@@ -376,6 +376,18 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_FEATURES_VALVE: {
+                VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE*>(current);
+                if (enabling->bufferDeviceAddressAllocationAlignment && !supported.bufferDeviceAddressAllocationAlignment) {
+                    ss << "VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE::"
+                          "bufferDeviceAddressAllocationAlignment is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES: {
                 VkPhysicalDeviceBufferDeviceAddressFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
@@ -2355,14 +2367,14 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT: {
-                VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT supported = vku::InitStructHelper();
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_KHR: {
+                VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
                 DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
-                const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* enabling =
-                    reinterpret_cast<const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT*>(current);
+                const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR*>(current);
                 if (enabling->pipelineLibraryGroupHandles && !supported.pipelineLibraryGroupHandles) {
-                    ss << "VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::pipelineLibraryGroupHandles is not supported\n";
+                    ss << "VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR::pipelineLibraryGroupHandles is not supported\n";
                 }
                 break;
             }

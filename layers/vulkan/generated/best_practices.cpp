@@ -66,6 +66,7 @@ std::string GetSpecialUse(vvl::Extension extension_name) {
         {vvl::Extension::_VK_ARM_performance_counters_by_region, "devtools"},
         {vvl::Extension::_VK_ARM_shader_instrumentation, "devtools"},
         {vvl::Extension::_VK_EXT_primitive_restart_index, "glemulation"},
+        {vvl::Extension::_VK_VALVE_buffer_device_address_allocation_alignment, "d3demulation"},
     };
 
     auto it = special_use_extensions.find(extension_name);

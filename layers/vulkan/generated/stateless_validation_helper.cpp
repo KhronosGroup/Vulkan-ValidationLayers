@@ -1442,6 +1442,18 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_KHR: {  // Covers
+                                                                                               // VUID-VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR);
+                VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR* structure =
+                    (VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::pipelineLibraryGroupHandles), structure->pipelineLibraryGroupHandles);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceMaintenance11FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR: {  // Covers
                                                                                // VUID-VkPhysicalDeviceMaintenance11FeaturesKHR-sType-sType
@@ -3070,18 +3082,6 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
-        // Validation code for VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT: {  // Covers
-                                                                                               // VUID-VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc =
-                    loc.pNext(Struct::VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT);
-                VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* structure =
-                    (VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT*)header;
-                skip |= ValidateBool32(pNext_loc.dot(Field::pipelineLibraryGroupHandles), structure->pipelineLibraryGroupHandles);
-            }
-        } break;
-
         // Validation code for VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT: {  // Covers
                                                                                                      // VUID-VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT-sType-sType
@@ -3740,6 +3740,19 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 VkPhysicalDevicePrivateDataBaseHandleFeaturesNV* structure =
                     (VkPhysicalDevicePrivateDataBaseHandleFeaturesNV*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::privateDataBaseHandle), structure->privateDataBaseHandle);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_FEATURES_VALVE: {  // Covers
+                                                                                                             // VUID-VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE);
+                VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE* structure =
+                    (VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::bufferDeviceAddressAllocationAlignment),
+                                       structure->bufferDeviceAddressAllocationAlignment);
             }
         } break;
 
@@ -9097,6 +9110,9 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // No Validation code for VkBufferDeviceAddressAlignmentAllocateInfoVALVE structure members  -- Covers
+        // VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-sType-sType
+
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
                                                                                    // VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
@@ -9250,7 +9266,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 287> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 288> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9271,6 +9287,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BORDER_COLOR_SWIZZLE_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_FEATURES_VALVE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_FEATURES_NV,
@@ -9408,7 +9425,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CACHE_INCREMENTAL_MODE_FEATURES_SEC,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_OPACITY_MICROMAP_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPERTIES_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES,
@@ -9691,7 +9708,8 @@ bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAlloca
                                        "VUID-vkAllocateMemory-pAllocateInfo-parameter", "VUID-VkMemoryAllocateInfo-sType-sType");
     if (pAllocateInfo != nullptr) {
         [[maybe_unused]] const Location pAllocateInfo_loc = loc.dot(Field::pAllocateInfo);
-        constexpr std::array<VkStructureType, 24> allowed_structs_VkMemoryAllocateInfo = {
+        constexpr std::array<VkStructureType, 25> allowed_structs_VkMemoryAllocateInfo = {
+            VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_ALIGNMENT_ALLOCATE_INFO_VALVE,
             VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV,
             VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
             VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_NV,
@@ -10269,8 +10287,9 @@ bool Device::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateIn
                                        "VUID-vkCreateBuffer-pCreateInfo-parameter", "VUID-VkBufferCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 10> allowed_structs_VkBufferCreateInfo = {
+        constexpr std::array<VkStructureType, 11> allowed_structs_VkBufferCreateInfo = {
             VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA,
+            VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_ALIGNMENT_ALLOCATE_INFO_VALVE,
             VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO,
             VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO,
@@ -12788,9 +12807,10 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
                                        "VUID-VkPhysicalDeviceProperties2-sType-sType");
     if (pProperties != nullptr) {
         [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties);
-        constexpr std::array<VkStructureType, 125> allowed_structs_VkPhysicalDeviceProperties2 = {
+        constexpr std::array<VkStructureType, 126> allowed_structs_VkPhysicalDeviceProperties2 = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_PROPERTIES_VALVE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_PROPERTIES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR,
@@ -14696,8 +14716,9 @@ bool Device::PreCallValidateGetDeviceBufferMemoryRequirements(VkDevice device, c
 
         if (pInfo->pCreateInfo != nullptr) {
             [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
-            constexpr std::array<VkStructureType, 10> allowed_structs_VkBufferCreateInfo = {
+            constexpr std::array<VkStructureType, 11> allowed_structs_VkBufferCreateInfo = {
                 VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA,
+                VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_ALIGNMENT_ALLOCATE_INFO_VALVE,
                 VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT,
                 VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO,
                 VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO,
@@ -26252,8 +26273,9 @@ bool Device::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(
                                            "VUID-VkBufferCreateInfo-sType-sType");
 
         [[maybe_unused]] const Location createInfo_loc = pBufferConstraintsInfo_loc.dot(Field::createInfo);
-        constexpr std::array<VkStructureType, 10> allowed_structs_VkBufferCreateInfo = {
+        constexpr std::array<VkStructureType, 11> allowed_structs_VkBufferCreateInfo = {
             VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA,
+            VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_ALIGNMENT_ALLOCATE_INFO_VALVE,
             VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO,
             VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO,

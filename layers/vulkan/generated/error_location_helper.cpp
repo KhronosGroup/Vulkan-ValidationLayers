@@ -973,6 +973,7 @@ const char* String(Struct structure) {
     {"VkBufferCopy", 13},
     {"VkBufferCopy2", 14},
     {"VkBufferCreateInfo", 19},
+    {"VkBufferDeviceAddressAlignmentAllocateInfoVALVE", 48},
     {"VkBufferDeviceAddressCreateInfoEXT", 35},
     {"VkBufferDeviceAddressInfo", 26},
     {"VkBufferImageCopy", 18},
@@ -1497,6 +1498,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT", 50},
     {"VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT", 52},
     {"VkPhysicalDeviceBorderColorSwizzleFeaturesEXT", 46},
+    {"VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE", 68},
+    {"VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentPropertiesVALVE", 70},
     {"VkPhysicalDeviceBufferDeviceAddressFeatures", 44},
     {"VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", 47},
     {"VkPhysicalDeviceClusterAccelerationStructureFeaturesNV", 55},
@@ -1729,7 +1732,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePipelineCacheIncrementalModeFeaturesSEC", 56},
     {"VkPhysicalDevicePipelineCreationCacheControlFeatures", 53},
     {"VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR", 56},
-    {"VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT", 55},
+    {"VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR", 55},
     {"VkPhysicalDevicePipelineOpacityMicromapFeaturesARM", 51},
     {"VkPhysicalDevicePipelinePropertiesFeaturesEXT", 46},
     {"VkPhysicalDevicePipelineProtectedAccessFeatures", 48},
@@ -2485,6 +2488,7 @@ const char* String(Field field) {
     {"bufferDescriptorAlignment", 26},
     {"bufferDescriptorSize", 21},
     {"bufferDeviceAddress", 20},
+    {"bufferDeviceAddressAllocationAlignment", 39},
     {"bufferDeviceAddressCaptureReplay", 33},
     {"bufferDeviceAddressMultiDevice", 31},
     {"bufferFeatures", 15},
@@ -3437,6 +3441,7 @@ const char* String(Field field) {
     {"maxBoundDescriptorSets", 23},
     {"maxBoxFilterBlockSize", 22},
     {"maxBufferCount", 15},
+    {"maxBufferDeviceAddressAllocationAlignment", 42},
     {"maxBufferSize", 14},
     {"maxClipDistances", 17},
     {"maxClusterCountPerAccelerationStructure", 40},
@@ -6380,6 +6385,7 @@ const char* String(Extension extension) {
     {"VK_KHR_pipeline_binary", 23},
     {"VK_KHR_pipeline_executable_properties", 38},
     {"VK_KHR_pipeline_library", 24},
+    {"VK_KHR_pipeline_library_group_handles", 38},
     {"VK_KHR_portability_enumeration", 31},
     {"VK_KHR_portability_subset", 26},
     {"VK_KHR_present_id", 18},
@@ -6560,6 +6566,7 @@ const char* String(Extension extension) {
     {"VK_SEC_pipeline_cache_incremental_mode", 39},
     {"VK_SEC_throttle_hint", 21},
     {"VK_SEC_ubm_surface", 19},
+    {"VK_VALVE_buffer_device_address_allocation_alignment", 52},
     {"VK_VALVE_descriptor_set_host_mapping", 37},
     {"VK_VALVE_fragment_density_map_layered", 38},
     {"VK_VALVE_mutable_descriptor_type", 33},
@@ -8324,6 +8331,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkRenderingAttachmentFlagsInfoKHR;
     case VK_STRUCTURE_TYPE_RESOLVE_IMAGE_MODE_INFO_KHR:
        return Struct::VkResolveImageModeInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_KHR:
+       return Struct::VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR:
        return Struct::VkPhysicalDeviceMaintenance11FeaturesKHR;
     case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OPTIMAL_IMAGE_TRANSFER_GRANULARITY_PROPERTIES_KHR:
@@ -9332,8 +9341,6 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM:
        return Struct::VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT:
-       return Struct::VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT:
        return Struct::VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT;
     case VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV:
@@ -9688,6 +9695,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_BASE_HANDLE_FEATURES_NV:
        return Struct::VkPhysicalDevicePrivateDataBaseHandleFeaturesNV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_FEATURES_VALVE:
+       return Struct::VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_PROPERTIES_VALVE:
+       return Struct::VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentPropertiesVALVE;
+    case VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_ALIGNMENT_ALLOCATE_INFO_VALVE:
+       return Struct::VkBufferDeviceAddressAlignmentAllocateInfoVALVE;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:
