@@ -135,11 +135,12 @@ std::string AccelerationStructureKHR::Describe(const Logger& dev_data) const {
 
     ss << dev_data.FormatHandle(Handle());
     if (UsesCreateInfo1()) {
-        const auto* ci_1 = std::get_if<CreateInfo1>(&create_info);
-        ss << ", createFlags: " << string_VkAccelerationStructureCreateFlagsKHR(ci_1->ci.createFlags)
-           << ", buffer: " << dev_data.FormatHandle(*ci_1->buffer_state) << ", offset: " << ci_1->ci.offset
-           << ", size: " << ci_1->ci.size << ", type: " << string_VkAccelerationStructureTypeKHR(ci_1->ci.type)
-           << ", deviceAddress: 0x" << std::hex << ci_1->ci.deviceAddress;
+        if (const auto* ci_1 = std::get_if<CreateInfo1>(&create_info)) {
+            ss << ", createFlags: " << string_VkAccelerationStructureCreateFlagsKHR(ci_1->ci.createFlags)
+               << ", buffer: " << dev_data.FormatHandle(*ci_1->buffer_state) << ", offset: " << ci_1->ci.offset
+               << ", size: " << ci_1->ci.size << ", type: " << string_VkAccelerationStructureTypeKHR(ci_1->ci.type)
+               << ", deviceAddress: 0x" << std::hex << ci_1->ci.deviceAddress;
+        }
     } else if (UsesCreateInfo2()) {
         const auto& ci_2 = std::get<vku::safe_VkAccelerationStructureCreateInfo2KHR>(create_info);
         ss << ", createFlags: " << string_VkAccelerationStructureCreateFlagsKHR(ci_2.createFlags) << ", addressRange.address: 0x"

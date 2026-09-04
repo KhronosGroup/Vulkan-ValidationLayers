@@ -132,7 +132,7 @@ bool CoreChecks::ValidateTensorSemiStructuredSparsityInfo(VkDevice device, const
             skip |= LogError("VUID-VkDataGraphPipelineConstantARM-pNext-09777", device,
                              constant_loc.pNext(Struct::VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM,
                                                 Field::pDimensions, sparsity->dimension),
-                             "(%" PRIu64 ") must be a multiple of groupSize (%" PRIu32 ")",
+                             "(%" PRIi64 ") must be a multiple of groupSize (%" PRIu32 ")",
                              tensor_desc->pDimensions[sparsity->dimension], sparsity->groupSize);
         }
         auto insert_ok = sparsity_dimensions.insert(sparsity->dimension).second;
@@ -669,7 +669,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice devic
     if (pCreateInfo->flags & VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM) {
         if (!enabled_features.protectedMemory) {
             skip |= LogError("VUID-VkDataGraphPipelineSessionCreateInfoARM-protectedMemory-09782", device,
-                             error_obj.location.dot(Field::dataGraphPipeline).dot(Field::flags),
+                             error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
                              "(%s) contains VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM but the protectedMemory "
                              "feature is not enabled",
                              string_VkDataGraphPipelineSessionCreateFlagsARM(pCreateInfo->flags).c_str());
@@ -681,7 +681,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice devic
                 "(%s) contains VK_DATA_GRAPH_PIPELINE_SESSION_CREATE_PROTECTED_BIT_ARM, and a "
                 "VkDataGraphPipelineNeuralStatisticsCreateInfoARM structure is "
                 "present in the pNext chain of the pipeline create info.\n%s",
-                string_VkDataGraphPipelineSessionCreateFlagBitsARM(pCreateInfo->flags),
+                string_VkDataGraphPipelineSessionCreateFlagsARM(pCreateInfo->flags).c_str(),
                 PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, pipeline_ptr->DataGraphCreateInfo().pNext).c_str());
         }
     }
@@ -925,7 +925,7 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
     const VkPipeline cb_pipeline = last_bound_state.pipeline_state->VkHandle();
     if (session_state.create_info.dataGraphPipeline != cb_pipeline) {
         skip |= LogError(
-            "VUID-vkCmdDispatchDataGraphARM-dataGraphPipeline-09951", LogObjectList(), error_obj.location,
+            "VUID-vkCmdDispatchDataGraphARM-dataGraphPipeline-09951", objlist, error_obj.location,
             "The pipeline bound to the command buffer (%s) is different from the pipeline bound to the session (%s); session %s.",
             FormatHandle(cb_pipeline).c_str(), FormatHandle(session_state.create_info.dataGraphPipeline).c_str(),
             FormatHandle(session_state).c_str());

@@ -748,7 +748,7 @@ bool CoreChecks::ValidateVideoEncodeRateControlAV1QIndex(VkCommandBuffer cmdbuf,
         }
 
         if (rc_layer_info.minQIndex.predictiveQIndex < min_q_index || rc_layer_info.minQIndex.predictiveQIndex > max_q_index) {
-            skip |= q_index_range_error(min_q_index_range_vuid, loc.dot(Field::minQIndex).dot(Field::qpP),
+            skip |= q_index_range_error(min_q_index_range_vuid, loc.dot(Field::minQIndex).dot(Field::predictiveQIndex),
                                         rc_layer_info.minQIndex.predictiveQIndex);
         }
 
@@ -903,7 +903,7 @@ bool CoreChecks::ValidateVideoPictureResource(const vvl::VideoPictureResource& p
         if (!IsIntegerMultipleOf(picture_resource.coded_offset, offset_granularity)) {
             const LogObjectList objlist(cmdbuf, vs_state.Handle());
             skip |=
-                LogError(coded_offset_vuid, objlist, loc.dot(Field::codedExtent),
+                LogError(coded_offset_vuid, objlist, loc.dot(Field::codedOffset),
                          "(%s) is not an integer multiple of the codedOffsetGranularity (%s).",
                          string_VkOffset2D(picture_resource.coded_offset).c_str(), string_VkOffset2D(offset_granularity).c_str());
         }
@@ -3288,7 +3288,7 @@ bool CoreChecks::ValidateVideoEncodeInfoAV1(const vvl::CommandBuffer& cb_state, 
 
                 auto ref_name_supported_and_used = [=](StdVideoAV1ReferenceName ref_name) {
                     const uint32_t ref_idx = ref_name - 1;
-                    return cdf_only_ref_index != ref_idx && picture_info->referenceNameSlotIndices[ref_idx] > 0 &&
+                    return cdf_only_ref_index != ref_idx && picture_info->referenceNameSlotIndices[ref_idx] >= 0 &&
                            ((profile_caps.encode_av1.unidirectionalCompoundReferenceNameMask & (1 << ref_idx)) != 0);
                 };
 
@@ -3383,7 +3383,7 @@ bool CoreChecks::ValidateVideoEncodeInfoAV1(const vvl::CommandBuffer& cb_state, 
             }
         }
 
-        auto std_picture_info_loc = loc.pNext(Struct::VkVideoEncodeAV1PictureInfoKHR, Field::pStdReferenceInfo);
+        auto std_picture_info_loc = loc.pNext(Struct::VkVideoEncodeAV1PictureInfoKHR, Field::pStdPictureInfo);
         auto setup_reference_loc = loc.dot(Field::pSetupReferenceSlot);
         auto std_setup_reference_info_loc =
             setup_reference_loc.pNext(Struct::VkVideoEncodeAV1DpbSlotInfoKHR, Field::pStdReferenceInfo);
@@ -3909,9 +3909,9 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
                                          error_obj.location.dot(Field::pVideoFormatInfo).pNext(Struct::VkVideoProfileListInfoKHR),
                                          false, nullptr, false, nullptr);
     } else {
-        const char* msg = video_profiles ? "no VkVideoProfileListInfoKHR structure found in the pNext chain of pVideoFormatInfo."
-                                         : "profileCount is zero in the VkVideoProfileListInfoKHR structure included in the "
-                                           "pNext chain of pVideoFormatInfo.";
+        const char* msg = video_profiles ? "profileCount is zero in the VkVideoProfileListInfoKHR structure included in the "
+                                           "pNext chain of pVideoFormatInfo."
+                                         : "no VkVideoProfileListInfoKHR structure found in the pNext chain of pVideoFormatInfo.";
         skip |=
             LogError("VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pNext-06812", physicalDevice, error_obj.location, "%s", msg);
     }
@@ -3968,7 +3968,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelProp
             if (!vku::FindStructInPNextChain<VkVideoEncodeH265QualityLevelPropertiesKHR>(pQualityLevelProperties->pNext)) {
                 skip |=
                     LogError("VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-08258", physicalDevice,
-                             quality_level_props_loc, props_pnext_msg, "VkVideoEncodeH264QualityLevelPropertiesKHR");
+                             quality_level_props_loc, props_pnext_msg, "VkVideoEncodeH265QualityLevelPropertiesKHR");
             }
             break;
 
@@ -4577,7 +4577,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
                                  "was created with VK_VIDEO_SESSION_PARAMETERS_CREATE_QUANTIZATION_MAP_COMPATIBLE_BIT_KHR but "
                                  "pCreateInfo->flags (%s) does not include "
                                  "VK_VIDEO_SESSION_PARAMETERS_CREATE_QUANTIZATION_MAP_COMPATIBLE_BIT_KHR.",
-                                 string_VkVideoSessionCreateFlagsKHR(pCreateInfo->flags).c_str());
+                                 string_VkVideoSessionParametersCreateFlagsKHR(pCreateInfo->flags).c_str());
             }
         }
     }
@@ -4968,7 +4968,7 @@ bool CoreChecks::PreCallValidateGetEncodedVideoSessionParametersKHR(
                 auto h265_info =
                     vku::FindStructInPNextChain<VkVideoEncodeH265SessionParametersGetInfoKHR>(pVideoSessionParametersInfo->pNext);
                 if (h265_info) {
-                    const Location h265_info_loc = params_info_loc.pNext(Struct::VkVideoEncodeH264SessionParametersGetInfoKHR);
+                    const Location h265_info_loc = params_info_loc.pNext(Struct::VkVideoEncodeH265SessionParametersGetInfoKHR);
 
                     if (!h265_info->writeStdVPS && !h265_info->writeStdSPS && !h265_info->writeStdPPS) {
                         skip |= LogError("VUID-VkVideoEncodeH265SessionParametersGetInfoKHR-writeStdVPS-08290",
@@ -5097,7 +5097,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                 const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession);
                 skip |=
                     LogError("VUID-VkVideoBeginCodingInfoKHR-slotIndex-04856", objlist, reference_slot_loc.dot(Field::slotIndex),
-                             "(%d) is greater than the maxDpbSlots %s was created with.", slot.slotIndex,
+                             "(%d) is not less than the maxDpbSlots %s was created with.", slot.slotIndex,
                              FormatHandle(pBeginInfo->videoSession).c_str());
             }
 

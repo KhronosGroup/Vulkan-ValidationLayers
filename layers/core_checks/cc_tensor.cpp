@@ -105,8 +105,8 @@ bool CoreChecks::ValidateTensorFormatUsage(VkFormat format, VkTensorUsageFlagsAR
                 LogError(vuid, device, loc.dot(Field::usage),
                          "(%s) has bit (%s) set but format features (%s) for format %s do not include matching required bit (%s)",
                          string_VkTensorUsageFlagsARM(usage).c_str(), string_VkTensorUsageFlagsARM(usage_bit).c_str(),
-                         string_VkTensorUsageFlagsARM(tensor_feature_flags).c_str(), string_VkFormat(format),
-                         string_VkTensorUsageFlagsARM(feature_bit).c_str());
+                         string_VkFormatFeatureFlags2(tensor_feature_flags).c_str(), string_VkFormat(format),
+                         string_VkFormatFeatureFlags2(feature_bit).c_str());
         }
     }
 
@@ -142,7 +142,7 @@ bool CoreChecks::ValidateRollingTensorInfo(const VkTensorDescriptionARM& descrip
                 if (wraps[i] >= (1 << 16)) {
                     skip |= LogError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09836", device,
                                      create_info_loc.pNext(Struct::VkTensorRollingBackingCreateInfoARM, Field::wraps, i),
-                                     "(%" PRIu32 ") is greater than 2^16 (%" PRIu32 ") and not equal to pDimensions[%" PRIu32
+                                     "(%" PRIu32 ") is not less than 2^16 (%" PRIu32 ") and not equal to pDimensions[%" PRIu32
                                      "] (%" PRIi64 ")",
                                      wraps[i], (1 << 16), i, description.pDimensions[i]);
                 }
@@ -491,7 +491,7 @@ bool CoreChecks::PreCallValidateGetTensorViewOpaqueCaptureDescriptorDataARM(VkDe
         ASSERT_AND_RETURN_SKIP(tensor_view_state);
         if (!(tensor_view_state->create_info.flags & VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM)) {
             skip |= LogError("VUID-VkTensorViewCaptureDescriptorDataInfoARM-tensorView-09709", pInfo->tensorView,
-                             error_obj.location.dot(Field::pInfo).dot(Field::tensor), "was created with %s.",
+                             error_obj.location.dot(Field::pInfo).dot(Field::tensorView), "was created with %s.",
                              string_VkTensorViewCreateFlagsARM(tensor_view_state->create_info.flags).c_str());
         }
     }

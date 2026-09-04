@@ -33,8 +33,12 @@ class DataGraphPipelineSession : public StateObject {
 
     bool Unprotected() const { return unprotected_; }
     const std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> &BindPointReqs() const { return bind_point_reqs_; }
-    const std::unordered_map<VkDataGraphPipelineSessionBindPointARM, std::vector<VkMemoryRequirements>> &MemReqsMap() const { return mem_reqs_map_; }
-    const std::unordered_map<VkDataGraphPipelineSessionBindPointARM, std::vector<vvl::MemoryBinding>> &BoundMemoryMap() const { return bound_memory_map_; }
+    const vvl::unordered_map<VkDataGraphPipelineSessionBindPointARM, std::vector<VkMemoryRequirements>>& MemReqsMap() const {
+        return mem_reqs_map_;
+    }
+    const vvl::unordered_map<VkDataGraphPipelineSessionBindPointARM, std::vector<vvl::MemoryBinding>>& BoundMemoryMap() const {
+        return bound_memory_map_;
+    }
 
     void InitMemoryRequirements(VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementARM *p_bind_point_reqs, uint32_t n_reqs);
     void AddBoundMemory(VkDataGraphPipelineSessionBindPointARM bind_point, MemoryBinding binding);
@@ -44,7 +48,8 @@ class DataGraphPipelineSession : public StateObject {
     VkDataGraphPipelineSessionARM session_;
     bool unprotected_ = true;
     std::vector<VkDataGraphPipelineSessionBindPointRequirementARM> bind_point_reqs_;
-    std::unordered_map<VkDataGraphPipelineSessionBindPointARM, std::vector<VkMemoryRequirements>> mem_reqs_map_;    /* requirements */
-    std::unordered_map<VkDataGraphPipelineSessionBindPointARM, std::vector<vvl::MemoryBinding>> bound_memory_map_;  /* actually bound */
+    vvl::unordered_map<VkDataGraphPipelineSessionBindPointARM, std::vector<VkMemoryRequirements>> mem_reqs_map_; /* requirements */
+    vvl::unordered_map<VkDataGraphPipelineSessionBindPointARM, std::vector<vvl::MemoryBinding>>
+        bound_memory_map_; /* actually bound */
 };
 }  // namespace vvl

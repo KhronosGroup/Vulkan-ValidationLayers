@@ -374,7 +374,7 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline& pipeline
                              create_info_loc.dot(Field::maxPipelineRayRecursionDepth).Fields().c_str(),
                              pipeline_create_info.maxPipelineRayRecursionDepth);
         }
-        if (lib_create_info.pLibraryInfo && pipeline_create_info.pLibraryInterface) {
+        if (lib_create_info.pLibraryInterface && pipeline_create_info.pLibraryInterface) {
             const auto& pipeline_interface = *pipeline_create_info.pLibraryInterface;
             const auto& lib_interface = *lib_create_info.pLibraryInterface;
 

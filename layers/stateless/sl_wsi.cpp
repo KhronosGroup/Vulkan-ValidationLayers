@@ -22,6 +22,7 @@
 #include "generated/dispatch_functions.h"
 #include "generated/enum_flag_bits.h"
 #include "utils/assert_utils.h"
+#include "utils/math_utils.h"
 
 #include <bitset>
 
@@ -677,8 +678,7 @@ bool Device::manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, u
                                  string_VkTimeDomainKHR(pTimestampInfos[i].timeDomain),
                                  PrintPNextChain(Struct::VkSwapchainCalibratedTimestampInfoEXT, pTimestampInfos[i].pNext).c_str());
             } else if (pTimestampInfos[i].timeDomain == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT) {
-                std::bitset<sizeof(VkPresentStageFlagsEXT)> bits(swapchain_calibrated_timestamp_info->presentStage);
-                if (bits.count() != 1) {
+                if (!IsSingleBitSet(swapchain_calibrated_timestamp_info->presentStage)) {
                     skip |= LogError("VUID-VkSwapchainCalibratedTimestampInfoEXT-timeDomain-12228", device,
                                      context.error_obj.location.dot(Field::pTimestampInfos, i)
                                          .pNext(Struct::VkSwapchainCalibratedTimestampInfoEXT)

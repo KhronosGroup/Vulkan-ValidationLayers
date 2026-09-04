@@ -167,7 +167,6 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     if (skip) return skip;
 
     auto queue_state = Get<vvl::Queue>(queue);
-    ASSERT_AND_RETURN_SKIP(queue_state);
     CommandBufferSubmitState cb_submit_state(*this, *queue_state);
     SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->GetQueueFlags());
 
@@ -354,7 +353,6 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
     }
 
     auto queue_state = Get<vvl::Queue>(queue);
-    ASSERT_AND_RETURN_SKIP(queue_state);
     CommandBufferSubmitState cb_submit_state(*this, *queue_state);
     SemaphoreSubmitState sem_submit_state(*this, queue, queue_state->GetQueueFlags());
 

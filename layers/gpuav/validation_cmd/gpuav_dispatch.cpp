@@ -134,7 +134,7 @@ void DispatchIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSta
                     skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-z-00419", objlist, loc_with_debug_region,
                                            "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
                                            " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",
-                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
+                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2]);
                     break;
                 }
                 default:

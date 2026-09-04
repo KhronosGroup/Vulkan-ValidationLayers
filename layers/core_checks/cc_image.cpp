@@ -3098,7 +3098,7 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo& 
             "(%" PRIu32
             ") is not less than or equal to "
             "VkPhysicalDeviceImageProcessingPropertiesQCOM::maxWeightFilterDimension.height (%" PRIu32 ").",
-            sample_weight_info->filterSize.width, phys_dev_ext_props.image_processing_props.maxWeightFilterDimension.width);
+            sample_weight_info->filterSize.height, phys_dev_ext_props.image_processing_props.maxWeightFilterDimension.height);
     }
 
     const Location filter_center_loc =
