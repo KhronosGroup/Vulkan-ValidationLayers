@@ -130,7 +130,7 @@ struct BeginRenderPassCommand {
 };
 
 struct NextSubpassCommand {
-    // Resolve, store, layou transition, load tags
+    // Resolve, store, layout transition, load tags
     static constexpr uint32_t kTagCount = 4;
 
     struct Storage {
