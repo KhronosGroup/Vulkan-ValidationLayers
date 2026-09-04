@@ -3076,9 +3076,13 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
         for (const auto& location : binding_description.locations) {
             const auto attr_index = location.second.index;
             const auto& attr_desc = location.second.desc;
+            // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45 for Vertex
+            const VkBuffer vertex_buffer_handle = vertex_buffer_binding->Buffer();
 
-            // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
-            if (!enabled_features.robustBufferAccess && !robust_pipeline && vertex_buffer_binding->Buffer() != VK_NULL_HANDLE) {
+            // VK_EXT_legacy_vertex_attributes has no alignment requirement, except for 64-bit format (which wasn't in OpenGL)
+            const bool attrib_alignment_required = !enabled_features.legacyVertexAttributes || vkuFormatIs64bit(attr_desc.format);
+            if (attrib_alignment_required && !enabled_features.robustBufferAccess && !robust_pipeline &&
+                vertex_buffer_handle != VK_NULL_HANDLE) {
                 const VkDeviceSize vertex_buffer_offset = vertex_buffer_binding->BufferOffset();
 
                 // Use 1 as vertex/instance index to use buffer stride as well
@@ -3096,7 +3100,7 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
 
                 if (!IsPointerAligned(attrib_address, vtx_attrib_req_alignment)) {
                     LogObjectList objlist(last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS));
-                    objlist.add(vertex_buffer_binding->Buffer());
+                    objlist.add(vertex_buffer_handle);
                     skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::VERTEX_BINDING_ATTRIBUTE_02721), objlist, loc,
                                      "Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (0x%" PRIx64
                                      ") is not aligned in pVertexAttributeDescriptions[%" PRIu32 "] (binding=%" PRIu32

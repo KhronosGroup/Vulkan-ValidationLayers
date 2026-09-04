@@ -932,6 +932,50 @@ TEST_F(PositiveVertexInput, LegacyVertexAttributes) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveVertexInput, LegacyVertexAttributesAlignment) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8491");
+    AddRequiredExtensions(VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::legacyVertexAttributes);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location = 0) in vec3 x;
+        void main(){
+           gl_Position = vec4(x, 1.0);
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkVertexInputBindingDescription input_binding{0, sizeof(float) * 3, VK_VERTEX_INPUT_RATE_VERTEX};
+
+    // non-packed, non-64-bit format
+    VkVertexInputAttributeDescription input_attrib{0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+
+    VkPipelineVertexInputStateCreateInfo vi_state = vku::InitStructHelper();
+    vi_state.vertexBindingDescriptionCount = 1;
+    vi_state.pVertexBindingDescriptions = &input_binding;
+    vi_state.vertexAttributeDescriptionCount = 1;
+    vi_state.pVertexAttributeDescriptions = &input_attrib;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.vi_ci_ = vi_state;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer vbo(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    VkDeviceSize offset = 7;
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vbo.handle(), &offset);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveVertexInput, ResetCmdSetVertexInput) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8523");
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
