@@ -287,7 +287,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     }
 
     const vvl::PipelineLayout& pipeline_layout = *last_bound.desc_set_pipeline_layout;
-    ss << "- vkCmdSetDescriptorBufferOffsetsEXT last bound with " << dev_data.FormatHandle(pipeline_layout.VkHandle()) << "\n";
+    ss << "- vkCmdSetDescriptorBufferOffsetsEXT last bound with " << dev_data.FormatHandle(pipeline_layout.Handle()) << "\n";
 
     ss << "- Shader descriptors:\n";
     for (const ShaderStageState* stage : stages) {
@@ -300,7 +300,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         ss << "  " << entry_point.Describe();
         // TODO - add util in ShaderStageState to get ShaderObject handle here
         if (stage->module_state && stage->module_state->VkHandle() != VK_NULL_HANDLE) {
-            ss << " " << dev_data.FormatHandle(stage->module_state->VkHandle());
+            ss << " " << dev_data.FormatHandle(stage->module_state->Handle());
         }
         ss << "\n";
 

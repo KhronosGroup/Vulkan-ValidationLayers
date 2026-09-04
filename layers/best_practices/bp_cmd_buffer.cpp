@@ -142,8 +142,8 @@ struct EventValidator {
                         "BestPractices-Event-SignalSignaledEvent", objlist, secondary_cb_loc,
                         "%s sets event %s which was already set (in the primary command buffer %s or in the executed secondary "
                         "command buffers). If this is not the desired behavior, the event must be reset before it is set again.",
-                        log.FormatHandle(secondary_cb.VkHandle()).c_str(), log.FormatHandle(event).c_str(),
-                        log.FormatHandle(primary_cb.VkHandle()).c_str());
+                        log.FormatHandle(secondary_cb.Handle()).c_str(), log.FormatHandle(event).c_str(),
+                        log.FormatHandle(primary_cb.Handle()).c_str());
                 }
             }
             signaling_state[event] = signaling_info.signaled;

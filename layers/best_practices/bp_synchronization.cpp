@@ -59,7 +59,7 @@ bool BestPractices::CheckEventSignalingState(const bp_state::CommandBufferSubSta
         skip |= LogWarning("BestPractices-Event-SignalSignaledEvent", objlist, cb_loc,
                            "%s sets event %s which was already set (in this command buffer or in the executed secondary command "
                            "buffers). If this is not the desired behavior, the event must be reset before it is set again.",
-                           FormatHandle(command_buffer.VkHandle()).c_str(), FormatHandle(event).c_str());
+                           FormatHandle(command_buffer.Handle()).c_str(), FormatHandle(event).c_str());
     }
     return skip;
 }

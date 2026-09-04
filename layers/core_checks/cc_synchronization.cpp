@@ -172,7 +172,7 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location& loc, const vvl::Se
                 "queue (%s) is waiting on binary semaphore (%s) that has an associated signal but it depends on timeline semaphore "
                 "wait (%s, wait value = %" PRIu64 ") that does not have resolving signal submitted yet.",
                 core.FormatHandle(queue).c_str(), core.FormatHandle(semaphore).c_str(),
-                core.FormatHandle(timeline_wait_info->semaphore->VkHandle()).c_str(), timeline_wait_info->payload);
+                core.FormatHandle(timeline_wait_info->semaphore->Handle()).c_str(), timeline_wait_info->payload);
         } else {
             binary_signaling_state[semaphore] = false;
         }

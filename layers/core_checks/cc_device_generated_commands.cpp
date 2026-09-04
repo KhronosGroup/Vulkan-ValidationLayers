@@ -1134,9 +1134,8 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                             "%s was created with a layout %s which is not compatible with the initialPipeline "
                             "layout %s for set "
                             "%" PRIu32 ".\n%s",
-                            FormatHandle(update_pipeline->VkHandle()).c_str(),
-                            FormatHandle(update_pipeline_layout->VkHandle()).c_str(),
-                            FormatHandle(initial_pipeline_layout->VkHandle()).c_str(), set,
+                            FormatHandle(update_pipeline->Handle()).c_str(), FormatHandle(update_pipeline_layout->Handle()).c_str(),
+                            FormatHandle(initial_pipeline_layout->Handle()).c_str(), set,
                             DescribePipelineLayoutSetNonCompatible(set, initial_pipeline_layout.get(), update_pipeline_layout.get())
                                 .c_str());
                         break;

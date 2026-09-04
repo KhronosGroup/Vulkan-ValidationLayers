@@ -618,9 +618,9 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         std::stringstream ss_as;
         std::stringstream ss_as_buffer;
         if (as_found_it != gpuav.device_state->as_with_addresses.array.end()) {
-            ss_as << "Acceleration structure corresponding to reference: " << gpuav.FormatHandle((*as_found_it)->VkHandle());
+            ss_as << "Acceleration structure corresponding to reference: " << gpuav.FormatHandle((*as_found_it)->Handle());
             if (const auto as_buffer = (*as_found_it)->GetFirstValidBuffer(*gpuav.device_state)) {
-                ss_as_buffer << "(" << gpuav.FormatHandle(as_buffer.state->VkHandle()) << ") ";
+                ss_as_buffer << "(" << gpuav.FormatHandle(as_buffer.state->Handle()) << ") ";
             }
         } else {
             ss_as << "Could not map acceleration structure reference to its corresponding handle, " << vvl_bug_msg;
@@ -695,16 +695,15 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                             error_ss << "Could not retrieve buffer information, " << vvl_bug_msg;
                         } else {
                             error_ss << "pInfos[" << blas_built_in_cmd.p_info_i << "].dstAccelerationStructure ("
-                                     << gpuav.FormatHandle(blas_built_in_cmd.blas->VkHandle()) << "), backed by buffer ("
-                                     << gpuav.FormatHandle(blas_cmd_as_buffer.state->VkHandle())
+                                     << gpuav.FormatHandle(blas_built_in_cmd.blas->Handle()) << "), backed by buffer ("
+                                     << gpuav.FormatHandle(blas_cmd_as_buffer.state->Handle())
                                      << "), overlaps on buffer address range " << vvl::string_range_hex(overlap) << " with buffer ("
-                                     << gpuav.FormatHandle(blas_tlas_as_buffer.state->VkHandle()) << ") of BLAS ("
-                                     << gpuav.FormatHandle((*as_found_it)->VkHandle()) << "), referenced in "
-                                     << invalid_blas_loc_str;
+                                     << gpuav.FormatHandle(blas_tlas_as_buffer.state->Handle()) << ") of BLAS ("
+                                     << gpuav.FormatHandle((*as_found_it)->Handle()) << "), referenced in " << invalid_blas_loc_str;
                         }
                     } else {
                         error_ss << "pInfos[" << blas_built_in_cmd.p_info_i << "].dstAccelerationStructure ("
-                                 << gpuav.FormatHandle(blas_built_in_cmd.blas->VkHandle())
+                                 << gpuav.FormatHandle(blas_built_in_cmd.blas->Handle())
                                  << ") is also referenced in a TLAS built in the same command, through " << invalid_blas_loc_str;
                     }
                 } else {
