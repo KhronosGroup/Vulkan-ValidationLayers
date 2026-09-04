@@ -112,6 +112,7 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
     skip |= ValidateCreateBufferFlags(pCreateInfo->flags, create_info_loc.dot(Field::flags));
     skip |= ValidateCreateBufferBufferDeviceAddress(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateBufferTileMemory(*pCreateInfo, create_info_loc);
+    skip |= ValidateCreateBufferDeviceAddressAllocationAlignment(*pCreateInfo, create_info_loc);
 
     return skip;
 }
@@ -252,6 +253,76 @@ bool Device::ValidateCreateBufferBufferDeviceAddress(const VkBufferCreateInfo& c
                          "device feature is not enabled.");
     }
 
+    return skip;
+}
+
+bool Device::ValidateCreateBufferDeviceAddressAllocationAlignment(const VkBufferCreateInfo& create_info,
+                                                                  const Location& create_info_loc) const {
+    bool skip = false;
+
+    const auto* alignment_info = vku::FindStructInPNextChain<VkBufferDeviceAddressAlignmentAllocateInfoVALVE>(create_info.pNext);
+    if (!alignment_info) {
+        return skip;
+    }
+    const Location alignment_loc = create_info_loc.pNext(Struct::VkBufferDeviceAddressAlignmentAllocateInfoVALVE, Field::alignment);
+    skip |= ValidateBufferDeviceAddressAlignmentAllocateInfo(*alignment_info, alignment_loc);
+
+    if (alignment_info->alignment == 0) {
+        return skip;  // "If alignment is 0, this alignment request is ignored"
+    }
+
+    if ((create_info.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) == 0) {
+        skip |= LogError("VUID-VkBufferCreateInfo-flags-12515", device, alignment_loc,
+                         "is %" PRIu32
+                         " (not zero), but VkBufferCreateInfo::flags (%s) does not include VK_BUFFER_CREATE_SPARSE_BINDING_BIT.",
+                         alignment_info->alignment, string_VkBufferCreateFlags(create_info.flags).c_str());
+    }
+
+    const auto* usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
+    const VkBufferUsageFlags2 usage = usage_flags2 ? usage_flags2->usage : create_info.usage;
+    if ((usage & VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT) == 0) {
+        skip |=
+            LogError("VUID-VkBufferCreateInfo-alignment-12516", device, alignment_loc,
+                     "is %" PRIu32
+                     " (not zero), but the effective usage flags (%s) do not include VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT.",
+                     alignment_info->alignment, string_VkBufferUsageFlags2(usage).c_str());
+    }
+
+    if (const auto* opaque_addr_info = vku::FindStructInPNextChain<VkBufferOpaqueCaptureAddressCreateInfo>(create_info.pNext)) {
+        if (opaque_addr_info->opaqueCaptureAddress != 0) {
+            skip |= LogError("VUID-VkBufferCreateInfo-alignment-12517", device, alignment_loc,
+                             "is %" PRIu32 " (not zero), but VkBufferOpaqueCaptureAddressCreateInfo::opaqueCaptureAddress (%" PRIu64
+                             ") is not 0.",
+                             alignment_info->alignment, opaque_addr_info->opaqueCaptureAddress);
+        }
+    }
+
+    return skip;
+}
+
+bool Device::ValidateBufferDeviceAddressAlignmentAllocateInfo(const VkBufferDeviceAddressAlignmentAllocateInfoVALVE& alignment_info,
+                                                              const Location& alignment_loc) const {
+    bool skip = false;
+    if (alignment_info.alignment == 0) {
+        return skip;  // "If alignment is 0, this alignment request is ignored"
+    }
+    if (!IsPowerOfTwo(alignment_info.alignment)) {
+        skip |= LogError("VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-alignment-12512", device, alignment_loc,
+                         "(%" PRIu32 ") is not a power of two.", alignment_info.alignment);
+    }
+    if (!enabled_features.bufferDeviceAddressAllocationAlignment) {
+        skip |= LogError("VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-alignment-12513", device, alignment_loc,
+                         "is %" PRIu32 " (not zero), but the bufferDeviceAddressAllocationAlignment feature is not enabled.",
+                         alignment_info.alignment);
+    } else {
+        const uint32_t max_alignment =
+            phys_dev_ext_props.buffer_device_address_allocation_alignment_props.maxBufferDeviceAddressAllocationAlignment;
+        if (alignment_info.alignment > max_alignment) {
+            skip |= LogError("VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-alignment-12514", device, alignment_loc,
+                             "(%" PRIu32 ") is greater than maxBufferDeviceAddressAllocationAlignment (%" PRIu32 ").",
+                             alignment_info.alignment, max_alignment);
+        }
+    }
     return skip;
 }
 

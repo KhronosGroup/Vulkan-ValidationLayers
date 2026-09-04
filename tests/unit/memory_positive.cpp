@@ -777,3 +777,40 @@ TEST_F(PositiveMemory, ZeroInitializeDeviceMemory) {
     vkt::DeviceMemory memory(*m_device, alloc_info);
     vk::BindImageMemory(device(), image, memory, 0);
 }
+
+TEST_F(PositiveMemory, BufferDeviceAddressAllocationAlignment) {
+    AddRequiredExtensions(VK_VALVE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddressAllocationAlignment);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferDeviceAddressAlignmentAllocateInfoVALVE alignment_info = vku::InitStructHelper();
+    alignment_info.alignment = 4;
+
+    {
+        VkBufferCreateInfo sparse_buffer_ci = vku::InitStructHelper(&alignment_info);
+        sparse_buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+        sparse_buffer_ci.size = 4096;
+        sparse_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        vkt::Buffer sparse_buffer(*m_device, sparse_buffer_ci, vkt::no_mem);
+    }
+
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    buffer_create_info.size = 4096;
+    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
+
+    VkMemoryRequirements buffer_mem_reqs = {};
+    vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper(&alignment_info);
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = buffer_mem_reqs.size;
+    m_device->Physical().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &alloc_info, 0);
+
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer, memory, 0);
+}

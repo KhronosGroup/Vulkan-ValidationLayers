@@ -59,6 +59,32 @@ bool Device::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                              "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT set, but bufferDeviceAddress feature is not enabled.");
         }
     }
+
+    if (const auto* alignment_info =
+            vku::FindStructInPNextChain<VkBufferDeviceAddressAlignmentAllocateInfoVALVE>(pAllocateInfo->pNext)) {
+        const Location alignment_loc =
+            allocate_info_loc.pNext(Struct::VkBufferDeviceAddressAlignmentAllocateInfoVALVE, Field::alignment);
+        skip |= ValidateBufferDeviceAddressAlignmentAllocateInfo(*alignment_info, alignment_loc);
+
+        if (alignment_info->alignment != 0) {
+            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) == 0) {
+                skip |= LogError("VUID-VkMemoryAllocateInfo-flags-12510", device, alignment_loc,
+                                 "is %" PRIu32
+                                 " (not zero), but VkMemoryAllocateFlagsInfo::flags (%s) does not include "
+                                 "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.",
+                                 alignment_info->alignment, string_VkMemoryAllocateFlags(flags).c_str());
+            }
+            if (const auto* opaque_addr_info =
+                    vku::FindStructInPNextChain<VkMemoryOpaqueCaptureAddressAllocateInfo>(pAllocateInfo->pNext);
+                opaque_addr_info && opaque_addr_info->opaqueCaptureAddress != 0) {
+                skip |= LogError("VUID-VkMemoryAllocateInfo-alignment-12511", device, alignment_loc,
+                                 "is %" PRIu32
+                                 " (not zero), but VkMemoryOpaqueCaptureAddressAllocateInfo::opaqueCaptureAddress (%" PRIu64
+                                 ") is not 0.",
+                                 alignment_info->alignment, opaque_addr_info->opaqueCaptureAddress);
+            }
+        }
+    }
     return skip;
 }
 
