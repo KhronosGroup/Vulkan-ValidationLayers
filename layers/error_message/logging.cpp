@@ -188,7 +188,8 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
                 label_iter->second->Export(queue_labels);
             }
             // If this is a command buffer, add any command buffer labels to the callback data.
-        } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info.objectType) {
+            // Only consider first found command buffer, to avoid mixing unrelated label stacks
+        } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info.objectType && cmd_buf_labels.empty()) {
             auto label_iter = debug_utils_cmd_buffer_labels.find(reinterpret_cast<VkCommandBuffer>(object_name_info.objectHandle));
             if (label_iter != debug_utils_cmd_buffer_labels.end()) {
                 label_iter->second->Export(cmd_buf_labels);

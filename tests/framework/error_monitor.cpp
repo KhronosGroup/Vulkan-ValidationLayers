@@ -87,9 +87,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 
         if (callback_data->objectCount > 0) {
             oss << "Objects: " << callback_data->objectCount << '\n';
-            for (uint32_t i = 0; i < callback_data->objectCount; i++) {
-                const auto& debug_object = callback_data->pObjects[i];
-                oss << "    [" << i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
+            for (uint32_t obj_i = 0; obj_i < callback_data->objectCount; obj_i++) {
+                const auto& debug_object = callback_data->pObjects[obj_i];
+                oss << "    [" << obj_i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
                 if (debug_object.objectHandle) {
                     oss << " 0x" << std::hex << debug_object.objectHandle;
                 } else {
@@ -97,6 +97,16 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
                 }
                 if (debug_object.pObjectName) {
                     oss << "[" << debug_object.pObjectName << "]";
+                }
+                if (debug_object.objectType == VK_OBJECT_TYPE_COMMAND_BUFFER && callback_data->cmdBufLabelCount > 0) {
+                    oss << " [ Active debug region: ";
+                    for (uint32_t label_i = 0; label_i < callback_data->cmdBufLabelCount; ++label_i) {
+                        if (label_i > 0) {
+                            oss << "::";
+                        }
+                        oss << callback_data->pCmdBufLabels[(callback_data->cmdBufLabelCount - 1) - label_i].pLabelName;
+                    }
+                    oss << " ]";
                 }
                 oss << '\n';
             }
