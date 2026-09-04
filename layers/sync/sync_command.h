@@ -129,14 +129,28 @@ struct BeginRenderPassCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context) const;
 };
 
+struct NextSubpassCommand {
+    // Resolve, store, layou transition, load tags
+    static constexpr uint32_t kTagCount = 4;
+
+    struct Storage {
+        NextSubpassCommand MakeCommand(const CommandData&) const { return NextSubpassCommand{}; }
+    };
+    Storage MakeStorage(CommandData&) const { return Storage{}; }
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
+                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context) const;
+};
+
 struct EndRenderPassCommand {
     // Store/resolve and final layout transition tags
     static constexpr uint32_t kTagCount = 2;
 
     struct Storage {
-        EndRenderPassCommand MakeCommand(const CommandData& command_data) const { return EndRenderPassCommand{}; }
+        EndRenderPassCommand MakeCommand(const CommandData&) const { return EndRenderPassCommand{}; }
     };
-    Storage MakeStorage(CommandData& command_data) const { return Storage{}; }
+    Storage MakeStorage(CommandData&) const { return Storage{}; }
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
     bool Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const;
@@ -145,7 +159,7 @@ struct EndRenderPassCommand {
 };
 
 using CommandStorage = std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage,
-                                    BeginRenderPassCommand::Storage, EndRenderPassCommand::Storage>;
+                                    BeginRenderPassCommand::Storage, NextSubpassCommand::Storage, EndRenderPassCommand::Storage>;
 
 struct CommandData {
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;

@@ -1337,19 +1337,20 @@ ResourceUsageTag CommandBufferContext::RecordBeginRenderPass(
 }
 
 ResourceUsageTag CommandBufferContext::RecordNextSubpass(vvl::Func command) {
-    // At this point current subpass value has not updated yet to the index of "next subpass"
-    const uint32_t previous_subpass = current_renderpass_context_->GetCurrentSubpass();
-    const uint32_t this_subpass = previous_subpass + 1;
+    if (!current_renderpass_context_->AdvanceSubpass()) {
+        return kInvalidTag;
+    }
+    current_context_ = &current_renderpass_context_->CurrentContext();
+
+    const uint32_t this_subpass = current_renderpass_context_->GetCurrentSubpass();
+    const uint32_t previous_subpass = this_subpass - 1;
 
     auto resolve_tag = NextCommandTag(command, SubCommandType::kResolveOp, previous_subpass);
     AddCommandHandle(resolve_tag, current_renderpass_context_->GetRenderPassState()->Handle());
-    auto store_tag = NextSubCommandTag(command, SubCommandType::kStoreOp, previous_subpass);
-    auto transition_tag = NextSubCommandTag(command, SubCommandType::kSubpassTransition, this_subpass);
-    auto load_tag = NextSubCommandTag(command, SubCommandType::kLoadOp, this_subpass);
-
-    current_renderpass_context_->RecordNextSubpass(resolve_tag, store_tag, transition_tag, load_tag);
-    current_context_ = &current_renderpass_context_->CurrentContext();
-    return transition_tag;
+    NextSubCommandTag(command, SubCommandType::kStoreOp, previous_subpass);
+    NextSubCommandTag(command, SubCommandType::kSubpassTransition, this_subpass);
+    NextSubCommandTag(command, SubCommandType::kLoadOp, this_subpass);
+    return resolve_tag;
 }
 
 ResourceUsageTag CommandBufferContext::RecordEndRenderPass(vvl::Func command) {
@@ -1379,6 +1380,7 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     const auto command = storage.MakeCommand(recorded_cb_context.GetCommandData());
                     using CommandType = std::decay_t<decltype(command)>;
                     if constexpr (!std::is_same_v<CommandType, BeginRenderPassCommand> &&
+                                  !std::is_same_v<CommandType, NextSubpassCommand> &&
                                   !std::is_same_v<CommandType, EndRenderPassCommand>) {
                         command.Apply(environment_, base_tag + entry.tag, *current_context_);
                         StoreCommand(base_tag + entry.tag, command, entry.tag_count);
@@ -2062,8 +2064,24 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_
     if (!cb_context.GetCurrentRenderPassContext()) {
         return;  // [core validation check]: begin render pass was not called
     }
+    RenderPassAccessContext& rp_context = *cb_context.GetCurrentRenderPassContext();
+    const SyncValidator& validator = cb_context.GetSyncState();
+    const auto& settings = validator.syncval_settings;
+
     const ResourceUsageTag tag = cb_context.RecordNextSubpass(loc.function);
-    cb_context.AddReplayEntry(tag, true, ReplayContextChange(ReplayContextChange::Type::kNextSubpass));
+    if (tag == kInvalidTag) {
+        return;
+    }
+    const ResourceUsageTag transition_tag = tag + 2;
+
+    const NextSubpassCommand command{};
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context);
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command, NextSubpassCommand::kTagCount);
+    }
+    cb_context.AddReplayEntry(transition_tag, true, ReplayContextChange(ReplayContextChange::Type::kNextSubpass));
 }
 
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) {

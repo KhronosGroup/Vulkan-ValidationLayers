@@ -136,8 +136,9 @@ class RenderPassAccessContext {
     void RecordLayoutTransitions(ResourceUsageTag tag, QueueId queue_id);
     void RecordLoadOperations(ResourceUsageTag tag, QueueId queue_id);
     void RecordBeginRenderPass(ResourceUsageTag transition_tag, ResourceUsageTag load_op_tag, QueueId queue_id);
+    bool AdvanceSubpass();
     void RecordNextSubpass(ResourceUsageTag resolve_tag, ResourceUsageTag store_tag, ResourceUsageTag transition_tag,
-                           ResourceUsageTag load_tag);
+                           ResourceUsageTag load_tag, QueueId queue_id);
     void RecordEndRenderPass(AccessContext& external_context, ResourceUsageTag store_tag, ResourceUsageTag transition_tag,
                              QueueId queue_id);
 
