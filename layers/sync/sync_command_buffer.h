@@ -347,8 +347,8 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     SyncEnvironment environment_;
 
-        // NOTE: Don't need the following for proxy contexts (that validate secondary execution).
-        // They flatten the source's current access state into cb_access_context_
+    // NOTE: Don't need the following for proxy contexts (that validate secondary execution).
+    // They flatten the source's current access state into cb_access_context_
     //
     // TODO: After removing legacy submit-time replay, replace this context history and the
     // non-owning current pointer with a single owning current context.
@@ -372,7 +372,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     // Used to initialize the corresponding value in the access object during recording.
     // At submit time, these ids are offset to ensure unique values among all submitted
     // command buffers.
-    // TODO: add the above mentioned submit time behavior
     uint32_t current_render_pass_instance_id_ = 0;
 };
 

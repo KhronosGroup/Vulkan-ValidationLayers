@@ -66,26 +66,18 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 if constexpr (std::is_same_v<CommandType, BeginRenderPassCommand>) {
                     command_skip = command.Validate(env, access_context, cb_context, entry.tag, loc);
                     replay_context.BeginRenderPass(command);
-                    if (!command_skip) {
-                        command.Apply(env, tag, *replay_context.render_pass_context);
-                    }
+                    command.Apply(env, tag, *replay_context.render_pass_context);
                 } else if constexpr (std::is_same_v<CommandType, NextSubpassCommand>) {
                     command_skip = command.Validate(env, *replay_context.render_pass_context, cb_context, entry.tag, loc);
                     replay_context.NextSubpass();
-                    if (!command_skip) {
-                        command.Apply(env, tag, *replay_context.render_pass_context);
-                    }
+                    command.Apply(env, tag, *replay_context.render_pass_context);
                 } else if constexpr (std::is_same_v<CommandType, EndRenderPassCommand>) {
                     command_skip = command.Validate(env, *replay_context.render_pass_context, cb_context, entry.tag, loc);
-                    if (!command_skip) {
-                        command.Apply(env, tag, *replay_context.render_pass_context, destination_access_context);
-                    }
+                    command.Apply(env, tag, *replay_context.render_pass_context, destination_access_context);
                     replay_context.EndRenderPass();
                 } else {
                     command_skip = command.Validate(env, access_context, cb_context, entry.tag, loc);
-                    if (!command_skip) {
-                        command.Apply(env, tag, access_context);
-                    }
+                    command.Apply(env, tag, access_context);
                 }
                 skip |= command_skip;
             },
