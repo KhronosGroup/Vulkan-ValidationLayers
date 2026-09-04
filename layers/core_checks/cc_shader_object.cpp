@@ -76,7 +76,7 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
                                               const Location& loc) const {
     bool skip = false;
 
-    const uint32_t invalid = createInfoCount;
+    const uint32_t invalid = vvl::kNoIndex32;
     uint32_t linked_stage = invalid;
     uint32_t non_linked_graphics_stage = invalid;
     uint32_t non_linked_task_mesh_stage = invalid;
