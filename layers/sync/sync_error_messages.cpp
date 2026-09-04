@@ -396,18 +396,23 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const SyncEnv
     return Error(env, hazard, command, resource_description, "RenderPassLoadOpVsLayoutTransitionError", additional_info);
 }
 
-std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                  vvl::Func command, const std::string& resource_description) const {
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "RenderPassResolveError");
+std::string ErrorMessages::RenderPassResolveError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                  const Location& loc, const std::string& resource_description) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    return Error(env, hazard, command, resource_description, "RenderPassResolveError", additional_info);
 }
 
-std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                  vvl::Func command, const std::string& resource_description,
+std::string ErrorMessages::RenderPassStoreOpError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                  const Location& loc, const std::string& resource_description,
                                                   VkAttachmentStoreOp store_op) const {
     AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
     const char* store_op_str = string_VkAttachmentStoreOp(store_op);
     additional_info.properties.Add(kPropertyStoreOp, store_op_str);
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "RenderPassStoreOpError", additional_info);
+    return Error(env, hazard, command, resource_description, "RenderPassStoreOpError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
@@ -432,53 +437,42 @@ std::string ErrorMessages::RenderPassLayoutTransitionVsResolveError(const SyncEn
                                                                     const std::string& resource_description,
                                                                     VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
                                                                     VkImageLayout new_layout, uint32_t resolve_subpass) const {
-    const char* old_layout_str = string_VkImageLayout(old_layout);
-    const char* new_layout_str = string_VkImageLayout(new_layout);
-
     AdditionalMessageInfo additional_info;
     const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
-
-    additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
-    additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
+    additional_info.properties.Add(kPropertyOldLayout, string_VkImageLayout(old_layout));
+    additional_info.properties.Add(kPropertyNewLayout, string_VkImageLayout(new_layout));
     additional_info.access_action = "performs image layout transition during " + validator_.FormatHandle(render_pass_handle);
     additional_info.brief_description_end_text = "during resolve operation in subpass ";
     additional_info.brief_description_end_text += std::to_string(resolve_subpass);
     return Error(env, hazard, command, resource_description, "RenderPassLayoutTransitionVsResolveError", additional_info);
 }
 
-std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                                vvl::Func command, const std::string& resource_description,
-                                                                VkImageLayout old_layout, VkImageLayout new_layout) const {
-    const char* old_layout_str = string_VkImageLayout(old_layout);
-    const char* new_layout_str = string_VkImageLayout(new_layout);
-
+std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                                const Location& loc, const std::string& resource_description,
+                                                                VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
+                                                                VkImageLayout new_layout) const {
     AdditionalMessageInfo additional_info;
-    additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
-    additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
-    additional_info.access_action =
-        "performs final image layout transition during " +
-        validator_.FormatHandle(cb_context.GetCurrentRenderPassContext()->GetRenderPassState()->Handle());
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "RenderPassFinalLayoutTransitionError",
-                 additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    additional_info.properties.Add(kPropertyOldLayout, string_VkImageLayout(old_layout));
+    additional_info.properties.Add(kPropertyNewLayout, string_VkImageLayout(new_layout));
+    additional_info.access_action = "performs final image layout transition during " + validator_.FormatHandle(render_pass_handle);
+    return Error(env, hazard, command, resource_description, "RenderPassFinalLayoutTransitionError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
-    const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command, const std::string& resource_description,
-    VkImageLayout old_layout, VkImageLayout new_layout, uint32_t store_resolve_subpass) const {
-    const char* old_layout_str = string_VkImageLayout(old_layout);
-    const char* new_layout_str = string_VkImageLayout(new_layout);
-
+    const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+    const Location& loc, const std::string& resource_description, VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
+    VkImageLayout new_layout, uint32_t store_resolve_subpass) const {
     AdditionalMessageInfo additional_info;
-    additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
-    additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
-    additional_info.access_action =
-        "performs final image layout transition during " +
-        validator_.FormatHandle(cb_context.GetCurrentRenderPassContext()->GetRenderPassState()->Handle());
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    additional_info.properties.Add(kPropertyOldLayout, string_VkImageLayout(old_layout));
+    additional_info.properties.Add(kPropertyNewLayout, string_VkImageLayout(new_layout));
+    additional_info.access_action = "performs final image layout transition during " + validator_.FormatHandle(render_pass_handle);
     additional_info.brief_description_end_text = "during store/resolve operation in subpass ";
     additional_info.brief_description_end_text += std::to_string(store_resolve_subpass);
-
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description,
-                 "RenderPassFinalLayoutTransitionVsStoreOrResolveError", additional_info);
+    return Error(env, hazard, command, resource_description, "RenderPassFinalLayoutTransitionVsStoreOrResolveError",
+                 additional_info);
 }
 
 std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,

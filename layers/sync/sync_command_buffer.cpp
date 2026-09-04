@@ -1354,17 +1354,13 @@ ResourceUsageTag CommandBufferContext::RecordNextSubpass(vvl::Func command) {
 
 ResourceUsageTag CommandBufferContext::RecordEndRenderPass(vvl::Func command) {
     const uint32_t current_subpass = current_renderpass_context_->GetCurrentSubpass();
-
     auto store_tag = NextCommandTag(command, SubCommandType::kStoreOp, current_subpass);
     AddCommandHandle(store_tag, current_renderpass_context_->GetRenderPassState()->Handle());
-
-    auto barrier_tag = NextSubCommandTag(command, SubCommandType::kSubpassTransition);
-
-    current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, store_tag, barrier_tag);
+    NextSubCommandTag(command, SubCommandType::kSubpassTransition);
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
     current_render_pass_instance_id_++;
-    return barrier_tag;
+    return store_tag;
 }
 
 void CommandBufferContext::RecordDestroyEvent(vvl::Event* event_state) { events_context_.Destroy(event_state); }
@@ -1382,7 +1378,8 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                 [&](const auto& storage) {
                     const auto command = storage.MakeCommand(recorded_cb_context.GetCommandData());
                     using CommandType = std::decay_t<decltype(command)>;
-                    if constexpr (!std::is_same_v<CommandType, BeginRenderPassCommand>) {
+                    if constexpr (!std::is_same_v<CommandType, BeginRenderPassCommand> &&
+                                  !std::is_same_v<CommandType, EndRenderPassCommand>) {
                         command.Apply(environment_, base_tag + entry.tag, *current_context_);
                         StoreCommand(base_tag + entry.tag, command, entry.tag_count);
                     }
@@ -2043,18 +2040,18 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     const uint32_t render_pass_instance_id = cb_context.GetCurrentRenderPassInstanceId();
     const BeginRenderPassCommand command{*rp_state, attachments, render_pass_begin.renderArea, render_pass_instance_id};
 
-    const ResourceUsageTag begin_tag =
+    const ResourceUsageTag tag =
         cb_context.RecordBeginRenderPass(loc.function, *rp_state, render_pass_begin.renderArea, attachments);
     RenderPassAccessContext& rp_context = *cb_context.GetCurrentRenderPassContext();
 
-    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    const auto& settings = validator.syncval_settings;
     if (settings.IsRecordTimeValidationEnabled()) {
-        command.Apply(cb_context.GetSyncEnvironment(), begin_tag, rp_context);
+        command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context);
     }
-    if (validator.syncval_settings.full_validation) {
-        cb_context.StoreCommand(begin_tag, command, BeginRenderPassCommand::kTagCount);
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command, BeginRenderPassCommand::kTagCount);
     }
-    cb_context.AddReplayEntry(begin_tag, true, ReplayContextChange(std::move(rp_state), std::move(attachments), &rp_context));
+    cb_context.AddReplayEntry(tag, true, ReplayContextChange(std::move(rp_state), std::move(attachments), &rp_context));
 }
 
 void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info,
@@ -2076,8 +2073,21 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_
     if (!cb_context.GetCurrentRenderPassContext()) {
         return;  // [core validation check]: begin render pass was not called
     }
+    RenderPassAccessContext& rp_context = *cb_context.GetCurrentRenderPassContext();
+    const SyncValidator& validator = cb_context.GetSyncState();
+    const auto& settings = validator.syncval_settings;
+
     const ResourceUsageTag tag = cb_context.RecordEndRenderPass(loc.function);
-    cb_context.AddReplayEntry(tag, true, ReplayContextChange(ReplayContextChange::Type::kEndRenderPass));
+
+    const EndRenderPassCommand command{};
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context, cb_context.GetCbAccessContext());
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command, EndRenderPassCommand::kTagCount);
+    }
+    const ResourceUsageTag transition_tag = tag + 1;
+    cb_context.AddReplayEntry(transition_tag, true, ReplayContextChange(ReplayContextChange::Type::kEndRenderPass));
 }
 
 void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t cmd_index,

@@ -122,9 +122,11 @@ class ErrorMessages {
                                                         const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
                                                         const Location& loc, const std::string& resource_description,
                                                         VkAttachmentLoadOp load_op, bool is_color) const;
-    std::string RenderPassResolveError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
+    std::string RenderPassResolveError(const SyncEnvironment& env, const HazardResult& hazard,
+                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
                                        const std::string& resource_description) const;
-    std::string RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
+    std::string RenderPassStoreOpError(const SyncEnvironment& env, const HazardResult& hazard,
+                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
                                        const std::string& resource_description, VkAttachmentStoreOp store_op) const;
 
     std::string RenderPassLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
@@ -136,14 +138,15 @@ class ErrorMessages {
                                                          const Location& loc, const std::string& resource_description,
                                                          VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
                                                          VkImageLayout new_layout, uint32_t resolve_subpass) const;
-    std::string RenderPassFinalLayoutTransitionError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                     vvl::Func command, const std::string& resource_description,
-                                                     VkImageLayout old_layout, VkImageLayout new_layout) const;
-    std::string RenderPassFinalLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
-                                                                     const CommandBufferContext& cb_context, vvl::Func command,
-                                                                     const std::string& resource_description,
-                                                                     VkImageLayout old_layout, VkImageLayout new_layout,
-                                                                     uint32_t store_resolve_subpass) const;
+    std::string RenderPassFinalLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                     const Location& loc, const std::string& resource_description,
+                                                     VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
+                                                     VkImageLayout new_layout) const;
+    std::string RenderPassFinalLayoutTransitionVsStoreOrResolveError(
+        const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+        const Location& loc, const std::string& resource_description, VulkanTypedHandle render_pass_handle,
+        VkImageLayout old_layout, VkImageLayout new_layout, uint32_t store_resolve_subpass) const;
 
     // TODO: temp legacy version
     std::string ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
