@@ -800,13 +800,13 @@ bool CoreChecks::ValidateDrawShaderObjectFlags(const LastBound& last_bound_state
                << " has flag VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR but the VkPipelineLayout (bound with ";
             ss << vvl::String(last_bound_state.GetDescriptorModeFunc())
                << ") is mixing mesh and non-mesh pre-rasterization shader stages\n";
-            ss << FormatHandle(pre_raster_dsl->VkHandle()) << " at set " << binding_with_pre_rast_stage->first << ", binding "
+            ss << FormatHandle(pre_raster_dsl->Handle()) << " at set " << binding_with_pre_rast_stage->first << ", binding "
                << binding_with_pre_rast_stage->second << " has stageFlags "
                << string_VkShaderStageFlags(
                       pre_raster_dsl->GetDescriptorSetLayoutBindingPtrFromBinding(binding_with_pre_rast_stage->second)->stageFlags)
                << '\n';
             if (!same_binding) {
-                ss << FormatHandle(mesh_dsl->VkHandle()) << " at set " << binding_with_mesh_stage->first << ", binding "
+                ss << FormatHandle(mesh_dsl->Handle()) << " at set " << binding_with_mesh_stage->first << ", binding "
                    << binding_with_mesh_stage->second << " has stageFlags "
                    << string_VkShaderStageFlags(
                           mesh_dsl->GetDescriptorSetLayoutBindingPtrFromBinding(binding_with_mesh_stage->second)->stageFlags)

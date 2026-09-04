@@ -249,7 +249,7 @@ struct EventValidator {
                         "BestPractices-Event-SignalSignaledEvent", objlist, cb_loc,
                         "%s sets event %s which is already in the signaled state (set by previously submitted command buffers or "
                         "from the host). If this is not the desired behavior, the event must be reset before it is set again.",
-                        bp.FormatHandle(cb.VkHandle()).c_str(), bp.FormatHandle(event).c_str());
+                        bp.FormatHandle(cb.Handle()).c_str(), bp.FormatHandle(event).c_str());
                 }
             }
             signaling_state[event] = info.signaled;

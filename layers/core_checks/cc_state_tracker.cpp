@@ -352,11 +352,9 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
                         "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are "
                         "bound to the same memory (%s), "
                         "and end up overlapping on memory range %s.",
-                        vvl::string_range(src_ranges_it->second).c_str(),
-                        validator.FormatHandle(src_buffer_state.VkHandle()).c_str(),
-                        vvl::string_range(dst_ranges_it->second).c_str(),
-                        validator.FormatHandle(dst_buffer_state.VkHandle()).c_str(), validator.FormatHandle(vk_memory).c_str(),
-                        vvl::string_range(memory_range_overlap).c_str());
+                        vvl::string_range(src_ranges_it->second).c_str(), validator.FormatHandle(src_buffer_state.Handle()).c_str(),
+                        vvl::string_range(dst_ranges_it->second).c_str(), validator.FormatHandle(dst_buffer_state.Handle()).c_str(),
+                        validator.FormatHandle(vk_memory).c_str(), vvl::string_range(memory_range_overlap).c_str());
                 }
 
                 if (src_ranges_it->first < dst_ranges_it->first) {

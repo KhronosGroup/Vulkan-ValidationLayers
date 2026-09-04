@@ -3130,7 +3130,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 access_context.DetectHazard(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, scratch_buffer.Handle());
-                const std::string resource_description = "scratch buffer " + FormatHandle(scratch_buffer.VkHandle());
+                const std::string resource_description = "scratch buffer " + FormatHandle(scratch_buffer.Handle());
                 const auto error =
                     error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
@@ -3144,7 +3144,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                                                           SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ, range);
                 if (hazard.IsHazard()) {
                     const LogObjectList objlist(commandBuffer, src_as_buffer.state->Handle(), src_accel->Handle());
-                    const std::string resource_description = FormatHandle(src_as_buffer.state->VkHandle());
+                    const std::string resource_description = FormatHandle(src_as_buffer.state->Handle());
                     const std::string error = error_messages_.AccelerationStructureError(
                         hazard, cb_context, error_obj.location.function, resource_description, range, info.srcAccelerationStructure,
                         info_loc.dot(Field::srcAccelerationStructure));
@@ -3160,7 +3160,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                     *dst_as_buffer.state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, dst_range);
                 if (hazard.IsHazard()) {
                     const LogObjectList objlist(commandBuffer, dst_as_buffer.state->Handle(), dst_accel->Handle());
-                    const std::string resource_description = FormatHandle(dst_as_buffer.state->VkHandle());
+                    const std::string resource_description = FormatHandle(dst_as_buffer.state->Handle());
                     const std::string error = error_messages_.AccelerationStructureError(
                         hazard, cb_context, error_obj.location.function, resource_description, dst_range,
                         info.dstAccelerationStructure, info_loc.dot(Field::dstAccelerationStructure));
@@ -3326,7 +3326,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuff
                                                       SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_state->Handle(), src_as_buffer.state->Handle(), src_accel->Handle());
-                const std::string resource_description = FormatHandle(src_as_buffer.state->VkHandle());
+                const std::string resource_description = FormatHandle(src_as_buffer.state->Handle());
                 const std::string error =
                     error_messages_.AccelerationStructureError(hazard, cb_context, error_obj.location.function,
                                                                resource_description, range, pInfo->src, info_loc.dot(Field::src));
@@ -3341,7 +3341,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuff
                                                       SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_state->Handle(), dst_as_buffer.state->Handle(), dst_accel->Handle());
-                const std::string resource_description = FormatHandle(dst_as_buffer.state->VkHandle());
+                const std::string resource_description = FormatHandle(dst_as_buffer.state->Handle());
                 const std::string error =
                     error_messages_.AccelerationStructureError(hazard, cb_context, error_obj.location.function,
                                                                resource_description, range, pInfo->dst, info_loc.dot(Field::dst));
@@ -3396,7 +3396,7 @@ bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCom
                                                       SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_state->Handle(), src_as_buffer.state->Handle(), src_accel->Handle());
-                const std::string resource_description = FormatHandle(src_as_buffer.state->VkHandle());
+                const std::string resource_description = FormatHandle(src_as_buffer.state->Handle());
                 const std::string error =
                     error_messages_.AccelerationStructureError(hazard, cb_context, error_obj.location.function,
                                                                resource_description, range, pInfo->src, info_loc.dot(Field::src));
@@ -3449,7 +3449,7 @@ bool SyncValidator::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCom
                                                       SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_state->Handle(), dst_as_buffer.state->Handle(), dst_accel->Handle());
-                const std::string resource_description = FormatHandle(dst_as_buffer.state->VkHandle());
+                const std::string resource_description = FormatHandle(dst_as_buffer.state->Handle());
                 const std::string error =
                     error_messages_.AccelerationStructureError(hazard, cb_context, error_obj.location.function,
                                                                resource_description, range, pInfo->dst, info_loc.dot(Field::dst));

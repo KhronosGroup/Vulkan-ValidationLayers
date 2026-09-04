@@ -221,10 +221,10 @@ void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb) {
                             strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
                             if (error_sub_code == kErrorSubCode_RayQuery_TlasNotBuilt) {
                                 strm << "OpRayQueryInitializeKHR operand Acceleration structure ("
-                                     << gpuav.FormatHandle(as_state->VkHandle()) << ") has not been built.";
+                                     << gpuav.FormatHandle(as_state->Handle()) << ") has not been built.";
                                 out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06352";
                             } else {
-                                strm << "OpTraceRayKHR operand Acceleration structure (" << gpuav.FormatHandle(as_state->VkHandle())
+                                strm << "OpTraceRayKHR operand Acceleration structure (" << gpuav.FormatHandle(as_state->Handle())
                                      << ") has not been built.";
                                 out_vuid_msg = "VUID-RuntimeSpirv-OpTraceRayKHR-06359";
                             }

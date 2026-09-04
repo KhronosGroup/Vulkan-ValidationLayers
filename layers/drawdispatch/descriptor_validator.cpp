@@ -707,7 +707,7 @@ bool DescriptorValidator::ValidateSampledImageDescriptor(const spirv::ResourceIn
             << " is accessed by a OpTypeImage that has a Format operand "
             << string_SpirvImageFormat(resource_variable.info.vk_format) << " (equivalent to "
             << string_VkFormat(resource_variable.info.vk_format) << ") which doesn't match the "
-            << FormatHandle(image_view_state.VkHandle()) << " format (" << string_VkFormat(image_view_ci.format)
+            << FormatHandle(image_view_state.Handle()) << " format (" << string_VkFormat(image_view_ci.format)
             << "). Any loads or stores with the variable will produce undefined values to the whole image (not just the texel "
                "being accessed).";
         if (vkuFormatCompatibilityClass(image_view_ci.format) == vkuFormatCompatibilityClass(resource_variable.info.vk_format)) {

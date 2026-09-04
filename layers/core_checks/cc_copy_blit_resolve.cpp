@@ -905,9 +905,9 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer commandBuffer, cons
                     "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are bound to "
                     "the same memory (%s), "
                     "and end up overlapping on memory range %s.",
-                    vvl::string_range(*src_ranges_it).c_str(), FormatHandle(src_buffer_state.VkHandle()).c_str(),
-                    vvl::string_range(*dst_ranges_it).c_str(), FormatHandle(dst_buffer_state.VkHandle()).c_str(),
-                    FormatHandle(src_binding->memory_state->VkHandle()).c_str(), vvl::string_range(memory_range_overlap).c_str());
+                    vvl::string_range(*src_ranges_it).c_str(), FormatHandle(src_buffer_state.Handle()).c_str(),
+                    vvl::string_range(*dst_ranges_it).c_str(), FormatHandle(dst_buffer_state.Handle()).c_str(),
+                    FormatHandle(src_binding->memory_state->Handle()).c_str(), vvl::string_range(memory_range_overlap).c_str());
             }
 
             if (*src_ranges_it < *dst_ranges_it) {

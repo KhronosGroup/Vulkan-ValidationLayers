@@ -2075,7 +2075,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
     }
 
     if (last_bound.pipeline_state) {
-        ss << "- Last bound pipeline: " << dev_data.FormatHandle(last_bound.pipeline_state->VkHandle()) << " ("
+        ss << "- Last bound pipeline: " << dev_data.FormatHandle(last_bound.pipeline_state->Handle()) << " ("
            << string_VkPipelineBindPoint(last_bound.pipeline_state->pipeline_type) << ")\n";
     }
 
@@ -2091,7 +2091,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
         ss << "  " << entry_point.Describe();
         // TODO - add util in ShaderStageState to get ShaderObject handle here
         if (stage->module_state && stage->module_state->VkHandle() != VK_NULL_HANDLE) {
-            ss << " " << dev_data.FormatHandle(stage->module_state->VkHandle());
+            ss << " " << dev_data.FormatHandle(stage->module_state->Handle());
         }
         ss << "\n";
 
