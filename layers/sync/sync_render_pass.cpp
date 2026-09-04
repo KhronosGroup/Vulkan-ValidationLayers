@@ -749,7 +749,6 @@ const vvl::ImageView* RenderPassAccessContext::GetClearAttachmentView(const VkCl
 
 bool RenderPassAccessContext::ValidateNextSubpass(const SyncEnvironment& env, const CommandBufferContext& cb_context,
                                                   ResourceUsageTag replay_tag, const Location& loc) const {
-    // PHASE1 TODO: Add Validate Preserve attachments
     bool skip = false;
     skip |= ValidateResolveOperations(env, cb_context, replay_tag, loc);
     skip |= ValidateStoreOperation(env, cb_context, replay_tag, loc);
@@ -760,19 +759,17 @@ bool RenderPassAccessContext::ValidateNextSubpass(const SyncEnvironment& env, co
     }
     const uint32_t next_subpass_view_mask = rp_state_->create_info.pSubpasses[next_subpass].viewMask;
     const auto& next_context = subpass_contexts_[next_subpass];
-    skip |=
-        ValidateLayoutTransitions(cb_context.GetSyncEnvironment(), next_context, *rp_state_, render_pass_instance_id_, next_subpass,
-                                  next_subpass_view_mask, attachment_views_, cb_context, kInvalidTag /*temp*/, loc);
+    skip |= ValidateLayoutTransitions(env, next_context, *rp_state_, render_pass_instance_id_, next_subpass, next_subpass_view_mask,
+                                      attachment_views_, cb_context, replay_tag, loc);
     if (!skip) {
         // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
         // on a copy of the (empty) next context.
         // Note: The resource access map should be empty so hopefully this copy isn't too horrible from a perf POV.
         AccessContext temp_context(cb_context.GetSyncState());
         temp_context.InitFrom(next_context);
-        RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context, kQueueIdInvalid /*temp*/);
-        skip |=
-            ValidateLoadOperation(cb_context.GetSyncEnvironment(), temp_context, *rp_state_, render_pass_instance_id_, next_subpass,
-                                  next_subpass_view_mask, attachment_views_, cb_context, kInvalidTag /*temp*/, loc);
+        RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context, env.queue_id);
+        skip |= ValidateLoadOperation(env, temp_context, *rp_state_, render_pass_instance_id_, next_subpass, next_subpass_view_mask,
+                                      attachment_views_, cb_context, replay_tag, loc);
     }
     return skip;
 }
@@ -950,27 +947,33 @@ void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag trans
     RecordLoadOperations(load_op_tag, queue_id);
 }
 
-void RenderPassAccessContext::RecordNextSubpass(ResourceUsageTag resolve_tag, const ResourceUsageTag store_tag,
-                                                const ResourceUsageTag transition_tag, const ResourceUsageTag load_tag) {
-    const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
-
-    // Resolves are against *prior* subpass context and thus *before* the subpass increment
-    UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, resolve_tag,
-                                  CurrentContext(), kQueueIdInvalid /*temp*/);
-    UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, current_subpass_, view_mask, store_tag,
-                                CurrentContext(), kQueueIdInvalid /*temp*/);
-
+bool RenderPassAccessContext::AdvanceSubpass() {
     if (current_subpass_ + 1 >= rp_state_->create_info.subpassCount) {
-        return;
+        return false;
     }
-    // Move to the next sub-command for the new subpass. The resolve and store are logically part of the previous
-    // subpass, so their tag needs to be different from the layout and load operations below.
     current_subpass_++;
+    return true;
+}
+
+void RenderPassAccessContext::RecordNextSubpass(ResourceUsageTag resolve_tag, const ResourceUsageTag store_tag,
+                                                const ResourceUsageTag transition_tag, const ResourceUsageTag load_tag,
+                                                QueueId queue_id) {
+    // AdvanceSubpass must already be called
+    assert(current_subpass_ > 0);
+
+    // The resolve and store are logically part of the previous subpass
+    const uint32_t prev_subpass = current_subpass_ - 1;
+    const uint32_t view_mask = rp_state_->create_info.pSubpasses[prev_subpass].viewMask;
+    UpdateAttachmentResolveAccess(*rp_state_, attachment_views_, render_pass_instance_id_, prev_subpass, view_mask, resolve_tag,
+                                  subpass_contexts_[prev_subpass], queue_id);
+    UpdateAttachmentStoreAccess(*rp_state_, attachment_views_, render_pass_instance_id_, prev_subpass, view_mask, store_tag,
+                                subpass_contexts_[prev_subpass], queue_id);
+
+    // Layout transition and load are from the current subpass
     AccessContext& current_context = CurrentContext();
     current_context.SetStartTag(transition_tag);
-
-    RecordLayoutTransitions(transition_tag, kQueueIdInvalid /*temp*/);
-    RecordLoadOperations(load_tag, kQueueIdInvalid /*temp*/);
+    RecordLayoutTransitions(transition_tag, queue_id);
+    RecordLoadOperations(load_tag, queue_id);
 }
 
 void RenderPassAccessContext::RecordEndRenderPass(AccessContext& external_context, const ResourceUsageTag store_tag,

@@ -669,6 +669,27 @@ bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const
     return command.Validate(cb_context, error_obj.location);
 }
 
+bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                           const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+    NextSubpassCommand command{};
+    return command.Validate(cb_context, error_obj.location);
+}
+
+bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+    EndRenderPassCommand command{};
+    return command.Validate(cb_context, error_obj.location);
+}
+
 bool SyncValidator::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                       VkSubpassContents contents, const ErrorObject& error_obj) const {
     VkSubpassBeginInfo subpass_begin_info = vku::InitStructHelper();
@@ -689,20 +710,6 @@ bool SyncValidator::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer comman
     return PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
 }
 
-bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                           const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
-    bool skip = false;
-    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const RenderPassAccessContext* renderpass_context = cb_context.GetCurrentRenderPassContext();
-    if (!renderpass_context) {
-        return skip;
-    }
-    skip |= renderpass_context->ValidateNextSubpass(cb_context.GetSyncEnvironment(), cb_context, kInvalidTag /*temp*/,
-                                                    error_obj.location);
-    return skip;
-}
-
 bool SyncValidator::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                                   const ErrorObject& error_obj) const {
     // Convert to a NextSubpass2
@@ -720,16 +727,6 @@ bool SyncValidator::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuf
 bool SyncValidator::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                                    const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
     return ValidateCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, error_obj);
-}
-
-bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
-        return false;
-    }
-    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    EndRenderPassCommand command{};
-    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {

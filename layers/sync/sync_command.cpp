@@ -38,6 +38,7 @@ struct CommandReplayContext {
         render_pass_context.emplace(command.render_pass, command.render_area, env.queue_flags, command.attachment_views,
                                     destination_access_context, command.render_pass_instance_id + render_pass_instance_offset);
     }
+    void NextSubpass() { render_pass_context->AdvanceSubpass(); }
     void EndRenderPass() { render_pass_context.reset(); }
 
     SyncEnvironment& env;
@@ -65,6 +66,12 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 if constexpr (std::is_same_v<CommandType, BeginRenderPassCommand>) {
                     command_skip = command.Validate(env, access_context, cb_context, entry.tag, loc);
                     replay_context.BeginRenderPass(command);
+                    if (!command_skip) {
+                        command.Apply(env, tag, *replay_context.render_pass_context);
+                    }
+                } else if constexpr (std::is_same_v<CommandType, NextSubpassCommand>) {
+                    command_skip = command.Validate(env, *replay_context.render_pass_context, cb_context, entry.tag, loc);
+                    replay_context.NextSubpass();
                     if (!command_skip) {
                         command.Apply(env, tag, *replay_context.render_pass_context);
                     }
@@ -353,6 +360,26 @@ void BeginRenderPassCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, R
     const ResourceUsageTag transition_tag = tag;
     const ResourceUsageTag load_op_tag = tag + 1;
     rp_context.RecordBeginRenderPass(transition_tag, load_op_tag, env.queue_id);
+}
+
+bool NextSubpassCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    const RenderPassAccessContext* render_pass_context = cb_context.GetCurrentRenderPassContext();
+    if (!render_pass_context) {
+        return false;
+    }
+    return Validate(cb_context.GetSyncEnvironment(), *render_pass_context, cb_context, kInvalidTag, loc);
+}
+bool NextSubpassCommand::Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
+                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    return render_pass_context.ValidateNextSubpass(env, cb_context, replay_tag, loc);
+}
+
+void NextSubpassCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context) const {
+    const ResourceUsageTag resolve_tag = tag;
+    const ResourceUsageTag store_tag = tag + 1;
+    const ResourceUsageTag transition_tag = tag + 2;
+    const ResourceUsageTag load_tag = tag + 3;
+    rp_context.RecordNextSubpass(resolve_tag, store_tag, transition_tag, load_tag, env.queue_id);
 }
 
 bool EndRenderPassCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
