@@ -68,6 +68,12 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                     if (!command_skip) {
                         command.Apply(env, tag, *replay_context.render_pass_context);
                     }
+                } else if constexpr (std::is_same_v<CommandType, EndRenderPassCommand>) {
+                    command_skip = command.Validate(env, *replay_context.render_pass_context, cb_context, entry.tag, loc);
+                    if (!command_skip) {
+                        command.Apply(env, tag, *replay_context.render_pass_context, destination_access_context);
+                    }
+                    replay_context.EndRenderPass();
                 } else {
                     command_skip = command.Validate(env, access_context, cb_context, entry.tag, loc);
                     if (!command_skip) {
@@ -347,6 +353,27 @@ void BeginRenderPassCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, R
     const ResourceUsageTag transition_tag = tag;
     const ResourceUsageTag load_op_tag = tag + 1;
     rp_context.RecordBeginRenderPass(transition_tag, load_op_tag, env.queue_id);
+}
+
+bool EndRenderPassCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    const RenderPassAccessContext* render_pass_context = cb_context.GetCurrentRenderPassContext();
+    if (!render_pass_context) {
+        return false;
+    }
+    return Validate(cb_context.GetSyncEnvironment(), *render_pass_context, cb_context, kInvalidTag, loc);
+}
+
+bool EndRenderPassCommand::Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
+                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                    const Location& loc) const {
+    return render_pass_context.ValidateEndRenderPass(env, cb_context, replay_tag, loc);
+}
+
+void EndRenderPassCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context,
+                                 AccessContext& external_context) const {
+    const ResourceUsageTag store_tag = tag;
+    const ResourceUsageTag transition_tag = tag + 1;
+    rp_context.RecordEndRenderPass(external_context, store_tag, transition_tag, env.queue_id);
 }
 
 }  // namespace syncval

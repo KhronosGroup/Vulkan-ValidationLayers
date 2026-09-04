@@ -129,8 +129,23 @@ struct BeginRenderPassCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context) const;
 };
 
-using CommandStorage =
-    std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage, BeginRenderPassCommand::Storage>;
+struct EndRenderPassCommand {
+    // Store/resolve and final layout transition tags
+    static constexpr uint32_t kTagCount = 2;
+
+    struct Storage {
+        EndRenderPassCommand MakeCommand(const CommandData& command_data) const { return EndRenderPassCommand{}; }
+    };
+    Storage MakeStorage(CommandData& command_data) const { return Storage{}; }
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
+                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context,
+               AccessContext& external_context) const;
+};
+
+using CommandStorage = std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage,
+                                    BeginRenderPassCommand::Storage, EndRenderPassCommand::Storage>;
 
 struct CommandData {
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;

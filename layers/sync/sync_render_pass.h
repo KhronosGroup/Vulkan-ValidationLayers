@@ -104,16 +104,18 @@ class RenderPassAccessContext {
                                       uint32_t view_mask, const AttachmentViewGenVector& attachment_views,
                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc);
 
-    bool ValidateStoreOperation(const CommandBufferContext& cb_context, vvl::Func command) const;
-    bool ValidateResolveOperations(const CommandBufferContext& cb_context, vvl::Func command) const;
+    bool ValidateStoreOperation(const SyncEnvironment& env, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                const Location& loc) const;
+    bool ValidateResolveOperations(const SyncEnvironment& env, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                   const Location& loc) const;
 
     static void UpdateAttachmentResolveAccess(const vvl::RenderPass& rp_state, const AttachmentViewGenVector& attachment_views,
                                               uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
-                                              const ResourceUsageTag tag, AccessContext& access_context);
+                                              const ResourceUsageTag tag, AccessContext& access_context, QueueId queue_id);
 
     static void UpdateAttachmentStoreAccess(const vvl::RenderPass& rp_state, const AttachmentViewGenVector& attachment_views,
                                             uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
-                                            const ResourceUsageTag tag, AccessContext& access_context);
+                                            const ResourceUsageTag tag, AccessContext& access_context, QueueId queue_id);
 
     static void RecordLayoutTransitions(const vvl::RenderPass& rp_state, uint32_t subpass,
                                         const AttachmentViewGenVector& attachment_views, const ResourceUsageTag tag,
@@ -124,16 +126,20 @@ class RenderPassAccessContext {
 
     const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
 
-    bool ValidateNextSubpass(const CommandBufferContext& cb_context, vvl::Func command) const;
-    bool ValidateEndRenderPass(const CommandBufferContext& cb_context, vvl::Func command) const;
-    bool ValidateFinalSubpassLayoutTransitions(const CommandBufferContext& cb_context, vvl::Func command) const;
+    bool ValidateNextSubpass(const SyncEnvironment& env, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                             const Location& loc) const;
+    bool ValidateEndRenderPass(const SyncEnvironment& env, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                               const Location& loc) const;
+    bool ValidateFinalSubpassLayoutTransitions(const SyncEnvironment& env, const CommandBufferContext& cb_context,
+                                               ResourceUsageTag replay_tag, const Location& loc) const;
 
     void RecordLayoutTransitions(ResourceUsageTag tag, QueueId queue_id);
     void RecordLoadOperations(ResourceUsageTag tag, QueueId queue_id);
     void RecordBeginRenderPass(ResourceUsageTag transition_tag, ResourceUsageTag load_op_tag, QueueId queue_id);
     void RecordNextSubpass(ResourceUsageTag resolve_tag, ResourceUsageTag store_tag, ResourceUsageTag transition_tag,
                            ResourceUsageTag load_tag);
-    void RecordEndRenderPass(AccessContext* external_context, ResourceUsageTag store_tag, ResourceUsageTag transition_tag);
+    void RecordEndRenderPass(AccessContext& external_context, ResourceUsageTag store_tag, ResourceUsageTag transition_tag,
+                             QueueId queue_id);
 
     uint32_t GetCurrentSubpass() const { return current_subpass_; }
     AccessContext& CurrentContext();
@@ -141,7 +147,7 @@ class RenderPassAccessContext {
     vvl::span<const AccessContext> GetSubpassContexts() const;
     vvl::span<AccessContext> GetSubpassContexts();
     const vvl::RenderPass* GetRenderPassState() const { return rp_state_; }
-    AccessContext* CreateStoreResolveProxy() const;
+    AccessContext* CreateStoreResolveProxy(QueueId queue_id) const;
 
   private:
     AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
