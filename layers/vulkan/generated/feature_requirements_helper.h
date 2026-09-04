@@ -74,6 +74,8 @@ enum class Feature {
     borderColorSwizzle,
     // VkPhysicalDeviceBorderColorSwizzleFeaturesEXT
     borderColorSwizzleFromImage,
+    // VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE
+    bufferDeviceAddressAllocationAlignment,
     // VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceVulkan12Features
     bufferDeviceAddress,
     // VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceVulkan12Features
@@ -696,7 +698,7 @@ enum class Feature {
     pipelineCreationCacheControl,
     // VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR
     pipelineExecutableInfo,
-    // VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT
+    // VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR
     pipelineLibraryGroupHandles,
     // VkPhysicalDevicePipelineOpacityMicromapFeaturesARM
     pipelineOpacityMicromap,

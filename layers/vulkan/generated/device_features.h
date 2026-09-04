@@ -74,6 +74,8 @@ struct DeviceFeatures {
     bool borderColorSwizzle;
     // VkPhysicalDeviceBorderColorSwizzleFeaturesEXT
     bool borderColorSwizzleFromImage;
+    // VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE
+    bool bufferDeviceAddressAllocationAlignment;
     // VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceVulkan12Features
     bool bufferDeviceAddress;
     // VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceVulkan12Features
@@ -702,7 +704,7 @@ struct DeviceFeatures {
     bool pipelineCreationCacheControl;
     // VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR
     bool pipelineExecutableInfo;
-    // VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT
+    // VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR
     bool pipelineLibraryGroupHandles;
     // VkPhysicalDevicePipelineOpacityMicromapFeaturesARM
     bool pipelineOpacityMicromap;

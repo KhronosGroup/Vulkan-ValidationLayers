@@ -479,6 +479,23 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                     "VkPhysicalDeviceBorderColorSwizzleFeaturesEXT::borderColorSwizzleFromImage"};
         }
 
+        case Feature::bufferDeviceAddressAllocationAlignment: {
+            auto vk_struct = const_cast<VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE>(
+                    *inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->bufferDeviceAddressAllocationAlignment,
+                    "VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE::bufferDeviceAddressAllocationAlignment"};
+        }
+
         case Feature::bufferDeviceAddress:
             if (api_version >= VK_API_VERSION_1_2) {
                 auto vk_struct = const_cast<VkPhysicalDeviceVulkan12Features*>(
@@ -5088,10 +5105,10 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
         }
 
         case Feature::pipelineLibraryGroupHandles: {
-            auto vk_struct = const_cast<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT*>(
-                vku::FindStructInPNextChain<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT>(*inout_pnext_chain));
+            auto vk_struct = const_cast<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
-                vk_struct = new VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT;
+                vk_struct = new VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR;
                 *vk_struct = vku::InitStructHelper();
                 if (*inout_pnext_chain) {
                     vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
@@ -5100,7 +5117,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                 }
             }
             return {&vk_struct->pipelineLibraryGroupHandles,
-                    "VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::pipelineLibraryGroupHandles"};
+                    "VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR::pipelineLibraryGroupHandles"};
         }
 
         case Feature::pipelineOpacityMicromap: {

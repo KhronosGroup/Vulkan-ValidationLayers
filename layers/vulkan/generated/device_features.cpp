@@ -874,6 +874,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->maintenance10 |= enabled->maintenance10 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_KHR: {
+                const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR* enabled =
+                    reinterpret_cast<const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesKHR*>(pNext);
+                features->pipelineLibraryGroupHandles |= enabled->pipelineLibraryGroupHandles == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR: {
                 const VkPhysicalDeviceMaintenance11FeaturesKHR* enabled =
                     reinterpret_cast<const VkPhysicalDeviceMaintenance11FeaturesKHR*>(pNext);
@@ -1773,12 +1779,6 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->shaderCoreBuiltins |= enabled->shaderCoreBuiltins == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT: {
-                const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* enabled =
-                    reinterpret_cast<const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT*>(pNext);
-                features->pipelineLibraryGroupHandles |= enabled->pipelineLibraryGroupHandles == VK_TRUE;
-                break;
-            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT: {
                 const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT*>(pNext);
@@ -2129,6 +2129,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 const VkPhysicalDevicePrivateDataBaseHandleFeaturesNV* enabled =
                     reinterpret_cast<const VkPhysicalDevicePrivateDataBaseHandleFeaturesNV*>(pNext);
                 features->privateDataBaseHandle |= enabled->privateDataBaseHandle == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_FEATURES_VALVE: {
+                const VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE*>(pNext);
+                features->bufferDeviceAddressAllocationAlignment |= enabled->bufferDeviceAddressAllocationAlignment == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
