@@ -818,7 +818,7 @@ const char* not_going_to_do[] = {
 
     // This should be a single VU as
     // VUID-RuntimeSpirv-imageDescriptorAlignment-11349
-    // already cover imageDescriptorAlignment, but there is a seperate VU
+    // already cover imageDescriptorAlignment, but there is a separate VU
     // for atomic storage images.
     // Instead of wasting effort/memory tracking that, we just combine the VU
     "VUID-RuntimeSpirv-imageDescriptorAlignment-11383",

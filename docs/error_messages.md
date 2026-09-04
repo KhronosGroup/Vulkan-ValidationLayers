@@ -47,7 +47,7 @@ For those who want to handle the callback to format the message the way they wan
 // VkDebugUtilsMessengerCallbackDataEXT
 const char*                           pMessageIdName;  // VUID
 int32_t                               messageIdNumber; // Hash of the VUID
-const char*                           pMessage;        // The "main message" (includes the spec text on seperate line)
+const char*                           pMessage;        // The "main message" (includes the spec text on separate line)
 
 // Debug Objects that Validaiton will print for you in a default callback
 uint32_t                              queueLabelCount;

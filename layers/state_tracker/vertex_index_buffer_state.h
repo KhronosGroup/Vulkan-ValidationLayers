@@ -33,7 +33,7 @@ class VertexBufferBinding {
     VertexBufferBinding() = default;  // reset state
 
     // We have these "Set" calls instead of a nice constructor because the API was messed up and the "stride" was in the pipeline,
-    // but moved to vkCmdBindVertexBuffer2 as well in a "last one sets in win" fashion
+    // but moved to vkCmdBindVertexBuffer2 as well in a "last one sets win" fashion
     //
     // So if an app goes
     //   vkCmdBindPipeline (stride set here)
@@ -64,7 +64,7 @@ class VertexBufferBinding {
     bool bound{false};
 
     // Binding valid size: 0 if buffer is not tracked, actual size if VK_WHOLE_SIZE was specified,
-    // clamped up to 0 if specified size is greater than the size actually left in the buffer
+    // clamped down to 0 if specified size is greater than the size actually left in the buffer
     VkDeviceSize effective_size{0};
     VkDeviceSize stride{0};
 

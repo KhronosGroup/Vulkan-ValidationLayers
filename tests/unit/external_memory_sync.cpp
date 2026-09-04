@@ -1076,7 +1076,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
 }
 
 TEST_F(NegativeExternalMemorySync, Semaphore) {
-    TEST_DESCRIPTION("Import and export invalid external semaphores, no queue sumbits involved.");
+    TEST_DESCRIPTION("Import and export invalid external semaphores, no queue submits involved.");
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;

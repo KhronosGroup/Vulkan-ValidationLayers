@@ -103,7 +103,7 @@ class RenderPass2SingleSubpass : public RenderPassHelperBase {
                                   VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                   VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL);
 
-    // Have a seperate set function to keep AddAttachmentDescription simple (very few things extend the AttachmentDescription)
+    // Have a separate set function to keep AddAttachmentDescription simple (very few things extend the AttachmentDescription)
     void SetAttachmentDescriptionPNext(uint32_t index, void *pNext);
 
     // Pass in index to attachment description

@@ -5339,7 +5339,7 @@ TEST_F(NegativeDynamicRendering, SuspendResumeMismatch7) {
 }
 
 TEST_F(NegativeDynamicRendering, SuspendResumeMismatch8) {
-    TEST_DESCRIPTION("Suspend and resume do not match. Validate accross two secondary command buffers.");
+    TEST_DESCRIPTION("Suspend and resume do not match. Validate across two secondary command buffers.");
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkRenderingAttachmentInfo suspend_color_attachment = vku::InitStructHelper();

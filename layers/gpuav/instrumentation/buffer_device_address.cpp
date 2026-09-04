@@ -63,7 +63,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                         ss << "Out of bounds: trying to " << access_type << " " << byte_size << " bytes at [0x" << std::hex
                            << address << ", 0x" << (address + byte_size) - 1 << ") but this range does not belong to any buffer.";
                         if (is_struct) {
-                            // Added because glslang currently has no way to seperate out the struct (Slang does as of 2025.6.2)
+                            // Added because glslang currently has no way to separate out the struct (Slang does as of 2025.6.2)
                             ss << " This " << (is_write ? "write" : "read") << " corresponds to a full OpTypeStruct load";
                             const uint32_t instruction_position_offset =
                                 error_record[kHeader_StageInstructionIdOffset] & kInstructionId_Mask;

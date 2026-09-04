@@ -169,13 +169,13 @@ uint32_t DescriptorHeapPass::GetMinBufferAlignment(const InstructionMeta& meta) 
 }
 
 uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
-                                                bool is_seperate_sampler) {
+                                                bool is_separate_sampler) {
     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
 
     // TODO - This logic is not obvious and should be either fixed or moved to a common util
-    // If dealing with a seperate sampler, only need to do it on the resource
+    // If dealing with a separate sampler, only need to do it on the resource
     // To add to the fire, this needs to go first otherwise the Function::CreateInstruction will break the inst_it
-    if (descriptor_path.image_load_inst && !is_seperate_sampler) {
+    if (descriptor_path.image_load_inst && !is_separate_sampler) {
         const uint32_t opcode = meta.target_instruction->Opcode();
         if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
             // if not a direct read/write/fetch, will be a OpSampledImage
@@ -203,19 +203,19 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         }
     }
 
-    const Variable& descriptor_variable = is_seperate_sampler ? *descriptor_path.sampler_variable : *meta.access_path->variable;
-    const uint32_t descriptor_index = is_seperate_sampler ? descriptor_path.sampler_index_id : descriptor_path.index_id;
+    const Variable& descriptor_variable = is_separate_sampler ? *descriptor_path.sampler_variable : *meta.access_path->variable;
+    const uint32_t descriptor_index = is_separate_sampler ? descriptor_path.sampler_index_id : descriptor_path.index_id;
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index, block, inst_it);  // might be int32
 
     const uint32_t inst_position = meta.target_instruction->GetPositionOffset();
     const uint32_t inst_position_id = type_manager_.CreateConstantUInt32(inst_position).Id();
-    const uint32_t is_sampler_id = type_manager_.GetConstantBool(is_seperate_sampler).Id();
+    const uint32_t is_sampler_id = type_manager_.GetConstantBool(is_separate_sampler).Id();
 
-    const VkDescriptorSetAndBindingMappingEXT* mapping = is_seperate_sampler ? meta.mapping_ptr_sampler : meta.mapping_ptr;
+    const VkDescriptorSetAndBindingMappingEXT* mapping = is_separate_sampler ? meta.mapping_ptr_sampler : meta.mapping_ptr;
 
     // We try and encode a lot of information in a single uint32_t
     uint32_t desc_encoding_id = 0;
-    const VkDescriptorType vk_desc_type = is_seperate_sampler ? VK_DESCRIPTOR_TYPE_SAMPLER : descriptor_path.type;
+    const VkDescriptorType vk_desc_type = is_separate_sampler ? VK_DESCRIPTOR_TYPE_SAMPLER : descriptor_path.type;
     const uint32_t desc_size_value = (uint32_t)module_.settings_.cached_descriptor_size->GetSize(vk_desc_type);
     {
         uint8_t desc_type_mask = (uint8_t)GetMaskFromDescriptorType(vk_desc_type);
@@ -224,7 +224,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
         const uint32_t desc_alignment_shift = GetAlignmentShift(desc_alignment_value);
         assert(desc_alignment_shift <= glsl::kInst_DescriptorHeap_AlignmentShiftMask);
 
-        const uint32_t mapping_index_encoded = is_seperate_sampler ? meta.mapping_index_sampler : meta.mapping_index_resource;
+        const uint32_t mapping_index_encoded = is_separate_sampler ? meta.mapping_index_sampler : meta.mapping_index_resource;
 
         const uint32_t desc_encoding = (desc_type_mask << glsl::kInst_DescriptorHeap_DescriptorTypeShift) |
                                        (desc_size_value << glsl::kInst_DescriptorHeap_DescriptorSizeShift) |
@@ -245,7 +245,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCall(BasicBlock& block, InstructionIt
     if (!mapping) {
         assert(descriptor_variable.interface_.IsHeap());  // Untyped
         const DescriptorHeapPass::UntypedLayout& untyped_layout =
-            is_seperate_sampler ? meta.untyped_layout_sampler : meta.untyped_layout_resource;
+            is_separate_sampler ? meta.untyped_layout_sampler : meta.untyped_layout_resource;
         // We need to do the CastToUint32 here otherwise if there are non-uint32 we won't hash duplicates as each access would
         // become a different ID from the result of CastToUint32
         uint32_t heap_offset_id = type_manager_.GetConstantZeroUint32().Id();
@@ -643,7 +643,7 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
     } else if (meta.mapping_ptr) {
         has_embedded_sampler = GetEmbeddedSampler(*meta.mapping_ptr) != nullptr;
     }
-    meta.instrument_seperate_sampler = descriptor_path.HasSampler() && !has_embedded_sampler;
+    meta.instrument_separate_sampler = descriptor_path.HasSampler() && !has_embedded_sampler;
 
     if (meta.mapping_index_resource == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
         meta.untyped_layout_resource = GetUntypedLayout(*meta.access_path->pointer_type, descriptor_path.heap_offset_member_index);
@@ -774,7 +774,7 @@ bool DescriptorHeapPass::Instrument() {
                 }
 
                 bool skip_resource = false;
-                bool skip_sampler = !meta.instrument_seperate_sampler;
+                bool skip_sampler = !meta.instrument_separate_sampler;
                 if (!module_.settings_.safe_mode) {
                     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
                     const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == descriptor_path.index_id
@@ -785,7 +785,7 @@ bool DescriptorHeapPass::Instrument() {
                         skip_resource = true;
                     }
 
-                    if (meta.instrument_seperate_sampler) {
+                    if (meta.instrument_separate_sampler) {
                         const uint32_t sampler_hash = meta.Hash(descriptor_path.sampler_index_id, VK_DESCRIPTOR_TYPE_SAMPLER);
                         if (sampler_hash != 0 && function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, sampler_hash)) {
                             skip_sampler = true;
@@ -812,7 +812,7 @@ bool DescriptorHeapPass::Instrument() {
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
                     ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta, false);
-                    if (meta.instrument_seperate_sampler) {
+                    if (meta.instrument_separate_sampler) {
                         ic_data.function_result_id =
                             CreateFunctionCallSampler(current_block, nullptr, meta, ic_data.function_result_id);
                     }

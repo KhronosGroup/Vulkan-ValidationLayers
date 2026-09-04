@@ -146,7 +146,7 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
             // We currently don't go chasing every function caller
             // Only CTS seems to try and pass OpTypeSampledImage as a parameter, so likely ok
             // (likely only CTS because combined image samplers are a GLSL only thing which doesn't allow passing it by parameter,
-            // it is more likley for seperate samplers which Slang can do)
+            // it is more likley for separate samplers which Slang can do)
             assert(type_manager.IsUndef(load_operand) || (load_inst && load_inst->Opcode() == spv::OpFunctionParameter));
             return;
         }

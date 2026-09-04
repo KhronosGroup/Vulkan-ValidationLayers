@@ -3523,7 +3523,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound& last_bound_state, const v
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RASTERIZATION_SAMPLES_07935), objlist, loc,
                              "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE, but "
                              "the rasterizationSamples (%" PRIu32 ") is not equal to rasterizationSamples (%" PRIu32
-                             ") of the the currently bound pipeline.",
+                             ") of the currently bound pipeline.",
                              msrtss_info->rasterizationSamples, pipeline.MultisampleState()->rasterizationSamples);
         }
     }

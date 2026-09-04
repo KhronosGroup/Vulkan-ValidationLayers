@@ -130,7 +130,7 @@ float NearestSmaller(const float from);
 
 // Defining VVL_TESTS_USE_CUSTOM_TEST_FRAMEWORK allows downstream users
 // to inject custom test framework changes. This includes the ability
-// to override the the base class of the VkLayerTest class so that
+// to override the base class of the VkLayerTest class so that
 // appropriate test framework customizations can be injected into the
 // class hierarchy at the closest possible place to the base class used
 // by all validation layer tests. Downstream users can provide their

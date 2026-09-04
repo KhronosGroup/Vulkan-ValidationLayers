@@ -223,7 +223,7 @@ TEST_F(NegativeOther, SpecLinksImplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
-    // keep VUID seperate otherwise vk_validation_stats.py will get confused
+    // keep VUID separate otherwise vk_validation_stats.py will get confused
     std::string spec_version = "https://docs.vulkan.org/spec/latest/chapters/features.html#" +
                                std::string("VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
 
@@ -236,7 +236,7 @@ TEST_F(NegativeOther, SpecLinksExplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
-    // keep VUID seperate otherwise vk_validation_stats.py will get confused
+    // keep VUID separate otherwise vk_validation_stats.py will get confused
     std::string spec_version =
         "https://docs.vulkan.org/spec/latest/chapters/resources.html#" + std::string("VUID-VkBufferCreateInfo-size-00912");
 

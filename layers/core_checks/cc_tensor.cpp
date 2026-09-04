@@ -150,7 +150,7 @@ bool CoreChecks::ValidateRollingTensorInfo(const VkTensorDescriptionARM& descrip
                     if (!IsPowerOfTwo(wraps[j]) && !IsPowerOfTwo(wraps[i])) {
                         skip |= LogError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09837", device,
                                          create_info_loc.pNext(Struct::VkTensorRollingBackingCreateInfoARM, Field::wraps, i),
-                                         "(%" PRIu32 ") and wrap[%" PRIu32 "] (%" PRIu32 ") are not a power of two.", wraps[i], j,
+                                         "(%" PRIu32 ") and wraps[%" PRIu32 "] (%" PRIu32 ") are not a power of two.", wraps[i], j,
                                          wraps[j]);
                         break;
                     }

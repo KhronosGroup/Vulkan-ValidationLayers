@@ -773,7 +773,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
 
         # These are cases are also where multiple commands call the struct,
         # but for simplicity, use same VUID because the Location will provide the name of the caller.
-        # The only reason these have seperate VUs is because they were listed in the command, not the struct
+        # The only reason these have separate VUs is because they were listed in the command, not the struct
         if structName == 'VkRenderingFragmentDensityMapAttachmentInfoEXT' and memberName == 'imageView':
             return '"UNASSIGNED-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-commonparent"'
         if structName == 'VkRenderingFragmentShadingRateAttachmentInfoKHR' and memberName == 'imageView':

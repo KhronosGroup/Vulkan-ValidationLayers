@@ -711,7 +711,7 @@ struct Module {
         // Some cases we can give better hints knowing the source shader language
         spv::SourceLanguage source_language{spv::SourceLanguageUnknown};
 
-        // Execution Modes are tied to a Function <id>, multiple EntryPoints can point to the same Funciton <id>
+        // Execution Modes are tied to a Function <id>, multiple EntryPoints can point to the same Function <id>
         // Keep a mapping so each EntryPoint can grab a reference to it
         vvl::unordered_map<uint32_t, ExecutionModeSet> execution_modes;
         ExecutionModeSet empty_execution_mode;  // all zero values, allows use to return a reference and not a copy each time

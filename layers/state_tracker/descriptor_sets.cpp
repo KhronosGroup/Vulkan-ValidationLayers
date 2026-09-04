@@ -933,7 +933,7 @@ void vvl::DescriptorSet::UpdateImageLayoutDrawStates(vvl::DeviceState* device_da
     }
 }
 
-// This is used to decide if we should validate the Descirptors on the CPU or GPU-AV
+// This is used to decide if we should validate the Descriptors on the CPU or GPU-AV
 bool vvl::DescriptorSet::ValidateBindingOnGPU(const DescriptorBinding& binding,
                                               const spirv::ResourceInterfaceVariable& variable) const {
     // Some applications (notably Doom Eternal) might have large non-bindless descriptors attached (basically doing Descriptor

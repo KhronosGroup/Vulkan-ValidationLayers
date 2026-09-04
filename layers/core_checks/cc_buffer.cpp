@@ -540,7 +540,7 @@ bool CoreChecks::ValidateDeviceAddressCommands(const LogObjectList& objlist, VkD
 
         if (flags & VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR) {
             if (!buffer->sparse) {
-                // TODO - use VerifyBoundMemoryIsValid? Not obvious which funciton to use
+                // TODO - use VerifyBoundMemoryIsValid? Not obvious which function to use
                 const std::string vuid_13097 =
                     vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::CompletelyBound_13097);
                 skip |= ValidateMemoryIsBoundToBuffer(objlist, *buffer, loc, vuid_13097.c_str());

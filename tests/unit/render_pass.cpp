@@ -247,7 +247,7 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayoutZeroInitialized) {
                          "VUID-VkAttachmentDescription2-finalLayout-00843");
 }
 
-TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayoutSeperateDS) {
+TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayoutSeparateDS) {
     TEST_DESCRIPTION("VkAttachmentDescription's finalLayout must not be UNDEFINED or PREINITIALIZED");
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);

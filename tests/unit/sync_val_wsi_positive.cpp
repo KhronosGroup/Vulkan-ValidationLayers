@@ -784,7 +784,7 @@ TEST_F(PositiveSyncValWsi, ResyncWithSwapchain4) {
     m_command_buffer.End();
     // Import accesses from two swapchain images before applying command buffer accesses
     // (layout transition of the first image). Test that implementation properly tracks
-    // multiple synchronized swapchain accesses (image0 and image1) accross all queue contexts
+    // multiple synchronized swapchain accesses (image0 and image1) across all queue contexts
     // where these accesses are registered.
     m_default_queue->Submit2(vkt::no_cmd, vkt::Wait(acquire_semaphore3));
     m_default_queue->Submit2(m_command_buffer, vkt::Wait(acquire_semaphore4));

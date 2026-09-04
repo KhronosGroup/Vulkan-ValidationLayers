@@ -26,7 +26,7 @@ import os
 from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 # Normally we don't like to have generator depend on other generator
-# But for this, the logic makes sense in 2 seperate file and its only including encapsulated data
+# But for this, the logic makes sense in 2 separate file and its only including encapsulated data
 from generators.dispatch_object_generator import APISpecific
 
 class DispatchVectorGenerator(BaseGenerator):

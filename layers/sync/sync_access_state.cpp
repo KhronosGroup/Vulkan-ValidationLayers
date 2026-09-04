@@ -1092,7 +1092,7 @@ void AccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, const Or
     // Only call this after recording an image layout transition
     assert(first_accesses_.size());
     if (first_accesses_.back().tag == tag) {
-        // If this layout transition is the the first write, add the additional ordering rules that guard the ILT
+        // If this layout transition is the first write, add the additional ordering rules that guard the ILT
         assert(first_accesses_.back().usage_info->access_index == SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
         auto& layout_ordering_lookup = GetLayoutOrderingBarrierLookup();
         first_write_layout_ordering_index = layout_ordering_lookup.GetIndexAndMaybeInsert(layout_ordering);

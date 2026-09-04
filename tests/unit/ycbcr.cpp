@@ -968,7 +968,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     mp_image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
 
     // Check for support of format used by all multi-planar tests
-    // Need seperate boolean as its valid to do tests that support YCbCr but not disjoint
+    // Need separate boolean as its valid to do tests that support YCbCr but not disjoint
     bool mp_disjoint_support = false;
 
     VkFormatProperties mp_format_properties;
@@ -1162,7 +1162,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
     mp_image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
 
     // Check for support of format used by all multi-planar tests
-    // Need seperate boolean as its valid to do tests that support YCbCr but not disjoint
+    // Need separate boolean as its valid to do tests that support YCbCr but not disjoint
     bool mp_disjoint_support = false;
     VkFormatProperties mp_format_properties;
     vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), mp_format, &mp_format_properties);

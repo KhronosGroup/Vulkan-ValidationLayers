@@ -2557,7 +2557,7 @@ bool CoreChecks::ValidateVideoEncodeInfoH264(const vvl::CommandBuffer& cb_state,
                     ") "
                     "that can be coded for the encode input picture specified in "
                     "pEncodeInfo->srcPictureResource (codedExtent = {%s}) but non-rectangular intra refresh regions are not "
-                    "supported by the the video profile (%s) %s was created with.",
+                    "supported by the video profile (%s) %s was created with.",
                     picture_info->naluSliceEntryCount, min_coding_block_extent.height,
                     string_VkExtent2D(encode_info.srcPictureResource.codedExtent).c_str(),
                     string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
@@ -3007,7 +3007,7 @@ bool CoreChecks::ValidateVideoEncodeInfoH265(const vvl::CommandBuffer& cb_state,
                     ") "
                     "that can be coded for the encode input picture specified in "
                     "pEncodeInfo->srcPictureResource (codedExtent = {%s}) but non-rectangular intra refresh regions are not "
-                    "supported by the the video profile (%s) %s was created with.",
+                    "supported by the video profile (%s) %s was created with.",
                     picture_info->naluSliceSegmentEntryCount, min_coding_block_extent.height,
                     string_VkExtent2D(encode_info.srcPictureResource.codedExtent).c_str(),
                     string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());

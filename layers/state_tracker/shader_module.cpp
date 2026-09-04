@@ -745,7 +745,7 @@ StaticImageAccess::StaticImageAccess(const Module& module_state, const Instructi
     // There is only one way to write to images, everything else is considered a read access
     access_mask |= (image_opcode == spv::OpImageWrite) ? AccessBit::image_write : AccessBit::image_read;
 
-    // Do sampler searching as seperate walk to not have the "visited" loop protection be falsly triggered
+    // Do sampler searching as separate walk to not have the "visited" loop protection be falsely triggered
     std::vector<const Instruction*> sampler_insn_to_search;
 
     auto walk_to_variables = [this, &module_state, &func_parameter_map, &sampler_insn_to_search](const Instruction* find_insn,
@@ -2552,7 +2552,7 @@ bool ResourceInterfaceVariable::IsHeap() const {
 }
 
 const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVariable& variable, const Module& module_state) {
-    // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable,
+    // Takes a OpVariable and looks at the descriptor type it uses. This will find things such as if the variable is writable,
     // image atomic operation, matching images to samplers, etc
     const Instruction* type = module_state.FindDef(variable.type_id);
     assert(type->Opcode() == spv::OpTypePointer || type->Opcode() == spv::OpTypeUntypedPointerKHR);

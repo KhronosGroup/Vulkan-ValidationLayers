@@ -64,7 +64,7 @@ struct AccessPath {
     std::vector<const Instruction*> ac_list;
 
     struct Descriptor {
-        // Optional variable of seperate sampler descriptor (still null if combinedImageSampler)
+        // Optional variable of separate sampler descriptor (still null if combinedImageSampler)
         const Variable* sampler_variable = nullptr;
         const Type* sampler_pointer_type = nullptr;
         bool is_combined_image_sampler = false;
@@ -77,7 +77,7 @@ struct AccessPath {
         // Most access paths are used to get the descriptor variable.
         // This is the ID of the uint that indexes in the array (or constant zero if no array)
         uint32_t index_id = 0;
-        // Optional index if there is a seperate sampler as well
+        // Optional index if there is a separate sampler as well
         uint32_t sampler_index_id = 0;
 
         // TODO - Need to handle OffsetIdEXT correctly, this is a dumb hack

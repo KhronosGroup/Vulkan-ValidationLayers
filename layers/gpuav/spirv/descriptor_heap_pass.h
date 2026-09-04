@@ -59,11 +59,11 @@ class DescriptorHeapPass : public Pass {
         UntypedLayout untyped_layout_sampler;
         uint32_t Hash(const uint32_t descriptor_index, VkDescriptorType vk_type) const;
 
-        bool instrument_seperate_sampler = false;
+        bool instrument_separate_sampler = false;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta, bool is_seperate_sampler);
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta, bool is_separate_sampler);
     uint32_t CreateFunctionCallSampler(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
                                        uint32_t non_sampler_result);
     uint32_t CreateFunctionCallCombinedSampler(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,

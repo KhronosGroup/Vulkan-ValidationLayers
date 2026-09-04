@@ -6085,7 +6085,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
 // Compute  :   Submit 1: [Unrelated access, signal sem2]
 // Transfer :   Submit 3: [wait sem+sem2, Write A]
 //
-// Write in Submit 3 races with read in Sumbit 1.
+// Write in Submit 3 races with read in submit 1.
 // Compute submit is needed to generate tags in such a ways that reproduces regression
 // with incorrect async tag tracking. This generates compute tags that have larger values
 // than the tags from the second gfx queue submission.

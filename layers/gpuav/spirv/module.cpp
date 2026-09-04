@@ -61,7 +61,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
     // [OpSpecConstant Result ID -> OpDecorate SpecID value] mapping
     vvl::unordered_map<uint32_t, uint32_t> id_to_spec_id;
 
-    // Parse everything up until the first function and sort into seperate lists
+    // Parse everything up until the first function and sort into separate lists
     while (it != words.end()) {
         const uint32_t opcode = *it & 0x0ffffu;
         const uint32_t length = *it >> 16;

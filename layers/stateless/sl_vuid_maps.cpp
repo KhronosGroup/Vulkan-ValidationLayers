@@ -82,7 +82,7 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-flags-11798" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11798" :
                 loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-flags-11798" :
-                // TOOD - Missing vkCreateDataGraphPipelinesARM
+                // TODO - Missing vkCreateDataGraphPipelinesARM
                 kVUIDUndefined;
         case PipelineCreateFlagError::ProtectedAccess_07368:
             return

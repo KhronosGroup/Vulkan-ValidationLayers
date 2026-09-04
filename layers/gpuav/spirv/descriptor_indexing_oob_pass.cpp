@@ -55,7 +55,7 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
 
     // TODO - This logic is not obvious and should be either fixed or moved to a common util
-    // If dealing with a seperate sampler, only need to do it on the resource
+    // If dealing with a separate sampler, only need to do it on the resource
     // To add to the fire, this needs to go first otherwise the Function::CreateInstruction will break the inst_it
     if (descriptor_path.image_load_inst) {
         const uint32_t opcode = meta.target_instruction->Opcode();

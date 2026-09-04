@@ -136,7 +136,7 @@ class Swapchain : public RefcountedStateObject, public SubStateManager<Swapchain
     std::shared_ptr<Swapchain> new_swapchain;
 
     // New swapchain state:
-    // Present wait semaphores from the the old swapchain presentations.
+    // Present wait semaphores from the old swapchain presentations.
     std::vector<std::shared_ptr<vvl::Semaphore>> old_swapchain_present_wait_semaphores;
     std::weak_ptr<Swapchain> old_swapchain;
 

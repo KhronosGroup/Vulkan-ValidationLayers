@@ -367,7 +367,7 @@ TEST_F(StressGpuAV, DescriptorIndexingGeneralBufferOOB) {
     // };
     // void main() {
     //     vec4 b = vec4(1.0, 2.0, 1.0, 2.0);
-    //     // Note - This is generated as 4 seperate OpLoads here
+    //     // Note - This is generated as 4 separate OpLoads here
     //     a += dot(vec4(m[0].x, m[0].y, m[0].z, m[0].w), b);
     //     a += dot(vec4(m[31].x, m[31].y, m[31].z, m[31].w), b);
     // }

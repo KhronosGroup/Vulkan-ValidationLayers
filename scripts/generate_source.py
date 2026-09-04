@@ -445,7 +445,7 @@ def main(argv):
         'gpuav_offline_spirv.cpp',
         'feature_requirements_helper.h', # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8969
         'feature_requirements_helper.cpp',
-        'feature_not_present.cpp', # this single funciton really fails with various clang-format versions
+        'feature_not_present.cpp', # this single function really fails with various clang-format versions
     ]
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
