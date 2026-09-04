@@ -365,10 +365,14 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
                                        const vvl::Pipeline* pipeline, const Location& loc) const {
     bool skip = false;
 
-    // Currently all builtin tested are only found in fragment shaders
-    if (entrypoint.execution_model != spv::ExecutionModelFragment) {
-        return skip;
-    }
+    uint32_t clip_distance_total = 0;
+    uint32_t cull_distance_total = 0;
+
+    // ... so apperently Vulkan 1.0 (and like 2% of random devices don't support clip/cull somehow)
+    // Not sure if we should really be validating these yet
+    // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4965
+    const bool skip_clip_cull = phys_dev_props.limits.maxClipDistances == 0 || phys_dev_props.limits.maxCullDistances == 0 ||
+                                phys_dev_props.limits.maxCombinedClipAndCullDistances == 0;
 
     for (const auto* variable : entrypoint.built_in_variables) {
         // Currently don't need to search in structs
@@ -387,6 +391,71 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
                              phys_dev_props.limits.maxSampleMaskWords);
             break;
         }
+
+        if (skip_clip_cull) {
+            continue;
+        }
+        // ClipDistance/CullDistance can show up as both a top-level array variable and a member of a Block-decorated struct
+        // Geo/Tess might be wrapped in an extra array (ex. gl_in[] / gl_out[]) which is already stripped out
+        if (variable->type_struct_info) {
+            for (uint32_t i = 0; i < variable->built_in_block.size(); i++) {
+                const spv::BuiltIn member_built_in = variable->built_in_block[i];
+                if (member_built_in == spv::BuiltInClipDistance) {
+                    const uint32_t array_size = module_state.GetFlattenArraySize(*variable->type_struct_info->members[i].insn);
+                    clip_distance_total += array_size;
+                    if (array_size > phys_dev_props.limits.maxClipDistances) {
+                        const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxClipDistances-00708"
+                                                    : "VUID-VkShaderCreateInfoEXT-pCode-08448";
+                        skip |= LogError(vuid, module_state.handle(), loc,
+                                         "shader %s ClipDistance BuiltIn array size is %" PRIu32
+                                         " which exceeds maxClipDistances of %" PRIu32 ".",
+                                         entrypoint.Describe().c_str(), array_size, phys_dev_props.limits.maxClipDistances);
+                    }
+                } else if (member_built_in == spv::BuiltInCullDistance) {
+                    const uint32_t array_size = module_state.GetFlattenArraySize(*variable->type_struct_info->members[i].insn);
+                    cull_distance_total += array_size;
+                    if (array_size > phys_dev_props.limits.maxCullDistances) {
+                        const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxCullDistances-00709"
+                                                    : "VUID-VkShaderCreateInfoEXT-pCode-08449";
+                        skip |= LogError(vuid, module_state.handle(), loc,
+                                         "shader %s CullDistance BuiltIn array size is %" PRIu32
+                                         " which exceeds maxCullDistances of %" PRIu32 ".",
+                                         entrypoint.Describe().c_str(), array_size, phys_dev_props.limits.maxCullDistances);
+                    }
+                }
+            }
+        } else if (variable->decorations.built_in == spv::BuiltInClipDistance) {
+            clip_distance_total += variable->array_size;
+            if (variable->array_size > phys_dev_props.limits.maxClipDistances) {
+                const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxClipDistances-00708"
+                                            : "VUID-VkShaderCreateInfoEXT-pCode-08448";
+                skip |= LogError(vuid, module_state.handle(), loc,
+                                 "shader %s ClipDistance BuiltIn array size is %" PRIu32
+                                 " which exceeds maxClipDistances of %" PRIu32 ".",
+                                 entrypoint.Describe().c_str(), variable->array_size, phys_dev_props.limits.maxClipDistances);
+            }
+        } else if (variable->decorations.built_in == spv::BuiltInCullDistance) {
+            cull_distance_total += variable->array_size;
+            if (variable->array_size > phys_dev_props.limits.maxCullDistances) {
+                const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxCullDistances-00709"
+                                            : "VUID-VkShaderCreateInfoEXT-pCode-08449";
+                skip |= LogError(vuid, module_state.handle(), loc,
+                                 "shader %s CullDistance BuiltIn array size is %" PRIu32
+                                 " which exceeds maxCullDistances of %" PRIu32 ".",
+                                 entrypoint.Describe().c_str(), variable->array_size, phys_dev_props.limits.maxCullDistances);
+            }
+        }
+    }
+
+    if (!skip_clip_cull && (clip_distance_total + cull_distance_total) > phys_dev_props.limits.maxCombinedClipAndCullDistances) {
+        const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710"
+                                    : "VUID-VkShaderCreateInfoEXT-pCode-08450";
+        skip |= LogError(vuid, module_state.handle(), loc,
+                         "shader %s has a ClipDistance BuiltIn array size of %" PRIu32
+                         " and a CullDistance BuiltIn array size of %" PRIu32 " which sum to %" PRIu32
+                         " and exceed maxCombinedClipAndCullDistances of %" PRIu32 ".",
+                         entrypoint.Describe().c_str(), clip_distance_total, cull_distance_total,
+                         clip_distance_total + cull_distance_total, phys_dev_props.limits.maxCombinedClipAndCullDistances);
     }
 
     return skip;

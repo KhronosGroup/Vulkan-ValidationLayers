@@ -135,6 +135,192 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
                                       "VUID-VkPipelineShaderStageCreateInfo-maxSampleMaskWords-00711");
 }
 
+TEST_F(NegativeShaderLimits, MaxClipDistances) {
+    AddRequiredFeature(vkt::Feature::shaderClipDistance);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const uint32_t max_clip_distances = m_device->Physical().limits_.maxClipDistances;
+    if (max_clip_distances > 64) {
+        GTEST_SKIP() << "maxClipDistances is too large to test with a reasonably sized array";
+    }
+    const uint32_t array_size = max_clip_distances + 1;
+
+    // layout(location = 0) out vec4 uFragColor;
+    // in float gl_ClipDistance[];  // array_size elements
+    // void main(){
+    //     uFragColor = vec4(gl_ClipDistance[0]);
+    // }
+    std::ostringstream source;
+    source << R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %gl_ClipDistance %uFragColor
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %gl_ClipDistance BuiltIn ClipDistance
+               OpDecorate %uFragColor Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+ %array_len = OpConstant %uint )"
+           << array_size << R"(
+%arr_float_n = OpTypeArray %float %array_len
+%_ptr_Input_arr_float_n = OpTypePointer Input %arr_float_n
+%gl_ClipDistance = OpVariable %_ptr_Input_arr_float_n Input
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Input_float = OpTypePointer Input %float
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+ %uFragColor = OpVariable %_ptr_Output_v4float Output
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %16 = OpAccessChain %_ptr_Input_float %gl_ClipDistance %int_0
+         %17 = OpLoad %float %16
+         %18 = OpCompositeConstruct %v4float %17 %17 %17 %17
+               OpStore %uFragColor %18
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj fs(*m_device, source.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    // hit both limits
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710");
+    const auto set_fs = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_fs, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-maxClipDistances-00708");
+}
+
+TEST_F(NegativeShaderLimits, MaxCullDistances) {
+    AddRequiredFeature(vkt::Feature::shaderCullDistance);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const uint32_t max_cull_distances = m_device->Physical().limits_.maxCullDistances;
+    if (max_cull_distances > 64) {
+        GTEST_SKIP() << "maxCullDistances is too large to test with a reasonably sized array";
+    }
+    const uint32_t array_size = max_cull_distances + 1;
+
+    // out gl_PerVertex {
+    //     vec4 gl_Position;
+    //     float gl_CullDistance[array_size];
+    // };
+    // void main(){
+    //     gl_Position = vec4(0);
+    // }
+    std::ostringstream source;
+    source << R"(
+               OpCapability Shader
+               OpCapability CullDistance
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %per_vertex_var
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+ %array_len = OpConstant %uint )"
+           << array_size << R"(
+   %cull_arr = OpTypeArray %float %array_len
+%gl_PerVertex = OpTypeStruct %v4float %cull_arr
+%out_ptr_type = OpTypePointer Output %gl_PerVertex
+%per_vertex_var = OpVariable %out_ptr_type Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_0 = OpConstant %float 0
+   %zero_vec = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+%pos_ptr_type = OpTypePointer Output %v4float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+    %pos_ptr = OpAccessChain %pos_ptr_type %per_vertex_var %int_0
+               OpStore %pos_ptr %zero_vec
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj vs(*m_device, source.str().c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    // hit both limits
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710");
+    const auto set_vs = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_vs, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-maxCullDistances-00709");
+}
+
+TEST_F(NegativeShaderLimits, MaxCombinedClipAndCullDistances) {
+    AddRequiredFeature(vkt::Feature::shaderClipDistance);
+    AddRequiredFeature(vkt::Feature::shaderCullDistance);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const auto& limits = m_device->Physical().limits_;
+    if (limits.maxCombinedClipAndCullDistances >= limits.maxClipDistances + limits.maxCullDistances) {
+        GTEST_SKIP() << "maxCombinedClipAndCullDistances is not smaller than maxClipDistances + maxCullDistances, so a "
+                        "combined-only violation can't be constructed without also exceeding one of the individual limits";
+    }
+    const uint32_t clip_size = limits.maxClipDistances;
+    const uint32_t cull_size = (limits.maxCombinedClipAndCullDistances - clip_size) + 1;
+
+    // out gl_PerVertex {
+    //     vec4 gl_Position;
+    //     float gl_ClipDistance[clip_size];
+    //     float gl_CullDistance[cull_size];
+    // };
+    // void main(){
+    //     gl_Position = vec4(0);
+    // }
+    std::ostringstream source;
+    source << R"(
+               OpCapability Shader
+               OpCapability ClipDistance
+               OpCapability CullDistance
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %per_vertex_var
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+  %clip_len = OpConstant %uint )"
+           << clip_size << R"(
+  %cull_len = OpConstant %uint )"
+           << cull_size << R"(
+   %clip_arr = OpTypeArray %float %clip_len
+   %cull_arr = OpTypeArray %float %cull_len
+%gl_PerVertex = OpTypeStruct %v4float %clip_arr %cull_arr
+%out_ptr_type = OpTypePointer Output %gl_PerVertex
+%per_vertex_var = OpVariable %out_ptr_type Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_0 = OpConstant %float 0
+   %zero_vec = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+%pos_ptr_type = OpTypePointer Output %v4float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+    %pos_ptr = OpAccessChain %pos_ptr_type %per_vertex_var %int_0
+               OpStore %pos_ptr %zero_vec
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkShaderObj vs(*m_device, source.str().c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    const auto set_vs = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_vs, kErrorBit,
+                                      "VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710");
+}
+
 TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
     TEST_DESCRIPTION("Test shader with offset less than minTexelGatherOffset and greather than maxTexelGatherOffset");
 
