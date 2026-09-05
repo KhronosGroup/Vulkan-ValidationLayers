@@ -72,8 +72,8 @@ VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateI
     return 0;
 }
 
-bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                              const Location& loc) const {
+bool CoreChecks::ValidateCreateShadersLinkingEXT(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                                 const Location& loc) const {
     bool skip = false;
 
     const uint32_t invalid = vvl::kNoIndex32;
@@ -241,8 +241,8 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
     return skip;
 }
 
-bool CoreChecks::ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_info, const spirv::Module& spirv,
-                                           const Location& create_info_loc) const {
+bool CoreChecks::ValidateCreateShadersMeshEXT(const VkShaderCreateInfoEXT& create_info, const spirv::Module& spirv,
+                                              const Location& create_info_loc) const {
     bool skip = false;
     if (create_info.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) return skip;
     if (spirv.static_data_.has_built_in_draw_index) {
@@ -253,8 +253,8 @@ bool CoreChecks::ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_i
     return skip;
 }
 
-bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                            const Location& loc, chassis::ShaderObject& chassis_state) const {
+bool CoreChecks::ValidateCreateShadersSpirvEXT(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                               const Location& loc, chassis::ShaderObject& chassis_state) const {
     bool skip = false;
 
     struct Tesc {
@@ -329,7 +329,7 @@ bool CoreChecks::ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkSh
         skip |= ValidateShaderStage(stage_state, nullptr, create_info_loc);
 
         if (create_info.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
-            skip |= ValidateCreateShadersMesh(create_info, *spirv, create_info_loc);
+            skip |= ValidateCreateShadersMeshEXT(create_info, *spirv, create_info_loc);
         }
 
         // We need to look for both tessellation stages to get information outside pCreateInfos loop
@@ -430,7 +430,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
             LogError("VUID-vkCreateShadersEXT-None-08400", device, error_obj.location, "the shaderObject feature was not enabled.");
     }
 
-    skip |= ValidateCreateShadersLinking(createInfoCount, pCreateInfos, error_obj.location);
+    skip |= ValidateCreateShadersLinkingEXT(createInfoCount, pCreateInfos, error_obj.location);
 
     bool has_compute = false;
     for (uint32_t i = 0; i < createInfoCount; ++i) {

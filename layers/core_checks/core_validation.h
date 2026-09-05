@@ -916,10 +916,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                                VkShaderModuleIdentifierEXT* pIdentifier,
                                                                const ErrorObject& error_obj) const override;
-    bool ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_info, const spirv::Module& spirv,
-                                   const Location& create_info_loc) const;
-    bool ValidateCreateShadersLinking(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                      const Location& loc) const;
+    bool ValidateCreateShadersMeshEXT(const VkShaderCreateInfoEXT& create_info, const spirv::Module& spirv,
+                                      const Location& create_info_loc) const;
+    bool ValidateCreateShadersLinkingEXT(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                         const Location& loc) const;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          const RecordObject& record_obj, chassis::CreateShaderModule& chassis_state) override;
@@ -1789,8 +1789,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                       const vvl::RenderPass& rp_state, const Location& loc) const;
     bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                         const ErrorObject& error_obj) const override;
-    bool ValidateCreateShadersSpirv(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, const Location& loc,
-                                    chassis::ShaderObject& chassis_state) const;
+    bool ValidateCreateShadersSpirvEXT(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, const Location& loc,
+                                       chassis::ShaderObject& chassis_state) const;
     bool PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                          const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                          const ErrorObject& error_obj) const override;
