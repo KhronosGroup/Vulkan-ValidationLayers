@@ -1997,3 +1997,186 @@ TEST_F(PositiveGpuAVRayTracing, BlasReference1DescriptorHeap) {
     ASSERT_EQ(debug_buffer_ptr[1], 0);
     ASSERT_EQ(debug_buffer_ptr[2], 1);
 }
+
+TEST_F(PositiveGpuAVRayTracing, BuildStateSnapshotFollowsExecutionOrder) {
+    TEST_DESCRIPTION(
+        "Build a BLAS twice with a different geometry count, submitting the smaller build last, then update it. The update must "
+        "be validated against the last *executed* build, not against the last *recorded* one.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    // Two geometries, 12 triangles each
+    vkt::as::BuildGeometryInfoKHR blas_big = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(
+        *m_device, vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+    {
+        std::vector<vkt::as::GeometryKHR> geometries;
+        geometries.emplace_back(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+        geometries.emplace_back(vkt::as::blueprint::GeometryCubeOnDeviceInfo(*m_device));
+        blas_big.SetGeometries(std::move(geometries));
+        blas_big.SetBuildRanges(blas_big.GetBuildRangeInfosFromGeometries());
+    }
+    blas_big.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    // Size the destination acceleration structure for the biggest of the two builds, then stop touching its size
+    blas_big.UpdateDstAccelStructSize();
+    blas_big.SetUpdateDstAccelStructSizeBeforeBuild(false);
+
+    // One geometry, 1 triangle, built into the same acceleration structure
+    vkt::as::BuildGeometryInfoKHR blas_small = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(
+        *m_device, vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 1));
+    blas_small.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    blas_small.SetDstAS(blas_big.GetDstAS());
+    blas_small.SetUpdateDstAccelStructSizeBeforeBuild(false);
+
+    // Record the small build first, so that recording the big one grows the GPU side build state buffers
+    vkt::CommandBuffer cb_small(*m_device, m_command_pool);
+    cb_small.Begin();
+    blas_small.BuildCmdBuffer(cb_small);
+    cb_small.End();
+
+    vkt::CommandBuffer cb_big(*m_device, m_command_pool);
+    cb_big.Begin();
+    blas_big.BuildCmdBuffer(cb_big);
+    cb_big.End();
+
+    // Execute in the opposite order: the last executed build is the small one
+    m_default_queue->SubmitAndWait(cb_big);
+    m_default_queue->SubmitAndWait(cb_small);
+
+    // Update the small build, leaving its geometry untouched. Nothing changed since the last executed build, so this is valid.
+    blas_small.SetSrcAS(blas_small.GetDstAS());
+    blas_small.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+
+    m_command_buffer.Begin();
+    blas_small.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVRayTracing, VertexBufferUpdateOnlySubmittedBuildsMatter) {
+    TEST_DESCRIPTION(
+        "Record 2 builds on the same BLAS. Then record an update on this BLAS, that is only valid against the first build. Only "
+        "submit first build - second build should not be taken into account");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    struct Vertex {
+        float x, y, z;
+    };
+
+    const std::array<Vertex, 9> vertices_build_1 = {{
+        {0.0f, 0.0f, 0.0f},
+        {1.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f},
+
+        {2.0f, 0.0f, 0.0f},
+        {NAN, 0.0f, 0.0f},  // triangle 1 inactive
+        {2.0f, 1.0f, 0.0f},
+
+        {3.0f, 0.0f, 0.0f},
+        {4.0f, 0.0f, 0.0f},
+        {3.0f, 1.0f, 0.0f},
+    }};
+
+    const std::array<Vertex, 9> vertices_build_2 = {{
+        {0.0f, 0.0f, 0.0f},
+        {1.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f},
+
+        {2.0f, 0.0f, 0.0f},
+        {2.5f, 0.0f, 0.0f},  // triangle 1 active
+        {2.0f, 1.0f, 0.0f},
+
+        {3.0f, 0.0f, 0.0f},
+        {NAN, 0.0f, 0.0f},  // triangle 2 inactive
+        {3.0f, 1.0f, 0.0f},
+    }};
+
+    const std::array<Vertex, 9> vertices_update = {{
+        {0.1f, 0.2f, 0.3f},
+        {1.1f, 0.2f, 0.3f},
+        {0.1f, 1.2f, 0.3f},
+
+        {2.1f, 0.2f, 0.3f},
+        {NAN, 0.2f, 0.3f},  // triangle 1 inactive, as in build 1
+        {2.1f, 1.2f, 0.3f},
+
+        {3.1f, 0.2f, 0.3f},
+        {4.1f, 0.2f, 0.3f},  // triangle 2 active, as in build 1
+        {3.1f, 1.2f, 0.3f},
+    }};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    auto make_vertex_buffer = [&](const std::array<Vertex, 9>& vertices) {
+        vkt::Buffer buffer(*m_device, sizeof(vertices[0]) * vertices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+        auto ptr = static_cast<Vertex*>(buffer.Memory().Map());
+        std::copy(vertices.begin(), vertices.end(), ptr);
+        buffer.Memory().Unmap();
+        return buffer;
+    };
+
+    vkt::as::GeometryKHR geom;
+    geom.SetType(vkt::as::GeometryKHR::Type::Triangle);
+    geom.SetFlags(VK_GEOMETRY_OPAQUE_BIT_KHR);
+    geom.SetPrimitiveCount(3);
+    geom.SetTrianglesDeviceVertexBuffer(make_vertex_buffer(vertices_build_1), uint32_t(vertices_build_1.size() - 1));
+    geom.SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geom));
+    blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    blas.UpdateDstAccelStructSize();
+    blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
+
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    blas.GetGeometries()[0].SetTrianglesDeviceVertexBuffer(make_vertex_buffer(vertices_build_2),
+                                                           uint32_t(vertices_build_2.size() - 1));
+    vkt::CommandBuffer cb_build_2(*m_device, m_command_pool);
+    cb_build_2.Begin();
+    blas.BuildCmdBuffer(cb_build_2);
+    cb_build_2.End();
+
+    blas.SetSrcAS(blas.GetDstAS());
+    blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    blas.GetGeometries()[0].SetTrianglesDeviceVertexBuffer(make_vertex_buffer(vertices_update),
+                                                           uint32_t(vertices_update.size() - 1));
+
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

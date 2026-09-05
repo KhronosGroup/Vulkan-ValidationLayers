@@ -16,6 +16,8 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
+#include <mutex>
 #include "generated/dispatch_functions.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
@@ -24,12 +26,15 @@
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
+#include "gpuav/shaders/validation_cmd/build_acceleration_structures.h"
 #include "gpuav/validation_cmd/gpuav_draw.h"
 
+#include "gpuav/validation_cmd/gpuav_ray_tracing.h"
 #include "profiling/profiling.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/pipeline_layout_state.h"
+#include "utils/ray_tracing_utils.h"
 
 #include <mutex>
 
@@ -684,10 +689,104 @@ AccelerationStructureKHRSubState::AccelerationStructureKHRSubState(Validator& va
     : vvl::AccelerationStructureKHRSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()), validator(validator) {
     gpu_state = validator.gpu_resources_manager_.GetHostCoherentBufferRange(sizeof(uint32_t));
     gpu_state.Clear();
+
+    last_build_cmd_ptr = validator.gpu_resources_manager_.GetHostCoherentBufferRange(sizeof(VkDeviceAddress));
+    last_build_cmd_ptr.Clear();
+}
+
+AccelerationStructureKHRSubState::LockedBuildStateGpuBuffers AccelerationStructureKHRSubState::AllocateBuildStateGpuBuffer(
+    const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+    const VkAccelerationStructureBuildRangeInfoKHR* build_range_infos) {
+    std::unique_lock<std::mutex> lock(build_state_gpu_mutex);
+
+    if (build_info.mode != VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
+        return {std::move(lock), build_state_gpu_buffers};
+    }
+
+    const VkDeviceSize build_cmd_copy_size =
+        2 * sizeof(uint32_t) + build_info.geometryCount * sizeof(shader::AccelerationStructureGeometryGPU);
+    if (build_state_gpu_buffers.build_cmd_copy.size < build_cmd_copy_size) {
+        retired_build_buffers.emplace_back(build_state_gpu_buffers.build_cmd_copy);
+        build_state_gpu_buffers.build_cmd_copy = validator.gpu_resources_manager_.GetDeviceLocalBufferRange(build_cmd_copy_size);
+    }
+
+    if (validator.gpuav_settings.ray_tracing_buffers_consistency &&
+        (build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
+        build_state_gpu_buffers.geometries_x_component_copies.resize(
+            std::max(build_state_gpu_buffers.geometries_x_component_copies.size(), size_t(build_info.geometryCount)));
+        build_state_gpu_buffers.index_buffer_copies.resize(
+            std::max(build_state_gpu_buffers.index_buffer_copies.size(), size_t(build_info.geometryCount)));
+
+        for (uint32_t geom_i = 0; geom_i < build_info.geometryCount; ++geom_i) {
+            const VkAccelerationStructureGeometryKHR& geom = rt::GetGeometry(build_info, geom_i);
+
+            {
+                const VkDeviceSize geometry_x_component_copy_size = [&]() -> VkDeviceSize {
+                    if (geom.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR &&
+                        geom.geometry.triangles.vertexFormat == VK_FORMAT_R32G32B32_SFLOAT) {
+                        return (geom.geometry.triangles.maxVertex + 1) * sizeof(float);
+                    } else if (geom.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
+                        return build_range_infos[geom_i].primitiveCount * sizeof(float);
+                    }
+                    return 0;
+                }();
+
+                vko::BufferRange& stored_geom_x_copy = build_state_gpu_buffers.geometries_x_component_copies[geom_i];
+                if (stored_geom_x_copy.size < geometry_x_component_copy_size) {
+                    retired_build_buffers.emplace_back(stored_geom_x_copy);
+                    stored_geom_x_copy = validator.gpu_resources_manager_.GetDeviceLocalBufferRange(geometry_x_component_copy_size);
+                }
+            }
+
+            {
+                const VkDeviceSize index_buffer_copy_size = [&]() -> VkDeviceSize {
+                    if (geom.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                        if (geom.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
+                            return VkDeviceSize(3) * build_range_infos[geom_i].primitiveCount *
+                                   IndexTypeByteSize(geom.geometry.triangles.indexType);
+                        }
+                    }
+                    return 0;
+                }();
+
+                vko::BufferRange& stored_index_buffer_copy = build_state_gpu_buffers.index_buffer_copies[geom_i];
+                if (stored_index_buffer_copy.size < index_buffer_copy_size) {
+                    retired_build_buffers.emplace_back(stored_index_buffer_copy);
+                    stored_index_buffer_copy = validator.gpu_resources_manager_.GetDeviceLocalBufferRange(index_buffer_copy_size);
+                }
+            }
+        }
+    }
+
+    return {std::move(lock), build_state_gpu_buffers};
 }
 
 void AccelerationStructureKHRSubState::Destroy() {
     id_tracker.reset();
+
+    if (build_state_gpu_buffers.build_cmd_copy.Valid()) {
+        validator.gpu_resources_manager_.ReturnDeviceLocalBufferRange(build_state_gpu_buffers.build_cmd_copy);
+    }
+
+    for (vko::BufferRange& br : build_state_gpu_buffers.geometries_x_component_copies) {
+        if (br.Valid()) {
+            validator.gpu_resources_manager_.ReturnDeviceLocalBufferRange(br);
+        }
+    }
+
+    for (vko::BufferRange& br : build_state_gpu_buffers.index_buffer_copies) {
+        if (br.Valid()) {
+            validator.gpu_resources_manager_.ReturnDeviceLocalBufferRange(br);
+        }
+    }
+
+    for (vko::BufferRange& br : retired_build_buffers) {
+        if (br.Valid()) {
+            validator.gpu_resources_manager_.ReturnDeviceLocalBufferRange(br);
+        }
+    }
+
+    validator.gpu_resources_manager_.ReturnHostCoherentBufferRange(last_build_cmd_ptr);
     validator.gpu_resources_manager_.ReturnHostCoherentBufferRange(gpu_state);
 }
 

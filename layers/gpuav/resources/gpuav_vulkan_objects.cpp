@@ -20,6 +20,7 @@
 
 #include "gpuav/core/gpuav.h"
 #include "generated/dispatch_functions.h"
+#include "state_tracker/state_tracker.h"
 #include "utils/math_utils.h"
 #include <mutex>
 #include <vulkan/utility/vk_struct_helper.hpp>

@@ -127,11 +127,14 @@ extern const uint32_t setup_acceleration_structure_gpu_state_update_comp[];
 extern const uint32_t setup_descriptor_encoding_update_comp_size;
 extern const uint32_t setup_descriptor_encoding_update_comp[];
 
-extern const uint32_t validation_cmd_blas_comp_size;
-extern const uint32_t validation_cmd_blas_comp[];
+extern const uint32_t validation_cmd_blas_slang_size;
+extern const uint32_t validation_cmd_blas_slang[];
 
 extern const uint32_t validation_cmd_copy_buffer_to_image_comp_size;
 extern const uint32_t validation_cmd_copy_buffer_to_image_comp[];
+
+extern const uint32_t validation_cmd_copy_geometries_x_component_slang_size;
+extern const uint32_t validation_cmd_copy_geometries_x_component_slang[];
 
 extern const uint32_t validation_cmd_copy_memory_indirect_comp_size;
 extern const uint32_t validation_cmd_copy_memory_indirect_comp[];
@@ -151,14 +154,17 @@ extern const uint32_t validation_cmd_draw_mesh_indirect_comp[];
 extern const uint32_t validation_cmd_first_instance_comp_size;
 extern const uint32_t validation_cmd_first_instance_comp[];
 
-extern const uint32_t validation_cmd_memcmp_comp_size;
-extern const uint32_t validation_cmd_memcmp_comp[];
+extern const uint32_t validation_cmd_memcmp_slang_size;
+extern const uint32_t validation_cmd_memcmp_slang[];
+
+extern const uint32_t validation_cmd_memcpy_slang_size;
+extern const uint32_t validation_cmd_memcpy_slang[];
 
 extern const uint32_t validation_cmd_setup_draw_indexed_indirect_index_buffer_comp_size;
 extern const uint32_t validation_cmd_setup_draw_indexed_indirect_index_buffer_comp[];
 
-extern const uint32_t validation_cmd_tlas_comp_size;
-extern const uint32_t validation_cmd_tlas_comp[];
+extern const uint32_t validation_cmd_tlas_slang_size;
+extern const uint32_t validation_cmd_tlas_slang[];
 
 extern const uint32_t validation_cmd_trace_rays_comp_size;
 extern const uint32_t validation_cmd_trace_rays_comp[];

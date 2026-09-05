@@ -53,7 +53,8 @@ void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
 }
 bool GpuAVSettings::IsBufferValidationEnabled() const {
     return validate_indirect_draws_buffers || validate_indirect_dispatches_buffers || validate_indirect_trace_rays_buffers ||
-           validate_buffer_copies || validate_copy_memory_indirect || validate_index_buffers;
+           validate_buffer_copies || validate_copy_memory_indirect || validate_index_buffers ||
+           validate_acceleration_structures_builds;
 }
 void GpuAVSettings::SetBufferValidationEnabled(bool enabled) {
     validate_indirect_draws_buffers = enabled;

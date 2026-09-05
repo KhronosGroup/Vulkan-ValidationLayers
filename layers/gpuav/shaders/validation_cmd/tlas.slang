@@ -14,17 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#version 460
-#extension GL_GOOGLE_include_directive : enable
-
-
 #include "common.h"
 #include "build_acceleration_structures.h"
 
-layout(push_constant, scalar)
-uniform PushConstants {
-    TLASValidationShaderPushData pc;
-};
+using namespace gpuav::shader;
+
+[vk::push_constant]
+ConstantBuffer<TLASValidationShaderPushData> pc;
 
 bool RangesInclude(Range r1, Range r2) {
     return (r1.begin <= r2.begin) && (r2.end <= r1.end);
@@ -33,25 +29,27 @@ bool RangesOverlap(Range r1, Range r2) {
     return RangesInclude(r1, r2) || RangesInclude(r2, r1);
 }
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
-void main() {
+[shader("compute")]
+[numthreads(tlas_validation_shader_wg_x, tlas_validation_shader_wg_y, 1)]
+void main(uint3 thread_id: SV_DispatchThreadID) {
     uint as_instance_i = 0;
     if (pc.validation_mode == kBuildASValidationMode_invalid_AS) {
-        as_instance_i = gl_GlobalInvocationID.x * (gl_NumWorkGroups.y * gl_WorkGroupSize.y) + gl_GlobalInvocationID.y;
+        // Slang has no system value semantic for the dispatch dimensions, gl_NumWorkGroups is available thanks to -allow-glsl
+        as_instance_i = thread_id.x * (gl_NumWorkGroups.y * tlas_validation_shader_wg_y) + thread_id.y;
     } else if (pc.validation_mode == kBuildASValidationMode_memory_overlaps) {
-        as_instance_i = gl_GlobalInvocationID.x;
+        as_instance_i = thread_id.x;
     }
     if (as_instance_i >= pc.blas_array_size) {
         return;
     }
-    const uint blas_built_in_cmd_i = gl_GlobalInvocationID.y;
+    const uint blas_built_in_cmd_i = thread_id.y;
 
     // Address of BLAS to validate
     uint64_t blas_addr = 0;
     if (pc.is_array_of_pointers == 0) {
-        blas_addr = pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference;
+        blas_addr = pc.blas_array_start_addr[as_instance_i].accelerationStructureReference;
     } else {
-        blas_addr = pc.blas_ptr_array_start_addr.blas_ptr_array[as_instance_i].as_instance.accelerationStructureReference;
+        blas_addr = pc.blas_ptr_array_start_addr[as_instance_i]->accelerationStructureReference;
     }
 
     // At least mentioned in VUID 12281:
@@ -66,12 +64,12 @@ void main() {
         error_subcode = kErrorSubCode_PreBuildAccelerationStructures_BlasAddrAlignment;
     } else if (pc.validation_mode == kBuildASValidationMode_invalid_AS) {
         error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
-        const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.count;
+        const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays->addresses_ptr->count;
         for (uint as_i = 0; as_i < as_count; ++as_i) {
-            uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.array[as_i];
+            uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays->addresses_ptr->array[as_i];
 
             if (valid_as_addr == blas_addr) {
-                const uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.metadata_ptr.array[as_i];
+                const uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays->metadata_ptr[as_i];
 
                 // found AS, first assume it is valid
                 error_subcode = 0;
@@ -99,20 +97,20 @@ void main() {
             return;
         }
         // Try to find buffer range associated to BLAS to validate
-        Range blas_buffer_range = {0,0};
-        const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.count;
+        Range blas_buffer_range = {0, 0};
+        const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays->addresses_ptr->count;
         for (uint as_i = 0; as_i < as_count; ++as_i) {
-            uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.array[as_i];
+            uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays->addresses_ptr->array[as_i];
 
             if (valid_as_addr == blas_addr) {
-                blas_buffer_range = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.buffer_ranges_ptr.array[as_i];
+                blas_buffer_range = pc.ptr_to_ptr_to_accel_structs_arrays->buffer_ranges_ptr[as_i];
                 break;
             }
         }
         // Does BLAS buffer range, referenced in a TLAS build,
         // overlaps with another BLAS buffer range referenced in the same build command?
         if (blas_buffer_range.begin != 0) {
-            Range blas_built_in_cmd_buffer_range = pc.blas_built_in_cmd_array_ptr.buffer_ranges[blas_built_in_cmd_i];
+            Range blas_built_in_cmd_buffer_range = pc.blas_built_in_cmd_array_ptr[blas_built_in_cmd_i];
             if (RangesOverlap(blas_buffer_range, blas_built_in_cmd_buffer_range)) {
                 error_subcode = kErrorSubCode_PreBuildAccelerationStructures_BlasMemoryOverlap;
             }
@@ -120,8 +118,15 @@ void main() {
     }
 
     if (error_subcode != 0) {
-        pc.blas_array_start_addr.blas_array[as_instance_i].instanceCustomIndex_and_mask &= 0xffffff;// Set mask to 0 (upper 8 bits), so instance cannot get hit
-        pc.blas_array_start_addr.blas_array[as_instance_i].accelerationStructureReference = pc.valid_dummy_blas_addr;// Point to a valid dummy blas
+        if (pc.is_array_of_pointers == 0) {
+            // Set mask to 0 (upper 8 bits), so instance cannot get hit
+            pc.blas_array_start_addr[as_instance_i].instanceCustomIndex_and_mask &= 0xffffff;
+            // Point to a valid dummy blas
+            pc.blas_array_start_addr[as_instance_i].accelerationStructureReference = pc.valid_dummy_blas_addr;
+        } else {
+            pc.blas_ptr_array_start_addr[as_instance_i]->instanceCustomIndex_and_mask &= 0xffffff;
+            pc.blas_ptr_array_start_addr[as_instance_i]->accelerationStructureReference = pc.valid_dummy_blas_addr;
+        }
 
         const uint error_dword_0 = uint(blas_addr);
         const uint error_dword_1 = uint(blas_addr >> 32u);
