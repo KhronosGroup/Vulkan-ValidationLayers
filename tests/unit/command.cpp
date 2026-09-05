@@ -776,6 +776,27 @@ TEST_F(NegativeCommand, DrawOutsideRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeCommand, DrawOutsideRenderPassDebugLabels) {
+    TEST_DESCRIPTION("call vkCmdDraw without renderpass - make sure debug labels appear in message");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+    label.pLabelName = "RegionA";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    label.pLabelName = "RegionB";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    m_errorMonitor->SetDesiredError("RegionA::RegionB");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeCommand, DispatchInsideRenderPass) {
     TEST_DESCRIPTION("Only allowed with VK_QCOM_tile_shading");
     RETURN_IF_SKIP(Init());
