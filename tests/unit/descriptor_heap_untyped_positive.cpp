@@ -15,6 +15,7 @@
 #include "shader_helper.h"
 #include "shader_templates.h"
 #include "test_framework.h"
+#include "utils/math_utils.h"
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 
@@ -2332,8 +2333,7 @@ TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredSampler) {
     desc_heap.WriteImageDescriptorAtOffset(image, heap_props.imageDescriptorSize);
 
     const VkDeviceSize image_offset = 2 * heap_props.imageDescriptorSize;
-    const VkDeviceSize buffer_offset =
-        ((image_offset + heap_props.bufferDescriptorSize - 1) / heap_props.bufferDescriptorSize) * heap_props.bufferDescriptorSize;
+    const VkDeviceSize buffer_offset = Align(image_offset, heap_props.bufferDescriptorSize);
 
     desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, buffer_offset);
     desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
