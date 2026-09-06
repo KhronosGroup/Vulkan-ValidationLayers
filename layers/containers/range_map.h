@@ -20,10 +20,7 @@
  */
 #pragma once
 
-#include <algorithm>
-#include <cassert>
 #include <map>
-#include <utility>
 #include "containers/range.h"
 
 #define RANGE_ASSERT(b) assert(b)

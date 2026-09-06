@@ -19,8 +19,6 @@
 #include "cc_sync_vuid_maps.h"
 #include "error_message/error_location.h"
 
-#include <cassert>
-
 namespace vvl {
 
 // IMPORTANT: this map should be in sync with features enumerated in DisabledPipelineStages()

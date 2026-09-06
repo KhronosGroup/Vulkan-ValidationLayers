@@ -20,7 +20,6 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
-#include "utils/assert_utils.h"
 
 bool BestPractices::ClearAttachmentsIsFullClear(const bp_state::CommandBufferSubState& cb_state, uint32_t rectCount,
                                                 const VkClearRect* pRects) const {

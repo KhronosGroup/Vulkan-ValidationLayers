@@ -17,10 +17,8 @@
  */
 
 #include "descriptor_heap_object.h"
-#include <vulkan/vulkan_core.h>
 
 #include "containers/container_utils.h"
-#include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 #include "utils/math_utils.h"
 

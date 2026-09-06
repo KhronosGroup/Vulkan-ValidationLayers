@@ -13,8 +13,6 @@
 
 #include "cooperative_matrix_helper.h"
 #include <spirv/unified1/spirv.hpp>
-#include <vulkan/vulkan_core.h>
-#include <vulkan/utility/vk_struct_helper.hpp>
 #include "containers/container_utils.h"
 #include "layer_validation_tests.h"
 

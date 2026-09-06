@@ -20,9 +20,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "generated/dispatch_functions.h"
 #include "best_practices/bp_state.h"
-#include "state_tracker/event_state.h"
 #include "state_tracker/queue_state.h"
-#include "state_tracker/device_state.h"
 
 bool bp_state::Instance::ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const {
     bool skip = false;

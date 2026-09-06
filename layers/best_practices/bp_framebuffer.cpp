@@ -18,7 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/bp_state.h"
 #include <vulkan/utility/vk_format_utils.h>
 #include "state_tracker/render_pass_state.h"
 
