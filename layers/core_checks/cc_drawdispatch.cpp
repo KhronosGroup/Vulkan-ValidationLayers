@@ -1096,7 +1096,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                          missShaderBindingOffset, miss_shader_buffer_state->GetSize());
     }
     auto raygen_shader_buffer_state = Get<vvl::Buffer>(raygenShaderBindingTableBuffer);
-    if (raygenShaderBindingOffset >= raygen_shader_buffer_state->GetSize()) {
+    if (raygen_shader_buffer_state && raygenShaderBindingOffset >= raygen_shader_buffer_state->GetSize()) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
         objlist.add(raygenShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02455", objlist,

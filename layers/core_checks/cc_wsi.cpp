@@ -994,6 +994,7 @@ bool CoreChecks::ValidatePresentId2(VkQueue queue, const VkPresentInfoKHR& prese
 
     for (uint32_t i = 0; i < present_id2_info.swapchainCount; i++) {
         const auto swapchain_state = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
+        ASSERT_AND_CONTINUE(swapchain_state);
         if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR) == 0) {
             const LogObjectList objlist(queue, present_info.pSwapchains[i]);
             skip |= LogError("VUID-VkPresentId2KHR-None-10820", objlist, present_info_loc.dot(Field::pSwapchain, i),
@@ -1410,6 +1411,7 @@ bool CoreChecks::PreCallValidateSetSwapchainPresentTimingQueueSizeEXT(VkDevice d
     bool skip = false;
 
     auto swapchain_state = Get<vvl::Swapchain>(swapchain);
+    ASSERT_AND_RETURN_SKIP(swapchain_state);
     if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT) == 0) {
         skip |= LogError("VUID-vkSetSwapchainPresentTimingQueueSizeEXT-swapchain-12229", swapchain, error_obj.location,
                          "was created with %s.", string_VkSwapchainCreateFlagsKHR(swapchain_state->create_info.flags).c_str());
@@ -1424,6 +1426,7 @@ bool CoreChecks::PreCallValidateGetPastPresentationTimingEXT(
     bool skip = false;
 
     auto swapchain_state = Get<vvl::Swapchain>(pPastPresentationTimingInfo->swapchain);
+    ASSERT_AND_RETURN_SKIP(swapchain_state);
     if (!swapchain_state->present_timing_stage_queries.empty()) {
         if ((pPastPresentationTimingInfo->flags & VK_PAST_PRESENTATION_TIMING_ALLOW_OUT_OF_ORDER_RESULTS_BIT_EXT) != 0) {
             uint32_t max = 0;
