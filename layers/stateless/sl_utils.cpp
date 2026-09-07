@@ -17,8 +17,10 @@
  */
 
 #include "error_message/error_location.h"
+#include "generated/error_location_helper.h"
 #include "stateless/stateless_validation.h"
 #include "sl_vuid_maps.h"
+#include "containers/small_vector.h"
 
 namespace stateless {
 bool Instance::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location& loc,
@@ -241,7 +243,13 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
     }
 
     if (next != nullptr) {
-        vvl::unordered_set<VkStructureType, vvl::hash<int>> unique_stype_check;
+        // We assume pNext chains are small and normally have 1 or 2 pNext at most and can do a simple linear search.
+        // This also keeps the allocation on the stack (instead of using an unorderd_set)
+        small_vector<VkStructureType, 16> unique_stype_check;
+        if (loc.function == vvl::Func::vkCreateDevice) {
+            unique_stype_check.reserve(128);  // exception, pass all the feature structs
+        }
+
         const char* disclaimer =
             "This error is based on the Valid Usage documentation for version %" PRIu32
             " of the Vulkan header.\nIt is possible that "
@@ -262,13 +270,15 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
             while (current != nullptr) {
                 if ((loc.function != Func::vkCreateInstance || (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
                     (loc.function != Func::vkCreateDevice || (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
-                    if (unique_stype_check.find(current->sType) != unique_stype_check.end() && !IsDuplicatePnext(current->sType)) {
+                    const bool is_duplicate =
+                        std::find(unique_stype_check.begin(), unique_stype_check.end(), current->sType) != unique_stype_check.end();
+                    if (is_duplicate && !IsDuplicatePnext(current->sType)) {
                         // stype_vuid will only be null if there are no listed pNext and will hit disclaimer check
                         skip |= log.LogError(stype_vuid, error_obj.handle, pNext_loc,
                                              "chain contains duplicate structure types: %s appears multiple times.\n%s",
                                              string_VkStructureName(current->sType), PrintPNextChain(loc.structure, next).c_str());
-                    } else {
-                        unique_stype_check.insert(current->sType);
+                    } else if (!is_duplicate) {
+                        unique_stype_check.emplace_back(current->sType);
                     }
 
                     if (std::find(start, end, current->sType) == end) {
