@@ -4222,6 +4222,17 @@ TEST_F(NegativeImage, SlicedUsage) {
         vkt::ImageView image_view(*m_device, ivci);
         m_errorMonitor->VerifyFound();
     }
+
+    {
+        sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT - 1;
+        sliced_info.sliceOffset = 2;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ASSERT_TRUE(get_effective_depth() == 8);
+
+        m_errorMonitor->SetDesiredError("VUID-VkImageViewSlicedCreateInfoEXT-sliceCount-07868");
+        vkt::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
