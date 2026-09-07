@@ -21,6 +21,7 @@
 #include "containers/array_range_map.h"
 #include "containers/range_map.h"
 #include <variant>
+#include <cassert>
 
 namespace sparse_container {
 

@@ -21,6 +21,7 @@
 
 #include <typeinfo>
 #include <vector>
+#include <cassert>
 #include "containers/custom_containers.h"
 #include "containers/range.h"
 
