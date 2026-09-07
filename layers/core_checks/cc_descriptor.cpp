@@ -1372,7 +1372,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLa
         // Layouts allowed for all three descriptor types (sampled, combined, input attachment)
         const static std::array<VkImageLayout, 3> shared_layouts = {
             {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL}};
-        const static std::array<ExtensionLayout, 9> shared_extended_layouts{{
+        const static std::array<ExtensionLayout, 7> shared_extended_layouts{{
             {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, &DeviceExtensions::vk_khr_shared_presentable_image},
             {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, &DeviceExtensions::vk_khr_maintenance2},
             {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_maintenance2},

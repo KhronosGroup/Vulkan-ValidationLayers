@@ -1479,23 +1479,24 @@ bool CoreChecks::PreCallValidateUnmapMemory2(VkDevice device, const VkMemoryUnma
     auto mem_info = Get<vvl::DeviceMemory>(pMemoryUnmapInfo->memory);
     ASSERT_AND_RETURN_SKIP(mem_info);
     if (!mem_info->mapped_range.size) {
-        const Location info_loc = error_obj.location.dot(Field::pMemoryUnmapInfo);
         skip |= LogError("VUID-VkMemoryUnmapInfo-memory-07964", pMemoryUnmapInfo->memory, error_obj.location,
                          "Unmapping Memory without memory being mapped.");
+    }
 
-        if (pMemoryUnmapInfo->flags & VK_MEMORY_UNMAP_RESERVE_BIT_EXT) {
-            if (!enabled_features.memoryUnmapReserve) {
-                skip |= LogError("VUID-VkMemoryUnmapInfo-flags-09579", pMemoryUnmapInfo->memory, info_loc.dot(Field::flags),
-                                 "VK_MEMORY_MAP_PLACED_BIT_EXT is set but memoryUnmapReserve is not enabled");
-            }
+    if (pMemoryUnmapInfo->flags & VK_MEMORY_UNMAP_RESERVE_BIT_EXT) {
+        if (!enabled_features.memoryUnmapReserve) {
+            skip |= LogError("VUID-VkMemoryUnmapInfo-flags-09579", pMemoryUnmapInfo->memory,
+                             error_obj.location.dot(Field::pMemoryUnmapInfo).dot(Field::flags),
+                             "VK_MEMORY_MAP_PLACED_BIT_EXT is set but memoryUnmapReserve is not enabled");
+        }
 
-            if (mem_info->IsImport() &&
-                (mem_info->import_handle_type.value() == VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT ||
-                 mem_info->import_handle_type.value() == VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_MAPPED_FOREIGN_MEMORY_BIT_EXT)) {
-                skip |= LogError("VUID-VkMemoryUnmapInfo-flags-09580", pMemoryUnmapInfo->memory, info_loc.dot(Field::flags),
-                                 "VK_MEMORY_MAP_PLACED_BIT_EXT is set but memory was imported with a handle type of %s",
-                                 string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()));
-            }
+        if (mem_info->IsImport() &&
+            (mem_info->import_handle_type.value() == VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT ||
+             mem_info->import_handle_type.value() == VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_MAPPED_FOREIGN_MEMORY_BIT_EXT)) {
+            skip |= LogError("VUID-VkMemoryUnmapInfo-flags-09580", pMemoryUnmapInfo->memory,
+                             error_obj.location.dot(Field::pMemoryUnmapInfo).dot(Field::flags),
+                             "VK_MEMORY_MAP_PLACED_BIT_EXT is set but memory was imported with a handle type of %s",
+                             string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()));
         }
     }
     return skip;
@@ -2987,12 +2988,12 @@ bool CoreChecks::ValidateBindDataGraphPipelineSessionMemoryARM(const VkBindDataG
                          bind_info_loc.dot(Field::bindPoint), "bindPoint (%s) not found in requirements (%s).",
                          string_VkDataGraphPipelineSessionBindPointARM(bind_info.bindPoint), required_bindpoints.str().c_str());
     } else {
-        if (bind_info.objectIndex > bpr_match->numObjects) {
-            skip |=
-                LogError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-objectIndex-09805", objlist,
-                         bind_info_loc.dot(Field::objectIndex),
-                         "(%" PRIu32 ") is greater than numObjects (%" PRIu32 ") defined for bindPoint (%s)", bind_info.objectIndex,
-                         bpr_match->numObjects, string_VkDataGraphPipelineSessionBindPointARM(bind_info.bindPoint));
+        if (bind_info.objectIndex >= bpr_match->numObjects) {
+            skip |= LogError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-objectIndex-09805", objlist,
+                             bind_info_loc.dot(Field::objectIndex),
+                             "(%" PRIu32 ") is greater than or equal to numObjects (%" PRIu32 ") defined for bindPoint (%s)",
+                             bind_info.objectIndex, bpr_match->numObjects,
+                             string_VkDataGraphPipelineSessionBindPointARM(bind_info.bindPoint));
         }
     }
 
