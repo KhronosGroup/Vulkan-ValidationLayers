@@ -2455,7 +2455,7 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(const vvl::CommandBuffer& cb_st
                                                  const VkDeviceSize offset, const vvl::Buffer& buffer_state,
                                                  const Location& loc) const {
     bool skip = false;
-    uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
+    uint64_t validation_value = uint64_t(stride) * (drawCount - 1) + offset + struct_size;
     if (validation_value > buffer_state.GetSize()) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(buffer_state.Handle());

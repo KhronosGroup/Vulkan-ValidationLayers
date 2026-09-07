@@ -4502,11 +4502,15 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound& last_bo
             const auto raster_line_state =
                 vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfo>(pipeline.RasterizationStatePNext());
 
+            // if no VkPipelineRasterizationLineStateCreateInfo, lineRasterizationMode is VK_LINE_RASTERIZATION_MODE_DEFAULT and
+            // stippledLineEnable is VK_FALSE
             const VkLineRasterizationMode line_rasterization_mode = (dynamic_line_raster_mode)
                                                                         ? cb_state.dynamic_state_value.line_rasterization_mode
-                                                                        : raster_line_state->lineRasterizationMode;
+                                                                    : raster_line_state ? raster_line_state->lineRasterizationMode
+                                                                                        : VK_LINE_RASTERIZATION_MODE_DEFAULT;
             const bool stippled_line_enable = (dynamic_line_stipple_enable) ? cb_state.dynamic_state_value.stippled_line_enable
-                                                                            : raster_line_state->stippledLineEnable;
+                                              : raster_line_state           ? raster_line_state->stippledLineEnable
+                                                                            : false;
 
             if (stippled_line_enable) {
                 if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR &&
@@ -4538,14 +4542,18 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound& last_bo
                 if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT &&
                     (!enabled_features.stippledRectangularLines || !phys_dev_props.limits.strictLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state->Handle());
-                    skip |=
-                        LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STIPPLED_STRICT_07498), objlist, loc,
-                                 "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT (set %s) with "
-                                 "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
-                                 dynamic_line_raster_mode ? "dynamically" : "in pipeline",
-                                 dynamic_line_stipple_enable ? "dynamically" : "in pipeline",
-                                 enabled_features.stippledRectangularLines ? "enabled" : "not enabled",
-                                 string_VkBool32(phys_dev_props.limits.strictLines).c_str());
+                    skip |= LogError(
+                        CreateActionVuid(loc.function, vvl::ActionVUID::STIPPLED_STRICT_07498), objlist, loc,
+                        "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT (set %s) with "
+                        "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.%s",
+                        dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                        dynamic_line_stipple_enable ? "dynamically" : "in pipeline",
+                        enabled_features.stippledRectangularLines ? "enabled" : "not enabled",
+                        string_VkBool32(phys_dev_props.limits.strictLines).c_str(),
+                        (!dynamic_line_raster_mode && !raster_line_state)
+                            ? "\nNote: There was no VkPipelineRasterizationLineStateCreateInfo so "
+                              "VK_LINE_RASTERIZATION_MODE_DEFAULT is used"
+                            : "");
                 }
             }
         }

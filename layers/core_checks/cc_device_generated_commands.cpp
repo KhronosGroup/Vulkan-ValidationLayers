@@ -63,6 +63,11 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                                                                 VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
+    if (pCreateInfo->tokenCount == 0) {
+        // VUID-VkIndirectCommandsLayoutCreateInfoEXT-tokenCount-arraylength
+        // but will prevent underflow in |pCreateInfo->tokenCount - 1|
+        return skip;
+    }
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
