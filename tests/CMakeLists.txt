@@ -308,6 +308,19 @@ target_include_directories(vk_layer_validation_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
+# Every unit/*.cpp file pulls in framework/test_common.h transitively (via binding.h), which is where
+# <gtest/gtest.h> and the VUL headers actually come from. Left alone, each of the unit test translation units
+# re-parses and re-instantiates all of that from scratch.
+# test_common.h only wraps stable, rarely-changing third-party headers, so it's a good, narrowly-scoped precompiled header
+#
+# Found this to have about a 20-25% build time improvement
+#
+# Note: If using ccache, you will want:
+#       export CCACHE_SLOPPINESS="pch_defines,time_macros"
+# - |pch_defines| covers the one call that generates the .pch
+# - |time_macros| covers the calls that consume the .pch
+target_precompile_headers(vk_layer_validation_tests PRIVATE framework/test_common.h)
+
 get_target_property(TEST_SOURCES vk_layer_validation_tests SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
 
