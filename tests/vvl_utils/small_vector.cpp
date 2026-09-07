@@ -11,14 +11,10 @@
  */
 
 #include "../framework/test_common.h"
-#include <cassert>
-#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <array>
 #include <vector>
 
-#include <vulkan/utility/vk_struct_helper.hpp>
 #include "containers/small_vector.h"
 #include "containers/span.h"
 

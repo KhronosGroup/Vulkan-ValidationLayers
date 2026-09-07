@@ -9,11 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
-#include "descriptor_helper.h"
 #include "pipeline_helper.h"
-#include "shader_helper.h"
 
 class UndefinedCore : public VkLayerTest {};
 

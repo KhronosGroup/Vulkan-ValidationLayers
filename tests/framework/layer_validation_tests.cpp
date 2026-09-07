@@ -10,8 +10,6 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-#include <cmath>
-#include <vector>
 #include "layer_validation_tests.h"
 #include "utils/convert_utils.h"
 

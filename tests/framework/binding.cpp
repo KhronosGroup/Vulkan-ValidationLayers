@@ -19,15 +19,6 @@
 
 #include "binding.h"
 
-#include <string.h>  // memset(), memcmp()
-#include <cassert>
-#include <algorithm>
-#include <iterator>
-#include <spirv-tools/libspirv.hpp>
-
-#include <vulkan/utility/vk_format_utils.h>
-#include <vulkan/utility/vk_struct_helper.hpp>
-
 #include "shader_helper.h"
 #include "sync_helper.h"
 #include "shader_object_helper.h"

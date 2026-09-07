@@ -12,8 +12,6 @@
  */
 
 #include "../framework/sync_val_tests.h"
-#include "../framework/descriptor_helper.h"
-#include "layer_validation_tests.h"
 
 class StressSyncVal : public VkLayerTest {
   public:

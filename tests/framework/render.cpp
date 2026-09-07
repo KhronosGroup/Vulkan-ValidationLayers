@@ -19,12 +19,7 @@
 
 #include "render.h"
 
-#include <cassert>
-#include <cstring>
 #include <unordered_set>
-#include <string>
-
-#include <vulkan/utility/vk_format_utils.h>
 
 #include "generated/vk_extension_helper.h"
 #include "layer_validation_tests.h"
