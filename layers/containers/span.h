@@ -18,6 +18,7 @@
 
 #pragma once
 #include <cstddef>
+#include <type_traits>  // add_const_t
 #include <utility>
 
 namespace vvl {
