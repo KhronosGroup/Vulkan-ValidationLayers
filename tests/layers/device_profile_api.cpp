@@ -16,16 +16,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <string.h>
 #include <cassert>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
 
 #include "generated/vk_dispatch_table_helper.h"
-#include "vk_lunarg_device_profile_api_layer.h"
 #include "utils/dispatch_utils.h"
-#include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace device_profile_api {
 

@@ -12,8 +12,6 @@
  */
 
 #include "descriptor_helper.h"
-#include <vulkan/utility/vk_struct_helper.hpp>
-#include "binding.h"
 
 OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device* device, const std::vector<VkDescriptorSetLayoutBinding>& bindings,
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void* layout_pnext,

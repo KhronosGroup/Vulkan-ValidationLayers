@@ -18,9 +18,7 @@
 
 #include "shader_helper.h"
 
-#include "test_common.h"
 #include "glslang/SPIRV/GlslangToSpv.h"
-#include <glslang/Public/ShaderLang.h>
 
 #ifdef VVL_USE_SLANG
 #pragma push_macro("None")

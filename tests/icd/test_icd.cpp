@@ -16,12 +16,9 @@
 */
 
 #include <algorithm>
-#include <array>
 #include "test_icd.h"
 #include "test_icd_helper.h"
 #include <vulkan/utility/vk_format_utils.h>
-#include <vulkan/vulkan_core.h>
-#include <cstddef>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace icd {
