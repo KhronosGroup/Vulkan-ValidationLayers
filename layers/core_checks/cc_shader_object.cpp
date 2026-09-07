@@ -288,11 +288,6 @@ bool CoreChecks::ValidateCreateShadersSpirvEXT(uint32_t createInfoCount, const V
             skip |= ValidateSpecializations(&safe_specialization_info, loc.dot(Field::pSpecializationInfo));
         }
 
-        // If user disabled shader validation, just skip all things related to spir-v
-        if (disabled[shader_validation]) {
-            continue;
-        }
-
         // Will be empty if not VK_SHADER_CODE_TYPE_SPIRV_EXT
         const std::shared_ptr<spirv::Module> spirv = chassis_state.module_states[i];
         const uint32_t embedded_samplers_count = CountDescriptorHeapEmbeddedSamplers(create_info.pNext);
