@@ -20,10 +20,6 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/buffer_state.h"
-#include "state_tracker/last_bound_state.h"
-#include "state_tracker/render_pass_state.h"
-#include "state_tracker/pipeline_state.h"
-#include <bitset>
 
 // Generic function to handle validation for all CmdDraw* type functions
 bool BestPractices::ValidateCmdDrawType(const bp_state::CommandBufferSubState& cb_state, const Location& loc) const {

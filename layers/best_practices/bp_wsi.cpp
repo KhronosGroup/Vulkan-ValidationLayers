@@ -18,9 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/bp_state.h"
-#include "generated/error_location_helper.h"
-#include "state_tracker/device_state.h"
 #include "state_tracker/wsi_state.h"
 
 bool bp_state::Instance::ValidateGetPhysicalDeviceDisplayPlaneProperties(VkPhysicalDevice physicalDevice,

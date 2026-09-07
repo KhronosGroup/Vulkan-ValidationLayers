@@ -17,10 +17,7 @@
 
 #include "best_practices/bp_state.h"
 #include <vulkan/utility/vk_format_utils.h>
-#include <vulkan/vulkan_core.h>
 #include "best_practices/best_practices_validation.h"
-#include "containers/container_utils.h"
-#include "generated/error_location_helper.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
