@@ -368,6 +368,7 @@ void CommandBuffer::ResetCBState() {
     rendering_attachments.Reset();
     active_queries.clear();
     started_queries.clear();
+    // |updated_queries| is cleared at vkBeginCommandBuffer
     render_pass_queries.clear();
     image_layout_registry.clear();
     aliased_image_layout_map.clear();
@@ -402,7 +403,14 @@ void CommandBuffer::ResetCBState() {
     push_data_dword_mask.clear();
 
     transform_feedback_active = false;
+    conditional_rendering_subpass = 0;
     transform_feedback_buffers_bound = 0;
+
+    conditional_rendering_active = false;
+    conditional_rendering_inside_render_pass = false;
+
+    // |performance_lock_acquired| is cleared at vkBeginCommandBuffer
+    performance_lock_released = false;
 
     bind_vertex_buffer_3_used = false;
     stride_set_with_bind_vertex_buffer_3 = false;
