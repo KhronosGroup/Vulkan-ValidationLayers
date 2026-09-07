@@ -29,6 +29,15 @@ namespace vvl {
 
 class ShaderObjectSubState;
 
+struct TessellationExecutionModes {
+    bool is_linked = false;
+    bool point_mode = false;
+    uint32_t subdivision = 0u;
+    uint32_t orientation = 0u;
+    uint32_t spacing = 0u;
+    uint32_t patch_size = 0u;
+};
+
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle
 struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSubState> {
     ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT shader_object,
