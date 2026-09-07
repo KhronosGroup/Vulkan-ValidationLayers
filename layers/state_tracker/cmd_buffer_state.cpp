@@ -729,6 +729,10 @@ void CommandBuffer::UpdateSubpassAttachments() {
         active_attachments[i].type = AttachmentInfo::Type::Empty;
     }
 
+    // Needs to be reset here for each subpass, otherwise indices from a subpass with more color attachments than the current one
+    // will incorrectly linger
+    active_color_attachments_index.clear();
+
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {

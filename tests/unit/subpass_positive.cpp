@@ -517,3 +517,106 @@ TEST_F(PositiveSubpass, InputAttachmentLayout) {
         vkt::RenderPass rp2(*m_device, *ConvertVkRenderPassCreateInfoToV2KHR(rpci).ptr());
     }
 }
+
+TEST_F(PositiveSubpass, ColorWriteEnableCountAcrossSubpasses) {
+    AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::colorWriteEnable);
+    RETURN_IF_SKIP(Init());
+
+    // subpass 0 has 3 color attachments, subpass 1 only has 1 (attachment 0, reused)
+    vkt::Image color_image0(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image1(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image2(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView view0 = color_image0.CreateView();
+    vkt::ImageView view1 = color_image1.CreateView();
+    vkt::ImageView view2 = color_image2.CreateView();
+
+    VkAttachmentDescription attachment_description = {};
+    attachment_description.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment_description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentDescription attachments[3] = {attachment_description, attachment_description, attachment_description};
+
+    VkAttachmentReference subpass0_refs[3] = {
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkAttachmentReference subpass1_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 3;
+    subpasses[0].pColorAttachments = subpass0_refs;
+    subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[1].colorAttachmentCount = 1;
+    subpasses[1].pColorAttachments = &subpass1_ref;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = 0;
+    dependency.dstSubpass = 1;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    VkRenderPassCreateInfo rpci2 = vku::InitStructHelper();
+    rpci2.attachmentCount = 3;
+    rpci2.pAttachments = attachments;
+    rpci2.subpassCount = 2;
+    rpci2.pSubpasses = subpasses;
+    rpci2.dependencyCount = 1;
+    rpci2.pDependencies = &dependency;
+    vkt::RenderPass render_pass2(*m_device, rpci2);
+
+    VkImageView views[3] = {view0.handle(), view1.handle(), view2.handle()};
+    vkt::Framebuffer framebuffer(*m_device, render_pass2, 3, views, m_width, m_height);
+
+    VkPipelineColorBlendAttachmentState color_blend3[3] = {DefaultColorBlendAttachmentState(), DefaultColorBlendAttachmentState(),
+                                                           DefaultColorBlendAttachmentState()};
+    CreatePipelineHelper pipe0(*this);
+    pipe0.cb_ci_.attachmentCount = 3;
+    pipe0.cb_ci_.pAttachments = color_blend3;
+    pipe0.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
+    pipe0.gp_ci_.renderPass = render_pass2;
+    pipe0.CreateGraphicsPipeline();
+
+    VkPipelineColorBlendAttachmentState color_blend1 = DefaultColorBlendAttachmentState();
+    CreatePipelineHelper pipe1(*this);
+    pipe1.cb_ci_.attachmentCount = 1;
+    pipe1.cb_ci_.pAttachments = &color_blend1;
+    pipe1.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
+    pipe1.gp_ci_.renderPass = render_pass2;
+    pipe1.gp_ci_.subpass = 1;
+    pipe1.CreateGraphicsPipeline();
+
+    VkClearValue clear_values[3] = {};
+
+    VkRenderPassBeginInfo rp_begin = vku::InitStructHelper();
+    rp_begin.renderPass = render_pass2;
+    rp_begin.framebuffer = framebuffer;
+    rp_begin.renderArea = {{0, 0}, {m_width, m_height}};
+    rp_begin.clearValueCount = 3;
+    rp_begin.pClearValues = clear_values;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_begin);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0);
+    VkBool32 enable3[3] = {VK_TRUE, VK_TRUE, VK_TRUE};
+    vk::CmdSetColorWriteEnableEXT(m_command_buffer, 3, enable3);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+    vk::CmdNextSubpass(m_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
+    VkBool32 enable1[1] = {VK_TRUE};
+    vk::CmdSetColorWriteEnableEXT(m_command_buffer, 1, enable1);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
