@@ -3888,25 +3888,26 @@ bool CoreChecks::ValidateResolveImageModeInfo(VkCommandBuffer commandBuffer, con
     const Location src_image_loc = resolve_info_loc.dot(Field::srcImage);
     const LogObjectList src_objlist(commandBuffer, pResolveImageInfo->srcImage);
 
+    auto src_image_state = Get<vvl::Image>(pResolveImageInfo->srcImage);
+    ASSERT_AND_RETURN_SKIP(src_image_state);
+
     const auto* resolve_mode_info = vku::FindStructInPNextChain<VkResolveImageModeInfoKHR>(pResolveImageInfo->pNext);
     if (!resolve_mode_info) {
-        auto src_image_state = Get<vvl::Image>(pResolveImageInfo->srcImage);
         if (vkuFormatIsDepthOrStencil(src_image_state->GetFormat())) {
             skip |= LogError("VUID-VkResolveImageInfo2-srcImage-10986", src_objlist, src_image_loc,
                              "has format %s but there is no VkResolveImageModeInfoKHR included in the pNext chain.\n%s",
                              string_VkFormat(src_image_state->GetFormat()),
                              PrintPNextChain(Struct::VkResolveImageInfo2, pResolveImageInfo->pNext).c_str());
         }
-        return skip;
+
+        return skip;  // rest of checks are rely on VkResolveImageModeInfoKHR
     }
+
+    auto dst_image_state = Get<vvl::Image>(pResolveImageInfo->dstImage);
+    ASSERT_AND_RETURN_SKIP(dst_image_state);
 
     const LogObjectList dst_objlist(commandBuffer, pResolveImageInfo->dstImage);
     const LogObjectList all_objlist(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->dstImage);
-
-    auto src_image_state = Get<vvl::Image>(pResolveImageInfo->srcImage);
-    auto dst_image_state = Get<vvl::Image>(pResolveImageInfo->dstImage);
-    ASSERT_AND_RETURN_SKIP(src_image_state);
-    ASSERT_AND_RETURN_SKIP(dst_image_state);
 
     if (resolve_mode_info->flags &
         (VK_RESOLVE_IMAGE_SKIP_TRANSFER_FUNCTION_BIT_KHR | VK_RESOLVE_IMAGE_ENABLE_TRANSFER_FUNCTION_BIT_KHR)) {

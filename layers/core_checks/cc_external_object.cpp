@@ -624,6 +624,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocat
 
         // We can only validate images since we lack information to do the buffer call for the properties
         auto image_state_ptr = Get<vvl::Image>(dedicated_allocation_info->image);
+        ASSERT_AND_RETURN_SKIP(image_state_ptr);
         VkFormat image_format = image_state_ptr->GetFormat();
         VkPhysicalDeviceExternalImageFormatInfo external_info = vku::InitStructHelper();
         external_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT;

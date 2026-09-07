@@ -35,6 +35,7 @@
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/wsi_state.h"
 #include "error_message/error_strings.h"
+#include "utils/assert_utils.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
 #include "state_tracker/data_graph_pipeline_session_state.h"
@@ -830,7 +831,7 @@ bool CoreChecks::HasTileMemoryType(uint32_t memory_type_index) const {
 bool CoreChecks::ValidateTileMemoryBindInfo(const VkTileMemoryBindInfoQCOM& tile_memory_bind_info, const Location& loc) const {
     bool skip = false;
     auto dev_mem = Get<vvl::DeviceMemory>(tile_memory_bind_info.memory);
-    if (!HasTileMemoryType(dev_mem->allocate_info.memoryTypeIndex)) {
+    if (dev_mem && !HasTileMemoryType(dev_mem->allocate_info.memoryTypeIndex)) {
         skip |= LogError("VUID-VkTileMemoryBindInfoQCOM-memory-10726", tile_memory_bind_info.memory,
                          loc.dot(Field::pCreateInfo).dot(Field::memory),
                          "was allocated from a VkMemoryHeap without the VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM property.");
