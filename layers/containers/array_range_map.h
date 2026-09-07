@@ -19,9 +19,8 @@
 
 #include "containers/range.h"
 
-#include <array>
 #include <limits>
-#include <utility>
+#include <cassert>
 
 namespace sparse_container {
 

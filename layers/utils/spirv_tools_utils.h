@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <vulkan/vulkan_core.h>
 #include <spirv-tools/libspirv.hpp>
 
 namespace vvl {
