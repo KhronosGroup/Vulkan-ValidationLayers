@@ -2307,3 +2307,30 @@ TEST_F(PositiveDynamicRendering, RenderAreaMipLevelMultipleLevels) {
 
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDynamicRendering, ResumeAfterUnrelatedFinishedInstance) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkRenderingInfo suspend_info = vku::InitStructHelper();
+    suspend_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_info.layerCount = 1;
+    suspend_info.renderArea = {{0, 0}, {1, 1}};
+
+    VkRenderingInfo resume_info = suspend_info;
+    resume_info.flags = VK_RENDERING_RESUMING_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(suspend_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.BeginRendering(resume_info);
+    m_command_buffer.EndRendering();
+
+    // Nothing is suspended at this point.
+    VkRenderingInfo unrelated_info = vku::InitStructHelper();
+    unrelated_info.flags = VK_RENDERING_RESUMING_BIT;
+    unrelated_info.layerCount = 1;
+    unrelated_info.renderArea = {{0, 0}, {4, 4}};
+    m_command_buffer.BeginRendering(unrelated_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
