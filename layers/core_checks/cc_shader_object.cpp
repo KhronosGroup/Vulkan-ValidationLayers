@@ -280,13 +280,7 @@ bool CoreChecks::ValidateCreateShadersSpirvEXT(uint32_t createInfoCount, const V
     ValidationCache* cache = CastFromHandle<ValidationCache*>(core_validation_cache);
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        // First validate all things that don't require valid SPIR-V
-        // this is found when using VK_EXT_shader_module_identifier
         const VkShaderCreateInfoEXT& create_info = pCreateInfos[i];
-        if (create_info.pSpecializationInfo) {
-            vku::safe_VkSpecializationInfo safe_specialization_info(create_info.pSpecializationInfo);
-            skip |= ValidateSpecializations(&safe_specialization_info, loc.dot(Field::pSpecializationInfo));
-        }
 
         // Will be empty if not VK_SHADER_CODE_TYPE_SPIRV_EXT
         const std::shared_ptr<spirv::Module> spirv = chassis_state.module_states[i];
@@ -429,7 +423,14 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
 
     bool has_compute = false;
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        has_compute |= pCreateInfos[i].stage == VK_SHADER_STAGE_COMPUTE_BIT;
+        const VkShaderCreateInfoEXT& create_info = pCreateInfos[i];
+
+        has_compute |= create_info.stage == VK_SHADER_STAGE_COMPUTE_BIT;
+
+        if (create_info.pSpecializationInfo) {
+            vku::safe_VkSpecializationInfo safe_specialization_info(create_info.pSpecializationInfo);
+            skip |= ValidateSpecializations(&safe_specialization_info, error_obj.location.dot(Field::pSpecializationInfo));
+        }
     }
 
     const VkQueueFlags queue_flag = has_compute ? VK_QUEUE_COMPUTE_BIT : VK_QUEUE_GRAPHICS_BIT;
