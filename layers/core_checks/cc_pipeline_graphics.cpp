@@ -1260,7 +1260,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
                                 "\tdescriptorCount: %" PRIu32
                                 "\n"
                                 "\tstageFlags: %s\n"
-                                "\tpImmutableSamplers: 0x%p\n"
+                                "\tpImmutableSamplers: %p\n"
                                 "|Fragment Shader State| %s at pSetLayouts[%" PRIu32 "] pBindings[%" PRIu32
                                 "] of:\n"
                                 "\tbinding: %" PRIu32
@@ -1269,7 +1269,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
                                 "\tdescriptorCount: %" PRIu32
                                 "\n"
                                 "\tstageFlags: %s\n"
-                                "\tpImmutableSamplers: 0x%p\n",
+                                "\tpImmutableSamplers: %p\n",
                                 FormatHandle(pre_raster_info.layout->Handle()).c_str(), i, binding_index,
                                 pre_raster_binding.binding, string_VkDescriptorType(pre_raster_binding.descriptorType),
                                 pre_raster_binding.descriptorCount,

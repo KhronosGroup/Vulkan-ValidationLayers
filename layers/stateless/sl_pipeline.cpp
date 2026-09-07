@@ -129,10 +129,13 @@ bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const
                 const char* vuid = loc.function == Func::vkCreatePipelineLayout
                                        ? "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292"
                                        : "VUID-VkShaderCreateInfoEXT-pPushConstantRanges-10063";
-                skip |= LogError(vuid, device, loc,
-                                 "pPushConstantRanges[%" PRIu32
-                                 "].stageFlags is the same stage (%s) as pPushConstantRanges[%" PRIu32 "].stageFlags.",
-                                 i, string_VkShaderStageFlags(push_constant_ranges[i].stageFlags).c_str(), j);
+                skip |= LogError(
+                    vuid, device, loc,
+                    "pPushConstantRanges[%" PRIu32 "].stageFlags (%s) and pPushConstantRanges[%" PRIu32
+                    "].stageFlags (%s) both contain %s.",
+                    i, string_VkShaderStageFlags(push_constant_ranges[i].stageFlags).c_str(), j,
+                    string_VkShaderStageFlags(push_constant_ranges[j].stageFlags).c_str(),
+                    string_VkShaderStageFlags(push_constant_ranges[i].stageFlags & push_constant_ranges[j].stageFlags).c_str());
                 break;  // Only need to report the first range mismatch
             }
         }
@@ -494,7 +497,7 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                 if (mapping.bindingCount != 1) {
                     skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11389", device,
                                      map_loc.dot(source_field).dot(Field::pEmbeddedSampler),
-                                     "is not NULL (0x%p).\nVkDescriptorSetAndBindingMappingEXT::source = %s.", embedded_sampler,
+                                     "is not NULL (%p).\nVkDescriptorSetAndBindingMappingEXT::source = %s.", embedded_sampler,
                                      string_VkDescriptorMappingSourceEXT(mapping.source));
                 }
                 const auto* object_name = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(embedded_sampler->pNext);
@@ -2003,8 +2006,9 @@ bool Device::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipeli
     if (pSrcCaches) {
         for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
             if (pSrcCaches[index0] == dstCache) {
-                skip |= LogError("VUID-vkMergePipelineCaches-dstCache-00770", device, error_obj.location.dot(Field::dstCache),
-                                 "%s is in pSrcCaches list.", FormatHandle(dstCache).c_str());
+                skip |=
+                    LogError("VUID-vkMergePipelineCaches-dstCache-00770", device, error_obj.location.dot(Field::pSrcCaches, index0),
+                             "is %s, which is also dstCache.", FormatHandle(dstCache).c_str());
                 break;
             }
         }
