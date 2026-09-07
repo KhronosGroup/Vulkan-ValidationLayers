@@ -18,15 +18,19 @@
 #pragma once
 
 #include "sync_barrier.h"
+#include "containers/custom_containers.h"
 #include "containers/span.h"
+#include "generated/vk_object_types.h"
 
 struct Location;
 struct VulkanTypedHandle;
 
 namespace vvl {
 class Buffer;
+class DescriptorSet;
 class Image;
 class ImageView;
+class Pipeline;
 class RenderPass;
 enum class Func;
 }  // namespace vvl
@@ -158,21 +162,82 @@ struct EndRenderPassCommand {
                AccessContext& external_context) const;
 };
 
-using CommandStorage = std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage,
-                                    BeginRenderPassCommand::Storage, NextSubpassCommand::Storage, EndRenderPassCommand::Storage>;
+struct ShaderAccessCommand {
+    struct DescriptorInfo {
+        const vvl::DescriptorSet* descriptor_set;
+        VkDescriptorType descriptor_type;
+        uint32_t set;
+        uint32_t binding;
+        uint32_t array_element;
+        VkShaderStageFlagBits stage;
+        VulkanTypedHandle resource_handle;
+    };
+    struct BufferAccess {
+        DescriptorInfo info;
+        const vvl::Buffer* buffer;
+        AccessRange range;
+        SyncAccessIndex access_index;
+        uint32_t handle_index = vvl::kNoIndex32;
+    };
+    struct ImageViewAccess {
+        DescriptorInfo info;
+        const vvl::ImageView* image_view;
+        VkImageLayout image_layout;
+        SyncAccessIndex access_index;
+        uint32_t handle_index = vvl::kNoIndex32;
+        // Input attachments use the render area and render-pass attachment ordering
+        VkOffset3D offset{};
+        VkExtent3D extent{};
+    };
+
+    const vvl::Pipeline* pipeline = nullptr;
+    vvl::span<const BufferAccess> buffer_accesses;
+    vvl::span<const ImageViewAccess> image_accesses;
+    uint32_t render_pass_instance_id = vvl::kNoIndex32;
+    uint32_t subpass = vvl::kNoIndex32;
+
+    struct Storage {
+        const vvl::Pipeline* pipeline;
+        uint32_t first_buffer_access;
+        uint32_t buffer_access_count;
+        uint32_t first_image_access;
+        uint32_t image_access_count;
+        uint32_t render_pass_instance_id;
+        uint32_t subpass;
+        ShaderAccessCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+using CommandStorage =
+    std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage, BeginRenderPassCommand::Storage,
+                 NextSubpassCommand::Storage, EndRenderPassCommand::Storage, ShaderAccessCommand::Storage>;
 
 struct CommandData {
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
     std::vector<std::shared_ptr<const vvl::Image>> images;
     std::vector<std::shared_ptr<const vvl::ImageView>> image_views;
     std::vector<std::shared_ptr<const vvl::RenderPass>> render_passes;
+    std::vector<std::shared_ptr<const vvl::Pipeline>> pipelines;
     std::vector<BufferCopyRegion> buffer_copy_regions;
     std::vector<VkImageCopy> image_copy_regions;
     std::vector<BarrierSet> barrier_sets;
+    std::vector<ShaderAccessCommand::BufferAccess> descriptor_buffer_accesses;
+    std::vector<ShaderAccessCommand::ImageViewAccess> descriptor_image_accesses;
+
+    std::vector<std::shared_ptr<const vvl::DescriptorSet>> descriptor_sets;
+    vvl::unordered_set<const vvl::DescriptorSet*> descriptor_set_lookup;
 
     uint32_t AddBuffer(const vvl::Buffer& buffer);
     uint32_t AddImage(const vvl::Image& image);
     uint32_t AddRenderPass(const vvl::RenderPass& render_pass);
+    void AddImageView(const vvl::ImageView& image_view);
+    void AddPipeline(const vvl::Pipeline& pipeline);
+    void AddDescriptorSet(const vvl::DescriptorSet& descriptor_set);
 };
 
 // TODO: CommandEntry won't be needed after all commands are introduced.

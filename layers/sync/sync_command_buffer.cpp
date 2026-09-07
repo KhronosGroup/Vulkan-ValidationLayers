@@ -34,6 +34,11 @@
 #include "utils/math_utils.h"
 #include "utils/text_utils.h"
 
+using vvl::BufferDescriptor;
+using vvl::DescriptorClass;
+using vvl::ImageDescriptor;
+using vvl::TexelDescriptor;
+
 namespace syncval {
 
 constexpr VkImageAspectFlags kColorAspects =
@@ -609,9 +614,9 @@ bool CommandBufferContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint
                         if (hazard.IsHazard()) {
                             LogObjectList objlist(cb_state_->Handle(), img_view_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.ImageDescriptorError(
-                                hazard, *this, loc.function, sync_state_.FormatHandle(*img_view_state), *pipe,
-                                variable.decorations.set, *descriptor_set, descriptor_type, variable.decorations.binding, index,
-                                stage_state.GetStage(), image_layout);
+                                GetSyncEnvironment(), hazard, *this, kInvalidTag, loc, sync_state_.FormatHandle(*img_view_state),
+                                *pipe, variable.decorations.set, *descriptor_set, descriptor_type, variable.decorations.binding,
+                                index, stage_state.GetStage(), image_layout);
                             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
                         }
                         break;
@@ -628,9 +633,9 @@ bool CommandBufferContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint
                         if (hazard.IsHazard()) {
                             LogObjectList objlist(cb_state_->Handle(), buf_view_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.BufferDescriptorError(
-                                hazard, *this, loc.function, sync_state_.FormatHandle(*buf_view_state), *pipe,
-                                variable.decorations.set, *descriptor_set, descriptor_type, variable.decorations.binding, index,
-                                stage_state.GetStage());
+                                GetSyncEnvironment(), hazard, *this, kInvalidTag, loc, sync_state_.FormatHandle(*buf_view_state),
+                                *pipe, variable.decorations.set, *descriptor_set, descriptor_type, variable.decorations.binding,
+                                index, stage_state.GetStage());
                             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
                         }
                         break;
@@ -655,8 +660,9 @@ bool CommandBufferContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint
                         if (hazard.IsHazard()) {
                             LogObjectList objlist(cb_state_->Handle(), buf_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.BufferDescriptorError(
-                                hazard, *this, loc.function, sync_state_.FormatHandle(*buf_state), *pipe, variable.decorations.set,
-                                *descriptor_set, descriptor_type, variable.decorations.binding, index, stage_state.GetStage());
+                                GetSyncEnvironment(), hazard, *this, kInvalidTag, loc, sync_state_.FormatHandle(*buf_state), *pipe,
+                                variable.decorations.set, *descriptor_set, descriptor_type, variable.decorations.binding, index,
+                                stage_state.GetStage());
                             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
                         }
                         break;
@@ -677,8 +683,9 @@ bool CommandBufferContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint
                                 LogObjectList objlist(cb_state_->Handle(), as_buffer.state->Handle(), pipe->Handle());
                                 const std::string resource_description = sync_state_.FormatHandle(accel->Handle());
                                 const std::string error = error_messages_.AccelerationStructureDescriptorError(
-                                    hazard, *this, loc.function, resource_description, *pipe, variable.decorations.set,
-                                    *descriptor_set, descriptor_type, variable.decorations.binding, index, stage_state.GetStage());
+                                    GetSyncEnvironment(), hazard, *this, kInvalidTag, loc, resource_description, *pipe,
+                                    variable.decorations.set, *descriptor_set, descriptor_type, variable.decorations.binding, index,
+                                    stage_state.GetStage());
                                 skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
                             }
                         }
@@ -822,6 +829,177 @@ void CommandBufferContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint p
                 }
             }
         }
+    }
+}
+
+CommandBufferContext::DescriptorAccesses CommandBufferContext::CollectDescriptorAccesses(
+    VkPipelineBindPoint pipelineBindPoint) const {
+    DescriptorAccesses result;
+    if (!sync_state_.syncval_settings.shader_accesses_heuristic) return result;
+
+    const auto& last_bound_state = cb_state_->lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
+    const vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
+    const std::vector<LastBound::DescriptorSetSlot>& ds_slots = last_bound_state.ds_slots;
+    if (!pipeline) {
+        return result;
+    }
+    result.pipeline = pipeline;
+    result.render_pass_instance_id = current_render_pass_instance_id_;
+    result.subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
+
+    for (const auto& stage_state : pipeline->stage_states) {
+        if ((stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT && pipeline->RasterizationDisabled()) ||
+            !stage_state.HasSpirv()) {
+            continue;
+        }
+        for (const auto& variable : stage_state.entrypoint->resource_interface_variables) {
+            if (variable.decorations.set >= ds_slots.size()) {
+                continue;  // [core validation error]
+            }
+            const auto& ds_slot = ds_slots[variable.decorations.set];
+            const auto* descriptor_set = ds_slot.ds_state.get();
+            if (!descriptor_set) {
+                continue;
+            }
+            const auto binding = descriptor_set->GetBinding(variable.decorations.binding);
+            if (!binding) {
+                continue;
+            }
+            // Validation based on static analysis of descriptors can produce false-positives.
+            // This workaround disables validation for the descriptor array case.
+            if (binding->count > 1) {
+                continue;
+            }
+            const VkDescriptorType descriptor_type = binding->type;
+            const VkShaderStageFlagBits stage_flag = stage_state.GetStage();
+            const SyncAccessIndex sync_index = GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_flag);
+            if (sync_index == SYNC_ACCESS_INDEX_NONE) {
+                continue;
+            }
+            auto make_descriptor_info = [&](const VulkanTypedHandle& resource_handle, uint32_t index) {
+                ShaderAccessCommand::DescriptorInfo info;
+                info.descriptor_set = descriptor_set;
+                info.resource_handle = resource_handle;
+                info.set = variable.decorations.set;
+                info.descriptor_type = descriptor_type;
+                info.binding = variable.decorations.binding;
+                info.array_element = index;
+                info.stage = stage_flag;
+                return info;
+            };
+            for (uint32_t index = 0; index < binding->count; index++) {
+                const auto* descriptor = binding->GetDescriptor(index);
+                switch (descriptor->GetClass()) {
+                    case DescriptorClass::ImageSampler:
+                    case DescriptorClass::Image: {
+                        // ImageSamplerDescriptor inherits from ImageDescriptor, so this cast works for both types
+                        const auto* image_descriptor = static_cast<const ImageDescriptor*>(descriptor);
+                        if (image_descriptor->Invalid()) {
+                            continue;
+                        }
+                        const auto* image_view = image_descriptor->GetImageViewState();
+                        if (image_view->is_depth_sliced) {
+                            // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
+                            // Descriptors, unless VK_EXT_image_2d_view_of_3d is supported, which it isn't at the moment.
+                            // See: VUID 00343
+                            continue;
+                        }
+                        ShaderAccessCommand::ImageViewAccess access;
+                        access.info = make_descriptor_info(image_view->Handle(), index);
+                        access.image_view = image_view;
+                        access.image_layout = image_descriptor->GetImageLayout();
+                        access.access_index = sync_index;
+                        if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
+                            access.offset = CastTo3D(cb_state_->render_area.offset);
+                            access.extent = CastTo3D(cb_state_->render_area.extent);
+                        }
+                        result.image_accesses.emplace_back(std::move(access));
+                        break;
+                    }
+                    case DescriptorClass::TexelBuffer: {
+                        const auto* texel_descriptor = static_cast<const TexelDescriptor*>(descriptor);
+                        if (texel_descriptor->Invalid()) {
+                            continue;
+                        }
+                        const auto* buffer_view = texel_descriptor->GetBufferViewState();
+                        const auto* buffer = buffer_view->buffer_state.get();
+                        ShaderAccessCommand::BufferAccess access;
+                        access.info = make_descriptor_info(buffer_view->Handle(), index);
+                        access.buffer = buffer;
+                        access.range = MakeRange(*buffer_view);
+                        access.access_index = sync_index;
+                        result.buffer_accesses.emplace_back(std::move(access));
+                        break;
+                    }
+                    case DescriptorClass::GeneralBuffer: {
+                        const auto* buffer_descriptor = static_cast<const BufferDescriptor*>(descriptor);
+                        if (buffer_descriptor->Invalid()) {
+                            continue;
+                        }
+                        VkDeviceSize offset = buffer_descriptor->GetOffset();
+                        if (vvl::IsDynamicDescriptor(descriptor_type)) {
+                            const uint32_t dynamic_offset_index =
+                                descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
+                            if (dynamic_offset_index >= ds_slot.dynamic_offsets.size()) {
+                                continue;  // [core validation error]
+                            }
+                            offset += ds_slot.dynamic_offsets[dynamic_offset_index];
+                        }
+                        const auto* buffer = buffer_descriptor->GetBufferState();
+                        ShaderAccessCommand::BufferAccess access;
+                        access.info = make_descriptor_info(buffer->Handle(), index);
+                        access.buffer = buffer;
+                        access.range = MakeRange(*buffer, offset, buffer_descriptor->GetRange());
+                        access.access_index = sync_index;
+                        result.buffer_accesses.emplace_back(std::move(access));
+                        break;
+                    }
+                    case DescriptorClass::AccelerationStructure: {
+                        const auto* accel_descriptor = static_cast<const vvl::AccelerationStructureDescriptor*>(descriptor);
+                        if (accel_descriptor->Invalid()) {
+                            continue;
+                        }
+                        const auto* acceleration_structure = accel_descriptor->GetAccelerationStructureStateKHR();
+                        if (!acceleration_structure) {
+                            continue;
+                        }
+                        const vvl::BufferAndOffset as_buffer = acceleration_structure->GetFirstValidBuffer(cb_state_->dev_data);
+                        if (!as_buffer) {
+                            continue;
+                        }
+                        ShaderAccessCommand::BufferAccess access;
+                        access.info = make_descriptor_info(acceleration_structure->Handle(), index);
+                        access.buffer = as_buffer.state;
+                        access.range = MakeRange(*as_buffer.state, as_buffer.offset, acceleration_structure->GetSize());
+                        access.access_index = sync_index;
+                        result.buffer_accesses.emplace_back(std::move(access));
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+    return result;
+}
+
+void CommandBufferContext::RecordShaderAccesses(ResourceUsageTag tag, DescriptorAccesses& descriptor_accesses) {
+    for (auto& access : descriptor_accesses.buffer_accesses) {
+        access.handle_index = AddCommandHandle(tag, access.info.resource_handle).handle_index;
+    }
+    for (auto& access : descriptor_accesses.image_accesses) {
+        access.handle_index = AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
+    }
+    const ShaderAccessCommand command{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses,
+                                      descriptor_accesses.image_accesses, descriptor_accesses.render_pass_instance_id,
+                                      descriptor_accesses.subpass};
+    const auto& settings = sync_state_.syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(GetSyncEnvironment(), tag, GetCurrentAccessContext());
+    }
+    if (settings.full_validation) {
+        StoreCommand(tag, command);
     }
 }
 

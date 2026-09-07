@@ -224,7 +224,12 @@ static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& 
     additional_info.properties.Add(kPropertyDescriptorType, descriptor_type_str);
     additional_info.properties.Add(kPropertyDescriptorBinding, descriptor_binding);
     additional_info.properties.Add(kPropertyDescriptorArrayElement, descriptor_array_element);
-    additional_info.access_initiator = std::string("Shader stage ") + string_VkShaderStageFlagBits(shader_stage);
+    const std::string shader_stage_description = std::string("Shader stage ") + string_VkShaderStageFlagBits(shader_stage);
+    if (additional_info.access_initiator.empty()) {
+        additional_info.access_initiator = shader_stage_description;
+    } else {
+        additional_info.access_initiator = shader_stage_description + " in " + additional_info.access_initiator;
+    }
 
     ss << "\nThe " << resource_type << " is referenced by descriptor binding " << descriptor_binding;
     ss << " (" << descriptor_type_str << ")";
@@ -235,29 +240,35 @@ static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& 
     ss << ", " << logger.FormatHandle(pipeline);
 }
 
-std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                 vvl::Func command, const std::string& resource_description,
+std::string ErrorMessages::BufferDescriptorError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                 const Location& loc, const std::string& resource_description,
                                                  const vvl::Pipeline& pipeline, uint32_t set_number,
                                                  const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                                  uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                                  VkShaderStageFlagBits shader_stage) const {
     AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+
     std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "buffer", additional_info, ss);
     ss << ".";
 
     additional_info.pre_synchronization_text = ss.str();
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BufferDescriptorError", additional_info);
+    return Error(env, hazard, command, resource_description, "BufferDescriptorError", additional_info);
 }
 
-std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                vvl::Func command, const std::string& resource_description,
+std::string ErrorMessages::ImageDescriptorError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                const Location& loc, const std::string& resource_description,
                                                 const vvl::Pipeline& pipeline, uint32_t set_number,
                                                 const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                                 uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                                 VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const {
     AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+
     std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "image", additional_info, ss);
@@ -265,24 +276,25 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
 
     additional_info.pre_synchronization_text = ss.str();
     additional_info.properties.Add(kPropertyImageLayout, string_VkImageLayout(image_layout));
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "ImageDescriptorError", additional_info);
+    return Error(env, hazard, command, resource_description, "ImageDescriptorError", additional_info);
 }
 
 std::string ErrorMessages::AccelerationStructureDescriptorError(
-    const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command, const std::string& resource_description,
-    const vvl::Pipeline& pipeline, uint32_t set_number, const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-    uint32_t descriptor_binding, uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
+    const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+    const Location& loc, const std::string& resource_description, const vvl::Pipeline& pipeline, uint32_t set_number,
+    const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type, uint32_t descriptor_binding,
+    uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
     AdditionalMessageInfo additional_info;
-    additional_info.access_action = "traces rays against";
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
 
     std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "acceleration structure", additional_info, ss);
     ss << ".";
-    additional_info.pre_synchronization_text = ss.str();
 
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "AccelerationStructureDescriptorError",
-                 additional_info);
+    additional_info.access_action = "traces rays against";
+    additional_info.pre_synchronization_text = ss.str();
+    return Error(env, hazard, command, resource_description, "AccelerationStructureDescriptorError", additional_info);
 }
 
 std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, const CommandBufferContext& cb_context,

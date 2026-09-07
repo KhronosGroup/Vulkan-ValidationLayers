@@ -1075,11 +1075,16 @@ void SyncValidator::RecordCountBuffer(CommandBufferContext& cb_context, const Re
 
 bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
                                                const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    skip |=
-        GetCommandBufferContext(*cb_state).ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
-    return skip;
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+    const auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
+    const ShaderAccessCommand command{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses,
+                                      descriptor_accesses.image_accesses, descriptor_accesses.render_pass_instance_id,
+                                      descriptor_accesses.subpass};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
@@ -1087,7 +1092,8 @@ void SyncValidator::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uin
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
+    auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
+    cb_context.RecordShaderAccesses(tag, descriptor_accesses);
 }
 
 bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

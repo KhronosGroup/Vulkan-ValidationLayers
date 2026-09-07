@@ -219,6 +219,17 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     void RecordEndRendering(const RecordObject& record_obj);
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location& loc) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
+
+    struct DescriptorAccesses {
+        const vvl::Pipeline* pipeline = nullptr;
+        std::vector<ShaderAccessCommand::BufferAccess> buffer_accesses;
+        std::vector<ShaderAccessCommand::ImageViewAccess> image_accesses;
+        uint32_t render_pass_instance_id = vvl::kNoIndex32;
+        uint32_t subpass = vvl::kNoIndex32;
+    };
+    DescriptorAccesses CollectDescriptorAccesses(VkPipelineBindPoint pipelineBindPoint) const;
+    void RecordShaderAccesses(ResourceUsageTag tag, DescriptorAccesses& descriptor_accesses);
+
     bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const Location& loc) const;
     void RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
     bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const Location& loc) const;

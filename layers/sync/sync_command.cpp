@@ -22,6 +22,7 @@
 #include "sync/sync_validation.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/pipeline_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "utils/image_utils.h"
 
@@ -103,6 +104,20 @@ uint32_t CommandData::AddRenderPass(const vvl::RenderPass& render_pass) {
     const uint32_t index = uint32_t(render_passes.size());
     render_passes.emplace_back(std::static_pointer_cast<const vvl::RenderPass>(render_pass.shared_from_this()));
     return index;
+}
+
+void CommandData::AddImageView(const vvl::ImageView& image_view) {
+    image_views.emplace_back(std::static_pointer_cast<const vvl::ImageView>(image_view.shared_from_this()));
+}
+
+void CommandData::AddPipeline(const vvl::Pipeline& pipeline) {
+    pipelines.emplace_back(std::static_pointer_cast<const vvl::Pipeline>(pipeline.shared_from_this()));
+}
+
+void CommandData::AddDescriptorSet(const vvl::DescriptorSet& descriptor_set) {
+    if (descriptor_set_lookup.insert(&descriptor_set).second) {
+        descriptor_sets.emplace_back(std::static_pointer_cast<const vvl::DescriptorSet>(descriptor_set.shared_from_this()));
+    }
 }
 
 BufferCopyCommand BufferCopyCommand::Storage::MakeCommand(const CommandData& command_data) const {
@@ -394,6 +409,130 @@ void EndRenderPassCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Ren
     const ResourceUsageTag store_tag = tag;
     const ResourceUsageTag transition_tag = tag + 1;
     rp_context.RecordEndRenderPass(external_context, store_tag, transition_tag, env.queue_id);
+}
+
+ShaderAccessCommand ShaderAccessCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const BufferAccess> buffer_accesses;
+    if (buffer_access_count != 0) {
+        buffer_accesses = vvl::make_span(&command_data.descriptor_buffer_accesses[first_buffer_access], buffer_access_count);
+    }
+    vvl::span<const ImageViewAccess> image_accesses;
+    if (image_access_count != 0) {
+        image_accesses = vvl::make_span(&command_data.descriptor_image_accesses[first_image_access], image_access_count);
+    }
+    return {pipeline, buffer_accesses, image_accesses, render_pass_instance_id, subpass};
+}
+
+ShaderAccessCommand::Storage ShaderAccessCommand::MakeStorage(CommandData& command_data) const {
+    if (pipeline) {
+        command_data.AddPipeline(*pipeline);
+    }
+    for (const BufferAccess& access : buffer_accesses) {
+        command_data.AddBuffer(*access.buffer);
+        command_data.AddDescriptorSet(*access.info.descriptor_set);
+    }
+    for (const ImageViewAccess& access : image_accesses) {
+        command_data.AddImageView(*access.image_view);
+        command_data.AddDescriptorSet(*access.info.descriptor_set);
+    }
+
+    const uint32_t first_buffer_access = uint32_t(command_data.descriptor_buffer_accesses.size());
+    const uint32_t buffer_access_count = uint32_t(buffer_accesses.size());
+    vvl::Append(command_data.descriptor_buffer_accesses, buffer_accesses);
+
+    const uint32_t first_image_access = uint32_t(command_data.descriptor_image_accesses.size());
+    const uint32_t image_access_count = uint32_t(image_accesses.size());
+    vvl::Append(command_data.descriptor_image_accesses, image_accesses);
+
+    return {pipeline, first_buffer_access, buffer_access_count, first_image_access, image_access_count, render_pass_instance_id,
+            subpass};
+}
+
+bool ShaderAccessCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool ShaderAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    const SyncValidator& validator = env.validator;
+    const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kRaster, render_pass_instance_id, subpass};
+
+    auto validate_access = [&](const auto& value) {
+        using AccessType = std::decay_t<decltype(value)>;
+        HazardResult hazard;
+        if constexpr (std::is_same_v<AccessType, BufferAccess>) {
+            hazard = access_context.DetectHazard(*value.buffer, value.access_index, value.range);
+        } else {
+            if (value.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
+                ImageRangeGen range_gen = MakeImageRangeGen(*value.image_view, value.offset, value.extent);
+                hazard = access_context.DetectAttachmentHazard(range_gen, value.access_index, attachment_access, env.queue_id);
+            } else {
+                hazard = access_context.DetectHazard(*value.image_view, value.access_index);
+            }
+        }
+        if (!hazard.IsHazard()) {
+            return;
+        }
+        const DescriptorInfo& info = value.info;
+        VulkanTypedHandle object_handle = info.resource_handle;
+        if constexpr (std::is_same_v<AccessType, BufferAccess>) {
+            if (info.resource_handle.type == kVulkanObjectTypeAccelerationStructureKHR) {
+                object_handle = value.buffer->Handle();
+            }
+        }
+        LogObjectList objlist = BaseObjectList(env, cb_context, object_handle);
+        objlist.add(pipeline->Handle());
+        std::string resource_description = validator.FormatHandle(info.resource_handle);
+        if constexpr (std::is_same_v<AccessType, ImageViewAccess>) {
+            if (replay_tag != kInvalidTag && value.image_view->image_state) {
+                resource_description += " (" + validator.FormatHandle(value.image_view->image_state->Handle()) + ")";
+            }
+        }
+        std::string error;
+        if constexpr (std::is_same_v<AccessType, ImageViewAccess>) {
+            error = validator.error_messages_.ImageDescriptorError(
+                env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
+                info.descriptor_type, info.binding, info.array_element, info.stage, value.image_layout);
+        } else {
+            if (info.resource_handle.type == kVulkanObjectTypeAccelerationStructureKHR) {
+                error = validator.error_messages_.AccelerationStructureDescriptorError(
+                    env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
+                    info.descriptor_type, info.binding, info.array_element, info.stage);
+            } else {
+                error = validator.error_messages_.BufferDescriptorError(
+                    env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
+                    info.descriptor_type, info.binding, info.array_element, info.stage);
+            }
+        }
+        skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    };
+
+    for (const BufferAccess& access : buffer_accesses) {
+        validate_access(access);
+    }
+    for (const ImageViewAccess& access : image_accesses) {
+        validate_access(access);
+    }
+    return skip;
+}
+
+void ShaderAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kRaster, render_pass_instance_id, subpass};
+    for (const BufferAccess& access : buffer_accesses) {
+        const ResourceUsageTagEx tag_ex{tag, access.handle_index};
+        access_context.UpdateAccessState(*access.buffer, access.access_index, access.range, tag_ex, 0, env.queue_id);
+    }
+    for (const ImageViewAccess& access : image_accesses) {
+        const ResourceUsageTagEx tag_ex{tag, access.handle_index};
+        if (access.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
+            ImageRangeGen range_gen = MakeImageRangeGen(*access.image_view, access.offset, access.extent);
+            access_context.UpdateAttachmentAccessState(range_gen, access.access_index, attachment_access, tag_ex, env.queue_id);
+        } else {
+            ImageRangeGen range_gen = MakeImageRangeGen(*access.image_view);
+            access_context.UpdateAccessState(range_gen, access.access_index, tag_ex, 0, env.queue_id);
+        }
+    }
 }
 
 }  // namespace syncval
