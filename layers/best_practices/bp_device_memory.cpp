@@ -17,10 +17,7 @@
  * limitations under the License.
  */
 
-#include <vulkan/vk_enum_string_helper.h>
-#include <vulkan/vulkan_core.h>
 #include "best_practices/best_practices_validation.h"
-#include "best_practices/bp_state.h"
 #include "state_tracker/buffer_state.h"
 
 void BestPractices::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,

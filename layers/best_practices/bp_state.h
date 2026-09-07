@@ -25,7 +25,6 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"
-#include "state_tracker/descriptor_sets.h"
 #include "state_tracker/push_constant_data.h"
 
 class BestPractices;

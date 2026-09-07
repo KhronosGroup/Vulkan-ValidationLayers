@@ -19,10 +19,8 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
-#include "generated/spirv_grammar_helper.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
-#include "chassis/chassis_modification_state.h"
 #include "utils/math_utils.h"
 
 static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {

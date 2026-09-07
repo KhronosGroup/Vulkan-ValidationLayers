@@ -19,7 +19,6 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
-#include "state_tracker/queue_state.h"
 #include "generated/dispatch_functions.h"
 
 bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc, const VkDependencyInfo& dep_info,

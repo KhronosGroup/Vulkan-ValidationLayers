@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 
-#include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include "best_practices/best_practices_validation.h"
 #include "error_message/error_strings.h"
