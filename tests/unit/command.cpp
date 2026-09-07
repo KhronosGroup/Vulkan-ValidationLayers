@@ -3580,6 +3580,12 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
         clear_rect.layerCount = 4;
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-pRects-06937");
         vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect);
+
+        // baseLayer + layerCount overflows 32-bit,
+        clear_rect.baseArrayLayer = 2;
+        clear_rect.layerCount = std::numeric_limits<uint32_t>::max() - 1;
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-pRects-06937");
+        vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect);
     };
 
     // Register clear commands to secondary command buffer

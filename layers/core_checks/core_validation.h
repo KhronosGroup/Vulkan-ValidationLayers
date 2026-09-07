@@ -1333,13 +1333,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateCreateImageViewSubresourceRange(const vvl::Image& image_state, bool is_imageview_2d_type,
                                                  const VkImageSubresourceRange& subresourceRange, const Location& loc) const;
 
-    bool ValidateCmdClearColorSubresourceRange(const vvl::Image& image_state,
-                                               const VkImageSubresourceRange& subresourceRange, const LogObjectList& objlist,
-                                               const Location& loc) const;
-
-    bool ValidateCmdClearDepthSubresourceRange(const vvl::Image& image_state,
-                                               const VkImageSubresourceRange& subresourceRange, const LogObjectList& objlist,
-                                               const Location& loc) const;
+    bool ValidateCmdClearSubresourceRange(const vvl::Image& image_state, const VkImageSubresourceRange& subresourceRange,
+                                          const LogObjectList& objlist, const Location& loc) const;
 
     bool ValidateImageBarrierSubresourceRange(const VkImageSubresourceRange& subresourceRange, const vvl::Image& image_state,
                                               const LogObjectList& objlist, const Location& loc) const;

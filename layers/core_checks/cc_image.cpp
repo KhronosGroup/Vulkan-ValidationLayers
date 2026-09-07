@@ -996,7 +996,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     skip |= ValidateUnprotectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearColorImage-commandBuffer-01806");
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
-        skip |= ValidateCmdClearColorSubresourceRange(image_state, pRanges[i], objlist, range_loc);
+        skip |= ValidateCmdClearSubresourceRange(image_state, pRanges[i], objlist, range_loc);
         skip |= ValidateClearImageSubresourceRange(objlist, pRanges[i], range_loc);
         skip |= ValidateClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
     }
@@ -1077,7 +1077,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
 
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
-        skip |= ValidateCmdClearDepthSubresourceRange(image_state, pRanges[i], objlist, range_loc);
+        skip |= ValidateCmdClearSubresourceRange(image_state, pRanges[i], objlist, range_loc);
         skip |= ValidateClearImageLayout(cb_state, image_state, pRanges[i], imageLayout, range_loc);
         // Image aspect must be depth or stencil or both
         VkImageAspectFlags valid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -1116,9 +1116,10 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                 }
             } else if ((image_state.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
                 skip |= LogError("VUID-vkCmdClearDepthStencilImage-pRanges-02659", objlist, range_loc.dot(Field::aspectMask),
-                                 "includes VK_IMAGE_ASPECT_STENCIL_BIT and "
-                                 "image was not created with VkImageStencilUsageCreateInfo, but was created with "
-                                 "VK_IMAGE_USAGE_TRANSFER_DST_BIT.");
+                                 "includes VK_IMAGE_ASPECT_STENCIL_BIT and image was not created with "
+                                 "VkImageStencilUsageCreateInfo, but the image usage (%s) does not include "
+                                 "VK_IMAGE_USAGE_TRANSFER_DST_BIT.",
+                                 string_VkImageUsageFlags2KHR(image_state.usage).c_str());
             }
         }
     }
@@ -1154,12 +1155,13 @@ bool CoreChecks::ValidateClearAttachmentExtent(const vvl::CommandBuffer& cb_stat
         const uint32_t rect_base_layer = clear_rects[i].baseArrayLayer;
         const uint32_t rect_layer_count = clear_rects[i].layerCount;
         // The layer indices specified by elements of pRects must be inferior to render pass layer count
-        if (rect_base_layer + rect_layer_count > render_pass_layer_count) {
+        const uint64_t necessary_layer_count = uint64_t{rect_base_layer} + uint64_t{rect_layer_count};
+        if (necessary_layer_count > render_pass_layer_count) {
             skip |= LogError(
                 "VUID-vkCmdClearAttachments-pRects-06937", cb_state.Handle(), loc.dot(Field::pRects, i).dot(Field::baseArrayLayer),
-                "(%" PRIu32 ") + layerCount (%" PRIu32 ") is %" PRIu32
+                "(%" PRIu32 ") + layerCount (%" PRIu32 ") is %" PRIu64
                 ", which is larger than the number of layers rendered to in the current render pass instance (%" PRIu32 ").",
-                rect_base_layer, rect_layer_count, rect_base_layer + rect_layer_count, render_pass_layer_count);
+                rect_base_layer, rect_layer_count, necessary_layer_count, render_pass_layer_count);
         }
     }
     return skip;
@@ -1624,24 +1626,8 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const vvl::Image& image
                                          image_state.VkHandle(), loc.dot(Field::subresourceRange));
 }
 
-bool CoreChecks::ValidateCmdClearColorSubresourceRange(const vvl::Image& image_state,
-                                                       const VkImageSubresourceRange& subresourceRange,
-                                                       const LogObjectList& objlist, const Location& loc) const {
-    auto image_layer_count_var = Field::arrayLayers;
-    uint32_t image_layer_count = image_state.GetArrayLayers();
-    if (enabled_features.maintenance9 && (image_state.create_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
-        image_layer_count_var = Field::depth;
-        const auto layers = LayersFromRange(subresourceRange);
-        const auto extent = image_state.GetEffectiveSubresourceExtent(layers.aspectMask, layers.mipLevel);
-        image_layer_count = extent.depth;
-    }
-    return ValidateImageSubresourceRange(image_state.GetMipLevels(), image_layer_count, subresourceRange, image_layer_count_var, objlist,
-                                         loc.dot(Field::subresourceRange));
-}
-
-bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const vvl::Image& image_state,
-                                                       const VkImageSubresourceRange& subresourceRange,
-                                                       const LogObjectList& objlist, const Location& loc) const {
+bool CoreChecks::ValidateCmdClearSubresourceRange(const vvl::Image& image_state, const VkImageSubresourceRange& subresourceRange,
+                                                  const LogObjectList& objlist, const Location& loc) const {
     auto image_layer_count_var = Field::arrayLayers;
     uint32_t image_layer_count = image_state.GetArrayLayers();
     if (enabled_features.maintenance9 && (image_state.create_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
@@ -1947,11 +1933,13 @@ bool CoreChecks::ValidateImageViewSlicedCreateInfo(const VkImageViewCreateInfo& 
                              create_info_loc.pNext(Struct::VkImageViewSlicedCreateInfoEXT, Field::sliceCount), "is 0.");
         }
 
-        if ((slice_offset + slice_count) > effective_view_depth) {
+        const uint64_t necessary_slice_count = uint64_t{slice_offset} + uint64_t{slice_count};
+        if (necessary_slice_count > effective_view_depth) {
             skip |= LogError("VUID-VkImageViewSlicedCreateInfoEXT-sliceCount-07868", create_info.image,
                              create_info_loc.pNext(Struct::VkImageViewSlicedCreateInfoEXT, Field::sliceOffset),
-                             "(%" PRIu32 ") + sliceCount (%" PRIu32 ") is greater than effective view depth (%" PRIu32 ").",
-                             slice_offset, slice_count, effective_view_depth);
+                             "(%" PRIu32 ") + sliceCount (%" PRIu32 ") is %" PRIu64
+                             ", which is greater than the effective view depth (%" PRIu32 ").",
+                             slice_offset, slice_count, necessary_slice_count, effective_view_depth);
         }
     }
     return skip;
@@ -2617,7 +2605,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image& image_state
                 }
             }
 
-            VkImageAspectFlagBits allowed_plane_indices[] = {
+            const VkImageAspectFlagBits allowed_plane_indices[] = {
                 VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT,
                 VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT};
 
