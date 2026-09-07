@@ -22,6 +22,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/vulkan_core.h>
 #include "containers/container_utils.h"
 #include "error_message/error_location.h"
 #include "core_validation.h"
@@ -47,9 +48,9 @@ bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList& objlist, vvl::Buf
     }
 
     if (!correct_usage) {
-        skip |= LogError(vuid, objlist, buffer_loc, "(%s) was created with %s but requires %s.",
+        skip |= LogError(vuid, objlist, buffer_loc, "(%s) was created with %s but requires %s%s.",
                          FormatHandle(buffer_state.Handle()).c_str(), string_VkBufferUsageFlags2(buffer_state.usage).c_str(),
-                         string_VkBufferUsageFlags2(desired).c_str());
+                         strict ? "" : "at least one of ", string_VkBufferUsageFlags2(desired).c_str());
     }
     return skip;
 }
@@ -62,10 +63,14 @@ bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer& buffer_state, const 
     if (range != VK_WHOLE_SIZE) {
         // The sum of range and offset must be less than or equal to the size of buffer
         if (range + create_info.offset > buffer_state.GetSize()) {
+            const VkDeviceSize remaining_space =
+                (create_info.offset <= buffer_state.GetSize()) ? (buffer_state.GetSize() - create_info.offset) : 0;
             skip |= LogError("VUID-VkBufferViewCreateInfo-offset-00931", buffer_state.Handle(), loc.dot(Field::range),
-                             "(%" PRIuLEAST64 ") does not equal VK_WHOLE_SIZE, the sum of offset (%" PRIuLEAST64
-                             ") and range must be less than or equal to the size of the buffer (%" PRIuLEAST64 ").",
-                             range, create_info.offset, buffer_state.GetSize());
+                             "(%" PRIuLEAST64 ") does not equal VK_WHOLE_SIZE, so the sum of offset (%" PRIuLEAST64
+                             ") and range must be less than or equal to the size of %s (%" PRIuLEAST64
+                             "), which allows a maximum range of (%" PRIuLEAST64 ") at this offset.",
+                             range, create_info.offset, FormatHandle(buffer_state.Handle()).c_str(), buffer_state.GetSize(),
+                             remaining_space);
         }
     } else if (create_info.offset < buffer_state.GetSize()) {
         // If offset is over, will be caught elsewhere (00925)
