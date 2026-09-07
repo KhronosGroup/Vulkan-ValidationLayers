@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include "containers/span.h"
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -84,6 +85,11 @@ const Value &FindExisting(const Container &container, const Key &key) {
 
 template <typename T>
 void Append(std::vector<T> &dst, const std::vector<T> &src) {
+    dst.insert(dst.end(), src.begin(), src.end());
+}
+
+template <typename T>
+void Append(std::vector<T>& dst, vvl::span<const T> src) {
     dst.insert(dst.end(), src.begin(), src.end());
 }
 
