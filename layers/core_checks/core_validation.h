@@ -48,6 +48,7 @@ namespace vvl {
 class DescriptorBinding;
 struct DslErrorSource;
 struct DescriptorSetLayoutList;
+struct TessellationExecutionModes;
 class Bindable;
 }  // namespace vvl
 
@@ -1784,6 +1785,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                       const vvl::RenderPass& rp_state, const Location& loc) const;
     bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                         const ErrorObject& error_obj) const override;
+    bool ValidateCreateShadersTessellation(const vvl::TessellationExecutionModes& tesc, const vvl::TessellationExecutionModes& tese,
+                                           const Location& loc) const;
     bool ValidateCreateShadersSpirvEXT(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, const Location& loc,
                                        chassis::ShaderObject& chassis_state) const;
     bool PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
