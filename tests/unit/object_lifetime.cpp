@@ -1298,3 +1298,65 @@ TEST_F(NegativeObjectLifetime, DestroyBufferAddressRange) {
     m_command_buffer.End();
     monitor_.SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");
 }
+
+TEST_F(NegativeObjectLifetime, LeakBufferAndBufferView) {
+    RETURN_IF_SKIP(InitFramework());
+    if (!IsPlatformMockICD()) {
+        // This test leaks a buffer/buffer view (on purpose) and should not be run on a real driver
+        GTEST_SKIP() << "This test only runs on the mock ICD";
+    }
+
+    const auto q_props = vkt::PhysicalDevice(Gpu()).queue_properties_;
+    ASSERT_TRUE(q_props.size() > 0);
+    ASSERT_TRUE(q_props[0].queueCount > 0);
+
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+
+    VkDevice leaky_device = VK_NULL_HANDLE;
+    ;
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &leaky_device);
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_ci.size = 4096;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    vk::CreateBuffer(leaky_device, &buffer_ci, nullptr, &buffer);
+
+    VkMemoryRequirements mem_reqs{};
+    vk::GetBufferMemoryRequirements(leaky_device, buffer, &mem_reqs);
+    VkPhysicalDeviceMemoryProperties mem_props{};
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &mem_props);
+    uint32_t mem_type_index = 0;
+    for (; mem_type_index < mem_props.memoryTypeCount; ++mem_type_index) {
+        if (mem_reqs.memoryTypeBits & (1u << mem_type_index)) break;
+    }
+    ASSERT_TRUE(mem_type_index < mem_props.memoryTypeCount);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = mem_reqs.size;
+    alloc_info.memoryTypeIndex = mem_type_index;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    vk::AllocateMemory(leaky_device, &alloc_info, nullptr, &memory);
+    vk::BindBufferMemory(leaky_device, buffer, memory, 0);
+
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
+    bvci.buffer = buffer;
+    bvci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    bvci.range = VK_WHOLE_SIZE;
+    VkBufferView view = VK_NULL_HANDLE;
+    vk::CreateBufferView(leaky_device, &bvci, nullptr, &view);
+
+    // VUID-vkDestroyDevice-device-05137
+    // VkDeviceMemory, VkBuffer, and VkBufferView
+    m_errorMonitor->SetDesiredError("has 3 leaked objects that have not been destroyed");
+    vk::DestroyDevice(leaky_device, nullptr);
+    m_errorMonitor->VerifyFound();
+}
