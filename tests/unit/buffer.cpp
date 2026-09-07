@@ -285,6 +285,26 @@ TEST_F(NegativeBuffer, BufferViewMaxTexelBufferElements) {
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-range-04059");
 }
 
+TEST_F(NegativeBuffer, BufferViewOffsetWholeSize) {
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat format_with_uniform_texel_support = VK_FORMAT_R8G8B8A8_UNORM;
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format_with_uniform_texel_support, VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Test requires support for VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT";
+    }
+
+    const VkDeviceSize buffer_size = 1024;
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+
+    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
+    buff_view_ci.buffer = buffer;
+    buff_view_ci.format = format_with_uniform_texel_support;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    buff_view_ci.offset = buffer_size * 2;
+
+    CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-offset-00925");
+}
+
 TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
     TEST_DESCRIPTION("texelBufferAlignment is not enabled by default in 1.2.");
     SetTargetApiVersion(VK_API_VERSION_1_2);

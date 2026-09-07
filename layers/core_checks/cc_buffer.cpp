@@ -67,7 +67,8 @@ bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer& buffer_state, const 
                              ") and range must be less than or equal to the size of the buffer (%" PRIuLEAST64 ").",
                              range, create_info.offset, buffer_state.GetSize());
         }
-    } else {
+    } else if (create_info.offset < buffer_state.GetSize()) {
+        // If offset is over, will be caught elsewhere (00925)
         const VkFormat format = create_info.format;
         // will be 1 because  block-compressed format are not supported for Texe l Buffer
         const VkDeviceSize texels_per_block = static_cast<VkDeviceSize>(vkuFormatTexelsPerBlock(format));
