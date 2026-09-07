@@ -1315,8 +1315,8 @@ void CommandBuffer::RecordDecodeVideo(const VkVideoDecodeInfoKHR& decode_info, c
     }
 
     // Update active query indices
+    uint32_t op_count = bound_video_session->GetVideoDecodeOperationCount(&decode_info);
     for (auto& query : active_queries) {
-        uint32_t op_count = bound_video_session->GetVideoDecodeOperationCount(&decode_info);
         query.active_query_index += op_count;
     }
 
