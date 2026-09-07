@@ -974,7 +974,12 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
         first_rendering_info = &rendering_info;
         first_rendering_info_loc = std::make_unique<LocationCapture>(loc.dot(vvl::Field::pRenderingInfo));
     }
-    last_rendering_info = &rendering_info;
+
+    if (rendering_info.flags & VK_RENDERING_SUSPENDING_BIT) {
+        last_rendering_info = &rendering_info;
+    } else {
+        last_rendering_info.emplace();  // cheaper than a deep copy
+    }
 
     has_render_pass_instance = true;
 

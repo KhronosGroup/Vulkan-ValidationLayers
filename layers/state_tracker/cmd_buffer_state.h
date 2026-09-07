@@ -429,6 +429,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // Rendering info from the first/last vkCmdBeginRendering.
     std::optional<vku::safe_VkRenderingInfo> first_rendering_info;
     std::unique_ptr<LocationCapture> first_rendering_info_loc;
+    // The optional means "vkCmdBeginRendering was called at least once (so far)"
+    // The struct content is only used for Suspend/Resume
     std::optional<vku::safe_VkRenderingInfo> last_rendering_info;
 
     // This is null if we are outside a renderPass/rendering
