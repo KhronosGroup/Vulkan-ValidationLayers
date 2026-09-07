@@ -182,6 +182,33 @@ bool vvl::BindableSparseMemoryTracker::HasFullRangeBound() const {
     return true;
 }
 
+bool vvl::BindableSparseMemoryTracker::IsRangeFullyBound(const BufferRange& range) const {
+    if (!range.valid() || range.empty()) {
+        return true;
+    }
+
+    // binding_map_ is keyed on resource-space ranges and iterates in ascending order, so we can walk the bindings that
+    // intersect |range| and make sure they cover it without leaving a gap.
+    VkDeviceSize covered_to = range.begin;
+    auto guard = ReadLockGuard{binding_lock_};
+    const auto end = binding_map_.upper_bound(range);
+    for (auto it = binding_map_.lower_bound(range); it != end; ++it) {
+        const auto& [resource_range, memory_data] = *it;
+        if (resource_range.begin > covered_to) {
+            return false;  // gap before this binding
+        }
+        if (!memory_data.memory_state || memory_data.memory_state->Invalid()) {
+            return false;
+        }
+        covered_to = std::max(covered_to, resource_range.end);
+        if (covered_to >= range.end) {
+            return true;
+        }
+    }
+
+    return covered_to >= range.end;
+}
+
 void vvl::BindableSparseMemoryTracker::BindMemory(StateObject* parent, std::shared_ptr<vvl::DeviceMemory>& memory_state,
                                                   VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
     MemoryBinding memory_data{memory_state, memory_offset, resource_offset};

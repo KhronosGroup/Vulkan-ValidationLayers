@@ -288,3 +288,52 @@ TEST_F(PositiveDeviceAddressCommands, MultipleRegions) {
     vk::CmdCopyMemoryKHR(m_command_buffer, &copy_memory_info);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDeviceAddressCommands, AddressRangeBoundSparseMemoryOffset) {
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    constexpr VkDeviceSize block_size = 65536;
+
+    VkBufferCreateInfo buffer_ci =
+        vkt::Buffer::CreateInfo(block_size * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
+    buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    vkt::Buffer sparse_buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), sparse_buffer, &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_mem_alloc =
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
+
+    // Bind the first block of the buffer, but source it from the *third* block of the allocation, so that
+    // memoryOffset != resourceOffset.
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.resourceOffset = 0u;
+    buffer_memory_bind.size = block_size;
+    buffer_memory_bind.memory = buffer_mem;
+    buffer_memory_bind.memoryOffset = block_size * 2;
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
+    buffer_memory_bind_info.buffer = sparse_buffer;
+    buffer_memory_bind_info.bindCount = 1u;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.bufferBindCount = 1u;
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+
+    vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
+    vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
+    sparse_queue->Wait();
+
+    // Buffer range [0, block_size) is fully bound, so VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR is valid here.
+    VkDeviceAddressRangeKHR range;
+    range.address = sparse_buffer.Address();
+    range.size = block_size;
+
+    m_command_buffer.Begin();
+    vk::CmdFillMemoryKHR(m_command_buffer, &range, VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR, 255u);
+    m_command_buffer.End();
+}
