@@ -425,7 +425,7 @@ bool CoreChecks::ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutio
     if (descriptor_flag_same && descriptor_flag != 0 && shader_info.pSetLayoutInfos) {
         const LogObjectList objlist;
         skip |= LogError("VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-11323", objlist,
-                         shader_info_loc.dot(Field::pSetLayoutInfos), "(0x%p) is not null", shader_info.pSetLayoutInfos);
+                         shader_info_loc.dot(Field::pSetLayoutInfos), "(%p) is not null", shader_info.pSetLayoutInfos);
     }
 
     return skip;

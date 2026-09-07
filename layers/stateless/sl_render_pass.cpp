@@ -505,13 +505,11 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info
 
         if (!rp_tile_shading_ci || !(rp_tile_shading_ci->flags & VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM)) {
             continue;
+        } else if (!subpass_desc.pResolveAttachments) {
+            continue;
         }
 
         for (uint32_t j = 0; j < subpass_desc.colorAttachmentCount; ++j) {
-            if (!subpass_desc.pResolveAttachments) {
-                continue;
-            }
-
             auto const &attachment_ref = subpass_desc.pResolveAttachments[j];
             if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED ||
                 attachment_ref.attachment >= create_info.attachmentCount) {
@@ -667,13 +665,13 @@ bool Device::ValidateRenderPassStripeBeginInfo(const LogObjectList& objlist, con
     const uint32_t width_granularity = phys_dev_ext_props.renderpass_striped_props.renderPassStripeGranularity.width;
     const uint32_t height_granularity = phys_dev_ext_props.renderpass_striped_props.renderPassStripeGranularity.height;
     const uint32_t last_stripe_index = (rp_stripe_begin->stripeInfoCount - 1);
-    uint32_t total_stripe_area = 0;
+    uint64_t total_stripe_area = 0;
     bool has_overlapping_stripes = false;
 
     for (uint32_t i = 0; i < rp_stripe_begin->stripeInfoCount; ++i) {
         const Location& stripe_info_loc = loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos, i);
         const VkRect2D stripe_area = rp_stripe_begin->pStripeInfos[i].stripeArea;
-        total_stripe_area += (stripe_area.extent.width * stripe_area.extent.height);
+        total_stripe_area += uint64_t{stripe_area.extent.width} * uint64_t{stripe_area.extent.height};
 
         // Check overlapping stripes, report only first overlapping stripe info.
         for (uint32_t index = i + 1; (!has_overlapping_stripes && i != last_stripe_index && index <= last_stripe_index); ++index) {
@@ -724,12 +722,12 @@ bool Device::ValidateRenderPassStripeBeginInfo(const LogObjectList& objlist, con
     }
 
     // Check render area coverage if there is no overlapping stripe.
-    const uint32_t total_render_area = render_area.extent.width * render_area.extent.height;
+    const uint64_t total_render_area = uint64_t{render_area.extent.width} * uint64_t{render_area.extent.height};
     if (!has_overlapping_stripes && (total_stripe_area != total_render_area)) {
         const std::string vuid = (loc.function == Func::vkCmdBeginRenderPass) ? "VUID-VkRenderPassBeginInfo-pNext-09539"
                                                                               : "VUID-VkRenderingInfo-pNext-09535";
         skip |= LogError(vuid.data(), objlist, loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos),
-                         "has total of stripe area of %" PRIu32 " is not covering whole render area of %" PRIu32 " (%s).",
+                         "has total of stripe area of %" PRIu64 " is not covering whole render area of %" PRIu64 " (%s).",
                          total_stripe_area, total_render_area, string_VkExtent2D(render_area.extent).c_str());
     }
 
@@ -750,13 +748,15 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
     }
 
     if (rendering_info) {
-        const uint32_t msb = (uint32_t)MostSignificantBit(rendering_info->viewMask);
-        if (multiview_per_view_info.perViewRenderAreaCount != msb + 1) {
-            skip |= LogError(
-                "VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-pNext-07866", objlist,
-                loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::perViewRenderAreaCount),
-                "(%" PRIu32 ") must be VkRenderingInfo::viewMask (0x%" PRIx32 ") most significant bit index (%" PRIu32 ") + 1",
-                multiview_per_view_info.perViewRenderAreaCount, rendering_info->viewMask, msb);
+        const int msb = MostSignificantBit(rendering_info->viewMask);
+        const uint32_t required_count = static_cast<uint32_t>(msb + 1);
+        if (multiview_per_view_info.perViewRenderAreaCount != required_count) {
+            skip |=
+                LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-pNext-07866", objlist,
+                         loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::perViewRenderAreaCount),
+                         "is %" PRIu32 " but must be %" PRIu32 ", the most significant bit index (%" PRId32
+                         ") of VkRenderingInfo::viewMask (0x%" PRIx32 ") plus one.",
+                         multiview_per_view_info.perViewRenderAreaCount, required_count, msb, rendering_info->viewMask);
         }
     }
 
@@ -1310,102 +1310,76 @@ bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
     const VkImageLayout image_layout = rendering_fsr_attachment_info.imageLayout;
     if (image_layout != VK_IMAGE_LAYOUT_GENERAL && image_layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
         skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06147", objlist,
-                         rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::layout),
+                         rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageLayout),
                          "is (%s).", string_VkImageLayout(image_layout));
     }
 
-    if (!IsPowerOfTwo(rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width)) {
-        skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06149", objlist,
-            rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
-                .dot(Field::width),
-            "(%" PRIu32 ") must be a power of two.", rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width);
+    const VkExtent2D texel_size = rendering_fsr_attachment_info.shadingRateAttachmentTexelSize;
+    const Location texel_size_loc =
+        rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize);
+    const auto& fsr_props = phys_dev_ext_props.fragment_shading_rate_props;
+
+    if (!IsPowerOfTwo(texel_size.width)) {
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06149", objlist,
+                         texel_size_loc.dot(Field::width), "(%" PRIu32 ") must be a power of two.", texel_size.width);
     }
 
-    const uint32_t max_frs_attach_texel_width =
-        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width;
-    if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width > max_frs_attach_texel_width) {
-        skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06150", objlist,
-            rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
-                .dot(Field::width),
-            "(%" PRIu32
-            ") must be less than or equal to "
-            "maxFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
-            rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width, max_frs_attach_texel_width);
+    if (texel_size.width > fsr_props.maxFragmentShadingRateAttachmentTexelSize.width) {
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06150", objlist,
+                         texel_size_loc.dot(Field::width),
+                         "(%" PRIu32
+                         ") must be less than or equal to "
+                         "maxFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                         texel_size.width, fsr_props.maxFragmentShadingRateAttachmentTexelSize.width);
     }
 
-    const uint32_t min_frs_attach_texel_width =
-        phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width;
-    if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width < min_frs_attach_texel_width) {
-        skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06151", objlist,
-            rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
-                .dot(Field::width),
-            "(%" PRIu32
-            ") must be greater than or equal to "
-            "minFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
-            rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width, min_frs_attach_texel_width);
+    if (texel_size.width < fsr_props.minFragmentShadingRateAttachmentTexelSize.width) {
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06151", objlist,
+                         texel_size_loc.dot(Field::width),
+                         "(%" PRIu32
+                         ") must be greater than or equal to "
+                         "minFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                         texel_size.width, fsr_props.minFragmentShadingRateAttachmentTexelSize.width);
     }
 
-    if (!IsPowerOfTwo(rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height)) {
-        skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06152", objlist,
-            rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
-                .dot(Field::height),
-            "(%" PRIu32 ") must be a power of two.", rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height);
+    if (!IsPowerOfTwo(texel_size.height)) {
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06152", objlist,
+                         texel_size_loc.dot(Field::height), "(%" PRIu32 ") must be a power of two.", texel_size.height);
     }
 
-    const uint32_t max_frs_attach_texel_height =
-        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height;
-    if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height > max_frs_attach_texel_height) {
-        skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06153", objlist,
-            rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
-                .dot(Field::height),
-            "(%" PRIu32
-            ") must be less than or equal to "
-            "maxFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
-            rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height, max_frs_attach_texel_height);
+    if (texel_size.height > fsr_props.maxFragmentShadingRateAttachmentTexelSize.height) {
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06153", objlist,
+                         texel_size_loc.dot(Field::height),
+                         "(%" PRIu32
+                         ") must be less than or equal to "
+                         "maxFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                         texel_size.height, fsr_props.maxFragmentShadingRateAttachmentTexelSize.height);
     }
 
-    const uint32_t min_frs_attach_texel_height =
-        phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height;
-    if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height < min_frs_attach_texel_height) {
-        skip |= LogError(
-            "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06154", objlist,
-            rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize)
-                .dot(Field::height),
-            "(%" PRIu32
-            ") must be greater than or equal to "
-            "minFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
-            rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height, min_frs_attach_texel_height);
+    if (texel_size.height < fsr_props.minFragmentShadingRateAttachmentTexelSize.height) {
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06154", objlist,
+                         texel_size_loc.dot(Field::height),
+                         "(%" PRIu32
+                         ") must be greater than or equal to "
+                         "minFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                         texel_size.height, fsr_props.minFragmentShadingRateAttachmentTexelSize.height);
     }
 
-    const uint32_t max_frs_attach_texel_aspect_ratio =
-        phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
-    if ((rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width /
-         rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height) > max_frs_attach_texel_aspect_ratio) {
-        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06155", objlist,
-                         rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR,
-                                                  Field::shadingRateAttachmentTexelSize),
-                         "the quotient of width (%" PRIu32 ") and height (%" PRIu32
-                         ") "
-                         "must be less than or equal to maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
-                         rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width,
-                         rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height, max_frs_attach_texel_aspect_ratio);
+    const uint32_t max_frs_attach_texel_aspect_ratio = fsr_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
+    const uint32_t aspect_ratio = static_cast<uint32_t>(SafeDivision(texel_size.width, texel_size.height));
+    if (aspect_ratio > max_frs_attach_texel_aspect_ratio) {
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06155", objlist, texel_size_loc,
+                         "is %" PRIu32 " by %" PRIu32 ", which has an aspect ratio of %" PRIu32
+                         ", which is greater than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
+                         texel_size.width, texel_size.height, aspect_ratio, max_frs_attach_texel_aspect_ratio);
     }
 
-    if ((rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height /
-         rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width) > max_frs_attach_texel_aspect_ratio) {
-        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06156", objlist,
-                         rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR,
-                                                  Field::shadingRateAttachmentTexelSize),
-                         "the quotient of height (%" PRIu32 ") and width (%" PRIu32
-                         ") "
-                         "must be less than or equal to maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
-                         rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height,
-                         rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width, max_frs_attach_texel_aspect_ratio);
+    const uint32_t inverse_aspect_ratio = static_cast<uint32_t>(SafeDivision(texel_size.height, texel_size.width));
+    if (inverse_aspect_ratio > max_frs_attach_texel_aspect_ratio) {
+        skip |= LogError("VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06156", objlist, texel_size_loc,
+                         "is %" PRIu32 " by %" PRIu32 ", which has an inverse aspect ratio of %" PRIu32
+                         ", which is greater than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
+                         texel_size.width, texel_size.height, inverse_aspect_ratio, max_frs_attach_texel_aspect_ratio);
     }
 
     return skip;

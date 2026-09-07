@@ -875,6 +875,47 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensionsMultiview) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeFragmentShadingRate, AttachmentTexelSizeZero) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fsr_properties);
+
+    VkAttachmentReference2 attach = vku::InitStructHelper();
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attach.attachment = 0;
+
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = vku::InitStructHelper();
+    fsr_attachment.shadingRateAttachmentTexelSize = {0, 0};
+    fsr_attachment.pFragmentShadingRateAttachment = &attach;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper(&fsr_attachment);
+
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
+    attach_desc.format = VK_FORMAT_R8_UINT;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    VkRenderPass rp;
+    m_errorMonitor->SetDesiredError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525");
+    m_errorMonitor->SetDesiredError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530");
+    vk::CreateRenderPass2KHR(device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeFragmentShadingRate, Attachments) {
     TEST_DESCRIPTION("Specify a fragment shading rate attachment with too small dimensions");
 

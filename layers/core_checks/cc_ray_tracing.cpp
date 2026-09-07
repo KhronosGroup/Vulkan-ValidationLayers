@@ -1344,7 +1344,7 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
                             .dot(Field::instances)
                             .dot(Field::data)
                             .dot(Field::hostAddress, instance_i),
-                        "(0x%p) does not reference a valid VkAccelerationStructureKHR object. %s is %s.", instance,
+                        "(%p) does not reference a valid VkAccelerationStructureKHR object. %s is %s.", instance,
                         geometry_loc.dot(Field::geometry).dot(Field::instances).dot(Field::arrayOfPointers).Fields().c_str(),
                         string_VkBool32(geom.geometry.instances.arrayOfPointers).c_str());
 

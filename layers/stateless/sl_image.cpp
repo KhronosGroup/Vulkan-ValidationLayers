@@ -192,7 +192,7 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     const VkFormat image_format = pCreateInfo->format;
     if (((create_flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) != 0) &&
         (vkuFormatHasDepth(image_format) == false)) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-01533", device, create_info_loc.dot(Field::flags),
+        skip |= LogError("VUID-VkImageCreateInfo-flags-01533", device, create_flags_loc,
                          "includes VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT but the "
                          "format (%s) must be a depth or depth/stencil format.",
                          string_VkFormat(image_format));
@@ -201,19 +201,19 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     if ((!enabled_features.shaderStorageImageMultisample) && ((usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0) &&
         (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT)) {
         skip |= LogError(
-            "VUID-VkImageCreateInfo-usage-00968", device, create_info_loc.dot(Field::usage),
+            "VUID-VkImageCreateInfo-usage-00968", device, usage_loc,
             "includes VK_IMAGE_USAGE_STORAGE_BIT and pCreateInfo->samples is %s, but shaderStorageImageMultisample feature "
             "was not enabled.",
             string_VkSampleCountFlagBits(pCreateInfo->samples));
     }
 
     if (!enabled_features.hostImageCopy && (usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) != 0) {
-        skip |= LogError("VUID-VkImageCreateInfo-usage-10245", device, create_info_loc.dot(Field::usage),
+        skip |= LogError("VUID-VkImageCreateInfo-usage-10245", device, usage_loc,
                          "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT, but hostImageCopy feature was not enabled.");
     }
 
     if (!enabled_features.tileMemoryHeap && (usage & VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM) != 0) {
-        skip |= LogError("VUID-VkImageCreateInfo-tileMemoryHeap-10766", device, create_info_loc.dot(Field::usage),
+        skip |= LogError("VUID-VkImageCreateInfo-tileMemoryHeap-10766", device, usage_loc,
                          "includes VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM, but tileMemoryHeap feature was not enabled.");
     }
 
@@ -255,20 +255,20 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
     if (create_flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) {
         if (pCreateInfo->mipLevels != 1) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_flags_loc,
                              "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT but mipLevels (%" PRIu32 ") is not 1",
                              pCreateInfo->mipLevels);
         } else if (pCreateInfo->arrayLayers != 1) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_flags_loc,
                              "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT but arrayLayers (%" PRIu32 ") is not 1",
                              pCreateInfo->arrayLayers);
         } else if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_flags_loc,
                              "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT but imageType (%s) is not VK_IMAGE_TYPE_2D",
                              string_VkImageType(pCreateInfo->imageType));
         } else if (image_create_maybe_linear) {
             skip |=
-                LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc.dot(Field::flags),
+                LogError("VUID-VkImageCreateInfo-flags-02259", device, create_flags_loc,
                          "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT but tiling must not be %s",
                          (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) ? "VK_IMAGE_TILING_LINEAR"
                                                                          : "linear from VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT");
@@ -277,60 +277,59 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
     if (usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
         if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-02557", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02557", device, usage_loc,
                              "includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, but imageType is %s.",
                              string_VkImageType(pCreateInfo->imageType));
         }
         if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError("VUID-VkImageCreateInfo-samples-02558", device, create_info_loc.dot(Field::usage),
+            skip |= LogError("VUID-VkImageCreateInfo-samples-02558", device, usage_loc,
                              "includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, but samples is %s.",
                              string_VkSampleCountFlagBits(pCreateInfo->samples));
         }
     }
     if (create_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
         if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-02565", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02565", device, create_flags_loc,
                              "includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, but tiling is %s.",
                              string_VkImageTiling(pCreateInfo->tiling));
         }
         if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-02566", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02566", device, create_flags_loc,
                              "includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, but imageType is %s.",
                              string_VkImageType(pCreateInfo->imageType));
         }
         if (create_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-02567", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02567", device, create_flags_loc,
                              "(%s) contains both VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT and VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT.",
                              string_VkImageCreateFlags2KHR(create_flags).c_str());
         }
         if (pCreateInfo->mipLevels != 1) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-02568", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02568", device, create_flags_loc,
                              "includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, but mipLevels is %" PRIu32 ".", pCreateInfo->mipLevels);
         }
     }
 
     if (create_flags & VK_IMAGE_CREATE_PROTECTED_BIT) {
         if (enabled_features.protectedMemory == VK_FALSE) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-01890", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-01890", device, create_flags_loc,
                              "has VK_IMAGE_CREATE_PROTECTED_BIT set, but the protectedMemory device feature is not enabled.");
         }
         const VkImageCreateFlags2KHR invalid_flags =
             VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
         if ((create_flags & invalid_flags) != 0) {
-            skip |= LogError("VUID-VkImageCreateInfo-None-01891", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-None-01891", device, create_flags_loc,
                              "can't have both protected and sparse flags set.");
         }
     }
 
     if (create_flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT) {
         if (!(enabled_features.multisampledRenderToSingleSampled)) {
-            skip |= LogError("VUID-VkImageCreateInfo-multisampledRenderToSingleSampled-06882", device,
-                             create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-multisampledRenderToSingleSampled-06882", device, create_flags_loc,
                              "contains VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT but the "
                              "multisampledRenderToSingleSampled feature is not enabled.");
         }
         if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-06883", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkImageCreateInfo-flags-06883", device, create_flags_loc,
                              "contains VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT but samples (%s) is not equal "
                              "to VK_SAMPLE_COUNT_1_BIT.",
                              string_VkSampleCountFlagBits(pCreateInfo->samples));
@@ -339,7 +338,7 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
 
     if ((create_flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) && !enabled_features.descriptorHeapCaptureReplay &&
         !enabled_features.descriptorBufferCaptureReplay) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-08104", device, create_info_loc.dot(Field::flags),
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08104", device, create_flags_loc,
                          "contains VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT but neither descriptorHeapCaptureReplay "
                          "nor descriptorBufferCaptureReplay "
                          "feature is not enabled.");
@@ -348,20 +347,19 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     if (create_flags & VK_IMAGE_CREATE_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR) {
         if (!enabled_features.maintenance11) {
             skip |=
-                LogError("VUID-VkImageCreateInfo-flags-13355", device, create_info_loc.dot(Field::flags),
+                LogError("VUID-VkImageCreateInfo-flags-13355", device, create_flags_loc,
                          "is %s but maintenance11 feature is not enabled.", string_VkImageCreateFlags2KHR(create_flags).c_str());
         }
         if (!IsValueIn(pCreateInfo->imageType, {VK_IMAGE_TYPE_1D, VK_IMAGE_TYPE_2D})) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-13356", device, create_info_loc.dot(Field::flags),
-                             "is %s but imageType is %s.", string_VkImageCreateFlags2KHR(create_flags).c_str(),
-                             string_VkImageType(pCreateInfo->imageType));
+            skip |= LogError("VUID-VkImageCreateInfo-flags-13356", device, create_flags_loc, "is %s but imageType is %s.",
+                             string_VkImageCreateFlags2KHR(create_flags).c_str(), string_VkImageType(pCreateInfo->imageType));
         }
     }
 
     auto opaque_capture_descriptor_buffer =
         vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
     if (opaque_capture_descriptor_buffer && !(create_flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-        skip |= LogError("VUID-VkImageCreateInfo-pNext-08105", device, create_info_loc.dot(Field::flags),
+        skip |= LogError("VUID-VkImageCreateInfo-pNext-08105", device, create_flags_loc,
                          "(%s) does not have VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but "
                          "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
                          string_VkImageCreateFlags2KHR(create_flags).c_str(),
@@ -415,8 +413,9 @@ bool Device::ValidateCreateImageSparse(const VkImageCreateInfo& create_info, con
     if (has_sparse_flags) {
         if (usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
             skip |= LogError("VUID-VkImageCreateInfo-None-01925", device, usage_loc,
-                             "is %s. Images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set.",
-                             string_VkImageCreateFlags2KHR(create_flags).c_str());
+                             "is %s, but the image is using sparse memory (flags are %s) which cannot have "
+                             "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set.",
+                             string_VkImageUsageFlags2KHR(usage).c_str(), string_VkImageCreateFlags2KHR(create_flags).c_str());
         }
         if ((!enabled_features.maintenance9 || !phys_dev_ext_props.maintenance9_props.image2DViewOf3DSparse) &&
             create_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) {
@@ -455,37 +454,37 @@ bool Device::ValidateCreateImageSparse(const VkImageCreateInfo& create_info, con
 
         if (VK_IMAGE_TYPE_1D == create_info.imageType) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-00970", device, create_flags_loc,
-                             "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT but imageType is VK_IMAGE_TYPE_1D.");
+                             "includes VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT but imageType is VK_IMAGE_TYPE_1D.");
         }
 
         if ((!enabled_features.sparseResidencyImage2D) && (VK_IMAGE_TYPE_2D == create_info.imageType)) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-00971", device, create_flags_loc,
-                             "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D, but "
+                             "includes VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT and imageType is VK_IMAGE_TYPE_2D, but "
                              "sparseResidencyImage2D feature was not enabled.");
         }
 
         if ((!enabled_features.sparseResidencyImage3D) && (VK_IMAGE_TYPE_3D == create_info.imageType)) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-00972", device, create_flags_loc,
-                             "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_3D, but "
+                             "includes VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT and imageType is VK_IMAGE_TYPE_3D, but "
                              "sparseResidencyImage3D feature was not enabled.");
         }
 
         if (VK_IMAGE_TYPE_2D == create_info.imageType) {
             if ((!enabled_features.sparseResidency2Samples) && (VK_SAMPLE_COUNT_2_BIT == create_info.samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00973", device, create_flags_loc,
-                                 "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
+                                 "includes VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
                                  "VK_SAMPLE_COUNT_2_BIT, but sparseResidency2Samples feature was not enabled.");
             } else if ((!enabled_features.sparseResidency4Samples) && (VK_SAMPLE_COUNT_4_BIT == create_info.samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00974", device, create_flags_loc,
-                                 "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
+                                 "includes VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
                                  "VK_SAMPLE_COUNT_4_BIT, but sparseResidency4Samples feature was not enabled.");
             } else if ((!enabled_features.sparseResidency8Samples) && (VK_SAMPLE_COUNT_8_BIT == create_info.samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00975", device, create_flags_loc,
-                                 "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
+                                 "includes VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
                                  "VK_SAMPLE_COUNT_8_BIT, but sparseResidency8Samples feature was not enabled.");
             } else if ((!enabled_features.sparseResidency16Samples) && (VK_SAMPLE_COUNT_16_BIT == create_info.samples)) {
                 skip |= LogError("VUID-VkImageCreateInfo-imageType-00976", device, create_flags_loc,
-                                 "includes VK_IMAGE_CREATE_SPARSE_BINDING_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
+                                 "includes VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT and imageType is VK_IMAGE_TYPE_2D and samples is "
                                  "VK_SAMPLE_COUNT_16_BIT, but sparseResidency16Samples feature was not enabled.");
             }
         }
@@ -721,12 +720,12 @@ bool Device::ValidateCreateImageSwapchain(const VkImageCreateInfo& create_info, 
                          "is not NULL, but initialLayout (%s) is not VK_IMAGE_LAYOUT_UNDEFINED.",
                          string_VkImageLayout(create_info.initialLayout));
     }
-    const VkImageCreateFlags valid_flags = (VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
-                                            VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
+    const VkImageCreateFlags2KHR valid_flags = (VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
+                                                VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
     if ((create_flags & ~valid_flags) != 0) {
         skip |= LogError(vuid, swapchain_create_info->swapchain, swapchain_loc,
                          "is not NULL, but flags %s must only have valid flags (%s).",
-                         string_VkImageCreateFlags2KHR(create_flags).c_str(), string_VkImageCreateFlags(valid_flags).c_str());
+                         string_VkImageCreateFlags2KHR(create_flags).c_str(), string_VkImageCreateFlags2KHR(valid_flags).c_str());
     }
 
     return skip;
@@ -880,7 +879,7 @@ bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo& crea
             image_create_drm_format_modifiers.push_back(drm_format_mod_explicit->drmFormatModifier);
         } else if (drm_format_mod_list) {
             for (uint32_t i = 0; i < drm_format_mod_list->drmFormatModifierCount; i++) {
-                image_create_drm_format_modifiers.push_back(*drm_format_mod_list->pDrmFormatModifiers);
+                image_create_drm_format_modifiers.push_back(drm_format_mod_list->pDrmFormatModifiers[i]);
             }
         }
 
@@ -923,7 +922,7 @@ bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo& crea
             }
             if (create_info.extent.depth == 1 && drm_format_mod_explicit->pPlaneLayouts[i].depthPitch != 0) {
                 skip |= LogError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269", device,
-                                 drm_loc.dot(Field::depthPitch), "is %" PRIu64 " and extext.depth is 1.",
+                                 drm_loc.dot(Field::depthPitch), "is %" PRIu64 " and extent.depth is 1.",
                                  drm_format_mod_explicit->pPlaneLayouts[i].depthPitch);
             }
         }
@@ -1050,7 +1049,7 @@ bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice devi
     if (subresource.mipLevel >= create_info.mipLevels) {
         skip |= LogError("VUID-VkDeviceImageSubresourceInfo-mipLevel-01716", device, image_subresource_loc.dot(Field::mipLevel),
                          "(%" PRIu32 ") must be less than %s (%" PRIu32 ").", subresource.mipLevel,
-                         create_info_loc.dot(Field::mipLevel).Fields().c_str(), create_info.mipLevels);
+                         create_info_loc.dot(Field::mipLevels).Fields().c_str(), create_info.mipLevels);
     }
 
     if (subresource.arrayLayer >= create_info.arrayLayers) {
@@ -1112,12 +1111,12 @@ bool Device::manual_PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
         const Location dst_subresource_loc = region_loc.dot(Field::dstSubresource);
 
         if (pRegions[i].srcSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
-            skip |= LogError("VUID-VkImageResolve-aspectMask-10981", commandBuffer, src_subresource_loc, "is %s.",
-                             string_VkImageAspectFlags(pRegions[i].srcSubresource.aspectMask).c_str());
+            skip |= LogError("VUID-VkImageResolve-aspectMask-10981", commandBuffer, src_subresource_loc.dot(Field::aspectMask),
+                             "is %s.", string_VkImageAspectFlags(pRegions[i].srcSubresource.aspectMask).c_str());
         }
         if (pRegions[i].dstSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
-            skip |= LogError("VUID-VkImageResolve-aspectMask-10981", commandBuffer, dst_subresource_loc, "is %s.",
-                             string_VkImageAspectFlags(pRegions[i].dstSubresource.aspectMask).c_str());
+            skip |= LogError("VUID-VkImageResolve-aspectMask-10981", commandBuffer, dst_subresource_loc.dot(Field::aspectMask),
+                             "is %s.", string_VkImageAspectFlags(pRegions[i].dstSubresource.aspectMask).c_str());
         }
 
         if (pRegions[i].srcSubresource.aspectMask != pRegions[i].dstSubresource.aspectMask) {
@@ -1145,13 +1144,13 @@ bool Device::manual_PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
         if (enabled_features.maintenance10) {
             if (region.srcSubresource.aspectMask &
                 ~(VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                skip |= LogError("VUID-VkImageResolve2-aspectMask-10993", commandBuffer, src_subresource_loc, "is %s.",
-                                 string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str());
+                skip |= LogError("VUID-VkImageResolve2-aspectMask-10993", commandBuffer, src_subresource_loc.dot(Field::aspectMask),
+                                 "is %s.", string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str());
             }
             if (region.dstSubresource.aspectMask &
                 ~(VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                skip |= LogError("VUID-VkImageResolve2-aspectMask-10993", commandBuffer, dst_subresource_loc, "is %s.",
-                                 string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
+                skip |= LogError("VUID-VkImageResolve2-aspectMask-10993", commandBuffer, dst_subresource_loc.dot(Field::aspectMask),
+                                 "is %s.", string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
             }
         } else {
             if (region.srcSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {

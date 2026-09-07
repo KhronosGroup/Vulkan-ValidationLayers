@@ -154,6 +154,8 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer comman
                                                           const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
+    const Location memory_info_loc = error_obj.location.dot(Field::pDecompressMemoryInfoEXT);
+    const Location method_loc = memory_info_loc.dot(Field::decompressionMethod);
 
     if (!enabled_features.memoryDecompression) {
         skip |= LogError("VUID-vkCmdDecompressMemoryEXT-memoryDecompression-11761", commandBuffer, error_obj.location,
@@ -162,59 +164,58 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer comman
 
     const auto& props = phys_dev_ext_props.memory_decompression_props;
     if ((pDecompressMemoryInfoEXT->decompressionMethod & props.decompressionMethods) == 0) {
-        skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-11763", commandBuffer,
-                         error_obj.location.dot(Field::decompressionMethod),
+        skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-11763", commandBuffer, method_loc,
                          "(0x%" PRIx64 ") is not a supported decompression method bit (supported mask: 0x%" PRIx64 ").",
                          pDecompressMemoryInfoEXT->decompressionMethod, props.decompressionMethods);
-    }
-
-    if (pDecompressMemoryInfoEXT->decompressionMethod & VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT) {
-        const Location memory_info_loc = error_obj.location.dot(Field::pDecompressMemoryInfoEXT);
-        for (uint32_t i = 0; i < pDecompressMemoryInfoEXT->regionCount; ++i) {
-            const Location region_loc = memory_info_loc.dot(Field::pRegions, i);
-            const VkDecompressMemoryRegionEXT mem_region = pDecompressMemoryInfoEXT->pRegions[i];
-            if (mem_region.decompressedSize > 65536) {
-                skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-11762", commandBuffer,
-                                 region_loc.dot(Field::decompressedSize),
-                                 "(%" PRIu64 ") must be less than or equal to 65536 bytes.", mem_region.decompressedSize);
-            }
-
-            if (mem_region.compressedSize == 0) {
-                skip |= LogError("VUID-VkDecompressMemoryRegionEXT-compressedSize-11795", commandBuffer,
-                                 region_loc.dot(Field::compressedSize), "must not be zero.");
-            }
-
-            if (mem_region.decompressedSize == 0) {
-                skip |= LogError("VUID-VkDecompressMemoryRegionEXT-decompressedSize-11796", commandBuffer,
-                                 region_loc.dot(Field::decompressedSize), "must not be zero.");
-            }
-
-            if (!IsPointerAligned(mem_region.srcAddress, 4)) {
-                skip |=
-                    LogError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07685", commandBuffer, region_loc.dot(Field::srcAddress),
-                             "(0x%" PRIx64 ") is not 4-byte aligned.", mem_region.srcAddress);
-            }
-
-            if (!IsPointerAligned(mem_region.dstAddress, 4)) {
-                skip |=
-                    LogError("VUID-VkDecompressMemoryRegionEXT-dstAddress-07687", commandBuffer, region_loc.dot(Field::dstAddress),
-                             "(0x%" PRIx64 ") is not 4-byte aligned.", mem_region.dstAddress);
-            }
-
-            const vvl::range<VkDeviceAddress> src_range{mem_region.srcAddress, mem_region.srcAddress + mem_region.compressedSize};
-            const vvl::range<VkDeviceAddress> dst_range{mem_region.dstAddress, mem_region.dstAddress + mem_region.decompressedSize};
-            if (src_range.intersects(dst_range)) {
-                skip |= LogError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07691", commandBuffer,
-                                 region_loc.dot(Field::srcAddress), "range %s overlaps with dstAddress range %s.",
-                                 string_range_hex(src_range).c_str(), string_range_hex(dst_range).c_str());
-            }
-        }
     }
 
     if (!IsPowerOfTwo(pDecompressMemoryInfoEXT->decompressionMethod)) {
         skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-07690", commandBuffer,
                          error_obj.location.dot(Field::pDecompressMemoryInfoEXT).dot(Field::decompressionMethod),
                          "(0x%" PRIx64 ") must have a single bit set.", pDecompressMemoryInfoEXT->decompressionMethod);
+    }
+
+    const bool is_gdeflate =
+        (pDecompressMemoryInfoEXT->decompressionMethod & VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT) != 0;
+    for (uint32_t i = 0; i < pDecompressMemoryInfoEXT->regionCount; ++i) {
+        const Location region_loc = memory_info_loc.dot(Field::pRegions, i);
+        const VkDecompressMemoryRegionEXT& mem_region = pDecompressMemoryInfoEXT->pRegions[i];
+
+        if (is_gdeflate && mem_region.decompressedSize > 65536) {
+            skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-11762", commandBuffer,
+                             region_loc.dot(Field::decompressedSize),
+                             "(%" PRIu64
+                             ") must be less than or equal to 65536 bytes when decompressionMethod is "
+                             "VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT.",
+                             mem_region.decompressedSize);
+        }
+
+        if (mem_region.compressedSize == 0) {
+            skip |= LogError("VUID-VkDecompressMemoryRegionEXT-compressedSize-11795", commandBuffer,
+                             region_loc.dot(Field::compressedSize), "must not be zero.");
+        }
+        if (mem_region.decompressedSize == 0) {
+            skip |= LogError("VUID-VkDecompressMemoryRegionEXT-decompressedSize-11796", commandBuffer,
+                             region_loc.dot(Field::decompressedSize), "must not be zero.");
+        }
+        if (!IsPointerAligned(mem_region.srcAddress, 4)) {
+            skip |= LogError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07685", commandBuffer, region_loc.dot(Field::srcAddress),
+                             "(0x%" PRIx64 ") is not 4-byte aligned.", mem_region.srcAddress);
+        }
+        if (!IsPointerAligned(mem_region.dstAddress, 4)) {
+            skip |= LogError("VUID-VkDecompressMemoryRegionEXT-dstAddress-07687", commandBuffer, region_loc.dot(Field::dstAddress),
+                             "(0x%" PRIx64 ") is not 4-byte aligned.", mem_region.dstAddress);
+        }
+
+        const vvl::range<VkDeviceAddress> src_range{mem_region.srcAddress, mem_region.srcAddress + mem_region.compressedSize};
+        const vvl::range<VkDeviceAddress> dst_range{mem_region.dstAddress, mem_region.dstAddress + mem_region.decompressedSize};
+        // A range whose address plus size wraps past the end of the address space would make intersects() silently return
+        // false, the bad address/size itself is caught elsewhere
+        if (src_range.valid() && dst_range.valid() && src_range.intersects(dst_range)) {
+            skip |= LogError("VUID-VkDecompressMemoryRegionEXT-srcAddress-07691", commandBuffer, region_loc.dot(Field::srcAddress),
+                             "range %s overlaps with dstAddress range %s.", string_range_hex(src_range).c_str(),
+                             string_range_hex(dst_range).c_str());
+        }
     }
 
     return skip;
@@ -355,20 +356,30 @@ bool Device::ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM& tile_mem
     bool skip = false;
     uint64_t largest_heap_size = 0;
     uint32_t heap_index = 0;
+    bool found_tile_heap = false;
     for (uint32_t i = 0; i < phys_dev_mem_props.memoryHeapCount; i++) {
         if (phys_dev_mem_props.memoryHeaps[i].flags & VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM) {
-            if (phys_dev_mem_props.memoryHeaps[i].size > largest_heap_size) {
+            if (!found_tile_heap || phys_dev_mem_props.memoryHeaps[i].size > largest_heap_size) {
                 largest_heap_size = phys_dev_mem_props.memoryHeaps[i].size;
                 heap_index = i;
+                found_tile_heap = true;
             }
         }
     }
     if (tile_memory_size_info.size > largest_heap_size) {
-        skip |= LogError("VUID-VkTileMemorySizeInfoQCOM-size-10729", device, loc.dot(Field::size),
-                         "(%" PRIu64 ") must be less than or equal to %" PRIu64 ", found at memoryHeaps[%" PRIu32
-                         "],"
-                         " the largest VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM heap.",
-                         tile_memory_size_info.size, largest_heap_size, heap_index);
+        if (found_tile_heap) {
+            skip |= LogError("VUID-VkTileMemorySizeInfoQCOM-size-10729", device, loc.dot(Field::size),
+                             "(%" PRIu64 ") must be less than or equal to %" PRIu64 ", found at memoryHeaps[%" PRIu32
+                             "],"
+                             " the largest VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM heap.",
+                             tile_memory_size_info.size, largest_heap_size, heap_index);
+        } else {
+            // Without reporting this, the error above would point at memoryHeaps[0] which is not a tile memory heap
+            skip |= LogError("VUID-VkTileMemorySizeInfoQCOM-size-10729", device, loc.dot(Field::size),
+                             "(%" PRIu64 ") is not zero, but none of the %" PRIu32
+                             " memory heaps have VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM set.",
+                             tile_memory_size_info.size, phys_dev_mem_props.memoryHeapCount);
+        }
     }
 
     return skip;

@@ -661,3 +661,24 @@ TEST_F(NegativeImageDrm, ImageTilingControl) {
     vkt::Image image(*m_device, image_create_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeImageDrm, ModifierListLinearNotFirst) {
+    RETURN_IF_SKIP(InitBasicImageDrm());
+
+    const uint64_t modifiers[2] = {1, 0};
+    VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
+    mod_list.pDrmFormatModifiers = modifiers;
+    mod_list.drmFormatModifierCount = 2;
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper(&mod_list);
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {64, 64, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02257");
+}

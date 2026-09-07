@@ -225,7 +225,7 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
                                  string_VkShaderCreateFlagsEXT(create_info.flags).c_str(), create_info.setLayoutCount);
             } else if (create_info.pSetLayouts) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-11291", device, create_info_loc.dot(Field::flags),
-                                 "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but pSetLayouts is not NULL (0x%p).",
+                                 "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but pSetLayouts is not NULL (%p).",
                                  string_VkShaderCreateFlagsEXT(create_info.flags).c_str(), create_info.pSetLayouts);
             }
             if (create_info.pushConstantRangeCount != 0) {
@@ -238,7 +238,7 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
             } else if (create_info.pPushConstantRanges) {
                 skip |= LogError(
                     "VUID-VkShaderCreateInfoEXT-flags-11371", device, create_info_loc.dot(Field::flags),
-                    "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but pPushConstantRanges is not NULL (0x%p).\nHint: "
+                    "includes VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT (%s), but pPushConstantRanges is not NULL (%p).\nHint: "
                     "When using Descriptor Heaps instead of Push Constants you now use Push Data. The shader code is the EXACT "
                     "same, but on the API side you now just call vkCmdPushDataEXT and do not need to deal with ranges or layouts.",
                     string_VkShaderCreateFlagsEXT(create_info.flags).c_str(), create_info.pPushConstantRanges);
