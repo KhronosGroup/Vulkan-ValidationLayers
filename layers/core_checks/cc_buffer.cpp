@@ -238,12 +238,14 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     auto buffer_state_ptr = Get<vvl::Buffer>(pCreateInfo->buffer);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
-    if (!buffer_state_ptr) return skip;
+    if (!buffer_state_ptr) {
+        return skip;
+    }
 
     const auto& buffer_state = *buffer_state_ptr;
     const LogObjectList objlist(device, pCreateInfo->buffer);
 
+    // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, create_info_loc.dot(Field::buffer),
                                           "VUID-VkBufferViewCreateInfo-buffer-00935");
     // In order to create a valid buffer view, the buffer must have been created with at least one of the following flags:
@@ -545,31 +547,15 @@ bool CoreChecks::ValidateDeviceAddressCommands(const LogObjectList& objlist, VkD
                     vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::CompletelyBound_13097);
                 skip |= ValidateMemoryIsBoundToBuffer(objlist, *buffer, loc, vuid_13097.c_str());
             } else {
-                // TODO - We should have a common util for sparse memory
-                using BufferRange = vvl::BindableMemoryTracker::BufferRange;
                 const VkDeviceSize offset = address - buffer->deviceAddress;
-                BufferRange ranges_bounds(offset, offset + size);
-                const auto ranges = buffer->GetBoundMemoryRange(ranges_bounds);
-                uint64_t start = offset;
-                bool fully_bound = true;
-                for (const auto& range : ranges) {
-                    for (const auto& memory_range : range.second) {
-                        if (start < memory_range.begin) {
-                            fully_bound = false;
-                            break;
-                        }
-                        start = memory_range.end;
-                    }
-                    if (!fully_bound) {
-                        break;
-                    }
-                }
-                if (!fully_bound || (start < (offset + size))) {
+                const vvl::BindableMemoryTracker::BufferRange buffer_range(offset, offset + size);
+                if (!buffer->IsRangeFullyBound(buffer_range)) {
                     skip |= LogError(vvl::GetDeviceAddressCommandVUID(loc, vvl::DeviceAddressCommandError::CompletelyBound_13097),
-                                     objlist, loc.dot(Field::flags),
-                                     "contains VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR, but the address range [0x%" PRIx64
-                                     ", 0x%" PRIx64 ") is not fully backed by memory for buffer %s.",
-                                     offset, offset + size, FormatHandle(buffer->Handle()).c_str());
+                                     objlist, loc.dot(Field::address),
+                                     "(0x%" PRIx64 ") with size (%" PRIu64
+                                     ") is used with VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR, but the sparse %s is not fully backed "
+                                     "by memory over the corresponding buffer range [%" PRIu64 ", %" PRIu64 ").",
+                                     address, size, FormatHandle(buffer->Handle()).c_str(), offset, offset + size);
                     break;
                 }
             }
