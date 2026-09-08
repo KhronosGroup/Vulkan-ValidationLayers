@@ -38,7 +38,7 @@ bool Device::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer comma
                              error_obj.location.dot(Field::viewportCount),
                              "(%" PRIu32
                              ") must "
-                             "not be greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
+                             "not be zero nor greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
                              viewportCount, phys_dev_props.limits.maxViewports);
         }
     }
@@ -150,30 +150,32 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
 
     // check for distinct values
     {
-        vvl::unordered_set<uint32_t> vertex_bindings(vertexBindingDescriptionCount);
+        vvl::unordered_map<uint32_t, uint32_t> vertex_bindings(vertexBindingDescriptionCount);
         for (uint32_t i = 0; i < vertexBindingDescriptionCount; ++i) {
             const uint32_t binding = pVertexBindingDescriptions[i].binding;
             auto const& binding_it = vertex_bindings.find(binding);
             if (binding_it != vertex_bindings.cend()) {
                 skip |= LogError("VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794", commandBuffer,
                                  error_obj.location.dot(Field::pVertexBindingDescriptions, i),
-                                 "and pVertexBindingDescriptions[%" PRIu32 "] are both %" PRIu32 ".", *binding_it, binding);
+                                 "and pVertexBindingDescriptions[%" PRIu32 "] both have a binding of %" PRIu32 ".",
+                                 binding_it->second, binding);
                 break;
             }
-            vertex_bindings.insert(binding);
+            vertex_bindings.emplace(binding, i);
         }
 
-        vvl::unordered_set<uint32_t> vertex_locations(vertexAttributeDescriptionCount);
+        vvl::unordered_map<uint32_t, uint32_t> vertex_locations(vertexAttributeDescriptionCount);
         for (uint32_t i = 0; i < vertexAttributeDescriptionCount; ++i) {
             const uint32_t location = pVertexAttributeDescriptions[i].location;
             auto const& location_it = vertex_locations.find(location);
             if (location_it != vertex_locations.cend()) {
                 skip |= LogError("VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795", commandBuffer,
                                  error_obj.location.dot(Field::pVertexAttributeDescriptions, i),
-                                 "and pVertexAttributeDescriptions[%" PRIu32 "] are both %" PRIu32 ".", *location_it, location);
+                                 "and pVertexAttributeDescriptions[%" PRIu32 "] both have a location of %" PRIu32 ".",
+                                 location_it->second, location);
                 break;
             }
-            vertex_locations.insert(location);
+            vertex_locations.emplace(location, i);
         }
     }
 
@@ -227,17 +229,17 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
 
     for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
         const Location attribute_loc = error_obj.location.dot(Field::pVertexAttributeDescriptions, attribute);
-        if (pVertexAttributeDescriptions[attribute].location > phys_dev_props.limits.maxVertexInputAttributes) {
+        if (pVertexAttributeDescriptions[attribute].location >= phys_dev_props.limits.maxVertexInputAttributes) {
             skip |= LogError("VUID-VkVertexInputAttributeDescription2EXT-location-06228", commandBuffer,
                              attribute_loc.dot(Field::location),
-                             "(%" PRIu32 ") is greater than maxVertexInputAttributes (%" PRIu32 ").",
+                             "(%" PRIu32 ") is not less than maxVertexInputAttributes (%" PRIu32 ").",
                              pVertexAttributeDescriptions[attribute].location, phys_dev_props.limits.maxVertexInputAttributes);
         }
 
-        if (pVertexAttributeDescriptions[attribute].binding > phys_dev_props.limits.maxVertexInputBindings) {
+        if (pVertexAttributeDescriptions[attribute].binding >= phys_dev_props.limits.maxVertexInputBindings) {
             skip |=
                 LogError("VUID-VkVertexInputAttributeDescription2EXT-binding-06229", commandBuffer,
-                         attribute_loc.dot(Field::binding), "(%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").",
+                         attribute_loc.dot(Field::binding), "(%" PRIu32 ") is not less than maxVertexInputBindings (%" PRIu32 ").",
                          pVertexAttributeDescriptions[attribute].binding, phys_dev_props.limits.maxVertexInputBindings);
         }
 
@@ -503,7 +505,7 @@ bool Device::manual_PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer comm
     const auto& error_obj = context.error_obj;
     if (depthClampMode == VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT) {
         if (!pDepthClampRange) {
-            skip |= LogError("VUID-vkCmdSetDepthClampRangeEXT-pDepthClampRange-09647", device,
+            skip |= LogError("VUID-vkCmdSetDepthClampRangeEXT-pDepthClampRange-09647", commandBuffer,
                              error_obj.location.dot(Field::pDepthClampRange), "is NULL.");
         } else {
             skip |= ValidateDepthClampRange(*pDepthClampRange, error_obj.location.dot(Field::pDepthClampRange));

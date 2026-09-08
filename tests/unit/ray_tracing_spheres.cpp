@@ -594,3 +594,32 @@ TEST_F(NegativeRayTracingSpheres, LSSpheresHostIndexTypeNoneWithNonZeroAddress) 
     blas.BuildHost();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRayTracingSpheres, SpheresMissingPNextStruct) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    AddRequiredFeature(vkt::Feature::spheres);
+    AddRequiredFeature(vkt::Feature::linearSweptSpheres);
+    AddRequiredExtensions(VK_NV_RAY_TRACING_LINEAR_SWEPT_SPHERES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    uint32_t max_primitive_count = 1;
+    VkAccelerationStructureBuildSizesInfoKHR size_info = vku::InitStructHelper();
+
+    VkAccelerationStructureGeometryKHR geometry = vku::InitStructHelper();  // null
+    geometry.geometryType = VK_GEOMETRY_TYPE_SPHERES_NV;
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_info = vku::InitStructHelper();
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info.geometryCount = 1;
+    build_info.pGeometries = &geometry;
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info,
+                                              &max_primitive_count, &size_info);
+
+    geometry.geometryType = VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV;
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info,
+                                              &max_primitive_count, &size_info);
+}

@@ -336,7 +336,7 @@ bool Device::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t of
     if (offset >= max_push_constants_size) {
         const char* vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-00370" : "VUID-vkCmdPushConstants-offset-00370";
         skip |= LogError(vuid, commandBuffer, loc.dot(Field::offset),
-                         "(%" PRIu32 ") is greater than maxPushConstantSize (%" PRIu32 ").", offset, max_push_constants_size);
+                         "(%" PRIu32 ") is not less than maxPushConstantSize (%" PRIu32 ").", offset, max_push_constants_size);
     }
     if (size > max_push_constants_size - offset) {
         const char* vuid = is_2 ? "VUID-VkPushConstantsInfo-size-00371" : "VUID-vkCmdPushConstants-size-00371";
@@ -543,7 +543,7 @@ bool Device::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
                          "(%" PRIu64 ") is not a multiple of 4.", dstOffset);
     }
 
-    if ((dataSize <= 0) || (dataSize > 65536)) {
+    if ((dataSize == 0) || (dataSize > 65536)) {
         const LogObjectList objlist(commandBuffer, dstBuffer);
         skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00037", objlist, error_obj.location.dot(Field::dataSize),
                          "(%" PRIu64 ") must be greater than zero and less than or equal to 65536.", dataSize);
@@ -914,7 +914,7 @@ bool Device::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
     }
 
     if (size != VK_WHOLE_SIZE) {
-        if (size <= 0) {
+        if (size == 0) {
             const LogObjectList objlist(commandBuffer, dstBuffer);
             skip |= LogError("VUID-vkCmdFillBuffer-size-00026", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") must be greater than zero.", size);
@@ -1376,9 +1376,9 @@ static size_t ComputeMinSize(VkComponentTypeKHR component_type, VkCooperativeVec
                              uint32_t num_columns, size_t stride) {
     size_t min_size = 0;
     size_t element_size = ComponentTypeBytesPerElement(component_type);
-    if (layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV) {
+    if (layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV && num_rows > 0) {
         min_size = (num_rows - 1) * stride + num_columns * element_size;
-    } else if (layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
+    } else if (layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV && num_columns > 0) {
         min_size = (num_columns - 1) * stride + num_rows * element_size;
     }
     return min_size;
@@ -1458,13 +1458,13 @@ bool Device::manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommand
 
         size_t min_src_size = ComputeMinSize(info.srcComponentType, info.srcLayout, info.numRows, info.numColumns, info.srcStride);
         if (info.srcSize < min_src_size) {
-            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10086", device, info_loc.dot(Field::srcSize),
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10086", commandBuffer, info_loc.dot(Field::srcSize),
                              "(%zu) less than minimum size for row/col-major layout (%zu)", info.srcSize, min_src_size);
         }
 
         size_t min_dst_size = ComputeMinSize(info.dstComponentType, info.dstLayout, info.numRows, info.numColumns, info.dstStride);
         if (*info.pDstSize < min_dst_size) {
-            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10087", device, info_loc.dot(Field::pDstSize),
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10087", commandBuffer, info_loc.dot(Field::pDstSize),
                              "(%zu) less than minimum size for row/col-major layout (%zu)", *info.pDstSize, min_dst_size);
         }
 

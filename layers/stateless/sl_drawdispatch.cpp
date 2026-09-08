@@ -37,7 +37,7 @@ bool Device::ValidateDrawIndirect2Info(VkCommandBuffer commandBuffer, const VkDr
                          "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", info.drawCount);
     } else if (info.drawCount > phys_dev_props.limits.maxDrawIndirectCount) {
         skip |= LogError("VUID-VkDrawIndirect2InfoKHR-drawCount-02719", commandBuffer, info_loc.dot(Field::drawCount),
-                         "%" PRIu32 ") is not less than or equal to maxDrawIndirectCount (%" PRIu32 ").", info.drawCount,
+                         "(%" PRIu32 ") is not less than or equal to maxDrawIndirectCount (%" PRIu32 ").", info.drawCount,
                          phys_dev_props.limits.maxDrawIndirectCount);
     }
 
@@ -66,8 +66,7 @@ bool Device::manual_PreCallValidateCmdDrawIndirect2KHR(VkCommandBuffer commandBu
     }
     if (address_range.stride == 0) {
         if (pInfo->drawCount > 1) {
-            skip |= LogError("VUID-vkCmdDrawIndirect2KHR-pInfo-13111", commandBuffer,
-                             info_loc.dot(Field::addressRange).dot(Field::drawCount),
+            skip |= LogError("VUID-vkCmdDrawIndirect2KHR-pInfo-13111", commandBuffer, info_loc.dot(Field::drawCount),
                              "is %" PRIu32 ", but addressRange.stride is 0.", pInfo->drawCount);
         }
     } else if (address_range.stride < sizeof(VkDrawIndirectCommand)) {
@@ -106,8 +105,7 @@ bool Device::manual_PreCallValidateCmdDrawIndexedIndirect2KHR(VkCommandBuffer co
     }
     if (address_range.stride == 0) {
         if (pInfo->drawCount > 1) {
-            skip |= LogError("VUID-vkCmdDrawIndexedIndirect2KHR-pInfo-13111", commandBuffer,
-                             info_loc.dot(Field::addressRange).dot(Field::drawCount),
+            skip |= LogError("VUID-vkCmdDrawIndexedIndirect2KHR-pInfo-13111", commandBuffer, info_loc.dot(Field::drawCount),
                              "is %" PRIu32 ", but addressRange.stride is 0.", pInfo->drawCount);
         }
     } else if (address_range.stride < sizeof(VkDrawIndexedIndirectCommand)) {
@@ -190,8 +188,7 @@ bool Device::manual_PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer comm
     }
     if (address_range.stride == 0) {
         if (pInfo->maxDrawCount > 1) {
-            skip |= LogError("VUID-vkCmdDrawIndirectCount2KHR-pInfo-13111", commandBuffer,
-                             info_loc.dot(Field::addressRange).dot(Field::drawCount),
+            skip |= LogError("VUID-vkCmdDrawIndirectCount2KHR-pInfo-13111", commandBuffer, info_loc.dot(Field::drawCount),
                              "is %" PRIu32 ", but addressRange.stride is 0.", pInfo->maxDrawCount);
         }
     } else if (address_range.stride < sizeof(VkDrawIndirectCommand)) {
@@ -240,19 +237,18 @@ bool Device::manual_PreCallValidateCmdDrawIndexedIndirectCount2KHR(VkCommandBuff
 
     if (address_range.stride == 0) {
         if (pInfo->maxDrawCount > 1) {
-            skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount2KHR-pInfo-13111", commandBuffer,
-                             info_loc.dot(Field::addressRange).dot(Field::maxDrawCount),
+            skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount2KHR-pInfo-13111", commandBuffer, info_loc.dot(Field::maxDrawCount),
                              "is %" PRIu32 ", but addressRange.stride is 0.", pInfo->maxDrawCount);
         }
     } else if (address_range.stride < sizeof(VkDrawIndexedIndirectCommand)) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount2KHR-pInfo-13112", commandBuffer,
                          info_loc.dot(Field::addressRange).dot(Field::stride),
-                         "(%" PRIu64 ") must be at least sizeof(VkDrawIndexedIndirectCommand) (%zu).", pInfo->addressRange.stride,
+                         "(%" PRIu64 ") must be at least sizeof(VkDrawIndexedIndirectCommand) (%zu).", address_range.stride,
                          sizeof(VkDrawIndexedIndirectCommand));
     } else if (!IsIntegerMultipleOf(address_range.stride, 4u)) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount2KHR-pInfo-13113", commandBuffer,
                          info_loc.dot(Field::addressRange).dot(Field::stride), "(%" PRIu64 ") must be a multiple of 4.",
-                         pInfo->addressRange.stride);
+                         address_range.stride);
     }
 
     return skip;

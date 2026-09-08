@@ -491,6 +491,8 @@ bool Device::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice devi
     ASSERT_AND_RETURN_SKIP(pCreateInfo->pTokens);
 
     uint32_t current_token_offset = 0;
+    uint32_t current_token_index = 0;
+    bool has_previous_token = false;
 
     for (uint32_t i = 0; i < pCreateInfo->tokenCount; ++i) {
         const Location token_loc = create_info_loc.dot(Field::pTokens, i);
@@ -500,13 +502,15 @@ bool Device::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice devi
                                                     has_stage_ray_tracing, has_stage_mesh);
 
         if (token.type != VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) {
-            if (token.offset < current_token_offset) {
+            if (has_previous_token && token.offset < current_token_offset) {
                 skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11103", device, token_loc.dot(Field::offset),
-                                 "(%" PRIu32 ") is less than pTokens[%" PRIu32 "].offset (%" PRIu32 ")", token.offset, i - 1,
-                                 pCreateInfo->pTokens[i - 1].offset);
+                                 "(%" PRIu32 ") is less than pTokens[%" PRIu32 "].offset (%" PRIu32 ")", token.offset,
+                                 current_token_index, current_token_offset);
             }
             // is a monotonic increasing value so can give previous value
             current_token_offset = token.offset;
+            current_token_index = i;
+            has_previous_token = true;
         }
     }
 
@@ -549,8 +553,8 @@ bool Device::manual_PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBu
     bool skip = false;
     const auto& error_obj = context.error_obj;
     if (!enabled_features.deviceGeneratedCommands) {
-        skip |= LogError("VUID-vkCmdPreprocessGeneratedCommandsEXT-deviceGeneratedCommands-11087", device, error_obj.location,
-                         "deviceGeneratedCommands feature was not enabled.");
+        skip |= LogError("VUID-vkCmdPreprocessGeneratedCommandsEXT-deviceGeneratedCommands-11087", commandBuffer,
+                         error_obj.location, "deviceGeneratedCommands feature was not enabled.");
     }
 
     const Location info_loc = error_obj.location.dot(Field::pGeneratedCommandsInfo);
@@ -576,7 +580,7 @@ bool Device::manual_PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffe
     const auto& error_obj = context.error_obj;
 
     if (!enabled_features.deviceGeneratedCommands) {
-        skip |= LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-deviceGeneratedCommands-11059", device, error_obj.location,
+        skip |= LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-deviceGeneratedCommands-11059", commandBuffer, error_obj.location,
                          "deviceGeneratedCommands feature was not enabled.");
     }
 
