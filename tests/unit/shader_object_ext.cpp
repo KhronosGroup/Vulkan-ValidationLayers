@@ -444,8 +444,8 @@ TEST_F(NegativeShaderObjectEXT, BindVertexAndTaskShaders) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
-    vkt::ShaderEXT vert_shader(*m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT));
-    vkt::ShaderEXT task_shader(*m_device, ShaderCreateInfo(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT));
+    vkt::ShaderEXT vert_shader(*m_device, ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT));
+    vkt::ShaderEXT task_shader(*m_device, ShaderCreateInfoEXT(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT));
     VkShaderEXT shaders[] = {
         vert_shader,
         task_shader,
@@ -472,8 +472,8 @@ TEST_F(NegativeShaderObjectEXT, BindVertexAndMeshShaders) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
-    vkt::ShaderEXT vert_shader(*m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT));
-    vkt::ShaderEXT mesh_shader(*m_device, ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT));
+    vkt::ShaderEXT vert_shader(*m_device, ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT));
+    vkt::ShaderEXT mesh_shader(*m_device, ShaderCreateInfoEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT));
     VkShaderEXT shaders[] = {
         vert_shader,
         mesh_shader,
@@ -504,14 +504,14 @@ TEST_F(NegativeShaderObjectEXT, CreateShadersWithoutEnabledFeatures) {
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08419");
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
-        vkt::ShaderEXT shader(*m_device, ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT));
+        vkt::ShaderEXT shader(*m_device, ShaderCreateInfoNoNextStageEXT(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT));
         m_errorMonitor->VerifyFound();
     }
 
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08420");
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
-        vkt::ShaderEXT shader(*m_device, ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_GEOMETRY_BIT));
+        vkt::ShaderEXT shader(*m_device, ShaderCreateInfoNoNextStageEXT(spv, VK_SHADER_STAGE_GEOMETRY_BIT));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -530,14 +530,14 @@ TEST_F(NegativeShaderObjectEXT, CreateMeshShadersWithoutEnabledFeatures) {
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08421");
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
-        vkt::ShaderEXT shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_TASK_BIT_EXT));
+        vkt::ShaderEXT shader(*m_device, ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_TASK_BIT_EXT));
         m_errorMonitor->VerifyFound();
     }
 
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08422");
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-        vkt::ShaderEXT shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_MESH_BIT_EXT));
+        vkt::ShaderEXT shader(*m_device, ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_MESH_BIT_EXT));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -553,7 +553,7 @@ TEST_F(NegativeShaderObjectEXT, ComputeShaderNotSupportedByCommandPool) {
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     vkt::ShaderEXT shader(*m_device, create_info);
 
     vkt::CommandPool command_pool(*m_device, transfer_queue_family_index.value());
@@ -580,7 +580,7 @@ TEST_F(NegativeShaderObjectEXT, GraphicsShadersNotSupportedByCommandPool) {
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
     vkt::ShaderEXT shader(*m_device, create_info);
 
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
@@ -608,7 +608,7 @@ TEST_F(NegativeShaderObjectEXT, GraphicsMeshShadersNotSupportedByCommandPool) {
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_MESH_BIT_EXT);
     vkt::ShaderEXT shader(*m_device, create_info);
 
     vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
@@ -631,7 +631,7 @@ TEST_F(NegativeShaderObjectEXT, NonUniqueShadersBind) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
     vkt::ShaderEXT shader1(*m_device, create_info);
     vkt::ShaderEXT shader2(*m_device, create_info);
 
@@ -659,7 +659,7 @@ TEST_F(NegativeShaderObjectEXT, InvalidShaderStageBind) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vkt::ShaderEXT shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT));
+    vkt::ShaderEXT shader(*m_device, ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT));
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_ALL_GRAPHICS;
 
@@ -682,7 +682,7 @@ TEST_F(NegativeShaderObjectEXT, GetShaderBinaryDataInvalidPointer) {
     }
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    vkt::ShaderEXT shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT));
+    vkt::ShaderEXT shader(*m_device, ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT));
 
     size_t dataSize = 0;
     vk::GetShaderBinaryDataEXT(*m_device, shader, &dataSize, nullptr);
@@ -764,7 +764,7 @@ TEST_F(NegativeShaderObjectEXT, FlagAttachmentFragmentShadingRate) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT);
+        ShaderCreateInfoFlagEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT);
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08487");
@@ -778,7 +778,7 @@ TEST_F(NegativeShaderObjectEXT, FlagFragmentDensityMap) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT);
+        ShaderCreateInfoFlagEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT);
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08489");
@@ -790,7 +790,7 @@ TEST_F(NegativeShaderObjectEXT, OMMShaderFlag) {
     AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfoFlag(
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoFlagEXT(
         spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_EXT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-micromap-11623");
@@ -807,8 +807,8 @@ TEST_F(NegativeShaderObjectEXT, MissingLinkStageBit) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-    createInfos[1] = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[1] = ShaderCreateInfoEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08402");
@@ -825,8 +825,8 @@ TEST_F(NegativeShaderObjectEXT, MissingLinkStageBitMesh) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
-    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[0] = ShaderCreateInfoEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08403");
@@ -843,8 +843,8 @@ TEST_F(NegativeShaderObjectEXT, LinkedVertexAndMeshStages) {
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
-    createInfos[1] = ShaderCreateInfoLink(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    createInfos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08404");
@@ -861,8 +861,8 @@ TEST_F(NegativeShaderObjectEXT, LinkedGeometryAndMeshStages) {
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfoLink(geom_spv, VK_SHADER_STAGE_GEOMETRY_BIT);
-    createInfos[1] = ShaderCreateInfoLink(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    createInfos[0] = ShaderCreateInfoLinkEXT(geom_spv, VK_SHADER_STAGE_GEOMETRY_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08404");
@@ -879,8 +879,8 @@ TEST_F(NegativeShaderObjectEXT, LinkedTaskAndMeshNoTaskShaders) {
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfoLink(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT);
-    createInfos[1] = ShaderCreateInfoLink(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    createInfos[0] = ShaderCreateInfoLinkEXT(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
     createInfos[1].flags |= VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
 
     VkShaderEXT shaders[2];
@@ -900,8 +900,8 @@ TEST_F(NegativeShaderObjectEXT, MissingNextStage) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
-    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08409");
     vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
@@ -921,8 +921,8 @@ TEST_F(NegativeShaderObjectEXT, SameLinkedStage) {
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_VERTEX_BIT);
-    createInfos[1] = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    createInfos[0] = ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08410");
@@ -944,8 +944,8 @@ TEST_F(NegativeShaderObjectEXT, LinkedStagesWithDifferentCodeType) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
 
@@ -981,7 +981,7 @@ TEST_F(NegativeShaderObjectEXT, UnsupportedNextStage) {
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoLink(spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+        ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08428");
@@ -1000,7 +1000,7 @@ TEST_F(NegativeShaderObjectEXT, InvalidTessellationControlNextStage) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
+        ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08430");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
@@ -1013,7 +1013,7 @@ TEST_F(NegativeShaderObjectEXT, InvalidTessellationEvaluationNextStage) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+        ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08431");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
@@ -1025,7 +1025,7 @@ TEST_F(NegativeShaderObjectEXT, InvalidGeometryNextStage) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08433");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
@@ -1037,7 +1037,7 @@ TEST_F(NegativeShaderObjectEXT, InvalidFragmentNextStage) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08434");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
@@ -1049,7 +1049,7 @@ TEST_F(NegativeShaderObjectEXT, InvalidTaskNextStage) {
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08435");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
@@ -1061,7 +1061,7 @@ TEST_F(NegativeShaderObjectEXT, InvalidMeshNextStage) {
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_1));
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08436");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
@@ -1182,8 +1182,8 @@ TEST_F(NegativeShaderObjectEXT, DescriptorSetNotBound) {
     auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    const vkt::ShaderEXT comp_shader(*m_device,
-                                     ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle()));
+    const vkt::ShaderEXT comp_shader(
+        *m_device, ShaderCreateInfoEXT(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle()));
     m_command_buffer.Begin();
     m_command_buffer.BindCompShaderEXT(comp_shader);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
@@ -1207,7 +1207,7 @@ TEST_F(NegativeShaderObjectEXT, DescriptorSetBoundRange) {
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     VkDescriptorSetLayout dsl_handles[2] = {descriptor_set.layout_, descriptor_set.layout_};
-    const vkt::ShaderEXT comp_shader(*m_device, ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, dsl_handles));
+    const vkt::ShaderEXT comp_shader(*m_device, ShaderCreateInfoEXT(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, dsl_handles));
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -2700,7 +2700,7 @@ TEST_F(NegativeShaderObjectEXT, MissingFragmentShaderBind) {
     InitDynamicRenderTarget();
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    auto vs_shader_ci = ShaderCreateInfoNoNextStage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    auto vs_shader_ci = ShaderCreateInfoNoNextStageEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     const vkt::ShaderEXT vert_shader(*m_device, vs_shader_ci);
 
     m_command_buffer.Begin();
@@ -2772,7 +2772,7 @@ TEST_F(NegativeShaderObjectEXT, VertAndMeshShaderBothBound) {
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
     VkShaderCreateInfoEXT mesh_create_info =
-        ShaderCreateInfoFlag(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+        ShaderCreateInfoFlagEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
     const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
 
     m_command_buffer.Begin();
@@ -2824,7 +2824,7 @@ TEST_F(NegativeShaderObjectEXT, TaskAndMeshShaderWithNoTaskFlag) {
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
     VkShaderCreateInfoEXT mesh_create_info =
-        ShaderCreateInfoFlag(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+        ShaderCreateInfoFlagEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
     const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
 
     m_command_buffer.Begin();
@@ -2850,8 +2850,8 @@ TEST_F(NegativeShaderObjectEXT, MissingLinkedShaderBind) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT create_infos[2];
-    create_infos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-    create_infos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[1] = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(*m_device, 2u, create_infos, nullptr, shaders);
 
@@ -2882,8 +2882,8 @@ TEST_F(NegativeShaderObjectEXT, BindShaderBetweenLinkedShaders) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT create_infos[2];
-    create_infos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-    create_infos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[1] = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(*m_device, 2u, create_infos, nullptr, shaders);
 
@@ -3228,7 +3228,7 @@ TEST_F(NegativeShaderObjectEXT, DrawWithGraphicsShadersWhenMeshShaderIsBound) {
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
     VkShaderCreateInfoEXT mesh_create_info =
-        ShaderCreateInfoFlag(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+        ShaderCreateInfoFlagEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
     const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
 
     m_command_buffer.Begin();
@@ -3717,7 +3717,7 @@ TEST_F(NegativeShaderObjectEXT, SharedMemoryOverLimit) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src.str().c_str());
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Workgroup-06530");
@@ -3731,7 +3731,7 @@ TEST_F(NegativeShaderObjectEXT, InvalidRequireFullSubgroupsFlag) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
+        ShaderCreateInfoFlagEXT(spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08992");
@@ -3768,7 +3768,7 @@ TEST_F(NegativeShaderObjectEXT, SpecializationMapEntryOffset) {
     specialization_info.dataSize = sizeof(uint32_t);
     specialization_info.pData = &data;
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
     create_info.pSpecializationInfo = &specialization_info;
 
     VkShaderEXT shader;
@@ -3807,7 +3807,7 @@ TEST_F(NegativeShaderObjectEXT, SpecializationMapEntrySize) {
     specialization_info.dataSize = sizeof(uint32_t);
     specialization_info.pData = &data;
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
     create_info.pSpecializationInfo = &specialization_info;
 
     VkShaderEXT shader;
@@ -3843,7 +3843,7 @@ TEST_F(NegativeShaderObjectEXT, SpecializationMismatch) {
     specialization_info.dataSize = sizeof(uint32_t) * 2;
     specialization_info.pData = &data;
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
     create_info.pSpecializationInfo = &specialization_info;
 
     VkShaderEXT shader;
@@ -3885,7 +3885,7 @@ TEST_F(NegativeShaderObjectEXT, SpecializationSameConstantId) {
     specialization_info.dataSize = sizeof(uint32_t);
     specialization_info.pData = &data;
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
     create_info.pSpecializationInfo = &specialization_info;
 
     VkShaderEXT shader;
@@ -3899,7 +3899,7 @@ TEST_F(NegativeShaderObjectEXT, MissingEntrypoint) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
     create_info.pName = "invalid";
 
     VkShaderEXT shader;
@@ -3954,7 +3954,7 @@ TEST_F(NegativeShaderObjectEXT, SpecializationApplied) {
     specialization_info.dataSize = sizeof(uint32_t);
     specialization_info.pData = &data;
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     create_info.pSpecializationInfo = &specialization_info;
 
     VkShaderEXT shader;
@@ -4025,7 +4025,8 @@ TEST_F(NegativeShaderObjectEXT, MinTexelGatherOffset) {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                        });
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoEXT(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06376");
@@ -4090,7 +4091,7 @@ TEST_F(NegativeShaderObjectEXT, UnsupportedSpirvCapability) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src, vs_spv);
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08740");
@@ -4122,7 +4123,7 @@ TEST_F(NegativeShaderObjectEXT, UnsupportedSpirvExtension) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src, vs_spv);
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08741");
@@ -4155,7 +4156,7 @@ TEST_F(NegativeShaderObjectEXT, SpirvExtensionRequirementsNotMet) {
     std::vector<uint32_t> cs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, cs_spv);
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08742");
@@ -4184,7 +4185,7 @@ TEST_F(NegativeShaderObjectEXT, MemoryModelNotEnabled) {
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-vulkanMemoryModel-06265");
@@ -4249,7 +4250,7 @@ TEST_F(NegativeShaderObjectEXT, MaxTransformFeedbackStream) {
     std::vector<uint32_t> gs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, gsSource.str().c_str(), gs_spv);
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(gs_spv, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(gs_spv, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpEmitStreamVertex-06310");
@@ -4304,7 +4305,7 @@ TEST_F(NegativeShaderObjectEXT, TransformFeedbackStride) {
     std::vector<uint32_t> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src.str().c_str(), vs_spv);
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-XfbStride-06313");
@@ -4345,7 +4346,7 @@ TEST_F(NegativeShaderObjectEXT, MeshOutputVertices) {
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, mesh_src.c_str(), spv);
 
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-07115");
@@ -4374,7 +4375,7 @@ TEST_F(NegativeShaderObjectEXT, Atomics) {
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src.c_str());
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06278");
@@ -4414,7 +4415,7 @@ TEST_F(NegativeShaderObjectEXT, ExtendedTypesDisabled) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06275");
@@ -4438,7 +4439,7 @@ TEST_F(NegativeShaderObjectEXT, ReadShaderClock) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderSubgroupClock-06267");
@@ -4482,7 +4483,7 @@ TEST_F(NegativeShaderObjectEXT, WriteLessComponent) {
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageWrite-07112");
@@ -4514,7 +4515,7 @@ TEST_F(NegativeShaderObjectEXT, LocalSizeIdExecutionMode) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-LocalSizeId-06434");
@@ -4547,7 +4548,7 @@ TEST_F(NegativeShaderObjectEXT, ZeroInitializeWorkgroupMemory) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_2, 0, cs_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372");
@@ -4596,7 +4597,7 @@ TEST_F(NegativeShaderObjectEXT, MissingNonReadableDecorationFormatRead) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-apiVersion-07954");
@@ -4674,7 +4675,7 @@ TEST_F(NegativeShaderObjectEXT, MaxSampleMaskWords) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08451");
@@ -4721,7 +4722,7 @@ TEST_F(NegativeShaderObjectEXT, ConservativeRasterizationPostDepthCoverage) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-FullyCoveredEXT-conservativeRasterizationPostDepthCoverage-04235");
@@ -4763,7 +4764,7 @@ TEST_F(NegativeShaderObjectEXT, LocalSizeExceedLimits) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src.c_str(), spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-x-06429");
@@ -5231,9 +5232,10 @@ TEST_F(NegativeShaderObjectEXT, DescriptorNotUpdated) {
 
     VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_, frag_descriptor_set.layout_};
 
-    const vkt::ShaderEXT vert_shader(*m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 2, descriptor_set_layouts));
+    const vkt::ShaderEXT vert_shader(*m_device,
+                                     ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 2, descriptor_set_layouts));
     const vkt::ShaderEXT frag_shader(*m_device,
-                                     ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, descriptor_set_layouts));
+                                     ShaderCreateInfoEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, descriptor_set_layouts));
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -5276,7 +5278,7 @@ TEST_F(NegativeShaderObjectEXT, ComputeVaryingAndFullSubgroups) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src.c_str());
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfoFlag(
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoFlagEXT(
         spv, VK_SHADER_STAGE_COMPUTE_BIT,
         VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT | VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
 
@@ -5307,7 +5309,7 @@ TEST_F(NegativeShaderObjectEXT, ComputeVaryingSubgroups) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src.c_str());
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
+        ShaderCreateInfoFlagEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08417");
@@ -5366,7 +5368,7 @@ TEST_F(NegativeShaderObjectEXT, GeometryShaderMaxOutputVertices) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, geom_src.c_str(), spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08454");
@@ -5426,7 +5428,7 @@ TEST_F(NegativeShaderObjectEXT, GeometryShaderMaxInvocations) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, geom_src.c_str(), spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08455");
@@ -5679,7 +5681,7 @@ TEST_F(NegativeShaderObjectEXT, CooperativeMatrix) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
@@ -5787,8 +5789,8 @@ TEST_F(NegativeShaderObjectEXT, MismatchedTessellationSubdivision) {
 
     VkShaderCreateInfoEXT createInfos[2];
     createInfos[0] =
-        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        ShaderCreateInfoLinkEXT(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08867");
@@ -5896,8 +5898,8 @@ TEST_F(NegativeShaderObjectEXT, MismatchedTessellationOrientation) {
 
     VkShaderCreateInfoEXT createInfos[2];
     createInfos[0] =
-        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        ShaderCreateInfoLinkEXT(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08868");
@@ -6005,8 +6007,8 @@ TEST_F(NegativeShaderObjectEXT, MismatchedTessellationSpacing) {
 
     VkShaderCreateInfoEXT createInfos[2];
     createInfos[0] =
-        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        ShaderCreateInfoLinkEXT(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08870");
@@ -6093,8 +6095,8 @@ TEST_F(NegativeShaderObjectEXT, MismatchedTessellationPatchSize) {
 
     VkShaderCreateInfoEXT create_infos[2];
     create_infos[0] =
-        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    create_infos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        ShaderCreateInfoLinkEXT(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    create_infos[1] = ShaderCreateInfoLinkEXT(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08871");
@@ -6109,7 +6111,7 @@ TEST_F(NegativeShaderObjectEXT, MissingSubgroupSizeControlFeature) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT);
+        ShaderCreateInfoFlagEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-09404");
@@ -6137,7 +6139,7 @@ TEST_F(NegativeShaderObjectEXT, MissingComputeFullSubgroups) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src.c_str());
     VkShaderCreateInfoEXT create_info =
-        ShaderCreateInfoFlag(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
+        ShaderCreateInfoFlagEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-09405");
@@ -6249,7 +6251,7 @@ TEST_F(NegativeShaderObjectEXT, MissingTessellationEvaluationSubdivision) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
 
@@ -6296,7 +6298,7 @@ TEST_F(NegativeShaderObjectEXT, MissingTessellationControlPatchSize) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-12226");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
@@ -6364,7 +6366,7 @@ TEST_F(NegativeShaderObjectEXT, TessellationPatchSize) {
         std::vector<uint32_t> spv;
         ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src.c_str(), spv);
         VkShaderCreateInfoEXT create_info =
-            ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+            ShaderCreateInfoLinkEXT(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         VkShaderEXT shader;
         vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
 
@@ -6510,7 +6512,7 @@ TEST_F(NegativeShaderObjectEXT, DescriptorWrongStageMultipleSets) {
 
     const auto comp_spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
     VkDescriptorSetLayout dsl[3] = {descriptor_set0.layout_, descriptor_set1.layout_, descriptor_set2.layout_};
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT, 3, dsl);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT, 3, dsl);
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-10383");
     const vkt::ShaderEXT comp_shader(*m_device, create_info);
     m_errorMonitor->VerifyFound();
@@ -6887,7 +6889,7 @@ TEST_F(NegativeShaderObjectEXT, MeshShaderPayloadMemoryOverLimit) {
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, mesh_source.str().c_str(), SPV_ENV_VULKAN_1_3);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxMeshPayloadAndSharedMemorySize-08755");
-    vkt::ShaderEXT mesh_shader(*m_device, ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT));
+    vkt::ShaderEXT mesh_shader(*m_device, ShaderCreateInfoEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT));
     m_errorMonitor->VerifyFound();
 }
 
@@ -6896,10 +6898,10 @@ TEST_F(NegativeShaderObjectEXT, DrawMissingNextStage) {
     InitDynamicRenderTarget();
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    const vkt::ShaderEXT vert_shader(*m_device, ShaderCreateInfoNoNextStage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT));
+    const vkt::ShaderEXT vert_shader(*m_device, ShaderCreateInfoNoNextStageEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT));
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    const vkt::ShaderEXT frag_shader(*m_device, ShaderCreateInfoNoNextStage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT));
+    const vkt::ShaderEXT frag_shader(*m_device, ShaderCreateInfoNoNextStageEXT(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT));
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -6920,12 +6922,12 @@ TEST_F(NegativeShaderObjectEXT, DrawWrongNextStage) {
     InitDynamicRenderTarget();
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    auto vs_shader_ci = ShaderCreateInfoNoNextStage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    auto vs_shader_ci = ShaderCreateInfoNoNextStageEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     vs_shader_ci.nextStage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     const vkt::ShaderEXT vert_shader(*m_device, vs_shader_ci);
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    const vkt::ShaderEXT frag_shader(*m_device, ShaderCreateInfoNoNextStage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT));
+    const vkt::ShaderEXT frag_shader(*m_device, ShaderCreateInfoNoNextStageEXT(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT));
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -7352,7 +7354,7 @@ TEST_F(NegativeShaderObjectEXT, CustomResolveSampleShadingImplicit) {
     )glsl";
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
-    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfoEXT(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     const vkt::ShaderEXT frag_shader(*m_device, fs_ci);
 
     vkt::Image color_image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -7397,12 +7399,12 @@ TEST_F(NegativeShaderObjectEXT, InvalidVertexBuffer) {
     vkt::Buffer vtx_buf(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
-    auto vs_shader_ci = ShaderCreateInfoNoNextStage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    auto vs_shader_ci = ShaderCreateInfoNoNextStageEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     vs_shader_ci.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
     const vkt::ShaderEXT vert_shader(*m_device, vs_shader_ci);
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    const vkt::ShaderEXT frag_shader(*m_device, ShaderCreateInfoNoNextStage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT));
+    const vkt::ShaderEXT frag_shader(*m_device, ShaderCreateInfoNoNextStageEXT(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT));
 
     VkVertexInputBindingDescription2EXT vtx_binding_des[3];
     vtx_binding_des[0] = vku::InitStructHelper();
@@ -7575,9 +7577,9 @@ TEST_F(NegativeShaderObjectEXT, InvalidImageLayout) {
     VkDescriptorSetLayout descdriptor_set_layout = descriptor_set.layout_;
 
     const vkt::ShaderEXT vert_shader(*m_device,
-                                     ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1u, &descdriptor_set_layout));
+                                     ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1u, &descdriptor_set_layout));
     const vkt::ShaderEXT frag_shader(*m_device,
-                                     ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1u, &descdriptor_set_layout));
+                                     ShaderCreateInfoEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1u, &descdriptor_set_layout));
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, image_ci);
@@ -7614,9 +7616,9 @@ TEST_F(NegativeShaderObjectEXT, HeapFlags) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT createInfos[2];
-    createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
     createInfos[0].flags |= VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-flags-11472");
@@ -7657,10 +7659,10 @@ TEST_F(NegativeShaderObjectEXT, DrawWithHeap) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT create_infos[2];
-    create_infos[0] = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_infos[0] = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
     create_infos[0].pNext = &mapping_info;
     create_infos[0].flags |= VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
-    create_infos[1] = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[1] = ShaderCreateInfoEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const vkt::ShaderEXT vert_shader(*m_device, create_infos[0]);
     const vkt::ShaderEXT frag_shader(*m_device, create_infos[1]);
@@ -7799,8 +7801,8 @@ TEST_F(NegativeShaderObjectEXT, MissingTessellationOrientation) {
 
     VkShaderCreateInfoEXT createInfos[2];
     createInfos[0] =
-        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        ShaderCreateInfoLinkEXT(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-12224");
@@ -7906,8 +7908,8 @@ TEST_F(NegativeShaderObjectEXT, MissingTessellationSpacing) {
 
     VkShaderCreateInfoEXT createInfos[2];
     createInfos[0] =
-        ShaderCreateInfoLink(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    createInfos[1] = ShaderCreateInfoLink(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        ShaderCreateInfoLinkEXT(tesc_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    createInfos[1] = ShaderCreateInfoLinkEXT(tese_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-12225");
@@ -7948,8 +7950,8 @@ TEST_F(NegativeShaderObjectEXT, MissingHeapBind) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT create_infos[2];
-    create_infos[0] = ShaderCreateInfoHeap(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
-    create_infos[1] = ShaderCreateInfoHeap(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[0] = ShaderCreateInfoHeapEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
+    create_infos[1] = ShaderCreateInfoHeapEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const vkt::ShaderEXT vert_shader(*m_device, create_infos[0]);
     const vkt::ShaderEXT frag_shader(*m_device, create_infos[1]);
@@ -7976,8 +7978,8 @@ TEST_F(NegativeShaderObjectEXT, ResetShaderObjectBinding) {
     const auto frag_spv = GLSLToSPV(stages[1], kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT create_infos[2];
-    create_infos[0] = ShaderCreateInfo(vert_spv, stages[0]);
-    create_infos[1] = ShaderCreateInfo(frag_spv, stages[1]);
+    create_infos[0] = ShaderCreateInfoEXT(vert_spv, stages[0]);
+    create_infos[1] = ShaderCreateInfoEXT(frag_spv, stages[1]);
 
     const vkt::ShaderEXT vert_shader(*m_device, create_infos[0]);
     const vkt::ShaderEXT frag_shader(*m_device, create_infos[1]);
@@ -8016,9 +8018,9 @@ TEST_F(NegativeShaderObjectEXT, NotAllShadersWithIndependentSetFlag) {
     const auto frag_spv = GLSLToSPV(stages[1], kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT create_infos[2];
-    create_infos[0] = ShaderCreateInfo(vert_spv, stages[0]);
+    create_infos[0] = ShaderCreateInfoEXT(vert_spv, stages[0]);
     create_infos[0].flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
-    create_infos[1] = ShaderCreateInfo(frag_spv, stages[1]);
+    create_infos[1] = ShaderCreateInfoEXT(frag_spv, stages[1]);
 
     const vkt::ShaderEXT vert_shader(*m_device, create_infos[0]);
     const vkt::ShaderEXT frag_shader(*m_device, create_infos[1]);
@@ -8054,7 +8056,8 @@ TEST_F(NegativeShaderObjectEXT, PipelineLayoutNoMissingIndependentSetFlag) {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
                                                  });
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &descriptor_set.layout_.handle());
+    VkShaderCreateInfoEXT create_info =
+        ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &descriptor_set.layout_.handle());
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT vert_shader(*m_device, create_info);
 
@@ -8094,7 +8097,7 @@ TEST_F(NegativeShaderObjectEXT, PipelineLayoutNoMissingIndependentSetFlagPushCon
     VkPushConstantRange ranges = {VK_SHADER_STAGE_VERTEX_BIT, 0, 16};
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &ranges);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &ranges);
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT vert_shader(*m_device, create_info);
 
@@ -8130,12 +8133,12 @@ TEST_F(NegativeShaderObjectEXT, PipelineLayoutIndependentSetsTaskStage) {
     InitDynamicRenderTarget();
 
     const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfo(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
+    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfoEXT(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
     task_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT task_shader(*m_device, task_create_info);
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfoEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
     mesh_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
 
@@ -8178,12 +8181,12 @@ TEST_F(NegativeShaderObjectEXT, PipelineLayoutIndependentSetsTaskStageDifferentS
     InitDynamicRenderTarget();
 
     const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfo(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
+    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfoEXT(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
     task_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT task_shader(*m_device, task_create_info);
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfoEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
     mesh_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
 
@@ -8230,7 +8233,7 @@ TEST_F(NegativeShaderObjectEXT, PipelineLayoutIndependentSetsMissingNoTaskShader
     InitDynamicRenderTarget();
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfoEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
     mesh_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
     const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
 
@@ -8272,12 +8275,12 @@ TEST_F(NegativeShaderObjectEXT, MeshWithIndeSetAndNoTaskFlapsButBoundTaskShader)
     InitDynamicRenderTarget();
 
     const auto task_spv = GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, kTaskMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfo(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
+    VkShaderCreateInfoEXT task_create_info = ShaderCreateInfoEXT(task_spv, VK_SHADER_STAGE_TASK_BIT_EXT);
     task_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT task_shader(*m_device, task_create_info);
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfoEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
     mesh_create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
     const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
 
@@ -8315,7 +8318,7 @@ TEST_F(NegativeShaderObjectEXT, NoIndependentSetFlagAndNullSetLayout) {
 
     const VkDescriptorSetLayout null_set_layout = VK_NULL_HANDLE;
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &null_set_layout);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &null_set_layout);
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13359");
     const vkt::ShaderEXT vert_shader(*m_device, create_info);
@@ -8330,7 +8333,7 @@ TEST_F(NegativeShaderObjectEXT, NoIndependentSetFlagAndInvalidSetLayout) {
 
     const VkDescriptorSetLayout invalid_set_layout = CastToHandle<VkDescriptorSetLayout>(0xdeadbeef);
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &invalid_set_layout);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &invalid_set_layout);
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13360");
@@ -8389,12 +8392,12 @@ TEST_F(NegativeShaderObjectEXT, IndependentSetsNotNull) {
     VkDescriptorSetLayout dsl_handles_f[2] = {VK_NULL_HANDLE, ds_f.layout_};
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 2, dsl_handles_v);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 2, dsl_handles_v);
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT vert_shader(*m_device, create_info);
 
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src);
-    create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, dsl_handles_f);
+    create_info = ShaderCreateInfoEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, dsl_handles_f);
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT frag_shader(*m_device, create_info);
 
@@ -8426,7 +8429,7 @@ TEST_F(NegativeShaderObjectEXT, IndependentSetsCompute) {
                                      });
 
     const auto comp_spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &ds.layout_.handle());
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &ds.layout_.handle());
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-12428");
     const vkt::ShaderEXT shader(*m_device, create_info);
@@ -8437,7 +8440,7 @@ TEST_F(NegativeShaderObjectEXT, DestroyBoundShaderObject) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    vkt::ShaderEXT shader(*m_device, ShaderCreateInfo(GLSLToSPV(stage, kMinimalShaderGlsl), stage));
+    vkt::ShaderEXT shader(*m_device, ShaderCreateInfoEXT(GLSLToSPV(stage, kMinimalShaderGlsl), stage));
 
     m_command_buffer.Begin();
     vk::CmdBindShadersEXT(m_command_buffer, 1u, &stage, &shader.handle());
@@ -8459,8 +8462,8 @@ TEST_F(NegativeShaderObjectEXT, DestroyedLinkedShader) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT create_infos[2];
-    create_infos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-    create_infos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[1] = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(*m_device, 2u, create_infos, nullptr, shaders);
 
@@ -8492,8 +8495,8 @@ TEST_F(NegativeShaderObjectEXT, DestroyedLinkedShader2) {
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkShaderCreateInfoEXT create_infos[2];
-    create_infos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-    create_infos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[0] = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_infos[1] = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(*m_device, 2u, create_infos, nullptr, shaders);
 

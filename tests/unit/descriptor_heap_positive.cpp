@@ -3108,11 +3108,11 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     mapping_info.pMappings = mappings;
 
     const auto vspv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
-    VkShaderCreateInfoEXT vs_ci = ShaderCreateInfoHeap(vspv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
+    VkShaderCreateInfoEXT vs_ci = ShaderCreateInfoHeapEXT(vspv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
     vkt::ShaderEXT vert_shader(*m_device, vs_ci);
 
     const auto fspv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
-    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfoHeap(fspv, VK_SHADER_STAGE_FRAGMENT_BIT, &mapping_info);
+    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfoHeapEXT(fspv, VK_SHADER_STAGE_FRAGMENT_BIT, &mapping_info);
     vkt::ShaderEXT frag_shader(*m_device, fs_ci);
 
     m_command_buffer.Begin();

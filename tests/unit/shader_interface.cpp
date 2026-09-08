@@ -1771,7 +1771,8 @@ TEST_F(NegativeShaderInterface, FragmentOutputNotWrittenDynamicRenderingShaderOb
         void main() {}
     )glsl";
 
-    const vkt::ShaderEXT vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::ShaderEXT vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                     GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
     const vkt::ShaderEXT frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source));
 
     m_command_buffer.Begin();
@@ -2561,7 +2562,7 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndexShaderObject) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-09558");
     const vkt::ShaderEXT frag_shader(*m_device,
-                                  ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, &descriptor_set.layout_.handle()));
+                                     ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, &descriptor_set.layout_.handle()));
     m_errorMonitor->VerifyFound();
 }
 

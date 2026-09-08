@@ -130,7 +130,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
     vkt::ShaderEXT shader;
     VkPushConstantRange push_constant_range = {0, 0, 4};
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT ci_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &push_constant_range);
+    VkShaderCreateInfoEXT ci_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &push_constant_range);
 
     // stageFlags of 0
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-requiredbitmask");

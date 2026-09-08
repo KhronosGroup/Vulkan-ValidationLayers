@@ -2198,12 +2198,12 @@ TEST_F(PositiveDescriptorBuffer, IndependentSetMixShaderObject) {
 
     // Shader object have INDEPENDENT_SETS but have no descriptors actually
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT vert_shader(*m_device, create_info);
 
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_info = ShaderCreateInfoEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT frag_shader(*m_device, create_info);
 
