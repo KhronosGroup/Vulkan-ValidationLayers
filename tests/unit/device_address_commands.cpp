@@ -2923,6 +2923,36 @@ TEST_F(NegativeDeviceAddressCommands, CopyAddressRangeOverlap) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDeviceAddressCommands, CopyDeviceMemoryAddressOverlapRegion) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer buffer(*m_device, 4096u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    const VkDeviceAddress base = buffer.Address();
+    constexpr VkDeviceSize r_size = 256u;
+
+    VkDeviceMemoryCopyKHR regions[2];
+    regions[0] = vku::InitStruct<VkDeviceMemoryCopyKHR>();
+    regions[0].srcRange = {base, r_size};
+    regions[0].srcFlags = 0u;
+    regions[0].dstRange = {base + 1024u, r_size};
+    regions[0].dstFlags = 0u;
+    regions[1] = vku::InitStruct<VkDeviceMemoryCopyKHR>();
+    regions[1].srcRange = {base + 1024u, r_size};
+    regions[1].srcFlags = 0u;
+    regions[1].dstRange = {base + 2048u, r_size};
+    regions[1].dstFlags = 0u;
+
+    VkCopyDeviceMemoryInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.regionCount = 2;
+    copy_memory_info.pRegions = regions;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDeviceMemoryInfoKHR-srcRange-13015");
+    vk::CmdCopyMemoryKHR(m_command_buffer, &copy_memory_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDeviceAddressCommands, CopyDeviceMemoryAddressOverlap) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
 
