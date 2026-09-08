@@ -865,7 +865,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     }
 
     if (const auto* device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext)) {
-        for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
+        for (uint32_t i = 0; i + 1 < device_group_ci->physicalDeviceCount; ++i) {
             for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
                 if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
                     skip |=
@@ -934,7 +934,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
             if (pImageFormatInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
                 skip |= LogError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249", physicalDevice,
                                  format_info_loc.dot(Field::tiling),
-                                 "(%s) but no VkPhysicalDeviceImageDrmFormatModifierInfoEXT in pNext chain.\n%s",
+                                 "is %s, but the pNext chain includes VkPhysicalDeviceImageDrmFormatModifierInfoEXT (which "
+                                 "requires VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT).\n%s",
                                  string_VkImageTiling(pImageFormatInfo->tiling),
                                  PrintPNextChain(Struct::VkPhysicalDeviceImageFormatInfo2, pImageFormatInfo->pNext).c_str());
             }
@@ -949,7 +950,7 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                                 format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
                                 "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is 0 (needs to be at least 1).");
                         }
-                    } else if (image_drm_format->queueFamilyIndexCount <= 1) {
+                    } else {
                         skip |= LogError(
                             "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315", physicalDevice,
                             format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
