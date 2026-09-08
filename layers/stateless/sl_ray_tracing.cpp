@@ -1471,10 +1471,7 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                              "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but srcAccelerationStructure is VK_NULL_HANDLE.");
         }
 
-        for (const auto [other_info_j, other_info] : vvl::enumerate(pInfos, infoCount)) {
-            if (info_i == other_info_j) {
-                continue;
-            }
+        for (const auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i + 1, infoCount - (info_i + 1))) {
             if (info.dstAccelerationStructure == other_info.dstAccelerationStructure) {
                 const LogObjectList objlist(commandBuffer, info.dstAccelerationStructure);
                 skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03698", objlist,
@@ -1614,10 +1611,7 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
                          "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but srcAccelerationStructure is VK_NULL_HANDLE.");
         }
 
-        for (const auto [other_info_j, other_info] : vvl::enumerate(pInfos, infoCount)) {
-            if (info_i == other_info_j) {
-                continue;
-            }
+        for (const auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i + 1, infoCount - (info_i + 1))) {
             if (info.dstAccelerationStructure == other_info.dstAccelerationStructure) {
                 const LogObjectList objlist(commandBuffer, info.dstAccelerationStructure);
                 skip |= LogError("VUID-vkCmdBuildAccelerationStructuresIndirectKHR-dstAccelerationStructure-03698", objlist,
@@ -1693,7 +1687,7 @@ bool Device::manual_PreCallValidateBuildAccelerationStructuresKHR(
             }
         }
 
-        for (const auto [other_info_j, other_info] : vvl::enumerate(pInfos, infoCount)) {
+        for (const auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i + 1, infoCount - (info_i + 1))) {
             if (info_i == other_info_j) {
                 continue;
             }
