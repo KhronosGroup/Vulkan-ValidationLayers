@@ -630,20 +630,26 @@ bool Device::manual_PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffe
                          "(%" PRIu64 ") is less than srcRange.size (%" PRIu64 ").", region.dstRange.size, region.srcRange.size);
         }
 
-        vvl::range<VkDeviceAddress> region_src_range = {region.srcRange.address, region.srcRange.address + region.srcRange.size};
-        for (uint32_t j = i; j < pCopyMemoryInfo->regionCount; ++j) {
+        const vvl::range<VkDeviceAddress> region_src_range = {region.srcRange.address,
+                                                              region.srcRange.address + region.srcRange.size};
+        for (uint32_t j = 0; j < pCopyMemoryInfo->regionCount; ++j) {
             const VkDeviceMemoryCopyKHR& other_region = pCopyMemoryInfo->pRegions[j];
-            vvl::range<VkDeviceAddress> next_src_range = {other_region.srcRange.address,
-                                                          other_region.srcRange.address + other_region.srcRange.size};
-            vvl::range<VkDeviceAddress> next_dst_range = {other_region.dstRange.address,
-                                                          other_region.dstRange.address + other_region.dstRange.size};
 
-            // j > i so that the current src range is not compared to itself
-            if (j > i && region_src_range.intersects(next_src_range)) {
-                skip |= LogError("VUID-VkCopyDeviceMemoryInfoKHR-srcRange-13015", commandBuffer, region_loc.dot(Field::srcRange),
+            if (j > i) {
+                const vvl::range<VkDeviceAddress> next_src_range = {other_region.srcRange.address,
+                                                                    other_region.srcRange.address + other_region.srcRange.size};
+                if (region_src_range.intersects(next_src_range)) {
+                    skip |=
+                        LogError("VUID-VkCopyDeviceMemoryInfoKHR-srcRange-13015", commandBuffer, region_loc.dot(Field::srcRange),
                                  "%s overlaps with pRegions[%" PRIu32 "].srcRange %s", string_range_hex(region_src_range).c_str(),
+
                                  j, string_range_hex(next_src_range).c_str());
-            } else if (region_src_range.intersects(next_dst_range)) {
+                }
+            }
+
+            const vvl::range<VkDeviceAddress> next_dst_range = {other_region.dstRange.address,
+                                                                other_region.dstRange.address + other_region.dstRange.size};
+            if (region_src_range.intersects(next_dst_range)) {
                 skip |= LogError("VUID-VkCopyDeviceMemoryInfoKHR-srcRange-13015", commandBuffer, region_loc.dot(Field::srcRange),
                                  "%s overlaps with pRegions[%" PRIu32 "].dstRange %s", string_range_hex(region_src_range).c_str(),
                                  j, string_range_hex(next_dst_range).c_str());
