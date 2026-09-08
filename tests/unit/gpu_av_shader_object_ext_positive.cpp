@@ -126,9 +126,9 @@ TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants) {
         )glsl";
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
 
-    VkShaderCreateInfoEXT vs_ci = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr,
+    VkShaderCreateInfoEXT vs_ci = ShaderCreateInfoEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr,
                                                    static_cast<uint32_t>(push_constant_ranges.size()), push_constant_ranges.data());
-    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr,
+    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfoEXT(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr,
                                                    static_cast<uint32_t>(push_constant_ranges.size()), push_constant_ranges.data());
 
     const vkt::ShaderEXT vs(*m_device, vs_ci);
@@ -258,9 +258,9 @@ TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants2) {
     indirect_draw_parameters.firstInstance = 0;
 
     VkShaderCreateInfoEXT vs_ci =
-        ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &graphics_push_constant_ranges);
+        ShaderCreateInfoEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &graphics_push_constant_ranges);
     VkShaderCreateInfoEXT fs_ci =
-        ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr, 1, &graphics_push_constant_ranges);
+        ShaderCreateInfoEXT(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr, 1, &graphics_push_constant_ranges);
 
     const vkt::ShaderEXT vs(*m_device, vs_ci);
     const vkt::ShaderEXT fs(*m_device, fs_ci);
@@ -308,7 +308,7 @@ TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants2) {
     }
 
     VkShaderCreateInfoEXT cs_ci =
-        ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT, 0, nullptr, 1, &compute_push_constant_ranges);
+        ShaderCreateInfoEXT(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT, 0, nullptr, 1, &compute_push_constant_ranges);
 
     const vkt::ShaderEXT cs(*m_device, cs_ci);
 

@@ -102,7 +102,7 @@ TEST_F(PositiveGpuAVScoped, DispatchShaderObjectAndPipeline) {
     )glsl";
 
     const auto comp_spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
-    VkShaderCreateInfoEXT comp_create_info = ShaderCreateInfo(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT comp_create_info = ShaderCreateInfoEXT(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
     VkValidationFeaturesEXT features = vku::InitStructHelper();

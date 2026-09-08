@@ -270,7 +270,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, PipelineAndShaderObjectComputeDispatchIndire
 
     const VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
     const auto comp_spv = GLSLToSPV(stage, kMinimalShaderGlsl);
-    VkShaderCreateInfoEXT comp_create_info = ShaderCreateInfo(comp_spv, stage);
+    VkShaderCreateInfoEXT comp_create_info = ShaderCreateInfoEXT(comp_spv, stage);
     const vkt::ShaderEXT comp_shader(*m_device, comp_create_info);
 
     m_command_buffer.Begin();

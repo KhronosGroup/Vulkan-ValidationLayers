@@ -850,8 +850,8 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersShaderObject) {
 
     VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_};
 
-    VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
-    VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
+    VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
+    VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfoEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
 
     vert_create_info.pNext = &kValFeature;
     frag_create_info.pNext = &kValFeature;
@@ -916,8 +916,8 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersShaderObjectDrawIndexedIndi
 
     VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_};
 
-    VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
-    VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
+    VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
+    VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfoEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
 
     vert_create_info.pNext = &kValFeature;
     frag_create_info.pNext = &kValFeature;

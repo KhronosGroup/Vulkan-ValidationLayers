@@ -87,7 +87,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CreateIndirectExecutionSetShaderObject) 
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT vert_create_info =
-        ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+        ShaderCreateInfoFlagEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
     const vkt::ShaderEXT vertShader(*m_device, vert_create_info);
     const VkShaderEXT shaders[] = {vertShader};
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -326,7 +326,7 @@ TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetShader) {
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT vert_create_info =
-        ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+        ShaderCreateInfoFlagEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
     const vkt::ShaderEXT vertShader(*m_device, vert_create_info);
     const VkShaderEXT shaders[] = {vertShader};
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -357,7 +357,7 @@ TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetShaderDestroye
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT vert_create_info =
-        ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+        ShaderCreateInfoFlagEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
     const vkt::ShaderEXT vertShader(*m_device, vert_create_info);
     const VkShaderEXT shaders[] = {vertShader};
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -475,7 +475,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT vert_create_info =
-        ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+        ShaderCreateInfoFlagEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
     const vkt::ShaderEXT vertShader(*m_device, vert_create_info);
     const VkShaderEXT shaders[] = {vertShader};
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -539,7 +539,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectMesh) {
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
-    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfoFlag(
+    VkShaderCreateInfoEXT mesh_create_info = ShaderCreateInfoFlagEXT(
         spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT | VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
     const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
     const VkShaderEXT shaders[] = {mesh_shader};
@@ -719,12 +719,12 @@ TEST_F(PositiveDeviceGeneratedCommands, ShaderObjectQuery) {
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT vert_create_info =
-        ShaderCreateInfoFlag(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+        ShaderCreateInfoFlagEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
     const vkt::ShaderEXT vert_shader(*m_device, vert_create_info);
 
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     VkShaderCreateInfoEXT frag_create_info =
-        ShaderCreateInfoFlag(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
+        ShaderCreateInfoFlagEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT);
     const vkt::ShaderEXT frag_shader(*m_device, frag_create_info);
 
     const VkShaderStageFlagBits stages[7] = {VK_SHADER_STAGE_VERTEX_BIT,

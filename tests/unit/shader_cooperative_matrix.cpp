@@ -974,7 +974,7 @@ TEST_F(NegativeShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source, SPV_ENV_VULKAN_1_1);
-    auto shader_ci = ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &dsl.handle());
+    auto shader_ci = ShaderCreateInfoNoNextStageEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &dsl.handle());
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10771");
     const vkt::ShaderEXT comp_shader(*m_device, shader_ci);

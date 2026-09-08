@@ -369,7 +369,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     )glsl";
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source, SPV_ENV_VULKAN_1_1);
-    auto shader_ci = ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &dsl.handle());
+    auto shader_ci = ShaderCreateInfoNoNextStageEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &dsl.handle());
     shader_ci.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
     const vkt::ShaderEXT comp_shader(*m_device, shader_ci);
 }
@@ -829,7 +829,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Properties2RuntimeQuerySelectors) {
                                              const void* p_next = nullptr) {
         const std::string source = MakeFloatMatrixSource(VK_SCOPE_SUBGROUP_KHR, config, local_size);
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, source.c_str(), SPV_ENV_VULKAN_1_2);
-        auto create_info = ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+        auto create_info = ShaderCreateInfoNoNextStageEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT);
         create_info.flags = flags;
         create_info.pNext = p_next;
         const vkt::ShaderEXT shader(*m_device, create_info);

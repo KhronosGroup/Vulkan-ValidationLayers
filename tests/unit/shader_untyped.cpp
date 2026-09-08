@@ -156,7 +156,7 @@ OpFunctionEnd
     std::vector<uint32_t> spv;
     const auto valid = ASMtoSPV(SPV_ENV_VULKAN_1_2, 0, spirv.c_str(), spv);
     EXPECT_TRUE(valid);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06278");
