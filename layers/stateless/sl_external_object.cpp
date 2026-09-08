@@ -59,7 +59,7 @@ bool Device::ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const ch
                                                  VkExternalSemaphoreHandleTypeFlags allowed_types) const {
     bool skip = false;
     if (0 == (handle_type & allowed_types)) {
-        skip |= LogError(vuid, semaphore, handle_type_loc, "%s is not one of the supported handleTypes (%s).",
+        skip |= LogError(vuid, semaphore, handle_type_loc, "(%s) is not one of the supported handleTypes (%s).",
                          string_VkExternalSemaphoreHandleTypeFlagBits(handle_type),
                          string_VkExternalSemaphoreHandleTypeFlags(allowed_types).c_str());
     }
@@ -71,7 +71,7 @@ bool Device::ValidateExternalFenceHandleType(VkFence fence, const char* vuid, co
                                              VkExternalFenceHandleTypeFlags allowed_types) const {
     bool skip = false;
     if (0 == (handle_type & allowed_types)) {
-        skip |= LogError(vuid, fence, handle_type_loc, "%s is not one of the supported handleTypes (%s).",
+        skip |= LogError(vuid, fence, handle_type_loc, "(%s) is not one of the supported handleTypes (%s).",
                          string_VkExternalFenceHandleTypeFlagBits(handle_type),
                          string_VkExternalFenceHandleTypeFlags(allowed_types).c_str());
     }
@@ -150,14 +150,11 @@ bool Device::manual_PreCallValidateGetMemoryHostPointerPropertiesEXT(VkDevice de
                      "is %s.", string_VkExternalMemoryHandleTypeFlagBits(handleType));
     }
 
-    const VkDeviceSize host_pointer = reinterpret_cast<VkDeviceSize>(pHostPointer);
-    if (!IsIntegerMultipleOf(host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment)) {
+    if (!IsPointerAligned(pHostPointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment)) {
         skip |= LogError("VUID-vkGetMemoryHostPointerPropertiesEXT-pHostPointer-01753", device,
                          error_obj.location.dot(Field::pHostPointer),
-                         "(0x%" PRIxLEAST64
-                         ") is not aligned "
-                         "to minImportedHostPointerAlignment (%" PRIuLEAST64 ")",
-                         host_pointer, phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
+                         "(%p) is not aligned to minImportedHostPointerAlignment (%" PRIuLEAST64 ")", pHostPointer,
+                         phys_dev_ext_props.external_memory_host_props.minImportedHostPointerAlignment);
     }
 
     return skip;

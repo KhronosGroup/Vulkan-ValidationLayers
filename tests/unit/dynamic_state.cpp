@@ -2258,6 +2258,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
                                                                       attribute);
         for (uint32_t i = 0; i < attributes.size(); ++i) attributes[i].location = i;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792");
+        m_errorMonitor->SetDesiredError("VUID-VkVertexInputAttributeDescription2EXT-location-06228");
         vk::CmdSetVertexInputEXT(m_command_buffer, 1, &binding, m_device->Physical().limits_.maxVertexInputAttributes + 1u,
                                  attributes.data());
         m_errorMonitor->VerifyFound();
@@ -2353,6 +2354,35 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
                                                            nullptr,
                                                            0,
                                                            m_device->Physical().limits_.maxVertexInputBindings + 1u,
+                                                           VK_FORMAT_R32G32B32A32_SFLOAT,
+                                                           0};
+        m_errorMonitor->SetDesiredError("VUID-VkVertexInputAttributeDescription2EXT-binding-06229");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetVertexInputEXT-binding-04793");
+        vk::CmdSetVertexInputEXT(m_command_buffer, 1, &binding, 1, &attribute);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkVertexInputBindingDescription2EXT binding = {
+            VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
+        VkVertexInputAttributeDescription2EXT attribute = {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
+                                                           nullptr,
+                                                           m_device->Physical().limits_.maxVertexInputAttributes,
+                                                           0,
+                                                           VK_FORMAT_R32G32B32A32_SFLOAT,
+                                                           0};
+        m_errorMonitor->SetDesiredError("VUID-VkVertexInputAttributeDescription2EXT-location-06228");
+        vk::CmdSetVertexInputEXT(m_command_buffer, 1, &binding, 1, &attribute);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkVertexInputBindingDescription2EXT binding = {
+            VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
+        VkVertexInputAttributeDescription2EXT attribute = {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
+                                                           nullptr,
+                                                           0,
+                                                           m_device->Physical().limits_.maxVertexInputBindings,
                                                            VK_FORMAT_R32G32B32A32_SFLOAT,
                                                            0};
         m_errorMonitor->SetDesiredError("VUID-VkVertexInputAttributeDescription2EXT-binding-06229");

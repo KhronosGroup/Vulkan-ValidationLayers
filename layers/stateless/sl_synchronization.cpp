@@ -60,7 +60,7 @@ bool Device::ValidateDependencyInfo(const Context& context, const VkDependencyIn
         for (uint32_t i = 0; i < memory_range_barriers_info->memoryRangeBarrierCount; ++i) {
             const VkMemoryRangeBarrierKHR& memory_range_barrier = memory_range_barriers_info->pMemoryRangeBarriers[i];
             skip |= context.ValidateDeviceAddressFlags(
-                loc.pNext(Struct::VkMemoryRangeBarrierKHR).dot(Field::pMemoryRangeBarriers, i).dot(Field::addressFlags),
+                loc.pNext(Struct::VkMemoryRangeBarriersInfoKHR).dot(Field::pMemoryRangeBarriers, i).dot(Field::addressFlags),
                 memory_range_barrier.addressFlags);
         }
     }

@@ -163,15 +163,14 @@ bool Context::ValidateAllocationCallbacks(const VkAllocationCallbacks& callback,
                                     "VUID-VkAllocationCallbacks-pfnFree-00634");
 
     if (callback.pfnInternalAllocation) {
-        skip |=
-            ValidateRequiredPointer(loc.dot(Field::pfnInternalAllocation), reinterpret_cast<const void*>(callback.pfnInternalFree),
-                                    "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        skip |= ValidateRequiredPointer(loc.dot(Field::pfnInternalFree), reinterpret_cast<const void*>(callback.pfnInternalFree),
+                                        "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
     }
 
     if (callback.pfnInternalFree) {
-        skip |=
-            ValidateRequiredPointer(loc.dot(Field::pfnInternalFree), reinterpret_cast<const void*>(callback.pfnInternalAllocation),
-                                    "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        skip |= ValidateRequiredPointer(loc.dot(Field::pfnInternalAllocation),
+                                        reinterpret_cast<const void*>(callback.pfnInternalAllocation),
+                                        "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
     }
     return skip;
 }

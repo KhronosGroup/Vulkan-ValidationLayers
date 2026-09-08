@@ -727,7 +727,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
             }
         } else if (geom.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {
             const Location p_geom_geom_spheres_loc = p_geom_geom_loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV);
-            auto sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const*>(geom.pNext);
+            const auto* sphere_struct = reinterpret_cast<VkAccelerationStructureGeometrySpheresDataNV const*>(geom.pNext);
             ASSERT_AND_RETURN_SKIP(sphere_struct);
 
             if (geometry_build_range_primitive_count > 0) {
@@ -791,7 +791,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
         } else if (geom.geometryType == VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV) {
             const Location p_geom_geom_linear_spheres_loc =
                 p_geom_geom_loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV);
-            auto sphere_linear_struct =
+            const auto* sphere_linear_struct =
                 reinterpret_cast<VkAccelerationStructureGeometryLinearSweptSpheresDataNV const*>(geom.pNext);
             ASSERT_AND_RETURN_SKIP(sphere_linear_struct);
 

@@ -71,17 +71,17 @@ bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfo
         if (present_scaling_create_info->scalingBehavior != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
-                             " is %s, but swapchainMaintenance1 is not enabled",
+                             "is %s, but swapchainMaintenance1 is not enabled",
                              string_VkPresentScalingFlagsKHR(present_scaling_create_info->scalingBehavior).c_str());
         } else if (present_scaling_create_info->presentGravityX != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
-                             " is %s, but swapchainMaintenance1 is not enabled",
+                             "is %s, but swapchainMaintenance1 is not enabled",
                              string_VkPresentGravityFlagsKHR(present_scaling_create_info->presentGravityX).c_str());
         } else if (present_scaling_create_info->presentGravityY != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
-                             " is %s, but swapchainMaintenance1 is not enabled",
+                             "is %s, but swapchainMaintenance1 is not enabled",
                              string_VkPresentGravityFlagsKHR(present_scaling_create_info->presentGravityY).c_str());
         }
     }
@@ -285,8 +285,9 @@ bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         for (uint32_t j = i + 1; j < pPresentInfo->swapchainCount; ++j) {
             if (pPresentInfo->pSwapchains[i] == pPresentInfo->pSwapchains[j]) {
-                skip |= LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", queue, present_info_loc.dot(Field::pSwapchain, i),
-                                 "and pSwapchain[%" PRIu32 "] are both %s.", j, FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
+                skip |=
+                    LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", queue, present_info_loc.dot(Field::pSwapchains, i),
+                             "and pSwapchains[%" PRIu32 "] are both %s.", j, FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
             }
         }
     }
@@ -343,7 +344,7 @@ bool Instance::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physi
                                     param_loc.dot(Field::visibleRegion).dot(Field::width));
     skip |=
         context.ValidateNotZero(display_mode_parameters.visibleRegion.height == 0, "VUID-VkDisplayModeParametersKHR-height-01991",
-                                param_loc.dot(Field::visibleRegion).dot(Field::width));
+                                param_loc.dot(Field::visibleRegion).dot(Field::height));
     skip |= context.ValidateNotZero(display_mode_parameters.refreshRate == 0, "VUID-VkDisplayModeParametersKHR-refreshRate-01992",
                                     param_loc.dot(Field::refreshRate));
 
@@ -643,9 +644,10 @@ bool Instance::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-bool Device::manual_PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
-                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                            const Context& context) const {
+bool Instance::manual_PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance,
+                                                              const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                              const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
     if (pCreateInfo->dfb == nullptr) {
@@ -676,7 +678,7 @@ bool Device::manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, u
                                  context.error_obj.location.dot(Field::pTimestampInfos, i).dot(Field::timeDomain),
                                  "is %s but pNext (%s) does not contain VkSwapchainCalibratedTimestampInfoEXT.",
                                  string_VkTimeDomainKHR(pTimestampInfos[i].timeDomain),
-                                 PrintPNextChain(Struct::VkSwapchainCalibratedTimestampInfoEXT, pTimestampInfos[i].pNext).c_str());
+                                 PrintPNextChain(Struct::VkCalibratedTimestampInfoKHR, pTimestampInfos[i].pNext).c_str());
             } else if (pTimestampInfos[i].timeDomain == VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT) {
                 if (!IsSingleBitSet(swapchain_calibrated_timestamp_info->presentStage)) {
                     skip |= LogError("VUID-VkSwapchainCalibratedTimestampInfoEXT-timeDomain-12228", device,

@@ -396,7 +396,11 @@ class Instance : public vvl::BaseInstance {
                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                    const Context &context) const;
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
-
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+    bool manual_PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                        const Context& context) const;
+#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     bool manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
@@ -1371,12 +1375,6 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
         VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV *pBuildInfo,
         const Context &context) const;
-
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-    bool manual_PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
-                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                        const Context& context) const;
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 
     bool manual_PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                           const VkCalibratedTimestampInfoKHR *pTimestampInfos,
