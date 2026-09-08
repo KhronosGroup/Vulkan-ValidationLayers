@@ -161,7 +161,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     uint32_t GetErrorLoggerIndex() { return (uint32_t)command_error_loggers_.size(); }
     const CommandErrorLogger &GetErrorLogger(uint32_t i) { return command_error_loggers_[i]; }
 
-    vko::Buffer& GetInternalDescriptorHeap();
     vko::Buffer& GetInternalDescriptorBuffer();
 
     // Buffer storing GPU-AV errors

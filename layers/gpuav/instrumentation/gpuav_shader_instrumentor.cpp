@@ -1342,8 +1342,8 @@ void GpuShaderInstrumentor::AddDescriptorHeapMappings(VkBaseOutStructure* create
         mapping.bindingCount = 1;
         mapping.resourceMask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT;
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
-        mapping.sourceData.indirectAddress.addressOffset = sizeof(VkDeviceAddress) * i;
         mapping.sourceData.indirectAddress.pushOffset = push_data_offset_;
+        mapping.sourceData.indirectAddress.addressOffset = sizeof(VkDeviceAddress) * i;
     }
 
     if (mapping_info) {

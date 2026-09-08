@@ -551,11 +551,9 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator& gpuav, 
         return;
     }
 
-    const VkDeviceSize indirect_buffer_offset = gpuav.heap_indirect_buffer_stride_ * common_error_info.total_action_commands;
-
-    const auto& indirect_buffer = cb_state.GetInternalDescriptorHeap();
-    uint8_t* indirect_buffer_ptr = static_cast<uint8_t*>(indirect_buffer.GetMappedPtr());
-    indirect_buffer_ptr += indirect_buffer_offset;
+    const vko::BufferRange& cb_local_desc_heap =
+        cb_state.gpu_resources_manager.GetHostCoherentBufferRange(gpuav.heap_indirect_buffer_stride_);
+    uint8_t* cb_local_desc_heap_ptr = static_cast<uint8_t*>(cb_local_desc_heap.offset_mapped_ptr);
 
     const uint32_t error_logger_index = cb_state.GetErrorLoggerIndex();
 
@@ -564,10 +562,10 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorHeap(Validator& gpuav, 
     const uint32_t action_command_index_offset = common_error_info.action_command_index * gpuav.indices_buffer_alignment_;
     const uint32_t resource_index_offset = error_logger_index * gpuav.indices_buffer_alignment_;
 
-    UpdateInstrumentationDescHeap(gpuav, cb_state, last_bound, (VkDeviceAddress*)indirect_buffer_ptr, action_command_index_offset,
-                                  resource_index_offset, loc);
+    UpdateInstrumentationDescHeap(gpuav, cb_state, last_bound, (VkDeviceAddress*)cb_local_desc_heap_ptr,
+                                  action_command_index_offset, resource_index_offset, loc);
 
-    VkDeviceAddress gpuav_data_address = indirect_buffer.Address() + indirect_buffer_offset;
+    VkDeviceAddress gpuav_data_address = cb_local_desc_heap.offset_address;
     VkPushDataInfoEXT push_data_info = vku::InitStructHelper();
     push_data_info.offset = gpuav.push_data_offset_;
     push_data_info.data.address = &gpuav_data_address;
