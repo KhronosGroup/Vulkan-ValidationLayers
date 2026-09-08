@@ -2803,9 +2803,20 @@ VkResult DispatchDevice::BindImageMemory2KHR(VkDevice device, uint32_t bindInfoC
     return result;
 }
 
+void HandleWrapper::UnwrapShaderObjectCreateInfoHandles(vku::safe_VkShaderCreateInfoEXT& safe_ci) {
+    UnwrapMappingInfo(this, safe_ci.pNext);
+
+    if (safe_ci.pSetLayouts) {
+        for (uint32_t index1 = 0; index1 < safe_ci.setLayoutCount; ++index1) {
+            safe_ci.pSetLayouts[index1] = Unwrap(safe_ci.pSetLayouts[index1]);
+        }
+    }
+}
+
 VkResult DispatchDevice::CreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                   const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders) {
     if (!wrap_handles) return device_dispatch_table.CreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+
     small_vector<vku::safe_VkShaderCreateInfoEXT, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pCreateInfos;
     vku::safe_VkShaderCreateInfoEXT* local_pCreateInfos = nullptr;
     if (pCreateInfos) {
@@ -2814,14 +2825,7 @@ VkResult DispatchDevice::CreateShadersEXT(VkDevice device, uint32_t createInfoCo
 
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
             local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
-
-            UnwrapMappingInfo(this, local_pCreateInfos[index0].pNext);
-
-            if (local_pCreateInfos[index0].pSetLayouts) {
-                for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].setLayoutCount; ++index1) {
-                    local_pCreateInfos[index0].pSetLayouts[index1] = Unwrap(local_pCreateInfos[index0].pSetLayouts[index1]);
-                }
-            }
+            UnwrapShaderObjectCreateInfoHandles(local_pCreateInfos[index0]);
         }
     }
 

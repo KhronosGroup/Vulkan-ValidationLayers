@@ -50,4 +50,12 @@ ShaderObject::ShaderObject(DeviceState& dev_data, const VkShaderCreateInfoEXT& c
     }
 }
 
+void ShaderObject::Destroy() {
+    for (auto& item : sub_states_) {
+        item.second->Destroy();
+    }
+    sub_states_.clear();
+    StateObject::Destroy();
+}
+
 }  // namespace vvl

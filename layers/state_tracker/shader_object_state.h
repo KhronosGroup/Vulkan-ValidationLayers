@@ -42,6 +42,7 @@ struct TessellationExecutionModes {
 struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSubState> {
     ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT shader_object,
                  std::shared_ptr<spirv::Module> &spirv_module);
+    void Destroy() override;
 
     const vku::safe_VkShaderCreateInfoEXT safe_create_info_ext;
     const VkShaderCreateInfoEXT &create_info_ext;

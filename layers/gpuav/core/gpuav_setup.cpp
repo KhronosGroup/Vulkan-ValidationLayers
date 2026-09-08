@@ -82,7 +82,9 @@ void Validator::Created(vvl::TensorView& obj) {
     DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
     obj.SetSubState(container_type, std::make_unique<TensorViewSubState>(obj, desc_id_pool));
 }
-void Validator::Created(vvl::ShaderObject& obj) { obj.SetSubState(container_type, std::make_unique<ShaderObjectSubState>(obj)); }
+void Validator::Created(vvl::ShaderObject& obj) {
+    obj.SetSubState(container_type, std::make_unique<ShaderObjectSubState>(*this, obj));
+}
 
 void Validator::Created(vvl::Pipeline& obj) { obj.SetSubState(container_type, std::make_unique<PipelineSubState>(*this, obj)); }
 
