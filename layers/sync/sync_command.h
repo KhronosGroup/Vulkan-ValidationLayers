@@ -72,6 +72,28 @@ struct BufferCopyCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct BufferAccessCommand {
+    const vvl::Buffer& buffer;
+    AccessRange range;
+    SyncAccessIndex access_index;
+    uint32_t handle_index = vvl::kNoIndex32;
+    SyncFlags flags = 0;
+
+    struct Storage {
+        AccessRange range;
+        uint32_t buffer_index;
+        SyncAccessIndex access_index;
+        uint32_t handle_index;
+        SyncFlags flags;
+        BufferAccessCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 struct ImageCopyCommand {
     const vvl::Image& src_image;
     const vvl::Image& dst_image;
@@ -221,9 +243,9 @@ struct ShaderAccessCommand {
                                    const ImageViewAccess& image_access) const;
 };
 
-using CommandStorage =
-    std::variant<BufferCopyCommand::Storage, ImageCopyCommand::Storage, BarrierCommand::Storage, BeginRenderPassCommand::Storage,
-                 NextSubpassCommand::Storage, EndRenderPassCommand::Storage, ShaderAccessCommand::Storage>;
+using CommandStorage = std::variant<BufferCopyCommand::Storage, BufferAccessCommand::Storage, ImageCopyCommand::Storage,
+                                    BarrierCommand::Storage, BeginRenderPassCommand::Storage, NextSubpassCommand::Storage,
+                                    EndRenderPassCommand::Storage, ShaderAccessCommand::Storage>;
 
 struct CommandData {
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;

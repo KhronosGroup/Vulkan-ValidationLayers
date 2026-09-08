@@ -57,6 +57,14 @@ inline const SyncAccessInfo& GetAccessInfo(SyncAccessIndex access) { return GetS
 extern const AccessRange kFullRange;
 constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
+struct SyncFlag {
+    enum : uint8_t {
+        kPresent = 0x01,
+        kMarker = 0x02,
+    };
+};
+using SyncFlags = uint8_t;
+
 // Notes:
 //  * Design goal is performance optimized set creation during specific SyncVal operations
 //  * Key must be integral.

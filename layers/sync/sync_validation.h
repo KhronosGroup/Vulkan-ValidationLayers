@@ -414,9 +414,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                                 VkDeviceSize stride, VkQueryResultFlags flags,
                                                 const ErrorObject& error_obj) const override;
 
-    bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                                      uint32_t data, const ErrorObject& error_obj) const override;
-
     bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                         const VkImageResolve* pRegions, const ErrorObject& error_obj) const override;
@@ -426,15 +423,25 @@ class SyncValidator : public vvl::DeviceProxy {
     bool PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
                                          const ErrorObject& error_obj) const override;
 
+    bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
+                                      uint32_t data, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                         VkDeviceSize dataSize, const void* pData, const ErrorObject& error_obj) const override;
 
+    bool ValidateBufferMarkerAMD(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                 const Location& loc) const;
+    void RecordBufferMarkerAMD(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, const Location& loc);
     bool PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                 VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
                                                 const ErrorObject& error_obj) const override;
     void PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
                                                const RecordObject& record_obj) override;
+    bool PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
+                                                 VkDeviceSize dstOffset, uint32_t marker,
+                                                 const ErrorObject& error_obj) const override;
+    void PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
+                                                VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
 
     bool PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
                                           const ErrorObject& error_obj) const override;
@@ -492,12 +499,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                        const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const override;
     void PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                       const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) override;
-
-    bool PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
-                                                 VkDeviceSize dstOffset, uint32_t marker,
-                                                 const ErrorObject& error_obj) const override;
-    void PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
-                                                VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                            const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const override;
     void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
