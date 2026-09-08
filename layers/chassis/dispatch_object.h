@@ -254,6 +254,7 @@ class HandleWrapper : public Logger {
     void UnwrapPnextChainHandles(const void* pNext);
     void UnwrapComputePipelineCreateInfoHandles(vku::safe_VkComputePipelineCreateInfo& safe_ci);
     void UnwrapGraphicsPipelineCreateInfoHandles(vku::safe_VkGraphicsPipelineCreateInfo& safe_ci);
+    void UnwrapShaderObjectCreateInfoHandles(vku::safe_VkShaderCreateInfoEXT& safe_ci);
 
     static std::atomic<uint64_t> global_unique_id;
     static vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;

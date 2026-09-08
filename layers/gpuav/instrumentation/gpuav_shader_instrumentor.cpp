@@ -414,7 +414,7 @@ void GpuShaderInstrumentor::PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice dev
     if (!gpuav_settings.IsSpirvModified()) {
         return;
     }
-    if (pNameInfo->objectType != VK_OBJECT_TYPE_PIPELINE || !pNameInfo->pObjectName) {
+    if (!pNameInfo->pObjectName) {
         return;
     }
 
@@ -428,43 +428,87 @@ void GpuShaderInstrumentor::PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice dev
         return;
     }
 
-    VkPipeline wrapped_pipeline = CastFromUint64<VkPipeline>(pNameInfo->objectHandle);
-    auto pipeline_state = Get<vvl::Pipeline>(wrapped_pipeline);
-    ASSERT_AND_RETURN(pipeline_state);
-    PipelineSubState& pipeline_sub_state = SubState(*pipeline_state);
+    if (pNameInfo->objectType == VK_OBJECT_TYPE_PIPELINE) {
+        VkPipeline wrapped_pipeline = CastFromUint64<VkPipeline>(pNameInfo->objectHandle);
+        auto pipeline_state = Get<vvl::Pipeline>(wrapped_pipeline);
+        ASSERT_AND_RETURN(pipeline_state);
+        PipelineSubState& pipeline_sub_state = SubState(*pipeline_state);
 
-    if (pipeline_sub_state.status.host.is_instrumented) {
-        return;
-    }
-
-    if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state, record_obj.location)) {
-        return;
-    }
-
-    auto layer_data = vvl::GetDispatchDevice(device);
-    ASSERT_AND_RETURN(layer_data);
-
-    // The pipeline was selected by name, not by individual shader name, so force all its shaders to be instrumented
-    for (const auto& stage_state : pipeline_state->stage_states) {
-        if (stage_state.module_state && stage_state.module_state->VkHandle() != VK_NULL_HANDLE) {
-            selected_instrumented_shaders.insert(stage_state.module_state->VkHandle());
+        if (pipeline_sub_state.status.host.is_instrumented) {
+            return;
         }
-    }
 
-    VkPipeline instrumented_pipeline = VK_NULL_HANDLE;
-    // Can't instrument ray tracing pipeline post creation,
-    // As corresponding shader binding tables may have already been created.
-    if (pipeline_state->linking_shaders == 0 &&
-        IsValueIn(pipeline_state->pipeline_type, {VK_PIPELINE_BIND_POINT_GRAPHICS, VK_PIPELINE_BIND_POINT_COMPUTE})) {
-        std::vector<chassis::ShaderInstrumentationMetadata> shader_instrumentation_metadata;
-        if (pipeline_state->pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state, record_obj.location)) {
+            return;
+        }
+
+        auto layer_data = vvl::GetDispatchDevice(device);
+        ASSERT_AND_RETURN(layer_data);
+
+        // The pipeline was selected by name, not by individual shader name, so force all its shaders to be instrumented
+        for (const auto& stage_state : pipeline_state->stage_states) {
+            if (stage_state.module_state && stage_state.module_state->VkHandle() != VK_NULL_HANDLE) {
+                selected_instrumented_shaders.insert(stage_state.module_state->VkHandle());
+            }
+        }
+
+        VkPipeline instrumented_pipeline = VK_NULL_HANDLE;
+        // Can't instrument ray tracing pipeline post creation,
+        // As corresponding shader binding tables may have already been created.
+        if (pipeline_state->linking_shaders == 0 &&
+            IsValueIn(pipeline_state->pipeline_type, {VK_PIPELINE_BIND_POINT_GRAPHICS, VK_PIPELINE_BIND_POINT_COMPUTE})) {
+            std::vector<chassis::ShaderInstrumentationMetadata> shader_instrumentation_metadata;
+            if (pipeline_state->pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                vku::safe_VkGraphicsPipelineCreateInfo new_pipeline_ci(pipeline_state->GraphicsCreateInfo());
+                new_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+                const bool success = PreCallRecordPipelineCreationShaderInstrumentation(
+                    nullptr, *pipeline_state, new_pipeline_ci, uint32_t(pipeline_state->stage_states.size()), record_obj.location,
+                    shader_instrumentation_metadata);
+                if (!success) {
+                    InternalError(device, record_obj.location,
+                                  "Failed to instrument graphics pipeline in SetDebugUtilsObjectNameEXT.");
+                    return;
+                }
+
+                layer_data->UnwrapGraphicsPipelineCreateInfoHandles(new_pipeline_ci);
+                const VkResult result = layer_data->device_dispatch_table.CreateGraphicsPipelines(
+                    device, VK_NULL_HANDLE, 1, new_pipeline_ci.ptr(), nullptr, &instrumented_pipeline);
+                if (result != VK_SUCCESS || instrumented_pipeline == VK_NULL_HANDLE) {
+                    InternalError(device, record_obj.location,
+                                  "Failed to create instrumented graphics pipeline in SetDebugUtilsObjectNameEXT.");
+                    return;
+                }
+            } else if (pipeline_state->pipeline_type == VK_PIPELINE_BIND_POINT_COMPUTE) {
+                vku::safe_VkComputePipelineCreateInfo new_pipeline_ci(pipeline_state->ComputeCreateInfo());
+                new_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+                const bool success = PreCallRecordPipelineCreationShaderInstrumentation(
+                    nullptr, *pipeline_state, new_pipeline_ci, uint32_t(pipeline_state->stage_states.size()), record_obj.location,
+                    shader_instrumentation_metadata);
+                if (!success) {
+                    InternalError(device, record_obj.location,
+                                  "Failed to instrument compute pipeline in SetDebugUtilsObjectNameEXT.");
+                    return;
+                }
+
+                layer_data->UnwrapComputePipelineCreateInfoHandles(new_pipeline_ci);
+                const VkResult result = layer_data->device_dispatch_table.CreateComputePipelines(
+                    device, VK_NULL_HANDLE, 1, new_pipeline_ci.ptr(), nullptr, &instrumented_pipeline);
+                if (result != VK_SUCCESS || instrumented_pipeline == VK_NULL_HANDLE) {
+                    InternalError(device, record_obj.location,
+                                  "Failed to create instrumented compute pipeline in SetDebugUtilsObjectNameEXT.");
+                    return;
+                }
+            }
+
+            PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, uint32_t(pipeline_state->stage_states.size()),
+                                                                shader_instrumentation_metadata);
+        } else {
             vku::safe_VkGraphicsPipelineCreateInfo new_pipeline_ci(pipeline_state->GraphicsCreateInfo());
-            new_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
-            const bool success = PreCallRecordPipelineCreationShaderInstrumentation(
-                nullptr, *pipeline_state, new_pipeline_ci, uint32_t(pipeline_state->stage_states.size()), record_obj.location,
-                shader_instrumentation_metadata);
+            const bool success = PreCallRecordPipelineCreationShaderInstrumentationGPL(nullptr, *pipeline_state, new_pipeline_ci,
+                                                                                       record_obj.location);
             if (!success) {
-                InternalError(device, record_obj.location, "Failed to instrument graphics pipeline in SetDebugUtilsObjectNameEXT.");
+                InternalError(device, record_obj.location,
+                              "Failed to instrument graphics pipeline library in SetDebugUtilsObjectNameEXT.");
                 return;
             }
 
@@ -476,51 +520,52 @@ void GpuShaderInstrumentor::PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice dev
                               "Failed to create instrumented graphics pipeline in SetDebugUtilsObjectNameEXT.");
                 return;
             }
-        } else if (pipeline_state->pipeline_type == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            vku::safe_VkComputePipelineCreateInfo new_pipeline_ci(pipeline_state->ComputeCreateInfo());
-            new_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
-            const bool success = PreCallRecordPipelineCreationShaderInstrumentation(
-                nullptr, *pipeline_state, new_pipeline_ci, uint32_t(pipeline_state->stage_states.size()), record_obj.location,
-                shader_instrumentation_metadata);
-            if (!success) {
-                InternalError(device, record_obj.location, "Failed to instrument compute pipeline in SetDebugUtilsObjectNameEXT.");
-                return;
-            }
-
-            layer_data->UnwrapComputePipelineCreateInfoHandles(new_pipeline_ci);
-            const VkResult result = layer_data->device_dispatch_table.CreateComputePipelines(
-                device, VK_NULL_HANDLE, 1, new_pipeline_ci.ptr(), nullptr, &instrumented_pipeline);
-            if (result != VK_SUCCESS || instrumented_pipeline == VK_NULL_HANDLE) {
-                InternalError(device, record_obj.location,
-                              "Failed to create instrumented compute pipeline in SetDebugUtilsObjectNameEXT.");
-                return;
-            }
         }
 
-        PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, uint32_t(pipeline_state->stage_states.size()),
-                                                            shader_instrumentation_metadata);
-    } else {
-        vku::safe_VkGraphicsPipelineCreateInfo new_pipeline_ci(pipeline_state->GraphicsCreateInfo());
-        const bool success =
-            PreCallRecordPipelineCreationShaderInstrumentationGPL(nullptr, *pipeline_state, new_pipeline_ci, record_obj.location);
-        if (!success) {
-            InternalError(device, record_obj.location,
-                          "Failed to instrument graphics pipeline library in SetDebugUtilsObjectNameEXT.");
-            return;
-        }
-
-        layer_data->UnwrapGraphicsPipelineCreateInfoHandles(new_pipeline_ci);
-        const VkResult result = layer_data->device_dispatch_table.CreateGraphicsPipelines(
-            device, VK_NULL_HANDLE, 1, new_pipeline_ci.ptr(), nullptr, &instrumented_pipeline);
-        if (result != VK_SUCCESS || instrumented_pipeline == VK_NULL_HANDLE) {
-            InternalError(device, record_obj.location,
-                          "Failed to create instrumented graphics pipeline in SetDebugUtilsObjectNameEXT.");
-            return;
-        }
+        const VkPipeline old_pipeline = layer_data->Replace(pipeline_state->VkHandle(), instrumented_pipeline);
+        pipeline_sub_state.AddHandleToDestroy(old_pipeline);
     }
 
-    const VkPipeline old_pipeline = layer_data->Replace(pipeline_state->VkHandle(), instrumented_pipeline);
-    pipeline_sub_state.AddHandleToDestroy(old_pipeline);
+    if (pNameInfo->objectType == VK_OBJECT_TYPE_SHADER_EXT) {
+        VkShaderEXT wrapped_shader = CastFromUint64<VkShaderEXT>(pNameInfo->objectHandle);
+        auto shader_state = Get<vvl::ShaderObject>(wrapped_shader);
+        ASSERT_AND_RETURN(shader_state);
+        ShaderObjectSubState& shader_sub_state = SubState(*shader_state);
+        if (shader_sub_state.instrumented_status.host.is_instrumented) {
+            return;
+        }
+
+        if (!shader_sub_state.original_module) {
+            return;
+        }
+
+        vku::safe_VkShaderCreateInfoEXT new_shader_ci(shader_sub_state.original_create_info);
+        new_shader_ci.codeSize = shader_sub_state.original_module->words_.size() * sizeof(uint32_t);
+        new_shader_ci.pCode = shader_sub_state.original_module->words_.data();
+        chassis::ShaderObject chassis_state(1, new_shader_ci.ptr());
+
+        VkShaderEXT instrumented_shader = VK_NULL_HANDLE;
+        chassis_state.force_shader_instrumentation = true;
+        PreCallRecordCreateShadersEXT(device, 1, new_shader_ci.ptr(), nullptr, &wrapped_shader, record_obj, chassis_state);
+
+        new_shader_ci = chassis_state.modified_create_infos[0];
+
+        auto layer_data = vvl::GetDispatchDevice(device);
+        ASSERT_AND_RETURN(layer_data);
+
+        layer_data->UnwrapShaderObjectCreateInfoHandles(new_shader_ci);
+        const VkResult result =
+            layer_data->device_dispatch_table.CreateShadersEXT(device, 1, new_shader_ci.ptr(), nullptr, &instrumented_shader);
+        if (result != VK_SUCCESS || instrumented_shader == VK_NULL_HANDLE) {
+            InternalError(device, record_obj.location, "Failed to create instrumented VkShaderEXT in SetDebugUtilsObjectNameEXT.");
+            return;
+        }
+
+        const VkShaderEXT old_shader = layer_data->Replace(wrapped_shader, instrumented_shader);
+        shader_sub_state.AddHandleToDestroy(old_shader);
+
+        PostCallRecordCreateShadersEXT(device, 1, new_shader_ci.ptr(), nullptr, &wrapped_shader, record_obj, chassis_state);
+    }
 }
 
 void GpuShaderInstrumentor::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -640,7 +685,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                     "solution is use the SPIR-V if you want to use debugging tools.");
             }
             continue;
-        } else if (!chassis_state.module_states[i]) {
+        } else if (!chassis_state.force_shader_instrumentation && !chassis_state.module_states[i]) {
             continue;
         }
 
@@ -663,7 +708,12 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                     "for VkShaderEXT created with it, therefore no validation error will be repored for them by GPU-AV at "
                     "runtime.";
             InternalWarning(device, record_obj.location, strm.str().c_str());
-        } else if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(new_create_info.pNext)) {
+        }
+        // Because shader objects can be instrumented post creation at object labeling time,
+        // a mechanism is needed to bypass selective shader instrumentation at this level.
+        // In this case, the decision to instrument or not is done at RecordSetDebugUtilsObjectNameEXT time.
+        else if (!chassis_state.force_shader_instrumentation && gpuav_settings.select_instrumented_shaders &&
+                 !IsSelectiveInstrumentationEnabled(new_create_info.pNext)) {
             continue;
         } else {
             // Modify the pipeline layout by:
@@ -715,10 +765,12 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
     if (!gpuav_settings.IsSpirvModified()) {
         return;
     }
-    // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
-    if (!chassis_state.is_modified) {
+
+    if (!gpuav_settings.select_instrumented_shaders && !chassis_state.is_modified) {
+        // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
         return;
     }
+
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         // If there are multiple shaders being created, and one is bad, will return a non VK_SUCCESS but we need to check if the
         // VkShaderEXT was null or not to actually know if it was created
@@ -726,22 +778,35 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
         if (shader_handle == VK_NULL_HANDLE) {
             continue;
         }
+        const auto& shader_object_state = Get<vvl::ShaderObject>(shader_handle);
+        ASSERT_AND_CONTINUE(shader_object_state);
+        auto& sub_state = SubState(*shader_object_state);
 
         auto& instrumentation_data = chassis_state.instrumentations_data[i];
+
+        // If select_instrumented_shaders is enabled, GPU-AV might need
+        // SPIR-V code at object labeling time to instrument.
+        // Save state needed to do that.
+        if (gpuav_settings.select_instrumented_shaders && !instrumentation_data.status.host.is_instrumented &&
+            pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
+            sub_state.original_create_info.initialize(&pCreateInfos[i]);
+            sub_state.original_module = chassis_state.module_states[i];
+        }
+
+        if (!chassis_state.is_modified) {
+            continue;
+        }
 
         // if the shader for some reason was not instrumented, there is nothing to save
         // (like not using VK_SHADER_CODE_TYPE_SPIRV_EXT)
         if (!instrumentation_data.status.host.is_instrumented) {
             continue;
         }
-        const auto& shader_object_state = Get<vvl::ShaderObject>(shader_handle);
-        ASSERT_AND_CONTINUE(shader_object_state);
-        auto& sub_state = SubState(*shader_object_state);
 
+        sub_state.original_create_info.initialize(&pCreateInfos[i]);
         sub_state.instrumented_status.Append(instrumentation_data.status);
         sub_state.unique_shader_id = instrumentation_data.unique_shader_id;
-        // Note - this doesn't make a deep copy of the pCode, but does of the DescriptorSetLayout which we
-        sub_state.original_create_info.initialize(&pCreateInfos[i]);
+        // No pCode deep copy
 
         // We currently need to store a copy of the original, non-instrumented shader so if there is debug information.
         std::vector<uint32_t> code;

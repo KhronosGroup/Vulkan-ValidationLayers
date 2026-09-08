@@ -19,6 +19,7 @@
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
 #include "shader_object_helper.h"
+#include "utils/math_utils.h"
 
 class PositiveGpuAVScoped : public GpuAVTest {};
 
@@ -133,4 +134,64 @@ TEST_F(PositiveGpuAVScoped, DispatchShaderObjectAndPipeline) {
     vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer, 0u);
 
     m_command_buffer.End();
+}
+
+TEST_F(PositiveGpuAVScoped, SelectInstrumentedShaderObjectBinary) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+
+    std::vector<VkLayerSettingEXT> layer_settings(2);
+    layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    std::array<const char*, 1> shader_regexes = {{"shader_object_foo"}};
+    layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
+                         shader_regexes.data()};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const char cs_source[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;
+        void main() {
+            Data.data[0] = 0u;
+        }
+    )glsl";
+
+    const vkt::ShaderEXT spirv_cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
+                                  &descriptor_set.layout_.handle());
+
+    size_t data_size = 0;
+    vk::GetShaderBinaryDataEXT(*m_device, spirv_cs, &data_size, nullptr);
+    if (data_size == 0) {
+        GTEST_SKIP() << "Driver returned no shader binary data";
+    }
+    std::vector<uint8_t> binary(data_size + 15);  // need 16-byte aligned pointers
+    void* binary_ptr = reinterpret_cast<void*>(Align(reinterpret_cast<uintptr_t>(binary.data()), (uintptr_t)16));
+    vk::GetShaderBinaryDataEXT(*m_device, spirv_cs, &data_size, binary_ptr);
+
+    VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
+    create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    create_info.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
+    create_info.codeSize = data_size;
+    create_info.pCode = binary_ptr;
+    create_info.pName = "main";
+    create_info.setLayoutCount = 1u;
+    create_info.pSetLayouts = &descriptor_set.layout_.handle();
+
+    VkShaderEXT binary_cs = VK_NULL_HANDLE;
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &binary_cs);
+    if (binary_cs == VK_NULL_HANDLE) {
+        GTEST_SKIP() << "Driver bug, not reparsing";
+    }
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_SHADER_EXT;
+    name_info.pObjectName = "shader_object_foo";
+    name_info.objectHandle = uint64_t(binary_cs);
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    vk::DestroyShaderEXT(*m_device, binary_cs, nullptr);
 }

@@ -690,7 +690,8 @@ void TensorViewSubState::Destroy() { id_tracker.reset(); }
 
 void TensorViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject& obj) : vvl::ShaderObjectSubState(obj) {}
+ShaderObjectSubState::ShaderObjectSubState(Validator& gpuav, vvl::ShaderObject& obj)
+    : vvl::ShaderObjectSubState(obj), gpuav_(gpuav) {}
 
 PipelineSubState::PipelineSubState(Validator& gpuav, vvl::Pipeline& pipeline) : vvl::PipelineSubState(pipeline), gpuav_(gpuav) {}
 
@@ -791,6 +792,21 @@ void PipelineSubState::AddHandleToDestroy(VkPipeline pipeline) {
     std::unique_lock<std::mutex> lock(mutex_);
     assert(uninstrumented_pipeline == VK_NULL_HANDLE);
     uninstrumented_pipeline = pipeline;
+}
+
+void ShaderObjectSubState::Destroy() {
+    if (stale_handle != VK_NULL_HANDLE) {
+        // vkDestroyShaderEXT expects an unwrapped handle,
+        // so cannot use DispatchDestroyPipeline as it will try to unwrap supplied pipeline handle
+        auto layer_data = vvl::GetDispatchDevice(gpuav_.device);
+        layer_data->device_dispatch_table.DestroyShaderEXT(gpuav_.device, stale_handle, nullptr);
+    }
+}
+
+void ShaderObjectSubState::AddHandleToDestroy(VkShaderEXT shader) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    assert(stale_handle == VK_NULL_HANDLE);
+    stale_handle = shader;
 }
 
 }  // namespace gpuav

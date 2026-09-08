@@ -44,6 +44,10 @@
 
 struct LastBound;
 
+namespace spirv {
+struct Module;
+}
+
 namespace gpuav {
 
 class Validator;
@@ -426,7 +430,13 @@ static inline const TensorViewSubState &SubState(const vvl::TensorView &obj) {
 
 class ShaderObjectSubState : public vvl::ShaderObjectSubState {
   public:
-    explicit ShaderObjectSubState(vvl::ShaderObject &obj);
+    explicit ShaderObjectSubState(Validator& gpuav, vvl::ShaderObject& obj);
+    void Destroy() override;
+
+    // Specifically for shaders instrumented post original creation:
+    // The old shader could be in use at time of instrumentation,
+    // so defer old pipeline destroy to Destroy() call.
+    void AddHandleToDestroy(VkShaderEXT shader);
 
     spirv::InstrumentationStatus instrumented_status;
     uint32_t unique_shader_id = 0;
@@ -434,6 +444,15 @@ class ShaderObjectSubState : public vvl::ShaderObjectSubState {
     // We need to keep incase the user calls vkGetShaderBinaryDataEXT
     vku::safe_VkShaderCreateInfoEXT original_create_info;
     VkShaderEXT original_handle = VK_NULL_HANDLE;
+
+    VkShaderEXT stale_handle = VK_NULL_HANDLE;
+    std::shared_ptr<::spirv::Module> original_module;
+
+  private:
+    Validator& gpuav_;
+    // Multiple threads can record multiple commands using the same shader,
+    // so shader destruction has to be thread safe
+    mutable std::mutex mutex_{};
 };
 
 static inline ShaderObjectSubState &SubState(vvl::ShaderObject &obj) {

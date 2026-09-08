@@ -68,6 +68,7 @@ struct ShaderObject {
 
     // When using GPU-AV the pCreateInfo is modified on the user
     bool is_modified = false;
+    bool force_shader_instrumentation = false;
     std::vector<vku::safe_VkShaderCreateInfoEXT> modified_create_infos;
     const VkShaderCreateInfoEXT* pCreateInfos = nullptr;
 
