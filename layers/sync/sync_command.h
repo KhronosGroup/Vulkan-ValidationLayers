@@ -72,12 +72,18 @@ struct BufferCopyCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+enum class BufferName : uint8_t {
+    kDstBuffer,
+    kIndirect,
+};
+
 struct BufferAccessCommand {
     const vvl::Buffer& buffer;
     AccessRange range;
     SyncAccessIndex access_index;
     uint32_t handle_index = vvl::kNoIndex32;
     SyncFlags flags = 0;
+    BufferName buffer_name = BufferName::kDstBuffer;
 
     struct Storage {
         AccessRange range;
@@ -85,6 +91,7 @@ struct BufferAccessCommand {
         SyncAccessIndex access_index;
         uint32_t handle_index;
         SyncFlags flags;
+        BufferName buffer_name;
         BufferAccessCommand MakeCommand(const CommandData& command_data) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
@@ -243,9 +250,25 @@ struct ShaderAccessCommand {
                                    const ImageViewAccess& image_access) const;
 };
 
+struct DispatchIndirectCommand {
+    ShaderAccessCommand shader_accesses;
+    BufferAccessCommand indirect_access;
+
+    struct Storage {
+        ShaderAccessCommand::Storage shader_access_storage;
+        BufferAccessCommand::Storage indirect_access_storage;
+        DispatchIndirectCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 using CommandStorage = std::variant<BufferCopyCommand::Storage, BufferAccessCommand::Storage, ImageCopyCommand::Storage,
                                     BarrierCommand::Storage, BeginRenderPassCommand::Storage, NextSubpassCommand::Storage,
-                                    EndRenderPassCommand::Storage, ShaderAccessCommand::Storage>;
+                                    EndRenderPassCommand::Storage, ShaderAccessCommand::Storage, DispatchIndirectCommand::Storage>;
 
 struct CommandData {
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
