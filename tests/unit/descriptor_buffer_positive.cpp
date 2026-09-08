@@ -863,8 +863,8 @@ TEST_F(PositiveDescriptorBuffer, ShaderObject) {
         }
     )glsl";
 
-    const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
-                         &ds_layout.handle());
+    const vkt::ShaderEXT cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
+                            &ds_layout.handle());
 
     m_command_buffer.Begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
@@ -2200,12 +2200,12 @@ TEST_F(PositiveDescriptorBuffer, IndependentSetMixShaderObject) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
-    const vkt::Shader vert_shader(*m_device, create_info);
+    const vkt::ShaderEXT vert_shader(*m_device, create_info);
 
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
-    const vkt::Shader frag_shader(*m_device, create_info);
+    const vkt::ShaderEXT frag_shader(*m_device, create_info);
 
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();

@@ -920,7 +920,7 @@ TEST_F(NegativeParent, ShaderObjectDescriptorSetLayout) {
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent");
-    const vkt::Shader vertShader(*m_device, stage, GLSLToSPV(stage, kVertexMinimalGlsl), &dsl_handle);
+    const vkt::ShaderEXT vertShader(*m_device, stage, GLSLToSPV(stage, kVertexMinimalGlsl), &dsl_handle);
     m_errorMonitor->VerifyFound();
 }
 

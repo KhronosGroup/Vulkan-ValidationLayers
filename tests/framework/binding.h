@@ -838,22 +838,22 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
     static VkShaderModuleCreateInfo CreateInfo(size_t code_size, const uint32_t *code, VkFlags flags);
 };
 
-class Shader : public internal::NonDispHandle<VkShaderEXT> {
+class ShaderEXT : public internal::NonDispHandle<VkShaderEXT> {
   public:
-    Shader() = default;
-    Shader(const Device &dev, VkShaderEXT shader) { NonDispHandle::init(dev, shader); }
-    Shader(const Device &dev, const VkShaderCreateInfoEXT &info) { Init(dev, info); }
-    Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
-           const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
-    Shader(const Device &dev, const VkShaderStageFlagBits stage, const char* code,
-           const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
-    Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t> &binary,
-           const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
-    ~Shader() noexcept;
+    ShaderEXT() = default;
+    ShaderEXT(const Device& dev, VkShaderEXT shader) { NonDispHandle::init(dev, shader); }
+    ShaderEXT(const Device& dev, const VkShaderCreateInfoEXT& info) { Init(dev, info); }
+    ShaderEXT(const Device& dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t>& spv,
+              const VkDescriptorSetLayout* descriptorSetLayout = nullptr, const VkPushConstantRange* pushConstRange = nullptr);
+    ShaderEXT(const Device& dev, const VkShaderStageFlagBits stage, const char* code,
+              const VkDescriptorSetLayout* descriptorSetLayout = nullptr, const VkPushConstantRange* pushConstRange = nullptr);
+    ShaderEXT(const Device& dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t>& binary,
+              const VkDescriptorSetLayout* descriptorSetLayout = nullptr, const VkPushConstantRange* pushConstRange = nullptr);
+    ~ShaderEXT() noexcept;
     void Destroy() noexcept;
 
     // vkCreateShaderModule()
-    void Init(const Device &dev, const VkShaderCreateInfoEXT &info);
+    void Init(const Device& dev, const VkShaderCreateInfoEXT& info);
     VkResult InitTry(const Device &dev, const VkShaderCreateInfoEXT &info);
     void SetName(const char *name) { NonDispHandle<VkShaderEXT>::SetName(VK_OBJECT_TYPE_SHADER_EXT, name); }
 };
@@ -1114,15 +1114,16 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 
     void PushData(uint32_t offset, size_t size, const void* address);
 
-    void BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& frag_shader);
-    void BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& geom_shader, const vkt::Shader& frag_shader);
-    void BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& tesc_shader, const vkt::Shader& tese_shader,
-                        const vkt::Shader& frag_shader);
-    void BindShadersEXT(const vkt::Shader& vert_shader, const vkt::Shader& tesc_shader, const vkt::Shader& tese_shader,
-                        const vkt::Shader& geom_shader, const vkt::Shader& frag_shader);
-    void BindCompShaderEXT(const vkt::Shader& comp_shader);
-    void BindMeshShadersEXT(const vkt::Shader& mesh_shader, const vkt::Shader& frag_shader);
-    void BindMeshShadersEXT(const vkt::Shader& task_shader, const vkt::Shader& mesh_shader, const vkt::Shader& frag_shader);
+    void BindShadersEXT(const vkt::ShaderEXT& vert_shader, const vkt::ShaderEXT& frag_shader);
+    void BindShadersEXT(const vkt::ShaderEXT& vert_shader, const vkt::ShaderEXT& geom_shader, const vkt::ShaderEXT& frag_shader);
+    void BindShadersEXT(const vkt::ShaderEXT& vert_shader, const vkt::ShaderEXT& tesc_shader, const vkt::ShaderEXT& tese_shader,
+                        const vkt::ShaderEXT& frag_shader);
+    void BindShadersEXT(const vkt::ShaderEXT& vert_shader, const vkt::ShaderEXT& tesc_shader, const vkt::ShaderEXT& tese_shader,
+                        const vkt::ShaderEXT& geom_shader, const vkt::ShaderEXT& frag_shader);
+    void BindCompShaderEXT(const vkt::ShaderEXT& comp_shader);
+    void BindMeshShadersEXT(const vkt::ShaderEXT& mesh_shader, const vkt::ShaderEXT& frag_shader);
+    void BindMeshShadersEXT(const vkt::ShaderEXT& task_shader, const vkt::ShaderEXT& mesh_shader,
+                            const vkt::ShaderEXT& frag_shader);
 
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR& beginInfo);
     void ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo);

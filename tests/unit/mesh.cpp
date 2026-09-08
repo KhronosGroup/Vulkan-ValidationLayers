@@ -1213,8 +1213,8 @@ TEST_F(NegativeMesh, DrawIndexMeshShaderObject) {
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-09632");
-    const vkt::Shader meshShader(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
-                                 GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, mesh_src, SPV_ENV_VULKAN_1_2));
+    const vkt::ShaderEXT meshShader(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
+                                    GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, mesh_src, SPV_ENV_VULKAN_1_2));
     m_errorMonitor->VerifyFound();
 }
 

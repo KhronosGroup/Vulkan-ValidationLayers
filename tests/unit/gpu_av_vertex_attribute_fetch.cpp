@@ -338,8 +338,8 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32ShaderObject) {
         }
     )glsl";
 
-    const vkt::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source));
-    const vkt::Shader fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::ShaderEXT vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source));
+    const vkt::ShaderEXT fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
     VkVertexInputBindingDescription2EXT input_binding = vku::InitStructHelper();
     input_binding.binding = 0;

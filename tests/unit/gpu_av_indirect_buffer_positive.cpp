@@ -271,7 +271,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, PipelineAndShaderObjectComputeDispatchIndire
     const VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
     const auto comp_spv = GLSLToSPV(stage, kMinimalShaderGlsl);
     VkShaderCreateInfoEXT comp_create_info = ShaderCreateInfo(comp_spv, stage);
-    const vkt::Shader comp_shader(*m_device, comp_create_info);
+    const vkt::ShaderEXT comp_shader(*m_device, comp_create_info);
 
     m_command_buffer.Begin();
 
@@ -351,12 +351,14 @@ TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
     g_pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     g_pipe.CreateGraphicsPipeline();
 
-    const vkt::Shader cs_shader_object(*m_device, VK_SHADER_STAGE_COMPUTE_BIT,
-                                       GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source), &c_descriptor_set.layout_.handle());
-    const vkt::Shader vs_shader_object(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source),
-                                       &g_descriptor_set.layout_.handle());
-    const vkt::Shader fs_shader_object(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                       GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, shader_source), &g_descriptor_set.layout_.handle());
+    const vkt::ShaderEXT cs_shader_object(*m_device, VK_SHADER_STAGE_COMPUTE_BIT,
+                                          GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source),
+                                          &c_descriptor_set.layout_.handle());
+    const vkt::ShaderEXT vs_shader_object(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                          GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source), &g_descriptor_set.layout_.handle());
+    const vkt::ShaderEXT fs_shader_object(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                          GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, shader_source),
+                                          &g_descriptor_set.layout_.handle());
 
     m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipeline_layout, 0, 1, &g_descriptor_set.set_, 0,

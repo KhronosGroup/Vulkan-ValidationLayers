@@ -2237,8 +2237,8 @@ TEST_F(NegativeYcbcr, DescriptorIndexShaderObject) {
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-12205");
-    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
-                                  &descriptor_set.layout_.handle());
+    const vkt::ShaderEXT comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
+                                     &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();
 }
 

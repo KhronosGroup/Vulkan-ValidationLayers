@@ -167,8 +167,8 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisableShaderObject) {
                                                  });
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-NonWritable-06341");
-    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source),
-                                  &descriptor_set.layout_.handle());
+    const vkt::ShaderEXT vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source),
+                                     &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();
 }
 

@@ -304,8 +304,8 @@ TEST_F(NegativeGpuAVDebugPrintf, ShaderObject) {
     descriptor_set_0.WriteDescriptorBufferInfo(0, buffer, 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set_0.UpdateDescriptorSets();
 
-    const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source),
-                         &dsl_handle);
+    const vkt::ShaderEXT cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source),
+                            &dsl_handle);
 
     m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set_0.set_, 0,

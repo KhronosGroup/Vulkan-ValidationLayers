@@ -977,7 +977,7 @@ TEST_F(NegativeShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     auto shader_ci = ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &dsl.handle());
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10771");
-    const vkt::Shader comp_shader(*m_device, shader_ci);
+    const vkt::ShaderEXT comp_shader(*m_device, shader_ci);
     m_errorMonitor->VerifyFound();
 }
 

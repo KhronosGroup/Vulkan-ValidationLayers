@@ -88,7 +88,7 @@ TEST_F(PositiveShader64BitIndexing, ShaderObjectEnableLength64) {
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     create_info.flags = VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT;
-    const vkt::Shader shader(*m_device, create_info);
+    const vkt::ShaderEXT shader(*m_device, create_info);
 }
 
 TEST_F(PositiveShader64BitIndexing, UntypedPointerLength64) {

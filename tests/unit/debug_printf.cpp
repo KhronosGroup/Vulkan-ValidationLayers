@@ -1932,8 +1932,8 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsGraphics) {
             gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
         }
     )glsl";
-    const vkt::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source));
-    const vkt::Shader fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    const vkt::ShaderEXT vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source));
+    const vkt::ShaderEXT fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -1978,7 +1978,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjects) {
             debugPrintfEXT("Here's a float in hex %1.9a", myfloat);
         }
     )glsl";
-    const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source));
+    const vkt::ShaderEXT cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source));
 
     m_command_buffer.Begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
@@ -2019,7 +2019,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsInt64) {
             debugPrintfEXT("Unsigned long as decimal %lu and as hex 0x%lx", bigvar, bigvar);
         }
     )glsl";
-    const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source));
+    const vkt::ShaderEXT cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source));
 
     m_command_buffer.Begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
@@ -2060,8 +2060,8 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
             gl_Position = vec4(0.0, 0.0, 0.0, 0.0);
         }
     )glsl";
-    const vkt::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source));
-    const vkt::Shader fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    const vkt::ShaderEXT vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source));
+    const vkt::ShaderEXT fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkMultiDrawInfoEXT multi_draws[3] = {};
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
@@ -2143,11 +2143,11 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
         }
     )glsl";
 
-    const vkt::Shader ts(*m_device, VK_SHADER_STAGE_TASK_BIT_EXT,
-                         GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, taskShaderText, SPV_ENV_VULKAN_1_3));
-    const vkt::Shader ms(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
-                         GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, SPV_ENV_VULKAN_1_3));
-    const vkt::Shader fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    const vkt::ShaderEXT ts(*m_device, VK_SHADER_STAGE_TASK_BIT_EXT,
+                            GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, taskShaderText, SPV_ENV_VULKAN_1_3));
+    const vkt::ShaderEXT ms(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
+                            GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, SPV_ENV_VULKAN_1_3));
+    const vkt::ShaderEXT fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -2346,9 +2346,9 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
         }
     )glsl";
 
-    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                                  GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl));
-    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source));
+    const vkt::ShaderEXT vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                     GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl));
+    const vkt::ShaderEXT frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source));
 
     VkRenderingInfo renderingInfo = vku::InitStructHelper();
     renderingInfo.colorAttachmentCount = 0;
@@ -2382,7 +2382,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectCompute) {
             debugPrintfEXT("float == %f", myfloat);
         }
     )glsl";
-    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source));
+    const vkt::ShaderEXT comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source));
 
     m_command_buffer.Begin();
     m_command_buffer.BindCompShaderEXT(comp_shader);
@@ -2881,8 +2881,8 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectReserved) {
             "This Shader Object has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "VkShaderEXT created with it");
 
-        const vkt::Shader comp_shader(*m_device,
-                                      ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit, layouts.data()));
+        const vkt::ShaderEXT comp_shader(*m_device,
+                                         ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit, layouts.data()));
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.Begin();
@@ -2903,8 +2903,8 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectReserved) {
         }
         vkt::PipelineLayout pipe_layout(*m_device, vkt_layouts);
 
-        const vkt::Shader comp_shader(*m_device,
-                                      ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, under_set_limit, layouts.data()));
+        const vkt::ShaderEXT comp_shader(*m_device,
+                                         ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, under_set_limit, layouts.data()));
 
         m_command_buffer.Begin();
         m_command_buffer.BindCompShaderEXT(comp_shader);
@@ -2950,8 +2950,8 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectNotReserved) {
             "This Shader Object has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "VkShaderEXT created with it");
 
-        const vkt::Shader comp_shader(*m_device,
-                                      ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit, layouts.data()));
+        const vkt::ShaderEXT comp_shader(*m_device,
+                                         ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit, layouts.data()));
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.Begin();
@@ -2972,8 +2972,8 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectNotReserved) {
         }
         vkt::PipelineLayout pipe_layout(*m_device, vkt_layouts);
 
-        const vkt::Shader comp_shader(*m_device,
-                                      ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit - 1, layouts.data()));
+        const vkt::ShaderEXT comp_shader(*m_device,
+                                         ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit - 1, layouts.data()));
 
         m_command_buffer.Begin();
         m_command_buffer.BindCompShaderEXT(comp_shader);
@@ -3079,8 +3079,8 @@ TEST_F(NegativeDebugPrintf, ShaderObjectBoundDescriptor) {
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const vkt::Shader comp_shader(*m_device,
-                                  ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle()));
+    const vkt::ShaderEXT comp_shader(*m_device,
+                                     ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle()));
     m_command_buffer.Begin();
     m_command_buffer.BindCompShaderEXT(comp_shader);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
@@ -3120,7 +3120,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectUnusedBoundDescriptor) {
     descriptor_set1.UpdateDescriptorSets();
 
     VkDescriptorSetLayout layouts[2] = {descriptor_set0.layout_, descriptor_set1.layout_};
-    const vkt::Shader comp_shader(*m_device, ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, layouts));
+    const vkt::ShaderEXT comp_shader(*m_device, ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, layouts));
     m_command_buffer.Begin();
     m_command_buffer.BindCompShaderEXT(comp_shader);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set0.set_, 0,
@@ -5207,8 +5207,8 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferShaderObject) {
         }
     )glsl";
 
-    const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
-                         &ds_layout.handle());
+    const vkt::ShaderEXT cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
+                            &ds_layout.handle());
 
     m_command_buffer.Begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
@@ -5301,7 +5301,7 @@ TEST_F(NegativeDebugPrintf, NoPipelineLayout) {
             debugPrintfEXT("c == %u\n", c);
         }
     )glsl";
-    const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source));
+    const vkt::ShaderEXT cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source));
 
     m_command_buffer.Begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
@@ -5566,9 +5566,9 @@ TEST_F(NegativeDebugPrintf, DrawMeshTasksIndirectCountEXT) {
     mesh_ci.codeSize = mesh_code.size() * sizeof(mesh_code[0]);
     mesh_ci.pCode = mesh_code.data();
     mesh_ci.pName = "main";
-    const vkt::Shader mesh(*m_device, mesh_ci);
-    const vkt::Shader frag(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                           GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl, SPV_ENV_VULKAN_1_2));
+    const vkt::ShaderEXT mesh(*m_device, mesh_ci);
+    const vkt::ShaderEXT frag(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                              GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl, SPV_ENV_VULKAN_1_2));
 
     vkt::Buffer count_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
@@ -5698,8 +5698,8 @@ TEST_F(NegativeDebugPrintf, DisableShaderValidationShaderObject) {
         }
     )glsl";
 
-    const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source),
-                         &ds.layout_.handle());
+    const vkt::ShaderEXT cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source),
+                            &ds.layout_.handle());
 
     m_command_buffer.Begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
@@ -6227,7 +6227,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapShaderObjects) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
     VkShaderCreateInfoEXT shader_create_info = ShaderCreateInfoHeap(spv, VK_SHADER_STAGE_COMPUTE_BIT, &mapping_info);
-    vkt::Shader shader(*m_device, shader_create_info);
+    vkt::ShaderEXT shader(*m_device, shader_create_info);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();

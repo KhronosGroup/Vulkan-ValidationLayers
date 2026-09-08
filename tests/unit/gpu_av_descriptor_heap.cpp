@@ -668,11 +668,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
 
     const auto vspv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource);
     VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoHeap(vspv, VK_SHADER_STAGE_VERTEX_BIT);
-    const vkt::Shader vert_shader(*m_device, vert_ci);
+    const vkt::ShaderEXT vert_shader(*m_device, vert_ci);
 
     const auto fspv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     VkShaderCreateInfoEXT frag_ci = ShaderCreateInfoHeap(fspv, VK_SHADER_STAGE_FRAGMENT_BIT);
-    const vkt::Shader frag_shader(*m_device, frag_ci);
+    const vkt::ShaderEXT frag_shader(*m_device, frag_ci);
 
     VkDrawIndexedIndirectCommand draw_params{};
     draw_params.indexCount = 3;
@@ -1056,11 +1056,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl);
     VkShaderCreateInfoEXT vert_shader_ci = ShaderCreateInfoHeap(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
-    const vkt::Shader vert_shader(*m_device, vert_shader_ci);
+    const vkt::ShaderEXT vert_shader(*m_device, vert_shader_ci);
 
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
     VkShaderCreateInfoEXT frag_shader_ci = ShaderCreateInfoHeap(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, &mapping_info);
-    const vkt::Shader frag_shader(*m_device, frag_shader_ci);
+    const vkt::ShaderEXT frag_shader(*m_device, frag_shader_ci);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
