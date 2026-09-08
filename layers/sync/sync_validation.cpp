@@ -1132,25 +1132,61 @@ void SyncValidator::PostCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuff
 
 bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    auto indirect_buffer = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCurrentAccessContext();
 
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
-    skip |= ValidateIndirectBuffer(cb_context, access_context, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
-                                   sizeof(VkDispatchIndirectCommand), error_obj.location);
-    return skip;
+    const auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
+    const AccessRange range = MakeRange(offset, sizeof(VkDispatchIndirectCommand));
+
+    const DispatchIndirectCommand command{
+        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
+                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        BufferAccessCommand{*indirect_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, vvl::kNoIndex32, 0,
+                            BufferName::kIndirect}};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       const RecordObject& record_obj) {
+    auto indirect_buffer = Get<vvl::Buffer>(buffer);
+    if (!indirect_buffer) {
+        return;
+    }
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
+    auto indirect_buffer_tag_ex = cb_context.AddCommandHandle(tag, indirect_buffer->Handle());
 
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
-    RecordIndirectBuffer(cb_context, tag, sizeof(VkDispatchIndirectCommand), buffer, offset, 1, sizeof(VkDispatchIndirectCommand));
+    auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
+    const AccessRange range = MakeRange(offset, sizeof(VkDispatchIndirectCommand));
+
+    for (auto& access : descriptor_accesses.buffer_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.info.resource_handle).handle_index;
+    }
+    for (auto& access : descriptor_accesses.image_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
+    }
+
+    const DispatchIndirectCommand command{
+        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
+                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        BufferAccessCommand{*indirect_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, indirect_buffer_tag_ex.handle_index,
+                            0, BufferName::kIndirect}};
+
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        AccessContext& access_context = cb_context.GetCurrentAccessContext();
+        command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
 }
 
 bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,

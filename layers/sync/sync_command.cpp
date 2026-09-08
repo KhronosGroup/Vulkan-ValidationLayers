@@ -190,11 +190,11 @@ void BufferCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Access
 }
 
 BufferAccessCommand BufferAccessCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    return {*command_data.buffers[buffer_index], range, access_index, handle_index, flags};
+    return {*command_data.buffers[buffer_index], range, access_index, handle_index, flags, buffer_name};
 }
 
 BufferAccessCommand::Storage BufferAccessCommand::MakeStorage(CommandData& command_data) const {
-    return {range, command_data.AddBuffer(buffer), access_index, handle_index, flags};
+    return {range, command_data.AddBuffer(buffer), access_index, handle_index, flags, buffer_name};
 }
 
 bool BufferAccessCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
@@ -225,7 +225,8 @@ bool BufferAccessCommand::Validate(const SyncEnvironment& env, const AccessConte
     } else {
         objlist = BaseObjectList(env, cb_context, buffer.Handle());
     }
-    const std::string resource_description = "dstBuffer " + validator.FormatHandle(buffer.Handle());
+    const char* buffer_name_str = buffer_name == BufferName::kDstBuffer ? "dstBuffer " : "indirect ";
+    const std::string resource_description = buffer_name_str + validator.FormatHandle(buffer.Handle());
     const std::string error =
         validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
     return validator.SyncError(hazard.Hazard(), objlist, loc, error);
@@ -590,6 +591,32 @@ void ShaderAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Acce
             access_context.UpdateAccessState(range_gen, access.access_index, tag_ex, 0, env.queue_id);
         }
     }
+}
+
+DispatchIndirectCommand DispatchIndirectCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    return {shader_access_storage.MakeCommand(command_data), indirect_access_storage.MakeCommand(command_data)};
+}
+
+DispatchIndirectCommand::Storage DispatchIndirectCommand::MakeStorage(CommandData& command_data) const {
+    return {shader_accesses.MakeStorage(command_data), indirect_access.MakeStorage(command_data)};
+}
+
+bool DispatchIndirectCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool DispatchIndirectCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                       const Location& loc) const {
+    bool skip = false;
+    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= indirect_access.Validate(env, access_context, cb_context, replay_tag, loc);
+    return skip;
+}
+
+void DispatchIndirectCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    shader_accesses.Apply(env, tag, access_context);
+    indirect_access.Apply(env, tag, access_context);
 }
 
 }  // namespace syncval
