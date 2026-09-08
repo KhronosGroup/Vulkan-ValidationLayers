@@ -185,11 +185,6 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
                          cpu_region.imageExtent.width * cpu_region.imageExtent.height * cpu_region.imageExtent.depth);
 
             ++gpu_regions_count;
-
-            if (gpu_regions_count == 0) {
-                // Nothing to validate
-                return;
-            }
         }
 
         gpu_regions_u32_ptr[0] = image_extent.width;

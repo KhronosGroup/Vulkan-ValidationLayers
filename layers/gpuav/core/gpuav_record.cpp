@@ -127,7 +127,7 @@ void Validator::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer,
 void Validator::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
                                                 const RecordObject& record_obj) {
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        BindBufferMemory(pBindInfos->buffer, pBindInfos->memory, pBindInfos->memoryOffset, record_obj.location);
+        BindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset, record_obj.location);
     }
 }
 
