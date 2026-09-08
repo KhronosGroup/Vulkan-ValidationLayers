@@ -211,6 +211,14 @@ struct ShaderAccessCommand {
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
                   ResourceUsageTag replay_tag, const Location& loc) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+
+  private:
+    bool ValidateBufferShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
+                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+                                    const BufferAccess& buffer_access) const;
+    bool ValidateImageShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
+                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+                                   const ImageViewAccess& image_access) const;
 };
 
 using CommandStorage =
