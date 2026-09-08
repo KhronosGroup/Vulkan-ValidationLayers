@@ -497,12 +497,12 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
 
         // flag must be zero
         if (device_queue_info.flags != 0) {
-            skip |= LogError(
-                "VUID-vkGetDeviceQueue-flags-01841", device, error_obj.location.dot(Field::queueFamilyIndex),
-                "(%" PRIu32
-                ") was created with a non-zero VkDeviceQueueCreateFlags in vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
-                "]. Need to use vkGetDeviceQueue2 instead.",
-                queueIndex, device_queue_info.index);
+            skip |= LogError("VUID-vkGetDeviceQueue-flags-01841", device, error_obj.location.dot(Field::queueFamilyIndex),
+                             "(%" PRIu32
+                             ") was created with a non-zero VkDeviceQueueCreateFlags (%s) in "
+                             "vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32 "]. Need to use vkGetDeviceQueue2 instead.",
+                             queueFamilyIndex, string_VkDeviceQueueCreateFlags(device_queue_info.flags).c_str(),
+                             device_queue_info.index);
         }
 
         if (device_queue_info.queue_count <= queueIndex) {
@@ -542,7 +542,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
 
             if (device_queue_info.queue_count <= queueIndex) {
                 skip |= LogError(
-                    "VUID-VkDeviceQueueInfo2-queueIndex-01843", device, error_obj.location.dot(Field::queueFamilyIndex),
+                    "VUID-VkDeviceQueueInfo2-queueIndex-01843", device, queue_info_loc.dot(Field::queueFamilyIndex),
                     "(%" PRIu32 ") is not less than the number of queues requested from [queueFamilyIndex (%" PRIu32
                     "), flags (%s)] combination when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
                     "] (requested %" PRIu32 " queues).",
@@ -647,7 +647,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
     for (uint32_t i = 0; i < srcCacheCount; i++) {
         auto src = CastFromHandle<const ValidationCache*>(pSrcCaches[i]);
         if (src == dst) {
-            const Location loc(Func::vkMergePipelineCaches, Field::dstCache);
+            const Location loc(Func::vkMergeValidationCachesEXT, Field::dstCache);
             skip |= LogError("VUID-vkMergeValidationCachesEXT-dstCache-01536", device, loc,
                              "(0x%" PRIx64 ") must not appear in pSrcCaches array.", HandleToUint64(dstCache));
             result = VK_ERROR_VALIDATION_FAILED_EXT;
@@ -832,11 +832,12 @@ bool CoreChecks::ValidateObjectNotInUse(const vvl::StateObject* obj_node, const 
     // is handled by the general error message below (the user handle has type Queue then).
     if (obj_handle.type == kVulkanObjectTypeSwapchainKHR && user_handle->type == kVulkanObjectTypeImage) {
         if (auto swapchain_image = Get<vvl::Image>(user_handle->Cast<VkImage>())) {
-            const VulkanTypedHandle* image_user_handle = swapchain_image->InUse();
-            skip |= LogError(error_code, device, loc, "can't be called on %s that has its %s in use by %s.",
-                             FormatHandle(obj_handle).c_str(), FormatHandle(*user_handle).c_str(),
-                             FormatHandle(*image_user_handle).c_str());
-            return skip;
+            if (const VulkanTypedHandle* image_user_handle = swapchain_image->InUse()) {
+                skip |= LogError(error_code, device, loc, "can't be called on %s that has its %s in use by %s.",
+                                 FormatHandle(obj_handle).c_str(), FormatHandle(*user_handle).c_str(),
+                                 FormatHandle(*image_user_handle).c_str());
+                return skip;
+            }
         }
     }
 
