@@ -13,6 +13,7 @@
  */
 
 #include "utils/cast_utils.h"
+#include "utils/math_utils.h"
 #include "layer_validation_tests.h"
 
 class NegativeSparseBuffer : public VkLayerTest {};
@@ -687,4 +688,87 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
     m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-flags-parameter");
     vk::QueueBindSparse(m_default_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSparseBuffer, OverlappingBufferCopyUnorderedRegions) {
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    if (m_device->QueuesWithSparseCapability().empty()) {
+        GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
+    }
+
+    vkt::Semaphore semaphore(*m_device);
+
+    VkBufferCreateInfo buffer_ci =
+        vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    vkt::Buffer buffer_sparse(*m_device, buffer_ci, vkt::no_mem);
+
+    const VkDeviceSize block = Align<VkDeviceSize>(256, buffer_sparse.MemoryRequirements().alignment);
+    buffer_sparse.Destroy();
+    buffer_ci.size = 2 * block;
+    buffer_sparse.InitNoMemory(*m_device, buffer_ci);
+
+    buffer_ci.flags = 0;
+    vkt::Buffer buffer_not_sparse(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements not_sparse_mem_reqs = buffer_not_sparse.MemoryRequirements();
+    const VkMemoryRequirements sparse_mem_reqs = buffer_sparse.MemoryRequirements();
+    if ((not_sparse_mem_reqs.memoryTypeBits & sparse_mem_reqs.memoryTypeBits) == 0) {
+        GTEST_SKIP() << "Could not find common memory type for sparse and not sparse buffer, skipping test";
+    }
+    not_sparse_mem_reqs.memoryTypeBits &= sparse_mem_reqs.memoryTypeBits;
+
+    const VkMemoryAllocateInfo mem_alloc =
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, not_sparse_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::DeviceMemory buffer_mem(*m_device, mem_alloc);
+
+    buffer_not_sparse.BindMemory(buffer_mem, 0);
+
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.size = 2 * block;
+    buffer_memory_bind.memory = buffer_mem;
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
+    buffer_memory_bind_info.buffer = buffer_sparse;
+    buffer_memory_bind_info.bindCount = 1;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.bufferBindCount = 1;
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+    bind_info.signalSemaphoreCount = 1;
+    bind_info.pSignalSemaphores = &semaphore.handle();
+
+    VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
+    vkt::Fence sparse_queue_fence(*m_device);
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
+    sparse_queue_fence.Wait(kWaitTimeout);
+
+    VkBufferCopy copy_infos[2];
+    copy_infos[0].srcOffset = 0;
+    copy_infos[0].dstOffset = block;
+    copy_infos[0].size = block;
+    copy_infos[1].srcOffset = block;
+    copy_infos[1].dstOffset = 0;
+    copy_infos[1].size = block;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse, buffer_not_sparse, 2, copy_infos);
+    m_command_buffer.End();
+
+    VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore.handle();
+    submit_info.pWaitDstStageMask = &mask;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-pRegions-00117", 2);
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
 }
