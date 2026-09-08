@@ -43,8 +43,8 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
     ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT shader_object,
                  std::shared_ptr<spirv::Module> &spirv_module);
 
-    const vku::safe_VkShaderCreateInfoEXT safe_create_info;
-    const VkShaderCreateInfoEXT &create_info;
+    const vku::safe_VkShaderCreateInfoEXT safe_create_info_ext;
+    const VkShaderCreateInfoEXT &create_info_ext;
 
     const bool is_independent_set;  // to match Pipeline version
     const bool descriptor_heap_mode;
@@ -68,7 +68,8 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
     const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
 
     VkShaderEXT VkHandle() const { return handle_.Cast<VkShaderEXT>(); }
-    bool IsGraphicsShaderState() const { return create_info.stage != VK_SHADER_STAGE_COMPUTE_BIT; };
+    bool IsGraphicsShaderState() const { return GetStage() != VK_SHADER_STAGE_COMPUTE_BIT; };
+    VkShaderStageFlagBits GetStage() const { return stage.GetStage(); }
 };
 
 class ShaderObjectSubState {

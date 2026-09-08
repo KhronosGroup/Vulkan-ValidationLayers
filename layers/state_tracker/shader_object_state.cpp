@@ -33,15 +33,15 @@ static DescriptorSetLayoutList GetSetLayouts(DeviceState& dev_data, const VkShad
 ShaderObject::ShaderObject(DeviceState& dev_data, const VkShaderCreateInfoEXT& create_info_i, VkShaderEXT handle,
                            std::shared_ptr<spirv::Module>& spirv_module)
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
-      safe_create_info(&create_info_i),
-      create_info(*safe_create_info.ptr()),
+      safe_create_info_ext(&create_info_i),
+      create_info_ext(*safe_create_info_ext.ptr()),
       is_independent_set((create_info_i.flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR) != 0),
       descriptor_heap_mode((create_info_i.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0),
       descriptor_heap_embedded_samplers_count(descriptor_heap_mode ? CountDescriptorHeapEmbeddedSamplers(create_info_i.pNext) : 0),
-      set_layouts(GetSetLayouts(dev_data, create_info)),
-      push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
+      set_layouts(GetSetLayouts(dev_data, create_info_ext)),
+      push_constant_ranges(GetCanonicalId(create_info_ext.pushConstantRangeCount, create_info_ext.pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, is_independent_set, true)),
-      stage(nullptr, &safe_create_info, &set_layouts, nullptr, spirv_module, VK_NULL_HANDLE, descriptor_heap_mode),
+      stage(nullptr, &safe_create_info_ext, &set_layouts, nullptr, spirv_module, VK_NULL_HANDLE, descriptor_heap_mode),
       active_slots(GetActiveSlots(stage.entrypoint)),
       max_active_slot(GetMaxActiveSlot(active_slots)) {
     // We need to update handle, but if using VK_SHADER_CODE_TYPE_SPIRV_EXT, it will be null

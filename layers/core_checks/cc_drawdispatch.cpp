@@ -641,7 +641,7 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
             }
         } else {
             const auto* shader_object = last_bound_state.GetShaderObjectState(ShaderObjectStage::COMPUTE);
-            if (shader_object && ((shader_object->create_info.flags & VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT) == 0)) {
+            if (shader_object && ((shader_object->create_info_ext.flags & VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT) == 0)) {
                 skip |= LogError("VUID-vkCmdDispatchBase-baseGroupX-00427", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
                                  error_obj.location,
                                  "If any of baseGroupX (%" PRIu32 "), baseGroupY (%" PRIu32 "), or baseGroupZ (%" PRIu32
@@ -2581,8 +2581,7 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound& last_bound_sta
                         "but multiple viewports (%" PRIu32
                         ") are set by the last call to vkCmdSetViewportWithCountEXT,"
                         "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                        string_VkShaderStageFlagBits(shader_object->create_info.stage),
-                        cb_state.dynamic_state_value.viewport_count);
+                        string_VkShaderStageFlagBits(shader_object->GetStage()), cb_state.dynamic_state_value.viewport_count);
                 }
                 break;
             }
@@ -3146,7 +3145,7 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
             if (fdm_attachment.image_view) {
                 const auto& shader_object = last_bound.GetShaderObjectState(ShaderObjectStage::FRAGMENT);
                 if (const auto shader_object_cr_info =
-                        vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(shader_object->create_info.pNext)) {
+                        vku::FindStructInPNextChain<VkCustomResolveCreateInfoEXT>(shader_object->create_info_ext.pNext)) {
                     if (cb_sub_state.custom_resolve.started && !shader_object_cr_info->customResolve) {
                         skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11529),
                                          cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
