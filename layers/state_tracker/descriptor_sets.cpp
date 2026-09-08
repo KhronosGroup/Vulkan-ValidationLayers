@@ -1235,6 +1235,7 @@ void vvl::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet& set_state,
     assert(acc_info || acc_info_nv || acc_info_partition_nv);
 
     if (acc_info_partition_nv) {
+        // Partitioned AS are referenced by VkDeviceAddress, not by a handle, so there is no state object to track.
         acc_partition_nv_ = acc_info_partition_nv->pAccelerationStructures[index];
         ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
         return;
@@ -1351,7 +1352,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet& set_state, const vvl::De
                 offset_ = buffer_info.offset;
                 range_ = buffer_info.range;
                 // can be null if using nullDescriptors
-                const auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(update.pBufferInfo->buffer);
+                const auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(buffer_info.buffer);
                 if (buffer_state) {
                     buffer_size = buffer_state->GetSize();
                 }
