@@ -336,13 +336,13 @@ void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSiz
     ds.WriteDescriptorBufferInfo(0, buffer, binding_offset, binding_range, descriptor_type);
     ds.UpdateDescriptorSets();
 
-    vkt::Shader* vso = nullptr;
-    vkt::Shader* fso = nullptr;
+    vkt::ShaderEXT* vso = nullptr;
+    vkt::ShaderEXT* fso = nullptr;
     if (shader_objects) {
-        vso = new vkt::Shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
-                              GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl), &ds.layout_.handle());
-        fso = new vkt::Shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader),
-                              &ds.layout_.handle());
+        vso = new vkt::ShaderEXT(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl), &ds.layout_.handle());
+        fso = new vkt::ShaderEXT(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader),
+                                 &ds.layout_.handle());
     }
     vkt::Buffer* indirect_buffer = nullptr;
     if (device_address_commands) {

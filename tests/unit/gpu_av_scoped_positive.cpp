@@ -110,7 +110,7 @@ TEST_F(PositiveGpuAVScoped, DispatchShaderObjectAndPipeline) {
     features.pEnabledValidationFeatures = enabled;
     comp_create_info.pNext = &features;
 
-    const vkt::Shader compShader(*m_device, comp_create_info);
+    const vkt::ShaderEXT compShader(*m_device, comp_create_info);
 
     CreateComputePipelineHelper compute_pipe(*this);
     compute_pipe.cs_ = VkShaderObj(*m_device, comp_src, VK_SHADER_STAGE_COMPUTE_BIT);

@@ -131,8 +131,8 @@ TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants) {
     VkShaderCreateInfoEXT fs_ci = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr,
                                                    static_cast<uint32_t>(push_constant_ranges.size()), push_constant_ranges.data());
 
-    const vkt::Shader vs(*m_device, vs_ci);
-    const vkt::Shader fs(*m_device, fs_ci);
+    const vkt::ShaderEXT vs(*m_device, vs_ci);
+    const vkt::ShaderEXT fs(*m_device, fs_ci);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
@@ -262,8 +262,8 @@ TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants2) {
     VkShaderCreateInfoEXT fs_ci =
         ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr, 1, &graphics_push_constant_ranges);
 
-    const vkt::Shader vs(*m_device, vs_ci);
-    const vkt::Shader fs(*m_device, fs_ci);
+    const vkt::ShaderEXT vs(*m_device, vs_ci);
+    const vkt::ShaderEXT fs(*m_device, fs_ci);
 
     // Compute pipeline
     // ---
@@ -310,7 +310,7 @@ TEST_F(PositiveGpuAVShaderObjectEXT, RestoreUserPushConstants2) {
     VkShaderCreateInfoEXT cs_ci =
         ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT, 0, nullptr, 1, &compute_push_constant_ranges);
 
-    const vkt::Shader cs(*m_device, cs_ci);
+    const vkt::ShaderEXT cs(*m_device, cs_ci);
 
     vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                     kHostVisibleMemProps);
@@ -361,14 +361,14 @@ TEST_F(PositiveGpuAVShaderObjectEXT, GetShaderBinaryDataSimple) {
     RETURN_IF_SKIP(InitState());
 
     // no descriptor and nothing to instrument
-    vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    vkt::ShaderEXT frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     size_t binary_data_size;
     vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, nullptr);
     std::vector<uint8_t> frag_data(binary_data_size);
     vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, frag_data.data());
 
-    vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data);
+    vkt::ShaderEXT binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data);
 }
 
 TEST_F(PositiveGpuAVShaderObjectEXT, GetShaderBinaryData) {
@@ -390,14 +390,14 @@ TEST_F(PositiveGpuAVShaderObjectEXT, GetShaderBinaryData) {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_src, &descriptor_set.layout_.handle());
+    vkt::ShaderEXT frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_src, &descriptor_set.layout_.handle());
 
     size_t binary_data_size;
     vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, nullptr);
     std::vector<uint8_t> frag_data(binary_data_size);
     vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, frag_data.data());
 
-    vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data, &descriptor_set.layout_.handle());
+    vkt::ShaderEXT binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data, &descriptor_set.layout_.handle());
 }
 
 TEST_F(PositiveGpuAVShaderObjectEXT, BinaryShaderObjects) {
@@ -436,8 +436,8 @@ TEST_F(PositiveGpuAVShaderObjectEXT, BinaryShaderObjects) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
 
-    vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_src, &descriptor_set.layout_.handle());
-    vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_src, &descriptor_set.layout_.handle());
+    vkt::ShaderEXT vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_src, &descriptor_set.layout_.handle());
+    vkt::ShaderEXT frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_src, &descriptor_set.layout_.handle());
 
     size_t binary_data_size;
     vk::GetShaderBinaryDataEXT(*m_device, vert_shader, &binary_data_size, nullptr);
@@ -448,8 +448,8 @@ TEST_F(PositiveGpuAVShaderObjectEXT, BinaryShaderObjects) {
     std::vector<uint8_t> frag_data(binary_data_size);
     vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, frag_data.data());
 
-    vkt::Shader binary_vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_data, &descriptor_set.layout_.handle());
-    vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data, &descriptor_set.layout_.handle());
+    vkt::ShaderEXT binary_vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_data, &descriptor_set.layout_.handle());
+    vkt::ShaderEXT binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data, &descriptor_set.layout_.handle());
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());

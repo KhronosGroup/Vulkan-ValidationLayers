@@ -703,7 +703,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSourceShader
 
     std::vector<uint32_t> cs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_2, 0, kBasicGlslShaderSource, cs_spv);
-    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, cs_spv, &descriptor_set.layout_.handle());
+    const vkt::ShaderEXT comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, cs_spv, &descriptor_set.layout_.handle());
 
     m_command_buffer.Begin();
     m_command_buffer.BindCompShaderEXT(comp_shader);
@@ -1433,7 +1433,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderObjectHandle) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     VkDescriptorSetLayout descriptorSetLayout = descriptor_set.layout_;
     VkShaderStageFlagBits shader_stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    const vkt::Shader comp_shader(*m_device, shader_stages[0], GLSLToSPV(shader_stages[0], comp_src), &descriptorSetLayout);
+    const vkt::ShaderEXT comp_shader(*m_device, shader_stages[0], GLSLToSPV(shader_stages[0], comp_src), &descriptorSetLayout);
 
     const char* object_name = "bad_shader_object";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();

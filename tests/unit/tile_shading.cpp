@@ -1944,9 +1944,9 @@ TEST_F(NegativeTileShading, TileShadingDrawButHasActiveGeometryShaderObject) {
 
     auto vert_ci = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
     vert_ci.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    vkt::Shader vert_shader{*m_device, vert_ci};
-    vkt::Shader geom_shader{*m_device, ShaderCreateInfo(geom_spv, VK_SHADER_STAGE_GEOMETRY_BIT)};
-    vkt::Shader frag_shader{*m_device, ShaderCreateInfoNoNextStage(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT)};
+    vkt::ShaderEXT vert_shader{*m_device, vert_ci};
+    vkt::ShaderEXT geom_shader{*m_device, ShaderCreateInfo(geom_spv, VK_SHADER_STAGE_GEOMETRY_BIT)};
+    vkt::ShaderEXT frag_shader{*m_device, ShaderCreateInfoNoNextStage(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT)};
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = m_color_view;
@@ -2332,7 +2332,7 @@ TEST_F(NegativeTileShading, CapabilityInComputeShaderObjectOutsideTileShadingRen
 
     std::vector<uint32_t> cs_spv{};
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_source, cs_spv);
-    vkt::Shader cs{*m_device, ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT)};
+    vkt::ShaderEXT cs{*m_device, ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT)};
 
     m_command_buffer.Begin();
     m_command_buffer.BindCompShaderEXT(cs);
@@ -2449,8 +2449,8 @@ TEST_F(NegativeTileShading, CapabilityInFragmentShaderObjectOutsideTileShadingRe
     std::vector<uint32_t> fs_spv{};
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_source, fs_spv);
 
-    vkt::Shader vs{*m_device, ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT)};
-    vkt::Shader fs{*m_device, ShaderCreateInfoNoNextStage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT)};
+    vkt::ShaderEXT vs{*m_device, ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT)};
+    vkt::ShaderEXT fs{*m_device, ShaderCreateInfoNoNextStage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT)};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());

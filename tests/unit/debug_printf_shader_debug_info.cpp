@@ -74,7 +74,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderObjectHandle) {
     )glsl";
 
     VkShaderStageFlagBits shader_stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    const vkt::Shader comp_shader(*m_device, shader_stages[0], GLSLToSPV(shader_stages[0], shader_source));
+    const vkt::ShaderEXT comp_shader(*m_device, shader_stages[0], GLSLToSPV(shader_stages[0], shader_source));
 
     const char* object_name = "bad_shader_object";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();

@@ -371,7 +371,7 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source, SPV_ENV_VULKAN_1_1);
     auto shader_ci = ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &dsl.handle());
     shader_ci.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-    const vkt::Shader comp_shader(*m_device, shader_ci);
+    const vkt::ShaderEXT comp_shader(*m_device, shader_ci);
 }
 
 TEST_F(PositiveShaderCooperativeMatrix, BFloat16) {
@@ -832,7 +832,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Properties2RuntimeQuerySelectors) {
         auto create_info = ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_COMPUTE_BIT);
         create_info.flags = flags;
         create_info.pNext = p_next;
-        const vkt::Shader shader(*m_device, create_info);
+        const vkt::ShaderEXT shader(*m_device, create_info);
     };
 
     create_shader_object(*default_config, props11.subgroupSize, 0);

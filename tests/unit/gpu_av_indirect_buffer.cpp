@@ -766,8 +766,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance3) {
     )glsl";
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    const vkt::Shader vert_shader(*m_device, stages[0], GLSLToSPV(stages[0], vert_src));
-    const vkt::Shader frag_shader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
+    const vkt::ShaderEXT vert_shader(*m_device, stages[0], GLSLToSPV(stages[0], vert_src));
+    const vkt::ShaderEXT frag_shader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -942,8 +942,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstanceIndexed3) {
     )glsl";
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    const vkt::Shader vert_shader(*m_device, stages[0], GLSLToSPV(stages[0], vert_src));
-    const vkt::Shader frag_shader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
+    const vkt::ShaderEXT vert_shader(*m_device, stages[0], GLSLToSPV(stages[0], vert_src));
+    const vkt::ShaderEXT frag_shader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -1126,7 +1126,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     ptr->z = 3;  // over
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    vkt::Shader shader(*m_device, stage, GLSLToSPV(stage, kMinimalShaderGlsl));
+    vkt::ShaderEXT shader(*m_device, stage, GLSLToSPV(stage, kMinimalShaderGlsl));
 
     m_command_buffer.Begin();
     vk::CmdBindShadersEXT(m_command_buffer, 1u, &stage, &shader.handle());
