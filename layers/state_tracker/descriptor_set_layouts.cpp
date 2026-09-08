@@ -25,7 +25,7 @@ DescriptorSetLayoutList::DescriptorSetLayoutList(size_t size) : list(size) {}
 const vvl::DescriptorSetLayout* DescriptorSetLayoutList::FindFromVariable(const spirv::ResourceInterfaceVariable& variable) const {
     const uint32_t set = variable.decorations.set;
     if (set < list.size()) {
-        const std::shared_ptr<vvl::DescriptorSetLayout const> set_layout = list[set];
+        const std::shared_ptr<vvl::DescriptorSetLayout const>& set_layout = list[set];
         if (set_layout) {
             return set_layout.get();
         }
