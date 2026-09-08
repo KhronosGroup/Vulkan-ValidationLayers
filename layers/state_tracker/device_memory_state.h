@@ -316,8 +316,8 @@ class Bindable : public StateObject {
         return memory_tracker_->GetBoundMemoryRange(range);
     }
 
-    BindableLinearMemoryTracker::BoundRanges GetBoundRanges(const BindableMemoryTracker::BufferRange &ranges_bounds,
-                                                            const std::vector<BindableMemoryTracker::BufferRange> ranges) const {
+    BindableMemoryTracker::BoundRanges GetBoundRanges(const BindableMemoryTracker::BufferRange& ranges_bounds,
+                                                      const std::vector<BindableMemoryTracker::BufferRange>& ranges) const {
         return memory_tracker_->GetBoundRanges(ranges_bounds, ranges);
     }
 
