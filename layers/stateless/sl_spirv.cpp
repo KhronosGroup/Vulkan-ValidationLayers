@@ -297,7 +297,7 @@ bool SpirvValidator::ValidateAtomicsTypes(const spirv::Module& module_state, con
                 } else {
                     // Assume is valid load/store/exchange (rest of supported atomic operations) or else spirv-val will catch
                     if ((atomic.bit_width == 16) && (enabled_features.shaderBufferFloat16Atomics == VK_FALSE)) {
-                        skip |= LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
+                        skip |= LogError("VUID-RuntimeSpirv-None-06337", module_state.handle(), loc,
                                          "SPIR-V is using 16-bit float atomics for load/store/exhange operations with "
                                          "StorageBuffer storage class, but shaderBufferFloat16Atomics was not enabled.\n%s\n",
                                          module_state.DescribeInstruction(atomic_def).c_str());
@@ -1123,8 +1123,8 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& m
                                  entrypoint.Describe().c_str(), max_input_slot.Describe().c_str(),
                                  limits.maxTessellationControlPerVertexInputComponents);
             }
-            if (entrypoint.max_input_slot_variable) {
-                if (entrypoint.max_input_slot_variable->is_patch &&
+            if (entrypoint.max_output_slot_variable) {
+                if (entrypoint.max_output_slot_variable->is_patch &&
                     max_output_slot.slot >= limits.maxTessellationControlPerPatchOutputComponents) {
                     skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
                                      "shader %s output interface variable (%s) "
@@ -1132,7 +1132,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& m
                                      entrypoint.Describe().c_str(), max_output_slot.Describe().c_str(),
                                      limits.maxTessellationControlPerPatchOutputComponents);
                 }
-                if (!entrypoint.max_input_slot_variable->is_patch &&
+                if (!entrypoint.max_output_slot_variable->is_patch &&
                     max_output_slot.slot >= limits.maxTessellationControlPerVertexOutputComponents) {
                     skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
                                      "shader %s output interface variable (%s) "

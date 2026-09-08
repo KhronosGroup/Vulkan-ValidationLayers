@@ -66,8 +66,7 @@ bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV
         return skip;
     }
 
-    if (order.sampleCount == 0 || (order.sampleCount & (order.sampleCount - 1)) ||
-        !(order.sampleCount & phys_dev_props.limits.framebufferNoAttachmentsSampleCounts)) {
+    if (!IsPowerOfTwo(order.sampleCount) || !(order.sampleCount & phys_dev_props.limits.framebufferNoAttachmentsSampleCounts)) {
         skip |= LogError("VUID-VkCoarseSampleOrderCustomNV-sampleCount-02074", device, order_loc.dot(Field::sampleCount),
                          "(%" PRIu32
                          ") must correspond to a sample count enumerated in VkSampleCountFlags whose corresponding bit "
@@ -661,7 +660,7 @@ bool Device::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCr
                             "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303", device,
                             binding_loc.pNext(Struct::VkMutableDescriptorTypeCreateInfoEXT, Field::mutableDescriptorTypeListCount),
                             "(%" PRIu32 ") is less than or equal to %" PRIu32 ", but pBindings[%" PRIu32
-                            " ].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_EXT",
+                            "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_EXT",
                             mutable_descriptor_type->mutableDescriptorTypeListCount, i, i);
                     }
                 } else {
@@ -954,7 +953,7 @@ bool Device::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const V
     if (pCreateInfo->pPoolSizes) {
         for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; ++i) {
             const Location pool_loc = create_info_loc.dot(Field::pPoolSizes, i);
-            if (pCreateInfo->pPoolSizes[i].descriptorCount <= 0) {
+            if (pCreateInfo->pPoolSizes[i].descriptorCount == 0) {
                 skip |= LogError("VUID-VkDescriptorPoolSize-descriptorCount-00302", device, pool_loc.dot(Field::descriptorCount),
                                  "is zero.");
             }
@@ -1605,7 +1604,7 @@ bool Device::ValidateHeapTexelBufferAlignment(const VkTexelBufferDescriptorInfoE
                 }
 
                 skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-12349", device,
-                                 loc.dot(Field::addressRange).dot(Field::address).dot(Field::address), "%s", ss.str().c_str());
+                                 loc.dot(Field::addressRange).dot(Field::address), "%s", ss.str().c_str());
             }
         } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
             VkDeviceSize alignment_requirement = phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
@@ -1632,7 +1631,7 @@ bool Device::ValidateHeapTexelBufferAlignment(const VkTexelBufferDescriptorInfoE
                 }
 
                 skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-12349", device,
-                                 loc.dot(Field::addressRange).dot(Field::address).dot(Field::address), "%s", ss.str().c_str());
+                                 loc.dot(Field::addressRange).dot(Field::address), "%s", ss.str().c_str());
             }
         }
     } else if (!IsPointerAligned(info.addressRange.address, phys_dev_props.limits.minTexelBufferOffsetAlignment)) {
