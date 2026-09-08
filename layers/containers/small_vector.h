@@ -201,7 +201,7 @@ class small_vector {
     reference emplace_back(Args &&...args) {
         assert(size_ < kMaxCapacity);
         reserve(size_ + 1);
-        new (GetWorkingStore() + size_) value_type(args...);
+        new (GetWorkingStore() + size_) value_type(std::forward<Args>(args)...);
         size_++;
         return back();
     }
