@@ -205,7 +205,7 @@ void RestorablePipelineState::Restore() const {
         std::vector<VkShaderStageFlagBits> stages;
         std::vector<VkShaderEXT> shaders;
         for (const vvl::ShaderObject* shader_obj : shader_objects_) {
-            stages.emplace_back(shader_obj->create_info.stage);
+            stages.emplace_back(shader_obj->GetStage());
             shaders.emplace_back(shader_obj->VkHandle());
         }
         DispatchCmdBindShadersEXT(cb_state_.VkHandle(), static_cast<uint32_t>(shader_objects_.size()), stages.data(),

@@ -7112,11 +7112,11 @@ void DeviceState::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
             const VkShaderEXT shader_handle = shader_info.pInitialShaders[i];
             const auto shader_object = Get<ShaderObject>(shader_handle);
             ASSERT_AND_CONTINUE(shader_object);
-            indirect_execution_state->shader_stage_flags |= shader_object->create_info.stage;
+            indirect_execution_state->shader_stage_flags |= shader_object->GetStage();
             if (i == 0) {
                 indirect_execution_state->initial_shader_object = shader_object;
             }
-            if (shader_object->create_info.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+            if (shader_object->GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
                 indirect_execution_state->initial_fragment_shader_object = shader_object;
             }
         }
