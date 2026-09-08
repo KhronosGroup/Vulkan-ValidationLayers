@@ -452,67 +452,78 @@ bool ShaderAccessCommand::Validate(const CommandBufferContext& cb_context, const
     return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
 }
 
-bool ShaderAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
-    bool skip = false;
+bool ShaderAccessCommand::ValidateBufferShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
+                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                     const Location& loc, const BufferAccess& buffer_access) const {
+    HazardResult hazard = access_context.DetectHazard(*buffer_access.buffer, buffer_access.access_index, buffer_access.range);
+    if (!hazard.IsHazard()) {
+        return false;
+    }
     const SyncValidator& validator = env.validator;
-    const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kRaster, render_pass_instance_id, subpass};
+    const DescriptorInfo& info = buffer_access.info;
 
-    auto validate_access = [&](const auto& value) {
-        using AccessType = std::decay_t<decltype(value)>;
-        HazardResult hazard;
-        if constexpr (std::is_same_v<AccessType, BufferAccess>) {
-            hazard = access_context.DetectHazard(*value.buffer, value.access_index, value.range);
-        } else {
-            if (value.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
-                ImageRangeGen range_gen = MakeImageRangeGen(*value.image_view, value.offset, value.extent);
-                hazard = access_context.DetectAttachmentHazard(range_gen, value.access_index, attachment_access, env.queue_id);
-            } else {
-                hazard = access_context.DetectHazard(*value.image_view, value.access_index);
-            }
-        }
-        if (!hazard.IsHazard()) {
-            return;
-        }
-        const DescriptorInfo& info = value.info;
-        VulkanTypedHandle object_handle = info.resource_handle;
-        if constexpr (std::is_same_v<AccessType, BufferAccess>) {
-            if (info.resource_handle.type == kVulkanObjectTypeAccelerationStructureKHR) {
-                object_handle = value.buffer->Handle();
-            }
-        }
-        LogObjectList objlist = BaseObjectList(env, cb_context, object_handle);
-        objlist.add(pipeline->Handle());
-        std::string resource_description = validator.FormatHandle(info.resource_handle);
-        if constexpr (std::is_same_v<AccessType, ImageViewAccess>) {
-            if (replay_tag != kInvalidTag && value.image_view->image_state) {
-                resource_description += " (" + validator.FormatHandle(value.image_view->image_state->Handle()) + ")";
-            }
-        }
-        std::string error;
-        if constexpr (std::is_same_v<AccessType, ImageViewAccess>) {
-            error = validator.error_messages_.ImageDescriptorError(
-                env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
-                info.descriptor_type, info.binding, info.array_element, info.stage, value.image_layout);
-        } else {
-            if (info.resource_handle.type == kVulkanObjectTypeAccelerationStructureKHR) {
-                error = validator.error_messages_.AccelerationStructureDescriptorError(
-                    env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
-                    info.descriptor_type, info.binding, info.array_element, info.stage);
-            } else {
-                error = validator.error_messages_.BufferDescriptorError(
-                    env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
-                    info.descriptor_type, info.binding, info.array_element, info.stage);
-            }
-        }
-        skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
-    };
+    LogObjectList objlist = BaseObjectList(env, cb_context, info.resource_handle);
+    if (info.resource_handle.type == kVulkanObjectTypeAccelerationStructureKHR) {
+        objlist.add(buffer_access.buffer->Handle());
+    }
+    objlist.add(pipeline->Handle());
 
+    const std::string resource_description = validator.FormatHandle(info.resource_handle);
+
+    std::string error;
+    if (info.resource_handle.type == kVulkanObjectTypeAccelerationStructureKHR) {
+        error = validator.error_messages_.AccelerationStructureDescriptorError(
+            env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
+            info.descriptor_type, info.binding, info.array_element, info.stage);
+    } else {
+        error = validator.error_messages_.BufferDescriptorError(env, hazard, cb_context, replay_tag, loc, resource_description,
+                                                                *pipeline, info.set, *info.descriptor_set, info.descriptor_type,
+                                                                info.binding, info.array_element, info.stage);
+    }
+    return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+}
+
+bool ShaderAccessCommand::ValidateImageShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
+                                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                    const Location& loc, const ImageViewAccess& image_access) const {
+    HazardResult hazard;
+    if (image_access.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
+        const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kRaster, render_pass_instance_id,
+                                                 subpass};
+        ImageRangeGen range_gen = MakeImageRangeGen(*image_access.image_view, image_access.offset, image_access.extent);
+        hazard = access_context.DetectAttachmentHazard(range_gen, image_access.access_index, attachment_access, env.queue_id);
+    } else {
+        hazard = access_context.DetectHazard(*image_access.image_view, image_access.access_index);
+    }
+    if (!hazard.IsHazard()) {
+        return false;
+    }
+    const SyncValidator& validator = env.validator;
+    const DescriptorInfo& info = image_access.info;
+
+    LogObjectList objlist = BaseObjectList(env, cb_context, info.resource_handle);
+    objlist.add(pipeline->Handle());
+
+    std::string resource_description = validator.FormatHandle(info.resource_handle);
+    if (replay_tag != kInvalidTag && image_access.image_view->image_state) {
+        resource_description += " (" + validator.FormatHandle(image_access.image_view->image_state->Handle()) + ")";
+    }
+
+    const std::string error = validator.error_messages_.ImageDescriptorError(
+        env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
+        info.descriptor_type, info.binding, info.array_element, info.stage, image_access.image_layout);
+
+    return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+}
+
+bool ShaderAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
     for (const BufferAccess& access : buffer_accesses) {
-        validate_access(access);
+        skip |= ValidateBufferShaderAccess(env, access_context, cb_context, replay_tag, loc, access);
     }
     for (const ImageViewAccess& access : image_accesses) {
-        validate_access(access);
+        skip |= ValidateImageShaderAccess(env, access_context, cb_context, replay_tag, loc, access);
     }
     return skip;
 }
