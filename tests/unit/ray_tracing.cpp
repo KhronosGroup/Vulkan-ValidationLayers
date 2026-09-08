@@ -1752,6 +1752,32 @@ TEST_F(NegativeRayTracing, HostCmdBuildAccelerationStructuresKHR) {
     }
 }
 
+TEST_F(NegativeRayTracing, BatchedBuildDuplicateDstAccelerationStructure) {
+    TEST_DESCRIPTION("Two pInfos entries of a single batched build using the same dstAccelerationStructure.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.SetupBuild(true);
+
+    // Both entries name the same dstAccelerationStructure, so each one conflicts with the other
+    std::array<VkAccelerationStructureBuildGeometryInfoKHR, 2> infos = {blas.GetInfo(), blas.GetInfo()};
+
+    VkAccelerationStructureBuildRangeInfoKHR range_info = {};
+    range_info.primitiveCount = 1;
+    std::array<const VkAccelerationStructureBuildRangeInfoKHR*, 2> range_infos = {&range_info, &range_info};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03698");
+    vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, size32(infos), infos.data(), range_infos.data());
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
     AddOptionalExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
