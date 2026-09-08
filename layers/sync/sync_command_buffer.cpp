@@ -2082,25 +2082,32 @@ void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, co
     }
 }
 
+static void RecordBufferAccess(CommandBufferContext& cb_context, vvl::Buffer& buffer_state, AccessRange range,
+                               const Location& loc) {
+    const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+    const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, buffer_state.Handle());
+    const BufferAccessCommand command{buffer_state, range, SYNC_CLEAR_TRANSFER_WRITE, tag_ex.handle_index};
+
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        AccessContext& access_context = cb_context.GetCbAccessContext();
+        command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
+}
+
 void CommandBufferSubState::RecordFillBuffer(vvl::Buffer& buffer_state, VkDeviceSize offset, VkDeviceSize size,
                                              const Location& loc) {
-    const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
-
     const AccessRange range = MakeRange(buffer_state, offset, size);
-    const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, buffer_state.Handle());
-    context.UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, range, tag_ex);
+    RecordBufferAccess(cb_context, buffer_state, range, loc);
 }
 
 void CommandBufferSubState::RecordUpdateBuffer(vvl::Buffer& buffer_state, VkDeviceSize offset, VkDeviceSize size,
                                                const Location& loc) {
-    const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
-
-    // VK_WHOLE_SIZE not allowed
-    const AccessRange range = MakeRange(offset, size);
-    const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, buffer_state.Handle());
-    context.UpdateAccessState(buffer_state, SYNC_CLEAR_TRANSFER_WRITE, range, tag_ex);
+    const AccessRange range = MakeRange(offset, size);  // VK_WHOLE_SIZE not allowed
+    RecordBufferAccess(cb_context, buffer_state, range, loc);
 }
 
 void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const VkVideoDecodeInfoKHR& decode_info,

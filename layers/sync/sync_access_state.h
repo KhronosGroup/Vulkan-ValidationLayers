@@ -71,14 +71,6 @@ enum class SyncOrdering : uint8_t {
     kNumOrderings = 4,
 };
 
-struct SyncFlag {
-    enum : uint8_t {
-        kPresent = 0x01,
-        kMarker = 0x02,
-    };
-};
-using SyncFlags = uint8_t;
-
 const char* string_SyncHazardVUID(SyncHazard hazard);
 
 struct SyncHazardInfo {

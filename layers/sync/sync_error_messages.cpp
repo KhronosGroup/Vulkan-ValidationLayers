@@ -109,6 +109,21 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, const Command
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BufferError", additional_info);
 }
 
+std::string ErrorMessages::BufferError(const SyncEnvironment& env, const HazardResult& hazard,
+                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+                                       const std::string& resource_description, const AccessRange range) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+
+    std::ostringstream ss;
+    ss << "\nBuffer access region: {\n";
+    ss << "  offset = " << range.begin << "\n";
+    ss << "  size = " << range.end - range.begin << "\n";
+    ss << "}\n";
+    additional_info.message_end_text += ss.str();
+    return Error(env, hazard, command, resource_description, "BufferError", additional_info);
+}
+
 std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const vvl::Func command,
                                            const std::string& resource_description, uint32_t region_index, AccessRange range,
                                            AdditionalMessageInfo additional_info) const {

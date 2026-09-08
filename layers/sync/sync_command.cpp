@@ -189,6 +189,52 @@ void BufferCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Access
     }
 }
 
+BufferAccessCommand BufferAccessCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    return {*command_data.buffers[buffer_index], range, access_index, handle_index, flags};
+}
+
+BufferAccessCommand::Storage BufferAccessCommand::MakeStorage(CommandData& command_data) const {
+    return {range, command_data.AddBuffer(buffer), access_index, handle_index, flags};
+}
+
+bool BufferAccessCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    // Buffer markers can execute inside a render pass and need its current subpass context,
+    // but in other cases GetCbAccessContext() is sufficient
+    const AccessContext& access_context = cb_context.GetCurrentAccessContext();
+    return Validate(cb_context.GetSyncEnvironment(), access_context, cb_context, kInvalidTag, loc);
+}
+
+bool BufferAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    const bool is_marker = (flags & SyncFlag::kMarker) != 0;
+    HazardResult hazard;
+    if (is_marker) {
+        hazard = access_context.DetectMarkerHazard(buffer, range);
+    } else {
+        hazard = access_context.DetectHazard(buffer, access_index, range);
+    }
+    if (!hazard.IsHazard()) {
+        return skip;
+    }
+
+    const SyncValidator& validator = env.validator;
+    LogObjectList objlist;
+    if (replay_tag == kInvalidTag && is_marker) {
+        objlist.add(buffer.Handle());
+    } else {
+        objlist = BaseObjectList(env, cb_context, buffer.Handle());
+    }
+    const std::string resource_description = "dstBuffer " + validator.FormatHandle(buffer.Handle());
+    const std::string error =
+        validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
+    return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+}
+
+void BufferAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    access_context.UpdateAccessState(buffer, access_index, range, ResourceUsageTagEx{tag, handle_index}, flags, env.queue_id);
+}
+
 ImageCopyCommand ImageCopyCommand::Storage::MakeCommand(const CommandData& command_data) const {
     const vvl::Image& src_image = *command_data.images[src_image_index];
     const vvl::Image& dst_image = *command_data.images[dst_image_index];
