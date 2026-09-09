@@ -743,7 +743,7 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
                          "(%" PRIu64 ") is not less than the size (%" PRIu64 ").", dstOffset, dst_buffer_state->GetSize());
     } else if (dataSize > dst_buffer_state->GetSize() - dstOffset) {
         skip |= LogError("VUID-vkCmdUpdateBuffer-dataSize-00033", objlist, error_obj.location.dot(Field::dataSize),
-                         "(%" PRIu64 ") is not less than the buffer size (%" PRIu64 ") minus dstOffset (%" PRIu64 ").", dataSize,
+                         "(%" PRIu64 ") is greater than the buffer size (%" PRIu64 ") minus dstOffset (%" PRIu64 ").", dataSize,
                          dst_buffer_state->GetSize(), dstOffset);
     }
     return skip;
@@ -2884,7 +2884,7 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
                 const LogObjectList objlist(commandBuffer, buffer_state->Handle());
                 skip |= LogError(
                     "VUID-VkConditionalRenderingBeginInfoEXT-offset-01983", objlist, conditional_loc.dot(Field::offset),
-                    "(%" PRIu64 ") + 4 bytes is not less than the size of pConditionalRenderingBegin->buffer (%" PRIu64 ").",
+                    "(%" PRIu64 ") + 4 bytes is greater than the size of pConditionalRenderingBegin->buffer (%" PRIu64 ").",
                     pConditionalRenderingBegin->offset, buffer_state->GetSize());
             }
         }

@@ -2563,7 +2563,7 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound& last_bound_sta
                                      stage_state.module_state->Handle(), loc,
                                      "shader %s in the last bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
                                      "but multiple viewports (%" PRIu32
-                                     ") are set by the last call to vkCmdSetViewportWithCountEXT,"
+                                     ") are set by the last call to vkCmdSetViewportWithCountEXT, "
                                      "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
                                      stage_state.entrypoint->Describe().c_str(), cb_state.dynamic_state_value.viewport_count);
                 }
@@ -2579,7 +2579,7 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound& last_bound_sta
                         CreateActionVuid(loc.function, vvl::ActionVUID::SET_VIEWPORT_WITH_COUNT_08642), cb_state.Handle(), loc,
                         "the %s shader in the last bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
                         "but multiple viewports (%" PRIu32
-                        ") are set by the last call to vkCmdSetViewportWithCountEXT,"
+                        ") are set by the last call to vkCmdSetViewportWithCountEXT, "
                         "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
                         string_VkShaderStageFlagBits(shader_object->GetStage()), cb_state.dynamic_state_value.viewport_count);
                 }

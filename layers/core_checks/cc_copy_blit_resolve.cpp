@@ -2125,10 +2125,10 @@ bool CoreChecks::ValidateBufferBounds(const vvl::CommandBuffer& cb_state, const 
     bool skip = false;
 
     const uint32_t normalized_layer_count = image_state.NormalizeLayerCount(region.imageSubresource);
-    const uint32_t z_copies = std::max(region.imageExtent.depth, normalized_layer_count);
     // Invalid if copy size is 0 and other validation checks will catch it. Returns zero as the caller should have fallback already
     // to ignore.
-    if (region.imageExtent.width == 0 || region.imageExtent.height == 0 || region.imageExtent.depth == 0 || z_copies == 0) {
+    if (region.imageExtent.width == 0 || region.imageExtent.height == 0 || region.imageExtent.depth == 0 ||
+        normalized_layer_count == 0) {
         return skip;
     }
 
@@ -2211,10 +2211,10 @@ bool CoreChecks::ValidateDeviceAddressBufferBounds(const vvl::CommandBuffer& cb_
     bool skip = false;
 
     const uint32_t normalized_layer_count = image_state.NormalizeLayerCount(region.imageSubresource);
-    const uint32_t z_copies = std::max(region.imageExtent.depth, normalized_layer_count);
     // Invalid if copy size is 0 and other validation checks will catch it. Returns zero as the caller should have fallback already
     // to ignore.
-    if (region.imageExtent.width == 0 || region.imageExtent.height == 0 || region.imageExtent.depth == 0 || z_copies == 0) {
+    if (region.imageExtent.width == 0 || region.imageExtent.height == 0 || region.imageExtent.depth == 0 ||
+        normalized_layer_count == 0) {
         return skip;
     }
 
