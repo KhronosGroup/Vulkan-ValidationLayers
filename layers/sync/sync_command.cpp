@@ -117,6 +117,18 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.dispatch_indirect_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kDrawMeshTasks: {
+                // TODO: Supply DynamicRenderingInfo once Begin/EndRendering replay is implemented.
+                auto command = command_data.draw_mesh_tasks_commands[index].MakeCommand(
+                    command_data, replay_context.render_pass_context ? &*replay_context.render_pass_context : nullptr, nullptr);
+                if (command.shader_accesses.render_pass_instance_id != vvl::kNoIndex32) {
+                    command.shader_accesses.render_pass_instance_id += replay_context.render_pass_instance_offset;
+                }
+                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
+                const ResourceUsageTag tag = base_tag + replay_tag;
+                command.Apply(env, tag, access_context);
+                continue;
+            }
         }
         assert(false);
     }
@@ -131,6 +143,7 @@ void CommandData::Reset() {
     begin_render_pass_commands.clear();
     shader_access_commands.clear();
     dispatch_indirect_commands.clear();
+    draw_mesh_tasks_commands.clear();
 
     buffers.clear();
     images.clear();
@@ -676,6 +689,73 @@ bool DispatchIndirectCommand::Validate(const SyncEnvironment& env, const AccessC
 void DispatchIndirectCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     shader_accesses.Apply(env, tag, access_context);
     indirect_access.Apply(env, tag, access_context);
+}
+
+DrawAttachmentCommand DrawAttachmentCommand::Storage::MakeCommand(RenderPassAccessContext* render_pass_context,
+                                                                  const DynamicRenderingInfo* rendering_info) const {
+    return {pipeline, render_pass_context, rendering_info, render_pass_instance_id, depth_write, stencil_write};
+}
+
+DrawAttachmentCommand::Storage DrawAttachmentCommand::MakeStorage(CommandData& command_data) const {
+    if (pipeline) {
+        command_data.AddPipeline(*pipeline);
+    }
+    return {pipeline, render_pass_instance_id, depth_write, stencil_write};
+}
+
+bool DrawAttachmentCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool DrawAttachmentCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                     const Location& loc) const {
+    if (render_pass_context) {
+        return render_pass_context->ValidateDrawSubpassAttachment(env, cb_context, replay_tag, loc, pipeline, depth_write,
+                                                                  stencil_write);
+    } else if (rendering_info) {
+        return rendering_info->ValidateDrawAttachments(env, access_context, cb_context, replay_tag, loc, render_pass_instance_id,
+                                                       pipeline, depth_write, stencil_write);
+    }
+    return false;
+}
+
+void DrawAttachmentCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    if (render_pass_context) {
+        render_pass_context->RecordDrawSubpassAttachment(pipeline, depth_write, stencil_write, tag, env.queue_id);
+    } else if (rendering_info) {
+        rendering_info->RecordDrawAttachments(access_context, render_pass_instance_id, pipeline, depth_write, stencil_write, tag,
+                                              env.queue_id);
+    }
+}
+
+DrawMeshTasksCommand DrawMeshTasksCommand::Storage::MakeCommand(const CommandData& command_data,
+                                                                RenderPassAccessContext* render_pass_context,
+                                                                const DynamicRenderingInfo* rendering_info) const {
+    return {shader_access_storage.MakeCommand(command_data),
+            attachment_access_storage.MakeCommand(render_pass_context, rendering_info)};
+}
+
+DrawMeshTasksCommand::Storage DrawMeshTasksCommand::MakeStorage(CommandData& command_data) const {
+    return {shader_accesses.MakeStorage(command_data), attachment_accesses.MakeStorage(command_data)};
+}
+
+bool DrawMeshTasksCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool DrawMeshTasksCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                    const Location& loc) const {
+    bool skip = false;
+    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    return skip;
+}
+
+void DrawMeshTasksCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    shader_accesses.Apply(env, tag, access_context);
+    attachment_accesses.Apply(env, tag, access_context);
 }
 
 }  // namespace syncval

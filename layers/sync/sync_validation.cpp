@@ -1456,13 +1456,18 @@ void SyncValidator::PostCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer
 
 bool SyncValidator::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                                        uint32_t groupCountZ, const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= cb_context.ValidateDrawAttachment(error_obj.location);
-    return skip;
+    const auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const DrawMeshTasksCommand command{
+        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
+                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        cb_context.GetDrawAttachmentCommand()};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
@@ -1471,8 +1476,23 @@ void SyncValidator::PostCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuf
     CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
-    cb_context.RecordDrawAttachment(tag);
+    auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    for (auto& access : descriptor_accesses.buffer_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.info.resource_handle).handle_index;
+    }
+    for (auto& access : descriptor_accesses.image_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
+    }
+    const DrawMeshTasksCommand command{
+        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
+                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        cb_context.GetDrawAttachmentCommand()};
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
 }
 
 bool SyncValidator::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

@@ -41,6 +41,7 @@ class AccessContext;
 class CommandBufferContext;
 class RenderPassAccessContext;
 struct CommandData;
+struct DynamicRenderingInfo;
 struct SyncEnvironment;
 
 struct BufferCopyRegion {
@@ -266,6 +267,46 @@ struct DispatchIndirectCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct DrawAttachmentCommand {
+    const vvl::Pipeline* pipeline;
+    RenderPassAccessContext* render_pass_context;
+    const DynamicRenderingInfo* rendering_info;
+    uint32_t render_pass_instance_id;
+    bool depth_write;
+    bool stencil_write;
+
+    struct Storage {
+        const vvl::Pipeline* pipeline;
+        uint32_t render_pass_instance_id;
+        bool depth_write;
+        bool stencil_write;
+        DrawAttachmentCommand MakeCommand(RenderPassAccessContext* render_pass_context,
+                                          const DynamicRenderingInfo* rendering_info) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct DrawMeshTasksCommand {
+    ShaderAccessCommand shader_accesses;
+    DrawAttachmentCommand attachment_accesses;
+
+    struct Storage {
+        ShaderAccessCommand::Storage shader_access_storage;
+        DrawAttachmentCommand::Storage attachment_access_storage;
+        DrawMeshTasksCommand MakeCommand(const CommandData& command_data, RenderPassAccessContext* render_pass_context,
+                                         const DynamicRenderingInfo* rendering_info) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 enum class CommandType : uint32_t {
     kBufferCopy,
     kBufferAccess,
@@ -276,6 +317,7 @@ enum class CommandType : uint32_t {
     kEndRenderPass,
     kShaderAccess,
     kDispatchIndirect,
+    kDrawMeshTasks,
 };
 
 struct CommandRef {
@@ -294,6 +336,7 @@ struct CommandData {
     std::vector<BeginRenderPassCommand::Storage> begin_render_pass_commands;
     std::vector<ShaderAccessCommand::Storage> shader_access_commands;
     std::vector<DispatchIndirectCommand::Storage> dispatch_indirect_commands;
+    std::vector<DrawMeshTasksCommand::Storage> draw_mesh_tasks_commands;
 
     // Resources and additional data used by the commands
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
@@ -347,6 +390,9 @@ struct CommandData {
     }
     CommandRef Store(const DispatchIndirectCommand::Storage& storage) {
         return Store(CommandType::kDispatchIndirect, dispatch_indirect_commands, storage);
+    }
+    CommandRef Store(const DrawMeshTasksCommand::Storage& storage) {
+        return Store(CommandType::kDrawMeshTasks, draw_mesh_tasks_commands, storage);
     }
 
   private:
