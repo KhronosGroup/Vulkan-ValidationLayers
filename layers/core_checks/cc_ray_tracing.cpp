@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <cstddef>
 #include <string>
 
 #include <vulkan/vk_enum_string_helper.h>
@@ -1823,9 +1824,9 @@ static uint32_t CalcTotalShaderGroupCount(const CoreChecks& validator, const vvl
 
     if (create_info.pLibraryInfo) {
         for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
-            auto library_pipeline_state = validator.Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
-            if (!library_pipeline_state) continue;
-            total += CalcTotalShaderGroupCount(validator, *library_pipeline_state.get());
+            if (auto library_pipeline_state = validator.Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i])) {
+                total += CalcTotalShaderGroupCount(validator, *library_pipeline_state.get());
+            }
         }
     }
     return total;
@@ -1951,12 +1952,16 @@ static vku::safe_VkRayTracingShaderGroupCreateInfoKHR* GetRayTracingShaderGroup(
 
     // Target group is in a linked pipeline library, recursively explore them
     if (create_info.pLibraryInfo) {
+        uint32_t accum_group_count = create_info.groupCount;
         for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
-            auto library_pipeline_state = validator.Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
-            if (!library_pipeline_state) {
-                continue;
+            if (auto library_pipeline_state = validator.Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i])) {
+                const uint32_t library_group_count = CalcTotalShaderGroupCount(validator, *library_pipeline_state.get());
+                // group index is within currently explored library, recursive call will just hit base case
+                if ((group_i - accum_group_count) < library_group_count) {
+                    return GetRayTracingShaderGroup(validator, *library_pipeline_state.get(), group_i - accum_group_count);
+                }
+                accum_group_count += library_group_count;
             }
-            return GetRayTracingShaderGroup(validator, *library_pipeline_state.get(), group_i - create_info.groupCount);
         }
     }
 

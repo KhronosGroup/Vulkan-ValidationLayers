@@ -270,6 +270,44 @@ TEST_F(PositiveRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroupP
     vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, rt_pipe, 1, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
 }
 
+TEST_F(PositiveRayTracingPipeline, GetRayTracingShaderGroupStackSizeMultiplePipelineLibraries) {
+    TEST_DESCRIPTION(
+        "Call vkGetRayTracingShaderGroupStackSizeKHR on a shader group coming from the second of two linked pipeline libraries");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::pipelineLibraryGroupHandles);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // Will hold groups 1 (ray gen) and 2 (miss) of the executable pipeline
+    vkt::rt::Pipeline rt_pipe_lib_1(*this, m_device);
+    rt_pipe_lib_1.InitLibraryInfo(sizeof(float), false);
+    rt_pipe_lib_1.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib_1.AddGlslMissShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib_1.BuildPipeline();
+
+    // Will hold group 3 (closest hit) of the executable pipeline
+    vkt::rt::Pipeline rt_pipe_lib_2(*this, m_device);
+    rt_pipe_lib_2.InitLibraryInfo(sizeof(float), false);
+    rt_pipe_lib_2.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
+    rt_pipe_lib_2.BuildPipeline();
+
+    // Holds group 0 (ray gen), the groups of the libraries are appended after it, in link order
+    vkt::rt::Pipeline rt_pipe(*this, m_device);
+    rt_pipe.InitLibraryInfo(sizeof(float), true);
+    rt_pipe.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe.AddLibrary(rt_pipe_lib_1);
+    rt_pipe.AddLibrary(rt_pipe_lib_2);
+    rt_pipe.BuildPipeline();
+
+    // Group 3 is in the *second* library, so looking it up must not stop at the first one
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, rt_pipe, 3, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
+}
+
 TEST_F(PositiveRayTracingPipeline, ClusterAccelerationStructureFeatureEnabled) {
     TEST_DESCRIPTION("Test that ray tracing pipeline creation succeeds when cluster acceleration structure feature is enabled");
 
