@@ -87,7 +87,7 @@ bool CoreChecks::ValidatePerformanceQueryResults(const vvl::QueryPool& query_poo
                                                                          : "VUID-vkCmdCopyQueryPoolResults-queryType-09440";
         const char* flags = loc.function == Func::vkCmdCopyQueryPoolResultsToMemoryKHR ? "queryResultFlags" : "flags";
         skip |= LogError(vuid, query_pool_state.Handle(), loc.dot(Field::queryPool),
-                         "(%s) was created with a queryType of"
+                         "(%s) was created with a queryType of "
                          "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but %s contains %s.",
                          FormatHandle(query_pool_state).c_str(), flags, invalid_flags_string.c_str());
     }

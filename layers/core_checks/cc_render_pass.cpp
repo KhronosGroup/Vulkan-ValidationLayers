@@ -1201,7 +1201,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                 if (!format_found) {
                     skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03215", objlist, attachment_loc,
                                      "internal VkImage was created with VkImageFormatListCreateInfo::pViewFormats[%" PRIu32
-                                     "] = %s,"
+                                     "] = %s, "
                                      "but now found in vkFramebufferAttachmentsCreateInfo::pAttachmentImageInfos[%" PRIu32
                                      "].pViewFormats.",
                                      j, string_VkFormat(image_format_list_create_info->pViewFormats[j]), i);
@@ -3818,7 +3818,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
                                  rendering_info_loc.dot(Field::pColorAttachments, j).dot(Field::imageView),
                                  "width (%" PRIu32
-                                 ") must be greater than or equal to"
+                                 ") must be greater than or equal to "
                                  "renderArea.offset.x (%" PRId32 ") + renderArea.extent.width (%" PRIu32 ").",
                                  image_state->GetExtent().width, offset_x, width);
             }
@@ -3827,7 +3827,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06084", objlist,
                                  rendering_info_loc.dot(Field::pColorAttachments, j).dot(Field::imageView),
                                  "height (%" PRIu32
-                                 ") must be greater than or equal to"
+                                 ") must be greater than or equal to "
                                  "renderArea.offset.y (%" PRId32 ") + renderArea.extent.height (%" PRIu32 ").",
                                  image_state->GetExtent().height, offset_y, height);
             }
@@ -3842,7 +3842,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
                                  rendering_info_loc.dot(Field::pDepthAttachment).dot(Field::imageView),
                                  "width (%" PRIu32
-                                 ") must be greater than or equal to"
+                                 ") must be greater than or equal to "
                                  "renderArea.offset.x (%" PRId32 ") + renderArea.extent.width (%" PRIu32 ").",
                                  image_state->GetExtent().width, offset_x, width);
             }
@@ -3851,7 +3851,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06084", objlist,
                                  rendering_info_loc.dot(Field::pDepthAttachment).dot(Field::imageView),
                                  "height (%" PRIu32
-                                 ") must be greater than or equal to"
+                                 ") must be greater than or equal to "
                                  "renderArea.offset.y (%" PRId32 ") + renderArea.extent.height (%" PRIu32 ").",
                                  image_state->GetExtent().height, offset_y, height);
             }
@@ -3866,7 +3866,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06083", objlist,
                                  rendering_info_loc.dot(Field::pStencilAttachment).dot(Field::imageView),
                                  "width (%" PRIu32
-                                 ") must be greater than or equal to"
+                                 ") must be greater than or equal to "
                                  "renderArea.offset.x (%" PRId32 ") + renderArea.extent.width (%" PRIu32 ").",
                                  image_state->GetExtent().width, offset_x, width);
             }
@@ -3875,7 +3875,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                 skip |= LogError("VUID-VkRenderingInfo-pNext-06084", objlist,
                                  rendering_info_loc.dot(Field::pStencilAttachment).dot(Field::imageView),
                                  "height (%" PRIu32
-                                 ") must be greater than or equal to"
+                                 ") must be greater than or equal to "
                                  "renderArea.offset.y (%" PRId32 ") + renderArea.extent.height(%" PRIu32 ").",
                                  image_state->GetExtent().height, offset_y, height);
             }

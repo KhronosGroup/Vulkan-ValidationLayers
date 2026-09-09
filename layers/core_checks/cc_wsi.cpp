@@ -1807,13 +1807,13 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
 
     const uint32_t width = pCreateInfo->imageExtent.width;
     const uint32_t height = pCreateInfo->imageExtent.height;
-    if (width >= device_properties.limits.maxImageDimension2D) {
+    if (width > device_properties.limits.maxImageDimension2D) {
         skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-width-01256", display_mode,
                          create_info_loc.dot(Field::imageExtent).dot(Field::width),
                          "(%" PRIu32 ") exceeds device limit maxImageDimension2D (%" PRIu32 ").", width,
                          device_properties.limits.maxImageDimension2D);
     }
-    if (height >= device_properties.limits.maxImageDimension2D) {
+    if (height > device_properties.limits.maxImageDimension2D) {
         skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-width-01256", display_mode,
                          create_info_loc.dot(Field::imageExtent).dot(Field::height),
                          "(%" PRIu32 ") exceeds device limit maxImageDimension2D (%" PRIu32 ").", height,
@@ -1825,10 +1825,10 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
     if (pCreateInfo->planeIndex >= display_plane_property_count) {
         skip |=
             LogError("VUID-VkDisplaySurfaceCreateInfoKHR-planeIndex-01252", display_mode, create_info_loc.dot(Field::planeIndex),
-                     "(%" PRIu32 ") must be in the range [0, %" PRIu32
-                     "] that was returned by "
+                     "(%" PRIu32 ") is not less than the %" PRIu32
+                     " plane(s) returned by "
                      "vkGetPhysicalDeviceDisplayPlanePropertiesKHR\n:Hint: Do you have the plane index hardcoded?",
-                     pCreateInfo->planeIndex, display_plane_property_count - 1);
+                     pCreateInfo->planeIndex, display_plane_property_count);
     } else {
         // call here once we know the plane index used is a valid plane index
         VkDisplayPlaneCapabilitiesKHR plane_capabilities;

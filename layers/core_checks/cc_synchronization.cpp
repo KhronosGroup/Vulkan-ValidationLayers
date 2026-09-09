@@ -684,7 +684,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState& state, const 
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             if (timeline_semaphore_submit_info == nullptr) {
                 skip |= LogError("VUID-VkSubmitInfo-pWaitSemaphores-03239", semaphore, signal_semaphore_loc,
-                                 "(%s) is a timeline semaphore, but VkSubmitInfo"
+                                 "(%s) is a timeline semaphore, but VkSubmitInfo "
                                  "does not include an instance of VkTimelineSemaphoreSubmitInfo",
                                  FormatHandle(semaphore).c_str());
                 break;
@@ -793,7 +793,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState& state, const 
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             if (timeline_semaphore_submit_info == nullptr) {
                 skip |= LogError("VUID-VkBindSparseInfo-pWaitSemaphores-03246", semaphore, signal_semaphore_loc,
-                                 "(%s) is a timeline semaphore, but VkSubmitInfo"
+                                 "(%s) is a timeline semaphore, but VkSubmitInfo "
                                  "does not include an instance of VkTimelineSemaphoreSubmitInfo",
                                  FormatHandle(semaphore).c_str());
                 break;

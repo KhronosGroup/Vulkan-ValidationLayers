@@ -366,7 +366,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, submit_loc);
 
         const bool protected_submit = (submit.flags & VK_SUBMIT_PROTECTED_BIT) != 0;
-        if ((protected_submit == true) && ((queue_state->create_flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
+        if ((protected_submit == true) && ((queue_state->create_flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) == 0)) {
             skip |= LogError("VUID-vkQueueSubmit2-queue-06447", queue, submit_loc,
                              "contains a protected submission to %s which was not created with "
                              "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
@@ -383,12 +383,9 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
             skip |= cb_submit_state.Validate(cb_loc, *cb_state, perf_pass);
 
-            {
-                const LogObjectList objlist(queue);
-                skip |= ValidateDeviceMaskToPhysicalDeviceCount(submit.pCommandBufferInfos[i].deviceMask, queue,
-                                                                info_loc.dot(Field::deviceMask),
-                                                                "VUID-VkCommandBufferSubmitInfo-deviceMask-03891");
-            }
+            skip |= ValidateDeviceMaskToPhysicalDeviceCount(submit.pCommandBufferInfos[i].deviceMask, LogObjectList(queue),
+                                                            info_loc.dot(Field::deviceMask),
+                                                            "VUID-VkCommandBufferSubmitInfo-deviceMask-03891");
 
             // Make sure command buffers are all protected or unprotected
             if ((cb_state->unprotected == true) && (protected_submit == true)) {
