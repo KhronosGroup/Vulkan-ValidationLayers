@@ -270,8 +270,8 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     template <typename Command>
     void StoreCommand(ResourceUsageTag tag, const Command& command, uint32_t tag_count = 1) {
-        auto storage = command.MakeStorage(command_data_);
-        commands_.push_back(CommandEntry{tag, tag_count, std::move(storage)});
+        const auto storage = command.MakeStorage(command_data_);
+        commands_.push_back({command_data_.Store(storage), tag, tag_count});
     }
 
     const std::vector<HandleRecord>& GetHandleRecords() const { return handles_; }

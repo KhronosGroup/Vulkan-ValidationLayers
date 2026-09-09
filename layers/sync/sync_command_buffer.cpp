@@ -328,7 +328,7 @@ void CommandBufferContext::Reset() {
     }
     replay_entries_.clear();
     commands_.clear();
-    command_data_ = {};
+    command_data_.Reset();
 
     command_number_ = 0;
     reset_count_++;
@@ -1551,21 +1551,53 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
 
     ImportRecordedAccessLog(recorded_cb_context);
 
+    auto import_common = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag,
+                                uint32_t tag_count) {
+        const auto command = storage.MakeCommand(recorded_command_data);
+        command.Apply(environment_, tag, *current_context_);
+        StoreCommand(tag, command, tag_count);
+    };
+
     const auto& settings = GetSyncState().syncval_settings;
     if (settings.full_validation && recorded_cb_context.HasAllCommands()) {
+        const CommandData& command_data = recorded_cb_context.GetCommandData();
         for (const CommandEntry& entry : recorded_cb_context.GetCommands()) {
-            std::visit(
-                [&](const auto& storage) {
-                    const auto command = storage.MakeCommand(recorded_cb_context.GetCommandData());
-                    using CommandType = std::decay_t<decltype(command)>;
-                    if constexpr (!std::is_same_v<CommandType, BeginRenderPassCommand> &&
-                                  !std::is_same_v<CommandType, NextSubpassCommand> &&
-                                  !std::is_same_v<CommandType, EndRenderPassCommand>) {
-                        command.Apply(environment_, base_tag + entry.tag, *current_context_);
-                        StoreCommand(base_tag + entry.tag, command, entry.tag_count);
-                    }
-                },
-                entry.storage);
+            const ResourceUsageTag tag = base_tag + entry.tag;
+            const uint32_t index = entry.command_ref.index;
+
+            switch (entry.command_ref.type) {
+                case CommandType::kBufferCopy: {
+                    import_common(command_data.buffer_copy_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kBufferAccess: {
+                    import_common(command_data.buffer_access_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kImageCopy: {
+                    import_common(command_data.image_copy_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kPipelineBarrier: {
+                    import_common(command_data.barrier_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kBeginRenderPass:
+                case CommandType::kNextSubpass:
+                case CommandType::kEndRenderPass: {
+                    // [core validation check]: these commands are invalid in secondary command buffers
+                    continue;
+                }
+                case CommandType::kShaderAccess: {
+                    import_common(command_data.shader_access_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kDispatchIndirect: {
+                    import_common(command_data.dispatch_indirect_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+            }
+            assert(false);
         }
     } else {
         // Replay synchronization actions against the current destination state. The

@@ -55,37 +55,96 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
     const CommandData& command_data = cb_context.GetCommandData();
     CommandReplayContext replay_context(env, destination_access_context, base_tag);
 
+    auto replay_common = [&skip, &command_data, base_tag, &env, &loc, &cb_context](
+                             const auto& storage, AccessContext& access_context, ResourceUsageTag replay_tag) {
+        const auto command = storage.MakeCommand(command_data);
+        skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
+        const ResourceUsageTag tag = base_tag + replay_tag;
+        command.Apply(env, tag, access_context);
+    };
+
     for (const CommandEntry& entry : cb_context.GetCommands()) {
-        const ResourceUsageTag tag = base_tag + entry.tag;
-        std::visit(
-            [&](const auto& storage) {
-                bool command_skip = false;
-                const auto& command = storage.MakeCommand(command_data);
-                using CommandType = std::decay_t<decltype(command)>;
+        const ResourceUsageTag replay_tag = entry.tag;
+        const uint32_t index = entry.command_ref.index;
+        AccessContext& access_context = replay_context.CurrentAccessContext();
 
-                AccessContext& access_context = replay_context.CurrentAccessContext();
-
-                if constexpr (std::is_same_v<CommandType, BeginRenderPassCommand>) {
-                    command_skip = command.Validate(env, access_context, cb_context, entry.tag, loc);
-                    replay_context.BeginRenderPass(command);
-                    command.Apply(env, tag, *replay_context.render_pass_context);
-                } else if constexpr (std::is_same_v<CommandType, NextSubpassCommand>) {
-                    command_skip = command.Validate(env, *replay_context.render_pass_context, cb_context, entry.tag, loc);
-                    replay_context.NextSubpass();
-                    command.Apply(env, tag, *replay_context.render_pass_context);
-                } else if constexpr (std::is_same_v<CommandType, EndRenderPassCommand>) {
-                    command_skip = command.Validate(env, *replay_context.render_pass_context, cb_context, entry.tag, loc);
-                    command.Apply(env, tag, *replay_context.render_pass_context, destination_access_context);
-                    replay_context.EndRenderPass();
-                } else {
-                    command_skip = command.Validate(env, access_context, cb_context, entry.tag, loc);
-                    command.Apply(env, tag, access_context);
-                }
-                skip |= command_skip;
-            },
-            entry.storage);
+        switch (entry.command_ref.type) {
+            case CommandType::kBufferCopy: {
+                replay_common(command_data.buffer_copy_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kBufferAccess: {
+                replay_common(command_data.buffer_access_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kImageCopy: {
+                replay_common(command_data.image_copy_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kPipelineBarrier: {
+                replay_common(command_data.barrier_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kBeginRenderPass: {
+                const auto command = command_data.begin_render_pass_commands[index].MakeCommand(command_data);
+                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
+                replay_context.BeginRenderPass(command);
+                const ResourceUsageTag tag = base_tag + replay_tag;
+                command.Apply(env, tag, *replay_context.render_pass_context);
+                continue;
+            }
+            case CommandType::kNextSubpass: {
+                const NextSubpassCommand command{};
+                skip |= command.Validate(env, *replay_context.render_pass_context, cb_context, replay_tag, loc);
+                replay_context.NextSubpass();
+                const ResourceUsageTag tag = base_tag + replay_tag;
+                command.Apply(env, tag, *replay_context.render_pass_context);
+                continue;
+            }
+            case CommandType::kEndRenderPass: {
+                const EndRenderPassCommand command{};
+                skip |= command.Validate(env, *replay_context.render_pass_context, cb_context, replay_tag, loc);
+                const ResourceUsageTag tag = base_tag + replay_tag;
+                command.Apply(env, tag, *replay_context.render_pass_context, destination_access_context);
+                replay_context.EndRenderPass();
+                continue;
+            }
+            case CommandType::kShaderAccess: {
+                replay_common(command_data.shader_access_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kDispatchIndirect: {
+                replay_common(command_data.dispatch_indirect_commands[index], access_context, replay_tag);
+                continue;
+            }
+        }
+        assert(false);
     }
     return skip;
+}
+
+void CommandData::Reset() {
+    buffer_copy_commands.clear();
+    buffer_access_commands.clear();
+    image_copy_commands.clear();
+    barrier_commands.clear();
+    begin_render_pass_commands.clear();
+    shader_access_commands.clear();
+    dispatch_indirect_commands.clear();
+
+    buffers.clear();
+    images.clear();
+    image_views.clear();
+    render_passes.clear();
+    pipelines.clear();
+    buffer_copy_regions.clear();
+    image_copy_regions.clear();
+    barrier_sets.clear();
+    descriptor_buffer_accesses.clear();
+    descriptor_image_accesses.clear();
+
+    descriptor_sets.clear();
+    descriptor_set_lookup.clear();
 }
 
 uint32_t CommandData::AddBuffer(const vvl::Buffer& buffer) {
