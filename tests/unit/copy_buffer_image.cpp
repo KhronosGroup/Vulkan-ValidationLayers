@@ -2112,6 +2112,23 @@ TEST_F(NegativeCopyBufferImage, ImageSampleCountMismatch) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeCopyBufferImage, CopyImageToBufferLayerCountZero) {
+    RETURN_IF_SKIP(Init());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0};
+    region.imageExtent = {32, 32, 1};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceLayers-layerCount-01700");
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeCopyBufferImage, ImageLayerCount) {
     TEST_DESCRIPTION("Check layerCount in vkCmdCopyImage");
     RETURN_IF_SKIP(Init());
