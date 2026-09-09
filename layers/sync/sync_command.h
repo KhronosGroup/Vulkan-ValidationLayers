@@ -266,11 +266,36 @@ struct DispatchIndirectCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
-using CommandStorage = std::variant<BufferCopyCommand::Storage, BufferAccessCommand::Storage, ImageCopyCommand::Storage,
-                                    BarrierCommand::Storage, BeginRenderPassCommand::Storage, NextSubpassCommand::Storage,
-                                    EndRenderPassCommand::Storage, ShaderAccessCommand::Storage, DispatchIndirectCommand::Storage>;
+enum class CommandType : uint32_t {
+    kBufferCopy,
+    kBufferAccess,
+    kImageCopy,
+    kPipelineBarrier,
+    kBeginRenderPass,
+    kNextSubpass,
+    kEndRenderPass,
+    kShaderAccess,
+    kDispatchIndirect,
+};
+
+struct CommandRef {
+    CommandType type;
+    uint32_t index;
+};
+static_assert(sizeof(CommandRef) == 8);
 
 struct CommandData {
+    // Command storage data.
+    // NOTE: NextSubpass and EndRenderPass have no storage data
+    std::vector<BufferCopyCommand::Storage> buffer_copy_commands;
+    std::vector<BufferAccessCommand::Storage> buffer_access_commands;
+    std::vector<ImageCopyCommand::Storage> image_copy_commands;
+    std::vector<BarrierCommand::Storage> barrier_commands;
+    std::vector<BeginRenderPassCommand::Storage> begin_render_pass_commands;
+    std::vector<ShaderAccessCommand::Storage> shader_access_commands;
+    std::vector<DispatchIndirectCommand::Storage> dispatch_indirect_commands;
+
+    // Resources and additional data used by the commands
     std::vector<std::shared_ptr<const vvl::Buffer>> buffers;
     std::vector<std::shared_ptr<const vvl::Image>> images;
     std::vector<std::shared_ptr<const vvl::ImageView>> image_views;
@@ -285,21 +310,60 @@ struct CommandData {
     std::vector<std::shared_ptr<const vvl::DescriptorSet>> descriptor_sets;
     vvl::unordered_set<const vvl::DescriptorSet*> descriptor_set_lookup;
 
+    void Reset();  // keeps capacity
+
     uint32_t AddBuffer(const vvl::Buffer& buffer);
     uint32_t AddImage(const vvl::Image& image);
     uint32_t AddRenderPass(const vvl::RenderPass& render_pass);
     void AddImageView(const vvl::ImageView& image_view);
     void AddPipeline(const vvl::Pipeline& pipeline);
     void AddDescriptorSet(const vvl::DescriptorSet& descriptor_set);
+
+    CommandRef Store(const BufferCopyCommand::Storage& storage) {
+        return Store(CommandType::kBufferCopy, buffer_copy_commands, storage);
+    }
+    CommandRef Store(const BufferAccessCommand::Storage& storage) {
+        return Store(CommandType::kBufferAccess, buffer_access_commands, storage);
+    }
+    CommandRef Store(const ImageCopyCommand::Storage& storage) {
+        return Store(CommandType::kImageCopy, image_copy_commands, storage);
+    }
+    CommandRef Store(const BarrierCommand::Storage& storage) {
+        return Store(CommandType::kPipelineBarrier, barrier_commands, storage);
+    }
+    CommandRef Store(const BeginRenderPassCommand::Storage& storage) {
+        return Store(CommandType::kBeginRenderPass, begin_render_pass_commands, storage);
+    }
+    CommandRef Store(const NextSubpassCommand::Storage&) {
+        // No storage data, return the command reference directly. The index is unused.
+        return {CommandType::kNextSubpass, 0};
+    }
+    CommandRef Store(const EndRenderPassCommand::Storage&) {
+        // No storage data, return the command reference directly. The index is unused.
+        return {CommandType::kEndRenderPass, 0};
+    }
+    CommandRef Store(const ShaderAccessCommand::Storage& storage) {
+        return Store(CommandType::kShaderAccess, shader_access_commands, storage);
+    }
+    CommandRef Store(const DispatchIndirectCommand::Storage& storage) {
+        return Store(CommandType::kDispatchIndirect, dispatch_indirect_commands, storage);
+    }
+
+  private:
+    template <typename Storage>
+    static CommandRef Store(CommandType type, std::vector<Storage>& commands, const Storage& storage) {
+        const uint32_t index = static_cast<uint32_t>(commands.size());
+        commands.push_back(storage);
+        return {type, index};
+    }
 };
 
-// TODO: CommandEntry won't be needed after all commands are introduced.
-// Tag could be derived from command index. Remove entry type when and
-// use array of commands instead.
+// TODO: Revisit tag tracking after command conversion.
+// Once tag and tag_count can be derived, store CommandRefs directly
 struct CommandEntry {
+    CommandRef command_ref;
     ResourceUsageTag tag;
     uint32_t tag_count;
-    CommandStorage storage;
 };
 
 bool ReplayCommands(SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
