@@ -23,10 +23,22 @@ concurrency:
   cancel-in-progress: true
 
 on:
-    push:
-    pull_request:
-        branches:
-            - main
+  # triggers individual PRs to get tested before merging
+  pull_request:
+    branches:
+      - main
+
+  schedule:
+    # We make a LOT of changes to VVL and sometimes with SKIP-CI and don't want them to run
+    # This will still check for us, but at a MUCH less frequent rate to save MANY CI minutes!
+    #
+    # From YEARS of doing this, these runs after merging are 99% a waste
+    # and when it is the 1% we fix it fast as we notice it locally.
+    #
+    # Not having a |push| (like |pull_request| above prevents doing it automatically on PR merging
+    #
+    # Runs at 00:00 UTC every Sunday
+    - cron: '0 0 * * 0'
 
 env:
   CMAKE_GENERATOR: Ninja
