@@ -4733,7 +4733,7 @@ TEST_F(NegativeShaderObjectEXT, MaxClipDistances) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_1, 0, fs_src.str().c_str(), spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-pCode-08450");  // hit both limits
@@ -4794,7 +4794,7 @@ TEST_F(NegativeShaderObjectEXT, MaxCullDistances) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_1, 0, vs_src.str().c_str(), spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-pCode-08450");  // hit both limits
@@ -4864,7 +4864,7 @@ TEST_F(NegativeShaderObjectEXT, MaxCombinedClipAndCullDistances) {
 
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_1, 0, vs_src.str().c_str(), spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08450");
