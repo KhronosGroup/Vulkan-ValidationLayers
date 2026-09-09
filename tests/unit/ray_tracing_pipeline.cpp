@@ -1236,6 +1236,57 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroupP
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeMultiplePipelineLibraries) {
+    TEST_DESCRIPTION(
+        "Call vkGetRayTracingShaderGroupStackSizeKHR on unused shaders of shader groups coming from two linked pipeline "
+        "libraries");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::pipelineLibraryGroupHandles);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // Will hold groups 1 (ray gen) and 2 (miss) of the executable pipeline
+    vkt::rt::Pipeline rt_pipe_lib_1(*this, m_device);
+    rt_pipe_lib_1.InitLibraryInfo(sizeof(float), false);
+    rt_pipe_lib_1.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib_1.AddGlslMissShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib_1.BuildPipeline();
+
+    // Will hold group 3 (closest hit) of the executable pipeline
+    vkt::rt::Pipeline rt_pipe_lib_2(*this, m_device);
+    rt_pipe_lib_2.InitLibraryInfo(sizeof(float), false);
+    rt_pipe_lib_2.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
+    rt_pipe_lib_2.BuildPipeline();
+
+    // Holds group 0 (ray gen), the groups of the libraries are appended after it, in link order
+    vkt::rt::Pipeline rt_pipe(*this, m_device);
+    rt_pipe.InitLibraryInfo(sizeof(float), true);
+    rt_pipe.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe.AddLibrary(rt_pipe_lib_1);
+    rt_pipe.AddLibrary(rt_pipe_lib_2);
+    rt_pipe.BuildPipeline();
+
+    // Groups of *all* libraries are counted, so the last valid group is 3
+    m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608");
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, rt_pipe, 4, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    // Group 2 comes from the first library and is a general (miss) group, it has no closest hit shader
+    m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609");
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, rt_pipe, 2, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    // Group 3 comes from the second library and is a hit group, it has no general shader
+    m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609");
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, rt_pipe, 3, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupHandles) {
     TEST_DESCRIPTION("Use a compute pipeline in GetRayTracingShaderGroupHandlesKHR");
 
