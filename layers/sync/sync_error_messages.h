@@ -111,8 +111,13 @@ class ErrorMessages {
                                      const std::string& resource_description, VkImageAspectFlags clear_aspects,
                                      uint32_t clear_rect_index, const VkClearRect& clear_rect) const;
 
-    std::string RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
+    std::string RenderPassAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
+                                          const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
                                           const std::string& resource_description) const;
+
+    std::string DynamicRenderingAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                const Location& loc, const std::string& resource_description) const;
 
     std::string BeginRenderingError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
                                     const std::string& resource_description, VkAttachmentLoadOp load_op) const;

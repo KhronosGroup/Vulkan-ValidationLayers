@@ -230,14 +230,14 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     DescriptorAccesses CollectDescriptorAccesses(VkPipelineBindPoint pipelineBindPoint) const;
     void RecordShaderAccesses(ResourceUsageTag tag, DescriptorAccesses& descriptor_accesses);
 
+    DrawAttachmentCommand GetDrawAttachmentCommand() const;
+
     bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const Location& loc) const;
     void RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
     bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const Location& loc) const;
     void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, ResourceUsageTag tag);
     bool ValidateDrawAttachment(const Location& loc) const;
-    bool ValidateDrawDynamicRenderingAttachment(const Location& loc) const;
     void RecordDrawAttachment(ResourceUsageTag tag);
-    void RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag);
     bool ValidateClearAttachment(const Location& loc, const VkClearAttachment& clear_attachment, uint32_t clear_rect_index,
                                  const VkClearRect& clear_rect) const;
     void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment& clear_attachment, const VkClearRect& clear_rect);

@@ -332,9 +332,20 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
     return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "ClearAttachmentError", additional_info);
 }
 
-std::string ErrorMessages::RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                     vvl::Func command, const std::string& resource_description) const {
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "RenderPassAttachmentError");
+std::string ErrorMessages::RenderPassAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                     const Location& loc, const std::string& resource_description) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    return Error(env, hazard, command, resource_description, "RenderPassAttachmentError", additional_info);
+}
+
+std::string ErrorMessages::DynamicRenderingAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                           const Location& loc, const std::string& resource_description) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    return Error(env, hazard, command, resource_description, "DynamicRenderingAttachmentError", additional_info);
 }
 
 static const char* GetLoadOpActionName(VkAttachmentLoadOp load_op) {

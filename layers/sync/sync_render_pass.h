@@ -24,10 +24,9 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 
-struct LastBound;
-
 namespace vvl {
 class CommandBuffer;
+class Pipeline;
 class RenderPass;
 }  // namespace vvl
 
@@ -55,7 +54,7 @@ struct DynamicRenderingInfo {
         SyncAccessIndex GetStoreUsage() const;
         SyncOrdering GetOrdering() const;
         Location GetLocation(const Location& loc, uint32_t index = 0) const;
-        bool IsWriteable(const LastBound& last_bound_state) const;
+        bool IsWriteable(bool depth_write, bool stencil_write) const;
         bool IsValid() const { return view.get(); }
     };
 
@@ -68,6 +67,13 @@ struct DynamicRenderingInfo {
     DynamicRenderingInfo(const SyncValidator& state, const VkRenderingInfo& rendering_info);
 
     const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
+
+    bool ValidateDrawAttachments(const SyncEnvironment& env, const AccessContext& access_context,
+                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+                                 uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline, bool depth_write,
+                                 bool stencil_write) const;
+    void RecordDrawAttachments(AccessContext& access_context, uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline,
+                               bool depth_write, bool stencil_write, ResourceUsageTag tag, QueueId queue_id) const;
 
     vku::safe_VkRenderingInfo info;
     std::vector<Attachment> attachments;  // All attachments (with internal typing)
@@ -121,8 +127,11 @@ class RenderPassAccessContext {
                                         const AttachmentViewGenVector& attachment_views, const ResourceUsageTag tag,
                                         AccessContext& access_context);
 
-    bool ValidateDrawSubpassAttachment(const CommandBufferContext& cb_context, vvl::Func command) const;
-    void RecordDrawSubpassAttachment(const vvl::CommandBuffer& cmd_buffer, ResourceUsageTag tag);
+    bool ValidateDrawSubpassAttachment(const SyncEnvironment& env, const CommandBufferContext& cb_context,
+                                       ResourceUsageTag replay_tag, const Location& loc, const vvl::Pipeline* pipeline,
+                                       bool depth_write_enabled, bool stencil_write_enabled) const;
+    void RecordDrawSubpassAttachment(const vvl::Pipeline* pipeline, bool depth_write_enabled, bool stencil_write_enabled,
+                                     ResourceUsageTag tag, QueueId queue_id);
 
     const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
 

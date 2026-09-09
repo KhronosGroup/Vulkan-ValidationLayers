@@ -395,42 +395,6 @@ bool RenderPassAccessContext::ValidateStoreOperation(const SyncEnvironment& env,
     return skip;
 }
 
-static bool IsDepthAttachmentWriteable(const LastBound& last_bound_state, const VkFormat format) {
-    const bool depth_write_enable = last_bound_state.IsDepthWriteEnable();
-    return (vkuFormatIsDepthAndStencil(format) || vkuFormatIsDepthOnly(format)) && depth_write_enable;
-}
-
-static bool IsStencilAttachmentWriteable(const LastBound& last_bound_state, const VkFormat format) {
-    if (!vkuFormatIsDepthAndStencil(format) && !vkuFormatIsStencilOnly(format)) {
-        return false;
-    }
-    if (!last_bound_state.IsStencilTestEnable()) {
-        return false;
-    }
-    auto is_writable = [&last_bound_state](const VkStencilOpState& ops) -> bool {
-        if (ops.writeMask == 0) {
-            return false;
-        }
-
-        // If compareOp is ALWAYS then failOp never runs (no writes possible)
-        const bool ignore_fail_op = (ops.compareOp == VK_COMPARE_OP_ALWAYS);
-
-        // If compareOp is NEVER then passOp never runs (no writes possible)
-        const bool ignore_pass_op = (ops.compareOp == VK_COMPARE_OP_NEVER);
-
-        // If depth test is not enabled then depthFailOp never runs (no writes possible)
-        const bool ignore_depth_fail_op = !last_bound_state.IsDepthTestEnable();
-
-        const bool is_read = (ops.failOp == VK_STENCIL_OP_KEEP || ignore_fail_op) &&
-                             (ops.passOp == VK_STENCIL_OP_KEEP || ignore_pass_op) &&
-                             (ops.depthFailOp == VK_STENCIL_OP_KEEP || ignore_depth_fail_op);
-        return !is_read;
-    };
-    const VkStencilOpState front_ops = last_bound_state.GetStencilOpStateFront();
-    const VkStencilOpState back_ops = last_bound_state.GetStencilOpStateBack();
-    return is_writable(front_ops) || is_writable(back_ops);
-}
-
 // Traverse the attachment resolves for this a specific subpass, and do action() to them.
 // Used by both validation and record operations
 //
@@ -588,37 +552,35 @@ static uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkPipeline
     return (pipe_ds_ci && depth_stencil_ref) ? depth_stencil_ref->attachment : VK_ATTACHMENT_UNUSED;
 }
 
-bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferContext& cb_context, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncEnvironment& env, const CommandBufferContext& cb_context,
+                                                            ResourceUsageTag replay_tag, const Location& loc,
+                                                            const vvl::Pipeline* pipeline, bool depth_write_enabled,
+                                                            bool stencil_write_enabled) const {
     bool skip = false;
-    const vvl::CommandBuffer& cmd_buffer = cb_context.GetCBState();
-    const auto& last_bound_state = cmd_buffer.GetLastBoundGraphics();
-    const auto* pipe = last_bound_state.pipeline_state;
-
-    if (!pipe || pipe->RasterizationDisabled()) {
+    if (!pipeline || pipeline->RasterizationDisabled()) {
         return skip;
     }
-
-    const auto& list = pipe->fs_writable_output_location_list;
+    const auto& list = pipeline->fs_writable_output_location_list;
     const auto& subpass = rp_state_->create_info.pSubpasses[current_subpass_];
-    const auto& current_context = CurrentContext();
-    const SyncValidator& sync_state = cb_context.GetSyncState();
+    const AccessContext& current_context = CurrentContext();
 
-    auto report_atachment_hazard = [&sync_state, &cb_context, command](const HazardResult& hazard,
-                                                                       const vvl::ImageView& attachment_view,
-                                                                       std::string_view attachment_description) {
+    auto report_atachment_hazard = [&env, &cb_context, replay_tag, &loc](const HazardResult& hazard,
+                                                                         const vvl::ImageView& attachment_view,
+                                                                         std::string_view attachment_description) {
+        const SyncValidator& validator = env.validator;
         const vvl::Image& attachment_image = *attachment_view.image_state;
-        LogObjectList objlist(cb_context.GetCBState().Handle(), attachment_view.Handle(), attachment_image.Handle());
-        const Location loc(command);
+        LogObjectList objlist = BaseObjectList(env, cb_context, attachment_view.Handle());
+        objlist.add(attachment_image.Handle());
 
         std::ostringstream ss;
         ss << attachment_description;
-        ss << " (" << sync_state.FormatHandle(attachment_view.Handle());
-        ss << ", " << sync_state.FormatHandle(attachment_image.Handle()) << ")";
+        ss << " (" << validator.FormatHandle(attachment_view.Handle());
+        ss << ", " << validator.FormatHandle(attachment_image.Handle()) << ")";
         const std::string resource_description = ss.str();
 
         const std::string error =
-            sync_state.error_messages_.RenderPassAttachmentError(hazard, cb_context, command, resource_description);
-        return sync_state.SyncError(hazard.Hazard(), objlist, loc, error);
+            validator.error_messages_.RenderPassAttachmentError(env, hazard, cb_context, replay_tag, loc, resource_description);
+        return validator.SyncError(hazard.Hazard(), objlist, loc, error);
     };
 
     // Subpass's inputAttachment has been done in ValidateDispatchDrawDescriptorSet
@@ -632,35 +594,35 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferC
             const AttachmentViewGen& view_gen = attachment_views_[subpass.pColorAttachments[location].attachment];
             HazardResult hazard = current_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                                                          SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                                                         attachment_access, subpass.viewMask);
+                                                                         attachment_access, subpass.viewMask, env.queue_id);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
-                ss << "color attachment " << location << " in subpass " << cmd_buffer.GetActiveSubpass();
+                ss << "color attachment " << location << " in subpass " << current_subpass_;
                 const std::string attachment_description = ss.str();
                 skip |= report_atachment_hazard(hazard, *view_gen.GetViewState(), attachment_description);
             }
         }
     }
 
-    // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
-    const auto ds_state = pipe->DepthStencilState();
+    // TODO: Read operations for both depth and stencil are possible in the future.
+    const auto ds_state = pipeline->DepthStencilState();
     const uint32_t depth_stencil_attachment = GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
 
     if (depth_stencil_attachment != VK_ATTACHMENT_UNUSED) {
         const AttachmentViewGen& view_gen = attachment_views_[depth_stencil_attachment];
         const vvl::ImageView& view_state = *view_gen.GetViewState();
         const VkFormat ds_format = view_state.create_info.format;
-        const bool depth_write = IsDepthAttachmentWriteable(last_bound_state, ds_format);
-        const bool stencil_write = IsStencilAttachmentWriteable(last_bound_state, ds_format);
+        const bool depth_write = depth_write_enabled && vkuFormatHasDepth(ds_format);
+        const bool stencil_write = stencil_write_enabled && vkuFormatHasStencil(ds_format);
 
         if (depth_write) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
             HazardResult hazard = current_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
                                                                          SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                                                         attachment_access, subpass.viewMask);
+                                                                         attachment_access, subpass.viewMask, env.queue_id);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
-                ss << "depth aspect of depth-stencil attachment in subpass " << cmd_buffer.GetActiveSubpass();
+                ss << "depth aspect of depth-stencil attachment in subpass " << current_subpass_;
                 const std::string attachment_description = ss.str();
                 skip |= report_atachment_hazard(hazard, view_state, attachment_description);
             }
@@ -669,10 +631,10 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferC
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
             HazardResult hazard = current_context.DetectAttachmentHazard(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
                                                                          SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                                                         attachment_access, subpass.viewMask);
+                                                                         attachment_access, subpass.viewMask, env.queue_id);
             if (hazard.IsHazard()) {
                 std::ostringstream ss;
-                ss << "stencil aspect of depth-stencil attachment in subpass " << cmd_buffer.GetActiveSubpass();
+                ss << "stencil aspect of depth-stencil attachment in subpass " << current_subpass_;
                 const std::string attachment_description = ss.str();
                 skip |= report_atachment_hazard(hazard, view_state, attachment_description);
             }
@@ -681,17 +643,15 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferC
     return skip;
 }
 
-void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuffer& cmd_buffer, const ResourceUsageTag tag) {
-    const auto& last_bound_state = cmd_buffer.GetLastBoundGraphics();
-    const auto* pipe = last_bound_state.pipeline_state;
-    if (!pipe || pipe->RasterizationDisabled()) {
+void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::Pipeline* pipeline, bool depth_write_enabled,
+                                                          bool stencil_write_enabled, ResourceUsageTag tag, QueueId queue_id) {
+    if (!pipeline || pipeline->RasterizationDisabled()) {
         return;
     }
-
-    const auto& list = pipe->fs_writable_output_location_list;
+    const auto& list = pipeline->fs_writable_output_location_list;
     const auto& subpass = rp_state_->create_info.pSubpasses[current_subpass_];
+    AccessContext& current_context = CurrentContext();
 
-    auto& current_context = CurrentContext();
     // Subpass's inputAttachment has been done in RecordDispatchDrawDescriptorSet
     if (subpass.pColorAttachments && subpass.colorAttachmentCount && !list.empty()) {
         for (const auto location : list) {
@@ -703,26 +663,26 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
             const AttachmentViewGen& view_gen = attachment_views_[subpass.pColorAttachments[location].attachment];
             current_context.UpdateAttachmentAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                                         SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
-                                                        ResourceUsageTagEx{tag}, subpass.viewMask);
+                                                        ResourceUsageTagEx{tag}, subpass.viewMask, queue_id);
         }
     }
 
-    // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
-    const auto* ds_state = pipe->DepthStencilState();
+    // TODO: Read operations for both depth and stencil are possible in the future
+    const auto* ds_state = pipeline->DepthStencilState();
     const uint32_t depth_stencil_attachment = GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
     if (depth_stencil_attachment != VK_ATTACHMENT_UNUSED) {
         const AttachmentViewGen& view_gen = attachment_views_[depth_stencil_attachment];
         const vvl::ImageView& view_state = *view_gen.GetViewState();
         const VkFormat ds_format = view_state.create_info.format;
-        const bool depth_write = IsDepthAttachmentWriteable(last_bound_state, ds_format);
-        const bool stencil_write = IsStencilAttachmentWriteable(last_bound_state, ds_format);
+        const bool depth_write = depth_write_enabled && vkuFormatHasDepth(ds_format);
+        const bool stencil_write = stencil_write_enabled && vkuFormatHasStencil(ds_format);
 
         if (depth_write || stencil_write) {
             const AttachmentAccess attachment_access = GetAttachmentAccess(SyncOrdering::kDepthStencilAttachment);
             const auto ds_gentype = view_gen.GetDepthStencilRenderAreaGenType(depth_write, stencil_write);
             current_context.UpdateAttachmentAccessState(view_gen, ds_gentype,
                                                         SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access,
-                                                        ResourceUsageTagEx{tag}, subpass.viewMask);
+                                                        ResourceUsageTagEx{tag}, subpass.viewMask, queue_id);
         }
     }
 }
@@ -1096,6 +1056,114 @@ const vvl::ImageView* DynamicRenderingInfo::GetClearAttachmentView(const VkClear
     return attachment_view;
 }
 
+bool DynamicRenderingInfo::ValidateDrawAttachments(const SyncEnvironment& env, const AccessContext& access_context,
+                                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                   const Location& loc, uint32_t render_pass_instance_id,
+                                                   const vvl::Pipeline* pipeline, bool depth_write, bool stencil_write) const {
+    bool skip = false;
+    if (!pipeline || pipeline->RasterizationDisabled()) {
+        return skip;
+    }
+
+    const auto& list = pipeline->fs_writable_output_location_list;
+    const SyncValidator& validator = env.validator;
+
+    for (const auto output_location : list) {
+        if (output_location >= info.colorAttachmentCount) {
+            continue;
+        }
+        const auto& attachment = attachments[output_location];
+        if (!attachment.IsWriteable(depth_write, stencil_write)) {
+            continue;
+        }
+        const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kColorAttachment,
+                                                 render_pass_instance_id, vvl::kNoIndex32};
+        ImageRangeGen view_gen = attachment.GetRangeGen(info.viewMask);
+        HazardResult hazard = access_context.DetectAttachmentHazard(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                                                    attachment_access, env.queue_id);
+
+        if (hazard.IsHazard()) {
+            const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
+            const Location attachment_loc = attachment.GetLocation(loc, output_location);
+            const Location location = replay_tag == kInvalidTag ? attachment_loc.dot(vvl::Field::imageView) : loc;
+            const std::string error = validator.error_messages_.DynamicRenderingAttachmentError(
+                env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(*attachment.view));
+            skip |= validator.SyncError(hazard.Hazard(), objlist, location, error);
+        }
+    }
+
+    // TODO -- fixup this and Subpass attachment to correct map the various depth stencil enables/reads vs. writes
+    // PHASE1 TODO: Add layout based read/vs. write selection.
+    // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
+    // PHASE1 TODO: Add EARLY stage detection based on ExecutionMode.
+    for (size_t i = info.colorAttachmentCount; i < attachments.size(); i++) {
+        const auto& attachment = attachments[i];
+        bool writeable = attachment.IsWriteable(depth_write, stencil_write);
+
+        if (writeable) {
+            const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kDepthStencilAttachment,
+                                                     render_pass_instance_id, vvl::kNoIndex32};
+            ImageRangeGen view_gen = attachment.GetRangeGen(info.viewMask);
+            HazardResult hazard = access_context.DetectAttachmentHazard(
+                view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access, env.queue_id);
+
+            if (hazard.IsHazard()) {
+                const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
+                const Location attachment_loc = attachment.GetLocation(loc);
+                const Location location = replay_tag == kInvalidTag ? attachment_loc.dot(vvl::Field::imageView) : loc;
+                const std::string error = validator.error_messages_.DynamicRenderingAttachmentError(
+                    env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(*attachment.view));
+                skip |= validator.SyncError(hazard.Hazard(), objlist, location, error);
+            }
+        }
+    }
+    return skip;
+}
+
+void DynamicRenderingInfo::RecordDrawAttachments(AccessContext& access_context, uint32_t render_pass_instance_id,
+                                                 const vvl::Pipeline* pipeline, bool depth_write, bool stencil_write,
+                                                 ResourceUsageTag tag, QueueId queue_id) const {
+    if (!pipeline || pipeline->RasterizationDisabled()) {
+        return;
+    }
+
+    const auto& list = pipeline->fs_writable_output_location_list;
+
+    for (const auto output_location : list) {
+        if (output_location >= info.colorAttachmentCount) {
+            continue;
+        }
+        const auto& attachment = attachments[output_location];
+        if (!attachment.IsWriteable(depth_write, stencil_write)) {
+            continue;
+        }
+        const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kColorAttachment,
+                                                 render_pass_instance_id, vvl::kNoIndex32};
+        ImageRangeGen view_gen = attachment.GetRangeGen(info.viewMask);
+        access_context.UpdateAttachmentAccessState(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
+                                                   ResourceUsageTagEx{tag}, queue_id);
+    }
+
+    // TODO -- fixup this and Subpass attachment to correct map the various depth stencil enables/reads vs. writes
+    // PHASE1 TODO: Add layout based read/vs. write selection.
+    // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
+    // PHASE1 TODO: Add EARLY stage detection based on ExecutionMode.
+
+    const uint32_t attachment_count = static_cast<uint32_t>(attachments.size());
+    for (uint32_t i = info.colorAttachmentCount; i < attachment_count; i++) {
+        const auto& attachment = attachments[i];
+        bool writeable = attachment.IsWriteable(depth_write, stencil_write);
+
+        if (writeable) {
+            const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kDepthStencilAttachment,
+                                                     render_pass_instance_id, vvl::kNoIndex32};
+            ImageRangeGen view_gen = attachment.GetRangeGen(info.viewMask);
+            access_context.UpdateAttachmentAccessState(view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                                       attachment_access, ResourceUsageTagEx{tag}, queue_id);
+        }
+    }
+}
+
 DynamicRenderingInfo::Attachment::Attachment(const SyncValidator& state, const vku::safe_VkRenderingAttachmentInfo& attachment_info,
                                              AttachmentType type_, const VkOffset3D& offset, const VkExtent3D& extent)
     : info(attachment_info), view(state.Get<vvl::ImageView>(attachment_info.imageView)), view_gen(), type(type_) {
@@ -1162,19 +1230,17 @@ Location DynamicRenderingInfo::Attachment::GetLocation(const Location& loc, uint
     }
 }
 
-bool DynamicRenderingInfo::Attachment::IsWriteable(const LastBound& last_bound_state) const {
-    bool writeable = IsValid();
-    if (writeable) {
-        //  Depth and Stencil have additional criteria
-        if (type == AttachmentType::kDepth) {
-            writeable =
-                last_bound_state.IsDepthWriteEnable() && IsDepthAttachmentWriteable(last_bound_state, view->create_info.format);
-        } else if (type == AttachmentType::kStencil) {
-            writeable =
-                last_bound_state.IsStencilTestEnable() && IsStencilAttachmentWriteable(last_bound_state, view->create_info.format);
-        }
+bool DynamicRenderingInfo::Attachment::IsWriteable(bool depth_write, bool stencil_write) const {
+    if (!IsValid()) {
+        return false;
     }
-    return writeable;
+    if (type == AttachmentType::kDepth) {
+        return depth_write && vkuFormatHasDepth(view->create_info.format);
+    } else if (type == AttachmentType::kStencil) {
+        return stencil_write && vkuFormatHasStencil(view->create_info.format);
+    } else {
+        return true;
+    }
 }
 
 }  // namespace syncval
