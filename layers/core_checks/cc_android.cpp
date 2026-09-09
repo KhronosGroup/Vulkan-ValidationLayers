@@ -26,6 +26,7 @@
 #include "error_message/error_strings.h"
 #include "utils/image_utils.h"
 #include <algorithm>
+#include <array>
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 // Android-specific validation that uses types defined only on Android and only for NDK versions
@@ -364,11 +365,11 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
 
             // First check if any invalid Vulkan usages, then make sure for each used, the matching AHB usage is also included
             // https://docs.vulkan.org/spec/latest/chapters/memory.html#memory-external-android-hardware-buffer-usage
-            const VkImageUsageFlags valid_vk_usages =
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
-                VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+            // Note - Only the IMAGE_USAGE flags, not the IMAGE_CREATE flags
+            const VkImageUsageFlags valid_vk_usages = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
+                                                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
             if (image_state->usage & ~(valid_vk_usages)) {
                 skip |= LogError(
                     "VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
@@ -377,14 +378,13 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                     string_VkImageUsageFlags2KHR(image_state->usage & ~(valid_vk_usages)).c_str(), import_ahb_info->buffer);
             }
 
-            static std::unordered_map<VkImageUsageFlags2KHR, uint64_t> ahb_usage_map_v2a = {
+            // Note - Only the IMAGE_USAGE flags, not the IMAGE_CREATE flags
+            constexpr std::array<std::pair<VkImageUsageFlags2KHR, uint64_t>, 5> ahb_usage_map_v2a = {{
                 {VK_IMAGE_USAGE_SAMPLED_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE},
                 {VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE},
                 {VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER},
                 {VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER},
                 {VK_IMAGE_USAGE_STORAGE_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER},
-                {VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP},
-                {VK_IMAGE_CREATE_PROTECTED_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT},
             };
 
             for (const auto& [vk_usage, ahb_usage] : ahb_usage_map_v2a) {
