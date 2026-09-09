@@ -422,11 +422,7 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
 }
 
 void Validator::PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
-                                                 const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) {
-    if (gpuav_settings.IsBufferValidationEnabled()) {
-        chassis_state.addressFlags |= VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
-    }
-
+                                                 const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     const auto buffer_states = GetBuffersByAddressRange(
@@ -449,10 +445,7 @@ void Validator::PreCallRecordCmdDrawIndirect2KHR(VkCommandBuffer commandBuffer, 
 }
 
 void Validator::PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
-                                                        const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) {
-    if (gpuav_settings.IsBufferValidationEnabled()) {
-        chassis_state.addressFlags |= VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
-    }
+                                                        const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     const auto buffer_states = GetBuffersByAddressRange(
@@ -479,11 +472,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect2KHR(VkCommandBuffer commandB
 }
 
 void Validator::PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
-                                                      const RecordObject& record_obj, VkDrawIndirectCount2InfoKHR& chassis_state) {
-    if (gpuav_settings.IsBufferValidationEnabled()) {
-        chassis_state.addressFlags |= VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
-    }
-
+                                                      const RecordObject& record_obj) {
     const auto buffer_states = GetBuffersByAddressRange(
         VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size}, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
     if (buffer_states.empty()) {
@@ -509,23 +498,14 @@ void Validator::PreCallRecordCmdDrawIndirectCount2KHR(VkCommandBuffer commandBuf
 
 void Validator::PreCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer,
                                                              const VkDrawIndirectCount2InfoKHR* pInfo,
-                                                             const RecordObject& record_obj,
-                                                             VkDrawIndirectCount2InfoKHR& chassis_state) {
-    PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj, chassis_state);
+                                                             const RecordObject& record_obj) {
+    PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
                                                                const VkDrawIndirectCount2InfoKHR* pInfo,
-                                                               const RecordObject& record_obj,
-                                                               VkDrawIndirectCount2InfoKHR& chassis_state) {
-    PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj, chassis_state);
-}
-
-void Validator::PreCallRecordCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
-                                                          const RecordObject& record_obj, VkDrawIndirect2InfoKHR& chassis_state) {
-    if (gpuav_settings.IsBufferValidationEnabled()) {
-        chassis_state.addressFlags |= VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
-    }
+                                                               const RecordObject& record_obj) {
+    PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
 }
 
 void Validator::PreCallRecordCmdDrawIndirectByteCount(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
@@ -680,11 +660,7 @@ void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, 
 }
 
 void Validator::PreCallRecordCmdDispatchIndirect2KHR(VkCommandBuffer commandBuffer, const VkDispatchIndirect2InfoKHR* pInfo,
-                                                     const RecordObject& record_obj, VkDispatchIndirect2InfoKHR& chassis_state) {
-    if (gpuav_settings.IsBufferValidationEnabled()) {
-        chassis_state.addressFlags |= VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
-    }
-
+                                                     const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     auto& sub_state = SubState(*cb_state);
@@ -883,13 +859,6 @@ void Validator::PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuff
         copy_buffer_to_image_info.pRegions = &region;
         valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*GetWrite<vvl::CommandBuffer>(commandBuffer)),
                                   &copy_buffer_to_image_info);
-    }
-}
-
-void Validator::PreCallRecordCmdBindIndexBuffer3KHR(VkCommandBuffer commandBuffer, const VkBindIndexBuffer3InfoKHR* pInfo,
-                                                    const RecordObject& record_obj, VkBindIndexBuffer3InfoKHR& chassis_state) {
-    if (gpuav_settings.IsBufferValidationEnabled()) {
-        chassis_state.addressFlags |= VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
     }
 }
 
