@@ -1253,7 +1253,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
     } else if (image_plane_info) {
         if ((image_state->disjoint == false)) {
             skip |= LogError("VUID-VkImageMemoryRequirementsInfo2-image-01590", pInfo->image, image_loc,
-                             "(%s) was not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
+                             "(%s) was not created with VK_IMAGE_CREATE_DISJOINT_BIT, "
                              "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
                              FormatHandle(pInfo->image).c_str());
         }
@@ -1261,7 +1261,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
         if ((vkuFormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
             skip |= LogError("VUID-VkImageMemoryRequirementsInfo2-image-02280", pInfo->image, image_loc,
                              "(%s) is a single-plane format (%s) and does not have tiling of "
-                             "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
+                             "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, "
                              "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
                              FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
         }
@@ -1940,7 +1940,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-09202" : "VUID-vkBindImageMemory-image-09202";
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(vuid, objlist, loc.dot(Field::image),
-                                             "was created with the VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT bit set,"
+                                             "was created with the VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT bit set, "
                                              "but the bound memory was allocated with %s and needs "
                                              "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.",
                                              string_VkMemoryAllocateFlags(memory_allocate_flags).c_str());

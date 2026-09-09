@@ -517,7 +517,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
 
     if (indirect_commands_layout.has_multi_draw_count_token) {
         // Use 64-bit to catch overflow
-        const uint64_t limit = 1 << 24;
+        const uint64_t limit = 1ULL << 24;
         const uint64_t count = (uint64_t)generated_commands_info.maxDrawCount * (uint64_t)generated_commands_info.maxSequenceCount;
         if (count >= limit) {
             skip |= LogError(
@@ -908,7 +908,7 @@ bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevi
 
     if (indirect_commands_layout->has_multi_draw_count_token) {
         // Use 64-bit to catch overflow
-        const uint64_t limit = 1 << 24;
+        const uint64_t limit = 1ULL << 24;
         const uint64_t count = (uint64_t)pInfo->maxDrawCount * (uint64_t)pInfo->maxSequenceCount;
         if (count >= limit) {
             skip |= LogError(

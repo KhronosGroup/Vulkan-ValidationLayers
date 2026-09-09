@@ -160,7 +160,7 @@ bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetF
         const Location info_loc = error_obj.location.dot(Field::pGetFdInfo);
         if ((pGetFdInfo->handleType & fence_state->export_handle_types) == 0) {
             skip |= LogError("VUID-VkFenceGetFdInfoKHR-handleType-01453", fence_state->Handle(), info_loc.dot(Field::handleType),
-                             "(%s) is different from VkExportFenceCreateInfo::handleTypes (%s). ",
+                             "(%s) is different from VkExportFenceCreateInfo::handleTypes (%s).",
                              string_VkExternalFenceHandleTypeFlagBits(pGetFdInfo->handleType),
                              string_VkExternalFenceHandleTypeFlags(fence_state->export_handle_types).c_str());
         }
@@ -217,7 +217,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(
         if ((pImportSemaphoreWin32HandleInfo->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 &&
             sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
             skip |= LogError("VUID-VkImportSemaphoreWin32HandleInfoKHR-flags-03322", sem_state->Handle(),
-                             error_obj.location.dot(Field::pImportSemaphoreWin32HandleInfo).dot(Field::semaphore),
+                             error_obj.location.dot(Field::pImportSemaphoreWin32HandleInfo).dot(Field::flags),
                              "includes VK_SEMAPHORE_IMPORT_TEMPORARY_BIT and semaphore is VK_SEMAPHORE_TYPE_TIMELINE.");
         }
     }
@@ -403,7 +403,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                             skip |= LogError(
                                 "VUID-VkExportMetalObjectsInfoEXT-pNext-06799", device, error_obj.location,
                                 "pNext chain contains a VkExportMetalTextureInfoEXT structure with image = "
-                                "%s, and plane = %s, but image was created with format %s, which is not multiplaner and plane is "
+                                "%s, and plane = %s, but image was created with format %s, which is not multiplanar and plane is "
                                 "required to be VK_IMAGE_ASPECT_PLANE_0_BIT",
                                 FormatHandle(metal_texture_ptr->image).c_str(), string_VkImageAspectFlags(image_plane).c_str(),
                                 string_VkFormat(image_info->GetFormat()));
@@ -440,7 +440,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "VUID-VkExportMetalObjectsInfoEXT-pNext-06801", device, error_obj.location,
                                 "pNext chain contains a VkExportMetalTextureInfoEXT structure with "
                                 "imageView = "
-                                "%s, and plane = %s, but imageView was created with format %s, which is not multiplaner and "
+                                "%s, and plane = %s, but imageView was created with format %s, which is not multiplanar and "
                                 "plane is "
                                 "required to be VK_IMAGE_ASPECT_PLANE_0_BIT",
                                 FormatHandle(metal_texture_ptr->imageView).c_str(), string_VkImageAspectFlags(image_plane).c_str(),
@@ -602,13 +602,12 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocat
     if (import_memory_metal_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT) {
         if (allocate_info.allocationSize != 0) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-10397", device, allocate_info_loc.dot(Field::allocationSize),
-                             "is %" PRId64, allocate_info.allocationSize);
+                             "is %" PRId64 ", but must be 0 when importing a VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT handle.", allocate_info.allocationSize);
         }
 
         if (dedicated_allocation_info == nullptr) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-10395", device, allocate_info_loc.dot(Field::pNext),
-                             "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT requires textures to be imported as a dedicated"
-                             "allocation.");
+                             "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT requires textures to be imported as a dedicated allocation.");
             // Early out since the image comes from VkMemoryDedicatedAllocateInfoKHR and there's none.
             return skip;
         }
