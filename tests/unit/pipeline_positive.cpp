@@ -1405,6 +1405,80 @@ TEST_F(PositivePipeline, ShaderModuleIdentifier) {
     pipe.CreateGraphicsPipeline();
 }
 
+TEST_F(PositivePipeline, ShaderModuleIdentifierMixedWithInlinedSpirv) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const std::vector<uint32_t> vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    VkShaderModuleCreateInfo vs_module_ci = vku::InitStructHelper();
+    vs_module_ci.codeSize = vs_spv.size() * sizeof(uint32_t);
+    vs_module_ci.pCode = vs_spv.data();
+
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
+    vk::GetShaderModuleIdentifierEXT(device(), fs, &get_identifier);
+
+    VkPipelineShaderStageModuleIdentifierCreateInfoEXT fs_id_ci = vku::InitStructHelper();
+    fs_id_ci.identifierSize = get_identifier.identifierSize;
+    fs_id_ci.pIdentifier = get_identifier.identifier;
+
+    VkPipelineShaderStageCreateInfo stages[2];
+    stages[0] = vku::InitStructHelper(&vs_module_ci);
+    stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stages[0].module = VK_NULL_HANDLE;
+    stages[0].pName = "main";
+    stages[1] = vku::InitStructHelper(&fs_id_ci);
+    stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stages[1].module = VK_NULL_HANDLE;
+    stages[1].pName = "main";
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages;
+    pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositivePipeline, ShaderModuleIdentifierUnknown) {
+    TEST_DESCRIPTION("Graphics pipeline from an identifier the layer has never seen, so no SPIR-V is available");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    uint8_t dummy_data = 0xAB;
+    uint8_t fake_identifier[VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT];
+    memset(fake_identifier, dummy_data, VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT);
+
+    VkPipelineShaderStageModuleIdentifierCreateInfoEXT id_ci = vku::InitStructHelper();
+    id_ci.identifierSize = VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT;
+    id_ci.pIdentifier = fake_identifier;
+
+    VkPipelineShaderStageCreateInfo stages[2];
+    stages[0] = vku::InitStructHelper(&id_ci);
+    stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stages[0].module = VK_NULL_HANDLE;
+    stages[0].pName = "main";
+    stages[1] = vku::InitStructHelper(&id_ci);
+    stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stages[1].module = VK_NULL_HANDLE;
+    stages[1].pName = "main";
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages;
+    pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositivePipeline, ViewportSwizzleNV) {
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiViewport);
