@@ -1488,6 +1488,16 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
         command.Apply(environment_, tag, *current_context_);
         StoreCommand(tag, command, tag_count);
     };
+    auto import_draw = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag,
+                              uint32_t tag_count) {
+        auto command = storage.MakeCommand(recorded_command_data, current_renderpass_context_, dynamic_rendering_info_.get());
+        const uint32_t subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
+        command.shader_accesses.render_pass_instance_id = current_render_pass_instance_id_;
+        command.shader_accesses.subpass = subpass;
+        command.attachment_accesses.render_pass_instance_id = current_render_pass_instance_id_;
+        command.Apply(environment_, tag, *current_context_);
+        StoreCommand(tag, command, tag_count);
+    };
 
     const auto& settings = GetSyncState().syncval_settings;
     if (settings.full_validation && recorded_cb_context.HasAllCommands()) {
@@ -1527,16 +1537,12 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     import_common(command_data.dispatch_indirect_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
+                case CommandType::kDrawIndirectCount: {
+                    import_draw(command_data.draw_indirect_count_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
                 case CommandType::kDrawMeshTasks: {
-                    auto command = command_data.draw_mesh_tasks_commands[index].MakeCommand(
-                        command_data, current_renderpass_context_, dynamic_rendering_info_.get());
-                    const uint32_t subpass =
-                        current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
-                    command.shader_accesses.render_pass_instance_id = current_render_pass_instance_id_;
-                    command.shader_accesses.subpass = subpass;
-                    command.attachment_accesses.render_pass_instance_id = current_render_pass_instance_id_;
-                    command.Apply(environment_, tag, *current_context_);
-                    StoreCommand(tag, command, entry.tag_count);
+                    import_draw(command_data.draw_mesh_tasks_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
             }

@@ -44,6 +44,27 @@ struct CommandData;
 struct DynamicRenderingInfo;
 struct SyncEnvironment;
 
+enum class BufferName : uint8_t {
+    kDstBuffer,
+    kIndirect,
+    kDrawCount,
+    kTransformFeedbackCounter,
+};
+
+enum class CommandType : uint32_t {
+    kBufferCopy,
+    kBufferAccess,
+    kImageCopy,
+    kPipelineBarrier,
+    kBeginRenderPass,
+    kNextSubpass,
+    kEndRenderPass,
+    kShaderAccess,
+    kDispatchIndirect,
+    kDrawIndirectCount,
+    kDrawMeshTasks,
+};
+
 struct BufferCopyRegion {
     VkDeviceSize src_offset;
     VkDeviceSize dst_offset;
@@ -71,11 +92,6 @@ struct BufferCopyCommand {
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
                   ResourceUsageTag replay_tag, const Location& loc) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
-};
-
-enum class BufferName : uint8_t {
-    kDstBuffer,
-    kIndirect,
 };
 
 struct BufferAccessCommand {
@@ -290,6 +306,25 @@ struct DrawAttachmentCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct DrawIndirectCountCommand {
+    ShaderAccessCommand shader_accesses;
+    DrawAttachmentCommand attachment_accesses;
+    BufferAccessCommand count_access;
+
+    struct Storage {
+        ShaderAccessCommand::Storage shader_access_storage;
+        DrawAttachmentCommand::Storage attachment_access_storage;
+        BufferAccessCommand::Storage count_access_storage;
+        DrawIndirectCountCommand MakeCommand(const CommandData& command_data, RenderPassAccessContext* render_pass_context,
+                                             const DynamicRenderingInfo* rendering_info) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 struct DrawMeshTasksCommand {
     ShaderAccessCommand shader_accesses;
     DrawAttachmentCommand attachment_accesses;
@@ -305,19 +340,6 @@ struct DrawMeshTasksCommand {
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
                   ResourceUsageTag replay_tag, const Location& loc) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
-};
-
-enum class CommandType : uint32_t {
-    kBufferCopy,
-    kBufferAccess,
-    kImageCopy,
-    kPipelineBarrier,
-    kBeginRenderPass,
-    kNextSubpass,
-    kEndRenderPass,
-    kShaderAccess,
-    kDispatchIndirect,
-    kDrawMeshTasks,
 };
 
 struct CommandRef {
@@ -336,6 +358,7 @@ struct CommandData {
     std::vector<BeginRenderPassCommand::Storage> begin_render_pass_commands;
     std::vector<ShaderAccessCommand::Storage> shader_access_commands;
     std::vector<DispatchIndirectCommand::Storage> dispatch_indirect_commands;
+    std::vector<DrawIndirectCountCommand::Storage> draw_indirect_count_commands;
     std::vector<DrawMeshTasksCommand::Storage> draw_mesh_tasks_commands;
 
     // Resources and additional data used by the commands
@@ -390,6 +413,9 @@ struct CommandData {
     }
     CommandRef Store(const DispatchIndirectCommand::Storage& storage) {
         return Store(CommandType::kDispatchIndirect, dispatch_indirect_commands, storage);
+    }
+    CommandRef Store(const DrawIndirectCountCommand::Storage& storage) {
+        return Store(CommandType::kDrawIndirectCount, draw_indirect_count_commands, storage);
     }
     CommandRef Store(const DrawMeshTasksCommand::Storage& storage) {
         return Store(CommandType::kDrawMeshTasks, draw_mesh_tasks_commands, storage);

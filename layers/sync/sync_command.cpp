@@ -28,6 +28,22 @@
 
 namespace syncval {
 
+static const char* GetBufferNamePrefix(BufferName buffer_name) {
+    switch (buffer_name) {
+        case BufferName::kDstBuffer:
+            return "dstBuffer ";
+        case BufferName::kIndirect:
+            return "indirect ";
+        case BufferName::kDrawCount:
+            return "draw count ";
+        case BufferName::kTransformFeedbackCounter:
+            return "transform feedback counter ";
+        default:
+            assert(false);
+            return "";
+    }
+}
+
 struct CommandReplayContext {
     CommandReplayContext(SyncEnvironment& env, AccessContext& destination_access_context, ResourceUsageTag base_tag)
         : env(env), destination_access_context(destination_access_context), render_pass_instance_offset(uint32_t(base_tag)) {}
@@ -55,9 +71,21 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
     const CommandData& command_data = cb_context.GetCommandData();
     CommandReplayContext replay_context(env, destination_access_context, base_tag);
 
-    auto replay_common = [&skip, &command_data, base_tag, &env, &loc, &cb_context](
+    auto replay_common = [&skip, &command_data, &env, &cb_context, base_tag, &loc](
                              const auto& storage, AccessContext& access_context, ResourceUsageTag replay_tag) {
         const auto command = storage.MakeCommand(command_data);
+        skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
+        const ResourceUsageTag tag = base_tag + replay_tag;
+        command.Apply(env, tag, access_context);
+    };
+    auto replay_draw = [&skip, &command_data, &replay_context, &env, &cb_context, base_tag, &loc](
+                           const auto& storage, AccessContext& access_context, ResourceUsageTag replay_tag) {
+        // TODO: Supply DynamicRenderingInfo once Begin/EndRendering replay is implemented.
+        auto command = storage.MakeCommand(
+            command_data, replay_context.render_pass_context ? &*replay_context.render_pass_context : nullptr, nullptr);
+        if (command.shader_accesses.render_pass_instance_id != vvl::kNoIndex32) {
+            command.shader_accesses.render_pass_instance_id += replay_context.render_pass_instance_offset;
+        }
         skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
         const ResourceUsageTag tag = base_tag + replay_tag;
         command.Apply(env, tag, access_context);
@@ -117,16 +145,12 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.dispatch_indirect_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kDrawIndirectCount: {
+                replay_draw(command_data.draw_indirect_count_commands[index], access_context, replay_tag);
+                continue;
+            }
             case CommandType::kDrawMeshTasks: {
-                // TODO: Supply DynamicRenderingInfo once Begin/EndRendering replay is implemented.
-                auto command = command_data.draw_mesh_tasks_commands[index].MakeCommand(
-                    command_data, replay_context.render_pass_context ? &*replay_context.render_pass_context : nullptr, nullptr);
-                if (command.shader_accesses.render_pass_instance_id != vvl::kNoIndex32) {
-                    command.shader_accesses.render_pass_instance_id += replay_context.render_pass_instance_offset;
-                }
-                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
-                const ResourceUsageTag tag = base_tag + replay_tag;
-                command.Apply(env, tag, access_context);
+                replay_draw(command_data.draw_mesh_tasks_commands[index], access_context, replay_tag);
                 continue;
             }
         }
@@ -143,6 +167,7 @@ void CommandData::Reset() {
     begin_render_pass_commands.clear();
     shader_access_commands.clear();
     dispatch_indirect_commands.clear();
+    draw_indirect_count_commands.clear();
     draw_mesh_tasks_commands.clear();
 
     buffers.clear();
@@ -297,8 +322,8 @@ bool BufferAccessCommand::Validate(const SyncEnvironment& env, const AccessConte
     } else {
         objlist = BaseObjectList(env, cb_context, buffer.Handle());
     }
-    const char* buffer_name_str = buffer_name == BufferName::kDstBuffer ? "dstBuffer " : "indirect ";
-    const std::string resource_description = buffer_name_str + validator.FormatHandle(buffer.Handle());
+    const char* buffer_name_prefix = GetBufferNamePrefix(buffer_name);
+    const std::string resource_description = buffer_name_prefix + validator.FormatHandle(buffer.Handle());
     const std::string error =
         validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
     return validator.SyncError(hazard.Hazard(), objlist, loc, error);
@@ -727,6 +752,39 @@ void DrawAttachmentCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Ac
         rendering_info->RecordDrawAttachments(access_context, render_pass_instance_id, pipeline, depth_write, stencil_write, tag,
                                               env.queue_id);
     }
+}
+
+DrawIndirectCountCommand DrawIndirectCountCommand::Storage::MakeCommand(const CommandData& command_data,
+                                                                        RenderPassAccessContext* render_pass_context,
+                                                                        const DynamicRenderingInfo* rendering_info) const {
+    return {shader_access_storage.MakeCommand(command_data),
+            attachment_access_storage.MakeCommand(render_pass_context, rendering_info),
+            count_access_storage.MakeCommand(command_data)};
+}
+
+DrawIndirectCountCommand::Storage DrawIndirectCountCommand::MakeStorage(CommandData& command_data) const {
+    return {shader_accesses.MakeStorage(command_data), attachment_accesses.MakeStorage(command_data),
+            count_access.MakeStorage(command_data)};
+}
+
+bool DrawIndirectCountCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool DrawIndirectCountCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                        const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                        const Location& loc) const {
+    bool skip = false;
+    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= count_access.Validate(env, access_context, cb_context, replay_tag, loc);
+    return skip;
+}
+
+void DrawIndirectCountCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    shader_accesses.Apply(env, tag, access_context);
+    attachment_accesses.Apply(env, tag, access_context);
+    count_access.Apply(env, tag, access_context);
 }
 
 DrawMeshTasksCommand DrawMeshTasksCommand::Storage::MakeCommand(const CommandData& command_data,
