@@ -1911,7 +1911,10 @@ bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer comm
     }
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    if (patchControlPoints > phys_dev_props.limits.maxTessellationPatchSize) {
+    if (patchControlPoints == 0) {
+        skip |= LogError("VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874", commandBuffer,
+                         error_obj.location.dot(Field::patchControlPoints), "must not be zero");
+    } else if (patchControlPoints > phys_dev_props.limits.maxTessellationPatchSize) {
         skip |= LogError("VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874", commandBuffer,
                          error_obj.location.dot(Field::patchControlPoints),
                          "(%" PRIu32
