@@ -3322,24 +3322,14 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
         }
     }
 
-    BufferAddressValidation<2> buffer_address_validator = {
-        {{{"VUID-VkDescriptorAddressInfoEXT-range-08045",
-           [&address_info](const vvl::Buffer& buffer_state) {
-               const VkDeviceSize end = buffer_state.GetSize() - (address_info.address - buffer_state.deviceAddress);
-               return address_info.range > end;
-           },
-           [&address_info]() {
-               return "The VkDescriptorAddressInfoEXT::range (" + std::to_string(address_info.range) +
-                      ") bytes does not fit in any buffer";
-           },
-           kEmptyErrorMsgBuffer},
-
-          {usage_vuid, [buffer_usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & buffer_usage) == 0; },
+    BufferAddressValidation<1> buffer_address_validator = {
+        {{{usage_vuid, [buffer_usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & buffer_usage) == 0; },
            [buffer_usage]() { return "The following buffers are missing " + string_VkBufferUsageFlags(buffer_usage); },
            kUsageErrorMsgBuffer}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, address_loc.dot(Field::address), LogObjectList(device),
-                                                           address_info.address, address_info.range);
+                                                           address_info.address, address_info.range,
+                                                           "VUID-VkDescriptorAddressInfoEXT-range-08045");
 
     return skip;
 }

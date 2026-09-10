@@ -4509,6 +4509,11 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStructureInfo) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10542");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10544");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10545");
+    // Both buffers are exactly the required size, so starting one byte in means the build no longer fits
+    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-scratchData-10559");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10541");
+    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-dstAccelerationStructureData-10562");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10543");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

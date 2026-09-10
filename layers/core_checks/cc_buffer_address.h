@@ -85,16 +85,20 @@ class BufferAddressValidation {
         ErrorMsgBuffer error_msg_buffer_func;
     };
 
-    // +1 for extra check for "valid generic VkDeviceAddress" check
-    std::array<VuidAndValidation, ChecksCount + 1> vuid_and_validations;
+    // ValidateDeviceAddress has two internal slot it uses:
+    //   [ChecksCount + 0] - "valid generic VkDeviceAddress" check (always)
+    //   [ChecksCount + 1] - "range fits inside the buffer" check (when caller passes a range VUID)
+    std::array<VuidAndValidation, ChecksCount + 2> vuid_and_validations;
     // There are times the caller will want to update state for each buffer object found
     UpdateCallback update_callback = [](const vvl::Buffer&) {};
 
     // We use vvl::DeviceProxy instead of CoreChecks here as a current hack to allow GPU-AV to use this. We still need a better
     // system to share CoreChecks with GPU-AV
+    //
+    // |range_size| and |range_vuid| are passed when caller has a range and wants to do the "does it fit" check
     [[nodiscard]] bool ValidateDeviceAddress(const vvl::DeviceProxy& validator, const Location& device_address_loc,
                                              const LogObjectList& objlist, VkDeviceAddress device_address,
-                                             VkDeviceSize range_size = 0) noexcept {
+                                             VkDeviceSize range_size = 0, std::string_view range_vuid = {}) noexcept {
         bool skip = false;
         // There will be an implicit VU like "must be a valid VkDeviceAddress value" and if can't be zero, stateless validation
         // should have caught this already
@@ -122,6 +126,7 @@ class BufferAddressValidation {
                 }
             }
             skip |= validator.LogError("VUID-VkDeviceAddress-size-11364", objlist, device_address_loc, "%s", ss.str().c_str());
+            return skip;  // Without any buffer nothing left to validate
         }
 
         // Checks if memory is in a completely and contiguously to a single VkDeviceMemory object
@@ -139,20 +144,36 @@ class BufferAddressValidation {
                 return std::string("buffer has not been bound to memory");
             }};
 
-        if (!HasValidBuffer(buffer_list)) {
-            skip |= LogInvalidBuffers(validator, buffer_list, device_address_loc, objlist, device_address, range_size);
+        size_t active_checks = ChecksCount + 1;
+
+        if (!range_vuid.empty() && range_size != 0) {
+            const vvl::range<VkDeviceAddress> required_range(device_address, device_address + range_size);
+            vuid_and_validations[ChecksCount + 1] = {
+                range_vuid,
+                [required_range](const vvl::Buffer& buffer_state) {
+                    // .valid() here ensures any overflow or bad values are ignored
+                    return !required_range.valid() || !buffer_state.DeviceAddressRange().includes(required_range);
+                },
+                []() { return "The following buffers are too small to hold the range"; }, kEmptyErrorMsgBuffer};
+            active_checks = ChecksCount + 2;
+        }
+
+        if (!HasValidBuffer(buffer_list, active_checks)) {
+            skip |=
+                LogInvalidBuffers(validator, buffer_list, device_address_loc, objlist, device_address, range_size, active_checks);
         }
         return skip;
     }
 
   private:
     // Look for a buffer that satisfies all VUIDs
-    [[nodiscard]] bool HasValidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept;
+    [[nodiscard]] bool HasValidBuffer(vvl::span<vvl::Buffer* const> buffer_list, size_t active_checks) const noexcept;
     // For every vuid, build an error mentioning every buffer from buffer_list that violates it, then log this error
     // using details provided by the other parameters.
     [[nodiscard]] bool LogInvalidBuffers(const vvl::DeviceProxy& validator, vvl::span<vvl::Buffer* const> buffer_list,
                                          const Location& device_address_loc, const LogObjectList& objlist,
-                                         VkDeviceAddress device_address, VkDeviceSize range_size) const noexcept;
+                                         VkDeviceAddress device_address, VkDeviceSize range_size,
+                                         size_t active_checks) const noexcept;
 
     struct Error {
         LogObjectList objlist;
@@ -162,7 +183,8 @@ class BufferAddressValidation {
 };
 
 template <size_t ChecksCount>
-bool BufferAddressValidation<ChecksCount>::HasValidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept {
+bool BufferAddressValidation<ChecksCount>::HasValidBuffer(vvl::span<vvl::Buffer* const> buffer_list,
+                                                          size_t active_checks) const noexcept {
     bool any_buffer_found = false;
     for (const auto& buffer : buffer_list) {
         ASSERT_AND_CONTINUE(buffer);
@@ -173,8 +195,8 @@ bool BufferAddressValidation<ChecksCount>::HasValidBuffer(vvl::span<vvl::Buffer*
         bool is_buffer_valid = true;
         // Once we find any buffer is valid, can just skip checking
         if (!any_buffer_found) {
-            for (const auto& vav : vuid_and_validations) {
-                if (vav.is_invalid_func(*buffer)) {
+            for (size_t i = 0; i < active_checks; ++i) {
+                if (vuid_and_validations[i].is_invalid_func(*buffer)) {
                     is_buffer_valid = false;
                     break;
                 }
@@ -190,9 +212,9 @@ template <size_t ChecksCount>
 bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const vvl::DeviceProxy& validator,
                                                              vvl::span<vvl::Buffer* const> buffer_list,
                                                              const Location& device_address_loc, const LogObjectList& objlist,
-                                                             VkDeviceAddress device_address,
-                                                             VkDeviceSize range_size) const noexcept {
-    std::array<Error, ChecksCount + 1> errors;
+                                                             VkDeviceAddress device_address, VkDeviceSize range_size,
+                                                             size_t active_checks) const noexcept {
+    std::array<Error, ChecksCount + 2> errors;
 
     // Build error message beginning. Then, only per buffer error needs to be appended.
     std::string error_msg_beginning;
@@ -226,7 +248,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const vvl::DevicePr
     for (const auto& buffer : buffer_list) {
         ASSERT_AND_CONTINUE(buffer);
 
-        for (size_t i = 0; i < (ChecksCount + 1); ++i) {
+        for (size_t i = 0; i < active_checks; ++i) {
             [[maybe_unused]] const auto& [vuid, is_invalid_func, error_msg_header_func, error_msg_buffer_func] =
                 vuid_and_validations[i];
 
@@ -256,7 +278,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const vvl::DevicePr
 
     // Output the error messages
     bool skip = false;
-    for (size_t i = 0; i < (ChecksCount + 1); ++i) {
+    for (size_t i = 0; i < active_checks; ++i) {
         const auto& vav = vuid_and_validations[i];
         auto& error = errors[i];
         if (!error.Empty()) {

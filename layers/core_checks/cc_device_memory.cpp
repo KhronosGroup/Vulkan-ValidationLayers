@@ -2938,22 +2938,12 @@ bool CoreChecks::ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSiz
     }
 
     vuid = strided ? "VUID-VkStridedDeviceAddressRangeKHR-address-11365" : "VUID-VkDeviceAddressRangeKHR-address-11365";
-    BufferAddressValidation<2> buffer_address_validator = {
-        {{{vuid,
-           [address, size](const vvl::Buffer& buffer_state) {
-               const VkDeviceSize end = buffer_state.GetSize() - (address - buffer_state.deviceAddress);
-               return size > end;
-           },
-           [strided, size]() {
-               std::string s = strided ? "VkStridedDeviceAddressRangeKHR" : "VkDeviceAddressRangeEXT";
-               return "The " + s + "::size (" + std::to_string(size) + ") bytes does not fit in any buffer";
-           },
-           kEmptyErrorMsgBuffer},
-          {usage_vuid, [usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & usage) == 0; },
+    BufferAddressValidation<1> buffer_address_validator = {
+        {{{usage_vuid, [usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & usage) == 0; },
            [usage]() { return std::string("The following buffers are missing ") + string_VkBufferUsageFlags2(usage); },
            kUsageErrorMsgBuffer}}}};
 
-    skip |= buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::address), objlist, address, size);
+    skip |= buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::address), objlist, address, size, vuid);
 
     return skip;
 }
@@ -3082,16 +3072,8 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBu
             const VkDeviceAddress start = region.srcAddress;
             const VkDeviceSize size = region.compressedSize;
 
-            BufferAddressValidation<2> buffer_address_validator = {
-                {{{"VUID-VkDecompressMemoryRegionEXT-srcAddress-07686",
-                   [start, size](const vvl::Buffer& buffer_state) {
-                       const VkDeviceSize end =
-                           buffer_state.GetSize() - static_cast<VkDeviceSize>(start - buffer_state.deviceAddress);
-                       return size > end;
-                   },
-                   [size]() { return "The compressedSize (" + std::to_string(size) + ") does not fit in any buffer"; },
-                   kEmptyErrorMsgBuffer},
-                  {"VUID-VkDecompressMemoryRegionEXT-srcAddress-11764",
+            BufferAddressValidation<1> buffer_address_validator = {
+                {{{"VUID-VkDecompressMemoryRegionEXT-srcAddress-11764",
                    [](const vvl::Buffer& buffer_state) {
                        return (buffer_state.usage & VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT) == 0;
                    },
@@ -3099,22 +3081,15 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBu
                    kUsageErrorMsgBuffer}}}};
 
             const Location src_loc = region_loc.dot(Field::srcAddress);
-            skip |= buffer_address_validator.ValidateDeviceAddress(*this, src_loc, objlist, start, size);
+            skip |= buffer_address_validator.ValidateDeviceAddress(*this, src_loc, objlist, start, size,
+                                                                   "VUID-VkDecompressMemoryRegionEXT-srcAddress-07686");
         }
 
         if (region.decompressedSize > 0) {
             const VkDeviceAddress start = region.dstAddress;
             const VkDeviceSize size = region.decompressedSize;
-            BufferAddressValidation<2> dst_range_validator = {
-                {{{"VUID-VkDecompressMemoryRegionEXT-dstAddress-07688",
-                   [start, size](const vvl::Buffer& buffer_state) {
-                       const VkDeviceSize end =
-                           buffer_state.GetSize() - static_cast<VkDeviceSize>(start - buffer_state.deviceAddress);
-                       return size > end;
-                   },
-                   [size]() { return "The decompressedSize (" + std::to_string(size) + ") does not fit in any buffer"; },
-                   kEmptyErrorMsgBuffer},
-                  {"VUID-VkDecompressMemoryRegionEXT-dstAddress-11765",
+            BufferAddressValidation<1> dst_range_validator = {
+                {{{"VUID-VkDecompressMemoryRegionEXT-dstAddress-11765",
                    [](const vvl::Buffer& buffer_state) {
                        return (buffer_state.usage & VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT) == 0;
                    },
@@ -3122,7 +3097,8 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBu
                    kUsageErrorMsgBuffer}}}};
 
             const Location dst_loc = region_loc.dot(Field::dstAddress);
-            skip |= dst_range_validator.ValidateDeviceAddress(*this, dst_loc, objlist, start, size);
+            skip |= dst_range_validator.ValidateDeviceAddress(*this, dst_loc, objlist, start, size,
+                                                              "VUID-VkDecompressMemoryRegionEXT-dstAddress-07688");
         }
     }
 

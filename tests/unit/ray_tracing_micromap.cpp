@@ -789,6 +789,8 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromap
         m_command_buffer.Begin();
         m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureTrianglesOpacityMicromapKHR-indexStride-11574");
         m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureTrianglesOpacityMicromapKHR-indexStride-11573");
+        // (indexStride * primitiveCount) overflows, so the index buffer cannot fit in any buffer either
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-indexBuffer-11577");
         vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &range_info_ptr);
         m_errorMonitor->VerifyFound();
         m_command_buffer.End();
