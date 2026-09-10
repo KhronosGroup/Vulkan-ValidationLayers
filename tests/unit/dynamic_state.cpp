@@ -1115,6 +1115,10 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874");
         vk::CmdSetPatchControlPointsEXT(command_buffer, 0x1000);
         m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874");
+        vk::CmdSetPatchControlPointsEXT(command_buffer, 0);
+        m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(command_buffer);
         command_buffer.End();
     }
