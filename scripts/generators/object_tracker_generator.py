@@ -1127,29 +1127,28 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
 
         # Handle object create operations if last parameter is created by this call
         if isCreate:
-            handle_type = command.params[-1].type
+            create_params = command.params[:-1] if command.params[-1].type == 'VkResult' else command.params
+            handle_param = create_params[-1]
+            handle_type = handle_param.type
             partial_success_commands = ['vkCreateGraphicsPipelines', 'vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateRayTracingPipelinesKHR', 'vkCreateShadersEXT', 'vkCreateDataGraphPipelinesARM']
             if handle_type in self.vk.handles:
                 # Check for special case where multiple handles are returned
-                objectArray = command.params[-1].length is not None
+                objectArray = handle_param.length is not None
 
                 if objectArray:
                     if command.name in partial_success_commands:
                         post_call_record += 'if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) {\n    return;\n}\n'
 
-                    post_call_record += f'if ({command.params[-1].name}) {{\n'
-                    countIsPointer = '*' if command.params[-2].type == 'uint32_t' and command.params[-2].pointer else ''
-                    post_call_record += f'for (uint32_t index = 0; index < {countIsPointer}{command.params[-1].length}; index++) {{\n'
+                    post_call_record += f'if ({handle_param.name}) {{\n'
+                    countIsPointer = '*' if create_params[-2].type == 'uint32_t' and create_params[-2].pointer else ''
+                    post_call_record += f'for (uint32_t index = 0; index < {countIsPointer}{handle_param.length}; index++) {{\n'
 
                 if command.name in partial_success_commands:
-                    if command.name == 'vkCreateShadersEXT':
-                        post_call_record += 'if (!pShaders[index]) continue;\n'
-                    else:
-                        post_call_record += 'if (!pPipelines[index]) continue;\n'
+                    post_call_record += f'if (!{handle_param.name}[index]) continue;\n'
 
-                allocator = command.params[-2].name if command.params[-2].type == 'VkAllocationCallbacks' else 'nullptr'
-                objectDest = f'{command.params[-1].name}[index]' if objectArray else f'*{command.params[-1].name}'
-                location = f'record_obj.location.dot(Field::{command.params[-1].name}, index)' if objectArray else 'record_obj.location'
+                allocator = create_params[-2].name if create_params[-2].type == 'VkAllocationCallbacks' else 'nullptr'
+                objectDest = f'{handle_param.name}[index]' if objectArray else f'*{handle_param.name}'
+                location = f'record_obj.location.dot(Field::{handle_param.name}, index)' if objectArray else 'record_obj.location'
                 parent = command.params[0].name
                 post_call_record += f'tracker.CreateObject({objectDest}, kVulkanObjectType{handle_type[2:]}, {allocator}, {location}, {parent});\n'
                 if objectArray:
@@ -1158,10 +1157,10 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             # Physical device groups are not handles, but a set of handles, they need to be tracked as well
             elif handle_type == 'VkPhysicalDeviceGroupProperties':
                 post_call_record += f'''
-                    if ({command.params[-1].name}) {{
+                    if ({handle_param.name}) {{
                         const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
-                        for (uint32_t device_group_index = 0; device_group_index < *{command.params[-2].name}; device_group_index++) {{
-                            PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{command.params[-1].name}[device_group_index].physicalDeviceCount, {command.params[-1].name}[device_group_index].physicalDevices, record_obj);
+                        for (uint32_t device_group_index = 0; device_group_index < *{create_params[-2].name}; device_group_index++) {{
+                            PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{handle_param.name}[device_group_index].physicalDeviceCount, {handle_param.name}[device_group_index].physicalDevices, record_obj);
                         }}
                     }}\n'''
         # Handle object destroy operations
