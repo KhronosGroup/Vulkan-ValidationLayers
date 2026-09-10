@@ -385,7 +385,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                 {VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER},
                 {VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER},
                 {VK_IMAGE_USAGE_STORAGE_BIT, (uint64_t)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER},
-            };
+            }};
 
             for (const auto& [vk_usage, ahb_usage] : ahb_usage_map_v2a) {
                 if (image_state->usage & vk_usage) {
