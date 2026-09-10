@@ -1154,8 +1154,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
                 continue;
             }
             auto lock = vo->WriteLock();
-            // If we don't pass into PostCallRecord, CoreCheck may give false positives when using GPU-AV
-            vo->PostCallRecordCreateBuffer(device, chassis_state.create_info_copy, pAllocator, pBuffer, record_obj);
+            vo->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
         }
     }
     return result;
