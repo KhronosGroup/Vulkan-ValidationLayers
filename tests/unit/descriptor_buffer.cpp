@@ -2298,3 +2298,22 @@ TEST_F(NegativeDescriptorBuffer, MaxBufferRange) {
     vk::GetDescriptorEXT(device(), get_info_s, descriptor_buffer_properties.storageBufferDescriptorSize, host_data);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorBuffer, DescriptorAddressRangeAtOffset) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    VkDescriptorAddressInfoEXT address_info = vku::InitStructHelper();
+    address_info.address = buffer.Address() + 2048;
+    address_info.range = 2560;
+    address_info.format = VK_FORMAT_UNDEFINED;
+
+    VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
+    get_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    get_info.data.pUniformBuffer = &address_info;
+
+    std::vector<uint8_t> descriptor(descriptor_buffer_properties.uniformBufferDescriptorSize);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-range-08045");
+    vk::GetDescriptorEXT(device(), &get_info, descriptor.size(), descriptor.data());
+    m_errorMonitor->VerifyFound();
+}

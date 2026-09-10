@@ -648,22 +648,13 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                 if (micromap_khr->indexType != VK_INDEX_TYPE_NONE_KHR) {
                     const uint64_t index_buffer_size =
                         uint64_t(micromap_khr->indexStride) * uint64_t(geometry_build_range_primitive_count);
-                    const vvl::range<VkDeviceAddress> index_buffer_range(micromap_khr->indexBuffer,
-                                                                         micromap_khr->indexBuffer + index_buffer_size);
-
-                    BufferAddressValidation<1> index_buffer_range_validator = {{{
-                        {"VUID-vkCmdBuildAccelerationStructuresKHR-indexBuffer-11577",
-                         [index_buffer_range](const vvl::Buffer& buffer_state) {
-                             return !buffer_state.DeviceAddressRange().includes(index_buffer_range);
-                         },
-                         []() { return "The opacity micromap indexBuffer does not fit in any buffer"; }, kEmptyErrorMsgBuffer},
-                    }}};
-
+                    BufferAddressValidation<0> index_buffer_range_validator;
                     skip |= index_buffer_range_validator.ValidateDeviceAddress(
                         *this,
                         p_geom_geom_triangles_loc.pNext(Struct::VkAccelerationStructureTrianglesOpacityMicromapKHR,
                                                         Field::indexBuffer),
-                        cb_objlist, micromap_khr->indexBuffer, index_buffer_size);
+                        cb_objlist, micromap_khr->indexBuffer, index_buffer_size,
+                        "VUID-vkCmdBuildAccelerationStructuresKHR-indexBuffer-11577");
                 }
 
                 if (auto micromap = Get<vvl::AccelerationStructureKHR>(micromap_khr->micromap)) {
@@ -970,22 +961,14 @@ bool CoreChecks::ValidateAccelerationStructureBuildScratch(VkCommandBuffer cmd_b
                 : pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-12260",
                             "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-12260");
 
-        BufferAddressValidation<2> buffer_address_validator = {
+        BufferAddressValidation<1> buffer_address_validator = {
             {{{scratch_buffer_has_storage_flag_vuid,
                [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
-               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
 
-              {scratch_address_range_vuid,
-               [scratch_address_range](const vvl::Buffer& buffer_state) {
-                   const vvl::range<VkDeviceSize> buffer_address_range = buffer_state.DeviceAddressRange();
-                   return !buffer_address_range.includes(scratch_address_range);
-               },
-               [scratch_size]() { return "The scratch size (" + std::to_string(scratch_size) + ") does not fit in any buffer"; },
-               kEmptyErrorMsgBuffer}}}};
-
-        skip |=
-            buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
-                                                           LogObjectList(cmd_buffer), info.scratchData.deviceAddress, scratch_size);
+        skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
+                                                               LogObjectList(cmd_buffer), info.scratchData.deviceAddress,
+                                                               scratch_size, scratch_address_range_vuid);
     }
 
     return skip;
@@ -2053,23 +2036,12 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& 
     const VkDeviceSize requested_size = binding_table.size - 1;
     const vvl::range<VkDeviceSize> requested_range(binding_table.deviceAddress, binding_table.deviceAddress + requested_size);
 
-    BufferAddressValidation<3> buffer_address_validator = {{{
+    BufferAddressValidation<2> buffer_address_validator = {{{
         {vuid_binding_table_flag,
          [](const vvl::Buffer& buffer_state) {
              return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR) == 0;
          },
          []() { return "The following buffers are missing VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR"; }, kUsageErrorMsgBuffer},
-
-        {"VUID-VkStridedDeviceAddressRegionKHR-size-04631",
-         [&requested_range](const vvl::Buffer& buffer_state) {
-             const auto buffer_address_range = buffer_state.DeviceAddressRange();
-             return !buffer_address_range.includes(requested_range);
-         },
-         [&table_loc, &binding_table]() {
-             return "The " + table_loc.Fields() + "->size (" + std::to_string(binding_table.size) +
-                    ") - 1 does not fit in any buffer";
-         },
-         kEmptyErrorMsgBuffer},
 
         {"VUID-VkStridedDeviceAddressRegionKHR-size-04632",
          [&binding_table](const vvl::Buffer& buffer_state) { return binding_table.stride > buffer_state.GetSize(); },
@@ -2080,9 +2052,9 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& 
          kEmptyErrorMsgBuffer},
     }}};
 
-    skip |= buffer_address_validator.ValidateDeviceAddress(*this, table_loc.dot(Field::deviceAddress),
-                                                           cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
-                                                           binding_table.deviceAddress, requested_size);
+    skip |= buffer_address_validator.ValidateDeviceAddress(
+        *this, table_loc.dot(Field::deviceAddress), cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
+        binding_table.deviceAddress, requested_size, "VUID-VkStridedDeviceAddressRegionKHR-size-04631");
 
     return skip;
 }

@@ -2317,3 +2317,20 @@ TEST_F(PositiveDescriptorBuffer, MutableDescriptor) {
         ASSERT_EQ(data[2], 20u);
     }
 }
+
+TEST_F(PositiveDescriptorBuffer, DescriptorAddressRangeAtOffset) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
+    VkDescriptorAddressInfoEXT address_info = vku::InitStructHelper();
+    address_info.address = buffer.Address() + 2048;
+    address_info.range = 2048;
+    address_info.format = VK_FORMAT_UNDEFINED;
+
+    VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
+    get_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    get_info.data.pUniformBuffer = &address_info;
+
+    std::vector<uint8_t> descriptor(descriptor_buffer_properties.uniformBufferDescriptorSize);
+    vk::GetDescriptorEXT(device(), &get_info, descriptor.size(), descriptor.data());
+}
