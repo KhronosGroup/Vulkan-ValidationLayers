@@ -49,35 +49,33 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     const auto* flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(chassis_state.modified_create_info.pNext);
     const VkBufferUsageFlags2 in_usage = flags2 ? flags2->usage : chassis_state.modified_create_info.usage;
 
+    VkBufferUsageFlags2 extra_usage = 0;
+
     // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
     // acceleration structure build validation will find and replace invalid acceleration structure
     // handles inside of a compute shader.
     if (in_usage & VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR) {
-        if (flags2) {
-            const_cast<VkBufferUsageFlags2CreateInfo*>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
-        } else {
-            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        }
+        extra_usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
     }
 
     // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
-    // Note - when using VK_KHR_device_address_commands we need to make sure to set
-    // VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR now
     if (gpuav_settings.IsBufferValidationEnabled() &&
         (in_usage & (VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT))) {
-        if (flags2) {
-            const_cast<VkBufferUsageFlags2CreateInfo*>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
-        } else {
-            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        }
+        extra_usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
     }
 
     if (gpuav_settings.validate_acceleration_structures_builds &&
         (in_usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
+        extra_usage |= VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
+    }
+
+    // We track any usage that was actually "injected" and apply it
+    const VkBufferUsageFlags2 injected_usage = extra_usage & ~in_usage;
+    if (injected_usage != 0) {
         if (flags2) {
-            const_cast<VkBufferUsageFlags2CreateInfo*>(flags2)->usage |= VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
+            const_cast<VkBufferUsageFlags2CreateInfo*>(flags2)->usage |= injected_usage;
         } else {
-            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            chassis_state.modified_create_info.usage |= static_cast<VkBufferUsageFlags>(injected_usage);
         }
     }
 

@@ -102,3 +102,43 @@ TEST_F(NegativeGpuAVIndexBuffer, IndexBufferOOB2) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVIndexBuffer, BindIndexBuffer3StorageUsage) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    {
+        vkt::Buffer index_buffer(*m_device, 256u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                 vkt::device_address);
+
+        VkBindIndexBuffer3InfoKHR index_buffer_info = vku::InitStructHelper();
+        index_buffer_info.addressRange = index_buffer.AddressRange();
+        index_buffer_info.addressFlags = 0u;
+        index_buffer_info.indexType = VK_INDEX_TYPE_UINT32;
+
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkBindIndexBuffer3InfoKHR-addressRange-13122");
+        vk::CmdBindIndexBuffer3KHR(m_command_buffer, &index_buffer_info);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
+
+    {
+        vkt::Buffer index_buffer(*m_device, 256u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+
+        VkBindIndexBuffer3InfoKHR index_buffer_info = vku::InitStructHelper();
+        index_buffer_info.addressRange = index_buffer.AddressRange();
+        index_buffer_info.addressFlags = VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR;
+        index_buffer_info.indexType = VK_INDEX_TYPE_UINT32;
+
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkBindIndexBuffer3InfoKHR-addressRange-13123");
+        vk::CmdBindIndexBuffer3KHR(m_command_buffer, &index_buffer_info);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
+}

@@ -1079,7 +1079,9 @@ TEST_F(PositiveGpuAVIndexBuffer, Ssbo) {
     }
 }
 
-TEST_F(PositiveGpuAVIndexBuffer, BindIndexBuffer3) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13040
+// This will fail self-validaiton with VU 13122
+TEST_F(PositiveGpuAVIndexBuffer, DISABLED_BindIndexBuffer3) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
