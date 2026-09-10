@@ -1527,35 +1527,6 @@ void SyncValidator::PostCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer co
     RecordIndirectBuffer(cb_context, tag, sizeof(VkDrawMeshTasksIndirectCommandEXT), buffer, offset, drawCount, stride);
 }
 
-bool SyncValidator::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                    VkDeviceSize offset, VkBuffer countBuffer,
-                                                                    VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                    uint32_t stride, const ErrorObject& error_obj) const {
-    bool skip = false;
-
-    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCurrentAccessContext();
-
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= cb_context.ValidateDrawAttachment(error_obj.location);
-    skip |= ValidateCountBuffer(cb_context, access_context, countBuffer, countBufferOffset, error_obj.location);
-    return skip;
-}
-
-void SyncValidator::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                   VkDeviceSize offset, VkBuffer countBuffer,
-                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                   uint32_t stride, const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
-    cb_context.RecordDrawAttachment(tag);
-    RecordCountBuffer(cb_context, tag, countBuffer, countBufferOffset);
-}
-
 bool SyncValidator::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                           const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
                                                           uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
@@ -1636,33 +1607,92 @@ void SyncValidator::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer,
     }
 }
 
+bool SyncValidator::ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                              BufferName buffer_name, const Location& loc) const {
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    const auto count_buffer = Get<vvl::Buffer>(countBuffer);
+    if (!count_buffer) {
+        return false;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+
+    const auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const AccessRange range = MakeRange(countBufferOffset, sizeof(uint32_t));
+    const DrawIndirectCountCommand command{
+        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
+                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        cb_context.GetDrawAttachmentCommand(),
+        BufferAccessCommand{*count_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, vvl::kNoIndex32, 0, buffer_name}};
+    return command.Validate(cb_context, loc);
+}
+
+void SyncValidator::RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                            BufferName buffer_name, const Location& loc) {
+    const auto count_buffer = Get<vvl::Buffer>(countBuffer);
+    if (!count_buffer) {
+        return;
+    }
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+    const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+
+    auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    for (auto& access : descriptor_accesses.buffer_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.info.resource_handle).handle_index;
+    }
+    for (auto& access : descriptor_accesses.image_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
+    }
+    const ResourceUsageTagEx count_tag_ex = cb_context.AddCommandHandle(tag, count_buffer->Handle());
+    const AccessRange range = MakeRange(countBufferOffset, sizeof(uint32_t));
+
+    const DrawIndirectCountCommand command{
+        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
+                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        cb_context.GetDrawAttachmentCommand(),
+        BufferAccessCommand{*count_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, count_tag_ex.handle_index, 0,
+                            buffer_name}};
+
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
+}
+
+bool SyncValidator::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                    VkDeviceSize offset, VkBuffer countBuffer,
+                                                                    VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                    uint32_t stride, const ErrorObject& error_obj) const {
+    // TODO: Currently we validate accesses to countBuffer but not buffer
+    return ValidateDrawIndirectCount(commandBuffer, countBuffer, countBufferOffset, BufferName::kDrawCount, error_obj.location);
+}
+
+void SyncValidator::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                   VkDeviceSize offset, VkBuffer countBuffer,
+                                                                   VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                   uint32_t stride, const RecordObject& record_obj) {
+    RecordDrawIndirectCount(commandBuffer, countBuffer, countBufferOffset, BufferName::kDrawCount, record_obj.location);
+}
+
 bool SyncValidator::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                                uint32_t firstInstance, VkBuffer counterBuffer,
                                                                VkDeviceSize counterBufferOffset, uint32_t counterOffset,
                                                                uint32_t vertexStride, const ErrorObject& error_obj) const {
-    bool skip = false;
-    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCurrentAccessContext();
-
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= cb_context.ValidateDrawAttachment(error_obj.location);
-    skip |= ValidateCountBuffer(cb_context, access_context, counterBuffer, counterBufferOffset, error_obj.location,
-                                "transform feedback counter");
-    return skip;
+    return ValidateDrawIndirectCount(commandBuffer, counterBuffer, counterBufferOffset, BufferName::kTransformFeedbackCounter,
+                                     error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                               uint32_t firstInstance, VkBuffer counterBuffer,
                                                               VkDeviceSize counterBufferOffset, uint32_t counterOffset,
                                                               uint32_t vertexStride, const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
-    cb_context.RecordDrawAttachment(tag);
-    RecordCountBuffer(cb_context, tag, counterBuffer, counterBufferOffset);
+    RecordDrawIndirectCount(commandBuffer, counterBuffer, counterBufferOffset, BufferName::kTransformFeedbackCounter,
+                            record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
