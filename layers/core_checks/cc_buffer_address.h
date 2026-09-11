@@ -89,8 +89,10 @@ class BufferAddressValidation {
     //   [ChecksCount + 0] - "valid generic VkDeviceAddress" check (always)
     //   [ChecksCount + 1] - "range fits inside the buffer" check (when caller passes a range VUID)
     std::array<VuidAndValidation, ChecksCount + 2> vuid_and_validations;
+
     // There are times the caller will want to update state for each buffer object found
-    UpdateCallback update_callback = [](const vvl::Buffer&) {};
+    // Left unset (nullptr) by default since only 1 of like 30 callers need this and was wasting an allocation
+    UpdateCallback update_callback = nullptr;
 
     // We use vvl::DeviceProxy instead of CoreChecks here as a current hack to allow GPU-AV to use this. We still need a better
     // system to share CoreChecks with GPU-AV
@@ -189,21 +191,26 @@ bool BufferAddressValidation<ChecksCount>::HasValidBuffer(vvl::span<vvl::Buffer*
     for (const auto& buffer : buffer_list) {
         ASSERT_AND_CONTINUE(buffer);
 
-        // Call here as we will need to update once for each buffer
-        update_callback(*buffer);
+        // Once a valid buffer is found, the only reason left to keep walking the list is update_callback
+        if (any_buffer_found && !update_callback) {
+            break;
+        }
+        if (update_callback) {
+            update_callback(*buffer);
+        }
+        if (any_buffer_found) {
+            continue;
+        }
 
         bool is_buffer_valid = true;
-        // Once we find any buffer is valid, can just skip checking
-        if (!any_buffer_found) {
-            for (size_t i = 0; i < active_checks; ++i) {
-                if (vuid_and_validations[i].is_invalid_func(*buffer)) {
-                    is_buffer_valid = false;
-                    break;
-                }
+        for (size_t i = 0; i < active_checks; ++i) {
+            if (vuid_and_validations[i].is_invalid_func(*buffer)) {
+                is_buffer_valid = false;
+                break;
             }
         }
 
-        any_buffer_found |= is_buffer_valid;
+        any_buffer_found = is_buffer_valid;
     }
     return any_buffer_found;
 }

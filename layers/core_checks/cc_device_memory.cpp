@@ -3123,11 +3123,9 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuf
                []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
 
               {"VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-11794",
-               [indirectCommandsAddress, stride, maxDecompressionCount](const vvl::Buffer& buffer_state) {
-                   if (maxDecompressionCount == 0 || stride == 0) return false;
-                   const vvl::range<VkDeviceSize> required_range(
-                       indirectCommandsAddress, indirectCommandsAddress + static_cast<VkDeviceSize>(stride) *
-                                                                              static_cast<VkDeviceSize>(maxDecompressionCount));
+               [indirectCommandsAddress, max_range_size](const vvl::Buffer& buffer_state) {
+                   if (max_range_size == 0) return false;
+                   const vvl::range<VkDeviceSize> required_range(indirectCommandsAddress, indirectCommandsAddress + max_range_size);
                    const vvl::range<VkDeviceSize> buffer_address_range = buffer_state.DeviceAddressRange();
                    return !buffer_address_range.includes(required_range);
                },
