@@ -33,6 +33,7 @@
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
 #include "utils/text_utils.h"
+#include "utils/vk_api_utils.h"
 
 using vvl::BufferDescriptor;
 using vvl::DescriptorClass;

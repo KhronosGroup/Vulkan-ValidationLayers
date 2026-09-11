@@ -46,6 +46,7 @@
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
 #include "utils/action_command_utils.h"
+#include "utils/vk_api_utils.h"
 
 namespace vvl {
 template <typename T>

@@ -22,17 +22,6 @@
 // This file should not need to include anything else, the goal of this file is utils that "could" be in the Vulkan-Headers
 #include <vulkan/vulkan_core.h>
 
-// It is very rare to have more than 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
-static const uint32_t kCommonMaxGraphicsShaderStages = 3;
-
-static const VkShaderStageFlags kShaderStageAllGraphics =
-    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-    VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
-
-static const VkShaderStageFlags kShaderStageAllRayTracing =
-    VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
-    VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-
 static inline uint32_t IndexTypeByteSize(VkIndexType index_type) {
     switch (index_type) {
         case VK_INDEX_TYPE_UINT16:
@@ -49,19 +38,6 @@ static inline uint32_t IndexTypeByteSize(VkIndexType index_type) {
             // Assume caller is handling this already
     }
     return 1;  // so compilers don't complain nothing is returned in all cases
-}
-
-static bool inline IsStageInPipelineBindPoint(VkShaderStageFlags stages, VkPipelineBindPoint bind_point) {
-    switch (bind_point) {
-        case VK_PIPELINE_BIND_POINT_GRAPHICS:
-            return (stages & kShaderStageAllGraphics) != 0;
-        case VK_PIPELINE_BIND_POINT_COMPUTE:
-            return (stages & VK_SHADER_STAGE_COMPUTE_BIT) != 0;
-        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
-            return (stages & kShaderStageAllRayTracing) != 0;
-        default:
-            return false;
-    }
 }
 
 // all "advanced blend operation" found in spec

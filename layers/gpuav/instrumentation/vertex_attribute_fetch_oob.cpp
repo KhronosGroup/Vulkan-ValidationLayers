@@ -24,6 +24,7 @@
 #include "state_tracker/shader_module.h"
 #include "utils/action_command_utils.h"
 #include "utils/image_utils.h"
+#include "utils/vk_api_utils.h"
 
 namespace gpuav {
 struct VertexAttributeFetchLimit {

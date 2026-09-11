@@ -120,6 +120,26 @@ void ValidationCache::Merge(ValidationCache const* other) {
     for (auto h : other->good_shader_hashes_) good_shader_hashes_.insert(h);
 }
 
+VkShaderStageFlags LogicallyLaterStages(VkShaderStageFlagBits stage) {
+    switch (stage) {
+        case VK_SHADER_STAGE_VERTEX_BIT:
+            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+                   VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+            return VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
+            return VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+        default:
+            return 0;
+    }
+}
+
 VkShaderStageFlagBits ExecutionModelToShaderStageFlagBits(uint32_t mode) {
     switch (mode) {
         case spv::ExecutionModelVertex:

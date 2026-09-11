@@ -32,6 +32,7 @@
 #include "containers/limits.h"
 #include "utils/math_utils.h"
 #include "utils/ray_tracing_utils.h"
+#include "utils/vk_api_utils.h"
 
 #include "profiling/profiling.h"
 

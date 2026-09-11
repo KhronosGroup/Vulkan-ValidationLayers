@@ -23,6 +23,7 @@
 #include <vulkan/vulkan_core.h>
 #include "containers/custom_containers.h"
 #include "utils/lock_utils.h"
+#include <array>
 
 enum class ShaderObjectStage : uint32_t {
     VERTEX = 0u,
@@ -38,6 +39,39 @@ enum class ShaderObjectStage : uint32_t {
 };
 
 constexpr uint32_t kShaderObjectStageCount = 8u;
+
+// It is very rare to have more than 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
+static const uint32_t kCommonMaxGraphicsShaderStages = 3;
+
+static const VkShaderStageFlags kShaderStageAllGraphics =
+    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+    VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
+
+static const VkShaderStageFlags kShaderStageAllRayTracing =
+    VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+    VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+
+static bool inline IsStageInPipelineBindPoint(VkShaderStageFlags stages, VkPipelineBindPoint bind_point) {
+    switch (bind_point) {
+        case VK_PIPELINE_BIND_POINT_GRAPHICS:
+            return (stages & kShaderStageAllGraphics) != 0;
+        case VK_PIPELINE_BIND_POINT_COMPUTE:
+            return (stages & VK_SHADER_STAGE_COMPUTE_BIT) != 0;
+        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
+            return (stages & kShaderStageAllRayTracing) != 0;
+        default:
+            return false;
+    }
+}
+
+// In order of how stages are linked together
+inline constexpr std::array kVertexGraphicsStages = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                                     VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                                     VK_SHADER_STAGE_FRAGMENT_BIT};
+inline constexpr std::array kMeshStages = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
+                                           VK_SHADER_STAGE_FRAGMENT_BIT};
+
+VkShaderStageFlags LogicallyLaterStages(VkShaderStageFlagBits stage);
 
 inline ShaderObjectStage VkShaderStageToShaderObjectStage(VkShaderStageFlagBits stage) {
     switch (stage) {

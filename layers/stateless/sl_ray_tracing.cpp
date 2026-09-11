@@ -28,6 +28,7 @@
 #include "utils/ray_tracing_utils.h"
 #include "utils/vk_api_utils.h"
 #include "utils/math_utils.h"
+#include "utils/shader_utils.h"
 
 namespace stateless {
 

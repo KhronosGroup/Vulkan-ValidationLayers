@@ -22,6 +22,7 @@
 #include "sync/sync_image.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/vk_api_utils.h"
 #include "utils/math_utils.h"
 
 namespace syncval {
