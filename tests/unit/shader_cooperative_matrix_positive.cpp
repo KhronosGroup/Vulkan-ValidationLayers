@@ -32,6 +32,38 @@ void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
 
 class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
+TEST_F(PositiveShaderCooperativeMatrix, MaxDimensionsWithoutFlexibleDimensions) {
+    TEST_DESCRIPTION("Flexible-dimension maximum does not apply when cooperativeMatrixFlexibleDimensions is disabled");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
+
+    if (!helper.HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_UINT32_KHR)) {
+        GTEST_SKIP() << "Valid Property not found";
+    }
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #pragma use_vulkan_memory_model
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(local_size_x = 64) in;
+        void main() {
+            coopmat<uint, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
+            coopmat<uint, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> B;
+            coopmat<uint, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> C;
+            coopmat<uint, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL);
+    pipe.CreateComputePipeline();
+}
+
 namespace {
 
 struct FloatMatrixConfig {
