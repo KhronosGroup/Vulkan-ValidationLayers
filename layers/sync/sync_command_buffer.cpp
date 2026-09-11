@@ -339,8 +339,7 @@ void CommandBufferContext::Reset() {
     rendering_view_gens_.clear();
 }
 
-ResourceUsageTag CommandBufferContext::RecordBeginRendering(const VkRenderingInfo& rendering_info,
-                                                            vvl::Func beging_rendering_command) {
+const RenderingInstance& CommandBufferContext::BeginRenderingInstance(const VkRenderingInfo& rendering_info) {
     rendering_attachments_ = CollectAttachments(environment_.validator, rendering_info);
     rendering_instance_ = RenderingInstance{rendering_info.flags, rendering_info.renderArea, rendering_info.viewMask,
                                             rendering_info.colorAttachmentCount, rendering_attachments_ /*init span*/};
@@ -348,11 +347,10 @@ ResourceUsageTag CommandBufferContext::RecordBeginRendering(const VkRenderingInf
     // TODO: Unconverted draws still apply attachment accesses when record validation is disabled.
     // Skip this initialization in that mode once those draws are converted.
     rendering_instance_->InitViewGens(rendering_view_gens_);
-
-    return NextCommandTag(beging_rendering_command);
+    return *rendering_instance_;
 }
 
-void CommandBufferContext::RecordEndRendering() {
+void CommandBufferContext::EndRenderingInstance() {
     assert(rendering_instance_.has_value());
     const bool rendering_has_ended = (rendering_instance_->flags & VK_RENDERING_SUSPENDING_BIT) == 0;
     if (rendering_has_ended) {
@@ -1373,7 +1371,7 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     const EndRenderingCommand command{*rendering_instance_, current_render_pass_instance_id_};
                     command.Apply(environment_, tag, *current_context_);
                     StoreCommand(tag, command, entry.tag_count);
-                    RecordEndRendering();
+                    EndRenderingInstance();
                     continue;
                 }
                 case CommandType::kBeginRenderPass:
