@@ -511,7 +511,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                                          print_properties().c_str(), print_flexible_properties().c_str());
                     }
                 }
-                if (IsExtEnabled(extensions.vk_nv_cooperative_matrix2)) {
+                if (enabled_features.cooperativeMatrixFlexibleDimensionsNV) {
                     if (m.rows > phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixFlexibleDimensionsMaxDimension ||
                         m.cols > phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixFlexibleDimensionsMaxDimension) {
                         skip |= LogError(
