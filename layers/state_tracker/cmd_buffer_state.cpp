@@ -1820,8 +1820,12 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
         auto& ds_slot = last_bound.ds_slots[set_idx];
         if (ds_slot.compat_id_for_set != pipe_compat_ids[set_idx]) {
             PushDescriptorCleanup(last_bound, set_idx);
+            const bool was_bound = ds_slot.ds_state != nullptr;
             ds_slot.Reset();
             ds_slot.compat_id_for_set = pipe_compat_ids[set_idx];
+            if (was_bound) {
+                ds_slot.disturbed_pipeline_layout = pipeline_layout->VkHandle();
+            }
         }
     }
 

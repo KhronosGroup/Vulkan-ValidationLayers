@@ -84,10 +84,14 @@ struct LastBound {
         uint64_t validated_set_change_count{~0ULL};
         uint64_t validated_set_image_layout_change_count{~0ULL};
 
+        // For better error messages to know if the layout was disturbed
+        VkPipelineLayout disturbed_pipeline_layout{VK_NULL_HANDLE};
+
         void Reset() {
             ds_state.reset();
             descriptor_buffer_binding.reset();
             dynamic_offsets.clear();
+            disturbed_pipeline_layout = VK_NULL_HANDLE;
         }
     };
 

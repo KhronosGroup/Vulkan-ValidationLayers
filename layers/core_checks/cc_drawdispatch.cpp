@@ -1936,11 +1936,23 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
             std::string error_string;
             const auto ds_slot = last_bound_state.ds_slots[set_index];
             if (!ds_slot.ds_state) {
-                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COMPATIBLE_PIPELINE_08600),
+                if (ds_slot.disturbed_pipeline_layout != VK_NULL_HANDLE) {
+                    skip |= LogError(
+                        CreateActionVuid(loc.function, vvl::ActionVUID::COMPATIBLE_PIPELINE_08600),
+                        cb_state.GetObjectList(bind_point), loc,
+                        "%s uses set %" PRIu32
+                        " but that set is not bound because it was disturbed by a previous call (like vkCmdBindDescriptorSets) "
+                        "that set %s which is not compatible.\nSee "
+                        "https://docs.vulkan.org/spec/latest/chapters/descriptorsets.html#descriptorsets-compatibility",
+                        FormatHandle(pipeline).c_str(), set_index, FormatHandle(ds_slot.disturbed_pipeline_layout).c_str());
+                } else {
+                    skip |=
+                        LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COMPATIBLE_PIPELINE_08600),
                                  cb_state.GetObjectList(bind_point), loc,
                                  "%s uses set %" PRIu32
                                  " but that set is not bound. (Need to use a command like vkCmdBindDescriptorSets to bind the set)",
                                  FormatHandle(pipeline).c_str(), set_index);
+                }
             } else if (pipeline_layout->set_layouts.list[set_index] &&
                        !VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, *pipeline_layout->set_layouts.list[set_index],
                                                          error_string)) {
@@ -2201,10 +2213,22 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound& las
                 std::string error_string;
                 const auto ds_slot = last_bound_state.ds_slots[set_index];
                 if (!ds_slot.ds_state) {
-                    const LogObjectList objlist(cb_state.Handle(), shader_object.Handle());
-                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COMPATIBLE_PIPELINE_08600), objlist, loc,
-                                     "%s uses set %" PRIu32 " but that set is not bound.",
-                                     FormatHandle(shader_object.Handle()).c_str(), set_index);
+                    if (ds_slot.disturbed_pipeline_layout != VK_NULL_HANDLE) {
+                        skip |= LogError(
+                            CreateActionVuid(loc.function, vvl::ActionVUID::COMPATIBLE_PIPELINE_08600),
+                            cb_state.GetObjectList(bind_point), loc,
+                            "%s uses set %" PRIu32
+                            " but that set is not bound because it was disturbed by a previous call (like vkCmdBindDescriptorSets) "
+                            "that set %s which is not compatible\nSee "
+                            "https://docs.vulkan.org/spec/latest/chapters/descriptorsets.html#descriptorsets-compatibility",
+                            FormatHandle(shader_object.Handle()).c_str(), set_index,
+                            FormatHandle(ds_slot.disturbed_pipeline_layout).c_str());
+                    } else {
+                        const LogObjectList objlist(cb_state.Handle(), shader_object.Handle());
+                        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COMPATIBLE_PIPELINE_08600), objlist, loc,
+                                         "%s uses set %" PRIu32 " but that set is not bound.",
+                                         FormatHandle(shader_object.Handle()).c_str(), set_index);
+                    }
                 } else if (shader_object.set_layouts.list[set_index] &&
                            !VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, *shader_object.set_layouts.list[set_index],
                                                              error_string)) {
