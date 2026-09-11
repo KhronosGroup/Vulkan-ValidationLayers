@@ -250,7 +250,7 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
         // Resolve/store operations do not happen when suspending
         return skip;
     }
-    for (uint32_t i = 0; i < (uint32_t)attachments.size(); i++) {
+    for (uint32_t i = 0; i < attachments.size(); i++) {
         const RenderingAttachment& attachment = attachments[i];
 
         auto attachment_description = [&validator, &attachment, i](const auto& view, std::ostringstream& ss) {

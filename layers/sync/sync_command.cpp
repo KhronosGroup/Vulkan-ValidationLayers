@@ -809,8 +809,8 @@ void DispatchIndirectCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, 
 }
 
 DrawAttachmentCommand DrawAttachmentCommand::Storage::MakeCommand(RenderPassAccessContext* render_pass_context,
-                                                                  const RenderingInstance* rendering_info) const {
-    return {pipeline, render_pass_context, rendering_info, render_pass_instance_id, depth_write, stencil_write};
+                                                                  const RenderingInstance* rendering_instance) const {
+    return {pipeline, render_pass_context, rendering_instance, render_pass_instance_id, depth_write, stencil_write};
 }
 
 DrawAttachmentCommand::Storage DrawAttachmentCommand::MakeStorage(CommandData& command_data) const {
@@ -881,9 +881,9 @@ void DrawIndirectCountCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag,
 
 DrawMeshTasksCommand DrawMeshTasksCommand::Storage::MakeCommand(const CommandData& command_data,
                                                                 RenderPassAccessContext* render_pass_context,
-                                                                const RenderingInstance* rendering_instanc) const {
+                                                                const RenderingInstance* rendering_instance) const {
     return {shader_access_storage.MakeCommand(command_data),
-            attachment_access_storage.MakeCommand(render_pass_context, rendering_instanc)};
+            attachment_access_storage.MakeCommand(render_pass_context, rendering_instance)};
 }
 
 DrawMeshTasksCommand::Storage DrawMeshTasksCommand::MakeStorage(CommandData& command_data) const {

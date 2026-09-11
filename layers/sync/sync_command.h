@@ -302,6 +302,20 @@ struct ShaderAccessCommand {
                                    const ImageViewAccess& image_access) const;
 };
 
+// Returned by CommandBufferContext::CollectDescriptorAccesses.
+// The same data as ShaderAccessCommand, but owns the buffer/image access arrays
+struct DescriptorAccesses {
+    const vvl::Pipeline* pipeline = nullptr;
+    std::vector<ShaderAccessCommand::BufferAccess> buffer_accesses;
+    std::vector<ShaderAccessCommand::ImageViewAccess> image_accesses;
+    uint32_t render_pass_instance_id = vvl::kNoIndex32;
+    uint32_t subpass = vvl::kNoIndex32;
+
+    ShaderAccessCommand MakeCommand() const {
+        return {pipeline, buffer_accesses, image_accesses, render_pass_instance_id, subpass};
+    }
+};
+
 struct DispatchIndirectCommand {
     ShaderAccessCommand shader_accesses;
     BufferAccessCommand indirect_access;

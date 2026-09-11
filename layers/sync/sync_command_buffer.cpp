@@ -661,8 +661,7 @@ void CommandBufferContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint p
     }
 }
 
-CommandBufferContext::DescriptorAccesses CommandBufferContext::CollectDescriptorAccesses(
-    VkPipelineBindPoint pipelineBindPoint) const {
+DescriptorAccesses CommandBufferContext::CollectDescriptorAccesses(VkPipelineBindPoint pipelineBindPoint) const {
     DescriptorAccesses result;
     if (!sync_state_.syncval_settings.shader_accesses_heuristic) return result;
 
@@ -820,9 +819,7 @@ void CommandBufferContext::RecordShaderAccesses(ResourceUsageTag tag, Descriptor
     for (auto& access : descriptor_accesses.image_accesses) {
         access.handle_index = AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
     }
-    const ShaderAccessCommand command{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses,
-                                      descriptor_accesses.image_accesses, descriptor_accesses.render_pass_instance_id,
-                                      descriptor_accesses.subpass};
+    const ShaderAccessCommand command = descriptor_accesses.MakeCommand();
     const auto& settings = sync_state_.syncval_settings;
     if (settings.IsRecordTimeValidationEnabled()) {
         command.Apply(GetSyncEnvironment(), tag, GetCurrentAccessContext());
