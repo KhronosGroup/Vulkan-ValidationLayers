@@ -374,34 +374,39 @@ static void CheckForLoadOpDontCareInsight(VkAttachmentLoadOp load_op, bool is_co
     }
 }
 
-std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                               vvl::Func command, const std::string& resource_description,
+std::string ErrorMessages::BeginRenderingError(const SyncEnvironment& env, const HazardResult& hazard,
+                                               const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                               const Location& loc, const std::string& resource_description,
                                                VkAttachmentLoadOp load_op) const {
     AdditionalMessageInfo additional_info;
-    const char* load_op_str = string_VkAttachmentLoadOp(load_op);
-    additional_info.properties.Add(kPropertyLoadOp, load_op_str);
+    additional_info.properties.Add(kPropertyLoadOp, string_VkAttachmentLoadOp(load_op));
     additional_info.access_action = GetLoadOpActionName(load_op);
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "BeginRenderingError", additional_info);
+
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    return Error(env, hazard, command, resource_description, "BeginRenderingError", additional_info);
 }
 
-std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                    vvl::Func command, const std::string& resource_description,
+std::string ErrorMessages::EndRenderingResolveError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                    const Location& loc, const std::string& resource_description,
                                                     VkResolveModeFlagBits resolve_mode, bool resolve_write) const {
     AdditionalMessageInfo additional_info;
-    const char* resolve_mode_str = string_VkResolveModeFlagBits(resolve_mode);
-    additional_info.properties.Add(kPropertyResolveMode, resolve_mode_str);
+    additional_info.properties.Add(kPropertyResolveMode, string_VkResolveModeFlagBits(resolve_mode));
     additional_info.access_action = resolve_write ? "writes to single sample resolve attachment" : "reads multisample attachment";
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "EndRenderingResolveError",
-                 additional_info);
+
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    return Error(env, hazard, command, resource_description, "EndRenderingResolveError", additional_info);
 }
 
-std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                  vvl::Func command, const std::string& resource_description,
+std::string ErrorMessages::EndRenderingStoreError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                  const Location& loc, const std::string& resource_description,
                                                   VkAttachmentStoreOp store_op) const {
     AdditionalMessageInfo additional_info;
-    const char* store_op_str = string_VkAttachmentStoreOp(store_op);
-    additional_info.properties.Add(kPropertyStoreOp, store_op_str);
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "EndRenderingStoreError", additional_info);
+    additional_info.properties.Add(kPropertyStoreOp, string_VkAttachmentStoreOp(store_op));
+
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    return Error(env, hazard, command, resource_description, "EndRenderingStoreError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassLoadOpError(const SyncEnvironment& env, const HazardResult& hazard,

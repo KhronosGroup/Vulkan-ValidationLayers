@@ -20,12 +20,8 @@
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
 #include "error_message/error_location.h"
-#include <vulkan/utility/vk_safe_struct.hpp>
-#include <vulkan/vulkan.h>
-#include <optional>
 
 namespace vvl {
-class CommandBuffer;
 class Pipeline;
 class RenderPass;
 }  // namespace vvl
@@ -33,59 +29,6 @@ class RenderPass;
 namespace syncval {
 
 class CommandBufferContext;
-
-enum class AttachmentType { kColor, kDepth, kStencil };
-
-struct DynamicRenderingInfo {
-    struct Attachment {
-        const vku::safe_VkRenderingAttachmentInfo& info;
-        std::shared_ptr<const vvl::ImageView> view;
-        std::shared_ptr<const vvl::ImageView> resolve_view;
-        ImageRangeGen view_gen;
-        std::optional<ImageRangeGen> resolve_gen;
-        AttachmentType type;
-
-        Attachment(const SyncValidator& state, const vku::safe_VkRenderingAttachmentInfo& info, const AttachmentType type_,
-                   const VkOffset3D& offset, const VkExtent3D& extent);
-
-        ImageRangeGen GetRangeGen(uint32_t view_mask = 0) const;
-
-        SyncAccessIndex GetLoadUsage() const;
-        SyncAccessIndex GetStoreUsage() const;
-        SyncOrdering GetOrdering() const;
-        Location GetLocation(const Location& loc, uint32_t index = 0) const;
-        bool IsWriteable(bool depth_write, bool stencil_write) const;
-        bool IsValid() const { return view.get(); }
-    };
-
-    // attachments store references to this info, so make sure this doesn't get moved around.
-    DynamicRenderingInfo(const DynamicRenderingInfo&) = delete;
-    DynamicRenderingInfo(DynamicRenderingInfo&&) = delete;
-    DynamicRenderingInfo& operator=(const DynamicRenderingInfo&) = delete;
-    DynamicRenderingInfo& operator=(DynamicRenderingInfo&&) = delete;
-
-    DynamicRenderingInfo(const SyncValidator& state, const VkRenderingInfo& rendering_info);
-
-    const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
-
-    bool ValidateDrawAttachments(const SyncEnvironment& env, const AccessContext& access_context,
-                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
-                                 uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline, bool depth_write,
-                                 bool stencil_write) const;
-    void RecordDrawAttachments(AccessContext& access_context, uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline,
-                               bool depth_write, bool stencil_write, ResourceUsageTag tag, QueueId queue_id) const;
-
-    vku::safe_VkRenderingInfo info;
-    std::vector<Attachment> attachments;  // All attachments (with internal typing)
-};
-
-struct BeginRenderingCmdState {
-    BeginRenderingCmdState(std::shared_ptr<const vvl::CommandBuffer>&& cb_state_) : cb_state(std::move(cb_state_)) {}
-    void AddRenderingInfo(const SyncValidator& state, const VkRenderingInfo& rendering_info);
-    const DynamicRenderingInfo& GetRenderingInfo() const;
-    std::shared_ptr<const vvl::CommandBuffer> cb_state;
-    std::unique_ptr<DynamicRenderingInfo> info;
-};
 
 std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass& rp_state,
                                                      const AccessContext& external_context, QueueId queue_id);
