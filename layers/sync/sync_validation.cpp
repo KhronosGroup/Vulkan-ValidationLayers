@@ -1120,10 +1120,8 @@ bool SyncValidator::ValidateDispatch(VkCommandBuffer commandBuffer, const Locati
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
-    const ShaderAccessCommand command{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses,
-                                      descriptor_accesses.image_accesses, descriptor_accesses.render_pass_instance_id,
-                                      descriptor_accesses.subpass};
+    const DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
+    const ShaderAccessCommand command = descriptor_accesses.MakeCommand();
     return command.Validate(cb_context, loc);
 }
 
@@ -1183,12 +1181,11 @@ bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBu
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    const auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
+    const DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
     const AccessRange range = MakeRange(offset, sizeof(VkDispatchIndirectCommand));
 
     const DispatchIndirectCommand command{
-        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
-                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        descriptor_accesses.MakeCommand(),
         BufferAccessCommand{*indirect_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, vvl::kNoIndex32, 0,
                             BufferName::kIndirect}};
     return command.Validate(cb_context, error_obj.location);
@@ -1216,8 +1213,7 @@ void SyncValidator::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuf
     }
 
     const DispatchIndirectCommand command{
-        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
-                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        descriptor_accesses.MakeCommand(),
         BufferAccessCommand{*indirect_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, indirect_buffer_tag_ex.handle_index,
                             0, BufferName::kIndirect}};
 
@@ -1503,11 +1499,8 @@ bool SyncValidator::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBu
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    const auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const DrawMeshTasksCommand command{
-        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
-                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
-        cb_context.GetDrawAttachmentCommand()};
+    const DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const DrawMeshTasksCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand()};
     return command.Validate(cb_context, error_obj.location);
 }
 
@@ -1524,10 +1517,7 @@ void SyncValidator::PostCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuf
     for (auto& access : descriptor_accesses.image_accesses) {
         access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
     }
-    const DrawMeshTasksCommand command{
-        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
-                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
-        cb_context.GetDrawAttachmentCommand()};
+    const DrawMeshTasksCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand()};
     if (syncval_settings.IsRecordTimeValidationEnabled()) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
@@ -1660,11 +1650,11 @@ bool SyncValidator::ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    const auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const AccessRange range = MakeRange(countBufferOffset, sizeof(uint32_t));
+
     const DrawIndirectCountCommand command{
-        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
-                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        descriptor_accesses.MakeCommand(),
         cb_context.GetDrawAttachmentCommand(),
         BufferAccessCommand{*count_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, vvl::kNoIndex32, 0, buffer_name}};
     return command.Validate(cb_context, loc);
@@ -1691,8 +1681,7 @@ void SyncValidator::RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuf
     const AccessRange range = MakeRange(countBufferOffset, sizeof(uint32_t));
 
     const DrawIndirectCountCommand command{
-        ShaderAccessCommand{descriptor_accesses.pipeline, descriptor_accesses.buffer_accesses, descriptor_accesses.image_accesses,
-                            descriptor_accesses.render_pass_instance_id, descriptor_accesses.subpass},
+        descriptor_accesses.MakeCommand(),
         cb_context.GetDrawAttachmentCommand(),
         BufferAccessCommand{*count_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, count_tag_ex.handle_index, 0,
                             buffer_name}};

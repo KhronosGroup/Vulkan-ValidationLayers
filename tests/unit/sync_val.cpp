@@ -7072,3 +7072,87 @@ TEST_F(NegativeSyncVal, WaitEventImageLayoutTransition) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncVal, DrawIndirectByteCountSubmitTime) {
+    TEST_DESCRIPTION("Detect a counter buffer hazard at submit time");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT tf_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tf_properties);
+    if (!tf_properties.transformFeedbackDraw) {
+        GTEST_SKIP() << "transformFeedbackDraw is not supported";
+    }
+
+    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer counter_buffer(*m_device, 16, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer fill_cb(*m_device, m_command_pool);
+    fill_cb.Begin();
+    vk::CmdFillBuffer(fill_cb, counter_buffer, 4, sizeof(uint32_t), 0);
+    fill_cb.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawIndirectByteCountEXT(m_command_buffer, 1, 0, counter_buffer, 4, 0, 4);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(fill_cb);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncVal, DrawMeshTasksIndirectCountSubmitTime) {
+    TEST_DESCRIPTION("Detect a count buffer hazard at submit time");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {64, 64};
+    rendering_info.layerCount = 1;
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    vkt::Buffer count_buffer(*m_device, 16, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::CommandBuffer fill_cb(*m_device, m_command_pool);
+    fill_cb.Begin();
+    vk::CmdFillBuffer(fill_cb, count_buffer, 4, sizeof(uint32_t), 0);
+    fill_cb.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer, 4, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(fill_cb);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
