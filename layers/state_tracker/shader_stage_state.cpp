@@ -79,6 +79,26 @@ const void* ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
+// vkspec.html#shaders-varying-subgroup-size
+bool ShaderStageState::AllowsVaryingSubgroupSize() const {
+    if (pipeline_create_info) {
+        return (pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT) != 0;
+    } else if (shader_object_create_info) {
+        return (shader_object_create_info->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0;
+    }
+    return false;
+}
+
+// vkspec.html#shaders-full-subgroups
+bool ShaderStageState::RequiresFullSubgroup() const {
+    if (pipeline_create_info) {
+        return (pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) != 0;
+    } else if (shader_object_create_info) {
+        return (shader_object_create_info->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0;
+    }
+    return false;
+}
+
 ShaderStageState::Heap ShaderStageState::GetHeapInfo(bool descriptor_heap_mode) {
     Heap result;
     if (!descriptor_heap_mode || !entrypoint || !spirv_state) {

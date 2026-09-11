@@ -119,10 +119,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
     }
     const bool has_required_subgroup_size = pipeline_required_subgroup_size_ci || shader_required_subgroup_size_ci;
 
-    const bool allows_varying_subgroup_size =
-        stage_state.HasPipeline()
-            ? (stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT) != 0
-            : (stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0;
+    const bool allows_varying_subgroup_size = stage_state.AllowsVaryingSubgroupSize();
     constexpr uint32_t spirv_version_1_6 = 0x00010600;
     const bool spirv_1_6_or_later = module_state.words_.size() > 1 && module_state.words_[1] >= spirv_version_1_6;
     // A zero selector requests properties suitable for an effective subgroup size that is not known at creation time.
@@ -206,15 +203,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
     }
 
     if (!module_state.static_data_.cooperative_matrix_inst.empty() && api_version < VK_API_VERSION_1_3) {
-        bool has_full_subgroups = false;
-        if (stage_state.pipeline_create_info) {
-            has_full_subgroups =
-                stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT;
-        } else {
-            has_full_subgroups = stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-        }
-
-        if (!has_full_subgroups) {
+        if (!stage_state.RequiresFullSubgroup()) {
             const char* vuid = stage_state.HasPipeline() ? "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10770"
                                                          : "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10771";
             skip |= LogError(vuid, module_state.handle(), loc,

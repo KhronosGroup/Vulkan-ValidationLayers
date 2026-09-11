@@ -82,6 +82,9 @@ struct ShaderStageState {
     vku::safe_VkSpecializationInfo *GetSpecializationInfo() const;
     const void* GetPNext() const;
 
+    bool AllowsVaryingSubgroupSize() const;
+    bool RequiresFullSubgroup() const;
+
     // Handles things like VK_EXT_shader_module_identifier and VK_SHADER_CODE_TYPE_SPIRV_EXT
     bool HasSpirv() const { return spirv_state.get() != nullptr && entrypoint.get() != nullptr; }
 
