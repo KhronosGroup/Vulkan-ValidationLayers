@@ -31,40 +31,18 @@
 #include "utils/shader_utils.h"
 #include "utils/descriptor_utils.h"
 
-// In order of how stages are linked together
-static const std::array graphics_stages = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                           VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
-                                           VK_SHADER_STAGE_FRAGMENT_BIT};
-static const std::array mesh_stages = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT};
-
 VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, VkShaderStageFlagBits stage) {
-    uint32_t graphic_index = static_cast<uint32_t>(graphics_stages.size());
-    uint32_t mesh_index = static_cast<uint32_t>(mesh_stages.size());
-    for (uint32_t i = 0; i < graphics_stages.size(); ++i) {
-        if (graphics_stages[i] == stage) {
-            graphic_index = i;
-            break;
+    const VkShaderStageFlags later_stages = LogicallyLaterStages(stage);
+    const bool is_mesh = (stage & (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)) != 0;
+    const auto stage_order = is_mesh ? vvl::span<const VkShaderStageFlagBits>(kMeshStages)
+                                     : vvl::span<const VkShaderStageFlagBits>(kVertexGraphicsStages);
+    for (VkShaderStageFlagBits stage : stage_order) {
+        if ((stage & later_stages) == 0) {
+            continue;
         }
-        if (i < mesh_stages.size() && mesh_stages[i] == stage) {
-            mesh_index = i;
-            break;
-        }
-    }
-
-    if (graphic_index < graphics_stages.size()) {
-        while (++graphic_index < graphics_stages.size()) {
-            for (uint32_t i = 0; i < createInfoCount; ++i) {
-                if (pCreateInfos[i].stage == graphics_stages[graphic_index]) {
-                    return graphics_stages[graphic_index];
-                }
-            }
-        }
-    } else {
-        while (++mesh_index < mesh_stages.size()) {
-            for (uint32_t i = 0; i < createInfoCount; ++i) {
-                if (pCreateInfos[i].stage == mesh_stages[mesh_index]) {
-                    return mesh_stages[mesh_index];
-                }
+        for (uint32_t i = 0; i < createInfoCount; ++i) {
+            if (pCreateInfos[i].stage == stage) {
+                return stage;
             }
         }
     }
@@ -579,8 +557,8 @@ bool CoreChecks::ValidateDrawShaderObjectNextStage(const LastBound& last_bound_s
     bool skip = false;
 
     const auto& stages = last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::VERTEX)
-                             ? vvl::span<const VkShaderStageFlagBits>(graphics_stages)
-                             : vvl::span<const VkShaderStageFlagBits>(mesh_stages);
+                             ? vvl::span<const VkShaderStageFlagBits>(kVertexGraphicsStages)
+                             : vvl::span<const VkShaderStageFlagBits>(kMeshStages);
     VkShaderStageFlagBits previous_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
     for (const auto stage : stages) {
         const ShaderObjectStage shader_object_stage = VkShaderStageToShaderObjectStage(stage);
@@ -886,7 +864,7 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
     const vvl::ShaderObject* producer = nullptr;
     const vvl::ShaderObject* consumer = nullptr;
 
-    for (const auto stage : graphics_stages) {
+    for (const auto stage : kVertexGraphicsStages) {
         if (skip) break;
         consumer = last_bound_state.GetShaderObjectState(VkShaderStageToShaderObjectStage(stage));
         if (!consumer) {

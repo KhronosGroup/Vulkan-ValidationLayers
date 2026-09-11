@@ -22,7 +22,7 @@
 #include <vector>
 #include "gpuav/spirv/instrumentation_status.h"
 #include "state_tracker/shader_module.h"
-#include "utils/vk_api_utils.h"
+#include "utils/shader_utils.h"
 
 namespace vvl {
 class Pipeline;

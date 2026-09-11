@@ -21,7 +21,7 @@
 #include "generated/enum_flag_bits.h"
 #include "containers/container_utils.h"
 #include "utils/math_utils.h"
-#include "utils/vk_api_utils.h"
+#include "utils/shader_utils.h"
 
 namespace stateless {
 static inline bool IsMeshCommand(VkIndirectCommandsTokenTypeEXT type) {

@@ -40,6 +40,7 @@
 #include "state_tracker/wsi_state.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
+#include "utils/vk_api_utils.h"
 #include "containers/container_utils.h"
 
 bool CoreChecks::IsMixSamplingSupported() const {

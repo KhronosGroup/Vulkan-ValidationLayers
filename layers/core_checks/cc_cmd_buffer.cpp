@@ -38,6 +38,7 @@
 #include "containers/container_utils.h"
 #include "utils/image_layout_utils.h"
 #include "utils/math_utils.h"
+#include "utils/vk_api_utils.h"
 
 // Ran on all vkCmd* commands
 // Because it validate the implicit VUs that stateless can't, if this fails, it is likely

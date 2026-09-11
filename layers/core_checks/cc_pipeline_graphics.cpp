@@ -35,6 +35,7 @@
 #include "utils/vk_struct_compare.h"
 #include "utils/action_command_utils.h"
 #include "utils/image_utils.h"
+#include "utils/vk_api_utils.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"

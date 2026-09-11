@@ -44,6 +44,7 @@
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "utils/assert_utils.h"
+#include "utils/vk_api_utils.h"
 #include "utils/shader_utils.h"
 #include "utils/hash_util.h"
 #include "utils/descriptor_utils.h"

@@ -28,6 +28,7 @@
 #include "state_tracker/state_object.h"
 #include "chassis/chassis_modification_state.h"
 #include "utils/descriptor_utils.h"
+#include "utils/vk_api_utils.h"
 
 namespace vvl {
 
