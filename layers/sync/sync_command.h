@@ -18,6 +18,7 @@
 #pragma once
 
 #include "sync_barrier.h"
+#include "sync_dynamic_rendering.h"
 #include "containers/custom_containers.h"
 #include "containers/span.h"
 #include "generated/vk_object_types.h"
@@ -41,7 +42,6 @@ class AccessContext;
 class CommandBufferContext;
 class RenderPassAccessContext;
 struct CommandData;
-struct DynamicRenderingInfo;
 struct SyncEnvironment;
 
 enum class BufferName : uint8_t {
@@ -56,6 +56,8 @@ enum class CommandType : uint32_t {
     kBufferAccess,
     kImageCopy,
     kPipelineBarrier,
+    kBeginRendering,
+    kEndRendering,
     kBeginRenderPass,
     kNextSubpass,
     kEndRenderPass,
@@ -149,6 +151,39 @@ struct BarrierCommand {
         BarrierCommand MakeCommand(const CommandData& command_data) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct BeginRenderingCommand {
+    RenderingInstance rendering_instance;
+    uint32_t render_pass_instance_id;
+
+    struct Storage {
+        VkRenderingFlags flags;
+        VkRect2D render_area;
+        uint32_t view_mask;
+        uint32_t color_attachment_count;
+        uint32_t first_attachment;
+        uint32_t attachment_count;
+        uint32_t render_pass_instance_id;
+        BeginRenderingCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct EndRenderingCommand {
+    const RenderingInstance& rendering_instance;
+    uint32_t render_pass_instance_id;
+
+    struct Storage {};
+    Storage MakeStorage(CommandData&) const { return {}; }
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
                   ResourceUsageTag replay_tag, const Location& loc) const;
@@ -286,7 +321,7 @@ struct DispatchIndirectCommand {
 struct DrawAttachmentCommand {
     const vvl::Pipeline* pipeline;
     RenderPassAccessContext* render_pass_context;
-    const DynamicRenderingInfo* rendering_info;
+    const RenderingInstance* rendering_instance;
     uint32_t render_pass_instance_id;
     bool depth_write;
     bool stencil_write;
@@ -297,7 +332,7 @@ struct DrawAttachmentCommand {
         bool depth_write;
         bool stencil_write;
         DrawAttachmentCommand MakeCommand(RenderPassAccessContext* render_pass_context,
-                                          const DynamicRenderingInfo* rendering_info) const;
+                                          const RenderingInstance* rendering_instance) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
@@ -316,7 +351,7 @@ struct DrawIndirectCountCommand {
         DrawAttachmentCommand::Storage attachment_access_storage;
         BufferAccessCommand::Storage count_access_storage;
         DrawIndirectCountCommand MakeCommand(const CommandData& command_data, RenderPassAccessContext* render_pass_context,
-                                             const DynamicRenderingInfo* rendering_info) const;
+                                             const RenderingInstance* rendering_instance) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
@@ -333,7 +368,7 @@ struct DrawMeshTasksCommand {
         ShaderAccessCommand::Storage shader_access_storage;
         DrawAttachmentCommand::Storage attachment_access_storage;
         DrawMeshTasksCommand MakeCommand(const CommandData& command_data, RenderPassAccessContext* render_pass_context,
-                                         const DynamicRenderingInfo* rendering_info) const;
+                                         const RenderingInstance* rendering_instance) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
@@ -350,11 +385,12 @@ static_assert(sizeof(CommandRef) == 8);
 
 struct CommandData {
     // Command storage data.
-    // NOTE: NextSubpass and EndRenderPass have no storage data
+    // NOTE: NextSubpass, EndRenderPass, EndRendering - have no storage data
     std::vector<BufferCopyCommand::Storage> buffer_copy_commands;
     std::vector<BufferAccessCommand::Storage> buffer_access_commands;
     std::vector<ImageCopyCommand::Storage> image_copy_commands;
     std::vector<BarrierCommand::Storage> barrier_commands;
+    std::vector<BeginRenderingCommand::Storage> begin_rendering_commands;
     std::vector<BeginRenderPassCommand::Storage> begin_render_pass_commands;
     std::vector<ShaderAccessCommand::Storage> shader_access_commands;
     std::vector<DispatchIndirectCommand::Storage> dispatch_indirect_commands;
@@ -370,6 +406,7 @@ struct CommandData {
     std::vector<BufferCopyRegion> buffer_copy_regions;
     std::vector<VkImageCopy> image_copy_regions;
     std::vector<BarrierSet> barrier_sets;
+    std::vector<RenderingAttachment> rendering_attachments;
     std::vector<ShaderAccessCommand::BufferAccess> descriptor_buffer_accesses;
     std::vector<ShaderAccessCommand::ImageViewAccess> descriptor_image_accesses;
 
@@ -396,6 +433,13 @@ struct CommandData {
     }
     CommandRef Store(const BarrierCommand::Storage& storage) {
         return Store(CommandType::kPipelineBarrier, barrier_commands, storage);
+    }
+    CommandRef Store(const BeginRenderingCommand::Storage& storage) {
+        return Store(CommandType::kBeginRendering, begin_rendering_commands, storage);
+    }
+    CommandRef Store(const EndRenderingCommand::Storage&) {
+        // No storage data, return the command reference directly. The index is unused.
+        return {CommandType::kEndRendering, 0};
     }
     CommandRef Store(const BeginRenderPassCommand::Storage& storage) {
         return Store(CommandType::kBeginRenderPass, begin_render_pass_commands, storage);

@@ -119,12 +119,15 @@ class ErrorMessages {
                                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
                                                 const Location& loc, const std::string& resource_description) const;
 
-    std::string BeginRenderingError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
-                                    const std::string& resource_description, VkAttachmentLoadOp load_op) const;
-    std::string EndRenderingResolveError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
+    std::string BeginRenderingError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
+                                    ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
+                                    VkAttachmentLoadOp load_op) const;
+    std::string EndRenderingResolveError(const SyncEnvironment& env, const HazardResult& hazard,
+                                         const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
                                          const std::string& resource_description, VkResolveModeFlagBits resolve_mode,
                                          bool resolve_write) const;
-    std::string EndRenderingStoreError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
+    std::string EndRenderingStoreError(const SyncEnvironment& env, const HazardResult& hazard,
+                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
                                        const std::string& resource_description, VkAttachmentStoreOp store_op) const;
 
     std::string RenderPassLoadOpError(const SyncEnvironment& env, const HazardResult& hazard,

@@ -32,7 +32,6 @@
 #include "utils/ray_tracing_utils.h"
 #include "utils/text_utils.h"
 #include "vk_layer_config.h"
-#include "containers/tls_guard.h"
 
 namespace syncval {
 
@@ -750,16 +749,24 @@ bool SyncValidator::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandB
 
 bool SyncValidator::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                                      const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    if (!pRenderingInfo) return skip;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    if (!pRenderingInfo) {
+        return false;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    vvl::TlsGuard<BeginRenderingCmdState> cmd_state(&skip, std::move(cb_state));
-    cmd_state->AddRenderingInfo(*this, *pRenderingInfo);
+    const auto attachments = CollectAttachments(*this, *pRenderingInfo);
+    RenderingInstance rendering_instance{pRenderingInfo->flags, pRenderingInfo->renderArea, pRenderingInfo->viewMask,
+                                         pRenderingInfo->colorAttachmentCount, vvl::make_span(attachments)};
 
-    // We need to set skip, because the TlsGuard destructor is looking at the skip value for RAII cleanup.
-    skip |= GetCommandBufferContext(*cmd_state->cb_state).ValidateBeginRendering(error_obj, *cmd_state);
-    return skip;
+    std::vector<ImageRangeGen> view_gens;
+    rendering_instance.InitViewGens(view_gens);
+
+    const BeginRenderingCommand command{rendering_instance, cb_context.GetCurrentRenderPassInstanceId()};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo,
@@ -769,12 +776,21 @@ void SyncValidator::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBu
 
 void SyncValidator::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                                     const RecordObject& record_obj) {
-    vvl::TlsGuard<BeginRenderingCmdState> cmd_state;
+    if (!pRenderingInfo) {
+        return;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    assert(cmd_state && cmd_state->cb_state && (cmd_state->cb_state->VkHandle() == commandBuffer));
-    // Note: for fine grain locking need to to something other than cast.
-    auto cb_state = std::const_pointer_cast<vvl::CommandBuffer>(cmd_state->cb_state);
-    GetCommandBufferContext(*cb_state).RecordBeginRendering(*cmd_state, record_obj.location);
+    const ResourceUsageTag tag = cb_context.RecordBeginRendering(*pRenderingInfo, record_obj.location.function);
+
+    const BeginRenderingCommand command{*cb_context.GetRenderingInstance(), cb_context.GetCurrentRenderPassInstanceId()};
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
@@ -782,10 +798,18 @@ bool SyncValidator::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuf
 }
 
 bool SyncValidator::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    skip |= GetCommandBufferContext(*cb_state).ValidateEndRendering(error_obj);
-    return skip;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+
+    const RenderingInstance* rendering_instance = cb_context.GetRenderingInstance();
+    if (!rendering_instance) {
+        return false;
+    }
+    const EndRenderingCommand command{*rendering_instance, cb_context.GetCurrentRenderPassInstanceId()};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
@@ -793,8 +817,24 @@ void SyncValidator::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffe
 }
 
 void SyncValidator::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    GetCommandBufferContext(*cb_state).RecordEndRendering(record_obj);
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+
+    const RenderingInstance* rendering_instance = cb_context.GetRenderingInstance();
+    if (!rendering_instance) {
+        return;
+    }
+
+    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function, SubCommandType::kStoreOp);
+
+    const EndRenderingCommand command{*rendering_instance, cb_context.GetCurrentRenderPassInstanceId()};
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
+    cb_context.RecordEndRendering();
 }
 
 template <typename RegionType>

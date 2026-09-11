@@ -17,6 +17,7 @@
 #pragma once
 
 #include "sync/sync_command.h"
+#include "sync/sync_dynamic_rendering.h"
 #include "sync/sync_event.h"
 #include "sync/sync_render_pass.h"
 #include "sync/sync_replay.h"
@@ -213,10 +214,10 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass& rp_state, const VkRect2D& render_area,
                                            const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views);
 
-    bool ValidateBeginRendering(const ErrorObject& error_obj, BeginRenderingCmdState& cmd_state) const;
-    void RecordBeginRendering(BeginRenderingCmdState& cmd_state, const Location& loc);
-    bool ValidateEndRendering(const ErrorObject& error_obj) const;
-    void RecordEndRendering(const RecordObject& record_obj);
+    ResourceUsageTag RecordBeginRendering(const VkRenderingInfo& rendering_info, vvl::Func beging_rendering_command);
+    void RecordEndRendering();
+    const RenderingInstance* GetRenderingInstance() const { return rendering_instance_ ? &*rendering_instance_ : nullptr; }
+
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location& loc) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
 
@@ -370,9 +371,10 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     std::vector<CommandEntry> commands_;
     CommandData command_data_;
 
-    // State during dynamic rendering (dynamic rendering rendering passes must be
-    // contained within a single command buffer)
-    std::unique_ptr<DynamicRenderingInfo> dynamic_rendering_info_;
+    // Dynamic rendering state
+    std::vector<RenderingAttachment> rendering_attachments_;
+    std::optional<RenderingInstance> rendering_instance_;
+    std::vector<ImageRangeGen> rendering_view_gens_;
 
     // Secondary buffer validation uses proxy context and does local update (imitates Record).
     // Because in this case PreRecord is not called, the label state is not updated. We make

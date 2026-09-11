@@ -31,7 +31,6 @@ target_sources(VkLayer_utils PRIVATE
     containers/small_range_map.h
     containers/small_vector.h
     containers/span.h
-    containers/tls_guard.h
     error_message/logging.h
     error_message/logging.cpp
     error_message/error_location.cpp
@@ -501,6 +500,8 @@ target_sources(vvl PRIVATE
     sync/sync_command_buffer.h
     sync/sync_common.cpp
     sync/sync_common.h
+    sync/sync_dynamic_rendering.cpp
+    sync/sync_dynamic_rendering.h
     sync/sync_error_messages.cpp
     sync/sync_error_messages.h
     sync/sync_event.cpp

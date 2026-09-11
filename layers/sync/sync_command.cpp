@@ -18,6 +18,7 @@
 #include "sync/sync_command.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_command_buffer.h"
+#include "sync/sync_dynamic_rendering.h"
 #include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 #include "state_tracker/buffer_state.h"
@@ -61,6 +62,11 @@ struct CommandReplayContext {
 
     SyncEnvironment& env;
     AccessContext& destination_access_context;
+
+    std::vector<ImageRangeGen> rendering_view_gens;
+    std::optional<RenderingInstance> rendering_instance;
+    uint32_t rendering_instance_id = vvl::kNoIndex32;
+
     const uint32_t render_pass_instance_offset;
     std::optional<RenderPassAccessContext> render_pass_context;
 };
@@ -78,14 +84,29 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
         const ResourceUsageTag tag = base_tag + replay_tag;
         command.Apply(env, tag, access_context);
     };
+
     auto replay_draw = [&skip, &command_data, &replay_context, &env, &cb_context, base_tag, &loc](
                            const auto& storage, AccessContext& access_context, ResourceUsageTag replay_tag) {
-        // TODO: Supply DynamicRenderingInfo once Begin/EndRendering replay is implemented.
-        auto command = storage.MakeCommand(
-            command_data, replay_context.render_pass_context ? &*replay_context.render_pass_context : nullptr, nullptr);
+        RenderPassAccessContext* render_pass_context =
+            replay_context.render_pass_context ? &*replay_context.render_pass_context : nullptr;
+        const RenderingInstance* rendering_instance =
+            replay_context.rendering_instance ? &*replay_context.rendering_instance : nullptr;
+
+        auto command = storage.MakeCommand(command_data, render_pass_context, rendering_instance);
+
+        // Render pass attachment accesses get their adjusted id from RenderPassAccessContext.
+        // Only shader accesses ids need to be adjusted here
         if (command.shader_accesses.render_pass_instance_id != vvl::kNoIndex32) {
             command.shader_accesses.render_pass_instance_id += replay_context.render_pass_instance_offset;
         }
+
+        // BeginRendering already added the replay offset to instance id (that's why no +=)
+        // Use it for both shader and attachment accesses
+        if (replay_context.rendering_instance) {
+            command.shader_accesses.render_pass_instance_id = replay_context.rendering_instance_id;
+            command.attachment_accesses.render_pass_instance_id = replay_context.rendering_instance_id;
+        }
+
         skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
         const ResourceUsageTag tag = base_tag + replay_tag;
         command.Apply(env, tag, access_context);
@@ -111,6 +132,27 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
             }
             case CommandType::kPipelineBarrier: {
                 replay_common(command_data.barrier_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kBeginRendering: {
+                auto command = command_data.begin_rendering_commands[index].MakeCommand(command_data);
+                command.render_pass_instance_id += replay_context.render_pass_instance_offset;
+                command.rendering_instance.InitViewGens(replay_context.rendering_view_gens);
+                replay_context.rendering_instance = command.rendering_instance;
+                replay_context.rendering_instance_id = command.render_pass_instance_id;
+                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
+                command.Apply(env, base_tag + replay_tag, access_context);
+                continue;
+            }
+            case CommandType::kEndRendering: {
+                if (!replay_context.rendering_instance) {
+                    continue;
+                }
+                const EndRenderingCommand command{*replay_context.rendering_instance, replay_context.rendering_instance_id};
+                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
+                command.Apply(env, base_tag + replay_tag, access_context);
+                replay_context.rendering_instance.reset();
+                replay_context.rendering_view_gens.clear();
                 continue;
             }
             case CommandType::kBeginRenderPass: {
@@ -164,6 +206,7 @@ void CommandData::Reset() {
     buffer_access_commands.clear();
     image_copy_commands.clear();
     barrier_commands.clear();
+    begin_rendering_commands.clear();
     begin_render_pass_commands.clear();
     shader_access_commands.clear();
     dispatch_indirect_commands.clear();
@@ -178,6 +221,7 @@ void CommandData::Reset() {
     buffer_copy_regions.clear();
     image_copy_regions.clear();
     barrier_sets.clear();
+    rendering_attachments.clear();
     descriptor_buffer_accesses.clear();
     descriptor_image_accesses.clear();
 
@@ -458,6 +502,54 @@ void BarrierCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessCon
     ApplyBarrier(env, access_context, barrier_set, tag, true);
 }
 
+BeginRenderingCommand BeginRenderingCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const RenderingAttachment> attachments;
+    if (attachment_count != 0) {
+        attachments = vvl::make_span(&command_data.rendering_attachments[first_attachment], attachment_count);
+    }
+    return {{flags, render_area, view_mask, color_attachment_count, attachments}, render_pass_instance_id};
+}
+
+BeginRenderingCommand::Storage BeginRenderingCommand::MakeStorage(CommandData& command_data) const {
+    const uint32_t first_attachment = uint32_t(command_data.rendering_attachments.size());
+    const uint32_t attachment_count = uint32_t(rendering_instance.attachments.size());
+    vvl::Append(command_data.rendering_attachments, rendering_instance.attachments);
+    return {rendering_instance.flags,
+            rendering_instance.render_area,
+            rendering_instance.view_mask,
+            rendering_instance.color_attachment_count,
+            first_attachment,
+            attachment_count,
+            render_pass_instance_id};
+}
+
+bool BeginRenderingCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool BeginRenderingCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                     const Location& loc) const {
+    return rendering_instance.ValidateBeginRendering(env, access_context, cb_context, replay_tag, loc, render_pass_instance_id);
+}
+
+void BeginRenderingCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    rendering_instance.RecordBeginRendering(access_context, render_pass_instance_id, tag, env.queue_id);
+}
+
+bool EndRenderingCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool EndRenderingCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    return rendering_instance.ValidateEndRendering(env, access_context, cb_context, replay_tag, loc, render_pass_instance_id);
+}
+
+void EndRenderingCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    rendering_instance.RecordEndRendering(access_context, render_pass_instance_id, tag, env.queue_id);
+}
+
 BeginRenderPassCommand BeginRenderPassCommand::Storage::MakeCommand(const CommandData& command_data) const {
     const vvl::RenderPass& render_pass = *command_data.render_passes[render_pass_index];
     vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views;
@@ -717,7 +809,7 @@ void DispatchIndirectCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, 
 }
 
 DrawAttachmentCommand DrawAttachmentCommand::Storage::MakeCommand(RenderPassAccessContext* render_pass_context,
-                                                                  const DynamicRenderingInfo* rendering_info) const {
+                                                                  const RenderingInstance* rendering_info) const {
     return {pipeline, render_pass_context, rendering_info, render_pass_instance_id, depth_write, stencil_write};
 }
 
@@ -738,9 +830,9 @@ bool DrawAttachmentCommand::Validate(const SyncEnvironment& env, const AccessCon
     if (render_pass_context) {
         return render_pass_context->ValidateDrawSubpassAttachment(env, cb_context, replay_tag, loc, pipeline, depth_write,
                                                                   stencil_write);
-    } else if (rendering_info) {
-        return rendering_info->ValidateDrawAttachments(env, access_context, cb_context, replay_tag, loc, render_pass_instance_id,
-                                                       pipeline, depth_write, stencil_write);
+    } else if (rendering_instance) {
+        return rendering_instance->ValidateDrawAttachments(env, access_context, cb_context, replay_tag, loc,
+                                                           render_pass_instance_id, pipeline, depth_write, stencil_write);
     }
     return false;
 }
@@ -748,17 +840,17 @@ bool DrawAttachmentCommand::Validate(const SyncEnvironment& env, const AccessCon
 void DrawAttachmentCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     if (render_pass_context) {
         render_pass_context->RecordDrawSubpassAttachment(pipeline, depth_write, stencil_write, tag, env.queue_id);
-    } else if (rendering_info) {
-        rendering_info->RecordDrawAttachments(access_context, render_pass_instance_id, pipeline, depth_write, stencil_write, tag,
-                                              env.queue_id);
+    } else if (rendering_instance) {
+        rendering_instance->RecordDrawAttachments(access_context, render_pass_instance_id, pipeline, depth_write, stencil_write,
+                                                  tag, env.queue_id);
     }
 }
 
 DrawIndirectCountCommand DrawIndirectCountCommand::Storage::MakeCommand(const CommandData& command_data,
                                                                         RenderPassAccessContext* render_pass_context,
-                                                                        const DynamicRenderingInfo* rendering_info) const {
+                                                                        const RenderingInstance* rendering_instance) const {
     return {shader_access_storage.MakeCommand(command_data),
-            attachment_access_storage.MakeCommand(render_pass_context, rendering_info),
+            attachment_access_storage.MakeCommand(render_pass_context, rendering_instance),
             count_access_storage.MakeCommand(command_data)};
 }
 
@@ -789,9 +881,9 @@ void DrawIndirectCountCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag,
 
 DrawMeshTasksCommand DrawMeshTasksCommand::Storage::MakeCommand(const CommandData& command_data,
                                                                 RenderPassAccessContext* render_pass_context,
-                                                                const DynamicRenderingInfo* rendering_info) const {
+                                                                const RenderingInstance* rendering_instanc) const {
     return {shader_access_storage.MakeCommand(command_data),
-            attachment_access_storage.MakeCommand(render_pass_context, rendering_info)};
+            attachment_access_storage.MakeCommand(render_pass_context, rendering_instanc)};
 }
 
 DrawMeshTasksCommand::Storage DrawMeshTasksCommand::MakeStorage(CommandData& command_data) const {
