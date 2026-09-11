@@ -7730,7 +7730,7 @@ TEST_F(NegativeShaderObjectEXT, VertexMisalignedAccess) {
 
     vk::CmdSetVertexInputEXT(m_command_buffer, 1u, &vertex_binding_description, 1u, &vertex_attribute_description);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-10390");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
