@@ -570,6 +570,10 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::PIPELINE_BOUND_08606: suffix = "None-08606"; break;
         // ### VUID-vkCmdDraw-None-02721
         case ActionVUID::VERTEX_BINDING_ATTRIBUTE_02721: suffix = "None-02721"; break;
+        // ### VUID-vkCmdDraw-format-10389
+        case ActionVUID::VERTEX_ATTRIBUTE_ALIGNMENT_10389: suffix = "format-10389"; break;
+        // ### VUID-vkCmdDraw-format-10390
+        case ActionVUID::VERTEX_ATTRIBUTE_ALIGNMENT_10390: suffix = "format-10390"; break;
         // ### VUID-vkCmdDraw-commandBuffer-02707
         case ActionVUID::CB_UNPROTECTED_02707: suffix = "commandBuffer-02707"; break;
         // ### VUID-vkCmdDraw-commandBuffer-02712
