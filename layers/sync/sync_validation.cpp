@@ -782,10 +782,11 @@ void SyncValidator::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffe
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
-    const ResourceUsageTag tag = cb_context.RecordBeginRendering(*pRenderingInfo, record_obj.location.function);
+    const RenderingInstance& rendering_instance = cb_context.BeginRenderingInstance(*pRenderingInfo);
 
-    const BeginRenderingCommand command{*cb_context.GetRenderingInstance(), cb_context.GetCurrentRenderPassInstanceId()};
+    const BeginRenderingCommand command{rendering_instance, cb_context.GetCurrentRenderPassInstanceId()};
     if (syncval_settings.IsRecordTimeValidationEnabled()) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
@@ -825,7 +826,6 @@ void SyncValidator::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, 
     if (!rendering_instance) {
         return;
     }
-
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function, SubCommandType::kStoreOp);
 
     const EndRenderingCommand command{*rendering_instance, cb_context.GetCurrentRenderPassInstanceId()};
@@ -835,7 +835,7 @@ void SyncValidator::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, 
     if (syncval_settings.full_validation) {
         cb_context.StoreCommand(tag, command);
     }
-    cb_context.RecordEndRendering();
+    cb_context.EndRenderingInstance();
 }
 
 template <typename RegionType>

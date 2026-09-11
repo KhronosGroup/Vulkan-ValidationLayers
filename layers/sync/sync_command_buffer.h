@@ -214,8 +214,8 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass& rp_state, const VkRect2D& render_area,
                                            const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views);
 
-    ResourceUsageTag RecordBeginRendering(const VkRenderingInfo& rendering_info, vvl::Func beging_rendering_command);
-    void RecordEndRendering();
+    const RenderingInstance& BeginRenderingInstance(const VkRenderingInfo& rendering_info);
+    void EndRenderingInstance();
     const RenderingInstance* GetRenderingInstance() const { return rendering_instance_ ? &*rendering_instance_ : nullptr; }
 
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location& loc) const;

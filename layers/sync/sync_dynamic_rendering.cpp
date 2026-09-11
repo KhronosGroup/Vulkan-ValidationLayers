@@ -19,6 +19,7 @@
 #include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/vk_api_utils.h"
 #include <vulkan/utility/vk_format_utils.h>
 
 namespace syncval {
