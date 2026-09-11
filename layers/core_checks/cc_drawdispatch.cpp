@@ -2993,8 +2993,6 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
     const auto& vertex_bindings = has_dynamic_descriptions ? cb_state.dynamic_state_value.vertex_bindings
                                                            : last_bound.pipeline_state->vertex_input_state->bindings;
 
-    const bool robust_pipeline = last_bound.pipeline_state && last_bound.pipeline_state->uses_pipeline_vertex_robustness;
-
     auto print_binding = [has_dynamic_descriptions](const VertexBindingState binding_description) {
         std::ostringstream ss;
         if (has_dynamic_descriptions) {
@@ -3080,10 +3078,21 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
             // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45 for Vertex
             const VkBuffer vertex_buffer_handle = vertex_buffer_binding->Buffer();
 
+            // vertex input fun incoming...
+            //
+            // VU 02721 is about checking the OOB vertex access
+            //  We currently do it for indirect draws in GPU-AV
+            //  We have a gap doing it for normal vkCmdDraw, but a lot of work to add for little coverage right now
+            // VU 10389/10390 are check the alignment which we are checking here
+            //
+            // A packed format is aligned to the size of the whole format, not a single component
+            // https://github.com/KhronosGroup/Vulkan-Docs/issues/1277
+            const bool is_packed_format = vkuFormatIsPacked(attr_desc.format);
             // VK_EXT_legacy_vertex_attributes has no alignment requirement, except for 64-bit format (which wasn't in OpenGL)
-            const bool attrib_alignment_required = !enabled_features.legacyVertexAttributes || vkuFormatIs64bit(attr_desc.format);
-            if (attrib_alignment_required && !enabled_features.robustBufferAccess && !robust_pipeline &&
-                vertex_buffer_handle != VK_NULL_HANDLE) {
+            // No packed format has 64-bit components, so that exception only applies to the non-packed case
+            const bool attrib_alignment_required =
+                !enabled_features.legacyVertexAttributes || (!is_packed_format && vkuFormatIs64bit(attr_desc.format));
+            if (attrib_alignment_required && vertex_buffer_handle != VK_NULL_HANDLE) {
                 const VkDeviceSize vertex_buffer_offset = vertex_buffer_binding->BufferOffset();
 
                 // Use 1 as vertex/instance index to use buffer stride as well
@@ -3091,25 +3100,23 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
 
                 VkDeviceSize vtx_attrib_req_alignment = GetVertexInputFormatSize(attr_desc.format);
 
-                // TODO - There is no real spec language describing these, but also almost no one supports these formats for vertex
-                // input and this check should probably just removed and do the safe division always. Will need to run against CTS
-                // before-and-after to make sure.
-                if (!vkuFormatIsPacked(attr_desc.format) && !vkuFormatIsCompressed(attr_desc.format) &&
-                    !vkuFormatIsSinglePlane_422(attr_desc.format) && !vkuFormatIsMultiplane(attr_desc.format)) {
+                if (!is_packed_format) {
                     vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, vkuFormatComponentCount(attr_desc.format));
                 }
 
                 if (!IsPointerAligned(attrib_address, vtx_attrib_req_alignment)) {
                     LogObjectList objlist(last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS));
                     objlist.add(vertex_buffer_handle);
-                    skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::VERTEX_BINDING_ATTRIBUTE_02721), objlist, loc,
-                                     "Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (0x%" PRIx64
+                    const vvl::ActionVUID vuid = is_packed_format ? vvl::ActionVUID::VERTEX_ATTRIBUTE_ALIGNMENT_10389
+                                                                  : vvl::ActionVUID::VERTEX_ATTRIBUTE_ALIGNMENT_10390;
+                    skip |= LogError(CreateActionVuid(loc.function, vuid), objlist, loc,
+                                     "Format %s %shas an alignment of %" PRIu64 " but the alignment of attribAddress (0x%" PRIx64
                                      ") is not aligned in pVertexAttributeDescriptions[%" PRIu32 "] (binding=%" PRIu32
                                      " location=%" PRIu32 ") where attribAddress = vertex buffer offset (%" PRIu64
                                      ") + binding stride (%" PRIu64 ") + attribute offset (%" PRIu32 ").",
-                                     string_VkFormat(attr_desc.format), vtx_attrib_req_alignment, attrib_address, attr_index,
-                                     attr_desc.binding, attr_desc.location, vertex_buffer_offset, vertex_buffer_binding->stride,
-                                     attr_desc.offset);
+                                     string_VkFormat(attr_desc.format), is_packed_format ? "(packed format) " : "",
+                                     vtx_attrib_req_alignment, attrib_address, attr_index, attr_desc.binding, attr_desc.location,
+                                     vertex_buffer_offset, vertex_buffer_binding->stride, attr_desc.offset);
                 }
             }
         }
