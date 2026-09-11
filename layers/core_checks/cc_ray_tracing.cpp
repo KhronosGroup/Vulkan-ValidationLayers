@@ -2051,7 +2051,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& 
 
         {"VUID-VkStridedDeviceAddressRegionKHR-size-04632",
          [&binding_table](const vvl::Buffer& buffer_state) { return binding_table.stride > buffer_state.GetSize(); },
-         [table_loc, &binding_table]() {
+         [&table_loc, &binding_table]() {
              return "The " + table_loc.Fields() + "->stride (" + std::to_string(binding_table.stride) +
                     ") does not fit in any buffer";
          },
