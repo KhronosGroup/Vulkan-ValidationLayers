@@ -3025,6 +3025,70 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageDifferentMapping) {
     pipe.CreateGraphicsPipeline(false);
 }
 
+TEST_F(PositiveDescriptorHeap, YcbcrImageSharedMapping) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108");
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+    vkt::SamplerYcbcrConversion ycbcr_conversion(*m_device, format);
+
+    VkSamplerYcbcrConversionInfo ycbcr_conversion_info = vku::InitStructHelper();
+    ycbcr_conversion_info.conversion = ycbcr_conversion;
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        layout(location = 0) out vec4 uv;
+        void main() {
+            vec2 pos = vec2(gl_VertexIndex & 1, gl_VertexIndex >> 1);
+            gl_Position = texture(tex, pos);
+        }
+    )glsl";
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 color;
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        void main() {
+            color = texture(tex, vec2(0.0));
+        }
+    )glsl";
+    VkShaderObj vs_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs_module = VkShaderObj(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo(&ycbcr_conversion_info);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset = {};
+    mapping.sourceData.constantOffset.pEmbeddedSampler = &sampler_info;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(&mapping_info),
+                                                 fs_module.GetStageCreateInfo(&mapping_info)};
+
+    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe.gp_ci_.stageCount = 2u;
+    pipe.gp_ci_.pStages = stages;
+    pipe.CreateGraphicsPipeline(false);
+
+    EXPECT_EQ(ycbcr_conversion.handle(), ycbcr_conversion_info.conversion);
+    EXPECT_EQ(&sampler_info, mapping.sourceData.constantOffset.pEmbeddedSampler);
+    vkt::Sampler sampler(*m_device, sampler_info);
+}
+
 TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -3114,6 +3178,9 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     const auto fspv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
     VkShaderCreateInfoEXT fs_ci = ShaderCreateInfoHeapEXT(fspv, VK_SHADER_STAGE_FRAGMENT_BIT, &mapping_info);
     vkt::ShaderEXT frag_shader(*m_device, fs_ci);
+
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108");
+    EXPECT_EQ(ycbcr_conversion.handle(), ycbcr_conversion_info.conversion);
 
     m_command_buffer.Begin();
 
