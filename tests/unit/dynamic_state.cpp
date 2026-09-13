@@ -814,7 +814,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
 
     VkDeviceSize strides[] = {1};
     vk::CmdBindVertexBuffers2EXT(m_command_buffer, 0, 1, buffers.data(), offsets.data(), 0, strides);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-10390");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
