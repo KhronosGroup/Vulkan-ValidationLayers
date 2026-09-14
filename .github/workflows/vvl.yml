@@ -23,6 +23,9 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  # allows fork-only wrapper workflows to invoke this
+  workflow_call:
+  workflow_dispatch:
   # triggers individual PRs to get tested before merging
   pull_request:
     branches:
