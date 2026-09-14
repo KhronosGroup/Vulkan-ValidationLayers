@@ -1340,7 +1340,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateImageBarrierSubresourceRange(const VkImageSubresourceRange& subresourceRange, const vvl::Image& image_state,
                                               const LogObjectList& objlist, const Location& loc) const;
 
-    bool ValidateImageViewFormatFeatures(const vvl::Image& image_state, const VkFormat view_format,
+    std::string DescribeImageViewUsage(const vvl::Image& image_state, const VkImageViewCreateInfo& create_info,
+                                       const VkImageUsageFlags2KHR image_usage) const;
+
+    bool ValidateImageViewFormatFeatures(const vvl::Image& image_state, const VkImageViewCreateInfo& create_info,
                                          const VkImageUsageFlags2KHR image_usage, const Location& create_info_loc) const;
 
     bool ValidateImageViewSlicedCreateInfo(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
