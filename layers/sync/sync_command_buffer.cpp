@@ -1380,6 +1380,10 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     import_common(command_data.dispatch_indirect_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
+                case CommandType::kDrawIndirect: {
+                    import_draw(command_data.draw_indirect_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
                 case CommandType::kDrawIndirectCount: {
                     import_draw(command_data.draw_indirect_count_commands[index], command_data, tag, entry.tag_count);
                     continue;

@@ -7156,3 +7156,83 @@ TEST_F(NegativeSyncVal, DrawMeshTasksIndirectCountSubmitTime) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncVal, DrawIndirectStrided) {
+    TEST_DESCRIPTION("Validate an indirect read from a strided entry");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
+    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
+    auto* draws = static_cast<VkDrawIndirectCommand*>(buffer.Memory().Map());
+    draws[0] = {};  // first struct
+    draws[2] = {};  // second struct (use index 2 to skip the gap)
+    buffer.Memory().Unmap();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawIndirect(m_command_buffer, buffer, 0, 2, 32 /* 16 bytes struct + 16 bytes gap*/);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    vkt::CommandBuffer fill_cb(*m_device, m_command_pool);
+    fill_cb.Begin();
+    vk::CmdFillBuffer(fill_cb, buffer, 32 /* start of the second entry*/, sizeof(VkDrawIndirectCommand), 0);
+    fill_cb.End();
+
+    m_default_queue->Submit(fill_cb);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncVal, DrawIndirectStridedUpdate) {
+    TEST_DESCRIPTION("Test update from strided indirect draw");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
+    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
+    auto* draws = static_cast<VkDrawIndirectCommand*>(buffer.Memory().Map());
+    draws[0] = {};  // first struct
+    draws[2] = {};  // second struct (use index 2 to skip the gap)
+    buffer.Memory().Unmap();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawIndirect(m_command_buffer, buffer, 0, 2, 32 /* 16 bytes struct + 16 bytes gap*/);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    vkt::CommandBuffer fill_cb(*m_device, m_command_pool);
+    fill_cb.Begin();
+    vk::CmdFillBuffer(fill_cb, buffer, 32, sizeof(VkDrawIndirectCommand), 0);
+    fill_cb.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    m_default_queue->Submit(fill_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
