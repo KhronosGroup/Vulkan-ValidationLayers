@@ -2434,19 +2434,25 @@ bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipe
                 for (VkPipeline lib : vvl::make_span(lib_info->pLibraries, lib_info->libraryCount)) {
                     auto lib_state = Get<vvl::Pipeline>(lib);
                     ASSERT_AND_CONTINUE(lib_state);
-                    if (!lib_state->rendering_create_info) {
-                        // chance there might not be VkPipelineRenderingCreateInfo when we except, means either a Vertex Input or an
-                        // error will be caught elsewhere
-                        continue;
+
+                    // A library can itself have been created by linking other libraries together, in which case it holds the sub
+                    // state, but does not own it (and its own VkPipelineRenderingCreateInfo was ignored when it was created).
+                    //
+                    // There might not be a VkPipelineRenderingCreateInfo at all, that means either a Vertex Input library or an
+                    // error that will be caught elsewhere... ya, GPL, the gift that keeps giving!
+                    if (const auto& fragment_output_state = lib_state->fragment_output_state) {
+                        if (const auto* lib_rendering_ci = fragment_output_state->parent.rendering_create_info) {
+                            rendering_ci.colorAttachmentCount = lib_rendering_ci->colorAttachmentCount;
+                            rendering_ci.pColorAttachmentFormats = lib_rendering_ci->pColorAttachmentFormats;
+                            rendering_ci.depthAttachmentFormat = lib_rendering_ci->depthAttachmentFormat;
+                            rendering_ci.stencilAttachmentFormat = lib_rendering_ci->stencilAttachmentFormat;
+                        }
                     }
-                    if (lib_state->OwnsLibState(lib_state->fragment_output_state)) {
-                        rendering_ci.colorAttachmentCount = lib_state->rendering_create_info->colorAttachmentCount;
-                        rendering_ci.pColorAttachmentFormats = lib_state->rendering_create_info->pColorAttachmentFormats;
-                        rendering_ci.depthAttachmentFormat = lib_state->rendering_create_info->depthAttachmentFormat;
-                        rendering_ci.stencilAttachmentFormat = lib_state->rendering_create_info->stencilAttachmentFormat;
-                    } else if (lib_state->OwnsLibState(lib_state->pre_raster_state)) {
-                        // Could look for Fragment shader, but their viewMask must match and pre-raster is pre-raster is required
-                        rendering_ci.viewMask = lib_state->rendering_create_info->viewMask;
+                    if (const auto& pre_raster_state = lib_state->pre_raster_state) {
+                        // Could look for Fragment shader, but their viewMask must match and pre-raster is required
+                        if (const auto* lib_rendering_ci = pre_raster_state->parent.rendering_create_info) {
+                            rendering_ci.viewMask = lib_rendering_ci->viewMask;
+                        }
                     }
                 }
             }
