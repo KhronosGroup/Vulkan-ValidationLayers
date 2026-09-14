@@ -1211,7 +1211,7 @@ bool CoreChecks::ValidateCmdTraceRaysIndirect(const Location& loc, const LastBou
     BufferAddressValidation<1> buffer_address_validator = {
         {{{usage_vuid,
            [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
-           []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
+           []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, ErrorMsgBuffer::Usage}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(
         *this, loc.dot(Field::indirectDeviceAddress), LogObjectList(last_bound_state.cb_state.Handle()), indirect_device_address);
@@ -2483,7 +2483,7 @@ bool CoreChecks::ValidateIndirectBufferDeviceAddress(const vvl::CommandBuffer& c
         BufferAddressValidation<1> buffer_address_validator = {{{
             {vuid_13108,
              [](const vvl::Buffer& buffer_state) { return (buffer_state.GetFlags() & VK_BUFFER_CREATE_PROTECTED_BIT) != 0; },
-             []() { return "The following buffers were created with VK_BUFFER_CREATE_PROTECTED_BIT"; }, kFlagErrorMsgBuffer},
+             []() { return "The following buffers were created with VK_BUFFER_CREATE_PROTECTED_BIT"; }, ErrorMsgBuffer::Flag},
         }}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::addressRange).dot(Field::address),
@@ -2508,7 +2508,7 @@ bool CoreChecks::ValidateIndirectCountBufferDeviceAddress(const vvl::CommandBuff
     BufferAddressValidation<1> buffer_address_validator = {
         {{{GetDrawDispatchIndirectVUID(loc, vvl::DrawDispatchIndirectError::COUNT_BUFFER_02715),
            [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
-           []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
+           []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, ErrorMsgBuffer::Usage}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::countAddressRange).dot(Field::address),
                                                            LogObjectList(cb_state.Handle()), address);

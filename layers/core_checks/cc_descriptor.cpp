@@ -2845,9 +2845,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                         string_VkBufferUsageFlags2(buffer_usage & descriptor_buffer_usage) +
                         " but none of the following buffers contain it";
              },
-             [](const vvl::Buffer& buffer_state) {
-                 return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage & descriptor_buffer_usage);
-             }},
+             ErrorMsgBuffer::Usage},
 
             {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",
              [buffer_usage](const vvl::Buffer& buffer_state) {
@@ -2859,7 +2857,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  return false;
              },
              []() { return "The following buffers are missing VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT"; },
-             kUsageErrorMsgBuffer},
+             ErrorMsgBuffer::Usage},
 
             {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08123",
              [buffer_usage](const vvl::Buffer& buffer_state) {
@@ -2871,7 +2869,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  return false;
              },
              []() { return "The following buffers are missing VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT"; },
-             kUsageErrorMsgBuffer},
+             ErrorMsgBuffer::Usage},
 
             {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08124",
              [buffer_usage](const vvl::Buffer& buffer_state) {
@@ -2883,7 +2881,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  return false;
              },
              []() { return "The following buffers are missing VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT"; },
-             kUsageErrorMsgBuffer},
+             ErrorMsgBuffer::Usage},
         }}};
 
         buffer_address_validator.update_callback = [buffer_usage, &push_descriptor_buffers, &resource_buffers,
@@ -3325,7 +3323,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
     BufferAddressValidation<1> buffer_address_validator = {
         {{{usage_vuid, [buffer_usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & buffer_usage) == 0; },
            [buffer_usage]() { return "The following buffers are missing " + string_VkBufferUsageFlags(buffer_usage); },
-           kUsageErrorMsgBuffer}}}};
+           ErrorMsgBuffer::Usage}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, address_loc.dot(Field::address), LogObjectList(device),
                                                            address_info.address, address_info.range,

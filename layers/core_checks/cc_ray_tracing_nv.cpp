@@ -433,7 +433,7 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
         BufferAddressValidation<1> buffer_address_validator = {
             {{{"VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-10550",
                [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
-               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, ErrorMsgBuffer::Usage}}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(
             *this, error_obj.location.dot(Field::pBuildInfo).dot(Field::scratchData), LogObjectList(commandBuffer),
@@ -451,7 +451,7 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                    return "The following buffers are missing "
                           "VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
                },
-               kUsageErrorMsgBuffer}}}};
+               ErrorMsgBuffer::Usage}}}};
 
         skip |=
             buffer_address_validator.ValidateDeviceAddress(*this, error_obj.location.dot(Field::pBuildInfo).dot(Field::srcInfos),
@@ -468,7 +468,7 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                    return "The following buffers are missing "
                           "VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
                },
-               kUsageErrorMsgBuffer}}}};
+               ErrorMsgBuffer::Usage}}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(*this,
                                                                error_obj.location.dot(Field::pBuildInfo).dot(Field::srcInfosCount),
@@ -482,7 +482,7 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                    return (buffer_state.usage & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) == 0;
                },
                []() { return "The following buffers are missing VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR"; },
-               kUsageErrorMsgBuffer}}}};
+               ErrorMsgBuffer::Usage}}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(
             *this, error_obj.location.dot(Field::pBuildInfo).dot(Field::srcAccelerationStructureData), LogObjectList(commandBuffer),
@@ -518,7 +518,7 @@ bool CoreChecks::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
                    return (buffer_state.usage & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) == 0;
                },
                []() { return "The following buffers are missing VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR"; },
-               kUsageErrorMsgBuffer}}}};
+               ErrorMsgBuffer::Usage}}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(
             *this, error_obj.location.dot(Field::pBuildInfo).dot(Field::dstAccelerationStructureData), LogObjectList(commandBuffer),
@@ -670,12 +670,12 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                  return "The buildScratchSize (" + std::to_string(accelerationStructure_size.buildScratchSize) +
                         ") does not fit in any buffer";
              },
-             kEmptyErrorMsgBuffer},
+             ErrorMsgBuffer::Empty},
             {"VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-12304",
              [](const vvl::Buffer& buffer_state) {
                  return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0;
              },
-             []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT"; }, ErrorMsgBuffer::Usage},
         }}};
         skip |= scratch_buffer_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::scratchData), objlist,
                                                                pCommandInfos->scratchData);
@@ -700,7 +700,7 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
              []() {
                  return "The following buffers are missing VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
              },
-             kUsageErrorMsgBuffer},
+             ErrorMsgBuffer::Usage},
         }}};
 
         skip |= src_infos_array_validator.ValidateDeviceAddress(
@@ -718,7 +718,7 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
              []() {
                  return "The following buffers are missing VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
              },
-             kUsageErrorMsgBuffer},
+             ErrorMsgBuffer::Usage},
         }}};
 
         skip |= src_infos_count_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::srcInfosCount), objlist,
@@ -731,7 +731,7 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
              [](const vvl::Buffer& buffer_state) {
                  return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0;
              },
-             []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT"; }, ErrorMsgBuffer::Usage},
         }}};
 
         skip |= dst_addresses_array_validator.ValidateDeviceAddress(
@@ -746,7 +746,7 @@ bool CoreChecks::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
                  return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) == 0;
              },
              []() { return "The following buffers are missing VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR"; },
-             kUsageErrorMsgBuffer},
+             ErrorMsgBuffer::Usage},
         }}};
 
         skip |= dst_implicit_data_validator.ValidateDeviceAddress(*this, command_infos_loc.dot(Field::dstImplicitData), objlist,

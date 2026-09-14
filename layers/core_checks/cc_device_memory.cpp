@@ -2941,7 +2941,7 @@ bool CoreChecks::ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSiz
     BufferAddressValidation<1> buffer_address_validator = {
         {{{usage_vuid, [usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & usage) == 0; },
            [usage]() { return std::string("The following buffers are missing ") + string_VkBufferUsageFlags2(usage); },
-           kUsageErrorMsgBuffer}}}};
+           ErrorMsgBuffer::Usage}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::address), objlist, address, size, vuid);
 
@@ -3078,7 +3078,7 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBu
                        return (buffer_state.usage & VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT) == 0;
                    },
                    []() { return "The following buffers are missing VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT"; },
-                   kUsageErrorMsgBuffer}}}};
+                   ErrorMsgBuffer::Usage}}}};
 
             const Location src_loc = region_loc.dot(Field::srcAddress);
             skip |= buffer_address_validator.ValidateDeviceAddress(*this, src_loc, objlist, start, size,
@@ -3094,7 +3094,7 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBu
                        return (buffer_state.usage & VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT) == 0;
                    },
                    []() { return "The following buffers are missing VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT"; },
-                   kUsageErrorMsgBuffer}}}};
+                   ErrorMsgBuffer::Usage}}}};
 
             const Location dst_loc = region_loc.dot(Field::dstAddress);
             skip |= dst_range_validator.ValidateDeviceAddress(*this, dst_loc, objlist, start, size,
@@ -3120,7 +3120,7 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuf
         BufferAddressValidation<2> buffer_address_validator = {
             {{{"VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-07694",
                [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
-               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer},
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, ErrorMsgBuffer::Usage},
 
               {"VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsAddress-11794",
                [indirectCommandsAddress, max_range_size](const vvl::Buffer& buffer_state) {
@@ -3133,7 +3133,7 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuf
                    return "The required " + std::to_string(max_range_size) + " byte (stride [" + std::to_string(stride) +
                           "] * maxDecompressionCount [" + std::to_string(maxDecompressionCount) + "]) does not fit in any buffer";
                },
-               kEmptyErrorMsgBuffer}}}};
+               ErrorMsgBuffer::Empty}}}};
 
         const Location ic_addr_loc = error_obj.location.dot(Field::indirectCommandsAddress);
         skip |=
@@ -3144,7 +3144,8 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuf
         BufferAddressValidation<1> buffer_address_validator = {
             {{{"VUID-vkCmdDecompressMemoryIndirectCountEXT-indirectCommandsCountAddress-07697",
                [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0; },
-               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; },
+               ErrorMsgBuffer::Usage}}}};
 
         const Location ic_count_loc = error_obj.location.dot(Field::indirectCommandsCountAddress);
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, ic_count_loc, objlist, indirectCommandsCountAddress);
