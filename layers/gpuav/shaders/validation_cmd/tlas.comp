@@ -65,33 +65,55 @@ void main() {
     if ((blas_addr % 16u ) != 0) {
         error_subcode = kErrorSubCode_PreBuildAccelerationStructures_BlasAddrAlignment;
     } else if (pc.validation_mode == kBuildASValidationMode_invalid_AS) {
-        error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
         const uint as_count = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.count;
+        error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidAS;
         for (uint as_i = 0; as_i < as_count; ++as_i) {
             uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.addresses_ptr.array[as_i];
 
             if (valid_as_addr == blas_addr) {
                 const uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays.as_arrays_ptrs.metadata_ptr.array[as_i];
 
-                // found AS, first assume it is valid
-                error_subcode = 0;
+                const uint as_type = GET_BUILD_AS_METADATA_AS_TYPE(as_metadata);
+                const uint as_buffer_status = GET_BUILD_AS_METADATA_BUFFER_STATUS(as_metadata);
+                const uint as_metadata_buffer_memory_status = GET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(as_metadata);
 
-                if (GET_BUILD_AS_METADATA_BUFFER_STATUS(as_metadata) != BUILD_AS_METADATA_VALID_BUFFER) {
-                    error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
+                // Valid AS found, quick exit
+                if (as_type == BUILD_AS_METADATA_AS_TYPE_BLAS &&
+                    as_buffer_status == BUILD_AS_METADATA_VALID_BUFFER &&
+                    as_metadata_buffer_memory_status == BUILD_AS_METADATA_VALID_BUFFER_MEMORY) {
+                    error_subcode = 0;
                     break;
                 }
 
-                if (GET_BUILD_AS_METADATA_AS_TYPE(as_metadata) != BUILD_AS_METADATA_AS_TYPE_BLAS) {
+                // Found blas_addr in the array of valid AS addresses,
+                // but the AS itself has an issue.
+                // Flag it but keep looking for a valid AS - finding one would indicate validity
+                // ---
+                // How can we end up in this situation?
+                // ---
+                // The buffer associated to an AS can be destroyed before it, and recycled to create another AS.
+                // Say for instance a TLAS is created with a buffer, then this buffer is destroyed.
+                // TLAS is now invalid.
+                // Say a BLAS is created, with a newly buffer that happens to end up giving this BLAS
+                // the same address as the previous TLAS
+                // => the "valid AS array" GPU-AV maintains will be {TLAS's address, BLAS's address}
+                // and so those 2 are equal.
+                // In this loop, TLAS will first be found, but the valid BLAS is right after
+                // hence the need to look past it.
+                if (as_type != BUILD_AS_METADATA_AS_TYPE_BLAS) {
                     error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidASType;
-                    break;
+                    continue;
                 }
 
-                if (GET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(as_metadata) != BUILD_AS_METADATA_VALID_BUFFER_MEMORY) {
+                if (as_buffer_status != BUILD_AS_METADATA_VALID_BUFFER) {
+                    error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
+                    continue;
+                }
+
+                if (as_metadata_buffer_memory_status != BUILD_AS_METADATA_VALID_BUFFER_MEMORY) {
                     error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASMemory;
-                    break;
+                    continue;
                 }
-
-                break;
             }
         }
     } else if (pc.validation_mode == kBuildASValidationMode_memory_overlaps) {

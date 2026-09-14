@@ -1820,6 +1820,94 @@ TEST_F(PositiveGpuAVRayTracing, TlasBuildUsingZeroAsBlasAddress) {
     }
 }
 
+TEST_F(PositiveGpuAVRayTracing, BlasAddressRecycledFromDestroyedTlas) {
+    TEST_DESCRIPTION(
+        "A TLAS is created, then its buffer is destroyed, making the TLAS invalid. A BLAS is then created on a buffer recycling "
+        "the memory of the destroyed one, ending up with the same address as the stale TLAS. Referencing that address in a TLAS "
+        "build is valid: GPU-AV must look past the stale TLAS entry in its list of valid acceleration structures, and find the "
+        "valid BLAS listed right after it.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    vkt::DeviceMemory common_as_memory;
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    const VkDeviceSize as_size = blas.GetSizeInfo().accelerationStructureSize;
+
+    const VkBufferCreateInfo as_buffer_ci = vkt::Buffer::CreateInfo(
+        as_size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
+
+    vkt::as::AccelerationStructureKHR tlas(m_device);
+    VkDeviceAddress stale_tlas_addr = 0;
+    {
+        vkt::Buffer tlas_buffer(*m_device, as_buffer_ci, vkt::no_mem);
+
+        VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        const VkMemoryAllocateInfo alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(
+            *m_device, tlas_buffer.MemoryRequirements(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
+        common_as_memory.Init(*m_device, alloc_info);
+        tlas_buffer.BindMemory(common_as_memory, 0);
+
+        tlas.SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+        tlas.SetSize(as_size);
+        tlas.SetDeviceBuffer(std::move(tlas_buffer));
+        tlas.Create();
+
+        // Getting the address is what makes GPU-AV list this TLAS
+        stale_tlas_addr = tlas.GetAccelerationStructureDeviceAddress();
+
+        // Destroy TLAS buffer
+        tlas.GetBuffer().Destroy();
+    }
+
+    vkt::Buffer blas_buffer(*m_device, as_buffer_ci, vkt::no_mem);
+    blas_buffer.BindMemory(common_as_memory, 0);
+    blas.GetDstAS()->SetSize(as_size);
+    blas.GetDstAS()->SetDeviceBuffer(std::move(blas_buffer));
+
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    if (blas.GetDstAS()->GetAccelerationStructureDeviceAddress() != stale_tlas_addr) {
+        GTEST_SKIP() << "Driver did not give the BLAS the address of the destroyed TLAS, cannot exercise this scenario";
+    }
+
+    // Build a TLAS referencing the BLAS: no false positive must be reported, the BLAS is valid
+    std::vector<vkt::as::GeometryKHR> cube_instances(1);
+    cube_instances[0].SetType(vkt::as::GeometryKHR::Type::Instance);
+
+    VkAccelerationStructureInstanceKHR cube_instance{};
+    cube_instance.transform.matrix[0][0] = 1.0f;
+    cube_instance.transform.matrix[1][1] = 1.0f;
+    cube_instance.transform.matrix[2][2] = 1.0f;
+    cube_instance.mask = 0xff;
+    cube_instance.instanceCustomIndex = 0;
+    cube_instance.instanceShaderBindingTableRecordOffset = 0;
+    cube_instances[0].AddInstanceDeviceAccelStructRef(*m_device, blas.GetDstAS()->handle(), cube_instance);
+
+    std::vector<vkt::as::BuildGeometryInfoKHR> tlas_build_info;
+    tlas_build_info.emplace_back(vkt::as::blueprint::CreateTLAS(*m_device, std::move(cube_instances)));
+
+    m_command_buffer.Begin();
+    vkt::as::BuildAccelerationStructuresKHR(m_command_buffer, tlas_build_info);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveGpuAVRayTracing, BlasReference1DescriptorHeap) {
     RETURN_IF_SKIP(CheckSlangSupport());
 
