@@ -17,6 +17,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_format_utils.h>
+#include <cstdint>
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
@@ -30,6 +31,7 @@
 #include "generated/gpuav_offline_spirv.h"
 #include "error_message/error_strings.h"
 #include "containers/limits.h"
+#include "state_tracker/ray_tracing_state.h"
 #include "utils/math_utils.h"
 #include "utils/ray_tracing_utils.h"
 #include "utils/vk_api_utils.h"
@@ -462,22 +464,26 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 gpuav.device_state->as_with_addresses.array.size() * (2 * sizeof(uint64_t)));
             auto as_buffer_addr_ranges_ptr = (uint64_t*)(as_buffer_addr_ranges_buffer.offset_mapped_ptr);
 
-            uint32_t written_count = 0;
+            uint32_t metadata_i = 0;
+            uint32_t as_addr_i = 0;
             for (const vvl::AccelerationStructureKHR* as : gpuav.device_state->as_with_addresses.array) {
-                as_addresses_ptr[written_count] = as->GetAccelerationStructureAddress();
                 uint32_t metadata = 0;
-                const auto as_buf = as->GetFirstValidBuffer(*gpuav.device_state);
+                const vvl::BufferAndOffset as_buf = as->GetFirstValidBuffer(*gpuav.device_state);
                 const bool is_buffer_alive = as_buf && !as_buf.state->Destroyed();
                 const bool is_buffer_bound_to_memory = is_buffer_alive && as_buf.state->IsMemoryBound();
                 metadata |= SET_BUILD_AS_METADATA_BUFFER_STATUS(is_buffer_alive);
                 metadata |= SET_BUILD_AS_METADATA_AS_TYPE(as->GetType());
                 metadata |= SET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(is_buffer_bound_to_memory);
-                as_metadatas_ptr[written_count] = metadata;
-                const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->GetVvlEffectiveDeviceAddressRange();
-                as_buffer_addr_ranges_ptr[2 * written_count] = as_buffer_addr_range.begin;
-                as_buffer_addr_ranges_ptr[2 * written_count + 1] = as_buffer_addr_range.end;
+                as_metadatas_ptr[metadata_i] = metadata;
+                ++metadata_i;
 
-                ++written_count;
+                if (const vvl::range<VkDeviceAddress> as_buffer_addr_range = as->GetVvlEffectiveDeviceAddressRange();
+                    !as_buffer_addr_range.empty()) {
+                    as_addresses_ptr[as_addr_i] = as->GetAccelerationStructureAddress();
+                    as_buffer_addr_ranges_ptr[2 * as_addr_i] = as_buffer_addr_range.begin;
+                    as_buffer_addr_ranges_ptr[2 * as_addr_i + 1] = as_buffer_addr_range.end;
+                    ++as_addr_i;
+                }
             }
 
             // Fill a GPU buffer with a pointer to the AS metadata

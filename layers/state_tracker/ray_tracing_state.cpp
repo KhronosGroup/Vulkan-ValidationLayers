@@ -127,6 +127,11 @@ VkDeviceAddressRangeKHR AccelerationStructureKHR::GetEffectiveDeviceAddressRange
 
 vvl::range<VkDeviceAddress> AccelerationStructureKHR::GetVvlEffectiveDeviceAddressRange() const {
     const VkDeviceAddressRangeKHR khr_device_address_range = GetEffectiveDeviceAddressRange();
+    if (const auto* ci_1 = std::get_if<CreateInfo1>(&create_info)) {
+        if (ci_1->buffer_state->Destroyed() || !ci_1->buffer_state->IsMemoryBound()) {
+            return {0, 0};
+        }
+    }
     return {khr_device_address_range.address, khr_device_address_range.address + khr_device_address_range.size};
 }
 
