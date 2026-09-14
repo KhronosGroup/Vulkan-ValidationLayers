@@ -741,8 +741,9 @@ std::string ImageView::DescribeImageUsage(const Logger& logger) const {
                 ss << ", but VkImageStencilUsageCreateInfo overwrote it with " << string_VkImageUsageFlags2KHR(stencilUsage)
                    << " because the image view has VK_IMAGE_ASPECT_STENCIL_BIT only";
             } else if (stencil_aspect && depth_aspect) {
-                ss << ", but VkImageStencilUsageCreateInfo added " << string_VkImageUsageFlags2KHR(stencilUsage)
-                   << " because the image view has both VK_IMAGE_ASPECT_STENCIL_BIT and VK_IMAGE_ASPECT_DEPTH_BIT";
+                ss << ", but intersected with VkImageStencilUsageCreateInfo::stencilUsage ("
+                   << string_VkImageUsageFlags2KHR(stencilUsage)
+                   << ") because the image view has both VK_IMAGE_ASPECT_STENCIL_BIT and VK_IMAGE_ASPECT_DEPTH_BIT";
             }
         }
     }
