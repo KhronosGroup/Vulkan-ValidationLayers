@@ -1689,8 +1689,23 @@ std::string CoreChecks::DescribeImageViewUsage(const vvl::Image& image_state, co
     }
 
     ss << " which was inherited from " << FormatHandle(image_state.Handle()) << " that was created with "
-       << string_VkImageUsageFlags2KHR(image_state.usage)
-       << ".\nHint: An image view only needs the format features of the usage it is actually used with. Add a "
+       << string_VkImageUsageFlags2KHR(image_state.usage);
+
+    if (image_state.stencil_usage.has_value()) {
+        const bool stencil_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+        const bool depth_aspect = (create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+        if (stencil_aspect && !depth_aspect) {
+            ss << ", but replaced with VkImageStencilUsageCreateInfo::stencilUsage ("
+               << string_VkImageUsageFlags2KHR(image_state.stencil_usage.value())
+               << ") because the image view only has VK_IMAGE_ASPECT_STENCIL_BIT";
+        } else if (stencil_aspect && depth_aspect) {
+            ss << ", but intersected with VkImageStencilUsageCreateInfo::stencilUsage ("
+               << string_VkImageUsageFlags2KHR(image_state.stencil_usage.value())
+               << ") because the image view has both VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT";
+        }
+    }
+
+    ss << ".\nHint: An image view only needs the format features of the usage it is actually used with. Add a "
           "VkImageViewUsageCreateInfo to the VkImageViewCreateInfo::pNext chain to restrict the usage of this image view.";
 
     if (image_state.create_flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) {
@@ -2025,21 +2040,21 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     const VkImageType image_type = image_state.GetImageType();
     const VkImageViewType view_type = create_info.viewType;
 
-    // If there's a chained VkImageViewUsageCreateInfo struct, modify |image_usage| to match.
-    // VkImageViewUsageCreateInfo must have a subset (no new usage) and remaining checks only look for inclusion of usage flag
-    VkImageUsageFlags2KHR image_usage = image_state.usage;
+    // https://docs.vulkan.org/spec/latest/chapters/resources.html#resources-image-inherited-usage
+    const VkImageUsageFlags2KHR image_usage = image_state.GetInheritedUsage(create_info);
 
+    // The following VUs are about the override itself, so they are in terms of what the image was created with
     const auto image_view_usage = GetImageViewUsageFlags(create_info);
     if (image_view_usage.has_value()) {
         if (IsExtEnabled(extensions.vk_khr_maintenance2)) {
             if (!image_state.stencil_usage.has_value()) {
-                if ((image_usage | image_view_usage.value()) != image_usage) {
+                if ((image_state.usage | image_view_usage.value()) != image_state.usage) {
                     skip |=
                         LogError("VUID-VkImageViewCreateInfo-pNext-02662", create_info.image,
                                  create_info_loc.pNext(Struct::VkImageViewUsageCreateInfo, Field::usage),
                                  "(%s) must not include any bits that were not set in VkImageCreateInfo::usage (%s) of the image.",
                                  string_VkImageUsageFlags2KHR(image_view_usage.value()).c_str(),
-                                 string_VkImageUsageFlags2KHR(image_usage).c_str());
+                                 string_VkImageUsageFlags2KHR(image_state.usage).c_str());
                 }
             } else {
                 if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == VK_IMAGE_ASPECT_STENCIL_BIT &&
@@ -2052,19 +2067,18 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
                                  string_VkImageUsageFlags2KHR(image_view_usage.value()).c_str(),
                                  string_VkImageUsageFlags2KHR(image_state.stencil_usage.value()).c_str());
                 }
-                if ((aspect_mask & ~VK_IMAGE_ASPECT_STENCIL_BIT) != 0 && (image_usage | image_view_usage.value()) != image_usage) {
-                    skip |=
-                        LogError("VUID-VkImageViewCreateInfo-pNext-02664", create_info.image,
-                                 create_info_loc.pNext(Struct::VkImageViewUsageCreateInfo, Field::usage),
-                                 "(%s) must not include any bits that were not set in VkImageCreateInfo::usage (%s) of the image "
-                                 "if subResourceRange.aspectMask (%s) includes bits other than VK_IMAGE_ASPECT_STENCIL_BIT.",
-                                 string_VkImageUsageFlags2KHR(image_view_usage.value()).c_str(),
-                                 string_VkImageUsageFlags2KHR(image_usage).c_str(), string_VkImageAspectFlags(aspect_mask).c_str());
+                if ((aspect_mask & ~VK_IMAGE_ASPECT_STENCIL_BIT) != 0 &&
+                    (image_state.usage | image_view_usage.value()) != image_state.usage) {
+                    skip |= LogError(
+                        "VUID-VkImageViewCreateInfo-pNext-02664", create_info.image,
+                        create_info_loc.pNext(Struct::VkImageViewUsageCreateInfo, Field::usage),
+                        "(%s) must not include any bits that were not set in VkImageCreateInfo::usage (%s) of the image "
+                        "if subResourceRange.aspectMask (%s) includes bits other than VK_IMAGE_ASPECT_STENCIL_BIT.",
+                        string_VkImageUsageFlags2KHR(image_view_usage.value()).c_str(),
+                        string_VkImageUsageFlags2KHR(image_state.usage).c_str(), string_VkImageAspectFlags(aspect_mask).c_str());
                 }
             }
         }
-
-        image_usage = image_view_usage.value();
     }
 
     skip |= ValidateImageViewSlicedCreateInfo(create_info, image_state, normalized_subresource_range, create_info_loc);
