@@ -948,6 +948,7 @@ void DrawIndirectCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Acce
     shader_accesses.Apply(env, tag, access_context);
     attachment_accesses.Apply(env, tag, access_context);
     indirect_access.Apply(env, tag, access_context);
+    // TODO: shader instrumentation support is needed to read indirect buffer content (RecordDrawVertexIndex)
 }
 
 DrawIndirectCountCommand DrawIndirectCountCommand::Storage::MakeCommand(const CommandData& command_data,
@@ -974,6 +975,7 @@ bool DrawIndirectCountCommand::Validate(const SyncEnvironment& env, const Access
     skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
     skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
     skip |= count_access.Validate(env, access_context, cb_context, replay_tag, loc);
+    // TODO: shader instrumentation support is needed to read indirect buffer content (ValidateDrawVertex)
     return skip;
 }
 
@@ -981,6 +983,7 @@ void DrawIndirectCountCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag,
     shader_accesses.Apply(env, tag, access_context);
     attachment_accesses.Apply(env, tag, access_context);
     count_access.Apply(env, tag, access_context);
+    // TODO: shader instrumentation support is needed to read indirect buffer content (RecordDrawVertexIndex)
 }
 
 DrawMeshTasksCommand DrawMeshTasksCommand::Storage::MakeCommand(const CommandData& command_data,
