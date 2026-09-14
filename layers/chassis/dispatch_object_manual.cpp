@@ -2012,7 +2012,15 @@ VkResult DispatchDevice::CreateRayTracingPipelinesKHR(VkDevice device, VkDeferre
         device, deferredOperation, pipelineCache, createInfoCount, (const VkRayTracingPipelineCreateInfoKHR*)local_pCreateInfos,
         pAllocator, pPipelines);
 
-    if (wrap_handles && deferredOperation == VK_NULL_HANDLE) {
+    // Fix check for deferred ray tracing pipeline creation
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+    //
+    // Passing a VkDeferredOperationKHR only means the implementation may defer the work, it is free to build the
+    // pipelines right away and return VK_OPERATION_NOT_DEFERRED_KHR (or VK_SUCCESS).
+    // Only VK_OPERATION_DEFERRED_KHR tells us the handles are not ready yet, anything else we have to wrap them now
+    const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+
+    if (wrap_handles && !is_operation_deferred) {
         for (uint32_t i = 0; i < createInfoCount; i++) {
             if (pPipelines[i] != VK_NULL_HANDLE) {
                 pPipelines[i] = WrapNew(pPipelines[i]);
@@ -2026,9 +2034,6 @@ VkResult DispatchDevice::CreateRayTracingPipelinesKHR(VkDevice device, VkDeferre
         }
     }
 
-    // Fix check for deferred ray tracing pipeline creation
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
-    const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
     if (is_operation_deferred) {
         std::vector<std::function<void()>> post_completion_fns;
         auto completion_find = deferred_operation_post_completion.pop(deferredOperation);
