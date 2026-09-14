@@ -480,6 +480,9 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 ++written_count;
             }
 
+            // Host cached memory is not guaranteed to be host coherent, flush so the GPU sees the writes above
+            cb.gpu_resources_manager.FlushAllocation(as_metadatas_buffer);
+
             // Fill a GPU buffer with a pointer to the AS metadata
             vko::BufferRange submit_time_ptr_to_accel_structs_metadata_buffer =
                 cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(glsl::AccelerationStructureArraysPtr));
@@ -511,6 +514,8 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 blas_built_in_cmd_buffer_ptr[2 * i] = blas_built_in_cmd_buffer_addr_range.begin;
                 blas_built_in_cmd_buffer_ptr[2 * i + 1] = blas_built_in_cmd_buffer_addr_range.end;
             }
+            // Host cached memory is not guaranteed to be host coherent, flush so the GPU sees the writes above
+            cb_state.gpu_resources_manager.FlushAllocation(blas_built_in_cmd_buffer);
         }
 
         BuildAccelerationStructuresValidationShader shader_resources;
