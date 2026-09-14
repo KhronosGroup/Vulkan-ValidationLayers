@@ -7236,3 +7236,108 @@ TEST_F(NegativeSyncVal, DrawIndirectStridedUpdate) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncVal, DrawVertexInputWAR) {
+    TEST_DESCRIPTION("Vertex buffer write after a draw");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
+    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+
+    VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+
+    const VkBufferUsageFlags usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer(*m_device, 128, usage);
+    vkt::Buffer other_buffer(*m_device, 128, usage);
+    const VkDeviceSize offset = 16;
+
+    vkt::CommandBuffer draw_cb(*m_device, m_command_pool);
+    draw_cb.Begin();
+    draw_cb.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(draw_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindVertexBuffers(draw_cb, 0, 1, &buffer.handle(), &offset);
+    vk::CmdDraw(draw_cb, 3, 1, 2 /* start reading at byte 48 */, 0);
+
+    // Change bindings to check that submit validation still uses the buffer from the initial binding
+    vk::CmdBindVertexBuffers(draw_cb, 0, 1, &other_buffer.handle(), &offset);
+    draw_cb.EndRendering();
+    draw_cb.End();
+
+    vkt::CommandBuffer fill_cb(*m_device, m_command_pool);
+    fill_cb.Begin();
+    vk::CmdFillBuffer(fill_cb, buffer, 48, 4, 0);
+    fill_cb.End();
+
+    m_default_queue->Submit(draw_cb);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    m_default_queue->Submit(fill_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncVal, DrawIndexInputRAW) {
+    TEST_DESCRIPTION("Index buffer read after a write");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
+    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+
+    VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {32, 32};
+    rendering_info.layerCount = 1;
+
+    const VkBufferUsageFlags usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer(*m_device, 128, usage);
+    vkt::Buffer other_buffer(*m_device, 128, usage);
+    const VkDeviceSize offset = 16;
+
+    vkt::CommandBuffer draw_cb(*m_device, m_command_pool);
+    draw_cb.Begin();
+    draw_cb.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(draw_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindVertexBuffers(draw_cb, 0, 1, &buffer.handle(), &offset);
+    vk::CmdBindIndexBuffer(draw_cb, buffer, offset, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(draw_cb, 3, 1, 2 /* start reading indices at byte 24 */, 0, 0);
+
+    // Change bindings to check that submit validation still uses the initial binding
+    vk::CmdBindIndexBuffer(draw_cb, other_buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindVertexBuffers(draw_cb, 0, 1, &other_buffer.handle(), &offset);
+    draw_cb.EndRendering();
+    draw_cb.End();
+
+    vkt::CommandBuffer fill_cb(*m_device, m_command_pool);
+    fill_cb.Begin();
+    vk::CmdFillBuffer(fill_cb, buffer, 24, 4, 0);
+    fill_cb.End();
+
+    m_default_queue->Submit(fill_cb);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit(draw_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
