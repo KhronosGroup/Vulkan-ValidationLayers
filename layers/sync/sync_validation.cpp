@@ -1203,14 +1203,8 @@ void SyncValidator::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuf
     auto indirect_buffer_tag_ex = cb_context.AddCommandHandle(tag, indirect_buffer->Handle());
 
     auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_COMPUTE);
+    descriptor_accesses.RegisterResources(cb_context, tag);
     const AccessRange range = MakeRange(offset, sizeof(VkDispatchIndirectCommand));
-
-    for (auto& access : descriptor_accesses.buffer_accesses) {
-        access.handle_index = cb_context.AddCommandHandle(tag, access.info.resource_handle).handle_index;
-    }
-    for (auto& access : descriptor_accesses.image_accesses) {
-        access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
-    }
 
     const DispatchIndirectCommand command{
         descriptor_accesses.MakeCommand(),
@@ -1511,12 +1505,8 @@ void SyncValidator::PostCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuf
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
     auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    for (auto& access : descriptor_accesses.buffer_accesses) {
-        access.handle_index = cb_context.AddCommandHandle(tag, access.info.resource_handle).handle_index;
-    }
-    for (auto& access : descriptor_accesses.image_accesses) {
-        access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
-    }
+    descriptor_accesses.RegisterResources(cb_context, tag);
+
     const DrawMeshTasksCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand()};
     if (syncval_settings.IsRecordTimeValidationEnabled()) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
@@ -1671,12 +1661,8 @@ void SyncValidator::RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuf
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
 
     auto descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    for (auto& access : descriptor_accesses.buffer_accesses) {
-        access.handle_index = cb_context.AddCommandHandle(tag, access.info.resource_handle).handle_index;
-    }
-    for (auto& access : descriptor_accesses.image_accesses) {
-        access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
-    }
+    descriptor_accesses.RegisterResources(cb_context, tag);
+
     const ResourceUsageTagEx count_tag_ex = cb_context.AddCommandHandle(tag, count_buffer->Handle());
     const AccessRange range = MakeRange(countBufferOffset, sizeof(uint32_t));
 

@@ -813,12 +813,7 @@ DescriptorAccesses CommandBufferContext::CollectDescriptorAccesses(VkPipelineBin
 }
 
 void CommandBufferContext::RecordShaderAccesses(ResourceUsageTag tag, DescriptorAccesses& descriptor_accesses) {
-    for (auto& access : descriptor_accesses.buffer_accesses) {
-        access.handle_index = AddCommandHandle(tag, access.info.resource_handle).handle_index;
-    }
-    for (auto& access : descriptor_accesses.image_accesses) {
-        access.handle_index = AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
-    }
+    descriptor_accesses.RegisterResources(*this, tag);
     const ShaderAccessCommand command = descriptor_accesses.MakeCommand();
     const auto& settings = sync_state_.syncval_settings;
     if (settings.IsRecordTimeValidationEnabled()) {
