@@ -99,13 +99,13 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructure2KHR(VkDevice device,
     BufferAddressValidation<2> buffer_address_validator = {{{
         {"VUID-VkAccelerationStructureCreateInfo2KHR-addressRange-11604",
          [](const vvl::Buffer& buffer_state) { return (buffer_state.GetFlags() & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0; },
-         []() { return "The following buffers were created with VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT"; }, kFlagErrorMsgBuffer},
+         []() { return "The following buffers were created with VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT"; }, ErrorMsgBuffer::Flag},
         {capture_replay_vuid,
          [has_capture_replay](const vvl::Buffer& buffer_state) {
              return (has_capture_replay && (buffer_state.GetFlags() & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) ||
                     (!has_capture_replay && ((buffer_state.GetFlags() & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) != 0));
          },
-         [&capture_replay_msg]() { return capture_replay_msg; }, kFlagErrorMsgBuffer},
+         [&capture_replay_msg]() { return capture_replay_msg; }, ErrorMsgBuffer::Flag},
     }}};
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, create_info_loc.dot(Field::addressRange).dot(Field::address),
                                                            device, pCreateInfo->addressRange.address);
@@ -551,7 +551,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                    return "The following buffers are missing "
                           "VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
                },
-               kUsageErrorMsgBuffer}}}};
+               ErrorMsgBuffer::Usage}}}};
 
         return buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::deviceAddress), cb_objlist,
                                                               address.deviceAddress);
@@ -867,7 +867,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                          return "The following buffers are missing "
                                 "VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
                      },
-                     kUsageErrorMsgBuffer},
+                     ErrorMsgBuffer::Usage},
                 }}};
 
                 skip |= data_address.ValidateDeviceAddress(*this, p_geom_loc.dot(Field::pNext).dot(Field::data), cb_objlist,
@@ -881,7 +881,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                          return "The following buffers are missing "
                                 "VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR";
                      },
-                     kUsageErrorMsgBuffer},
+                     ErrorMsgBuffer::Usage},
                 }}};
 
                 skip |= triangle_array_address.ValidateDeviceAddress(*this, p_geom_loc.dot(Field::pNext).dot(Field::triangleArray),
@@ -905,7 +905,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                                     std::to_string(micromap_geometry_data->triangleArrayStride) +
                                     ", numTriangles: " + std::to_string(total_triangle_count) + ") does not fit in any buffer";
                          },
-                         kEmptyErrorMsgBuffer},
+                         ErrorMsgBuffer::Empty},
                     }}};
 
                     skip |= triangle_array_range_validator.ValidateDeviceAddress(
@@ -966,7 +966,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildScratch(VkCommandBuffer cmd_b
         BufferAddressValidation<1> buffer_address_validator = {
             {{{scratch_buffer_has_storage_flag_vuid,
                [](const vvl::Buffer& buffer_state) { return (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT) == 0; },
-               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, kUsageErrorMsgBuffer}}}};
+               []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT"; }, ErrorMsgBuffer::Usage}}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
                                                                LogObjectList(cmd_buffer), info.scratchData.deviceAddress,
@@ -2047,7 +2047,8 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& 
          [](const vvl::Buffer& buffer_state) {
              return (static_cast<uint32_t>(buffer_state.usage) & VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR) == 0;
          },
-         []() { return "The following buffers are missing VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR"; }, kUsageErrorMsgBuffer},
+         []() { return "The following buffers are missing VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR"; },
+         ErrorMsgBuffer::Usage},
 
         {"VUID-VkStridedDeviceAddressRegionKHR-size-04632",
          [&binding_table](const vvl::Buffer& buffer_state) { return binding_table.stride > buffer_state.GetSize(); },
@@ -2055,7 +2056,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& 
              return "The " + table_loc.Fields() + "->stride (" + std::to_string(binding_table.stride) +
                     ") does not fit in any buffer";
          },
-         kEmptyErrorMsgBuffer},
+         ErrorMsgBuffer::Empty},
     }}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(

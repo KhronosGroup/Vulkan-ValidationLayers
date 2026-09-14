@@ -55,18 +55,42 @@
    More details in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7517
  */
 
-// This file usage is very limited, such that we should be able to claim this name in global userspace
-using ErrorMsgBuffer = std::function<std::string(const vvl::Buffer&)>;
+// This file usage is very limited, such that we should be able to claim |ErrorMsgBuffer| in global userspace
+//
+// We use to have every caller declare there own std::function callback, but then we realized they are the same
+// So now instead of allocating a lambda, we just select an enum
+enum class ErrorMsgBuffer : uint8_t {
+    // Print nothing
+    // For some VUs that there is nothing per vvl::Buffer worth printing
+    Empty,
+    // Prints "has usage %s"
+    Usage,
+    // Prints "has flag%s"
+    Flag,
+    // Used by the implicit "bound to memory" check ValidateDeviceAddress adds for every device address
+    MemoryBound,
+};
 
-// These are to help unify the various checks to use the same language
-// The only reason to not use these is if you need special extra/modified information printed out
-static inline const ErrorMsgBuffer kEmptyErrorMsgBuffer = [](const vvl::Buffer&) { return ""; };
-static inline const ErrorMsgBuffer kUsageErrorMsgBuffer = [](const vvl::Buffer& buffer_state) {
-    return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
-};
-static inline const ErrorMsgBuffer kFlagErrorMsgBuffer = [](const vvl::Buffer& buffer_state) {
-    return "has flag " + string_VkBufferCreateFlags(buffer_state.GetFlags());
-};
+// Only called once an error is being built
+static inline std::string DescribeBufferForError(ErrorMsgBuffer error_msg_buffer, const vvl::DeviceProxy& validator,
+                                                 const vvl::Buffer& buffer_state) {
+    switch (error_msg_buffer) {
+        case ErrorMsgBuffer::Usage:
+            return "has usage " + string_VkBufferUsageFlags2(buffer_state.usage);
+        case ErrorMsgBuffer::Flag:
+            return "has flag " + string_VkBufferCreateFlags(buffer_state.GetFlags());
+        case ErrorMsgBuffer::MemoryBound: {
+            const auto memory_state = buffer_state.MemoryState();
+            if (memory_state && memory_state->Destroyed()) {
+                return "buffer is bound to memory (" + validator.FormatHandle(memory_state->Handle()) + ") but it has been freed";
+            }
+            return std::string("buffer has not been bound to memory");
+        }
+        case ErrorMsgBuffer::Empty:
+            break;
+    }
+    return std::string();
+}
 
 template <size_t ChecksCount = 1>
 class BufferAddressValidation {
@@ -81,8 +105,8 @@ class BufferAddressValidation {
         IsInvalidFunction is_invalid_func;
         // Text appended to error message header (for the VU as a whole)
         ErrorMsgHeaderFunction error_msg_header_func;
-        // List dedicated error per buffer
-        ErrorMsgBuffer error_msg_buffer_func;
+        // Which dedicated per buffer detail to print alongside the buffer description
+        ErrorMsgBuffer error_msg_buffer = ErrorMsgBuffer::Empty;
     };
 
     // ValidateDeviceAddress has two internal slot it uses:
@@ -136,15 +160,7 @@ class BufferAddressValidation {
         vuid_and_validations[ChecksCount] = {
             "VUID-VkDeviceAddress-None-10894",
             [](const vvl::Buffer& buffer_state) { return !buffer_state.sparse && !buffer_state.IsMemoryBound(); },
-            []() { return "The following buffers are not bound to memory or it has been freed"; },
-            [&validator](const vvl::Buffer& buffer_state) {
-                const auto memory_state = buffer_state.MemoryState();
-                if (memory_state && memory_state->Destroyed()) {
-                    return "buffer is bound to memory (" + validator.FormatHandle(memory_state->Handle()) +
-                           ") but it has been freed";
-                }
-                return std::string("buffer has not been bound to memory");
-            }};
+            []() { return "The following buffers are not bound to memory or it has been freed"; }, ErrorMsgBuffer::MemoryBound};
 
         size_t active_checks = ChecksCount + 1;
 
@@ -156,7 +172,7 @@ class BufferAddressValidation {
                     // .valid() here ensures any overflow or bad values are ignored
                     return !required_range.valid() || !buffer_state.DeviceAddressRange().includes(required_range);
                 },
-                []() { return "The following buffers are too small to hold the range"; }, kEmptyErrorMsgBuffer};
+                []() { return "The following buffers are too small to hold the range"; }, ErrorMsgBuffer::Empty};
             active_checks = ChecksCount + 2;
         }
 
@@ -256,8 +272,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const vvl::DevicePr
         ASSERT_AND_CONTINUE(buffer);
 
         for (size_t i = 0; i < active_checks; ++i) {
-            [[maybe_unused]] const auto& [vuid, is_invalid_func, error_msg_header_func, error_msg_buffer_func] =
-                vuid_and_validations[i];
+            [[maybe_unused]] const auto& [vuid, is_invalid_func, error_msg_header_func, error_msg_buffer] = vuid_and_validations[i];
 
             if (!is_invalid_func(*buffer)) {
                 continue;
@@ -277,8 +292,11 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const vvl::DevicePr
             // Always print the buffer range/size
             error_msg += "  ";  // small indent help to visualize
             error_msg += buffer->Describe(validator);
-            error_msg += " ";
-            error_msg += error_msg_buffer_func(*buffer);
+            const std::string buffer_detail = DescribeBufferForError(error_msg_buffer, validator, *buffer);
+            if (!buffer_detail.empty()) {
+                error_msg += " ";
+                error_msg += buffer_detail;
+            }
             error_msg += "\n";
         }
     }
