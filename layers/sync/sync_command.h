@@ -416,6 +416,8 @@ struct DrawIndirectCountCommand {
     ShaderAccessCommand shader_accesses;
     DrawAttachmentCommand attachment_accesses;
     BufferAccessCommand count_access;
+    // TODO: Track indirect buffer accesses when gpu-av is integrated.
+    // indirect buffer accesses depend on runtime count value.
 
     struct Storage {
         ShaderAccessCommand::Storage shader_access_storage;

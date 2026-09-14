@@ -268,11 +268,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                 const uint32_t drawCount, const uint32_t stride, const Location& loc) const;
     void RecordIndirectBuffer(CommandBufferContext& cb_context, ResourceUsageTag tag, const VkDeviceSize struct_size,
                               const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
-
-    bool ValidateCountBuffer(const CommandBufferContext& cb_context, const AccessContext& access_context, VkBuffer buffer,
-                             VkDeviceSize offset, const Location& loc, const char* count_buffer_label = "draw count") const;
-    void RecordCountBuffer(CommandBufferContext& cb_context, ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset);
-
     bool ValidateDispatch(VkCommandBuffer commandBuffer, const Location& loc) const;
     void RecordDispatch(VkCommandBuffer commandBuffer, const Location& loc);
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
@@ -388,9 +383,9 @@ class SyncValidator : public vvl::DeviceProxy {
     void RecordDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count, uint32_t stride,
                             uint32_t access_size, BufferName buffer_name, const Location& loc);
     bool ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                   BufferName buffer_name, const Location& loc) const;
+                                   const Location& loc) const;
     void RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                 BufferName buffer_name, const Location& loc);
+                                 const Location& loc);
     bool PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                          VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                          uint32_t maxDrawCount, uint32_t stride,
