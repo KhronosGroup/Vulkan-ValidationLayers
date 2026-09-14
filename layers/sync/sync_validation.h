@@ -383,6 +383,10 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
                                        uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
                                        const RecordObject& record_obj) override;
+    bool ValidateDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count, uint32_t stride,
+                              uint32_t access_size, BufferName buffer_name, const Location& loc) const;
+    void RecordDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count, uint32_t stride,
+                            uint32_t access_size, BufferName buffer_name, const Location& loc);
     bool ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                    BufferName buffer_name, const Location& loc) const;
     void RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,

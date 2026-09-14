@@ -187,6 +187,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.dispatch_indirect_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kDrawIndirect: {
+                replay_draw(command_data.draw_indirect_commands[index], access_context, replay_tag);
+                continue;
+            }
             case CommandType::kDrawIndirectCount: {
                 replay_draw(command_data.draw_indirect_count_commands[index], access_context, replay_tag);
                 continue;
@@ -210,10 +214,14 @@ void CommandData::Reset() {
     begin_render_pass_commands.clear();
     shader_access_commands.clear();
     dispatch_indirect_commands.clear();
+    draw_indirect_commands.clear();
     draw_indirect_count_commands.clear();
     draw_mesh_tasks_commands.clear();
 
     buffers.clear();
+    buffer_lookup.clear();
+    last_buffer = nullptr;
+    last_buffer_index = 0;
     images.clear();
     image_views.clear();
     render_passes.clear();
@@ -230,9 +238,16 @@ void CommandData::Reset() {
 }
 
 uint32_t CommandData::AddBuffer(const vvl::Buffer& buffer) {
-    const uint32_t index = uint32_t(buffers.size());
-    buffers.emplace_back(std::static_pointer_cast<const vvl::Buffer>(buffer.shared_from_this()));
-    return index;
+    if (last_buffer == &buffer) {
+        return last_buffer_index;
+    }
+    const auto [it, inserted] = buffer_lookup.try_emplace(&buffer, uint32_t(buffers.size()));
+    if (inserted) {
+        buffers.emplace_back(std::static_pointer_cast<const vvl::Buffer>(buffer.shared_from_this()));
+    }
+    last_buffer = &buffer;
+    last_buffer_index = it->second;
+    return last_buffer_index;
 }
 
 uint32_t CommandData::AddImage(const vvl::Image& image) {
@@ -375,6 +390,53 @@ bool BufferAccessCommand::Validate(const SyncEnvironment& env, const AccessConte
 
 void BufferAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     access_context.UpdateAccessState(buffer, access_index, range, ResourceUsageTagEx{tag, handle_index}, flags, env.queue_id);
+}
+
+StridedBufferAccessCommand StridedBufferAccessCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    return {*command_data.buffers[buffer_index], offset, count, stride, access_size, access_index, handle_index, buffer_name};
+}
+
+StridedBufferAccessCommand::Storage StridedBufferAccessCommand::MakeStorage(CommandData& command_data) const {
+    assert(access_size <= std::numeric_limits<uint16_t>::max());
+    return {offset, command_data.AddBuffer(buffer), count, stride, access_index, handle_index, uint16_t(access_size), buffer_name};
+}
+
+uint32_t StridedBufferAccessCommand::GetRangeCount() const {
+    if (count == 0) {
+        return 0;
+    }
+    // Merge into one range if adjacent accesses have no gaps
+    return (stride == access_size) ? 1 : count;
+}
+
+AccessRange StridedBufferAccessCommand::GetRange(uint32_t index) const {
+    // Merge into one range if adjacent accesses have no gaps, otherwise return the requested range
+    const VkDeviceSize size = (stride == access_size) ? VkDeviceSize(count) * access_size : access_size;
+    return MakeRange(offset + VkDeviceSize(index) * stride, size);
+}
+
+bool StridedBufferAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                          const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                          const Location& loc) const {
+    for (uint32_t i = 0; i < GetRangeCount(); i++) {
+        const AccessRange range = GetRange(i);
+        const HazardResult hazard = access_context.DetectHazard(buffer, access_index, range);
+        if (hazard.IsHazard()) {
+            const SyncValidator& validator = env.validator;
+            const LogObjectList objlist = BaseObjectList(env, cb_context, buffer.Handle());
+            const std::string resource_description = GetBufferNamePrefix(buffer_name) + validator.FormatHandle(buffer.Handle());
+            const std::string error =
+                validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
+            return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+        }
+    }
+    return false;
+}
+
+void StridedBufferAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    for (uint32_t i = 0; i < GetRangeCount(); i++) {
+        access_context.UpdateAccessState(buffer, access_index, GetRange(i), ResourceUsageTagEx{tag, handle_index}, 0, env.queue_id);
+    }
 }
 
 ImageCopyCommand ImageCopyCommand::Storage::MakeCommand(const CommandData& command_data) const {
@@ -853,6 +915,39 @@ void DrawAttachmentCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Ac
         rendering_instance->RecordDrawAttachments(access_context, render_pass_instance_id, pipeline, depth_write, stencil_write,
                                                   tag, env.queue_id);
     }
+}
+
+DrawIndirectCommand DrawIndirectCommand::Storage::MakeCommand(const CommandData& command_data,
+                                                              RenderPassAccessContext* render_pass_context,
+                                                              const RenderingInstance* rendering_instance) const {
+    return {shader_access_storage.MakeCommand(command_data),
+            attachment_access_storage.MakeCommand(render_pass_context, rendering_instance),
+            indirect_access_storage.MakeCommand(command_data)};
+}
+
+DrawIndirectCommand::Storage DrawIndirectCommand::MakeStorage(CommandData& command_data) const {
+    return {shader_accesses.MakeStorage(command_data), attachment_accesses.MakeStorage(command_data),
+            indirect_access.MakeStorage(command_data)};
+}
+
+bool DrawIndirectCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool DrawIndirectCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= indirect_access.Validate(env, access_context, cb_context, replay_tag, loc);
+    // TODO: shader instrumentation support is needed to read indirect buffer content (ValidateDrawVertex)
+    return skip;
+}
+
+void DrawIndirectCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    shader_accesses.Apply(env, tag, access_context);
+    attachment_accesses.Apply(env, tag, access_context);
+    indirect_access.Apply(env, tag, access_context);
 }
 
 DrawIndirectCountCommand DrawIndirectCountCommand::Storage::MakeCommand(const CommandData& command_data,
