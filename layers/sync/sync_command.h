@@ -311,6 +311,10 @@ struct DescriptorAccesses {
     uint32_t render_pass_instance_id = vvl::kNoIndex32;
     uint32_t subpass = vvl::kNoIndex32;
 
+    // Registers a HandleRecord for each descriptor resource and initializes the
+    // handle_index fields of access structures. Call before MakeCommand. Record time only.
+    void RegisterResources(CommandBufferContext& cb_context, ResourceUsageTag tag);
+
     ShaderAccessCommand MakeCommand() const {
         return {pipeline, buffer_accesses, image_accesses, render_pass_instance_id, subpass};
     }

@@ -782,6 +782,15 @@ void ShaderAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Acce
     }
 }
 
+void DescriptorAccesses::RegisterResources(CommandBufferContext& cb_context, ResourceUsageTag tag) {
+    for (auto& access : buffer_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.info.resource_handle).handle_index;
+    }
+    for (auto& access : image_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
+    }
+}
+
 DispatchIndirectCommand DispatchIndirectCommand::Storage::MakeCommand(const CommandData& command_data) const {
     return {shader_access_storage.MakeCommand(command_data), indirect_access_storage.MakeCommand(command_data)};
 }
