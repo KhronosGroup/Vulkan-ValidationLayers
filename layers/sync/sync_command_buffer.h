@@ -226,6 +226,8 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     DrawAttachmentCommand GetDrawAttachmentCommand() const;
 
+    VertexInputAccesses CollectVertexAccesses(uint32_t first_vertex, uint32_t vertex_count) const;
+    VertexInputAccesses CollectIndexAccesses(uint32_t first_index, uint32_t index_count) const;
     bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const Location& loc) const;
     void RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
     bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const Location& loc) const;

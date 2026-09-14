@@ -824,17 +824,19 @@ void CommandBufferContext::RecordShaderAccesses(ResourceUsageTag tag, Descriptor
     }
 }
 
-bool CommandBufferContext::ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const Location& loc) const {
-    bool skip = false;
-    const auto* pipe = cb_state_->GetLastBoundGraphics().pipeline_state;
-    if (!pipe) {
-        return skip;
+VertexInputAccesses CommandBufferContext::CollectVertexAccesses(uint32_t first_vertex, uint32_t vertex_count) const {
+    const vvl::Pipeline* pipeline = cb_state_->GetLastBoundGraphics().pipeline_state;
+    if (!pipeline) {
+        return {};
     }
+    VertexInputAccesses result;
+    result.pipeline = pipeline;
+    result.access_index = SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ;
 
     const auto& binding_buffers = cb_state_->current_vertex_buffer_binding_info;
-    const auto& vertex_bindings = pipe->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+    const auto& vertex_bindings = pipeline->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
                                       ? cb_state_->dynamic_state_value.vertex_bindings
-                                      : pipe->vertex_input_state->bindings;
+                                      : pipeline->vertex_input_state->bindings;
 
     for (const auto& [_, binding_state] : vertex_bindings) {
         const auto& binding_desc = binding_state.desc;
@@ -844,102 +846,59 @@ bool CommandBufferContext::ValidateDrawVertex(uint32_t vertexCount, uint32_t fir
         }
         if (const vvl::VertexBufferBinding* vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
             // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
-            const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->Buffer());
-            if (!buf_state) continue;  // also skips if using nullDescriptor
-
-            const AccessRange range =
-                MakeRangeForVertexData(vertex_buffer->BufferOffset(), firstVertex, vertexCount, binding_state);
-            auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
-            if (hazard.IsHazard()) {
-                LogObjectList objlist(cb_state_->Handle(), buf_state->Handle(), pipe->Handle());
-                const std::string resource_description = "vertex " + sync_state_.FormatHandle(*buf_state);
-                const auto error = error_messages_.BufferError(hazard, *this, loc.function, resource_description, range);
-                skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+            const auto buffer = sync_state_.Get<vvl::Buffer>(vertex_buffer->Buffer());
+            if (!buffer) {
+                continue;  // also skips if using nullDescriptor
             }
+            VkDeviceSize offset = vertex_buffer->BufferOffset();
+            const AccessRange range = MakeRangeForVertexData(offset, first_vertex, vertex_count, binding_state);
+            result.accesses.emplace_back(VertexInputCommand::Access{buffer.get(), range});
         }
     }
-    return skip;
+    return result;
 }
 
-void CommandBufferContext::RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag tag) {
-    const auto* pipe = cb_state_->GetLastBoundGraphics().pipeline_state;
-    if (!pipe) {
-        return;
-    }
-    const auto& binding_buffers = cb_state_->current_vertex_buffer_binding_info;
-    const auto& vertex_bindings = pipe->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
-                                      ? cb_state_->dynamic_state_value.vertex_bindings
-                                      : pipe->vertex_input_state->bindings;
-
-    for (const auto& [_, binding_state] : vertex_bindings) {
-        const auto& binding_desc = binding_state.desc;
-        if (binding_desc.inputRate != VK_VERTEX_INPUT_RATE_VERTEX) {
-            // TODO: add support to determine range of instance level attributes
-            continue;
-        }
-        if (const auto* vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
-            // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
-            const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->Buffer());
-            if (!buf_state) continue;  // also skips if using nullDescriptor
-
-            const AccessRange range =
-                MakeRangeForVertexData(vertex_buffer->BufferOffset(), firstVertex, vertexCount, binding_state);
-            const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());
-            current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range, tag_ex);
-        }
-    }
-}
-
-bool CommandBufferContext::ValidateDrawVertexIndex(uint32_t index_count, uint32_t firstIndex, const Location& loc) const {
-    bool skip = false;
+VertexInputAccesses CommandBufferContext::CollectIndexAccesses(uint32_t first_index, uint32_t index_count) const {
+    const vvl::Pipeline* pipeline = cb_state_->GetLastBoundGraphics().pipeline_state;
     const auto& index_binding = cb_state_->index_buffer_binding;
     // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
-    const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.Buffer());
-    if (!index_buf_state) return skip;
-
-    const uint32_t index_size = IndexTypeByteSize(index_binding.index_type);
-    const AccessRange range = MakeRangeForIndexData(index_binding.BufferOffset(), firstIndex, index_count, index_size);
-
-    auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
-    if (hazard.IsHazard()) {
-        LogObjectList objlist(cb_state_->Handle(), index_buf_state->Handle());
-        if (const auto* pipe = cb_state_->GetLastBoundGraphics().pipeline_state) {
-            objlist.add(pipe->Handle());
-        }
-        const std::string resource_description = "index " + sync_state_.FormatHandle(*index_buf_state);
-        const auto error = error_messages_.BufferError(hazard, *this, loc.function, resource_description, range);
-        skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+    const auto index_buffer = sync_state_.Get<vvl::Buffer>(index_binding.Buffer());
+    if (!index_buffer) {
+        return {};
     }
+    const uint32_t index_size = IndexTypeByteSize(index_binding.index_type);
+    const VkDeviceSize offset = index_binding.BufferOffset();
+    const AccessRange range = MakeRangeForIndexData(offset, first_index, index_count, index_size);
 
-    // TODO: Shader instrumentation support is needed to read index buffer content and determine the range of accessed
-    // versices (new syncval mode). Scanning index buffer for each draw call might be the simplest option to implement
-    // and the most reliable one, but potentially it can be heavy (still might be okay, testing is needed).
-    // Some other options: a) rescan index buffer when its modification is detected, b) scan index buffer only once and
-    // then assume it is immutable (common scenario).
-    // skip |= ValidateDrawVertex(?, ?, loc);
-
-    return skip;
+    VertexInputAccesses result;
+    result.pipeline = pipeline;
+    result.access_index = SYNC_INDEX_INPUT_INDEX_READ;
+    result.accesses.emplace_back(VertexInputCommand::Access{index_buffer.get(), range});
+    return result;
 }
 
-void CommandBufferContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag tag) {
-    const auto& index_binding = cb_state_->index_buffer_binding;
-    // TODO - Handle https://gitlab.khronos.org/vulkan/Vulkan-ValidationLayers/-/issues/45
-    const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.Buffer());
-    if (!index_buf_state) {
-        return;
-    }
+bool CommandBufferContext::ValidateDrawVertex(uint32_t vertex_count, uint32_t first_vertex, const Location& loc) const {
+    const auto vertex_accesses = CollectVertexAccesses(first_vertex, vertex_count);
+    return vertex_accesses.MakeCommand().Validate(*this, loc);
+}
 
-    const uint32_t index_size = IndexTypeByteSize(index_binding.index_type);
-    const AccessRange range = MakeRangeForIndexData(index_binding.BufferOffset(), firstIndex, indexCount, index_size);
-    const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, index_buf_state->Handle());
-    current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range, tag_ex);
+void CommandBufferContext::RecordDrawVertex(uint32_t vertex_count, uint32_t first_vertex, ResourceUsageTag tag) {
+    auto vertex_accesses = CollectVertexAccesses(first_vertex, vertex_count);
+    vertex_accesses.RegisterResources(*this, tag);
+    vertex_accesses.MakeCommand().Apply(environment_, tag, *current_context_);
+}
 
-    // TODO: Shader instrumentation support is needed to read index buffer content and determine the range of accessed
-    // versices (new syncval mode). Scanning index buffer for each draw call might be the simplest option to implement
-    // and the most reliable one, but potentially it can be heavy (still might be okay, testing is needed).
-    // Some other options: a) rescan index buffer when its modification is detected, b) scan index buffer only once and
-    // then assume it is immutable (common scenario).
-    // RecordDrawVertex(?, ?, tag);
+bool CommandBufferContext::ValidateDrawVertexIndex(uint32_t index_count, uint32_t first_index, const Location& loc) const {
+    const auto index_accesses = CollectIndexAccesses(first_index, index_count);
+    // TODO: Shader instrumentation support is needed to read index buffer content and determine
+    // the range of accessed versices. This is an expensive scan and likely has to be off by default.
+    return index_accesses.MakeCommand().Validate(*this, loc);
+}
+
+void CommandBufferContext::RecordDrawVertexIndex(uint32_t index_count, uint32_t first_index, ResourceUsageTag tag) {
+    auto index_accesses = CollectIndexAccesses(first_index, index_count);
+    index_accesses.RegisterResources(*this, tag);
+    index_accesses.MakeCommand().Apply(environment_, tag, *current_context_);
 }
 
 static bool IsStencilWriteable(const LastBound& last_bound_state) {
@@ -1378,6 +1337,10 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                 }
                 case CommandType::kDispatchIndirect: {
                     import_common(command_data.dispatch_indirect_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kDraw: {
+                    import_draw(command_data.draw_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
                 case CommandType::kDrawIndirect: {
