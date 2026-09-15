@@ -590,7 +590,7 @@ void vvl::Semaphore::WaitTimePoint(std::shared_future<void>&& waiter, uint64_t p
     }
 
     if (result != std::future_status::ready) {
-        device_.LogError(
+        device_.LogInternalError(
             "INTERNAL-ERROR-VkSemaphore-state-timeout", Handle(), loc,
             "The Validation Layers hit a timeout waiting for timeline semaphore state to update. completed_.payload=%" PRIu64
             " wait_payload=%" PRIu64,
