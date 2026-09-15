@@ -114,6 +114,29 @@ TEST_F(PositiveSyncValRayTracing, BuildAccelerationStructure) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveSyncValRayTracing, BuildVertexBufferExecutionBarrier) {
+    TEST_DESCRIPTION("An execution barrier synchronizes a build's vertex reads with a later buffer write");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    blas.SetupBuild(true);
+    const vkt::Buffer& vertex_buffer = blas.GetGeometries()[0].GetTriangles().device_vertex_buffer;
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer write_cb(*m_device, m_command_pool);
+    write_cb.Begin();
+    write_cb.ExecutionBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    vk::CmdFillBuffer(write_cb, vertex_buffer, 0, 4, 0);
+    write_cb.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->SubmitAndWait(write_cb);
+}
+
 TEST_F(PositiveSyncValRayTracing, WriteToAccelerationStructureBuffer) {
     TEST_DESCRIPTION("Write to a vacant region of acceleration structure buffer during acceleration structure build");
     RETURN_IF_SKIP(InitRayTracing());

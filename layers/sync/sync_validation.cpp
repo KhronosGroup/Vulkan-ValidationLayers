@@ -3163,202 +3163,101 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
     return {};
 }
 
-bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
-    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
+std::vector<BuildAccelerationStructuresCommand::Access> SyncValidator::CollectAccelerationStructureBuildAccesses(
+    uint32_t info_count, const VkAccelerationStructureBuildGeometryInfoKHR* infos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* build_range_infos) const {
+    using AccessType = BuildAccelerationStructuresCommand::AccessType;
+    std::vector<BuildAccelerationStructuresCommand::Access> accesses;
 
-    for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
-        const Location info_loc = error_obj.location.dot(Field::pInfos, i);
-        // Validate scratch buffer
-        if (const vvl::Buffer* p_scratch_buffer = GetSingleBufferFromDeviceAddress(*device_state, info.scratchData.deviceAddress)) {
-            const vvl::Buffer& scratch_buffer = *p_scratch_buffer;
-            const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
-            const VkDeviceSize offset = info.scratchData.deviceAddress - scratch_buffer.deviceAddress;
-            const AccessRange range = MakeRange(scratch_buffer, offset, scratch_size);
-            auto hazard =
-                access_context.DetectHazard(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, range);
-            if (hazard.IsHazard()) {
-                const LogObjectList objlist(commandBuffer, scratch_buffer.Handle());
-                const std::string resource_description = "scratch buffer " + FormatHandle(scratch_buffer.Handle());
-                const auto error =
-                    error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, range);
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+    for (const auto [i, info] : vvl::enumerate(infos, info_count)) {
+        // Scratch buffer
+        if (const vvl::Buffer* scratch_buffer = GetSingleBufferFromDeviceAddress(*device_state, info.scratchData.deviceAddress)) {
+            const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, build_range_infos[i]);
+            const VkDeviceSize offset = info.scratchData.deviceAddress - scratch_buffer->deviceAddress;
+            const AccessRange range = MakeRange(*scratch_buffer, offset, scratch_size);
+            accesses.push_back({scratch_buffer, range, AccessType::kScratch, i});
+        }
+        // Src/Dst acceleration structures
+        const auto src_accel = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
+        const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
+        if (src_accel && src_accel != dst_accel) {
+            if (const vvl::BufferAndOffset src_buffer = src_accel->GetFirstValidBuffer(*device_state)) {
+                const AccessRange range = MakeRange(src_buffer.offset, src_accel->GetSize());
+                accesses.push_back({src_buffer.state, range, AccessType::kSource, i, info.srcAccelerationStructure});
             }
         }
-        // Validate access to source acceleration structure
-        if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
-            if (const vvl::BufferAndOffset src_as_buffer = src_accel->GetFirstValidBuffer(*device_state)) {
-                const AccessRange range = MakeRange(src_as_buffer.offset, src_accel->GetSize());
-                auto hazard = access_context.DetectHazard(*src_as_buffer.state,
-                                                          SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ, range);
-                if (hazard.IsHazard()) {
-                    const LogObjectList objlist(commandBuffer, src_as_buffer.state->Handle(), src_accel->Handle());
-                    const std::string resource_description = FormatHandle(src_as_buffer.state->Handle());
-                    const std::string error = error_messages_.AccelerationStructureError(
-                        hazard, cb_context, error_obj.location.function, resource_description, range, info.srcAccelerationStructure,
-                        info_loc.dot(Field::srcAccelerationStructure));
-                    skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-                }
+        if (dst_accel) {
+            if (const vvl::BufferAndOffset dst_buffer = dst_accel->GetFirstValidBuffer(*device_state)) {
+                const AccessRange dst_range = MakeRange(dst_buffer.offset, dst_accel->GetSize());
+                accesses.push_back({dst_buffer.state, dst_range, AccessType::kDestination, i, info.dstAccelerationStructure});
             }
         }
-        // Validate access to the acceleration structure being built
-        if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
-            if (const vvl::BufferAndOffset dst_as_buffer = dst_accel->GetFirstValidBuffer(*device_state)) {
-                const AccessRange dst_range = MakeRange(dst_as_buffer.offset, dst_accel->GetSize());
-                auto hazard = access_context.DetectHazard(
-                    *dst_as_buffer.state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, dst_range);
-                if (hazard.IsHazard()) {
-                    const LogObjectList objlist(commandBuffer, dst_as_buffer.state->Handle(), dst_accel->Handle());
-                    const std::string resource_description = FormatHandle(dst_as_buffer.state->Handle());
-                    const std::string error = error_messages_.AccelerationStructureError(
-                        hazard, cb_context, error_obj.location.function, resource_description, dst_range,
-                        info.dstAccelerationStructure, info_loc.dot(Field::dstAccelerationStructure));
-                    skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-                }
-            }
-        }
-        // Validate geometry buffers
-        const VkAccelerationStructureBuildRangeInfoKHR* p_range_infos = ppBuildRangeInfos[i];
-        if (!p_range_infos) {
+        // Geometry buffers
+        const VkAccelerationStructureBuildRangeInfoKHR* range_infos = build_range_infos[i];
+        if (!range_infos) {
             continue;  // [core validation check]: range pointers should be valid
         }
         for (uint32_t k = 0; k < info.geometryCount; k++) {
-            const auto* p_geometry = info.pGeometries ? &info.pGeometries[k] : info.ppGeometries[k];
-            if (!p_geometry) {
+            const auto* geometry = info.pGeometries ? &info.pGeometries[k] : info.ppGeometries[k];
+            if (!geometry) {
                 continue;  // [core validation check]: null pointer in ppGeometries
             }
-            const auto geometry_info = GetValidGeometryInfo(*device_state, *p_geometry, p_range_infos[k]);
-            if (!geometry_info.has_value()) {
+            const auto geometry_info = GetValidGeometryInfo(*device_state, *geometry, range_infos[k]);
+            if (!geometry_info) {
                 continue;
             }
-            auto validate_accel_input_geometry = [this, &access_context, &cb_context, &commandBuffer, &error_obj](
-                                                     const vvl::Buffer& geometry_data, const AccessRange& geometry_range,
-                                                     const char* data_description) {
-                auto hazard =
-                    access_context.DetectHazard(geometry_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ, geometry_range);
-                if (hazard.IsHazard()) {
-                    const LogObjectList objlist(commandBuffer, geometry_data.Handle());
-                    std::ostringstream ss;
-                    ss << data_description << " ";
-                    ss << FormatHandle(geometry_data.Handle());
-                    const std::string resource_description = ss.str();
-                    const std::string error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
-                                                                          resource_description, geometry_range);
-                    return SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-                }
-                return false;
-            };
             if (geometry_info->vertex_data) {
-                skip |= validate_accel_input_geometry(*geometry_info->vertex_data, geometry_info->vertex_range, "vertex data");
+                accesses.push_back({geometry_info->vertex_data, geometry_info->vertex_range, AccessType::kVertex, i});
             }
             if (geometry_info->index_data) {
-                skip |= validate_accel_input_geometry(*geometry_info->index_data, geometry_info->index_range, "index data");
+                accesses.push_back({geometry_info->index_data, geometry_info->index_range, AccessType::kIndex, i});
             }
             if (geometry_info->transform_data) {
-                skip |=
-                    validate_accel_input_geometry(*geometry_info->transform_data, geometry_info->transform_range, "transform data");
+                accesses.push_back({geometry_info->transform_data, geometry_info->transform_range, AccessType::kTransform, i});
             }
             if (geometry_info->aabb_data) {
-                skip |= validate_accel_input_geometry(*geometry_info->aabb_data, geometry_info->aabb_range, "aabb data");
+                accesses.push_back({geometry_info->aabb_data, geometry_info->aabb_range, AccessType::kAABB, i});
             }
             if (geometry_info->instance_data) {
-                skip |=
-                    validate_accel_input_geometry(*geometry_info->instance_data, geometry_info->instance_range, "instance data");
+                accesses.push_back({geometry_info->instance_data, geometry_info->instance_range, AccessType::kInstance, i});
             }
         }
     }
-    return skip;
+    return accesses;
+}
+
+bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+
+    const auto accesses = CollectAccelerationStructureBuildAccesses(infoCount, pInfos, ppBuildRangeInfos);
+    const BuildAccelerationStructuresCommand command{accesses};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    AccessContext& access_context = cb_context.GetCbAccessContext();
-
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
-    for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
-        // Record scratch buffer access
-        if (const vvl::Buffer* p_scratch_buffer = GetSingleBufferFromDeviceAddress(*device_state, info.scratchData.deviceAddress)) {
-            const vvl::Buffer& scratch_buffer = *p_scratch_buffer;
-            const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
-            const VkDeviceSize offset = info.scratchData.deviceAddress - scratch_buffer.deviceAddress;
-            const AccessRange scratch_range = MakeRange(scratch_buffer, offset, scratch_size);
-            const ResourceUsageTagEx scratch_tag_ex = cb_context.AddCommandHandle(tag, scratch_buffer.Handle());
-            access_context.UpdateAccessState(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
-                                             scratch_range, scratch_tag_ex);
-        }
+    auto accesses = CollectAccelerationStructureBuildAccesses(infoCount, pInfos, ppBuildRangeInfos);
+    for (auto& access : accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.buffer->Handle()).handle_index;
+    }
 
-        const auto src_accel = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
-        const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
-
-        // Record source acceleration structure access (READ).
-        // If the source is the same as the destination then no need to record READ
-        // (destination update will replace access with WRITE anyway).
-        if (src_accel && src_accel != dst_accel) {
-            if (const vvl::BufferAndOffset src_as_buffer = src_accel->GetFirstValidBuffer(*device_state)) {
-                const AccessRange range = MakeRange(src_as_buffer.offset, src_accel->GetSize());
-                const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_as_buffer.state->Handle());
-                access_context.UpdateAccessState(*src_as_buffer.state,
-                                                 SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ, range, tag_ex);
-            }
-        }
-        // Record destination acceleration structure access (WRITE)
-        if (dst_accel) {
-            if (const vvl::BufferAndOffset dst_as_buffer = dst_accel->GetFirstValidBuffer(*device_state)) {
-                const AccessRange dst_range = MakeRange(dst_as_buffer.offset, dst_accel->GetSize());
-                const ResourceUsageTagEx dst_tag_ex = cb_context.AddCommandHandle(tag, dst_as_buffer.state->Handle());
-                access_context.UpdateAccessState(
-                    *dst_as_buffer.state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, dst_range, dst_tag_ex);
-            }
-        }
-        // Record geometry buffer acceses (READ)
-        const VkAccelerationStructureBuildRangeInfoKHR* p_range_infos = ppBuildRangeInfos[i];
-        if (!p_range_infos) {
-            continue;  // [core validation check]: range pointers should be valid
-        }
-        for (uint32_t k = 0; k < info.geometryCount; k++) {
-            const auto* p_geometry = info.pGeometries ? &info.pGeometries[k] : info.ppGeometries[k];
-            if (!p_geometry) {
-                continue;  // [core validation check]: null pointer in ppGeometries
-            }
-            const auto geometry_info = GetValidGeometryInfo(*device_state, *p_geometry, p_range_infos[k]);
-            if (!geometry_info.has_value()) {
-                continue;
-            }
-            if (geometry_info->vertex_data) {
-                const ResourceUsageTagEx vertex_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->vertex_data->Handle());
-                access_context.UpdateAccessState(*geometry_info->vertex_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                                 geometry_info->vertex_range, vertex_tag_ex);
-            }
-            if (geometry_info->index_data) {
-                const ResourceUsageTagEx index_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->index_data->Handle());
-                access_context.UpdateAccessState(*geometry_info->index_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                                 geometry_info->index_range, index_tag_ex);
-            }
-            if (geometry_info->transform_data) {
-                const ResourceUsageTagEx transform_tag_ex =
-                    cb_context.AddCommandHandle(tag, geometry_info->transform_data->Handle());
-                access_context.UpdateAccessState(*geometry_info->transform_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                                 geometry_info->transform_range, transform_tag_ex);
-            }
-            if (geometry_info->aabb_data) {
-                const ResourceUsageTagEx aabb_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->aabb_data->Handle());
-                access_context.UpdateAccessState(*geometry_info->aabb_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                                 geometry_info->aabb_range, aabb_tag_ex);
-            }
-            if (geometry_info->instance_data) {
-                const ResourceUsageTagEx instance_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->instance_data->Handle());
-                access_context.UpdateAccessState(*geometry_info->instance_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
-                                                 geometry_info->instance_range, instance_tag_ex);
-            }
-        }
+    const BuildAccelerationStructuresCommand command{vvl::make_span(std::as_const(accesses))};
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 

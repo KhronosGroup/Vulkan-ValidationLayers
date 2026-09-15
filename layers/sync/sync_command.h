@@ -73,6 +73,7 @@ enum class CommandType : uint32_t {
     kDrawIndirect,
     kDrawIndirectCount,
     kDrawMeshTasks,
+    kBuildAccelerationStructures,
 };
 
 struct BufferCopyRegion {
@@ -636,6 +637,30 @@ struct DrawMeshTasksCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct BuildAccelerationStructuresCommand {
+    enum class AccessType : uint8_t { kScratch, kSource, kDestination, kVertex, kIndex, kTransform, kAABB, kInstance };
+    struct Access {
+        const vvl::Buffer* buffer;
+        AccessRange range;
+        AccessType type;
+        uint32_t info_index;
+        VkAccelerationStructureKHR acceleration_structure = VK_NULL_HANDLE;
+        uint32_t handle_index = vvl::kNoIndex32;
+    };
+    vvl::span<const Access> accesses;
+
+    struct Storage {
+        uint32_t first_access;
+        uint32_t access_count;
+        BuildAccelerationStructuresCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 struct CommandRef {
     CommandType type;
     uint32_t index;
@@ -663,6 +688,7 @@ struct CommandData {
     std::vector<DrawIndirectCommand::Storage> draw_indirect_commands;
     std::vector<DrawIndirectCountCommand::Storage> draw_indirect_count_commands;
     std::vector<DrawMeshTasksCommand::Storage> draw_mesh_tasks_commands;
+    std::vector<BuildAccelerationStructuresCommand::Storage> build_acceleration_structures_commands;
 
     //
     // Resources and additional data used by the commands
@@ -690,6 +716,7 @@ struct CommandData {
     std::vector<VertexInputCommand::Access> vertex_input_accesses;
     std::vector<MultiDrawVertexInputCommand::Binding> multi_draw_vertex_bindings;
     std::vector<MultiDrawVertexInputCommand::DrawRange> multi_draw_ranges;
+    std::vector<BuildAccelerationStructuresCommand::Access> acceleration_structure_build_accesses;
 
     std::vector<std::shared_ptr<const vvl::DescriptorSet>> descriptor_sets;
     vvl::unordered_set<const vvl::DescriptorSet*> descriptor_set_lookup;
@@ -758,6 +785,9 @@ struct CommandData {
     }
     CommandRef Store(const DrawMeshTasksCommand::Storage& storage) {
         return Store(CommandType::kDrawMeshTasks, draw_mesh_tasks_commands, storage);
+    }
+    CommandRef Store(const BuildAccelerationStructuresCommand::Storage& storage) {
+        return Store(CommandType::kBuildAccelerationStructures, build_acceleration_structures_commands, storage);
     }
 
   private:
