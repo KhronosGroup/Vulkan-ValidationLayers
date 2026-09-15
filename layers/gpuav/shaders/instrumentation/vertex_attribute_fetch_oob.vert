@@ -53,13 +53,13 @@ void inst_vertex_attribute_fetch_oob(const uvec4 stage_info)
             return;
         }
 
-        uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
-        const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= SpecConstantInstErrorBufferLengthId;
+        uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordDwordSize);
+        const bool errors_buffer_not_filled = (write_pos + kErrorRecordDwordSize) <= SpecConstantInstErrorBufferLengthId;
 
         if (errors_buffer_not_filled) {
             const uint error = valid_vertex_attribute_fetch_vertex_input_rate ? kErrorSubCode_IndexedDraw_OOBInstanceIndex : kErrorSubCode_IndexedDraw_OOBVertexIndex;
 
-            inst_errors_buffer.data[write_pos + kHeader_ErrorRecordSizeOffset] = kErrorRecordSize;
+            inst_errors_buffer.data[write_pos + kHeader_ErrorRecordSizeOffset] = kErrorRecordDwordSize;
             inst_errors_buffer.data[write_pos + kHeader_ShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroup_InstIndexedDraw << kErrorGroup_Shift) | (error << kErrorSubCode_Shift);
             // The shader stage is irrelevant because we know it is a vertex shader
             inst_errors_buffer.data[write_pos + kHeader_StageInstructionIdOffset] = stage_info[0] << kStageId_Shift;
