@@ -1474,9 +1474,6 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
         std::vector<uint8_t> attachment_uses(create_info.attachmentCount);
         std::vector<VkImageLayout> attachment_layouts(create_info.attachmentCount);
 
-        // Track if attachments are used as input as well as another type
-        vvl::unordered_set<uint32_t> input_attachments;
-
         if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS &&
             subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI) {
             const char* vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-04953"
@@ -1498,7 +1495,6 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
             const Location input_loc = subpass_loc.dot(Field::pInputAttachments, j);
             const Location attachment_loc = create_info_loc.dot(Field::pAttachments, attachment_index);
 
-            input_attachments.insert(attachment_index);
             skip |= ValidateAttachmentIndex(attachment_index, create_info.attachmentCount, input_loc);
 
             if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
