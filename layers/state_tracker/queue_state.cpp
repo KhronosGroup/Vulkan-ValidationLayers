@@ -179,10 +179,10 @@ void vvl::Queue::Wait(const Location& loc, uint64_t until_seq) {
     }
     auto wait_status = waiter.wait_until(GetCondWaitTimeout());
     if (wait_status != std::future_status::ready) {
-        device_state_.LogError("INTERNAL-ERROR-VkQueue-state-timeout", Handle(), loc,
-                               "The Validation Layers hit a timeout waiting for queue state to update."
-                               " seq=%" PRIu64 " until=%" PRIu64,
-                               seq_.load(), until_seq);
+        device_state_.LogInternalError("INTERNAL-ERROR-VkQueue-state-timeout", Handle(), loc,
+                                       "The Validation Layers hit a timeout waiting for queue state to update."
+                                       " seq=%" PRIu64 " until=%" PRIu64,
+                                       seq_.load(), until_seq);
     }
 }
 
