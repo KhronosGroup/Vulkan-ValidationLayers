@@ -3245,8 +3245,8 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
                                                   const Location& address_loc) const {
     bool skip = false;
 
-    // Could be a VkBufferUsageFlagBits, but simpler for the string_VkBufferUsageFlags function to be used in the lambda
-    VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+    // Could be a VkBufferUsageFlagBits, but simpler for the string_VkBufferUsageFlags2 function to be used in the lambda
+    VkBufferUsageFlags2 buffer_usage = 0;
     const char* usage_vuid = nullptr;
     const char* limit_vuid = nullptr;
     Field limit_field = Field::Empty;
@@ -3322,7 +3322,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
 
     BufferAddressValidation<1> buffer_address_validator = {
         {{{usage_vuid, [buffer_usage](const vvl::Buffer& buffer_state) { return (buffer_state.usage & buffer_usage) == 0; },
-           [buffer_usage]() { return "The following buffers are missing " + string_VkBufferUsageFlags(buffer_usage); },
+           [buffer_usage]() { return "The following buffers are missing " + string_VkBufferUsageFlags2(buffer_usage); },
            ErrorMsgBuffer::Usage}}}};
 
     skip |= buffer_address_validator.ValidateDeviceAddress(*this, address_loc.dot(Field::address), LogObjectList(device),
