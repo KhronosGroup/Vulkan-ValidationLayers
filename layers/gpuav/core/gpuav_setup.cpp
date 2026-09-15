@@ -23,7 +23,6 @@
 #endif
 #include "chassis/dispatch_object.h"
 #include "gpuav/core/gpuav.h"
-#include "gpuav/core/gpuav_constants.h"
 #include "gpuav/instrumentation/descriptor_checks_classic.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"

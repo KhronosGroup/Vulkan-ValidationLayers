@@ -50,6 +50,10 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
 
     VkBufferUsageFlags2 extra_usage = 0;
 
+    if (!enabled_features.descriptorHeap) {
+        extra_usage |= VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT;
+    }
+
     // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
     // acceleration structure build validation will find and replace invalid acceleration structure
     // handles inside of a compute shader.
@@ -101,6 +105,27 @@ void Validator::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreate
 void Validator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                            const RecordObject& record_obj) {
     descriptor_buffer.resource_handles_.erase(buffer);
+}
+
+void Validator::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
+                                            const RecordObject& record_obj, chassis::AllocateMemory& chassis_state) {
+    if (!enabled_features.descriptorHeap) {
+        return;
+    }
+
+    chassis_state.modified_allocate_info.initialize(pAllocateInfo);
+
+    if (auto* alloc_flags_info = const_cast<VkMemoryAllocateFlagsInfo*>(
+            vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(chassis_state.modified_allocate_info.pNext))) {
+        alloc_flags_info->flags |= VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    } else {
+        VkMemoryAllocateFlagsInfo new_alloc_flags_info = vku::InitStructHelper();
+        new_alloc_flags_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        vku::AddToPnext(chassis_state.modified_allocate_info, new_alloc_flags_info);
+    }
+
+    chassis_state.allocate_info_copy = chassis_state.modified_allocate_info.ptr();
 }
 
 void Validator::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,

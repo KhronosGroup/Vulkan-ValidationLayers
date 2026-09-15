@@ -27,9 +27,11 @@
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/setup/descriptor_encoding_update.h"
+#include "state_tracker/bind_point.h"
 #include "state_tracker/descriptor_sets.h"
 #include "containers/limits.h"
 #include "utils/image_utils.h"
+#include "utils/assert_utils.h"
 
 using vvl::DescriptorClass;
 
@@ -271,13 +273,15 @@ void DescriptorSetSubState::PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb,
         cb_sub_state.gpuav_.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<DescriptorEncodingUpdateShader>>(
             cb_sub_state.gpuav_, Location(vvl::Func::Empty));
 
-    if (!descriptor_encoding_update_pipeline.valid) {
+    if (!descriptor_encoding_update_pipeline.Valid()) {
         return;
     }
 
     valpipe::RestorablePipelineState restorable_state(cb_sub_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-    DispatchCmdBindPipeline(cb.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, descriptor_encoding_update_pipeline.pipeline);
+    if (!descriptor_encoding_update_pipeline.BindComputePipeline(cb, cb.GetLastBoundCompute().GetActionDescriptorMode())) {
+        return;
+    }
 
     for (const VkWriteDescriptorSet& write_desc : vvl::make_span(write_descs, write_count)) {
         const auto [start_binding, binding_count, desc_set_encodings] =
@@ -296,9 +300,8 @@ void DescriptorSetSubState::PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb,
         shader_resources.push_constants.staged_desc_encodings_ptr = desc_set_encodings.offset_address;
         shader_resources.push_constants.start_binding = start_binding;
 
-        if (!descriptor_encoding_update_pipeline.BindShaderResources(cb_sub_state.gpuav_, cb_sub_state, shader_resources)) {
-            return;
-        }
+        ASSERT_AND_RETURN(
+            descriptor_encoding_update_pipeline.BindShaderResources(cb_sub_state.gpuav_, cb_sub_state, shader_resources));
 
         {
             VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();

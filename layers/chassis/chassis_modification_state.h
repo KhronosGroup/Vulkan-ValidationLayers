@@ -167,4 +167,11 @@ struct CreateBuffer {
     vku::safe_VkBufferCreateInfo modified_create_info;
 };
 
+struct AllocateMemory {
+    // To not waste time for CoreChecks we just copy the pointer, but if GPU-AV want to modifiy it, it will update pointer to be a
+    // pointer of the Safe Struct
+    const VkMemoryAllocateInfo* allocate_info_copy;
+    vku::safe_VkMemoryAllocateInfo modified_allocate_info;
+};
+
 }  // namespace chassis

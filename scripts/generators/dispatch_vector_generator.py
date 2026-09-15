@@ -58,6 +58,7 @@ class DispatchVectorGenerator(BaseGenerator):
         'vkCreateBuffer',
         'vkGetShaderBinaryDataEXT',
         'vkCmdBindDescriptorBuffersEXT',
+        'vkAllocateMemory',
     )
     skip_intercept_id_post_record = (
         'vkAllocateDescriptorSets',

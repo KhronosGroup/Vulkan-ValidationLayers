@@ -15,6 +15,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "buffer_helper.h"
+#include "descriptor_heap_object.h"
 
 class NegativeGpuAVVertexAttributeFetch : public GpuAVTest {};
 
@@ -297,6 +298,96 @@ TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "Vertex index 666");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "Vertex index 42");
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
+
+    // vertexOffset = 3
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "Vertex index 3");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "Vertex index 669");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "Vertex index 45");
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 3, 0);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+// #ARNO not sure this test hav value
+TEST_F(NegativeGpuAVVertexAttributeFetch, DrawBadVertexIndex32DescriptorHeap) {
+    TEST_DESCRIPTION("Validate illegal index buffer values - uint32_t index. Use descriptor heap");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    vkt::DescriptorHeap::AddDescriptorHeapRequirements(*this);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::DescriptorHeap desc_heap(*this);
+    const VkDeviceSize heap_size = desc_heap.heap_props.bufferDescriptorSize;
+    desc_heap.CreateResourceHeap(heap_size);
+
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    *((float*)buffer.Memory().Map()) = 0.1f;
+    const VkDeviceSize buffer_heap_offset = desc_heap.WriteBufferDescriptor(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    const char* vsSource = R"glsl(
+        #version 450
+        layout(location=0) in vec3 pos;
+        layout(set = 0, binding = 0) buffer ssbo { float x; };
+
+        void main() {
+            gl_Position = vec4(pos + vec3(x), gl_VertexIndex);
+        }
+    )glsl";
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
+    mapping.sourceData.pushIndex.heapOffset = (uint32_t)buffer_heap_offset;
+    mapping.sourceData.heapData.pushOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr, "main", nullptr,
+                   &mapping_info);
+    VkShaderObj fs = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+
+    VkPipelineCreateFlags2CreateInfoKHR pipe_flags = vku::InitStructHelper();
+    pipe_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    CreatePipelineHelper pipe(*this, &pipe_flags);
+    VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages;
+    pipe.CreateGraphicsPipeline(false);
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    desc_heap.BindResourceHeap(m_command_buffer);
+
+    VkPushDataInfoEXT pdi = vku::InitStructHelper();
+    uint32_t x = 0;
+    pdi.offset = 0;
+    pdi.data.address = &x;
+    pdi.data.size = sizeof(x);
+    vk::CmdPushDataEXT(m_command_buffer, &pdi);
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
     vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
