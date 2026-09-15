@@ -55,7 +55,10 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
         set << "imageMemoryBarrierCount " << set_dependency_info.imageMemoryBarrierCount;
         wait << "imageMemoryBarrierCount " << dependency_info.imageMemoryBarrierCount;
     } else {
-        for (uint32_t i = 0; i < dependency_info.memoryBarrierCount; ++i) {
+        // Only report the first difference found, otherwise the 3 loops below concatenate into an unreadable message
+        bool found_any = false;
+
+        for (uint32_t i = 0; !found_any && i < dependency_info.memoryBarrierCount; ++i) {
             bool found = true;
             if (dependency_info.pMemoryBarriers[i].srcStageMask != set_dependency_info.pMemoryBarriers[i].srcStageMask) {
                 set << "pMemoryBarriers[" << i << "].srcStageMask "
@@ -81,10 +84,11 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
                 found = false;
             }
             if (found) {
+                found_any = true;
                 break;
             }
         }
-        for (uint32_t i = 0; i < dependency_info.bufferMemoryBarrierCount; ++i) {
+        for (uint32_t i = 0; !found_any && i < dependency_info.bufferMemoryBarrierCount; ++i) {
             bool found = true;
             if (dependency_info.pBufferMemoryBarriers[i].srcStageMask !=
                 set_dependency_info.pBufferMemoryBarriers[i].srcStageMask) {
@@ -137,10 +141,11 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
                 found = false;
             }
             if (found) {
+                found_any = true;
                 break;
             }
         }
-        for (uint32_t i = 0; i < dependency_info.imageMemoryBarrierCount; ++i) {
+        for (uint32_t i = 0; !found_any && i < dependency_info.imageMemoryBarrierCount; ++i) {
             bool found = true;
             if (dependency_info.pImageMemoryBarriers[i].srcStageMask != set_dependency_info.pImageMemoryBarriers[i].srcStageMask) {
                 set << "pImageMemoryBarriers[" << i << "].srcStageMask "
@@ -226,11 +231,17 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
                 found = false;
             }
             if (found) {
+                found_any = true;
                 break;
             }
         }
     }
-    return "event was set with " + set.str() + " and is being waited on with " + wait.str();
+
+    const std::string set_str = set.str();
+    if (set_str.empty()) {
+        return "unable to find which field of the VkDependencyInfo differs (this is a Validaiton bug, please report!)";
+    }
+    return "event was set with " + set_str + " and is being waited on with " + wait.str();
 }
 
 std::string string_BuffersFromAddress(const vvl::DeviceState& device, VkDeviceAddress address) {
