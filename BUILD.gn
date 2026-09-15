@@ -185,7 +185,6 @@ vvl_sources = [
   "layers/gpu_dump/gpu_dump_state.cpp",
   "layers/gpu_dump/gpu_dump_state.h",
   "layers/gpuav/core/gpuav.h",
-  "layers/gpuav/core/gpuav_constants.h",
   "layers/gpuav/core/gpuav_features.cpp",
   "layers/gpuav/core/gpuav_record.cpp",
   "layers/gpuav/core/gpuav_settings.cpp",

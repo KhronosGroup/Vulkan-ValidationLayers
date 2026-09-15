@@ -15,6 +15,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "buffer_helper.h"
+#include "descriptor_heap_object.h"
 
 class NegativeGpuAVVertexAttributeFetch : public GpuAVTest {};
 

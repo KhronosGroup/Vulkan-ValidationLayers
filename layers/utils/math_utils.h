@@ -116,6 +116,12 @@ constexpr T Align(T x, T p2) {
     return (x + p2 - 1) & ~(p2 - 1);
 }
 
+// Given p2 a power of two, returns the first address greater than or equal to ptr that is a multiple of p2
+template <typename T>
+T* AlignPointer(T* ptr, std::uintptr_t p2) {
+    return reinterpret_cast<T*>(Align(reinterpret_cast<std::uintptr_t>(ptr), p2));
+}
+
 // Given any positive p (not necessarily power of two),
 // returns the smallest multiple of p greater than or equal to x
 template <typename T>

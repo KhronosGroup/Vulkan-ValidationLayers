@@ -15,6 +15,7 @@
 #include "pipeline_helper.h"
 #include "buffer_helper.h"
 #include "shader_templates.h"
+#include "descriptor_heap_object.h"
 
 class NegativeGpuAVIndirectBuffer : public GpuAVTest {};
 
@@ -1300,6 +1301,53 @@ TEST_F(NegativeGpuAVIndirectBuffer, MeshDeviceAddressCommandsDrawCountDeviceLimi
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13116");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndirectBuffer, MeshDescriptorHeap) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    vkt::DescriptorHeapEXT::AddDescriptorHeapRequirements(*this);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_shader_props);
+    if (mesh_shader_props.maxMeshWorkGroupCount[0] == vvl::kU32Max) {
+        GTEST_SKIP() << "maxMeshWorkGroupCount[0] too high for this test";
+    }
+
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(desc_heap.heap_props.bufferDescriptorSize);
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                            kHostVisibleMemProps);
+    auto* draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT*>(draw_buffer.Memory().Map());
+    draw_ptr->groupCountX = mesh_shader_props.maxMeshWorkGroupCount[0] + 1;
+    draw_ptr->groupCountY = 1;
+    draw_ptr->groupCountZ = 1;
+
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::HeapGraphicsPipelineEXT mesh_pipe(*this, mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo());
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe);
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, draw_buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07326");
+    if (mesh_shader_props.maxMeshWorkGroupCount[0] + 1 >= mesh_shader_props.maxMeshWorkGroupTotalCount) {
+        m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329");
+    }
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

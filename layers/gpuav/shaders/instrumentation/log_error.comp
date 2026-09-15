@@ -28,11 +28,11 @@ void inst_log_error(const uvec4 stage_info) {
         const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
         if (!max_cmd_errors_count_reached) {
 
-            uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
-            const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= SpecConstantInstErrorBufferLengthId;
+            uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordDwordSize);
+            const bool errors_buffer_not_filled = (write_pos + kErrorRecordDwordSize) <= SpecConstantInstErrorBufferLengthId;
 
             if (errors_buffer_not_filled) {
-                inst_errors_buffer.data[write_pos + kHeader_ErrorRecordSizeOffset] = kErrorRecordSize;
+                inst_errors_buffer.data[write_pos + kHeader_ErrorRecordSizeOffset] = kErrorRecordDwordSize;
                 inst_errors_buffer.data[write_pos + kHeader_ShaderIdErrorOffset] = error_payload.shader_error_encoding;
                 inst_errors_buffer.data[write_pos + kHeader_StageInstructionIdOffset] = error_payload.inst_offset | (stage_info.x << kStageId_Shift);
                 inst_errors_buffer.data[write_pos + kHeader_StageInfoOffset_0] = stage_info.y;

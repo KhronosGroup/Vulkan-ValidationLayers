@@ -19,6 +19,7 @@
 #include "shader_helper.h"
 #include "utils/math_utils.h"
 #include "test_framework.h"
+#include "buffer_helper.h"
 
 class PositiveGpuAVDescriptorHeapEXT : public GpuAVDescriptorHeapEXT {};
 
@@ -2157,4 +2158,73 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, GlslStructuredWithMapping) {
 
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_GLSL,
                                      &specialization_info);
+}
+
+TEST_F(PositiveGpuAVDescriptorHeapEXT, BufferValidationMixComputeGraphics) {
+    TEST_DESCRIPTION("Compute pipeline is heap, Graphics is classic");
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+    InitRenderTarget();
+
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+    vkt::Buffer heap_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptor(heap_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) buffer A { uint a; };
+        void main() {
+            a = 1;
+        }
+    )glsl";
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = 0;
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+    vkt::HeapComputePipelineEXT compute_pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+
+    vkt::Buffer ubo(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set.WriteDescriptorBufferInfo(0, ubo, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    char const* vs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform ubo { vec4 x; };
+        void main() {
+            gl_Position = x;
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    VkDrawIndexedIndirectCommand draw{};
+    draw.indexCount = 3;
+    draw.instanceCount = 1;
+    vkt::Buffer draw_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {draw});
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 1, 2});
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

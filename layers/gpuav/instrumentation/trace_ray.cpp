@@ -340,7 +340,7 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
         cb.gpuav_.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<AccelerationStructureGpuStateUpdateShader>>(
             cb.gpuav_, Location(vvl::Func::Empty));
 
-    if (!as_gpu_state_update_pipeline.valid) {
+    if (!as_gpu_state_update_pipeline.Valid()) {
         return;
     }
 
@@ -359,7 +359,7 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
                                    &barrier_write_after_read, 0, nullptr, 0, nullptr);
     }
 
-    DispatchCmdBindPipeline(cb.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, as_gpu_state_update_pipeline.pipeline);
+    ASSERT_AND_RETURN(as_gpu_state_update_pipeline.BindComputePipeline(gpuav, cb));
 
     for (const AccelerationStructureGpuStateUpdate& update : updates) {
         auto dst_as_state = gpuav.Get<vvl::AccelerationStructureKHR>(update.dst);
