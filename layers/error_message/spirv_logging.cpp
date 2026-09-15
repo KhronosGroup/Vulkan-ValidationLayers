@@ -310,7 +310,7 @@ static void GetSourceLines(std::ostringstream& ss, const std::vector<std::string
             ss << "Internal error: calculated source line of " << opsource_index << " for source size of " << source_lines.size()
                << " lines\n";
         }
-    } else if (logging_info.line_number_start < source_lines.size() && logging_info.line_number_start != 0) {
+    } else if (logging_info.line_number_start <= source_lines.size() && logging_info.line_number_start != 0) {
         // file lines normally start at 1 index
         ss << '\n' << source_lines[logging_info.line_number_start - 1] << '\n';
         if (logging_info.column_number > 0) {
