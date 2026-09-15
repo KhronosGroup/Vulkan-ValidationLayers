@@ -472,12 +472,13 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline& pipeline
                              string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str());
         }
 
+        // If linking with a Vertex Input, the renderpass is ignored and skip check
+        const VkGraphicsPipelineLibraryFlagsEXT valid_rp_lib = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                               VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                               VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
+
         // Check if RenderPass are both not null when linking in a GPL stage that uses them
         if (incoming_gpl && null_render_pass && lib->GraphicsCreateInfo().renderPass != VK_NULL_HANDLE) {
-            // If linking with a Vertex Input, the renderpass is ignored and skip check
-            const VkGraphicsPipelineLibraryFlagsEXT valid_rp_lib = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
-                                                                   VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                                                                   VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
             const bool gpl_needs_rp = (gpl_info->flags & valid_rp_lib) != 0;
             const bool lib_needs_rp = (lib->graphics_lib_type & valid_rp_lib) != 0;
             if (gpl_needs_rp && lib_needs_rp) {
@@ -490,6 +491,83 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline& pipeline
                                  string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str(), i,
                                  string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                                  FormatHandle(lib->GraphicsCreateInfo().renderPass).c_str());
+            }
+        }
+
+        if (incoming_gpl && !null_render_pass) {
+            const VkGraphicsPipelineLibraryFlagsEXT gpl_rp_flags = gpl_info->flags & valid_rp_lib;
+            const VkGraphicsPipelineLibraryFlagsEXT lib_rp_flags = lib->graphics_lib_type & valid_rp_lib;
+            // The VU only applies when the library supplies one of the subsets the incoming pipeline does not
+            if (gpl_rp_flags != 0 && lib_rp_flags != 0 && (gpl_rp_flags & lib_rp_flags) == 0) {
+                const VkRenderPass incoming_rp = pipeline.GraphicsCreateInfo().renderPass;
+                // The library might have been created by linking other libraries, in which case its own
+                // VkGraphicsPipelineCreateInfo::renderPass was ignored
+                const auto lib_rp_state = lib->RenderPassState();
+                const VkRenderPass lib_rp =
+                    (lib_rp_state && !lib_rp_state->UsesDynamicRendering()) ? lib_rp_state->VkHandle() : VK_NULL_HANDLE;
+                if (lib_rp == VK_NULL_HANDLE) {
+                    skip |= LogError(
+                        "VUID-VkGraphicsPipelineCreateInfo-renderpass-06624", lib->Handle(), create_info_loc.dot(Field::renderPass),
+                        "(%s) includes "
+                        "VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s), but pLibraries[%" PRIu32
+                        "] includes VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s) and "
+                        "was created with render pass VK_NULL_HANDLE.",
+                        FormatHandle(incoming_rp).c_str(), string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str(), i,
+                        string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
+                } else if (lib_rp != incoming_rp) {
+                    auto incoming_rp_state = Get<vvl::RenderPass>(incoming_rp);
+                    if (incoming_rp_state) {
+                        skip |= ValidateRenderPassCompatibility(incoming_rp_state->Handle(), *incoming_rp_state, lib->Handle(),
+                                                                *lib_rp_state, create_info_loc.dot(Field::renderPass),
+                                                                "VUID-VkGraphicsPipelineCreateInfo-renderpass-06624");
+                    }
+                }
+            }
+        }
+
+        // The RenderPasses of two libraries being linked together needs to match, regardless of what the linking pipeline is
+        // doing. Vertex Input state ignores the render pass, so only the other 3 subsets are compared against each other
+        if ((lib->graphics_lib_type & valid_rp_lib) != 0) {
+            for (uint32_t k = i + 1; k < library_create_info.libraryCount; k++) {
+                const auto other_lib = Get<vvl::Pipeline>(library_create_info.pLibraries[k]);
+                if (!other_lib) {
+                    continue;
+                }
+                // The VU only applies when the other library supplies one of the subsets this library does not
+                if ((other_lib->graphics_lib_type & valid_rp_lib) == 0 ||
+                    (lib->graphics_lib_type & other_lib->graphics_lib_type & valid_rp_lib) != 0) {
+                    continue;
+                }
+
+                // A library can itself have been created by linking other libraries, in which case its own
+                // VkGraphicsPipelineCreateInfo::renderPass was ignored
+                const auto lib_rp_state = lib->RenderPassState();
+                const auto other_lib_rp_state = other_lib->RenderPassState();
+                const VkRenderPass lib_rp =
+                    (lib_rp_state && !lib_rp_state->UsesDynamicRendering()) ? lib_rp_state->VkHandle() : VK_NULL_HANDLE;
+                const VkRenderPass other_lib_rp = (other_lib_rp_state && !other_lib_rp_state->UsesDynamicRendering())
+                                                      ? other_lib_rp_state->VkHandle()
+                                                      : VK_NULL_HANDLE;
+
+                if ((lib_rp == VK_NULL_HANDLE) != (other_lib_rp == VK_NULL_HANDLE)) {
+                    LogObjectList objlist(lib->Handle(), other_lib->Handle());
+                    skip |=
+                        LogError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06628", objlist,
+                                 create_info_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR, Field::pLibraries, i),
+                                 "(%s - %s) was created with renderPass %s, but pLibraries[%" PRIu32
+                                 "] (%s - %s) was created with renderPass %s. \nHint: They must either be compatible render passes "
+                                 "or both be VK_NULL_HANDLE.",
+                                 FormatHandle(lib->Handle()).c_str(),
+                                 string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
+                                 FormatHandle(lib_rp).c_str(), k, FormatHandle(other_lib->Handle()).c_str(),
+                                 string_VkGraphicsPipelineLibraryFlagsEXT(other_lib->graphics_lib_type).c_str(),
+                                 FormatHandle(other_lib_rp).c_str());
+                } else if (lib_rp != VK_NULL_HANDLE && lib_rp != other_lib_rp) {
+                    skip |= ValidateRenderPassCompatibility(
+                        lib->Handle(), *lib_rp_state, other_lib->Handle(), *other_lib_rp_state,
+                        create_info_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR, Field::pLibraries, i),
+                        "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06628");
+                }
             }
         }
 
