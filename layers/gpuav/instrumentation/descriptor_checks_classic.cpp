@@ -192,7 +192,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                                 "descriptor.";
                     }
 
-                    out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::INVALID_DESCRIPTOR_08114);
+                    out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_08114);
                     error_found = true;
                 } break;
 

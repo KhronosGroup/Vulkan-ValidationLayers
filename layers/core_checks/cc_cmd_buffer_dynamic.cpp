@@ -1182,7 +1182,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                 const VkPrimitiveTopology topology = last_bound_state.GetRasterizationInputTopology();
                 if (IsLineTopology(topology) || IsPointTopology(topology)) {
                     skip |= LogError(
-                        CreateActionVuid(loc.function, vvl::ActionVUID::CONVERVATIVE_RASTERIZATION_07499), cb_state.Handle(), loc,
+                        CreateActionVuid(loc.function, vvl::ActionVUID::CONSERVATIVE_RASTERIZATION_07499), cb_state.Handle(), loc,
                         "the rasterization input topology is %s and conservativePointAndLineRasterization is VK_FALSE, but "
                         "conservativeRasterizationMode set with vkCmdSetConservativeRasterizationModeEXT() was %s.%s",
                         string_VkPrimitiveTopology(topology),

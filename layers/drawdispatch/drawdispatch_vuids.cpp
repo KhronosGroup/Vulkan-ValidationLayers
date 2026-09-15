@@ -177,7 +177,7 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::IMAGE_VIEW_NUMERIC_07753: suffix = "format-07753"; break;
 
         // ### VUID-vkCmdDraw-None-06537
-        case ActionVUID::SUBRESOURCE_RP_WRTIE_06537: suffix = "None-06537"; break;
+        case ActionVUID::SUBRESOURCE_RP_WRITE_06537: suffix = "None-06537"; break;
         // ### VUID-vkCmdDraw-None-12338
         case ActionVUID::SUBRESOURCE_SUBPASS_12338: suffix = "None-12338"; break;
         // ### VUID-vkCmdDraw-None-12339
@@ -431,7 +431,7 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         // ### VUID-vkCmdDraw-multiviewPerViewViewports-12263
         case ActionVUID::SCISSOR_MULTIVIEW_12263: suffix = "multiviewPerViewViewports-12263"; break;
         // ### VUID-vkCmdDraw-conservativePointAndLineRasterization-07499
-        case ActionVUID::CONVERVATIVE_RASTERIZATION_07499: suffix = "conservativePointAndLineRasterization-07499"; break;
+        case ActionVUID::CONSERVATIVE_RASTERIZATION_07499: suffix = "conservativePointAndLineRasterization-07499"; break;
         // ### VUID-vkCmdDraw-blendEnable-04727
         case ActionVUID::BLEND_ENABLE_04727: suffix = "blendEnable-04727"; break;
         // ### VUID-vkCmdDraw-maxFragmentDualSrcAttachments-09239
@@ -717,8 +717,6 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::UNIFORM_ACCESS_OOB_08612: suffix = "None-08612"; break;
         // ### VUID-vkCmdDraw-None-08613
         case ActionVUID::STORAGE_ACCESS_OOB_08613: suffix = "None-08613"; break;
-        // ### VUID-vkCmdDraw-None-08114
-        case ActionVUID::INVALID_DESCRIPTOR_08114: suffix = "None-08114"; break;
         // ### VUID-vkCmdDraw-None-10068
         case ActionVUID::DESCRIPTOR_INDEX_OOB_10068: suffix = "None-10068"; break;
         // ### VUID-vkCmdDraw-None-08116
@@ -749,8 +747,6 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::DESCRIPTOR_HEAP_INVALID_ADDRESS_11306: suffix = "None-11306"; break;
         // ### VUID-vkCmdDraw-None-12472
         case ActionVUID::DESCRIPTOR_HEAP_HASHING_12472: suffix = "None-12472"; break;
-        // ### VUID-vkCmdDrawIndirectCount-countBuffer-02717
-        case ActionVUID::INDIRECT_COUNT_LIMIT: suffix = "countBuffer-02717"; break;
     }
     // clang-format on
 
