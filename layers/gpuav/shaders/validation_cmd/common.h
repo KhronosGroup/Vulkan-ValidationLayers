@@ -19,12 +19,6 @@
 
 #ifdef __SLANG__
 
-// Slang has no equivalent to a GLSL buffer block ending with a runtime sized array, so the error
-// buffer is seen as a flat array of uint: `flags`, then `errors_count`, then the error records.
-static const uint kErrorBuffer_FlagsOffset = 0;
-static const uint kErrorBuffer_ErrorsCountOffset = 1;
-static const uint kErrorBuffer_RecordsOffset = 2;
-
 [vk::binding(kBindingDiagErrorBuffer, kDiagCommonDescriptorSet)] RWStructuredBuffer<uint> error_buffer;
 
 [vk::binding(kBindingDiagActionIndex, kDiagCommonDescriptorSet)] StructuredBuffer<uint> action_index;
@@ -35,7 +29,7 @@ static const uint kErrorBuffer_RecordsOffset = 2;
 
 bool MaxCmdErrorsCountReached() {
     const uint cmd_id = resource_index[0];
-    uint previous_errors_count;
+    uint previous_errors_count = 0;
     InterlockedAdd(cmd_errors_count[cmd_id], 1, previous_errors_count);
     return previous_errors_count >= kMaxErrorsPerCmd;
 }
@@ -45,30 +39,26 @@ void GpuavLogError5(uint error_group, uint error_sub_code, uint dword_0, uint dw
         return;
     }
 
-    uint error_buffer_size;
-    uint error_buffer_stride;
-    error_buffer.GetDimensions(error_buffer_size, error_buffer_stride);
-    const uint errors_buffer_length = error_buffer_size - kErrorBuffer_RecordsOffset;
+    uint error_offset = 0;
+    InterlockedAdd(error_buffer[error_buffer_used_size_member_offset], kErrorRecordDwordSize, error_offset);
+    error_offset = error_offset + error_buffer_data_member_offset;
 
-    uint vo_idx;
-    InterlockedAdd(error_buffer[kErrorBuffer_ErrorsCountOffset], kErrorRecordSize, vo_idx);
-    const bool errors_buffer_filled = (vo_idx + kErrorRecordSize) > errors_buffer_length;
+    const uint error_buffer_u32_size = error_buffer[error_buffer_u32_size_member_offset];
+    const bool errors_buffer_filled = (error_offset + kErrorRecordDwordSize) > error_buffer_u32_size;
     if (errors_buffer_filled) {
         return;
     }
 
-    const uint record_i = kErrorBuffer_RecordsOffset + vo_idx;
-
-    error_buffer[record_i + kHeader_ShaderIdErrorOffset] =
+    error_buffer[error_offset + kHeader_ShaderIdErrorOffset] =
         (error_group << kErrorGroup_Shift) | (error_sub_code << kErrorSubCode_Shift);
-    error_buffer[record_i + kHeader_ErrorRecordSizeOffset] = kErrorRecordSize;
-    error_buffer[record_i + kHeader_ActionIdErrorLoggerIdOffset] = (action_index[0] << kActionId_Shift) | resource_index[0];
+    error_buffer[error_offset + kHeader_ErrorRecordSizeOffset] = kErrorRecordDwordSize;
+    error_buffer[error_offset + kHeader_ActionIdErrorLoggerIdOffset] = (action_index[0] << kActionId_Shift) | resource_index[0];
 
-    error_buffer[record_i + kValCmd_ErrorPayloadDword_0] = dword_0;
-    error_buffer[record_i + kValCmd_ErrorPayloadDword_1] = dword_1;
-    error_buffer[record_i + kValCmd_ErrorPayloadDword_2] = dword_2;
-    error_buffer[record_i + kValCmd_ErrorPayloadDword_3] = dword_3;
-    error_buffer[record_i + kValCmd_ErrorPayloadDword_4] = dword_4;
+    error_buffer[error_offset + kValCmd_ErrorPayloadDword_0] = dword_0;
+    error_buffer[error_offset + kValCmd_ErrorPayloadDword_1] = dword_1;
+    error_buffer[error_offset + kValCmd_ErrorPayloadDword_2] = dword_2;
+    error_buffer[error_offset + kValCmd_ErrorPayloadDword_3] = dword_3;
+    error_buffer[error_offset + kValCmd_ErrorPayloadDword_4] = dword_4;
 }
 
 #else
@@ -77,6 +67,7 @@ void GpuavLogError5(uint error_group, uint error_sub_code, uint dword_0, uint dw
 
 layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagErrorBuffer, scalar) buffer ErrorBuffer {
     uint flags;
+    uint error_buffer_u32_size;
     uint errors_count;
     uint errors_buffer[];
 };
@@ -104,22 +95,23 @@ void GpuavLogError5(uint error_group, uint error_sub_code, uint dword_0, uint dw
         return;
     }
 
-    uint vo_idx = atomicAdd(errors_count, kErrorRecordSize);
-    const bool errors_buffer_filled = (vo_idx + kErrorRecordSize) > errors_buffer.length();
+    uint error_offset = atomicAdd(errors_count, kErrorRecordDwordSize);
+    const bool errors_buffer_filled =
+        (error_offset + error_buffer_data_member_offset + kErrorRecordDwordSize) > error_buffer_u32_size;
     if (errors_buffer_filled) {
         return;
     }
 
-    errors_buffer[vo_idx + kHeader_ShaderIdErrorOffset] =
+    errors_buffer[error_offset + kHeader_ShaderIdErrorOffset] =
         (error_group << kErrorGroup_Shift) | (error_sub_code << kErrorSubCode_Shift);
-    errors_buffer[vo_idx + kHeader_ErrorRecordSizeOffset] = kErrorRecordSize;
-    errors_buffer[vo_idx + kHeader_ActionIdErrorLoggerIdOffset] = (action_index[0] << kActionId_Shift) | resource_index[0];
+    errors_buffer[error_offset + kHeader_ErrorRecordSizeOffset] = kErrorRecordDwordSize;
+    errors_buffer[error_offset + kHeader_ActionIdErrorLoggerIdOffset] = (action_index[0] << kActionId_Shift) | resource_index[0];
 
-    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_0] = dword_0;
-    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_1] = dword_1;
-    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_2] = dword_2;
-    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_3] = dword_3;
-    errors_buffer[vo_idx + kValCmd_ErrorPayloadDword_4] = dword_4;
+    errors_buffer[error_offset + kValCmd_ErrorPayloadDword_0] = dword_0;
+    errors_buffer[error_offset + kValCmd_ErrorPayloadDword_1] = dword_1;
+    errors_buffer[error_offset + kValCmd_ErrorPayloadDword_2] = dword_2;
+    errors_buffer[error_offset + kValCmd_ErrorPayloadDword_3] = dword_3;
+    errors_buffer[error_offset + kValCmd_ErrorPayloadDword_4] = dword_4;
 }
 
 #endif

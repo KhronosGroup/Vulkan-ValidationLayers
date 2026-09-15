@@ -274,6 +274,8 @@ std::string CommandBuffer::DescriptorHeap::Describe(bool is_sampler) const {
 // To "properly" do this, we would need to really divide LastBound state into 3 structs for each
 // For the practical future, we will try and get away just assuming these crazy cases are not happening
 void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function) {
+    last_used_descriptor_mode = new_mode;
+
     // 99% of time, all LastBound will be the same mode
     bool reset_heap = false;
     bool reset_buffer = false;
@@ -307,6 +309,7 @@ void CommandBuffer::SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func fu
 // So calling it doesn't "set" a mode, but instead only "invalidates"
 void CommandBuffer::InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode, vvl::DescriptorMode new_mode,
                                              vvl::Func function) {
+    last_used_descriptor_mode = new_mode;
     for (uint32_t i = 0; i < vvl::BindPointCount; i++) {
         const vvl::DescriptorMode current_mode = lastBound[i].GetDescriptorMode();
         if (current_mode == invalidate_mode) {
