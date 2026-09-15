@@ -103,7 +103,7 @@ struct CachedDescriptorSize {
 //
 // This all should be capable of being packed in 4 bits as there are only 14 known types currently
 enum class vvlDescriptorType : uint8_t {
-    // Sampler is a speical case, it is never by itself and instead is is provided along with an image
+    // Sampler is a special case, it is never by itself and instead is is provided along with an image
     Sampler = 0x0,          // VK_DESCRIPTOR_TYPE_SAMPLER
     CombinedSampler = 0x1,  // VK_DESCRIPTOR_TYPE_SAMPLER part of a COMBINED_IMAGE_SAMPLER
 

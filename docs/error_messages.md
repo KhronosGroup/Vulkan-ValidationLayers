@@ -37,7 +37,7 @@ Here we see a few things, listed in the order they appear
 8. Link to the VUID
 9. List of Objects
     - Contain handle type, hex value, and optional debug util name
-10. There is a new line under to allow for easy seperation of multiple error messages
+10. There is a new line under to allow for easy separation of multiple error messages
 
 # Custom Callback
 

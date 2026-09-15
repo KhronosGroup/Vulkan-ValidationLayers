@@ -294,7 +294,7 @@ std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
     ss << indent << "vertexStride: " << std::dec << triangles.vertexStride << '\n';
     ss << indent << "maxVertex: " << triangles.maxVertex << '\n';
     ss << indent << "indexType: " << string_VkIndexType(triangles.indexType) << '\n';
-    ss << indent << "indexData: " << std::hex << triangles.indexData.deviceAddress << '\n';
+    ss << indent << "indexData: 0x" << std::hex << triangles.indexData.deviceAddress << '\n';
     if (triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
         std::string index_buffers_list_str = string_BuffersFromAddress(device_state, triangles.indexData.deviceAddress);
         if (!index_buffers_list_str.empty()) {
@@ -303,7 +303,7 @@ std::string string_VkAccelerationStructureGeometryTrianglesDataKHR(
             ss << index_buffers_str << '\n';
         }
     }
-    ss << indent << "transformData: " << triangles.transformData.deviceAddress << '\n';
+    ss << indent << "transformData: 0x" << std::hex << triangles.transformData.deviceAddress << '\n';
     if (triangles.transformData.deviceAddress != 0) {
         std::string transform_buffers_list_str = string_BuffersFromAddress(device_state, triangles.transformData.deviceAddress);
         if (!transform_buffers_list_str.empty()) {

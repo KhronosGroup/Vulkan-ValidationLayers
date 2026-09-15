@@ -36,7 +36,7 @@ struct Location {
     const vvl::Struct structure{};
     const vvl::Field field{};
     const uint32_t index{};  // optional index if checking an array.
-    const bool isPNext{};    // will print the struct is from a 'pNext` chain
+    const bool isPNext{};    // will print the struct is from a |pNext| chain
     const Location* prev{};
     mutable const std::string* debug_region{};
 
@@ -111,23 +111,6 @@ struct ErrorObject {
 };
 
 namespace vvl {
-
-template <typename VuidFunctor>
-struct LocationVuidAdapter {
-    const Location loc;
-    VuidFunctor vuid_functor;
-    const char* FuncName() const {
-        // the returned reference from loc must be valid for lifespan of loc, at least.
-        return loc.StringFunc();
-    }
-    const char* Vuid() const {
-        // the returned reference from functor must be valid for lifespan of vuid_functor, at least.
-        const std::string& vuid = vuid_functor(loc);
-        return vuid.c_str();
-    }
-    template <typename... Args>
-    LocationVuidAdapter(const Location& loc_, const Args&... args) : loc(loc_), vuid_functor(args...) {}
-};
 
 struct LocationCapture {
     LocationCapture(const Location& loc);
