@@ -1967,11 +1967,17 @@ TEST_F(PositiveGraphicsLibrary, LegacyDitheringEnable) {
 
     VkPipelineLayout layout = VK_NULL_HANDLE;
 
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
-        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &pipeline_rendering_info);
+        pre_raster_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
         pre_raster_lib.CreateGraphicsPipeline();
     }
 
@@ -1981,15 +1987,13 @@ TEST_F(PositiveGraphicsLibrary, LegacyDitheringEnable) {
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
-        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &pipeline_rendering_info);
+        frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+        frag_shader_lib.ds_ci_ = vku::InitStructHelper();
+        frag_shader_lib.gp_ci_.pDepthStencilState = &frag_shader_lib.ds_ci_;
         frag_shader_lib.gp_ci_.layout = layout;
         frag_shader_lib.CreateGraphicsPipeline(false);
     }
-
-    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
     VkPipelineCreateFlags2CreateInfo create_flags2 = vku::InitStructHelper();
     create_flags2.flags = VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT | VK_PIPELINE_CREATE_LIBRARY_BIT_KHR |
