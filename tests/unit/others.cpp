@@ -1581,3 +1581,66 @@ TEST_F(NegativeOther, FeatureWithNoSType) {
     vk::CreateDevice(Gpu(), &dev_info, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeOther, CircularPNextChainSelf) {
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferUsageFlags2CreateInfo cycle = vku::InitStructHelper();
+    cycle.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    cycle.pNext = &cycle;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.pNext = &cycle;
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VkBuffer buffer = VK_NULL_HANDLE;
+    // VUID-VkBufferCreateInfo-sType-unique
+    m_errorMonitor->SetDesiredError("circular loop detected in pNext chaining");
+    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeOther, CircularPNextChainTwoNodes) {
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferUsageFlags2CreateInfo node_a = vku::InitStructHelper();
+    node_a.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VkExternalMemoryBufferCreateInfo node_b = vku::InitStructHelper();
+    node_a.pNext = &node_b;
+    node_b.pNext = &node_a;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.pNext = &node_a;
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VkBuffer buffer = VK_NULL_HANDLE;
+    // VUID-VkBufferCreateInfo-sType-unique
+    m_errorMonitor->SetDesiredError("circular loop detected in pNext chaining");
+    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeOther, CircularPNextChainGarbage) {
+    RETURN_IF_SKIP(Init());
+
+    VkBaseInStructure cycle = {};
+    // stype-check off
+    cycle.sType = static_cast<VkStructureType>(0x7FFF0000);
+    cycle.pNext = &cycle;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.pNext = &cycle;
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VkBuffer buffer = VK_NULL_HANDLE;
+    // VUID-VkBufferCreateInfo-pNext-pNext and VUID-VkBufferCreateInfo-sType-unique
+    m_errorMonitor->SetDesiredError("circular loop detected in pNext chaining", 2);
+    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}

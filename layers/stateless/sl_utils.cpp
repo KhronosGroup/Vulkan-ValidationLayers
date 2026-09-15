@@ -276,6 +276,7 @@ bool Context::ValidateStructPnext(const Location& loc, const void* next, size_t 
                         skip |= log.LogError(stype_vuid, error_obj.handle, pNext_loc,
                                              "chain contains duplicate structure types: %s appears multiple times.\n%s",
                                              string_VkStructureName(current->sType), PrintPNextChain(loc.structure, next).c_str());
+                        break;  // stop looping (since a circular cycle might have been hit)
                     } else if (!is_duplicate) {
                         unique_stype_check.emplace_back(current->sType);
                     }

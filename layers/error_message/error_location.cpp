@@ -80,8 +80,19 @@ std::string PrintPNextChain(vvl::Struct in_struct, const void* in_pNext) {
             out << "pNext chain: " << vvl::String(in_struct) << "::pNext";
         }
 
+        // Catches if pNext chain is circular chaining
+        // uses small vector (and 16) as most chains should be at most 2 or 3 items
+        small_vector<const void*, 16> visited;
+
         for (const VkBaseInStructure* current = static_cast<const VkBaseInStructure*>(in_pNext); current != nullptr;
              current = current->pNext) {
+            const bool already_visited =
+                std::find(visited.begin(), visited.end(), static_cast<const void*>(current)) != visited.end();
+            if (already_visited) {
+                out << " -> circular loop detected in pNext chaining!";
+                break;
+            }
+
             // Special case for the 2 special loader structs
             if (current->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO) {
                 out << " -> [VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO]";
@@ -95,6 +106,8 @@ std::string PrintPNextChain(vvl::Struct in_struct, const void* in_pNext) {
                     out << " -> [" << vvl::String(next_struct) << "]";
                 }
             }
+
+            visited.emplace_back(current);
         }
     } else {
         if (in_struct == vvl::Struct::Empty) {
