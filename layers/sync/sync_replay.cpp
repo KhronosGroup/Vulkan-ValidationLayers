@@ -116,10 +116,10 @@ class ReplayContexts {
 static bool ValidateEventCommand(const SyncEnvironment& env, const ReplayOperation& operation,
                                  const AccessContext& destination_context, ResourceUsageTag exec_tag) {
     if (const auto* set_event = GetSetEventReplay(operation)) {
-        return ValidateCmdSetEvent(env, set_event->event, set_event->src_exec_scope, exec_tag, Location(set_event->command));
+        return ValidateCmdSetEvent(env, *set_event->event, set_event->src_exec_scope, exec_tag, Location(set_event->command));
     }
     if (const auto* reset_event = GetResetEventReplay(operation)) {
-        return ValidateCmdResetEvent(env, reset_event->event, reset_event->exec_scope, exec_tag, Location(reset_event->command));
+        return ValidateCmdResetEvent(env, *reset_event->event, reset_event->exec_scope, exec_tag, Location(reset_event->command));
     }
     if (const auto* wait_events = GetWaitEventsReplay(operation)) {
         bool skip = false;
@@ -145,9 +145,9 @@ void ApplyReplayAction(SyncEnvironment& env, const ReplayOperation& operation, A
         merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(env.queue_id, exec_tag), *set_event->recorded_context);
         merged_context->TrimAndClearFirstAccess();
 
-        ApplyCmdSetEvent(env, set_event->event, set_event->src_exec_scope, merged_context, exec_tag, set_event->command);
+        ApplyCmdSetEvent(env, *set_event->event, set_event->src_exec_scope, merged_context, exec_tag, set_event->command);
     } else if (const auto* reset_event = GetResetEventReplay(operation)) {
-        ApplyCmdResetEvent(env, reset_event->event, exec_tag, reset_event->command);
+        ApplyCmdResetEvent(env, *reset_event->event, exec_tag, reset_event->command);
     } else if (const auto* wait_events = GetWaitEventsReplay(operation)) {
         ApplyCmdWaitEvents(env, access_context, wait_events->events, wait_events->barrier_sets, exec_tag, wait_events->command);
     }

@@ -7073,6 +7073,46 @@ TEST_F(NegativeSyncVal, WaitEventImageLayoutTransition) {
     m_default_queue->Wait();
 }
 
+TEST_F(NegativeSyncVal, EventLayoutTransitionBeforeFirstImageAccess) {
+    TEST_DESCRIPTION("Track an event layout transition when SetEvent has no preceding image accesses");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image src(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    vkt::Image dst(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    dst.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::Event event(*m_device);
+    vkt::CommandBuffer transition_cb(*m_device, m_command_pool);
+    vkt::CommandBuffer copy_cb(*m_device, m_command_pool);
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.image = src;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    // No destination access mask, so the following copy is not synchronized with the transition.
+
+    VkImageCopy region{};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.extent = {32, 32, 1};
+
+    transition_cb.Begin();
+    transition_cb.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    transition_cb.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
+    transition_cb.End();
+
+    copy_cb.Begin();
+    vk::CmdCopyImage(copy_cb, src, VK_IMAGE_LAYOUT_GENERAL, dst, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    copy_cb.End();
+
+    m_default_queue->Submit(transition_cb);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit(copy_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncVal, DrawIndirectByteCountSubmitTime) {
     TEST_DESCRIPTION("Detect a counter buffer hazard at submit time");
     SetTargetApiVersion(VK_API_VERSION_1_3);

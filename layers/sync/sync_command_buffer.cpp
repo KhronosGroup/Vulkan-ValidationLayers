@@ -1354,6 +1354,18 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     import_common(command_data.barrier_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
+                case CommandType::kSetEvent: {
+                    import_common(command_data.set_event_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kResetEvent: {
+                    import_common(command_data.reset_event_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kWaitEvents: {
+                    import_common(command_data.wait_events_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
                 case CommandType::kBeginRendering: {
                     auto command = command_data.begin_rendering_commands[index].MakeCommand(command_data);
                     command.render_pass_instance_id = current_render_pass_instance_id_;
