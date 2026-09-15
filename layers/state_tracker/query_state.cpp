@@ -158,7 +158,6 @@ uint32_t QueryPool::GetQuerySize(VkQueryResultFlags flags) const {
             query_size = sizeof(VkPerformanceCounterResultKHR) * query_items;
             break;
 
-        // These are zero only because no one has spent time to decide what they should return
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV:
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
@@ -166,14 +165,31 @@ uint32_t QueryPool::GetQuerySize(VkQueryResultFlags flags) const {
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
         case VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT:
         case VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT:
-        case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
+            // Based off VUs like 03448, using until told otherwise
+            query_items = 1;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
         case VK_QUERY_TYPE_TIME_ELAPSED_QCOM:
+            query_items = 1;
+            query_size = query_size_in_bytes * (query_items + query_avail_data);
+            break;
+
+        // The result layout is driver defined
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
+        // to silence compiler warning
         case VK_QUERY_TYPE_MAX_ENUM:
             query_size = 0;
             break;
     }
 
     return query_size;
+}
+
+// Prevents large queryCounts (like UINT_MAX) from looping over all the unused queries
+uint32_t QueryPool::ClampQueryRange(uint32_t firstQuery, uint32_t queryCount) const {
+    const uint64_t last_query = static_cast<uint64_t>(firstQuery) + queryCount;
+    return static_cast<uint32_t>(std::min(last_query, static_cast<uint64_t>(create_info.queryCount)));
 }
 
 }  // namespace vvl

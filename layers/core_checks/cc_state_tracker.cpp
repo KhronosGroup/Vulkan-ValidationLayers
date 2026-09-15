@@ -803,7 +803,7 @@ static void SetQueryState(const QueryObject& object, QueryState value, QueryMap*
 static void SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perf_query_pass,
                                QueryState value, QueryMap* local_query_to_state_map) {
     for (uint32_t i = 0; i < queryCount; i++) {
-        QueryObject query_obj = {queryPool, firstQuery + i, perf_query_pass};
+        QueryObject query_obj = {queryPool, firstQuery + i, 0, perf_query_pass};
         (*local_query_to_state_map)[query_obj] = value;
     }
 }
@@ -870,7 +870,7 @@ void CommandBufferSubState::RecordEndQueries(VkQueryPool queryPool, uint32_t fir
 
 static QueryState GetLocalQueryState(const QueryMap* local_query_to_state_map, VkQueryPool queryPool, uint32_t queryIndex,
                                      uint32_t perf_query_pass) {
-    QueryObject query = QueryObject(queryPool, queryIndex, perf_query_pass);
+    QueryObject query = QueryObject(queryPool, queryIndex, 0, perf_query_pass);
 
     auto iter = local_query_to_state_map->find(query);
     if (iter != local_query_to_state_map->end()) return iter->second;
@@ -966,7 +966,7 @@ void CommandBufferSubState::RecordWriteAccelerationStructuresProperties(VkQueryP
         bool skip = false;
         if (do_validate) {
             for (uint32_t i = 0; i < accelerationStructureCount; i++) {
-                QueryObject query_obj = {queryPool, firstQuery + i, perf_query_pass};
+                QueryObject query_obj = {queryPool, firstQuery + i, 0, perf_query_pass};
                 skip |= validator.VerifyQueryIsReset(cb_state_arg, query_obj, loc, perf_query_pass, local_query_to_state_map);
             }
         }
