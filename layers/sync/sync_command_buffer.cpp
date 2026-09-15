@@ -162,12 +162,17 @@ static ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_s
     return it->second;
 }
 
-static AccessRange MakeRangeForVertexData(VkDeviceSize offset, uint32_t first_vertex, uint32_t vertex_count,
-                                          const VertexBindingState& vertex_binding) {
+static uint32_t GetVertexAccessSize(const VertexBindingState& vertex_binding) {
     uint32_t element_size = 0;
     for (const auto& [_, vertex_attrib] : vertex_binding.locations) {
         element_size = std::max(element_size, vertex_attrib.desc.offset + GetVertexInputFormatSize(vertex_attrib.desc.format));
     }
+    return element_size;
+}
+
+static AccessRange MakeRangeForVertexData(VkDeviceSize offset, uint32_t first_vertex, uint32_t vertex_count,
+                                          const VertexBindingState& vertex_binding) {
+    const uint32_t element_size = GetVertexAccessSize(vertex_binding);
     const VkDeviceSize range_start = offset + (first_vertex * vertex_binding.desc.stride);
     VkDeviceSize range_size = 0;
     if (vertex_count > 0) {
@@ -344,8 +349,8 @@ const RenderingInstance& CommandBufferContext::BeginRenderingInstance(const VkRe
     rendering_instance_ = RenderingInstance{rendering_info.flags, rendering_info.renderArea, rendering_info.viewMask,
                                             rendering_info.colorAttachmentCount, rendering_attachments_ /*init span*/};
 
-    // TODO: Unconverted draws still apply attachment accesses when record validation is disabled.
-    // Skip this initialization in that mode once those draws are converted.
+    // Secondary command import applies draws even when record validation is disabled,
+    // so this rendering instance also needs view gens in that mode.
     rendering_instance_->InitViewGens(rendering_view_gens_);
     return *rendering_instance_;
 }
@@ -850,7 +855,7 @@ VertexInputAccesses CommandBufferContext::CollectVertexAccesses(uint32_t first_v
             if (!buffer) {
                 continue;  // also skips if using nullDescriptor
             }
-            VkDeviceSize offset = vertex_buffer->BufferOffset();
+            const VkDeviceSize offset = vertex_buffer->BufferOffset();
             const AccessRange range = MakeRangeForVertexData(offset, first_vertex, vertex_count, binding_state);
             result.accesses.emplace_back(VertexInputCommand::Access{buffer.get(), range});
         }
@@ -874,31 +879,82 @@ VertexInputAccesses CommandBufferContext::CollectIndexAccesses(uint32_t first_in
     result.pipeline = pipeline;
     result.access_index = SYNC_INDEX_INPUT_INDEX_READ;
     result.accesses.emplace_back(VertexInputCommand::Access{index_buffer.get(), range});
+    // TODO: Shader instrumentation support is needed to read index buffer content and determine
+    // the range of accessed vertices. This is an expensive scan and likely has to be off by default.
     return result;
 }
 
-bool CommandBufferContext::ValidateDrawVertex(uint32_t vertex_count, uint32_t first_vertex, const Location& loc) const {
-    const auto vertex_accesses = CollectVertexAccesses(first_vertex, vertex_count);
-    return vertex_accesses.MakeCommand().Validate(*this, loc);
+MultiDrawVertexInputAccesses CommandBufferContext::CollectMultiDrawVertexAccesses(uint32_t draw_count,
+                                                                                  const VkMultiDrawInfoEXT* draw_info,
+                                                                                  uint32_t stride) const {
+    const vvl::Pipeline* pipeline = cb_state_->GetLastBoundGraphics().pipeline_state;
+    if (!pipeline) {
+        return {};
+    }
+    MultiDrawVertexInputAccesses result;
+    result.pipeline = pipeline;
+    result.access_index = SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ;
+
+    const auto& binding_buffers = cb_state_->current_vertex_buffer_binding_info;
+    const auto& vertex_bindings = pipeline->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+                                      ? cb_state_->dynamic_state_value.vertex_bindings
+                                      : pipeline->vertex_input_state->bindings;
+
+    for (const auto& [_, binding_state] : vertex_bindings) {
+        const auto& binding_desc = binding_state.desc;
+        if (binding_desc.inputRate != VK_VERTEX_INPUT_RATE_VERTEX) {
+            // TODO: add support to determine range of instance level attributes
+            continue;
+        }
+        if (const vvl::VertexBufferBinding* vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
+            const auto buffer = sync_state_.Get<vvl::Buffer>(vertex_buffer->Buffer());
+            if (!buffer) {
+                continue;  // also skips if using nullDescriptor
+            }
+            const VkDeviceSize offset = vertex_buffer->BufferOffset();
+            const uint32_t access_size = GetVertexAccessSize(binding_state);
+            result.bindings.emplace_back(
+                MultiDrawVertexInputCommand::Binding{buffer.get(), offset, binding_desc.stride, access_size});
+        }
+    }
+    if (result.bindings.empty()) {
+        return {};
+    }
+    result.draws.reserve(draw_count);
+    const auto* bytes = reinterpret_cast<const uint8_t*>(draw_info);
+    for (uint32_t i = 0; i < draw_count; i++) {
+        const auto& draw = *reinterpret_cast<const VkMultiDrawInfoEXT*>(bytes + size_t(i) * stride);
+        result.draws.push_back({draw.firstVertex, draw.vertexCount});
+    }
+    return result;
 }
 
-void CommandBufferContext::RecordDrawVertex(uint32_t vertex_count, uint32_t first_vertex, ResourceUsageTag tag) {
-    auto vertex_accesses = CollectVertexAccesses(first_vertex, vertex_count);
-    vertex_accesses.RegisterResources(*this, tag);
-    vertex_accesses.MakeCommand().Apply(environment_, tag, *current_context_);
-}
+MultiDrawVertexInputAccesses CommandBufferContext::CollectMultiDrawIndexAccesses(uint32_t draw_count,
+                                                                                 const VkMultiDrawIndexedInfoEXT* draw_info,
+                                                                                 uint32_t stride) const {
+    const vvl::Pipeline* pipeline = cb_state_->GetLastBoundGraphics().pipeline_state;
+    const auto& index_binding = cb_state_->index_buffer_binding;
+    const auto index_buffer = sync_state_.Get<vvl::Buffer>(index_binding.Buffer());
+    if (!index_buffer) {
+        return {};
+    }
+    const uint32_t index_size = IndexTypeByteSize(index_binding.index_type);
+    const VkDeviceSize offset = index_binding.BufferOffset();
 
-bool CommandBufferContext::ValidateDrawVertexIndex(uint32_t index_count, uint32_t first_index, const Location& loc) const {
-    const auto index_accesses = CollectIndexAccesses(first_index, index_count);
+    MultiDrawVertexInputAccesses result;
+    result.pipeline = pipeline;
+    result.access_index = SYNC_INDEX_INPUT_INDEX_READ;
+    result.bindings.emplace_back(MultiDrawVertexInputCommand::Binding{index_buffer.get(), offset, index_size, index_size});
+
+    result.draws.reserve(draw_count);
+    const auto* bytes = reinterpret_cast<const uint8_t*>(draw_info);
+    for (uint32_t i = 0; i < draw_count; i++) {
+        const auto& draw = *reinterpret_cast<const VkMultiDrawIndexedInfoEXT*>(bytes + size_t(i) * stride);
+        result.draws.push_back({draw.firstIndex, draw.indexCount});
+    }
     // TODO: Shader instrumentation support is needed to read index buffer content and determine
-    // the range of accessed versices. This is an expensive scan and likely has to be off by default.
-    return index_accesses.MakeCommand().Validate(*this, loc);
-}
-
-void CommandBufferContext::RecordDrawVertexIndex(uint32_t index_count, uint32_t first_index, ResourceUsageTag tag) {
-    auto index_accesses = CollectIndexAccesses(first_index, index_count);
-    index_accesses.RegisterResources(*this, tag);
-    index_accesses.MakeCommand().Apply(environment_, tag, *current_context_);
+    // the range of accessed vertices. This is an expensive scan and likely has to be off by default.
+    return result;
 }
 
 static bool IsStencilWriteable(const LastBound& last_bound_state) {
@@ -945,14 +1001,6 @@ DrawAttachmentCommand CommandBufferContext::GetDrawAttachmentCommand() const {
             current_render_pass_instance_id_,
             pipeline && last_bound_state.IsDepthWriteEnable(),
             pipeline && IsStencilWriteable(last_bound_state)};
-}
-
-bool CommandBufferContext::ValidateDrawAttachment(const Location& loc) const {
-    return GetDrawAttachmentCommand().Validate(*this, loc);
-}
-
-void CommandBufferContext::RecordDrawAttachment(const ResourceUsageTag tag) {
-    GetDrawAttachmentCommand().Apply(environment_, tag, *current_context_);
 }
 
 VkImageAspectFlags CommandBufferContext::GetAttachmentAspectsToClear(VkImageAspectFlags clear_aspect_mask,
@@ -1341,6 +1389,10 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                 }
                 case CommandType::kDraw: {
                     import_draw(command_data.draw_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
+                case CommandType::kDrawMulti: {
+                    import_draw(command_data.draw_multi_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
                 case CommandType::kDrawIndirect: {

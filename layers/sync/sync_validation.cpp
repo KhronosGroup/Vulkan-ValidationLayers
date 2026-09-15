@@ -1443,21 +1443,18 @@ bool SyncValidator::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer comman
                                                           const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
                                                           uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
                                                           const ErrorObject& error_obj) const {
-    bool skip = false;
-    if (!pIndexInfo) {
-        return skip;
+    if (!syncval_settings.IsRecordTimeValidationEnabled() || !pIndexInfo) {
+        return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= cb_context.ValidateDrawAttachment(error_obj.location);
-    const auto ptr = reinterpret_cast<const uint8_t*>(pIndexInfo);
-    for (uint32_t i = 0; i < drawCount; i++) {
-        const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT*>(ptr + i * stride);
-        skip |= cb_context.ValidateDrawVertexIndex(info_ptr->indexCount, info_ptr->firstIndex, error_obj.location);
-    }
-    return skip;
+    const DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const MultiDrawVertexInputAccesses vertex_accesses = cb_context.CollectMultiDrawIndexAccesses(drawCount, pIndexInfo, stride);
+
+    const DrawMultiCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand(),
+                                   vertex_accesses.MakeCommand()};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
@@ -1471,33 +1468,36 @@ void SyncValidator::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer command
     CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
-    cb_context.RecordDrawAttachment(tag);
-    const auto ptr = reinterpret_cast<const uint8_t*>(pIndexInfo);
-    for (uint32_t i = 0; i < drawCount; i++) {
-        const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT*>(ptr + i * stride);
-        cb_context.RecordDrawVertexIndex(info_ptr->indexCount, info_ptr->firstIndex, tag);
+    DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    descriptor_accesses.RegisterResources(cb_context, tag);
+    MultiDrawVertexInputAccesses vertex_accesses = cb_context.CollectMultiDrawIndexAccesses(drawCount, pIndexInfo, stride);
+    vertex_accesses.RegisterResources(cb_context, tag);
+
+    const DrawMultiCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand(),
+                                   vertex_accesses.MakeCommand()};
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 
 bool SyncValidator::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                    const VkMultiDrawInfoEXT* pVertexInfo, uint32_t instanceCount,
                                                    uint32_t firstInstance, uint32_t stride, const ErrorObject& error_obj) const {
-    bool skip = false;
-    if (!pVertexInfo) {
-        return skip;
+    if (!syncval_settings.IsRecordTimeValidationEnabled() || !pVertexInfo) {
+        return false;
     }
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= cb_context.ValidateDrawAttachment(error_obj.location);
-    const auto ptr = reinterpret_cast<const uint8_t*>(pVertexInfo);
-    for (uint32_t i = 0; i < drawCount; i++) {
-        const auto info_ptr = reinterpret_cast<const VkMultiDrawInfoEXT*>(ptr + i * stride);
-        skip |= cb_context.ValidateDrawVertex(info_ptr->vertexCount, info_ptr->firstVertex, error_obj.location);
-    }
-    return skip;
+    const DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const MultiDrawVertexInputAccesses vertex_accesses = cb_context.CollectMultiDrawVertexAccesses(drawCount, pVertexInfo, stride);
+
+    const DrawMultiCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand(),
+                                   vertex_accesses.MakeCommand()};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
@@ -1510,12 +1510,18 @@ void SyncValidator::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer,
     CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
-    cb_context.RecordDrawAttachment(tag);
-    const auto ptr = reinterpret_cast<const uint8_t*>(pVertexInfo);
-    for (uint32_t i = 0; i < drawCount; i++) {
-        const auto info_ptr = reinterpret_cast<const VkMultiDrawInfoEXT*>(ptr + i * stride);
-        cb_context.RecordDrawVertex(info_ptr->vertexCount, info_ptr->firstVertex, tag);
+    DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    descriptor_accesses.RegisterResources(cb_context, tag);
+    MultiDrawVertexInputAccesses vertex_accesses = cb_context.CollectMultiDrawVertexAccesses(drawCount, pVertexInfo, stride);
+    vertex_accesses.RegisterResources(cb_context, tag);
+
+    const DrawMultiCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand(),
+                                   vertex_accesses.MakeCommand()};
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 

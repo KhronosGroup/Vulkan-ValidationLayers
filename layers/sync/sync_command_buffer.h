@@ -228,12 +228,10 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     VertexInputAccesses CollectVertexAccesses(uint32_t first_vertex, uint32_t vertex_count) const;
     VertexInputAccesses CollectIndexAccesses(uint32_t first_index, uint32_t index_count) const;
-    bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const Location& loc) const;
-    void RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
-    bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const Location& loc) const;
-    void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, ResourceUsageTag tag);
-    bool ValidateDrawAttachment(const Location& loc) const;
-    void RecordDrawAttachment(ResourceUsageTag tag);
+    MultiDrawVertexInputAccesses CollectMultiDrawVertexAccesses(uint32_t draw_count, const VkMultiDrawInfoEXT* draw_info,
+                                                                uint32_t stride) const;
+    MultiDrawVertexInputAccesses CollectMultiDrawIndexAccesses(uint32_t draw_count, const VkMultiDrawIndexedInfoEXT* draw_info,
+                                                               uint32_t stride) const;
     bool ValidateClearAttachment(const Location& loc, const VkClearAttachment& clear_attachment, uint32_t clear_rect_index,
                                  const VkClearRect& clear_rect) const;
     void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment& clear_attachment, const VkClearRect& clear_rect);
