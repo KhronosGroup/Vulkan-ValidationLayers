@@ -53,8 +53,9 @@ class QueryPool : public StateObject {
 
     void SetQueryState(uint32_t query, uint32_t perf_pass, QueryState state);
     QueryState GetQueryState(uint32_t query, uint32_t perf_pass) const;
-    QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags flags);
+    static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags flags);
     uint32_t GetQuerySize(VkQueryResultFlags flags) const;
+    uint32_t ClampQueryRange(uint32_t firstQuery, uint32_t queryCount) const;
 
     const vku::safe_VkQueryPoolCreateInfo safe_create_info;
     const VkQueryPoolCreateInfo &create_info;
@@ -155,7 +156,7 @@ inline const char *string_QueryResultType(QueryResultType result_type) {
 namespace std {
 template <>
 struct hash<QueryObject> {
-    size_t operator()(QueryObject query_obj) const throw() {
+    size_t operator()(const QueryObject& query_obj) const noexcept {
         return hash<uint64_t>()((uint64_t)(query_obj.pool)) ^
                hash<uint64_t>()(static_cast<uint64_t>(query_obj.slot) | (static_cast<uint64_t>(query_obj.perf_pass) << 32));
     }
