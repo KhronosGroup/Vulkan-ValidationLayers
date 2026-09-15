@@ -86,15 +86,31 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
                 uint32_t rows_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(4));
                 uint32_t cols_id = type_manager_.GetConstantUInt32FromId(coopmat_type->inst_.Word(5));
                 const uint32_t memory_layout_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 3 : 4));
-                uint32_t stride_id = type_manager_.GetConstantUInt32FromId(inst.Word(store ? 4 : 5));
+
+                const Type& uint32_type = type_manager_.GetTypeInt(32, false);
+
+                // MemoryLayout must be a constant, but Stride can be any integer value
+                const uint32_t stride_operand_id = inst.Word(store ? 4 : 5);
+                uint32_t stride_id = stride_operand_id;
+                if (type_manager_.FindConstantById(stride_operand_id)) {
+                    stride_id = type_manager_.GetConstantUInt32FromId(stride_operand_id);
+                } else {
+                    const Type* stride_type = type_manager_.FindTypeGlobal(function, stride_operand_id);
+                    assert(stride_type && stride_type->spv_type_ == SpvType::kInt);
+                    if (stride_type->meta_.scalar.bit_width != 32) {
+                        stride_id = module_.TakeNextId();
+                        block.CreateInstruction(spv::OpUConvert, {uint32_type.Id(), stride_id, stride_operand_id}, inst_it);
+                    } else if (stride_type->IsSignedInt()) {
+                        stride_id = module_.TakeNextId();
+                        block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), stride_id, stride_operand_id}, inst_it);
+                    }
+                }
 
                 const uint32_t ptr_id = inst.Operand(0);  // works with both store and loads
 
                 // get type of pointee
                 const Type* ptr_type = type_manager_.FindTypeGlobal(function, ptr_id);
                 const Type* scalar_elem_type = type_manager_.FindChildType(*ptr_type, 0);
-
-                const Type& uint32_type = type_manager_.GetTypeInt(32, false);
 
                 // if the pointer is to a vector type, scale stride_id by the vector size
                 if (scalar_elem_type->VectorSize() > 0) {
