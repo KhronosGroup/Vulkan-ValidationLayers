@@ -871,8 +871,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
     const size_t total_size = msg_buffer_str.size();
     size_t offset = 0;
     while (offset < total_size) {
-        size_t bytes_to_print = std::min(chunk_size, total_size - offset);
-        __android_log_print(ANDROID_LOG_INFO, "VALIDATION", "%s", msg_buffer_str.c_str() + offset);
+        const size_t bytes_to_print = std::min(chunk_size, total_size - offset);
+        // If you just use "%s" it will re-print the whole remaining string on every iteration
+        __android_log_print(ANDROID_LOG_INFO, "VALIDATION", "%.*s", static_cast<int>(bytes_to_print),
+                            msg_buffer_str.c_str() + offset);
         offset += bytes_to_print;
     }
 #endif
