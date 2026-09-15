@@ -396,7 +396,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // Currently storing "lastBound" objects on per-CB basis
     //  long-term may want to create caches of "lastBound" states and could have
     //  each individual CMD_NODE referencing its own "lastBound" state
-    // Store last bound state for Gfx & Compute pipeline bind points
     std::array<LastBound, vvl::BindPointCount> lastBound;
     const LastBound &GetLastBoundGraphics() const { return lastBound[vvl::BindPointGraphics]; }
     const LastBound &GetLastBoundCompute() const { return lastBound[vvl::BindPointCompute]; }
@@ -600,6 +599,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     void SetDescriptorMode(vvl::DescriptorMode new_mode, vvl::Func function);
     void InvalidateDescriptorMode(vvl::DescriptorMode invalidate_mode, vvl::DescriptorMode new_mode, vvl::Func function);
+    vvl::DescriptorMode GetLastUsedDescriptorMode() { return last_used_descriptor_mode; }
+    vvl::DescriptorMode last_used_descriptor_mode = vvl::DescriptorMode::DescriptorModeUnknown;
 
     mutable std::shared_mutex lock;
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }

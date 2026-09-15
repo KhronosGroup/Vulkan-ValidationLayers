@@ -25,6 +25,7 @@
 #include "generated/gpuav_offline_spirv.h"
 #include "containers/limits.h"
 #include "containers/container_utils.h"
+#include "utils/assert_utils.h"
 
 namespace gpuav {
 namespace valcmd {
@@ -74,8 +75,7 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
 
     // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
     for (LastBound& last_bound : cb_state.base.lastBound) {
-        if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer ||
-            last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
+        if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer) {
             return;
         }
     }
@@ -101,8 +101,8 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
         gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
     valpipe::ComputePipeline<CopyBufferToImageValidationShader>& validation_pipeline =
         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<CopyBufferToImageValidationShader>>(
-            gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-    if (!validation_pipeline.valid) {
+            gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+    if (!validation_pipeline.Valid()) {
         gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create CopyBufferToImageValidationShader.");
         return;
     }
@@ -199,11 +199,8 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
         shader_resources.src_buffer_binding.info = {copy_buffer_to_img_info->srcBuffer, 0, VK_WHOLE_SIZE};
         shader_resources.copy_src_regions_buffer_binding.info = copy_src_regions_mem_buffer_range.GetDescriptorBufferInfo();
 
-        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
-                                 shader_resources)) {
-            gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
-            return;
-        }
+        ASSERT_AND_RETURN(validation_pipeline.BindShaderResources(
+            gpuav, cb_state, shader_resources, valpipe::ErrorLogging{cb_state.compute_index, cb_state.GetErrorLoggerIndex()}));
 
         group_count_x = max_texels_count_in_regions / 64 + uint32_t(max_texels_count_in_regions % 64 > 0);
     }
@@ -211,7 +208,10 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
     // Setup validation pipeline
     // ---
     {
-        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
+        if (!validation_pipeline.BindComputePipeline(gpuav, cb_state.base,
+                                                     cb_state.base.GetLastBoundCompute().GetActionDescriptorMode())) {
+            return;
+        }
 
         DispatchCmdDispatch(cb_state.VkHandle(), group_count_x, 1, 1);
     }

@@ -60,8 +60,10 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         return;
     }
     // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
-        return;
+    for (const auto& lb : cb_state.base.lastBound) {
+        if (lb.GetDescriptorMode() == vvl::DescriptorModeBuffer) {
+            return;
+        }
     }
 
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
@@ -70,8 +72,8 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
     valpipe::ComputePipeline<TraceRaysValidationShader>& validation_pipeline =
         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<TraceRaysValidationShader>>(
-            gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-    if (!validation_pipeline.valid) {
+            gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+    if (!validation_pipeline.Valid()) {
         gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create TraceRaysValidationShader.");
         return;
     }
@@ -100,17 +102,17 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         shader_resources.push_constants.max_ray_dispatch_invocation_count =
             gpuav.phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount;
 
-        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index, cb_state.GetErrorLoggerIndex(),
-                                 shader_resources)) {
-            gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
-            return;
-        }
+        ASSERT_AND_RETURN(validation_pipeline.BindShaderResources(
+            gpuav, cb_state, shader_resources, valpipe::ErrorLogging{cb_state.compute_index, cb_state.GetErrorLoggerIndex()}));
     }
 
     // Setup validation pipeline
     // ---
     {
-        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
+        if (!validation_pipeline.BindComputePipeline(gpuav, cb_state.base,
+                                                     cb_state.base.GetLastBoundCompute().GetActionDescriptorMode())) {
+            return;
+        }
 
         DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
     }
@@ -377,8 +379,10 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         return;
     }
     // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
-        return;
+    for (const auto& lb : cb_state.base.lastBound) {
+        if (lb.GetDescriptorMode() == vvl::DescriptorModeBuffer) {
+            return;
+        }
     }
 
     struct BlasArray {
@@ -433,8 +437,8 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
     valpipe::ComputePipeline<BuildAccelerationStructuresValidationShader>& validation_pipeline =
         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<BuildAccelerationStructuresValidationShader>>(
-            gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-    if (!validation_pipeline.valid) {
+            gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+    if (!validation_pipeline.Valid()) {
         return;
     }
 
@@ -531,7 +535,10 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         shader_resources.push_constants.blas_built_in_cmd_array_ptr = (shader::Range*)blas_built_in_cmd_buffer.offset_address;
         shader_resources.push_constants.blas_built_in_cmd_array_size = (uint32_t)blas_built_in_cmd_array.size();
 
-        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
+        if (!validation_pipeline.BindComputePipeline(gpuav, cb_state.base,
+                                                     cb_state.base.GetLastBoundCompute().GetActionDescriptorMode())) {
+            return;
+        }
 
         // Validation dispatch, one for each TLAS build
         // ---
@@ -568,9 +575,8 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             shader_resources.push_constants.is_array_of_pointers = is_array_of_pointers;
             shader_resources.push_constants.blas_array_i = (uint32_t)blas_array_i;
 
-            const bool bind_error_logging_desc_set = blas_array_i == 0;
-            ASSERT_AND_RETURN(BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                  cb_state.GetErrorLoggerIndex(), shader_resources, bind_error_logging_desc_set));
+            ASSERT_AND_RETURN(validation_pipeline.BindShaderResources(
+                gpuav, cb_state, shader_resources, valpipe::ErrorLogging{cb_state.compute_index, cb_state.GetErrorLoggerIndex()}));
 
             constexpr uint32_t wg_size_x = shader::tlas_validation_shader_wg_x;
             constexpr uint32_t wg_size_y = shader::tlas_validation_shader_wg_y;
@@ -581,7 +587,8 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
 
             shader_resources.push_constants.validation_mode = shader::kBuildASValidationMode_memory_overlaps;
 
-            BindShaderPushConstants(validation_pipeline, gpuav, cb_state, shader_resources);
+            validation_pipeline.BindPushConstants(gpuav, cb_state, cb_state.base.GetLastBoundCompute().GetActionDescriptorMode(),
+                                                  shader_resources);
 
             const uint32_t wg_count_y = GetDispatchWorkGroupCount((uint32_t)blas_built_in_cmd_array.size(), wg_size_y);
             DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, wg_count_y, 1);
@@ -825,7 +832,7 @@ static VkDeviceAddress GetAccelerationStructureGeometryGPU(
                         valpipe::ComputePipeline<MemcpyShader>& memcpy_pipeline =
                             gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<MemcpyShader>>(
                                 gpuav, Location(vvl::Func::Empty), VK_NULL_HANDLE);
-                        ASSERT_AND_RETURN_VALUE(memcpy_pipeline.valid, 0);
+                        ASSERT_AND_RETURN_VALUE(memcpy_pipeline.Valid(), 0);
 
                         MemcpyShader memcpy_shader_resources;
                         memcpy_shader_resources.push_constants.update_time_indices = index_buffer_addr;
@@ -843,11 +850,10 @@ static VkDeviceAddress GetAccelerationStructureGeometryGPU(
 
                         assert(index_buffer_bytes_leftover == 0);  // Indices cannot be uint8, so no bytes should be left
 
-                        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, memcpy_pipeline.pipeline);
-
-                        ASSERT_AND_RETURN_VALUE(BindShaderResources(memcpy_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                                    cb_state.GetErrorLoggerIndex(), memcpy_shader_resources, false),
+                        ASSERT_AND_RETURN_VALUE(memcpy_pipeline.BindComputePipeline(
+                                                    cb_state.base, cb_state.base.GetLastBoundCompute().GetActionDescriptorMode()),
                                                 0);
+                        ASSERT_AND_RETURN_VALUE(memcpy_pipeline.BindShaderResources(gpuav, cb_state, memcpy_shader_resources), 0);
 
                         const uint32_t shader_threads_count = memcpy_shader_resources.push_constants.uvec4_count +
                                                               memcpy_shader_resources.push_constants.u32_count +
@@ -878,7 +884,7 @@ static VkDeviceAddress GetAccelerationStructureGeometryGPU(
                         valpipe::ComputePipeline<CopyGeometriesXComponentShader>& copy_geometries_x_pipeline =
                             gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<CopyGeometriesXComponentShader>>(
                                 gpuav, Location(vvl::Func::Empty), VK_NULL_HANDLE);
-                        ASSERT_AND_RETURN_VALUE(copy_geometries_x_pipeline.valid, 0);
+                        ASSERT_AND_RETURN_VALUE(copy_geometries_x_pipeline.Valid(), 0);
 
                         CopyGeometriesXComponentShader copy_geometries_x_resources;
                         copy_geometries_x_resources.push_constants.geometries_x_component_copy =
@@ -887,13 +893,11 @@ static VkDeviceAddress GetAccelerationStructureGeometryGPU(
                         copy_geometries_x_resources.push_constants.count = uint32_t(vertex_count);
                         copy_geometries_x_resources.push_constants.stride = uint32_t(triangles.vertexStride);
 
-                        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
-                                                copy_geometries_x_pipeline.pipeline);
-
+                        ASSERT_AND_RETURN_VALUE(copy_geometries_x_pipeline.BindComputePipeline(
+                                                    cb_state.base, cb_state.base.GetLastBoundCompute().GetActionDescriptorMode()),
+                                                0);
                         ASSERT_AND_RETURN_VALUE(
-                            BindShaderResources(copy_geometries_x_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                cb_state.GetErrorLoggerIndex(), copy_geometries_x_resources, false),
-                            0);
+                            copy_geometries_x_pipeline.BindShaderResources(gpuav, cb_state, copy_geometries_x_resources), 0);
 
                         const uint32_t shader_threads_count = copy_geometries_x_resources.push_constants.count;
                         const uint32_t wg_count_x =
@@ -931,7 +935,7 @@ static VkDeviceAddress GetAccelerationStructureGeometryGPU(
                     valpipe::ComputePipeline<CopyGeometriesXComponentShader>& copy_geometries_x_pipeline =
                         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<CopyGeometriesXComponentShader>>(
                             gpuav, Location(vvl::Func::Empty), VK_NULL_HANDLE);
-                    ASSERT_AND_RETURN_VALUE(copy_geometries_x_pipeline.valid, 0);
+                    ASSERT_AND_RETURN_VALUE(copy_geometries_x_pipeline.Valid(), 0);
 
                     CopyGeometriesXComponentShader copy_geometries_x_resources;
                     copy_geometries_x_resources.push_constants.geometries_x_component_copy =
@@ -940,12 +944,11 @@ static VkDeviceAddress GetAccelerationStructureGeometryGPU(
                     copy_geometries_x_resources.push_constants.count = build_range_info.primitiveCount;
                     copy_geometries_x_resources.push_constants.stride = uint32_t(aabb.stride);
 
-                    DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
-                                            copy_geometries_x_pipeline.pipeline);
-
-                    ASSERT_AND_RETURN_VALUE(BindShaderResources(copy_geometries_x_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                                cb_state.GetErrorLoggerIndex(), copy_geometries_x_resources, false),
+                    ASSERT_AND_RETURN_VALUE(copy_geometries_x_pipeline.BindComputePipeline(
+                                                cb_state.base, cb_state.base.GetLastBoundCompute().GetActionDescriptorMode()),
                                             0);
+                    ASSERT_AND_RETURN_VALUE(
+                        copy_geometries_x_pipeline.BindShaderResources(gpuav, cb_state, copy_geometries_x_resources), 0);
 
                     const uint32_t shader_threads_count = copy_geometries_x_resources.push_constants.count;
                     const uint32_t wg_count_x =
@@ -983,8 +986,10 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         return;
     }
     // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
-        return;
+    for (const auto& lb : cb_state.base.lastBound) {
+        if (lb.GetDescriptorMode() == vvl::DescriptorModeBuffer) {
+            return;
+        }
     }
 
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
@@ -994,15 +999,15 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
 
     valpipe::ComputePipeline<BLASValidationShader>& blas_pipeline =
         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<BLASValidationShader>>(
-            gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-    if (!blas_pipeline.valid) {
+            gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+    if (!blas_pipeline.Valid()) {
         return;
     }
 
     valpipe::ComputePipeline<MemcmpShader>& memcmp_pipeline =
         gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<MemcmpShader>>(
-            gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-    if (!memcmp_pipeline.valid) {
+            gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+    if (!memcmp_pipeline.Valid()) {
         return;
     }
 
@@ -1063,7 +1068,8 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 continue;
             }
 
-            DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, blas_pipeline.pipeline);
+            ASSERT_AND_RETURN(
+                blas_pipeline.BindComputePipeline(cb_state.base, cb_state.base.GetLastBoundCompute().GetActionDescriptorMode()));
 
             BLASValidationShader blas_shader_resources{};
             blas_shader_resources.push_constants.as_geometry_gpu = (shader::AccelerationStructureGeometryGPU*)as_geometry_gpu;
@@ -1095,8 +1101,9 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     triangles_validation_mode.has_value()) {
                     blas_shader_resources.push_constants.validation_mode = *triangles_validation_mode;
 
-                    ASSERT_AND_RETURN(BindShaderResources(blas_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                          cb_state.GetErrorLoggerIndex(), blas_shader_resources));
+                    ASSERT_AND_RETURN(blas_pipeline.BindShaderResources(
+                        gpuav, cb_state, blas_shader_resources,
+                        valpipe::ErrorLogging{cb_state.compute_index, cb_state.GetErrorLoggerIndex()}));
 
                     const uint32_t wg_count_x =
                         GetDispatchWorkGroupCount(3 * build_range_info.primitiveCount, shader::blas_validation_shader_wg_x);
@@ -1105,8 +1112,9 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
 
                 if (geom_data.geometry.triangles.transformData.deviceAddress != 0) {
                     blas_shader_resources.push_constants.validation_mode = shader::kBLASValidationMode_transform_matrix;
-                    ASSERT_AND_RETURN(BindShaderResources(blas_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                          cb_state.GetErrorLoggerIndex(), blas_shader_resources));
+                    ASSERT_AND_RETURN(blas_pipeline.BindShaderResources(
+                        gpuav, cb_state, blas_shader_resources,
+                        valpipe::ErrorLogging{cb_state.compute_index, cb_state.GetErrorLoggerIndex()}));
 
                     DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
                 }
@@ -1117,8 +1125,9 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                     !(info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
                     blas_shader_resources.push_constants.last_build_as_geometries_gpu = nullptr;
                 }
-                ASSERT_AND_RETURN(BindShaderResources(blas_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                      cb_state.GetErrorLoggerIndex(), blas_shader_resources));
+                ASSERT_AND_RETURN(blas_pipeline.BindShaderResources(
+                    gpuav, cb_state, blas_shader_resources,
+                    valpipe::ErrorLogging{cb_state.compute_index, cb_state.GetErrorLoggerIndex()}));
 
                 const uint32_t wg_count_x =
                     GetDispatchWorkGroupCount(build_range_info.primitiveCount, shader::blas_validation_shader_wg_x);
@@ -1151,10 +1160,11 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 memcmp_shader_resources.push_constants.geometry_i = geom_i;
                 memcmp_shader_resources.push_constants.error_info_i = error_info_i;
 
-                DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, memcmp_pipeline.pipeline);
-
-                ASSERT_AND_RETURN(BindShaderResources(memcmp_pipeline, gpuav, cb_state, cb_state.compute_index,
-                                                      cb_state.GetErrorLoggerIndex(), memcmp_shader_resources));
+                ASSERT_AND_RETURN(memcmp_pipeline.BindComputePipeline(
+                    cb_state.base, cb_state.base.GetLastBoundCompute().GetActionDescriptorMode()));
+                ASSERT_AND_RETURN(memcmp_pipeline.BindShaderResources(
+                    gpuav, cb_state, memcmp_shader_resources,
+                    valpipe::ErrorLogging{cb_state.compute_index, cb_state.GetErrorLoggerIndex()}));
 
                 const uint32_t shader_threads_count = memcmp_shader_resources.push_constants.uvec4_count +
                                                       memcmp_shader_resources.push_constants.u32_count +

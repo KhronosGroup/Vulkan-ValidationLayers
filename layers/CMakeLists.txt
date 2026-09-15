@@ -314,7 +314,6 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/extended_flags_helper_generator.h
     ${API_TYPE}/generated/extended_flags_helper_generator.cpp
     gpuav/core/gpuav.h
-    gpuav/core/gpuav_constants.h
     gpuav/core/gpuav_features.cpp
     gpuav/core/gpuav_record.cpp
     gpuav/core/gpuav_setup.cpp

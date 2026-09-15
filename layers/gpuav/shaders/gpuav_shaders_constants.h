@@ -33,6 +33,27 @@ const uint kDebugInputBindlessMaxDescriptors = 1024u * 1024u * 4u;
 
 #endif
 
+// Offsets into the error buffer
+// -----------------------------
+
+// Flags controlling the behavior of instrumentation code
+const uint error_buffer_flags_member_offset = 0;
+
+// Values stored at output_flags_offset
+const uint inst_buffer_oob_enabled = 0x1;
+
+// Error buffer size
+const uint error_buffer_u32_size_member_offset = 1;
+
+// Used error buffer size.
+// Shaders will atomically read and update this value so as not to
+// overwrite each others records. This value must be initialized to zero
+const uint error_buffer_used_size_member_offset = 2;
+
+// Start of the stream of records written by the instrumented shaders.
+// Each record represents a validation error. The format of the records is documented below.
+const uint error_buffer_data_member_offset = 3;
+
 // Maximum errors a cmd is allowed to log
 const uint kMaxErrorsPerCmd = 6;
 
@@ -143,7 +164,7 @@ const int kDebugInputBuffAddrLengthOffset = 0;
 // We make some assumptions from profiling that we can maintain these limits and squeeze all this information in a single dword
 // these values are asserted for and can be adjusted if we edge cases that matter
 //
-// cst::indices_count is set at 1u << 13 (8192) used to set the action cmd index
+// glsl::indices_count is set at 1u << 13 (8192) used to set the action cmd index
 //
 // // We use a single bit mark if this descriptor was accessed or not
 const uint kPostProcessMetaMaskAccessed = 1u << 31;
