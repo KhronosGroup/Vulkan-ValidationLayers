@@ -132,6 +132,9 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
         auto vuid_count_it = duplicate_message_count_map.find(vuid_hash);
         if (vuid_count_it == duplicate_message_count_map.end()) {
             duplicate_message_count_map.emplace(vuid_hash, 1);
+            if (duplicate_message_limit == 1) {
+                at_message_limit = true;
+            }
         } else if (vuid_count_it->second >= duplicate_message_limit) {
             return false;
         } else {
