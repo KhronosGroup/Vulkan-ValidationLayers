@@ -547,6 +547,9 @@ class SyncValidator : public vvl::DeviceProxy {
                                                 const RecordObject& record_obj) override;
     void PostCallRecordGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
                                                    const RecordObject& record_obj) override;
+    std::vector<BuildAccelerationStructuresCommand::Access> CollectAccelerationStructureBuildAccesses(
+        uint32_t info_count, const VkAccelerationStructureBuildGeometryInfoKHR* infos,
+        const VkAccelerationStructureBuildRangeInfoKHR* const* build_range_infos) const;
     bool PreCallValidateCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                           const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                           const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,

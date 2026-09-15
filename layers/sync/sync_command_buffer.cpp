@@ -1419,6 +1419,10 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     import_draw(command_data.draw_mesh_tasks_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
+                case CommandType::kBuildAccelerationStructures: {
+                    import_common(command_data.build_acceleration_structures_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
             }
             assert(false);
         }

@@ -21,6 +21,56 @@
 
 struct NegativeSyncValRayTracing : public VkSyncValTest {};
 
+TEST_F(NegativeSyncValRayTracing, BuildAfterVertexBufferWrite) {
+    TEST_DESCRIPTION("Build reads vertex data written by an earlier submission without a barrier");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    blas.SetupBuild(true);
+    const vkt::Buffer& vertex_buffer = blas.GetGeometries()[0].GetTriangles().device_vertex_buffer;
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, vertex_buffer, 0, 4, 0);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer build_cb(*m_device, m_command_pool);
+    build_cb.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(build_cb);
+    build_cb.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit(build_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValRayTracing, WriteScratchBufferAfterBuild) {
+    TEST_DESCRIPTION("Write scratch data used by an acceleration structure build in an earlier submission");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.SetDeviceScratchAdditionalFlags(VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas.SetupBuild(true);
+    const vkt::Buffer& scratch_buffer = *blas.GetScratchBuffer();
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer write_cb(*m_device, m_command_pool);
+    write_cb.Begin();
+    vk::CmdFillBuffer(write_cb, scratch_buffer, 0, 4, 0);
+    write_cb.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit(write_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncValRayTracing, ScratchBufferHazard) {
     TEST_DESCRIPTION("Write to scratch buffer during acceleration structure build");
     RETURN_IF_SKIP(InitRayTracing());

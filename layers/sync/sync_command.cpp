@@ -221,6 +221,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_draw(command_data.draw_mesh_tasks_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kBuildAccelerationStructures: {
+                replay_common(command_data.build_acceleration_structures_commands[index], access_context, replay_tag);
+                continue;
+            }
         }
         assert(false);
     }
@@ -244,6 +248,7 @@ void CommandData::Reset() {
     draw_indirect_commands.clear();
     draw_indirect_count_commands.clear();
     draw_mesh_tasks_commands.clear();
+    build_acceleration_structures_commands.clear();
 
     buffers.clear();
     buffer_lookup.clear();
@@ -265,6 +270,7 @@ void CommandData::Reset() {
     vertex_input_accesses.clear();
     multi_draw_vertex_bindings.clear();
     multi_draw_ranges.clear();
+    acceleration_structure_build_accesses.clear();
 
     descriptor_sets.clear();
     descriptor_set_lookup.clear();
@@ -1337,6 +1343,100 @@ bool DrawMeshTasksCommand::Validate(const SyncEnvironment& env, const AccessCont
 void DrawMeshTasksCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     shader_accesses.Apply(env, tag, access_context);
     attachment_accesses.Apply(env, tag, access_context);
+}
+
+static SyncAccessIndex GetAccessIndex(BuildAccelerationStructuresCommand::AccessType type) {
+    switch (type) {
+        case BuildAccelerationStructuresCommand::AccessType::kScratch:
+        case BuildAccelerationStructuresCommand::AccessType::kDestination:
+            return SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE;
+        case BuildAccelerationStructuresCommand::AccessType::kSource:
+            return SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ;
+        default:
+            return SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ;
+    }
+}
+
+BuildAccelerationStructuresCommand BuildAccelerationStructuresCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const Access> accesses;
+    if (access_count != 0) {
+        accesses = vvl::make_span(&command_data.acceleration_structure_build_accesses[first_access], access_count);
+    }
+    return {accesses};
+}
+
+BuildAccelerationStructuresCommand::Storage BuildAccelerationStructuresCommand::MakeStorage(CommandData& command_data) const {
+    const uint32_t first_access = uint32_t(command_data.acceleration_structure_build_accesses.size());
+    vvl::Append(command_data.acceleration_structure_build_accesses, accesses);
+    for (const Access& access : accesses) {
+        command_data.AddBuffer(*access.buffer);
+    }
+    return {first_access, uint32_t(accesses.size())};
+}
+
+bool BuildAccelerationStructuresCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool BuildAccelerationStructuresCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                  const Location& loc) const {
+    bool skip = false;
+    const SyncValidator& validator = env.validator;
+    for (const Access& access : accesses) {
+        const auto hazard = access_context.DetectHazard(*access.buffer, GetAccessIndex(access.type), access.range);
+        if (!hazard.IsHazard()) {
+            continue;
+        }
+        LogObjectList objlist = BaseObjectList(env, cb_context, access.buffer->Handle());
+        std::string error;
+        if (access.acceleration_structure != VK_NULL_HANDLE) {
+            objlist.add(access.acceleration_structure);
+            const Location info_loc(vvl::Func::vkCmdBuildAccelerationStructuresKHR, vvl::Field::pInfos, access.info_index);
+            const auto field =
+                access.type == AccessType::kSource ? vvl::Field::srcAccelerationStructure : vvl::Field::dstAccelerationStructure;
+            error = validator.error_messages_.AccelerationStructureError(
+                env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(access.buffer->Handle()), access.range,
+                access.acceleration_structure, info_loc.dot(field));
+        } else {
+            const char* description = nullptr;
+            switch (access.type) {
+                case AccessType::kScratch:
+                    description = "scratch buffer ";
+                    break;
+                case AccessType::kVertex:
+                    description = "vertex data ";
+                    break;
+                case AccessType::kIndex:
+                    description = "index data ";
+                    break;
+                case AccessType::kTransform:
+                    description = "transform data ";
+                    break;
+                case AccessType::kAABB:
+                    description = "aabb data ";
+                    break;
+                case AccessType::kInstance:
+                    description = "instance data ";
+                    break;
+                default:
+                    assert(false);
+                    continue;
+            }
+            const std::string resource_description = description + validator.FormatHandle(access.buffer->Handle());
+            error =
+                validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, access.range);
+        }
+        skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    }
+    return skip;
+}
+
+void BuildAccelerationStructuresCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    for (const Access& access : accesses) {
+        access_context.UpdateAccessState(*access.buffer, GetAccessIndex(access.type), access.range,
+                                         ResourceUsageTagEx{tag, access.handle_index}, 0, env.queue_id);
+    }
 }
 
 }  // namespace syncval

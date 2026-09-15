@@ -171,6 +171,30 @@ std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard
                  additional_info);
 }
 
+std::string ErrorMessages::AccelerationStructureError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                      const Location& loc, const std::string& resource_description,
+                                                      AccessRange range, VkAccelerationStructureKHR as,
+                                                      const Location& as_location) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+
+    std::ostringstream ss;
+    ss << "The buffer backs ";
+    ss << as_location.Fields();
+    ss << " (" << validator_.FormatHandle(as) << "). ";
+    additional_info.pre_synchronization_text = ss.str();
+
+    std::ostringstream ss2;
+    ss2 << "\nBuffer access region: {\n";
+    ss2 << "  offset = " << range.begin << "\n";
+    ss2 << "  size = " << range.end - range.begin << "\n";
+    ss2 << "}\n";
+    additional_info.message_end_text += ss2.str();
+
+    return Error(env, hazard, command, resource_description, "AccelerationStructureError", additional_info);
+}
+
 std::string ErrorMessages::ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
                                                      const std::string& resource_description, uint32_t region_index,
                                                      const VkOffset3D& offset, const VkExtent3D& extent,
