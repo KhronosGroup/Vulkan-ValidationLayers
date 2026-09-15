@@ -19,9 +19,11 @@
 #include "sync/sync_access_context.h"
 #include "sync/sync_command_buffer.h"
 #include "sync/sync_dynamic_rendering.h"
+#include "sync/sync_event.h"
 #include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/event_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -134,6 +136,18 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.barrier_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kSetEvent: {
+                replay_common(command_data.set_event_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kResetEvent: {
+                replay_common(command_data.reset_event_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kWaitEvents: {
+                replay_common(command_data.wait_events_commands[index], access_context, replay_tag);
+                continue;
+            }
             case CommandType::kBeginRendering: {
                 auto command = command_data.begin_rendering_commands[index].MakeCommand(command_data);
                 command.render_pass_instance_id += replay_context.render_pass_instance_offset;
@@ -218,6 +232,9 @@ void CommandData::Reset() {
     buffer_access_commands.clear();
     image_copy_commands.clear();
     barrier_commands.clear();
+    set_event_commands.clear();
+    reset_event_commands.clear();
+    wait_events_commands.clear();
     begin_rendering_commands.clear();
     begin_render_pass_commands.clear();
     shader_access_commands.clear();
@@ -241,6 +258,7 @@ void CommandData::Reset() {
     buffer_copy_regions.clear();
     image_copy_regions.clear();
     barrier_sets.clear();
+    events.clear();
     rendering_attachments.clear();
     descriptor_buffer_accesses.clear();
     descriptor_image_accesses.clear();
@@ -584,6 +602,98 @@ bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& a
 
 void BarrierCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     ApplyBarrier(env, access_context, barrier_set, tag, true);
+}
+
+SetEventCommand SetEventCommand::Storage::MakeCommand(const CommandData&) const { return {*event, src_exec_scope, command}; }
+
+SetEventCommand::Storage SetEventCommand::MakeStorage(CommandData& command_data) const {
+    command_data.events.emplace_back(std::static_pointer_cast<const vvl::Event>(event.shared_from_this()));
+    return {&event, src_exec_scope, command};
+}
+
+bool SetEventCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool SetEventCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                               const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    const Location command_loc(command);
+    const Location& error_loc = (replay_tag == kInvalidTag) ? loc : command_loc;
+
+    // kInvalidTag disables the tag cutoff used by legacy replay
+    return ValidateCmdSetEvent(env, event, src_exec_scope, kInvalidTag, error_loc);
+}
+
+std::shared_ptr<const AccessContext> SetEventCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag,
+                                                            AccessContext& access_context) const {
+    // Capture the state at this execution of SetEvent for later inspection at wait time.
+    // TODO: revisit this solution if copy shows in profiler (especially during replay)
+    auto src_access_context = std::make_shared<AccessContext>(env.validator);
+    src_access_context->InitFrom(access_context);
+
+    ApplyCmdSetEvent(env, event, src_exec_scope, src_access_context, tag, command);
+    return src_access_context;
+}
+
+ResetEventCommand ResetEventCommand::Storage::MakeCommand(const CommandData&) const { return {*event, exec_scope, command}; }
+
+ResetEventCommand::Storage ResetEventCommand::MakeStorage(CommandData& command_data) const {
+    command_data.events.emplace_back(std::static_pointer_cast<const vvl::Event>(event.shared_from_this()));
+    return {&event, exec_scope, command};
+}
+
+bool ResetEventCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool ResetEventCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    const Location command_loc(command);
+    const Location& error_loc = replay_tag == kInvalidTag ? loc : command_loc;
+    return ValidateCmdResetEvent(env, event, exec_scope, kInvalidTag, error_loc);
+}
+
+void ResetEventCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    ApplyCmdResetEvent(env, event, tag, command);
+}
+
+WaitEventsCommand WaitEventsCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const std::shared_ptr<const vvl::Event>> events;
+    if (event_count != 0) {
+        events = vvl::make_span(&command_data.events[first_event], event_count);
+    }
+    vvl::span<const BarrierSet> barrier_sets;
+    if (barrier_set_count != 0) {
+        barrier_sets = vvl::make_span(&command_data.barrier_sets[first_barrier_set], barrier_set_count);
+    }
+    return {events, barrier_sets, command};
+}
+
+WaitEventsCommand::Storage WaitEventsCommand::MakeStorage(CommandData& command_data) const {
+    const uint32_t first_event = uint32_t(command_data.events.size());
+    const uint32_t first_barrier_set = uint32_t(command_data.barrier_sets.size());
+    vvl::Append(command_data.events, events);
+    vvl::Append(command_data.barrier_sets, barrier_sets);
+    return {first_event, uint32_t(events.size()), first_barrier_set, uint32_t(barrier_sets.size()), command};
+}
+
+bool WaitEventsCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool WaitEventsCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    const Location command_loc(command);
+    const Location& error_loc = replay_tag == kInvalidTag ? loc : command_loc;
+
+    bool skip = false;
+    skip = ValidateCmdWaitEvents(env, events, kInvalidTag, error_loc);
+    skip |= DetectCmdWaitEventsImageBarrierHazard(env, access_context, cb_context, events, barrier_sets, replay_tag, loc);
+    return skip;
+}
+
+void WaitEventsCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    ApplyCmdWaitEvents(env, access_context, events, barrier_sets, tag, command, true);
 }
 
 BeginRenderingCommand BeginRenderingCommand::Storage::MakeCommand(const CommandData& command_data) const {

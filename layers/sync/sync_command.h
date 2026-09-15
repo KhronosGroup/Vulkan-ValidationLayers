@@ -30,6 +30,7 @@ struct VulkanTypedHandle;
 namespace vvl {
 class Buffer;
 class DescriptorSet;
+class Event;
 class Image;
 class ImageView;
 class Pipeline;
@@ -57,6 +58,9 @@ enum class CommandType : uint32_t {
     kBufferAccess,
     kImageCopy,
     kPipelineBarrier,
+    kSetEvent,
+    kResetEvent,
+    kWaitEvents,
     kBeginRendering,
     kEndRendering,
     kBeginRenderPass,
@@ -186,6 +190,64 @@ struct BarrierCommand {
     struct Storage {
         uint32_t barrier_set_index;
         BarrierCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct SetEventCommand {
+    const vvl::Event& event;
+    SyncExecScope src_exec_scope;
+    vvl::Func command;
+
+    struct Storage {
+        const vvl::Event* event;
+        SyncExecScope src_exec_scope;
+        vvl::Func command;
+        SetEventCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+
+    // Return the snapshot so record-time processing can also retain it for legacy replay.
+    std::shared_ptr<const AccessContext> Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct ResetEventCommand {
+    const vvl::Event& event;
+    SyncExecScope exec_scope;
+    vvl::Func command;
+
+    struct Storage {
+        const vvl::Event* event;
+        SyncExecScope exec_scope;
+        vvl::Func command;
+        ResetEventCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct WaitEventsCommand {
+    vvl::span<const std::shared_ptr<const vvl::Event>> events;
+    vvl::span<const BarrierSet> barrier_sets;
+    vvl::Func command;
+
+    struct Storage {
+        uint32_t first_event;
+        uint32_t event_count;
+        uint32_t first_barrier_set;
+        uint32_t barrier_set_count;
+        vvl::Func command;
+        WaitEventsCommand MakeCommand(const CommandData& command_data) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
@@ -589,6 +651,9 @@ struct CommandData {
     std::vector<BufferAccessCommand::Storage> buffer_access_commands;
     std::vector<ImageCopyCommand::Storage> image_copy_commands;
     std::vector<BarrierCommand::Storage> barrier_commands;
+    std::vector<SetEventCommand::Storage> set_event_commands;
+    std::vector<ResetEventCommand::Storage> reset_event_commands;
+    std::vector<WaitEventsCommand::Storage> wait_events_commands;
     std::vector<BeginRenderingCommand::Storage> begin_rendering_commands;
     std::vector<BeginRenderPassCommand::Storage> begin_render_pass_commands;
     std::vector<ShaderAccessCommand::Storage> shader_access_commands;
@@ -618,6 +683,7 @@ struct CommandData {
     std::vector<BufferCopyRegion> buffer_copy_regions;
     std::vector<VkImageCopy> image_copy_regions;
     std::vector<BarrierSet> barrier_sets;
+    std::vector<std::shared_ptr<const vvl::Event>> events;
     std::vector<RenderingAttachment> rendering_attachments;
     std::vector<ShaderAccessCommand::BufferAccess> descriptor_buffer_accesses;
     std::vector<ShaderAccessCommand::ImageViewAccess> descriptor_image_accesses;
@@ -648,6 +714,13 @@ struct CommandData {
     }
     CommandRef Store(const BarrierCommand::Storage& storage) {
         return Store(CommandType::kPipelineBarrier, barrier_commands, storage);
+    }
+    CommandRef Store(const SetEventCommand::Storage& storage) { return Store(CommandType::kSetEvent, set_event_commands, storage); }
+    CommandRef Store(const ResetEventCommand::Storage& storage) {
+        return Store(CommandType::kResetEvent, reset_event_commands, storage);
+    }
+    CommandRef Store(const WaitEventsCommand::Storage& storage) {
+        return Store(CommandType::kWaitEvents, wait_events_commands, storage);
     }
     CommandRef Store(const BeginRenderingCommand::Storage& storage) {
         return Store(CommandType::kBeginRendering, begin_rendering_commands, storage);

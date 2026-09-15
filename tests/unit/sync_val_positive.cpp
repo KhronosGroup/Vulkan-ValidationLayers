@@ -5158,6 +5158,89 @@ TEST_F(PositiveSyncVal, WaitEventImageLayoutTransition) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveSyncVal, EventScopeFromPriorSubmission) {
+    TEST_DESCRIPTION("SetEvent captures accesses from a preceding submission");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer dst(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Event event(*m_device);
+    vkt::CommandBuffer write_cb(*m_device, m_command_pool);
+    vkt::CommandBuffer set_cb(*m_device, m_command_pool);
+    vkt::CommandBuffer wait_cb(*m_device, m_command_pool);
+
+    write_cb.Begin();
+    vk::CmdFillBuffer(write_cb, buffer, 0, 64, 0x42);
+    write_cb.End();
+
+    set_cb.Begin();
+    set_cb.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    set_cb.End();
+
+    VkBufferMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.buffer = buffer;
+    barrier.size = VK_WHOLE_SIZE;
+
+    wait_cb.Begin();
+    wait_cb.WaitEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
+    wait_cb.Copy(buffer, dst);
+    wait_cb.End();
+
+    m_default_queue->Submit(write_cb);
+    m_default_queue->Submit(set_cb);
+    m_default_queue->Submit(wait_cb);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncVal, WaitEvents2SeparateBufferBarriers) {
+    TEST_DESCRIPTION("Each event uses its own buffer barrier in WaitEvents2");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 64, usage);
+    vkt::Buffer buffer_b(*m_device, 64, usage);
+    vkt::Buffer output_a(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer output_b(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Event event_a(*m_device);
+    vkt::Event event_b(*m_device);
+
+    VkBufferMemoryBarrier2 barrier_a = vku::InitStructHelper();
+    barrier_a.srcStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+    barrier_a.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_a.dstStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+    barrier_a.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    barrier_a.buffer = buffer_a;
+    barrier_a.size = VK_WHOLE_SIZE;
+
+    VkBufferMemoryBarrier2 barrier_b = barrier_a;
+    barrier_b.buffer = buffer_b;
+
+    VkDependencyInfo dependencies[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    dependencies[0].bufferMemoryBarrierCount = 1;
+    dependencies[0].pBufferMemoryBarriers = &barrier_a;
+    dependencies[1].bufferMemoryBarrierCount = 1;
+    dependencies[1].pBufferMemoryBarriers = &barrier_b;
+    const VkEvent events[2] = {event_a, event_b};
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, buffer_a, 0, 64, 0);
+    vk::CmdSetEvent2(m_command_buffer, event_a, &dependencies[0]);
+
+    vk::CmdFillBuffer(m_command_buffer, buffer_b, 0, 64, 0);
+    vk::CmdSetEvent2(m_command_buffer, event_b, &dependencies[1]);
+
+    vk::CmdWaitEvents2(m_command_buffer, 2, events, dependencies);
+    m_command_buffer.Copy(buffer_a, output_a);
+    m_command_buffer.Copy(buffer_b, output_b);
+
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveSyncVal, QSCopyImage) {
     RETURN_IF_SKIP(InitSyncVal());
 

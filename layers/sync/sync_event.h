@@ -33,6 +33,7 @@ struct Location;
 namespace syncval {
 
 class AccessContext;
+class CommandBufferContext;
 struct SyncEnvironment;
 
 struct SyncEventState {
@@ -72,25 +73,22 @@ class SyncEventsContext {
     using iterator = Map::iterator;
     using const_iterator = Map::const_iterator;
 
-    SyncEventState* GetFromShared(const SyncEventState::EventPointer& event_state) {
-        const auto find_it = map_.find(event_state.get());
-        if (find_it == map_.end()) {
-            if (!event_state.get()) return nullptr;
+    SyncEventState& GetOrCreate(const vvl::Event& event);
 
-            const auto* event_plain_ptr = event_state.get();
-            auto sync_state = std::make_shared<SyncEventState>(event_state);
-            auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
-            return insert_pair.first->second.get();
+    SyncEventState* GetFromShared(const SyncEventState::EventPointer& event_state) {
+        return event_state ? &GetOrCreate(*event_state) : nullptr;
+    }
+
+    const SyncEventState* Get(const vvl::Event& event) const {
+        const auto find_it = map_.find(&event);
+        if (find_it == map_.end()) {
+            return nullptr;
         }
         return find_it->second.get();
     }
 
     const SyncEventState* Get(const SyncEventState::EventPointer& event_state) const {
-        const auto find_it = map_.find(event_state.get());
-        if (find_it == map_.end()) {
-            return nullptr;
-        }
-        return find_it->second.get();
+        return event_state ? Get(*event_state) : nullptr;
     }
 
     void ApplyBarrier(const SyncExecScope& src, const SyncExecScope& dst, ResourceUsageTag tag);
@@ -111,29 +109,36 @@ class SyncEventsContext {
     Map map_;
 };
 
-bool ValidateCmdSetEvent(const SyncEnvironment& env, const std::shared_ptr<const vvl::Event>& event,
-                         const SyncExecScope& src_exec_scope, ResourceUsageTag base_tag, const Location& loc);
+bool ValidateCmdSetEvent(const SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& src_exec_scope,
+                         ResourceUsageTag base_tag, const Location& loc);
 
-bool ValidateCmdResetEvent(const SyncEnvironment& env, const std::shared_ptr<const vvl::Event>& event,
-                           const SyncExecScope& exec_scope, ResourceUsageTag base_tag, const Location& loc);
+bool ValidateCmdResetEvent(const SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& exec_scope,
+                           ResourceUsageTag base_tag, const Location& loc);
 
-bool ValidateCmdWaitEvents(const SyncEnvironment& env, const std::vector<std::shared_ptr<const vvl::Event>>& events,
+bool ValidateCmdWaitEvents(const SyncEnvironment& env, vvl::span<const std::shared_ptr<const vvl::Event>> events,
                            const ResourceUsageTag base_tag, const Location& loc);
 
+// TODO: Remove when legacy submit validation is removed
 bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const AccessContext& access_context,
                                            const std::vector<std::shared_ptr<const vvl::Event>>& events,
                                            const vvl::span<const BarrierSet>& barrier_sets, ResourceUsageTag base_tag,
                                            const Location& loc);
 
+bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const AccessContext& access_context,
+                                           const CommandBufferContext& cb_context,
+                                           vvl::span<const std::shared_ptr<const vvl::Event>> events,
+                                           vvl::span<const BarrierSet> barrier_sets, ResourceUsageTag replay_tag,
+                                           const Location& loc);
+
 // Main functionality of the correspodning Record methods, which perform additional setup
-void ApplyCmdSetEvent(SyncEnvironment& env, const std::shared_ptr<const vvl::Event>& event, const SyncExecScope& src_exec_scope,
+void ApplyCmdSetEvent(SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& src_exec_scope,
                       const std::shared_ptr<const AccessContext>& src_access_context, ResourceUsageTag tag, vvl::Func command);
 
-void ApplyCmdResetEvent(SyncEnvironment& env, const std::shared_ptr<const vvl::Event>& event, ResourceUsageTag tag,
-                        vvl::Func command);
+void ApplyCmdResetEvent(SyncEnvironment& env, const vvl::Event& event, ResourceUsageTag tag, vvl::Func command);
 
+// TODO: Remove replay when legacy submit processing no longer suppresses layout-transition writes.
 void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
-                        const std::vector<std::shared_ptr<const vvl::Event>>& events, vvl::span<const BarrierSet> barrier_sets,
-                        ResourceUsageTag tag, vvl::Func command);
+                        vvl::span<const std::shared_ptr<const vvl::Event>> events, vvl::span<const BarrierSet> barrier_sets,
+                        ResourceUsageTag tag, vvl::Func command, bool replay = false);
 
 }  // namespace syncval

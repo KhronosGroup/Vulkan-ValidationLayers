@@ -541,6 +541,10 @@ std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const H
                                              const SyncImageBarrier& barrier) const {
     AdditionalMessageInfo additional_info;
     const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    // Temporary: preserve the legacy message type for event waits.
+    if (IsValueIn(command, {vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR})) {
+        additional_info.message_type_override = nullptr;
+    }
     return ImageBarrierError(env, hazard, command, resource_description, barrier, std::move(additional_info));
 }
 
