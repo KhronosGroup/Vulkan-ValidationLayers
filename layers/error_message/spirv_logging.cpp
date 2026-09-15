@@ -74,7 +74,7 @@ static void AppendSourceText(const char* text, std::vector<std::string>& out_sou
             out_source_lines.back() += *c;
         }
     }
-};
+}
 
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
@@ -252,7 +252,7 @@ static void GetSourceLines(std::ostringstream& ss, const std::vector<std::string
     std::string current_filename = logging_info.reported_filename;  // current "preprocessor" filename state.
     std::vector<std::string>::size_type saved_opsource_offset = 0;
 
-    // This was designed to fine the best line if using #line in GLSL
+    // This was designed to find the best line if using #line in GLSL
     bool found_best_line = false;
     if (!logging_info.using_shader_debug_info) {
         for (auto it = source_lines.begin(); it != source_lines.end(); ++it) {
@@ -421,8 +421,8 @@ void GetExecutionModelNames(const std::vector<uint32_t>& instructions, std::ostr
             } else {
                 ss << ", ";
             }
-            const uint32_t entry_point_id = instructions[offset + 1];
-            ss << string_SpvExecutionModel(entry_point_id);
+            const uint32_t execution_model = instructions[offset + 1];
+            ss << string_SpvExecutionModel(execution_model);
         }
 
         offset += length;
@@ -528,7 +528,7 @@ void FindGlobalName(std::ostringstream& ss, const std::vector<uint32_t>& instruc
     ss << "[No OpName found, ID " << find_id << "]";
 }
 
-// Tries to the same logic as BufferDeviceAddressPass::RequiresInstrumentation
+// Tries to do the same logic as BufferDeviceAddressPass::RequiresInstrumentation
 // This is heavily favored for GLSL where this problem occurs
 void FindOpStructFromBDA(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset) {
     uint32_t last_seen_function_offset = 0;

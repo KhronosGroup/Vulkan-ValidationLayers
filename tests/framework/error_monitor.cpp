@@ -81,7 +81,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
             oss << "Verbose Information: ";
         }
 
-        oss << "[ " << callback_data->pMessageIdName << " ] | MessageID = 0x" << std::hex << callback_data->messageIdNumber << '\n';
+        oss << "[ " << callback_data->pMessageIdName << " ] | MessageID = 0x" << std::hex << callback_data->messageIdNumber
+            << std::dec << '\n';
+
         oss << callback_data->pMessage << '\n';
 
         if (callback_data->objectCount > 0) {
@@ -90,7 +92,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
                 const auto& debug_object = callback_data->pObjects[obj_i];
                 oss << "    [" << obj_i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
                 if (debug_object.objectHandle) {
-                    oss << " 0x" << std::hex << debug_object.objectHandle;
+                    oss << " 0x" << std::hex << debug_object.objectHandle << std::dec;
                 } else {
                     oss << " VK_NULL_HANDLE";
                 }

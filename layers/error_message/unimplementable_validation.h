@@ -43,7 +43,7 @@ const char* unimplementable_validation[] = {
 
     // These VUIDs cannot be validated beyond making sure the pointer is not null
     "VUID-VkMemoryToImageCopy-pHostPointer-09061",
-    "VUID-VkImageToMemoryCopy-pHostPointer-09066"
+    "VUID-VkImageToMemoryCopy-pHostPointer-09066",
 
     // these are already taken care in spirv-val for 08737
     "VUID-VkShaderModuleCreateInfo-pCode-08736",
@@ -82,7 +82,7 @@ const char* unimplementable_validation[] = {
     "VUID-vkEnumerateInstanceExtensionProperties-pPropertyCount-parameter",
     // These are implemented, but can't test as the loader will fail out first
     "VUID-VkInstanceCreateInfo-ppEnabledLayerNames-parameter",
-    "VUID-VkInstanceCreateInfo-ppEnabledExtensionNames-parameter"
+    "VUID-VkInstanceCreateInfo-ppEnabledExtensionNames-parameter",
 
     // Caches are called between application runs so there is no way for a layer to track this information
     "VUID-VkPipelineCacheCreateInfo-initialDataSize-00768",
@@ -299,7 +299,7 @@ const char* unimplementable_validation[] = {
     "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-07338",
     "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-07339",
     "VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-parameter",
-    "VUID-VkRenderingInputAttachmentIndexInfo-pStencilInputAttachmentIndex-parameter"
+    "VUID-VkRenderingInputAttachmentIndexInfo-pStencilInputAttachmentIndex-parameter",
 
     // These VUs have "is not NULL it must be a pointer to a valid pointer to valid structure" language
     // There is no actual way to validate thsese
@@ -694,7 +694,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceOpacityMicromapPropertiesKHR-sType-sType",
 
     // Needs to be correct for VVL to even know about the struct
-    "VUID-VkLayerSettingsCreateInfoEXT-sType-sType"
+    "VUID-VkLayerSettingsCreateInfoEXT-sType-sType",
 
     // Points to Video struts not defined
     "VUID-VkVideoDecodeAV1InlineSessionParametersInfoKHR-pStdSequenceHeader-parameter",
@@ -707,7 +707,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkVideoEncodeAV1SessionParametersCreateInfoKHR-pStdOperatingPoints-parameter",
 
     // Acceleration structure replay related,
-    // but VVL has no way of tracking needed info (typically stored offline)
+    // VVL would need to track AS state outside of the application, impossible
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09488"
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09489"
     "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09490"
@@ -733,12 +733,6 @@ const char* unimplementable_validation[] = {
     // RT pipeline stack size is dynamic, allocated at runtime
     // how rays behaves in the scene
     "VUID-vkCmdSetRayTracingPipelineStackSizeKHR-pipelineStackSize-03610",
-
-    // Those VUs are related to replaying AS.
-    // VVL would need to track AS state outside of the application, impossible
-    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09488",
-    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09489",
-    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09490",
 
     // Currently ALL BuiltIn in SPIR-V are only for Vulkan
     "VUID-StandaloneSpirv-BuiltIn-04668",

@@ -93,7 +93,7 @@ struct LogObjectList {
     [[nodiscard]] auto begin() const -> decltype(object_list.begin()) { return object_list.begin(); }
     [[nodiscard]] auto end() const -> decltype(object_list.end()) { return object_list.end(); }
 
-    LogObjectList(){};
+    LogObjectList() {}
 };
 
 typedef struct VkLayerDbgFunctionState {
@@ -138,7 +138,7 @@ struct LoggingLabel {
         out.pLabelName = name.c_str();
         std::copy(color.cbegin(), color.cend(), out.color);
         return out;
-    };
+    }
 
     LoggingLabel() : name(), color({{0.f, 0.f, 0.f, 0.f}}) {}
     LoggingLabel(const VkDebugUtilsLabelEXT* label_info);

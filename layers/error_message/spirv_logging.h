@@ -43,7 +43,7 @@ void FindGlobalName(std::ostringstream& ss, const std::vector<uint32_t>& instruc
 void FindOpStructFromBDA(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset);
 
 // These are used where we can't use normal spirv::Instructions.
-// The main spot is post-processisng error message in GPU-AV, the time it takes to interchange back from a vector<uint32_t> to a
+// The main spot is post-processing error message in GPU-AV, the time it takes to interchange back from a vector<uint32_t> to a
 // vector<Instructions> is too high to do mid-frame. Most things just need these simple helpers
 const char* GetOpString(const std::vector<uint32_t>& instructions, uint32_t string_id);
 uint32_t GetConstantValue(const std::vector<uint32_t>& instructions, uint32_t constant_id);
