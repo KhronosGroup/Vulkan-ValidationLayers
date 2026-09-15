@@ -191,6 +191,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_draw(command_data.draw_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kDrawMulti: {
+                replay_draw(command_data.draw_multi_commands[index], access_context, replay_tag);
+                continue;
+            }
             case CommandType::kDrawIndirect: {
                 replay_draw(command_data.draw_indirect_commands[index], access_context, replay_tag);
                 continue;
@@ -219,6 +223,7 @@ void CommandData::Reset() {
     shader_access_commands.clear();
     dispatch_indirect_commands.clear();
     draw_commands.clear();
+    draw_multi_commands.clear();
     draw_indirect_commands.clear();
     draw_indirect_count_commands.clear();
     draw_mesh_tasks_commands.clear();
@@ -240,6 +245,8 @@ void CommandData::Reset() {
     descriptor_buffer_accesses.clear();
     descriptor_image_accesses.clear();
     vertex_input_accesses.clear();
+    multi_draw_vertex_bindings.clear();
+    multi_draw_ranges.clear();
 
     descriptor_sets.clear();
     descriptor_set_lookup.clear();
@@ -868,64 +875,6 @@ void DescriptorAccesses::RegisterResources(CommandBufferContext& cb_context, Res
     }
 }
 
-VertexInputCommand VertexInputCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const Access> accesses;
-    if (access_count != 0) {
-        accesses = vvl::make_span(&command_data.vertex_input_accesses[first_access], access_count);
-    }
-    return {pipeline, accesses, access_index};
-}
-
-VertexInputCommand::Storage VertexInputCommand::MakeStorage(CommandData& command_data) const {
-    if (pipeline) {
-        command_data.AddPipeline(*pipeline);
-    }
-    for (const Access& access : accesses) {
-        command_data.AddBuffer(*access.buffer);
-    }
-    const uint32_t first_access = uint32_t(command_data.vertex_input_accesses.size());
-    vvl::Append(command_data.vertex_input_accesses, accesses);
-    return {pipeline, first_access, uint32_t(accesses.size()), access_index};
-}
-
-bool VertexInputCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
-}
-
-bool VertexInputCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
-    bool skip = false;
-    for (const Access& access : accesses) {
-        const HazardResult hazard = access_context.DetectHazard(*access.buffer, access_index, access.range);
-        if (hazard.IsHazard()) {
-            const SyncValidator& validator = env.validator;
-            LogObjectList objlist = BaseObjectList(env, cb_context, access.buffer->Handle());
-            if (pipeline) {
-                objlist.add(pipeline->Handle());
-            }
-            const char* buffer_name = access_index == SYNC_INDEX_INPUT_INDEX_READ ? "index " : "vertex ";
-            const std::string resource_description = buffer_name + validator.FormatHandle(*access.buffer);
-            const std::string error =
-                validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, access.range);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
-        }
-    }
-    return skip;
-}
-
-void VertexInputCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
-    for (const Access& access : accesses) {
-        access_context.UpdateAccessState(*access.buffer, access_index, access.range, ResourceUsageTagEx{tag, access.handle_index},
-                                         0, env.queue_id);
-    }
-}
-
-void VertexInputAccesses::RegisterResources(CommandBufferContext& cb_context, ResourceUsageTag tag) {
-    for (auto& access : accesses) {
-        access.handle_index = cb_context.AddCommandHandle(tag, access.buffer->Handle()).handle_index;
-    }
-}
-
 DispatchIndirectCommand DispatchIndirectCommand::Storage::MakeCommand(const CommandData& command_data) const {
     return {shader_access_storage.MakeCommand(command_data), indirect_access_storage.MakeCommand(command_data)};
 }
@@ -990,6 +939,136 @@ void DrawAttachmentCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Ac
     }
 }
 
+VertexInputCommand VertexInputCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const Access> accesses;
+    if (access_count != 0) {
+        accesses = vvl::make_span(&command_data.vertex_input_accesses[first_access], access_count);
+    }
+    return {pipeline, accesses, access_index};
+}
+
+VertexInputCommand::Storage VertexInputCommand::MakeStorage(CommandData& command_data) const {
+    if (pipeline) {
+        command_data.AddPipeline(*pipeline);
+    }
+    for (const Access& access : accesses) {
+        command_data.AddBuffer(*access.buffer);
+    }
+    const uint32_t first_access = uint32_t(command_data.vertex_input_accesses.size());
+    vvl::Append(command_data.vertex_input_accesses, accesses);
+    return {pipeline, first_access, uint32_t(accesses.size()), access_index};
+}
+
+bool VertexInputCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool VertexInputCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    for (const Access& access : accesses) {
+        const HazardResult hazard = access_context.DetectHazard(*access.buffer, access_index, access.range);
+        if (hazard.IsHazard()) {
+            const SyncValidator& validator = env.validator;
+            LogObjectList objlist = BaseObjectList(env, cb_context, access.buffer->Handle());
+            if (pipeline) {
+                objlist.add(pipeline->Handle());
+            }
+            const char* buffer_name = access_index == SYNC_INDEX_INPUT_INDEX_READ ? "index " : "vertex ";
+            const std::string resource_description = buffer_name + validator.FormatHandle(*access.buffer);
+            const std::string error =
+                validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, access.range);
+            skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+        }
+    }
+    return skip;
+}
+
+void VertexInputCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    for (const Access& access : accesses) {
+        access_context.UpdateAccessState(*access.buffer, access_index, access.range, ResourceUsageTagEx{tag, access.handle_index},
+                                         0, env.queue_id);
+    }
+}
+
+MultiDrawVertexInputCommand MultiDrawVertexInputCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const Binding> bindings;
+    if (binding_count != 0) {
+        bindings = vvl::make_span(&command_data.multi_draw_vertex_bindings[first_binding], binding_count);
+    }
+    vvl::span<const DrawRange> draws;
+    if (draw_count != 0) {
+        draws = vvl::make_span(&command_data.multi_draw_ranges[first_draw], draw_count);
+    }
+    return {pipeline, bindings, draws, access_index};
+}
+
+MultiDrawVertexInputCommand::Storage MultiDrawVertexInputCommand::MakeStorage(CommandData& command_data) const {
+    if (pipeline) {
+        command_data.AddPipeline(*pipeline);
+    }
+    for (const Binding& binding : bindings) {
+        command_data.AddBuffer(*binding.buffer);
+    }
+    const uint32_t first_binding = uint32_t(command_data.multi_draw_vertex_bindings.size());
+    vvl::Append(command_data.multi_draw_vertex_bindings, bindings);
+    const uint32_t first_draw = uint32_t(command_data.multi_draw_ranges.size());
+    vvl::Append(command_data.multi_draw_ranges, draws);
+    return {pipeline, first_binding, uint32_t(bindings.size()), first_draw, uint32_t(draws.size()), access_index};
+}
+
+AccessRange MultiDrawVertexInputCommand::GetRange(const Binding& binding, const DrawRange& draw) const {
+    const VkDeviceSize offset = binding.offset + VkDeviceSize(draw.first) * binding.stride;
+    const VkDeviceSize size = draw.count ? VkDeviceSize(draw.count - 1) * binding.stride + binding.access_size : 0;
+    return MakeRange(offset, size);
+}
+
+bool MultiDrawVertexInputCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                           const Location& loc) const {
+    bool skip = false;
+    for (const DrawRange& draw : draws) {
+        for (const Binding& binding : bindings) {
+            const AccessRange range = GetRange(binding, draw);
+            const HazardResult hazard = access_context.DetectHazard(*binding.buffer, access_index, range);
+            if (hazard.IsHazard()) {
+                const SyncValidator& validator = env.validator;
+                LogObjectList objlist = BaseObjectList(env, cb_context, binding.buffer->Handle());
+                if (pipeline) {
+                    objlist.add(pipeline->Handle());
+                }
+                const char* buffer_name = (access_index == SYNC_INDEX_INPUT_INDEX_READ) ? "index " : "vertex ";
+                const std::string resource_description = buffer_name + validator.FormatHandle(*binding.buffer);
+                const std::string error =
+                    validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
+                skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+            }
+        }
+    }
+    return skip;
+}
+
+void MultiDrawVertexInputCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    for (const DrawRange& draw : draws) {
+        for (const Binding& binding : bindings) {
+            access_context.UpdateAccessState(*binding.buffer, access_index, GetRange(binding, draw),
+                                             ResourceUsageTagEx{tag, binding.handle_index}, 0, env.queue_id);
+        }
+    }
+}
+
+void VertexInputAccesses::RegisterResources(CommandBufferContext& cb_context, ResourceUsageTag tag) {
+    for (auto& access : accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.buffer->Handle()).handle_index;
+    }
+}
+
+void MultiDrawVertexInputAccesses::RegisterResources(CommandBufferContext& cb_context, ResourceUsageTag tag) {
+    for (auto& binding : bindings) {
+        binding.handle_index = cb_context.AddCommandHandle(tag, binding.buffer->Handle()).handle_index;
+    }
+}
+
 DrawCommand DrawCommand::Storage::MakeCommand(const CommandData& command_data, RenderPassAccessContext* render_pass_context,
                                               const RenderingInstance* rendering_instance) const {
     return {shader_access_storage.MakeCommand(command_data), vertex_access_storage.MakeCommand(command_data),
@@ -1018,6 +1097,38 @@ void DrawCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContex
     shader_accesses.Apply(env, tag, access_context);
     vertex_accesses.Apply(env, tag, access_context);
     attachment_accesses.Apply(env, tag, access_context);
+}
+
+DrawMultiCommand DrawMultiCommand::Storage::MakeCommand(const CommandData& command_data,
+                                                        RenderPassAccessContext* render_pass_context,
+                                                        const RenderingInstance* rendering_instance) const {
+    return {shader_access_storage.MakeCommand(command_data),
+            attachment_access_storage.MakeCommand(render_pass_context, rendering_instance),
+            vertex_access_storage.MakeCommand(command_data)};
+}
+
+DrawMultiCommand::Storage DrawMultiCommand::MakeStorage(CommandData& command_data) const {
+    return {shader_accesses.MakeStorage(command_data), attachment_accesses.MakeStorage(command_data),
+            vertex_accesses.MakeStorage(command_data)};
+}
+
+bool DrawMultiCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool DrawMultiCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= vertex_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    return skip;
+}
+
+void DrawMultiCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    shader_accesses.Apply(env, tag, access_context);
+    attachment_accesses.Apply(env, tag, access_context);
+    vertex_accesses.Apply(env, tag, access_context);
 }
 
 DrawIndirectCommand DrawIndirectCommand::Storage::MakeCommand(const CommandData& command_data,
