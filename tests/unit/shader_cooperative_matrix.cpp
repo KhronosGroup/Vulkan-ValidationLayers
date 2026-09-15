@@ -544,7 +544,10 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeLocalSizeIdSpecConstant) {
     pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM, &spec_info);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", 3);
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166");
+    // The point of the error is being able to tell it is the workgroup size that doesn't match
+    m_errorMonitor->SetDesiredErrorRegex("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166",
+                                         "no VkCooperativeMatrixFlexibleDimensionsPropertiesNV with workgroup scope and "
+                                         "workgroupInvocations == [0-9]+");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

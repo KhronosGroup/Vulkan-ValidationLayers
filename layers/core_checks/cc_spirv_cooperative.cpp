@@ -19,6 +19,7 @@
 #include <cinttypes>
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -85,6 +86,19 @@ VkComponentTypeKHR GetComponentType(const spirv::Instruction* insn, bool is_sign
         }
     }
     return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
+}
+
+static const char* string_CooperativeMatrixUse(uint32_t use) {
+    switch (use) {
+        case spv::CooperativeMatrixUseMatrixAKHR:
+            return "MatrixA";
+        case spv::CooperativeMatrixUseMatrixBKHR:
+            return "MatrixB";
+        case spv::CooperativeMatrixUseMatrixAccumulatorKHR:
+            return "MatrixAccumulator";
+        default:
+            return "Unknown";
+    }
 }
 
 static bool IsSignedIntEnum(const VkComponentTypeKHR component_type) {
@@ -174,7 +188,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
         std::string Describe() {
             std::ostringstream ss;
             ss << "rows: " << rows << ", cols: " << cols << ", scope: " << string_VkScopeKHR(scope)
-               << ", type: " << string_VkComponentTypeKHR(component_type) << ", use: " << use;
+               << ", type: " << string_VkComponentTypeKHR(component_type) << ", use: " << string_CooperativeMatrixUse(use);
             return ss.str();
         }
     };
@@ -232,7 +246,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                << " | AType = " << string_VkComponentTypeKHR(prop.AType) << " | BType = " << string_VkComponentTypeKHR(prop.BType)
                << " | CType = " << string_VkComponentTypeKHR(prop.CType)
                << " | ResultType = " << string_VkComponentTypeKHR(prop.ResultType) << " | scope = " << string_VkScopeKHR(prop.scope)
-               << '\n';
+               << " | saturatingAccumulation = " << (prop.saturatingAccumulation ? "VK_TRUE" : "VK_FALSE") << '\n';
         }
         return ss.str();
     };
@@ -245,7 +259,42 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                << " | KGranularity = " << prop.KGranularity << " | AType = " << string_VkComponentTypeKHR(prop.AType)
                << " | BType = " << string_VkComponentTypeKHR(prop.BType) << " | CType = " << string_VkComponentTypeKHR(prop.CType)
                << " | ResultType = " << string_VkComponentTypeKHR(prop.ResultType) << " | scope = " << string_VkScopeKHR(prop.scope)
+               << " | saturatingAccumulation = " << (prop.saturatingAccumulation ? "VK_TRUE" : "VK_FALSE")
                << " | workgroupInvocations = " << prop.workgroupInvocations << '\n';
+        }
+        return ss.str();
+    };
+
+    auto print_workgroup_size = [this, workgroup_size, &local_size](VkScopeKHR scope) {
+        std::ostringstream ss;
+        if (scope != VK_SCOPE_WORKGROUP_KHR) {
+            return ss.str();
+        }
+        ss << "The shader's total workgroup size is " << workgroup_size << " (" << local_size.x << ", " << local_size.y << ", "
+           << local_size.z << ") which must exactly match the workgroupInvocations of a workgroup scope property.\n";
+
+        // Ordered set because these values are printed out, so we want them ascending and
+        // deterministic between runs, otherwise the error message is harder to read and tests can't match against it
+        std::set<uint32_t> supported_invocations;
+        for (const auto& prop : device_state->cooperative_matrix_flexible_dimensions_properties) {
+            if (prop.scope == VK_SCOPE_WORKGROUP_KHR) {
+                supported_invocations.insert(prop.workgroupInvocations);
+            }
+        }
+        if (supported_invocations.find(static_cast<uint32_t>(workgroup_size)) == supported_invocations.end()) {
+            ss << "There is no VkCooperativeMatrixFlexibleDimensionsPropertiesNV with workgroup scope and workgroupInvocations == "
+               << workgroup_size << ", so no matrix using workgroup scope can be supported at this workgroup size. ";
+            if (supported_invocations.empty()) {
+                ss << "(No workgroup scope properties are exposed at all)\n";
+            } else {
+                ss << "The supported workgroupInvocations values are [";
+                bool first = true;
+                for (const uint32_t invocations : supported_invocations) {
+                    ss << (first ? "" : ", ") << invocations;
+                    first = false;
+                }
+                ss << "]\n";
+            }
         }
         return ss.str();
     };
@@ -484,20 +533,22 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                         found_error = true;
                         skip |= LogError("VUID-RuntimeSpirv-cooperativeMatrixProperties2-13382", module_state.handle(), loc,
                                          "shader %s has\n%s (%s)\nbut doesn't match any supported "
-                                         "VkCooperativeMatrixPropertiesKHR or VkCooperativeMatrixProperties2EXT.",
-                                         entrypoint.Describe().c_str(), insn.Describe().c_str(), m.Describe().c_str());
+                                         "VkCooperativeMatrixPropertiesKHR or VkCooperativeMatrixProperties2EXT.\n%s",
+                                         entrypoint.Describe().c_str(), insn.Describe().c_str(), m.Describe().c_str(),
+                                         print_workgroup_size(m.scope).c_str());
                     } else if (!enabled_features.cooperativeMatrixFlexibleDimensionsNV) {
                         found_error = true;
                         skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163", module_state.handle(), loc,
-                                         "shader %s has\n%s (%s)\nbut doesn't match any VkCooperativeMatrixPropertiesKHR\n%s.",
+                                         "shader %s has\n%s (%s)\nbut doesn't match any VkCooperativeMatrixPropertiesKHR\n%s%s",
                                          entrypoint.Describe().c_str(), insn.Describe().c_str(), m.Describe().c_str(),
-                                         print_properties().c_str());
+                                         print_workgroup_size(m.scope).c_str(), print_properties().c_str());
                     } else {
                         skip |= LogError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", module_state.handle(), loc,
                                          "shader %s has\n%s (%s)\nbut doesn't match any VkCooperativeMatrixPropertiesKHR or "
-                                         "VkCooperativeMatrixFlexibleDimensionsPropertiesNV\n%s\n%s.",
+                                         "VkCooperativeMatrixFlexibleDimensionsPropertiesNV\n%s%s\n%s",
                                          entrypoint.Describe().c_str(), insn.Describe().c_str(), m.Describe().c_str(),
-                                         print_properties().c_str(), print_flexible_properties().c_str());
+                                         print_workgroup_size(m.scope).c_str(), print_properties().c_str(),
+                                         print_flexible_properties().c_str());
                     }
                 }
                 if (enabled_features.cooperativeMatrixFlexibleDimensionsNV) {
@@ -637,29 +688,41 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                     }
                     if (!found_matching_prop && !found_matching_flexible_prop && !found_matching_properties2) {
                         found_error = true;
+                        std::stringstream operands;
+                        operands << "A -> " << a.Describe() << "\nB -> " << b.Describe() << "\nC -> " << c.Describe()
+                                 << "\nResult -> " << r.Describe() << "\nCooperative Matrix Operands: "
+                                 << (flags == 0 ? "None" : string_SpvCooperativeMatrixOperands(flags))
+                                 << " (saturatingAccumulation must be "
+                                 << ((flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask) ? "VK_TRUE" : "VK_FALSE")
+                                 << ")\nAll 4 matrices must match the same property.\n";
+                        const std::string operands_str = operands.str();
+                        // A mismatched scope is caught by its own VU, still want the workgroup size hint if any matrix uses it
+                        const VkScopeKHR report_scope = (a.scope == VK_SCOPE_WORKGROUP_KHR || b.scope == VK_SCOPE_WORKGROUP_KHR ||
+                                                         c.scope == VK_SCOPE_WORKGROUP_KHR || r.scope == VK_SCOPE_WORKGROUP_KHR)
+                                                            ? VK_SCOPE_WORKGROUP_KHR
+                                                            : a.scope;
+
                         if (enabled_features.cooperativeMatrixProperties2) {
                             skip |= LogError("VUID-RuntimeSpirv-cooperativeMatrixProperties2-13383", module_state.handle(), loc,
                                              "shader %s instruction\n%s\ndoesn't match any supported "
-                                             "VkCooperativeMatrixPropertiesKHR or VkCooperativeMatrixProperties2EXT\n"
-                                             "%s\n%s\n%s\n%s\n",
-                                             entrypoint.Describe().c_str(), insn.Describe().c_str(), a.Describe().c_str(),
-                                             b.Describe().c_str(), c.Describe().c_str(), r.Describe().c_str());
+                                             "VkCooperativeMatrixPropertiesKHR or VkCooperativeMatrixProperties2EXT\n%s%s",
+                                             entrypoint.Describe().c_str(), insn.Describe().c_str(), operands_str.c_str(),
+                                             print_workgroup_size(report_scope).c_str());
                         } else if (!enabled_features.cooperativeMatrixFlexibleDimensionsNV) {
                             skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
                                              "shader %s instruction\n%s\ndoesn't match a supported matrix "
-                                             "VkCooperativeMatrixPropertiesKHR\n%s\n%s\n%s\n%s\n%s\n",
-                                             entrypoint.Describe().c_str(), insn.Describe().c_str(), a.Describe().c_str(),
-                                             b.Describe().c_str(), c.Describe().c_str(), r.Describe().c_str(),
-                                             print_properties().c_str());
+                                             "VkCooperativeMatrixPropertiesKHR\n%s%s%s",
+                                             entrypoint.Describe().c_str(), insn.Describe().c_str(), operands_str.c_str(),
+                                             print_workgroup_size(report_scope).c_str(), print_properties().c_str());
                         } else {
                             skip |=
                                 LogError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166", module_state.handle(), loc,
                                          "shader %s instruction\n%s\ndoesn't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesKHR or "
-                                         "VkPhysicalDeviceCooperativeMatrix2PropertiesNV\n%s\n%s\n%s\n%s\n%s\n%s\n",
-                                         entrypoint.Describe().c_str(), insn.Describe().c_str(), a.Describe().c_str(),
-                                         b.Describe().c_str(), c.Describe().c_str(), r.Describe().c_str(),
-                                         print_properties().c_str(), print_flexible_properties().c_str());
+                                         "VkPhysicalDeviceCooperativeMatrix2PropertiesNV\n%s%s%s\n%s",
+                                         entrypoint.Describe().c_str(), insn.Describe().c_str(), operands_str.c_str(),
+                                         print_workgroup_size(report_scope).c_str(), print_properties().c_str(),
+                                         print_flexible_properties().c_str());
                         }
                     }
                 }
