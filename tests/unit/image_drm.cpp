@@ -682,3 +682,63 @@ TEST_F(NegativeImageDrm, ModifierListLinearNotFirst) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02257");
 }
+
+TEST_F(NegativeImageDrm, ModifierListUnsupportedModifier) {
+    RETURN_IF_SKIP(InitBasicImageDrm());
+
+    std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+    if (mods.empty()) {
+        GTEST_SKIP() << "No valid Format Modifier found";
+    }
+    // DRM_FORMAT_MOD_INVALID, will never be reported as supported
+    mods.push_back(0x00FFFFFFFFFFFFFFULL);
+
+    VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
+    mod_list.drmFormatModifierCount = static_cast<uint32_t>(mods.size());
+    mod_list.pDrmFormatModifiers = mods.data();
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper(&mod_list);
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {64, 64, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    CreateImageTest(image_ci, "VUID-VkImageDrmFormatModifierListCreateInfoEXT-pDrmFormatModifiers-02263");
+}
+
+TEST_F(NegativeImageDrm, ExplicitUnsupportedModifier) {
+    RETURN_IF_SKIP(InitBasicImageDrm());
+
+    std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+    if (mods.empty()) {
+        GTEST_SKIP() << "No valid Format Modifier found";
+    }
+
+    VkSubresourceLayout plane_layouts[2] = {{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}};
+
+    VkImageDrmFormatModifierExplicitCreateInfoEXT mod_explicit = vku::InitStructHelper();
+    mod_explicit.drmFormatModifier = 0x00FFFFFFFFFFFFFFULL;  // DRM_FORMAT_MOD_INVALID
+    mod_explicit.drmFormatModifierPlaneCount = 1;
+    mod_explicit.pPlaneLayouts = plane_layouts;
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper(&mod_explicit);
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {64, 64, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    CreateImageTest(image_ci, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifier-02264");
+
+    mod_explicit.drmFormatModifier = mods[0];
+    mod_explicit.drmFormatModifierPlaneCount = 2;
+    CreateImageTest(image_ci, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifierPlaneCount-02265");
+}

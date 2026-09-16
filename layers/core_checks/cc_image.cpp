@@ -733,31 +733,68 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
 
         if (modifier_list) {
+            // The spec requires every modifier in the list to be supported
+            // The driver will only pick a single one to create the image with, so the use the first supported modifier
+            bool found_supported = false;
             for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
                 drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
-                result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
-                                                                               &image_format_properties);
-
-                // The application gives a list of modifier and the driver selects one. If one is valid, stop there.
-                if (result == VK_SUCCESS) {
-                    break;
+                VkImageFormatProperties2 modifier_format_properties = vku::InitStructHelper();
+                const VkResult modifier_result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(
+                    api_version, physical_device, &image_format_info, &modifier_format_properties);
+                if (modifier_result != VK_SUCCESS) {
+                    skip |= LogError(
+                        "VUID-VkImageDrmFormatModifierListCreateInfoEXT-pDrmFormatModifiers-02263", device,
+                        create_info_loc.pNext(Struct::VkImageDrmFormatModifierListCreateInfoEXT, Field::pDrmFormatModifiers, i),
+                        "(%" PRIu64
+                        ") is not compatible with the rest of the VkImageCreateInfo, "
+                        "vkGetPhysicalDeviceImageFormatProperties2 returned back %s.\n%s%s",
+                        modifier_list->pDrmFormatModifiers[i], string_VkResult(modifier_result),
+                        string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(),
+                        PrintPNextChain(Struct::VkImageCreateInfo, pCreateInfo->pNext).c_str());
+                } else if (!found_supported) {
+                    found_supported = true;
+                    image_format_properties = modifier_format_properties;
                 }
             }
+            result = found_supported ? VK_SUCCESS : VK_ERROR_FORMAT_NOT_SUPPORTED;
         } else if (explicit_modifier) {
             drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
             result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
                                                                            &image_format_properties);
-        }
-
-        if (result != VK_SUCCESS) {
-            // Will not have to worry about VkExternalFormatANDROID if using DRM format modifier
-            std::string drm_source = modifier_list ? "pDrmFormatModifiers[]" : "VkImageDrmFormatModifierExplicitCreateInfoEXT";
-            skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, error_obj.location,
-                             "The following VkImageCreateInfo returned %s when calling "
-                             "VkGetPhysicalDeviceImageFormatProperties2\ndrmFormatModifier (%" PRIu64 ") from %s\n%s%s",
-                             string_VkResult(result), drm_format_modifier.drmFormatModifier, drm_source.c_str(),
+            if (result != VK_SUCCESS) {
+                skip |=
+                    LogError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifier-02264", device,
+                             create_info_loc.pNext(Struct::VkImageDrmFormatModifierExplicitCreateInfoEXT, Field::drmFormatModifier),
+                             "(%" PRIu64
+                             ") is not compatible with the rest of the VkImageCreateInfo, "
+                             "vkGetPhysicalDeviceImageFormatProperties2 returned back %s.\n%s%s",
+                             explicit_modifier->drmFormatModifier, string_VkResult(result),
                              string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(),
                              PrintPNextChain(Struct::VkImageCreateInfo, pCreateInfo->pNext).c_str());
+            }
+
+            VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
+            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, pCreateInfo->format, &fmt_props_2);
+            std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties(fmt_drm_props.drmFormatModifierCount);
+            fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, pCreateInfo->format, &fmt_props_2);
+
+            for (const auto& drm_property : drm_properties) {
+                if (drm_property.drmFormatModifier != explicit_modifier->drmFormatModifier) {
+                    continue;
+                }
+                if (drm_property.drmFormatModifierPlaneCount != explicit_modifier->drmFormatModifierPlaneCount) {
+                    skip |= LogError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifierPlaneCount-02265", device,
+                                     create_info_loc.pNext(Struct::VkImageDrmFormatModifierExplicitCreateInfoEXT,
+                                                           Field::drmFormatModifierPlaneCount),
+                                     "is %" PRIu32 " but the drmFormatModifierPlaneCount of drmFormatModifier (%" PRIu64
+                                     ") for %s is %" PRIu32 ".",
+                                     explicit_modifier->drmFormatModifierPlaneCount, explicit_modifier->drmFormatModifier,
+                                     string_VkFormat(pCreateInfo->format), drm_property.drmFormatModifierPlaneCount);
+                }
+                break;
+            }
         }
     }
 
