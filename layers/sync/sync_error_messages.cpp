@@ -336,8 +336,9 @@ std::string ErrorMessages::AccelerationStructureDescriptorError(
     return Error(env, hazard, command, resource_description, "AccelerationStructureDescriptorError", additional_info);
 }
 
-std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                vvl::Func command, const std::string& resource_description,
+std::string ErrorMessages::ClearAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                const Location& loc, const std::string& resource_description,
                                                 VkImageAspectFlags clear_aspects, uint32_t clear_rect_index,
                                                 const VkClearRect& clear_rect) const {
     std::ostringstream ss;
@@ -349,11 +350,12 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
     ss << "}\n";
 
     AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
     additional_info.properties.Add(kPropertyImageAspects, string_VkImageAspectFlags(clear_aspects));
     additional_info.access_action = "clears";
     additional_info.message_end_text = ss.str();
 
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "ClearAttachmentError", additional_info);
+    return Error(env, hazard, command, resource_description, "ClearAttachmentError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,

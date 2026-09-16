@@ -75,6 +75,7 @@ enum class CommandType : uint32_t {
     kDrawMeshTasks,
     kBuildAccelerationStructures,
     kVideo,
+    kClearAttachments,
 };
 
 struct BufferCopyRegion {
@@ -701,6 +702,37 @@ struct VideoCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct ClearAttachmentsCommand {
+    struct Attachment {
+        const vvl::ImageView* view;
+        VkImageAspectFlags original_aspects;   // VkClearAttachment::aspectMask
+        VkImageAspectFlags effective_aspects;  // aspects actually selected for validation/application
+        uint32_t color_attachment;
+    };
+
+    vvl::span<const Attachment> attachments;
+    vvl::span<const VkClearRect> rects;
+    uint32_t view_mask;
+    uint32_t render_pass_instance_id;
+    uint32_t subpass;
+
+    struct Storage {
+        uint32_t first_attachment;
+        uint32_t attachment_count;
+        uint32_t first_rect;
+        uint32_t rect_count;
+        uint32_t view_mask;
+        uint32_t render_pass_instance_id;
+        uint32_t subpass;
+        ClearAttachmentsCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 struct CommandRef {
     CommandType type;
     uint32_t index;
@@ -730,6 +762,7 @@ struct CommandData {
     std::vector<DrawMeshTasksCommand::Storage> draw_mesh_tasks_commands;
     std::vector<BuildAccelerationStructuresCommand::Storage> build_acceleration_structures_commands;
     std::vector<VideoCommand::Storage> video_commands;
+    std::vector<ClearAttachmentsCommand::Storage> clear_attachments_commands;
 
     //
     // Resources and additional data used by the commands
@@ -759,6 +792,8 @@ struct CommandData {
     std::vector<MultiDrawVertexInputCommand::DrawRange> multi_draw_ranges;
     std::vector<BuildAccelerationStructuresCommand::Access> acceleration_structure_build_accesses;
     std::vector<VideoCommand::PictureAccess> video_picture_accesses;
+    std::vector<ClearAttachmentsCommand::Attachment> clear_attachments;
+    std::vector<VkClearRect> clear_rects;
 
     std::vector<std::shared_ptr<const vvl::DescriptorSet>> descriptor_sets;
     vvl::unordered_set<const vvl::DescriptorSet*> descriptor_set_lookup;
@@ -832,6 +867,9 @@ struct CommandData {
         return Store(CommandType::kBuildAccelerationStructures, build_acceleration_structures_commands, storage);
     }
     CommandRef Store(const VideoCommand::Storage& storage) { return Store(CommandType::kVideo, video_commands, storage); }
+    CommandRef Store(const ClearAttachmentsCommand::Storage& storage) {
+        return Store(CommandType::kClearAttachments, clear_attachments_commands, storage);
+    }
 
   private:
     template <typename Storage>

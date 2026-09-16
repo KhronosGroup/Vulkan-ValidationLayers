@@ -113,9 +113,10 @@ class ErrorMessages {
                                                      uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                                      VkShaderStageFlagBits shader_stage) const;
 
-    std::string ClearAttachmentError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
-                                     const std::string& resource_description, VkImageAspectFlags clear_aspects,
-                                     uint32_t clear_rect_index, const VkClearRect& clear_rect) const;
+    std::string ClearAttachmentError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
+                                     ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
+                                     VkImageAspectFlags clear_aspects, uint32_t clear_rect_index,
+                                     const VkClearRect& clear_rect) const;
 
     std::string RenderPassAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
