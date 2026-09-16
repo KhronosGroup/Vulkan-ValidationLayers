@@ -51,6 +51,10 @@ enum class BufferName : uint8_t {
     kIndirect,
     kDrawCount,
     kTransformFeedbackCounter,
+    kRaygenShaderBindingTable,
+    kMissShaderBindingTable,
+    kHitShaderBindingTable,
+    kCallableShaderBindingTable,
 };
 
 enum class CommandType : uint32_t {
@@ -68,6 +72,7 @@ enum class CommandType : uint32_t {
     kEndRenderPass,
     kShaderAccess,
     kDispatchIndirect,
+    kTraceRays,
     kDraw,
     kDrawMulti,
     kDrawIndirect,
@@ -438,6 +443,23 @@ struct DispatchIndirectCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct TraceRaysCommand {
+    ShaderAccessCommand shader_accesses;
+    vvl::span<const BufferAccessCommand> buffer_accesses;
+
+    struct Storage {
+        ShaderAccessCommand::Storage shader_access_storage;
+        uint32_t first_buffer_access;
+        uint32_t buffer_access_count;
+        TraceRaysCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 struct DrawAttachmentCommand {
     const vvl::Pipeline* pipeline;
     RenderPassAccessContext* render_pass_context;
@@ -755,6 +777,7 @@ struct CommandData {
     std::vector<BeginRenderPassCommand::Storage> begin_render_pass_commands;
     std::vector<ShaderAccessCommand::Storage> shader_access_commands;
     std::vector<DispatchIndirectCommand::Storage> dispatch_indirect_commands;
+    std::vector<TraceRaysCommand::Storage> trace_rays_commands;
     std::vector<DrawCommand::Storage> draw_commands;
     std::vector<DrawMultiCommand::Storage> draw_multi_commands;
     std::vector<DrawIndirectCommand::Storage> draw_indirect_commands;
@@ -787,6 +810,7 @@ struct CommandData {
     std::vector<RenderingAttachment> rendering_attachments;
     std::vector<ShaderAccessCommand::BufferAccess> descriptor_buffer_accesses;
     std::vector<ShaderAccessCommand::ImageViewAccess> descriptor_image_accesses;
+    std::vector<BufferAccessCommand> trace_rays_buffer_accesses;
     std::vector<VertexInputCommand::Access> vertex_input_accesses;
     std::vector<MultiDrawVertexInputCommand::Binding> multi_draw_vertex_bindings;
     std::vector<MultiDrawVertexInputCommand::DrawRange> multi_draw_ranges;
@@ -849,6 +873,9 @@ struct CommandData {
     }
     CommandRef Store(const DispatchIndirectCommand::Storage& storage) {
         return Store(CommandType::kDispatchIndirect, dispatch_indirect_commands, storage);
+    }
+    CommandRef Store(const TraceRaysCommand::Storage& storage) {
+        return Store(CommandType::kTraceRays, trace_rays_commands, storage);
     }
     CommandRef Store(const DrawCommand::Storage& storage) { return Store(CommandType::kDraw, draw_commands, storage); }
     CommandRef Store(const DrawMultiCommand::Storage& storage) {

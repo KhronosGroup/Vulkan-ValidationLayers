@@ -16,6 +16,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -1032,60 +1033,6 @@ bool SyncValidator::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, 
     return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                                 pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
                                 pBlitImageInfo->filter, error_obj.location.dot(Field::pBlitImageInfo));
-}
-
-bool SyncValidator::ValidateIndirectBuffer(const CommandBufferContext& cb_context, const AccessContext& access_context,
-                                           const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
-                                           const uint32_t drawCount, const uint32_t stride, const Location& loc) const {
-    bool skip = false;
-    if (drawCount == 0) return skip;
-
-    auto buf_state = Get<vvl::Buffer>(buffer);
-    VkDeviceSize size = struct_size;
-    if (drawCount == 1 || stride == size) {
-        if (drawCount > 1) size *= drawCount;
-        const AccessRange range = MakeRange(offset, size);
-        auto hazard = access_context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
-        if (hazard.IsHazard()) {
-            const LogObjectList objlist(cb_context.GetCBState().Handle(), buf_state->Handle());
-            const std::string resource_description = "indirect " + FormatHandle(buffer);
-            const auto error = error_messages_.BufferError(hazard, cb_context, loc.function, resource_description, range);
-            skip |= SyncError(hazard.Hazard(), objlist, loc, error);
-        }
-    } else {
-        for (uint32_t i = 0; i < drawCount; ++i) {
-            const AccessRange range = MakeRange(offset + i * stride, size);
-            auto hazard = access_context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
-            if (hazard.IsHazard()) {
-                const LogObjectList objlist(cb_context.GetCBState().Handle(), buf_state->Handle());
-                const std::string resource_description = "indirect " + FormatHandle(buffer);
-                const auto error = error_messages_.BufferError(hazard, cb_context, loc.function, resource_description, range);
-                skip |= SyncError(hazard.Hazard(), objlist, loc, error);
-                break;
-            }
-        }
-    }
-    return skip;
-}
-
-void SyncValidator::RecordIndirectBuffer(CommandBufferContext& cb_context, const ResourceUsageTag tag,
-                                         const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
-                                         const uint32_t drawCount, uint32_t stride) {
-    auto buf_state = Get<vvl::Buffer>(buffer);
-    auto tag_ex = buf_state ? cb_context.AddCommandHandle(tag, buf_state->Handle()) : ResourceUsageTagEx{tag};
-
-    VkDeviceSize size = struct_size;
-    AccessContext& access_context = cb_context.GetCurrentAccessContext();
-    if (drawCount == 1 || stride == size) {
-        if (drawCount > 1) size *= drawCount;
-        const AccessRange range = MakeRange(offset, size);
-        access_context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag_ex);
-    } else {
-        for (uint32_t i = 0; i < drawCount; ++i) {
-            const AccessRange range = MakeRange(offset + i * stride, size);
-            access_context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag_ex);
-        }
-    }
 }
 
 bool SyncValidator::ValidateDispatch(VkCommandBuffer commandBuffer, const Location& loc) const {
@@ -3377,47 +3324,77 @@ void SyncValidator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComm
     }
 }
 
-bool SyncValidator::ValidateSbtBuffer(const CommandBufferContext& cb_context,
-                                      const VkStridedDeviceAddressRegionKHR* p_sbt_address_region, const Location& loc,
-                                      const char* sbt_buffer_label) const {
-    bool skip = false;
-    if (!p_sbt_address_region) {
-        return skip;
-    }
-    const vvl::Buffer* p_sbt_buffer = GetSingleBufferFromDeviceAddress(*device_state, p_sbt_address_region->deviceAddress);
-    if (!p_sbt_buffer) {
-        return skip;
-    }
-    const VkDeviceSize offset = p_sbt_address_region->deviceAddress - p_sbt_buffer->deviceAddress;
-    const AccessRange sbt_range = MakeRange(*p_sbt_buffer, offset, p_sbt_address_region->size);
+small_vector<BufferAccessCommand, SyncValidator::kMaxTraceRaysBufferAccesses> SyncValidator::CollectTraceRaysBufferAccesses(
+    const vvl::span<const VkStridedDeviceAddressRegionKHR* const> shader_binding_tables, VkDeviceAddress indirect_address,
+    VkDeviceSize indirect_size) const {
+    const BufferName buffer_names[] = {BufferName::kRaygenShaderBindingTable, BufferName::kMissShaderBindingTable,
+                                       BufferName::kHitShaderBindingTable, BufferName::kCallableShaderBindingTable};
+    assert(shader_binding_tables.size() <= kMaxSbtCount);
 
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-    auto hazard = access_context.DetectHazard(*p_sbt_buffer, SYNC_RAY_TRACING_SHADER_SHADER_BINDING_TABLE_READ, sbt_range);
-    if (hazard.IsHazard()) {
-        const LogObjectList objlist(cb_context.GetCBState().Handle(), p_sbt_buffer->Handle());
-        const std::string resource_description =
-            std::string(sbt_buffer_label) + " shader binding table " + FormatHandle(*p_sbt_buffer);
-        const auto error = error_messages_.BufferError(hazard, cb_context, loc.function, resource_description, sbt_range);
-        skip |= SyncError(hazard.Hazard(), objlist, loc, error);
+    small_vector<BufferAccessCommand, kMaxTraceRaysBufferAccesses> accesses;
+
+    for (const auto [index, sbt_region] : vvl::enumerate(shader_binding_tables)) {
+        if (!sbt_region) {
+            continue;
+        }
+        const vvl::Buffer* sbt_buffer = GetSingleBufferFromDeviceAddress(*device_state, sbt_region->deviceAddress);
+        if (!sbt_buffer) {
+            continue;
+        }
+        const VkDeviceSize offset = sbt_region->deviceAddress - sbt_buffer->deviceAddress;
+        const AccessRange range = MakeRange(*sbt_buffer, offset, sbt_region->size);
+        accesses.emplace_back(BufferAccessCommand{*sbt_buffer, range, SYNC_RAY_TRACING_SHADER_SHADER_BINDING_TABLE_READ,
+                                                  vvl::kNoIndex32, 0, buffer_names[index]});
     }
-    return skip;
+    if (indirect_size) {
+        if (const vvl::Buffer* indirect_buffer = GetSingleBufferFromDeviceAddress(*device_state, indirect_address)) {
+            const VkDeviceSize offset = indirect_address - indirect_buffer->deviceAddress;
+            const AccessRange range = MakeRange(offset, indirect_size);
+            accesses.emplace_back(BufferAccessCommand{*indirect_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ,
+                                                      vvl::kNoIndex32, 0, BufferName::kIndirect});
+        }
+    }
+    return accesses;
 }
 
-void SyncValidator::RecordSbtBuffer(CommandBufferContext& cb_context, const VkStridedDeviceAddressRegionKHR* p_sbt_address_region,
-                                    ResourceUsageTag tag) {
-    if (!p_sbt_address_region) {
-        return;
+bool SyncValidator::ValidateTraceRays(VkCommandBuffer command_buffer,
+                                      vvl::span<const VkStridedDeviceAddressRegionKHR* const> shader_binding_tables,
+                                      VkDeviceAddress indirect_address, VkDeviceSize indirect_size, const Location& loc) const {
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
     }
-    const vvl::Buffer* p_sbt_buffer = GetSingleBufferFromDeviceAddress(*device_state, p_sbt_address_region->deviceAddress);
-    if (!p_sbt_buffer) {
-        return;
-    }
-    const VkDeviceSize offset = p_sbt_address_region->deviceAddress - p_sbt_buffer->deviceAddress;
-    const AccessRange sbt_range = MakeRange(*p_sbt_buffer, offset, p_sbt_address_region->size);
+    const auto cb_state = Get<vvl::CommandBuffer>(command_buffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
 
-    const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, p_sbt_buffer->Handle());
-    AccessContext& access_context = cb_context.GetCbAccessContext();
-    access_context.UpdateAccessState(*p_sbt_buffer, SYNC_RAY_TRACING_SHADER_SHADER_BINDING_TABLE_READ, sbt_range, tag_ex);
+    const DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    const auto buffer_accesses = CollectTraceRaysBufferAccesses(shader_binding_tables, indirect_address, indirect_size);
+
+    const TraceRaysCommand command{descriptor_accesses.MakeCommand(), buffer_accesses};
+    return command.Validate(cb_context, loc);
+}
+
+void SyncValidator::RecordTraceRays(VkCommandBuffer command_buffer,
+                                    vvl::span<const VkStridedDeviceAddressRegionKHR* const> shader_binding_tables,
+                                    VkDeviceAddress indirect_address, VkDeviceSize indirect_size, const Location& loc) {
+    auto cb_state = Get<vvl::CommandBuffer>(command_buffer);
+    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+    const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+
+    DescriptorAccesses descriptor_accesses = cb_context.CollectDescriptorAccesses(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    descriptor_accesses.RegisterResources(cb_context, tag);
+
+    auto buffer_accesses = CollectTraceRaysBufferAccesses(shader_binding_tables, indirect_address, indirect_size);
+    for (BufferAccessCommand& access : buffer_accesses) {
+        access.handle_index = cb_context.AddCommandHandle(tag, access.buffer.Handle()).handle_index;
+    }
+
+    const TraceRaysCommand command{descriptor_accesses.MakeCommand(), buffer_accesses};
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
 }
 
 bool SyncValidator::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
@@ -3427,16 +3404,9 @@ bool SyncValidator::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer
                                                    const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                    uint32_t width, uint32_t height, uint32_t depth,
                                                    const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
-    skip |= ValidateSbtBuffer(cb_context, pRaygenShaderBindingTable, error_obj.location, "raygen");
-    skip |= ValidateSbtBuffer(cb_context, pMissShaderBindingTable, error_obj.location, "miss");
-    skip |= ValidateSbtBuffer(cb_context, pHitShaderBindingTable, error_obj.location, "hit");
-    skip |= ValidateSbtBuffer(cb_context, pCallableShaderBindingTable, error_obj.location, "callable");
-    return skip;
+    const std::array shader_binding_tables = {pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
+                                              pCallableShaderBindingTable};
+    return ValidateTraceRays(commandBuffer, shader_binding_tables, 0, 0, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
@@ -3445,15 +3415,9 @@ void SyncValidator::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                   const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                   const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                   uint32_t width, uint32_t height, uint32_t depth, const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-
-    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, tag);
-    RecordSbtBuffer(cb_context, pRaygenShaderBindingTable, tag);
-    RecordSbtBuffer(cb_context, pMissShaderBindingTable, tag);
-    RecordSbtBuffer(cb_context, pHitShaderBindingTable, tag);
-    RecordSbtBuffer(cb_context, pCallableShaderBindingTable, tag);
+    const std::array shader_binding_tables = {pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
+                                              pCallableShaderBindingTable};
+    RecordTraceRays(commandBuffer, shader_binding_tables, 0, 0, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
@@ -3463,22 +3427,10 @@ bool SyncValidator::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer comma
                                                            const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                            VkDeviceAddress indirectDeviceAddress,
                                                            const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
-    skip |= ValidateSbtBuffer(cb_context, pRaygenShaderBindingTable, error_obj.location, "raygen");
-    skip |= ValidateSbtBuffer(cb_context, pMissShaderBindingTable, error_obj.location, "miss");
-    skip |= ValidateSbtBuffer(cb_context, pHitShaderBindingTable, error_obj.location, "hit");
-    skip |= ValidateSbtBuffer(cb_context, pCallableShaderBindingTable, error_obj.location, "callable");
-
-    if (const vvl::Buffer* indirect_buffer = GetSingleBufferFromDeviceAddress(*device_state, indirectDeviceAddress)) {
-        skip |= ValidateIndirectBuffer(cb_context, access_context, sizeof(VkTraceRaysIndirectCommandKHR),
-                                       indirect_buffer->VkHandle(), 0, 1, 0, error_obj.location);
-    }
-    return skip;
+    const std::array shader_binding_tables = {pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
+                                              pCallableShaderBindingTable};
+    return ValidateTraceRays(commandBuffer, shader_binding_tables, indirectDeviceAddress, sizeof(VkTraceRaysIndirectCommandKHR),
+                             error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
@@ -3487,48 +3439,21 @@ void SyncValidator::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer comman
                                                           const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                           const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                           VkDeviceAddress indirectDeviceAddress, const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-
-    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, tag);
-    RecordSbtBuffer(cb_context, pRaygenShaderBindingTable, tag);
-    RecordSbtBuffer(cb_context, pMissShaderBindingTable, tag);
-    RecordSbtBuffer(cb_context, pHitShaderBindingTable, tag);
-    RecordSbtBuffer(cb_context, pCallableShaderBindingTable, tag);
-
-    if (const vvl::Buffer* indirect_buffer = GetSingleBufferFromDeviceAddress(*device_state, indirectDeviceAddress)) {
-        RecordIndirectBuffer(cb_context, tag, sizeof(VkTraceRaysIndirectCommandKHR), indirect_buffer->VkHandle(), 0, 1, 0);
-    }
+    const std::array shader_binding_tables = {pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
+                                              pCallableShaderBindingTable};
+    RecordTraceRays(commandBuffer, shader_binding_tables, indirectDeviceAddress, sizeof(VkTraceRaysIndirectCommandKHR),
+                    record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                             const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
-
-    if (const vvl::Buffer* indirect_buffer = GetSingleBufferFromDeviceAddress(*device_state, indirectDeviceAddress)) {
-        skip |= ValidateIndirectBuffer(cb_context, access_context, sizeof(VkTraceRaysIndirectCommand2KHR),
-                                       indirect_buffer->VkHandle(), 0, 1, 0, error_obj.location);
-    }
-    return skip;
+    // Shader binding table addresses are in the indirect buffer and cannot be resolved on the CPU
+    return ValidateTraceRays(commandBuffer, {}, indirectDeviceAddress, sizeof(VkTraceRaysIndirectCommand2KHR), error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
                                                            const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-
-    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, tag);
-
-    if (const vvl::Buffer* indirect_buffer = GetSingleBufferFromDeviceAddress(*device_state, indirectDeviceAddress)) {
-        RecordIndirectBuffer(cb_context, tag, sizeof(VkTraceRaysIndirectCommand2KHR), indirect_buffer->VkHandle(), 0, 1, 0);
-    }
+    RecordTraceRays(commandBuffer, {}, indirectDeviceAddress, sizeof(VkTraceRaysIndirectCommand2KHR), record_obj.location);
 }
 
 }  // namespace syncval
