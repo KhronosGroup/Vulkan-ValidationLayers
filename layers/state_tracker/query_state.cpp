@@ -19,6 +19,7 @@
  */
 
 #include "state_tracker/query_state.h"
+#include "containers/limits.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "utils/math_utils.h"
 
@@ -187,8 +188,15 @@ uint32_t QueryPool::GetQuerySize(VkQueryResultFlags flags) const {
 }
 
 // Prevents large queryCounts (like UINT_MAX) from looping over all the unused queries
+//
+// If the queue only has a queryCount of 20 and the user passes in a queryCount of 100 there is no point to loop query [21, 100] in
+// that case
 uint32_t QueryPool::ClampQueryRange(uint32_t firstQuery, uint32_t queryCount) const {
     const uint64_t last_query = static_cast<uint64_t>(firstQuery) + queryCount;
+    if (last_query > vvl::kU32Max) {
+        // The range cannot even be expressed in 32-bits, don't try to validate any part of it
+        return firstQuery;
+    }
     return static_cast<uint32_t>(std::min(last_query, static_cast<uint64_t>(create_info.queryCount)));
 }
 
