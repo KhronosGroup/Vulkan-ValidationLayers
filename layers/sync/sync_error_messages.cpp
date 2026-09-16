@@ -639,9 +639,12 @@ std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueB
     return Error(batch_context.GetSyncEnvironment(), hazard, command, resource_description, "PresentError", additional_info);
 }
 
-std::string ErrorMessages::VideoError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
+std::string ErrorMessages::VideoError(const SyncEnvironment& env, const HazardResult& hazard,
+                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
                                       const std::string& resource_description) const {
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "VideoError");
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    return Error(env, hazard, command, resource_description, "VideoError", additional_info);
 }
 
 }  // namespace syncval

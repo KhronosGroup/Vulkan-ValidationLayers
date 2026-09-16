@@ -225,6 +225,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.build_acceleration_structures_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kVideo: {
+                replay_common(command_data.video_commands[index], access_context, replay_tag);
+                continue;
+            }
         }
         assert(false);
     }
@@ -249,6 +253,7 @@ void CommandData::Reset() {
     draw_indirect_count_commands.clear();
     draw_mesh_tasks_commands.clear();
     build_acceleration_structures_commands.clear();
+    video_commands.clear();
 
     buffers.clear();
     buffer_lookup.clear();
@@ -271,6 +276,7 @@ void CommandData::Reset() {
     multi_draw_vertex_bindings.clear();
     multi_draw_ranges.clear();
     acceleration_structure_build_accesses.clear();
+    video_picture_accesses.clear();
 
     descriptor_sets.clear();
     descriptor_set_lookup.clear();
@@ -1436,6 +1442,130 @@ void BuildAccelerationStructuresCommand::Apply(SyncEnvironment& env, ResourceUsa
     for (const Access& access : accesses) {
         access_context.UpdateAccessState(*access.buffer, GetAccessIndex(access.type), access.range,
                                          ResourceUsageTagEx{tag, access.handle_index}, 0, env.queue_id);
+    }
+}
+
+VideoCommand VideoCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const PictureAccess> pictures;
+    if (picture_count != 0) {
+        pictures = vvl::make_span(&command_data.video_picture_accesses[first_picture], picture_count);
+    }
+    return {operation, *bitstream_buffer, bitstream_range, pictures, bitstream_handle_index};
+}
+
+VideoCommand::Storage VideoCommand::MakeStorage(CommandData& command_data) const {
+    command_data.AddBuffer(bitstream_buffer);
+    const uint32_t first_picture = uint32_t(command_data.video_picture_accesses.size());
+    vvl::Append(command_data.video_picture_accesses, pictures);
+    for (const PictureAccess& picture : pictures) {
+        command_data.AddImageView(*picture.view);
+    }
+    return {bitstream_range, &bitstream_buffer, first_picture, uint32_t(pictures.size()), bitstream_handle_index, operation};
+}
+
+static SyncAccessIndex GetVideoPictureAccessIndex(VideoCommand::Operation operation, VideoCommand::PictureType type) {
+    const bool write = (type == VideoCommand::PictureType::kOutput) || (type == VideoCommand::PictureType::kReconstructed);
+    if (operation == VideoCommand::Operation::kDecode) {
+        return write ? SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE : SYNC_VIDEO_DECODE_VIDEO_DECODE_READ;
+    } else {
+        return write ? SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE : SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ;
+    }
+}
+
+static ImageRangeGen MakeVideoPictureRangeGen(const VideoCommand::PictureAccess& picture) {
+    const VkOffset3D offset = {picture.effective_offset.x, picture.effective_offset.y, 0};
+    const VkExtent3D extent = {picture.effective_extent.width, picture.effective_extent.height, 1};
+    if (picture.type == VideoCommand::PictureType::kQuantizationMap) {
+        return MakeImageRangeGen(*picture.view, offset, extent);
+    } else {
+        const ImageSubState& image_substate = SubState(*picture.view->image_state);
+        return image_substate.MakeImageRangeGen(picture.subresource_range, offset, extent, false);
+    }
+}
+
+bool VideoCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool VideoCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                            ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    const SyncValidator& validator = env.validator;
+
+    const SyncAccessIndex bitstream_access_index =
+        (operation == Operation::kDecode) ? SYNC_VIDEO_DECODE_VIDEO_DECODE_READ : SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE;
+
+    const auto bitstream_hazard = access_context.DetectHazard(bitstream_buffer, bitstream_access_index, bitstream_range);
+    if (bitstream_hazard.IsHazard()) {
+        // TODO: Unify record-time video object lists with other commands after conversion
+        const LogObjectList objlist = replay_tag == kInvalidTag ? LogObjectList(bitstream_buffer.Handle())
+                                                                : BaseObjectList(env, cb_context, bitstream_buffer.Handle());
+        const std::string resource_description = "bitstream buffer " + validator.FormatHandle(bitstream_buffer.Handle());
+        const std::string error = validator.error_messages_.BufferError(env, bitstream_hazard, cb_context, replay_tag, loc,
+                                                                        resource_description, bitstream_range);
+        skip |= validator.SyncError(bitstream_hazard.Hazard(), objlist, loc, error);
+    }
+    for (const PictureAccess& picture : pictures) {
+        auto range_gen = MakeVideoPictureRangeGen(picture);
+        const SyncAccessIndex picture_access_index = GetVideoPictureAccessIndex(operation, picture.type);
+        const auto hazard = access_context.DetectHazard(range_gen, picture_access_index);
+        if (!hazard.IsHazard()) {
+            continue;
+        }
+        const Location info_loc(vvl::Func::Empty,
+                                operation == Operation::kDecode ? vvl::Field::pDecodeInfo : vvl::Field::pEncodeInfo);
+        std::ostringstream ss;
+        switch (picture.type) {
+            case PictureType::kOutput:
+                ss << "decode output picture " << info_loc.dot(vvl::Field::dstPictureResource).Fields();
+                break;
+            case PictureType::kInput:
+                ss << "encode input picture " << info_loc.dot(vvl::Field::srcPictureResource).Fields();
+                break;
+            case PictureType::kReconstructed:
+                ss << "reconstructed picture "
+                   << info_loc.dot(vvl::Field::pSetupReferenceSlot).dot(vvl::Field::pPictureResource).Fields();
+                break;
+            case PictureType::kReference:
+                ss << "reference picture " << picture.reference_index << " "
+                   << info_loc.dot(vvl::Field::pReferenceSlots, picture.reference_index).dot(vvl::Field::pPictureResource).Fields();
+                break;
+            case PictureType::kQuantizationMap:
+                ss << "quantization map " << info_loc.dot(vvl::Field::quantizationMap).Fields();
+                break;
+        }
+        ss << " ";
+        if (picture.type == PictureType::kQuantizationMap) {
+            VkVideoEncodeQuantizationMapInfoKHR map_info = vku::InitStructHelper();
+            map_info.quantizationMap = picture.view->VkHandle();
+            map_info.quantizationMapExtent = picture.coded_extent;
+            FormatVideoQuantizationMap(validator, map_info, ss);
+        } else {
+            VkVideoPictureResourceInfoKHR picture_info = vku::InitStructHelper();
+            picture_info.imageViewBinding = picture.view->VkHandle();
+            picture_info.codedOffset = picture.coded_offset;
+            picture_info.codedExtent = picture.coded_extent;
+            picture_info.baseArrayLayer = picture.base_array_layer;
+            FormatVideoPictureResouce(validator, picture_info, ss);
+        }
+        const LogObjectList objlist = (replay_tag == kInvalidTag) ? LogObjectList(picture.view->Handle())
+                                                                  : BaseObjectList(env, cb_context, picture.view->Handle());
+        const std::string error = validator.error_messages_.VideoError(env, hazard, cb_context, replay_tag, loc, ss.str());
+        skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    }
+    return skip;
+}
+
+void VideoCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    const SyncAccessIndex buffer_access_index =
+        (operation == Operation::kDecode) ? SYNC_VIDEO_DECODE_VIDEO_DECODE_READ : SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE;
+    access_context.UpdateAccessState(bitstream_buffer, buffer_access_index, bitstream_range,
+                                     ResourceUsageTagEx{tag, bitstream_handle_index}, 0, env.queue_id);
+
+    for (const PictureAccess& picture : pictures) {
+        auto range_gen = MakeVideoPictureRangeGen(picture);
+        const SyncAccessIndex picture_access_index = GetVideoPictureAccessIndex(operation, picture.type);
+        access_context.UpdateAccessState(range_gen, picture_access_index, ResourceUsageTagEx{tag}, 0, env.queue_id);
     }
 }
 

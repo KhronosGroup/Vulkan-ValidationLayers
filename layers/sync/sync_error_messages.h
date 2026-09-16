@@ -189,8 +189,8 @@ class ErrorMessages {
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,
                              const std::string& resource_description, uint32_t swapchain_index) const;
 
-    std::string VideoError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
-                           const std::string& resource_description) const;
+    std::string VideoError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
+                           ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description) const;
 
   private:
     vvl::Func AddReplayInfo(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,

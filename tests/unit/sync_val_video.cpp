@@ -350,3 +350,71 @@ TEST_F(NegativeSyncValVideo, EncodeQuantizationMap) {
         GTEST_SKIP() << "Not all quantization map types could be tested";
     }
 }
+
+TEST_F(NegativeSyncValVideo, DecodeOutputPictureAcrossCommandBuffers) {
+    TEST_DESCRIPTION("Two command buffers write the same video decode output picture without a dependency");
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfigDecode();
+    if (!config) {
+        GTEST_SKIP() << "Test requires decode support";
+    }
+    VideoContext context(m_device, config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+    cb.Begin();
+    cb.BeginVideoCoding(context.Begin());
+    cb.ControlVideoCoding(context.Control().Reset());
+    cb.DecodeVideo(context.DecodeFrame());
+    cb.EndVideoCoding(context.End());
+    cb.End();
+
+    vkt::CommandPool pool(*m_device, config.QueueFamilyIndex());
+    vkt::CommandBuffer second_cb(*m_device, pool);
+    second_cb.Begin();
+    second_cb.BeginVideoCoding(context.Begin());
+    second_cb.DecodeVideo(context.DecodeFrame());
+    second_cb.EndVideoCoding(context.End());
+    second_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    context.Queue().Submit({cb, second_cb});
+    m_errorMonitor->VerifyFound();
+    context.Queue().Wait();
+}
+
+TEST_F(NegativeSyncValVideo, EncodeBitstreamAcrossCommandBuffers) {
+    TEST_DESCRIPTION("Two command buffers write the same video encode bitstream buffer without a dependency");
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfigEncode();
+    if (!config) {
+        GTEST_SKIP() << "Test requires encode support";
+    }
+    VideoContext context(m_device, config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+    cb.Begin();
+    cb.BeginVideoCoding(context.Begin());
+    cb.ControlVideoCoding(context.Control().Reset());
+    cb.EncodeVideo(context.EncodeFrame());
+    cb.EndVideoCoding(context.End());
+    cb.End();
+
+    vkt::CommandPool pool(*m_device, config.QueueFamilyIndex());
+    vkt::CommandBuffer second_cb(*m_device, pool);
+    second_cb.Begin();
+    second_cb.BeginVideoCoding(context.Begin());
+    second_cb.EncodeVideo(context.EncodeFrame());
+    second_cb.EndVideoCoding(context.End());
+    second_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    context.Queue().Submit({cb, second_cb});
+    m_errorMonitor->VerifyFound();
+    context.Queue().Wait();
+}

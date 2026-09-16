@@ -29,8 +29,6 @@ class Bindable;
 class Buffer;
 class Image;
 class ImageView;
-class VideoPictureResource;
-class VideoSession;
 }  // namespace vvl
 
 namespace syncval {
@@ -394,8 +392,6 @@ class AccessContext {
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange& tag_range,
                                       const AccessContext& destination_context) const;
 
-    HazardResult DetectVideoHazard(const vvl::VideoSession& vs_state, const vvl::VideoPictureResource& resource,
-                                   SyncAccessIndex current_usage) const;
     HazardResult DetectMarkerHazard(const vvl::Buffer& buffer, const AccessRange& range) const;
 
   private:
