@@ -1190,10 +1190,16 @@ void CommandBufferSubState::RetireQueries(uint32_t perf_submit_pass, const Query
     };
     const QueryMap local_query_map = GetLocalQueryMap(perf_submit_pass);
     for (const auto& [query_object, query_state] : local_query_map) {
-        if (query_state == QUERYSTATE_ENDED && !is_query_updated_after(query_object)) {
-            auto query_pool_state = base.dev_data.Get<vvl::QueryPool>(query_object.pool);
-            if (!query_pool_state) continue;
-            query_pool_state->SetQueryState(query_object.slot, query_object.perf_pass, QUERYSTATE_AVAILABLE);
+        if (is_query_updated_after(query_object)) {
+            // Anything a later pending submission touches will be settled when that submission retires
+            continue;
+        } else if (query_state != QUERYSTATE_ENDED && query_state != QUERYSTATE_RESET) {
+            continue;
+        }
+
+        if (auto query_pool_state = base.dev_data.Get<vvl::QueryPool>(query_object.pool)) {
+            const QueryState new_state = (query_state == QUERYSTATE_ENDED) ? QUERYSTATE_AVAILABLE : QUERYSTATE_RESET;
+            query_pool_state->SetQueryState(query_object.slot, query_object.perf_pass, new_state);
         }
     }
 }
