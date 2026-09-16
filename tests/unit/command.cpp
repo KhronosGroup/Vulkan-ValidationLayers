@@ -2868,22 +2868,28 @@ TEST_F(NegativeCommand, ResolveUsage) {
         GTEST_SKIP() << "Required VkSampleCountFlagBits are not supported; skipping";
     }
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    // Best guess format
+    const VkFormat src_format = VK_FORMAT_A8B8G8R8_USCALED_PACK32;
+    const VkFormat dst_format = VK_FORMAT_A8B8G8R8_SSCALED_PACK32;
+    const VkFormatFeatureFlags2 src_features = m_device->FormatFeaturesOptimal(src_format);
+    const VkFormatFeatureFlags2 dst_features = m_device->FormatFeaturesOptimal(dst_format);
+    if ((src_features & VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT) || !(src_features & VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT) ||
+        (dst_features & VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT) || !(dst_features & VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(src_format) << " to only be a transfer dst and " << string_VkFormat(dst_format)
+                     << " to only be a transfer src";
     }
-
-    VkFormat src_format = VK_FORMAT_R8_UNORM;
-    VkFormat dst_format = VK_FORMAT_R8_SNORM;
-
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), src_format, &formatProps);
-    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), src_format, formatProps);
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), dst_format, &formatProps);
-    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), dst_format, formatProps);
+    // The formats also need to actually be usable for the multisampled images below
+    auto multisampled_image_supported = [this](VkFormat format, VkImageUsageFlags usage) {
+        VkImageCreateInfo ci = vkt::Image::ImageCreateInfo2D(32, 1, 1, 1, format, usage);
+        ci.samples = VK_SAMPLE_COUNT_2_BIT;
+        VkImageFormatProperties props;
+        return GetImageFormatProps(Gpu(), ci, props) == VK_SUCCESS && (props.sampleCounts & VK_SAMPLE_COUNT_2_BIT) != 0;
+    };
+    if (!multisampled_image_supported(src_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT) ||
+        !multisampled_image_supported(dst_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(src_format) << " and " << string_VkFormat(dst_format)
+                     << " to support multisampled images";
+    }
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3728,25 +3734,20 @@ TEST_F(NegativeCommand, ClearDepthStencilImageWithInvalidAspect) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
-
 TEST_F(NegativeCommand, ClearColorImageWithMissingFeature) {
     TEST_DESCRIPTION("Use vkCmdClearColorImage with image format that doesnt have VK_FORMAT_FEATURE_TRANSFER_DST_BIT.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    // Best guess format
+    const VkFormat format = VK_FORMAT_A8B8G8R8_SSCALED_PACK32;
+    const VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    VkImageFormatProperties image_format_props;
+    if ((m_device->FormatFeaturesOptimal(format) & VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT) ||
+        GetImageFormatProps(Gpu(), image_ci, image_format_props) != VK_SUCCESS) {
+        GTEST_SKIP() << "Need " << string_VkFormat(format) << " to be usable as an image, but not as a transfer dst";
     }
-
-    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), format, &formatProps);
-    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
 
     vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
@@ -3765,7 +3766,6 @@ TEST_F(NegativeCommand, ClearColorImageWithMissingFeature) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
-
 TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
     TEST_DESCRIPTION("Attempt to clear color aspect of depth/stencil image.");
 

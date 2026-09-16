@@ -423,18 +423,12 @@ TEST_F(NegativeSampler, LinearReductionModeMinMax) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    const VkFormat format = VK_FORMAT_ASTC_4x4_SRGB_BLOCK;
+    const VkFormatFeatureFlags2 features = m_device->FormatFeaturesOptimal(format);
+    if (!(features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) || !(features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT) ||
+        (features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(format) << " to be sampled with linear filtering, but not minmax filtering";
     }
-
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), format, &formatProps);
-    formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT);
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
 
     vkt::Image image(*m_device, 128, 128, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();

@@ -810,23 +810,13 @@ TEST_F(PositiveAtomic, Int64Shared) {
 
 TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
     TEST_DESCRIPTION("Have a OpImageTexelPointer without an actual OpAtomic* accessing it");
-
     RETURN_IF_SKIP(Init());
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;
-    // Need to have VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT
-    //      but not VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    const VkFormatFeatureFlags2 features = m_device->FormatFeaturesOptimal(format);
+    if (!(features & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT) || (features & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(format) << " to be a storage image without atomic support";
     }
-
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), format, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
-    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
@@ -841,8 +831,9 @@ TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
              OpDecorate %image Binding 0
      %void = OpTypeVoid
         %3 = OpTypeFunction %void
+    %float = OpTypeFloat 32
      %uint = OpTypeInt 32 0
-        %7 = OpTypeImage %uint 2D 0 0 0 2 R32ui
+        %7 = OpTypeImage %float 2D 0 0 0 2 R32f
    %ptr_uc = OpTypePointer UniformConstant %7
     %image = OpVariable %ptr_uc UniformConstant
       %int = OpTypeInt 32 1
@@ -850,7 +841,7 @@ TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
     %int_0 = OpConstant %int 0
        %13 = OpConstantComposite %v2int %int_0 %int_0
    %uint_0 = OpConstant %uint 0
-%ptr_image = OpTypePointer Image %uint
+%ptr_image = OpTypePointer Image %float
      %main = OpFunction %void None %3
         %5 = OpLabel
        %18 = OpImageTexelPointer %ptr_image %image %13 %uint_0

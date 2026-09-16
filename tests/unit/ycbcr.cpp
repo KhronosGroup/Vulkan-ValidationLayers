@@ -26,11 +26,16 @@ TEST_F(NegativeYcbcr, Sampler) {
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(Init());
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
+    // Best guess at a multi-planar format that has some chroma format features missing
+    const VkFormat mp_format = VK_FORMAT_G16_B16R16_2PLANE_420_UNORM;
+    const VkFormatFeatureFlags2 features = m_device->FormatFeaturesLinear(mp_format) | m_device->FormatFeaturesOptimal(mp_format);
+
+    const VkFormatFeatureFlags2 cosited = VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT;
+    const VkFormatFeatureFlags2 midpoint = VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT;
+    const VkFormatFeatureFlags2 linear_filter = VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
+    const VkFormatFeatureFlags2 forceable =
+        VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT;
+    const VkFormatFeatureFlags2 separate = VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT;
 
     VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
     VkSamplerYcbcrConversionCreateInfo sycci = vku::InitStructHelper();
@@ -54,64 +59,62 @@ TEST_F(NegativeYcbcr, Sampler) {
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
-    // Force the multi-planar format support desired format features
-    VkFormat mp_format = VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM;
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, &formatProps);
-    formatProps.linearTilingFeatures = 0;
-    formatProps.optimalTilingFeatures = 0;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
-
-    // Check that errors are caught when format feature don't exist
+    // Check that errors are caught when format features don't exist
     sycci.format = mp_format;
 
     // No Chroma Sampler Bit set
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650");
-    // 01651 set off twice for both xChromaOffset and yChromaOffset
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
-    m_errorMonitor->VerifyFound();
+    if (!(features & (cosited | midpoint))) {
+        sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+        sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650");
+        // 01651 set off twice for both xChromaOffset and yChromaOffset
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Cosited feature supported, but midpoint samples set
-    formatProps.linearTilingFeatures = 0;
-    formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
-    sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
-    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
-    m_errorMonitor->VerifyFound();
-
-    // Moving support to Linear to test that it checks either linear or optimal
-    formatProps.linearTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
-    formatProps.optimalTilingFeatures = 0;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
-    sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
-    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
-    m_errorMonitor->VerifyFound();
+    if ((features & cosited) && !(features & midpoint)) {
+        sycci.forceExplicitReconstruction = VK_FALSE;
+        sycci.chromaFilter = VK_FILTER_NEAREST;
+        sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
+        sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Using forceExplicitReconstruction without feature bit
-    sycci.forceExplicitReconstruction = VK_TRUE;
-    sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
-    m_errorMonitor->VerifyFound();
+    if ((features & cosited) && !(features & forceable)) {
+        sycci.forceExplicitReconstruction = VK_TRUE;
+        sycci.chromaFilter = VK_FILTER_NEAREST;
+        sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+        sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656");
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Linear chroma filtering without feature bit
+    if ((features & cosited) && !(features & linear_filter)) {
+        sycci.forceExplicitReconstruction = VK_FALSE;
+        sycci.chromaFilter = VK_FILTER_LINEAR;
+        sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+        sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+        m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657");
+        vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // The rest needs a valid SamplerYcbcrConversion using a linear chromaFilter, and a format that will hit 01645
+    if (!(features & cosited) || !(features & linear_filter) || (features & separate)) {
+        return;
+    }
     sycci.forceExplicitReconstruction = VK_FALSE;
     sycci.chromaFilter = VK_FILTER_LINEAR;
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657");
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
-    m_errorMonitor->VerifyFound();
-
-    // Add linear feature bit so can create valid SamplerYcbcrConversion
-    formatProps.linearTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
-    formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
+    sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
 
     // Try to create a Sampler with non-matching filters without feature bit set
@@ -280,23 +283,10 @@ TEST_F(NegativeYcbcr, Formats) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
     if (!FormatIsSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
         GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM is unsupported";
     }
-
-    // Set format features as needed for tests
-    VkFormatProperties formatProps;
     const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
-    formatProps.optimalTilingFeatures = formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_DISJOINT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
 
     // Create ycbcr image with all valid values
     // Each test changes needed values and returns them back after
@@ -342,10 +332,16 @@ TEST_F(NegativeYcbcr, Formats) {
     }
     image_create_info = reset_create_info;
 
-    // Test using a format that doesn't support disjoint
-    image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
-    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260");
-    image_create_info = reset_create_info;
+    {
+        const VkFormat no_disjoint_format = VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16;
+        const VkFormatFeatureFlags2 features = m_device->FormatFeaturesOptimal(no_disjoint_format);
+        if ((features & VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT) && !(features & VK_FORMAT_FEATURE_2_DISJOINT_BIT)) {
+            image_create_info.format = no_disjoint_format;
+            image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+            CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260");
+        }
+        image_create_info = reset_create_info;
+    }
 
     {
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-format-parameter");
@@ -374,23 +370,10 @@ TEST_F(NegativeYcbcr, FormatsLimits) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
     if (!FormatIsSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
         GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM is unsupported";
     }
-
-    // Set format features as needed for tests
-    VkFormatProperties formatProps;
     const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
-    formatProps.optimalTilingFeatures = formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_DISJOINT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
 
     // Create ycbcr image with all valid values
     // Each test changes needed values and returns them back after
