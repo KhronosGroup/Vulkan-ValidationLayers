@@ -1702,15 +1702,23 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
 bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                        const VkClearAttachment* pAttachments, uint32_t rectCount,
                                                        const VkClearRect* pRects, const ErrorObject& error_obj) const {
-    bool skip = false;
-    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-
-    for (const VkClearAttachment& attachment : vvl::make_span(pAttachments, attachmentCount)) {
-        for (const auto [rect_index, rect] : vvl::enumerate(pRects, rectCount)) {
-            skip |= GetCommandBufferContext(*cb_state).ValidateClearAttachment(error_obj.location, attachment, rect_index, rect);
-        }
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
     }
-    return skip;
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+
+    const auto attachments = cb_context.CollectClearAttachments({pAttachments, attachmentCount});
+    if (attachments.empty()) {
+        return false;
+    }
+
+    const auto* render_pass_context = cb_context.GetCurrentRenderPassContext();
+    const uint32_t current_subpass = render_pass_context ? render_pass_context->GetCurrentSubpass() : vvl::kNoIndex32;
+
+    const ClearAttachmentsCommand command{
+        attachments, {pRects, rectCount}, cb_context.GetViewMask(), cb_context.GetCurrentRenderPassInstanceId(), current_subpass};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,

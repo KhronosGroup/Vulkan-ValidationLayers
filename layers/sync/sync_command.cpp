@@ -28,6 +28,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "utils/image_utils.h"
+#include "utils/math_utils.h"
 
 namespace syncval {
 
@@ -229,6 +230,13 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.video_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kClearAttachments: {
+                auto command = command_data.clear_attachments_commands[index].MakeCommand(command_data);
+                command.render_pass_instance_id += replay_context.render_pass_instance_offset;
+                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
+                command.Apply(env, base_tag + replay_tag, access_context);
+                continue;
+            }
         }
         assert(false);
     }
@@ -254,6 +262,7 @@ void CommandData::Reset() {
     draw_mesh_tasks_commands.clear();
     build_acceleration_structures_commands.clear();
     video_commands.clear();
+    clear_attachments_commands.clear();
 
     buffers.clear();
     buffer_lookup.clear();
@@ -277,6 +286,8 @@ void CommandData::Reset() {
     multi_draw_ranges.clear();
     acceleration_structure_build_accesses.clear();
     video_picture_accesses.clear();
+    clear_attachments.clear();
+    clear_rects.clear();
 
     descriptor_sets.clear();
     descriptor_set_lookup.clear();
@@ -1566,6 +1577,172 @@ void VideoCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessConte
         auto range_gen = MakeVideoPictureRangeGen(picture);
         const SyncAccessIndex picture_access_index = GetVideoPictureAccessIndex(operation, picture.type);
         access_context.UpdateAccessState(range_gen, picture_access_index, ResourceUsageTagEx{tag}, 0, env.queue_id);
+    }
+}
+
+ClearAttachmentsCommand::Storage ClearAttachmentsCommand::MakeStorage(CommandData& command_data) const {
+    const uint32_t first_attachment = uint32_t(command_data.clear_attachments.size());
+    vvl::Append(command_data.clear_attachments, attachments);
+    for (const Attachment& attachment : attachments) {
+        command_data.AddImageView(*attachment.view);
+    }
+    const uint32_t first_rect = uint32_t(command_data.clear_rects.size());
+    vvl::Append(command_data.clear_rects, rects);
+    return {first_attachment, uint32_t(attachments.size()), first_rect, uint32_t(rects.size()),
+            view_mask,        render_pass_instance_id,      subpass};
+}
+
+ClearAttachmentsCommand ClearAttachmentsCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const Attachment> attachments;
+    if (attachment_count) {
+        attachments = {&command_data.clear_attachments[first_attachment], attachment_count};
+    }
+    vvl::span<const VkClearRect> rects;
+    if (rect_count) {
+        rects = {&command_data.clear_rects[first_rect], rect_count};
+    }
+    return {attachments, rects, view_mask, render_pass_instance_id, subpass};
+}
+
+static std::optional<VkImageSubresourceRange> RestrictSubresourceRangeToClearLayers(
+    const VkImageSubresourceRange& normalized_subresource_range, uint32_t clear_first_layer, uint32_t clear_layer_count) {
+    // Contract of this function
+    assert(normalized_subresource_range.layerCount != VK_REMAINING_ARRAY_LAYERS);
+    // According to spec
+    assert(clear_layer_count != VK_REMAINING_ARRAY_LAYERS);
+
+    const uint32_t first = std::max(normalized_subresource_range.baseArrayLayer, clear_first_layer);
+    const uint32_t last_range = normalized_subresource_range.baseArrayLayer + normalized_subresource_range.layerCount;
+    const uint32_t last_clear = clear_first_layer + clear_layer_count;
+    const uint32_t last = std::min(last_range, last_clear);
+
+    if (first >= last) {
+        return {};
+    }
+
+    std::optional<VkImageSubresourceRange> result = normalized_subresource_range;
+    result->baseArrayLayer = first;
+    result->layerCount = last - first;
+    return result;
+}
+
+bool ClearAttachmentsCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool ClearAttachmentsCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                       const Location& loc) const {
+    bool skip = false;
+    const SyncValidator& validator = env.validator;
+
+    auto report_hazard = [&skip, &env, &cb_context, replay_tag, &loc, this, &validator](
+                             const HazardResult& hazard, const Attachment& attachment, bool color, uint32_t rect_index,
+                             const VkClearRect& rect) {
+        std::ostringstream ss;
+        ss << string_VkImageAspectFlags(attachment.original_aspects);
+        if (color) {
+            ss << " aspect of color attachment " << attachment.color_attachment;
+            ss << " (" << validator.FormatHandle(*attachment.view) << ")";
+        } else {
+            ss << " aspect(s) of depth-stencil attachment (" << validator.FormatHandle(*attachment.view) << ")";
+        }
+        if (subpass != vvl::kNoIndex32) {
+            ss << " in subpass " << subpass;
+        }
+        const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
+        const std::string error = validator.error_messages_.ClearAttachmentError(env, hazard, cb_context, replay_tag, loc, ss.str(),
+                                                                                 attachment.original_aspects, rect_index, rect);
+        skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    };
+
+    for (const Attachment& attachment : attachments) {
+        const bool color = (attachment.effective_aspects & kColorAspects) != 0;
+        const SyncOrdering ordering = color ? SyncOrdering::kColorAttachment : SyncOrdering::kDepthStencilAttachment;
+        const AttachmentAccess attachment_access{AttachmentAccessType::Access, ordering, render_pass_instance_id, subpass};
+
+        // Depth/stencil clears execute in both early and late stages. Track the most recent access (late)
+        const SyncAccessIndex access_index =
+            color ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE : SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
+
+        for (const auto [rect_index, rect] : vvl::enumerate(rects)) {
+            auto subresource_range = RestrictSubresourceRangeToClearLayers(attachment.view->normalized_subresource_range,
+                                                                           rect.baseArrayLayer, rect.layerCount);
+            if (!subresource_range) {
+                continue;
+            }
+            subresource_range->aspectMask = attachment.effective_aspects;
+
+            if (view_mask == 0) {
+                const auto hazard = access_context.DetectAttachmentHazard(*attachment.view->image_state, *subresource_range,
+                                                                          attachment.view->is_depth_sliced, access_index,
+                                                                          attachment_access, env.queue_id);
+                if (hazard.IsHazard()) {
+                    report_hazard(hazard, attachment, color, uint32_t(rect_index), rect);
+                }
+            } else {
+                const ImageSubState& sub_state = SubState(*attachment.view->image_state);
+                const VkImageSubresourceRange& attachment_subresource = attachment.view->normalized_subresource_range;
+                const auto view_indices = GetSetBitIndices(view_mask);
+
+                for (uint32_t view_index : view_indices) {
+                    if (view_index < attachment_subresource.layerCount) {
+                        VkImageSubresourceRange view_subresource = attachment_subresource;
+                        view_subresource.baseArrayLayer += view_index;
+                        view_subresource.layerCount = 1;
+
+                        auto range_gen = sub_state.MakeImageRangeGen(view_subresource, attachment.view->is_depth_sliced);
+                        const auto hazard =
+                            access_context.DetectAttachmentHazard(range_gen, access_index, attachment_access, env.queue_id);
+                        if (hazard.IsHazard()) {
+                            report_hazard(hazard, attachment, color, uint32_t(rect_index), rect);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return skip;
+}
+
+void ClearAttachmentsCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    for (const Attachment& attachment : attachments) {
+        const ImageSubState& sub_state = SubState(*attachment.view->image_state);
+        const bool color = (attachment.effective_aspects & kColorAspects) != 0;
+        const SyncOrdering ordering = color ? SyncOrdering::kColorAttachment : SyncOrdering::kDepthStencilAttachment;
+        const AttachmentAccess attachment_access{AttachmentAccessType::Access, ordering, render_pass_instance_id, subpass};
+
+        const SyncAccessIndex access_index =
+            color ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE : SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
+
+        for (const VkClearRect& rect : rects) {
+            auto subresource_range = RestrictSubresourceRangeToClearLayers(attachment.view->normalized_subresource_range,
+                                                                           rect.baseArrayLayer, rect.layerCount);
+            if (!subresource_range) {
+                continue;
+            }
+            subresource_range->aspectMask = attachment.effective_aspects;
+            // NOTE: when we teach ImageRangeGen to work with view masks all logic will be much simplified
+            if (view_mask == 0) {
+                auto range_gen = sub_state.MakeImageRangeGen(*subresource_range, attachment.view->is_depth_sliced);
+                access_context.UpdateAttachmentAccessState(range_gen, access_index, attachment_access, ResourceUsageTagEx{tag},
+                                                           env.queue_id);
+            } else {
+                const VkImageSubresourceRange& attachment_subresource = attachment.view->normalized_subresource_range;
+                const auto view_indices = GetSetBitIndices(view_mask);
+
+                for (uint32_t view_index : view_indices) {
+                    if (view_index < attachment_subresource.layerCount) {
+                        VkImageSubresourceRange view_subresource = attachment_subresource;
+                        view_subresource.baseArrayLayer += view_index;
+                        view_subresource.layerCount = 1;
+                        auto range_gen = sub_state.MakeImageRangeGen(view_subresource, attachment.view->is_depth_sliced);
+                        access_context.UpdateAttachmentAccessState(range_gen, access_index, attachment_access,
+                                                                   ResourceUsageTagEx{tag}, env.queue_id);
+                    }
+                }
+            }
+        }
     }
 }
 

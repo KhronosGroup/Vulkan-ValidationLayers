@@ -55,6 +55,9 @@ AccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSi
 inline const SyncAccessInfo& GetAccessInfo(SyncAccessIndex access) { return GetSyncAccessInfos()[access]; }
 
 extern const AccessRange kFullRange;
+
+constexpr VkImageAspectFlags kColorAspects =
+    VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
 constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
 struct SyncFlag {

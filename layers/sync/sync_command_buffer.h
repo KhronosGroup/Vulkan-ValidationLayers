@@ -232,9 +232,9 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
                                                                 uint32_t stride) const;
     MultiDrawVertexInputAccesses CollectMultiDrawIndexAccesses(uint32_t draw_count, const VkMultiDrawIndexedInfoEXT* draw_info,
                                                                uint32_t stride) const;
-    bool ValidateClearAttachment(const Location& loc, const VkClearAttachment& clear_attachment, uint32_t clear_rect_index,
-                                 const VkClearRect& clear_rect) const;
-    void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment& clear_attachment, const VkClearRect& clear_rect);
+    std::vector<ClearAttachmentsCommand::Attachment> CollectClearAttachments(
+        vvl::span<const VkClearAttachment> clear_attachments) const;
+    uint32_t GetViewMask() const;  // can be called only during render pass instance
 
     ResourceUsageTag RecordNextSubpass(vvl::Func command);
     ResourceUsageTag RecordEndRenderPass(vvl::Func command);
@@ -312,15 +312,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     uint32_t AddHandle(const VulkanTypedHandle& typed_handle, uint32_t index);
     AttachmentAccess GetAttachmentAccess(SyncOrdering ordering, AttachmentAccessType type = AttachmentAccessType::Access) const;
 
-    // Should be called only during render pass instance
-    uint32_t GetViewMask() const;
-
-    struct ClearAttachmentInfo {
-        const vvl::ImageView& attachment_view;
-        VkImageSubresourceRange subresource_range{};
-    };
-    std::optional<ClearAttachmentInfo> GetClearAttachmentInfo(const VkClearAttachment& clear_attachment, uint32_t clear_first_layer,
-                                                              uint32_t clear_layer_count) const;
     VkImageAspectFlags GetAttachmentAspectsToClear(VkImageAspectFlags clear_aspect_mask,
                                                    const vvl::ImageView& attachment_view) const;
 
