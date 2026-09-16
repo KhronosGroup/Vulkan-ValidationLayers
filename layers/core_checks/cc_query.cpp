@@ -986,6 +986,8 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer& cb_state, VkQuery
     const auto& query_pool_ci = query_pool_state->create_info;
     if (query_pool_ci.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
         if (query_pool_state->has_perf_scope_render_pass && rp_state) {
+            // see https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4137
+            // I have never been able to hit this VU in a test, but keep "just in case"
             const LogObjectList objlist(cb_state.Handle(), queryPool);
             skip |= LogError("VUID-vkCmdEndQuery-queryPool-03228", objlist, loc,
                              "Query pool %s was created with a counter of scope "
@@ -1021,6 +1023,8 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer& cb_state, VkQuery
             if (subpass_desc) {
                 const uint32_t bits = CountSetBits(subpass_desc->viewMask);
                 if (slot + bits > query_pool_state->create_info.queryCount) {
+                    // see https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4137
+                    // I have never been able to hit this VU in a test, but keep "just in case"
                     const char* vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-query-02345" : "VUID-vkCmdEndQuery-query-00812";
                     const LogObjectList objlist(cb_state.Handle(), queryPool, rp_state->Handle());
                     skip |= LogError(vuid, objlist, loc,

@@ -402,6 +402,90 @@ TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveQuery, SequentialRenderPassInstances) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9196");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2u);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 2u);
+
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    m_command_buffer.EndRenderPass();
+
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1u);
+    m_command_buffer.EndRenderPass();
+
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveQuery, SequentialRenderingInstances) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9196");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2u);
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.layerCount = 1u;
+    begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 2u);
+
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    m_command_buffer.EndRendering();
+
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1u);
+    m_command_buffer.EndRendering();
+
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveQuery, SuspendResumeRenderingInstance) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9196");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2u);
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.layerCount = 1u;
+    begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 2u);
+
+    begin_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    m_command_buffer.EndRendering();
+
+    begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1u);
+    m_command_buffer.EndRendering();
+
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveQuery, PerformanceQueries) {
 #if defined(VVL_ENABLE_TSAN)
     // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
