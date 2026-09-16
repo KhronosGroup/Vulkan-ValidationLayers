@@ -21,6 +21,7 @@
 
 #include <fstream>
 #include <vector>
+#include "generated/error_location_helper.h"
 #include "utils/assert_utils.h"
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
@@ -598,6 +599,79 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
     VkImageFormatProperties2* pImageFormatProperties, const ErrorObject& error_obj) const {
     return PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                   error_obj);
+}
+
+bool core::Instance::ValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                          VkImageType type, VkSampleCountFlagBits samples,
+                                                                          VkImageUsageFlags2KHR usage, VkImageTiling tiling,
+                                                                          const VkImageUsageFlags2CreateInfoKHR* usage_flags2,
+                                                                          const Location& samples_loc) const {
+    bool skip = false;
+
+    VkImageFormatProperties image_format_properties = {};
+    VkResult result = VK_SUCCESS;
+    Func dispatch_function = Func::vkGetPhysicalDeviceImageFormatProperties;
+
+    if (usage_flags2) {
+        dispatch_function = Func::vkGetPhysicalDeviceImageFormatProperties2;
+        VkImageUsageFlags2CreateInfoKHR usage_flags2_copy = *usage_flags2;
+        usage_flags2_copy.pNext = nullptr;
+        VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&usage_flags2_copy);
+        image_format_info.format = format;
+        image_format_info.type = type;
+        image_format_info.tiling = tiling;
+        VkImageFormatProperties2 image_format_properties2 = vku::InitStructHelper();
+        result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physicalDevice, &image_format_info,
+                                                                       &image_format_properties2);
+        image_format_properties = image_format_properties2.imageFormatProperties;
+    } else {
+        result = DispatchGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling,
+                                                                static_cast<VkImageUsageFlags>(usage), 0, &image_format_properties);
+    }
+
+    if (result == VK_SUCCESS) {
+        if ((image_format_properties.sampleCounts & samples) == 0) {
+            const char* vuid = samples_loc.function == Func::vkGetPhysicalDeviceSparseImageFormatProperties
+                                   ? "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-samples-01094"
+                                   : "VUID-VkPhysicalDeviceSparseImageFormatInfo2-samples-01095";
+            skip |= LogError(vuid, physicalDevice, samples_loc,
+                             "is %s, but %s with format (%s), type (%s), tiling (%s), and usage "
+                             "(%s) returns a sampleCounts of %s.",
+                             string_VkSampleCountFlagBits(samples), String(dispatch_function), string_VkFormat(format),
+                             string_VkImageType(type), string_VkImageTiling(tiling), string_VkImageUsageFlags2KHR(usage).c_str(),
+                             string_VkSampleCountFlags(image_format_properties.sampleCounts).c_str());
+        }
+    }
+    return skip;
+}
+
+bool core::Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                                 VkImageType type, VkSampleCountFlagBits samples,
+                                                                                 VkImageUsageFlags usage, VkImageTiling tiling,
+                                                                                 uint32_t* pPropertyCount,
+                                                                                 VkSparseImageFormatProperties* pProperties,
+                                                                                 const ErrorObject& error_obj) const {
+    return ValidateGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling, nullptr,
+                                                                error_obj.location.dot(Field::samples));
+}
+
+bool core::Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
+    VkSparseImageFormatProperties2* pProperties, const ErrorObject& error_obj) const {
+    if (!pFormatInfo) {
+        return false;
+    }
+    const auto* usage_flags2 = vku::FindStructInPNextChain<VkImageUsageFlags2CreateInfoKHR>(pFormatInfo->pNext);
+    return ValidateGetPhysicalDeviceSparseImageFormatProperties(
+        physicalDevice, pFormatInfo->format, pFormatInfo->type, pFormatInfo->samples, GetImageUsageFlags(*pFormatInfo),
+        pFormatInfo->tiling, usage_flags2, error_obj.location.dot(Field::pFormatInfo).dot(Field::samples));
+}
+
+bool core::Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
+    VkSparseImageFormatProperties2* pProperties, const ErrorObject& error_obj) const {
+    return PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties,
+                                                                        error_obj);
 }
 
 // Access helper functions for external modules
