@@ -3696,17 +3696,11 @@ TEST_F(NegativeCopyBufferImage, ImageCopyMissingSrcFormatFeature) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    // Best guess format
+    const VkFormat format = VK_FORMAT_A8B8G8R8_USCALED_PACK32;
+    if (m_device->FormatFeaturesOptimal(format) & VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT) {
+        GTEST_SKIP() << "Need " << string_VkFormat(format) << " to not support being a transfer src";
     }
-
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), format, &formatProps);
-    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
 
     VkImageFormatProperties img_prop;
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), format, VK_IMAGE_TYPE_2D,
@@ -3751,17 +3745,11 @@ TEST_F(NegativeCopyBufferImage, ImageCopyMissingDstFormatFeature) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    // Best guess format
+    const VkFormat format = VK_FORMAT_A8B8G8R8_SSCALED_PACK32;
+    if (m_device->FormatFeaturesOptimal(format) & VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT) {
+        GTEST_SKIP() << "Need " << string_VkFormat(format) << " to not support being a transfer dst";
     }
-
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), format, &formatProps);
-    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
 
     VkImageFormatProperties img_prop;
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), format, VK_IMAGE_TYPE_2D,

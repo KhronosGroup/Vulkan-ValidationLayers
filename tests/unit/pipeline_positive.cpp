@@ -1061,35 +1061,26 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
 
 TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     TEST_DESCRIPTION("Create a shader writing a storage image without an image format");
-
-    // need to be compatible to use VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT
-    const VkFormat image_format = VK_FORMAT_B8G8R8A8_SRGB;
-    const VkFormat image_view_format = VK_FORMAT_R32_SFLOAT;
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
+    // Best guess format
+    const VkFormat image_format = VK_FORMAT_A8B8G8R8_SNORM_PACK32;
+    const VkFormat image_view_format = VK_FORMAT_R32_SFLOAT;
     VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
-
-    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(Gpu(), image_format, &fmt_props);
-    fmt_props.formatProperties.optimalTilingFeatures =
-        (fmt_props.formatProperties.optimalTilingFeatures & ~VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT);
-    fmt_props_3.optimalTilingFeatures = (fmt_props_3.optimalTilingFeatures & ~VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT);
-    fmt_props_3.optimalTilingFeatures = (fmt_props_3.optimalTilingFeatures & ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT);
-    fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), image_format, fmt_props);
-
-    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(Gpu(), image_view_format, &fmt_props);
-    fmt_props.formatProperties.optimalTilingFeatures |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
-    fmt_props_3.optimalTilingFeatures |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
-    fmt_props_3.optimalTilingFeatures |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
-    fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), image_view_format, fmt_props);
+    vk::GetPhysicalDeviceFormatProperties2(Gpu(), image_format, &fmt_props);
+    if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT) ||
+        (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(image_format) << " to be a storage image without write-without-format support";
+    }
+    vk::GetPhysicalDeviceFormatProperties2(Gpu(), image_view_format, &fmt_props);
+    if ((fmt_props_3.optimalTilingFeatures &
+         (VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) !=
+        (VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(image_view_format) << " to be a storage image with write-without-format support";
+    }
 
     // Make sure compute pipeline has a compute shader stage set
     const char* csSource = R"(
@@ -1150,12 +1141,18 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_STORAGE_BIT;
-    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_IMAGE_USAGE_STORAGE_BIT)) {
+    if (!IsImageFormatSupported(Gpu(), image_create_info, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
         GTEST_SKIP() << "Image create info not compatible on device";
     }
 
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
-    vkt::ImageView view = image.CreateView();
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    ivci.image = image;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = image_view_format;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView view(*m_device, ivci);
 
     ds.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     ds.UpdateDescriptorSets();

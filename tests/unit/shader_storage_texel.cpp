@@ -290,23 +290,15 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    // Best guess format
+    const VkFormat format = VK_FORMAT_A8B8G8R8_SRGB_PACK32;
     VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
-
-    // set so format can be used as a storage texel buffer, but no WITHOUT_FORMAT support
-    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(Gpu(), format, &fmt_props);
-    fmt_props.formatProperties.bufferFeatures |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
-    fmt_props.formatProperties.bufferFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
-    fmt_props_3.bufferFeatures |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
-    fmt_props_3.bufferFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
-    fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), format, fmt_props);
+    vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &fmt_props);
+    if (!(fmt_props_3.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT) ||
+        (fmt_props_3.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(format) << " to be a storage texel buffer without write-without-format support";
+    }
 
     const char* csSource = R"(
                   OpCapability Shader

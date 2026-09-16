@@ -2016,34 +2016,24 @@ void NegativeRenderPass::TestPotentialFormatFeatures(bool const useLinearColorAt
         RETURN_IF_SKIP(InitState());
     }
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    const VkFormat valid_color_format = VK_FORMAT_R8G8B8A8_UNORM;  // guaranteed to be valid
+    const VkFormat invalid_color_format = VK_FORMAT_B8G8R8A8_UINT;
+    const VkFormat depth_format = VK_FORMAT_B8G8R8A8_UINT;
+    const VkFormatFeatureFlags2 attachment_features =
+        VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
+    if ((m_device->FormatFeaturesOptimal(invalid_color_format) | m_device->FormatFeaturesLinear(invalid_color_format)) &
+        attachment_features) {
+        GTEST_SKIP() << "Cannot make " << string_VkFormat(invalid_color_format) << " lack attachment format features";
     }
 
-    // Set format features from being found
-    const VkFormat validColorFormat = VK_FORMAT_R8G8B8A8_UNORM;  // guaranteed to be valid everywhere
-    const VkFormat invalidColorFormat = VK_FORMAT_B8G8R8A8_UNORM;
-    const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), invalidColorFormat, &formatProps);
-    formatProps.linearTilingFeatures = 0;
-    formatProps.optimalTilingFeatures = 0;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), invalidColorFormat, formatProps);
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), depthFormat, &formatProps);
-    formatProps.linearTilingFeatures = 0;
-    formatProps.optimalTilingFeatures = 0;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), depthFormat, formatProps);
-
     VkAttachmentDescription attachments[4] = {
-        {0, validColorFormat, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        {0, valid_color_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL},
-        {0, invalidColorFormat, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        {0, invalid_color_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL},
-        {0, validColorFormat, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        {0, valid_color_format, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL},
-        {0, depthFormat, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        {0, depth_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL}};
 
     VkAttachmentReference references[4] = {
@@ -2064,7 +2054,7 @@ void NegativeRenderPass::TestPotentialFormatFeatures(bool const useLinearColorAt
     subpass.pDepthStencilAttachment = nullptr;
     subpass.preserveAttachmentCount = 0;
     subpass.pPreserveAttachments = nullptr;
-    VkSubpassDescription originalSubpass = subpass;
+    VkSubpassDescription original_subpass = subpass;
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 4u, attachments, 1u, &subpass, 0u, nullptr);
 
@@ -2077,7 +2067,7 @@ void NegativeRenderPass::TestPotentialFormatFeatures(bool const useLinearColorAt
         CreateRenderPassTest(rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-02648",
                              "VUID-VkSubpassDescription2-pColorAttachments-02898");
     }
-    subpass = originalSubpass;
+    subpass = original_subpass;
 
     // Input attachment
     subpass.inputAttachmentCount = 1;
@@ -2089,13 +2079,13 @@ void NegativeRenderPass::TestPotentialFormatFeatures(bool const useLinearColorAt
         CreateRenderPassTest(rpci, rp2Supported, "VUID-VkSubpassDescription-pInputAttachments-02647",
                              "VUID-VkSubpassDescription2-pInputAttachments-02897");
     }
-    subpass = originalSubpass;
+    subpass = original_subpass;
 
     // Depth Stencil attachment
     subpass.pDepthStencilAttachment = &references[3];
     CreateRenderPassTest(rpci, rp2Supported, "VUID-VkSubpassDescription-pDepthStencilAttachment-02650",
                          "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900");
-    subpass = originalSubpass;
+    subpass = original_subpass;
 
     // Resolve attachment
     subpass.pResolveAttachments = &references[1];

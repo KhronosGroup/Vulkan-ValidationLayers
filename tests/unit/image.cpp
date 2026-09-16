@@ -1215,38 +1215,27 @@ TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    // Best guess format
+    const VkFormat image_format = VK_FORMAT_A8B8G8R8_UINT_PACK32;
+    const VkFormat view_format = VK_FORMAT_A8B8G8R8_SINT_PACK32;
+    if (!(m_device->FormatFeaturesOptimal(image_format) &
+          (VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT)) ||
+        !(m_device->FormatFeaturesOptimal(view_format) & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) ||
+        (m_device->FormatFeaturesOptimal(view_format) & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(image_format) << " to be a sampled storage image and "
+                     << string_VkFormat(view_format) << " to be sampled without storage support";
     }
 
-    VkFormatProperties format_props;
-
-    // Ensure image format claims support for sampled and storage, excludes color attachment
-    memset(&format_props, 0, sizeof(format_props));
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, &format_props);
-    format_props.optimalTilingFeatures |= (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-    format_props.optimalTilingFeatures = format_props.optimalTilingFeatures & ~VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, format_props);
-
     // Create image with sampled and storage usages
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R32G32B32A32_UINT,
-                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    auto image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, image_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
-
-    // Force the imageview format to exclude storage feature, include color attachment
-    memset(&format_props, 0, sizeof(format_props));
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, &format_props);
-    format_props.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-    format_props.optimalTilingFeatures = (format_props.optimalTilingFeatures & ~VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, format_props);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_R32G32B32A32_SINT;
+    ivci.format = view_format;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     // ImageView creation should fail because view format doesn't support all the underlying image's usages
@@ -1654,57 +1643,43 @@ TEST_F(NegativeImage, UndefinedFormat) {
 
 TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
     TEST_DESCRIPTION("Create an image with a color format, then try to create a depth view of it");
-
     RETURN_IF_SKIP(Init());
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
 
-    VkFormatProperties format_props;
+    const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    if (!(m_device->FormatFeaturesOptimal(color_format) & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) ||
+        !(m_device->FormatFeaturesOptimal(depth_format) & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(color_format) << " and " << string_VkFormat(depth_format)
+                     << " to both support being sampled";
+    }
 
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), depth_format, &format_props);
-    format_props.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), depth_format, format_props);
-
-    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
+    vkt::Image image(*m_device, 128, 128, color_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     VkImageViewCreateInfo view_ci = vku::InitStructHelper();
     view_ci.image = image;
     view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view_ci.format = depth_format;
     view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-
     CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-12397");
 }
 
 TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
     TEST_DESCRIPTION("Create an image view with a different format, when the image does not have MUTABLE_FORMAT bit");
-
     RETURN_IF_SKIP(Init());
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+
+    const VkFormat image_format = VK_FORMAT_B8G8R8A8_UNORM;
+    const VkFormat view_format = VK_FORMAT_B8G8R8A8_SRGB;  // different format, same compatibility class
+    if (!(m_device->FormatFeaturesOptimal(image_format) & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) ||
+        !(m_device->FormatFeaturesOptimal(view_format) & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(image_format) << " and " << string_VkFormat(view_format)
+                     << " to both support being a color attachment";
     }
 
-    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-    VkFormatProperties format_props;
-
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_B8G8R8A8_UINT, &format_props);
-    format_props.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_B8G8R8A8_UINT, format_props);
-
+    vkt::Image image(*m_device, 128, 128, image_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     VkImageViewCreateInfo view_ci = vku::InitStructHelper();
     view_ci.image = image;
     view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_ci.format = VK_FORMAT_B8G8R8A8_UINT;
+    view_ci.format = view_format;
     view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-
     CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-12397");
 }
 

@@ -2136,31 +2136,24 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    const VkFormat sampled_format = VK_FORMAT_R16_SINT;
+    const VkFormatFeatureFlags2 sampled_features = m_device->FormatFeaturesOptimal(sampled_format);
+    if (!(sampled_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) ||
+        (sampled_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(sampled_format) << " to be sampled without linear filtering support";
     }
 
-    const VkFormat sampled_format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    // Remove format features want to test if missing
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), sampled_format, &formatProps);
-    formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), sampled_format, formatProps);
-
     vkt::Image image(*m_device, 128, 128, sampled_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    vkt::ImageView imageView = image.CreateView();
+    vkt::ImageView image_view = image.CreateView();
 
     // maps to VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     const char* fs_source_combined = R"glsl(
         #version 450
-        layout (set=0, binding=0) uniform sampler2D samplerColor;
+        layout (set=0, binding=0) uniform isampler2D samplerColor;
         layout(location=0) out vec4 color;
         void main() {
-           color = texture(samplerColor, gl_FragCoord.xy);
-           color += texture(samplerColor, gl_FragCoord.wz);
+           color = vec4(texture(samplerColor, gl_FragCoord.xy));
+           color += vec4(texture(samplerColor, gl_FragCoord.wz));
         }
     )glsl";
     VkShaderObj fs_combined(*m_device, fs_source_combined, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -2168,15 +2161,15 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     // maps to VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE and VK_DESCRIPTOR_TYPE_SAMPLER
     const char* fs_source_separate = R"glsl(
         #version 450
-        layout (set=0, binding=0) uniform texture2D textureColor;
+        layout (set=0, binding=0) uniform itexture2D textureColor;
         layout (set=0, binding=1) uniform sampler samplers;
         layout(location=0) out vec4 color;
         // test can be detected from function
-        vec4 foo(texture2D _texture, sampler _sampler) {
-            return texture(sampler2D(_texture, _sampler), gl_FragCoord.xy);
+        ivec4 foo(itexture2D _texture, sampler _sampler) {
+            return texture(isampler2D(_texture, _sampler), gl_FragCoord.xy);
         }
         void main() {
-           color = foo(textureColor, samplers);
+           color = vec4(foo(textureColor, samplers));
         }
     )glsl";
     VkShaderObj fs_separate(*m_device, fs_source_separate, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -2184,7 +2177,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     // maps to an unused image sampler that should not trigger validation as it is never sampled
     const char* fs_source_unused = R"glsl(
         #version 450
-        layout (set=0, binding=0) uniform sampler2D samplerColor;
+        layout (set=0, binding=0) uniform isampler2D samplerColor;
         layout(location=0) out vec4 color;
         void main() {
            color = vec4(gl_FragCoord.xyz, 1.0);
@@ -2195,12 +2188,12 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     // maps to VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER but makes sure it walks function tree to find sampling
     const char* fs_source_function = R"glsl(
         #version 450
-        layout (set=0, binding=0) uniform sampler2D samplerColor;
+        layout (set=0, binding=0) uniform isampler2D samplerColor;
         layout(location=0) out vec4 color;
-        vec4 foo() { return texture(samplerColor, gl_FragCoord.xy); }
-        vec4 bar(float x) { return (x > 0.5) ? foo() : vec4(1.0,1.0,1.0,1.0); }
+        ivec4 foo() { return texture(samplerColor, gl_FragCoord.xy); }
+        ivec4 bar(float x) { return (x > 0.5) ? foo() : ivec4(1,1,1,1); }
         void main() {
-           color = bar(gl_FragCoord.x);
+           color = vec4(bar(gl_FragCoord.x));
         }
     )glsl";
     VkShaderObj fs_function(*m_device, fs_source_function, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -2248,10 +2241,10 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;  // turned off feature bit for test
     vkt::Sampler sampler_mipmap(*m_device, sampler_ci);
 
-    combined_descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler_filter);
+    combined_descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler_filter);
     combined_descriptor_set.UpdateDescriptorSets();
 
-    separate_descriptor_set.WriteDescriptorImageInfo(0, imageView, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    separate_descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     separate_descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler_filter, VK_DESCRIPTOR_TYPE_SAMPLER,
                                                      VK_IMAGE_LAYOUT_UNDEFINED);
     separate_descriptor_set.UpdateDescriptorSets();
@@ -2291,7 +2284,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     // Same test but for mipmap, so need to update descriptors
     {
         combined_descriptor_set.Clear();
-        combined_descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler_mipmap);
+        combined_descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler_mipmap);
         combined_descriptor_set.UpdateDescriptorSets();
 
         separate_descriptor_set.Clear();

@@ -414,23 +414,17 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    const VkFormat good_format = VK_FORMAT_R8G8B8A8_SINT;
+    const VkFormat bad_format = VK_FORMAT_R16_SINT;
+    const VkFormatFeatureFlags2 good_features = m_device->FormatFeaturesOptimal(good_format);
+    const VkFormatFeatureFlags2 bad_features = m_device->FormatFeaturesOptimal(bad_format);
+    if (!(good_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(good_format) << " to support linear filtering";
     }
-
-    const VkFormat good_format = VK_FORMAT_R8G8B8A8_UNORM;
-    const VkFormat bad_format = VK_FORMAT_B8G8R8A8_UNORM;
-
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), bad_format, &formatProps);
-    formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), bad_format, formatProps);
-
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), good_format, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), good_format, formatProps);
+    if (!(bad_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT) ||
+        (bad_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(bad_format) << " to be sampled without linear filtering support";
+    }
 
     vkt::Image bad_image(*m_device, 128, 128, bad_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView bad_view = bad_image.CreateView();
@@ -446,11 +440,11 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
 
     const char* fs_source = R"glsl(
         #version 450
-        layout (set=0, binding=0) uniform sampler2D bad; // never accessed
-        layout (set=0, binding=1) uniform sampler2D good;
+        layout (set=0, binding=0) uniform isampler2D bad; // never accessed
+        layout (set=0, binding=1) uniform isampler2D good;
         layout(location=0) out vec4 color;
         void main() {
-           color = texture(good, gl_FragCoord.xy);
+           color = vec4(texture(good, gl_FragCoord.xy));
         }
     )glsl";
     VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
