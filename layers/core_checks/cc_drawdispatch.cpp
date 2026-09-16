@@ -290,7 +290,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
 }
 
 bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_state, uint32_t indexCount, uint32_t firstIndex,
-                                                  const Location& loc, const char* first_index_vuid) const {
+                                                  const Location& loc) const {
     bool skip = false;
     if (enabled_features.robustBufferAccess2) {
         return skip;
@@ -310,7 +310,10 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_s
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(cb_state.index_buffer_binding.Buffer());
         const VkDeviceSize buffer_offset = cb_state.index_buffer_binding.BufferOffset();
-        skip |= LogError(first_index_vuid, objlist, loc,
+        const char* vuid = loc.function == Func::vkCmdDrawMultiIndexedEXT
+                               ? "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798"
+                               : "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798";
+        skip |= LogError(vuid, objlist, loc,
                          "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
                          ")) "
                          "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
@@ -335,8 +338,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
 
     skip |= ValidateGraphicsIndexedCmd(last_bound_state, error_obj.location);
     if (cb_state.index_buffer_binding.HasNonNullBuffer()) {
-        skip |= ValidateCmdDrawIndexedBufferSize(cb_state, indexCount, firstIndex, error_obj.location,
-                                                 "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798");
+        skip |= ValidateCmdDrawIndexedBufferSize(cb_state, indexCount, firstIndex, error_obj.location);
     }
 
     return skip;
@@ -389,8 +391,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
         for (uint32_t i = 0; i < drawCount; i++) {
             const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT*>(info_bytes + i * stride);
             skip |= ValidateCmdDrawIndexedBufferSize(cb_state, info_ptr->indexCount, info_ptr->firstIndex,
-                                                     error_obj.location.dot(Field::pIndexInfo, i),
-                                                     "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798");
+                                                     error_obj.location.dot(Field::pIndexInfo, i));
         }
     }
     return skip;
