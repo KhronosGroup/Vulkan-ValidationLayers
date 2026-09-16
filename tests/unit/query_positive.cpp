@@ -725,3 +725,50 @@ TEST_F(PositiveQuery, CopyLastQueryResult) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveQuery, ResetInPreviousSubmission) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8233");
+    RETURN_IF_SKIP(Init());
+    if (HasZeroTimestampValidBits()) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0";
+    }
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
+    vkt::Buffer buffer(*m_device, 4 * sizeof(uint64_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkCommandBuffer command_buffer[3];
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
+    command_buffer_allocate_info.commandPool = m_command_pool;
+    command_buffer_allocate_info.commandBufferCount = 3;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, command_buffer);
+
+    {
+        VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+
+        vk::BeginCommandBuffer(command_buffer[0], &begin_info);
+        vk::CmdResetQueryPool(command_buffer[0], query_pool, 0, 2);
+        vk::EndCommandBuffer(command_buffer[0]);
+
+        vk::BeginCommandBuffer(command_buffer[1], &begin_info);
+        vk::CmdWriteTimestamp(command_buffer[1], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, query_pool, 0);
+        vk::EndCommandBuffer(command_buffer[1]);
+
+        vk::BeginCommandBuffer(command_buffer[2], &begin_info);
+        vk::CmdWriteTimestamp(command_buffer[2], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, query_pool, 1);
+        vk::CmdCopyQueryPoolResults(command_buffer[2], query_pool, 0, 2, buffer, 0, sizeof(uint64_t),
+                                    VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+        vk::CmdResetQueryPool(command_buffer[2], query_pool, 0, 2);
+        vk::EndCommandBuffer(command_buffer[2]);
+    }
+
+    for (uint32_t loop = 0; loop < 2; ++loop) {
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.commandBufferCount = loop == 0 ? 3 : 2;
+        submit_info.pCommandBuffers = loop == 0 ? &command_buffer[0] : &command_buffer[1];
+        vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+        m_default_queue->Wait();
+    }
+
+    vk::FreeCommandBuffers(device(), m_command_pool, 3, command_buffer);
+}
