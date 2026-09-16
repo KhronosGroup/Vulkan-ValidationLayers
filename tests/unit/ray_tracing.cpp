@@ -1506,33 +1506,27 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
         }
     }
     // Invalid stride, greater than maxShaderGroupStride
-    // Given the invalid stride computation, stride is likely to also be misaligned, so allow above errors
+    // Keep the stride a multiple of shaderGroupHandleAlignment so only the maxShaderGroupStride errors are triggered
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
-        if (ray_tracing_properties.maxShaderGroupStride ==
-            std::numeric_limits<decltype(ray_tracing_properties.maxShaderGroupStride)>::max()) {
-            printf("ray_tracing_properties.maxShaderGroupStride has maximum possible value, skipping related tests\n");
-        } else {
-            invalid_stride.stride = ray_tracing_properties.maxShaderGroupStride + 1;
+        const uint32_t align = ray_tracing_properties.shaderGroupHandleAlignment;
+        invalid_stride.stride = static_cast<VkDeviceSize>(ray_tracing_properties.maxShaderGroupStride) +
+                                (align - (ray_tracing_properties.maxShaderGroupStride % align));
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04041");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
-            vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride,
-                                        device_address);
-            m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04041");
+        vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride,
+                                    device_address);
+        m_errorMonitor->VerifyFound();
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04035");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
-            vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion,
-                                        device_address);
-            m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04035");
+        vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion,
+                                    device_address);
+        m_errorMonitor->VerifyFound();
 
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04029");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
-            vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion,
-                                        device_address);
-            m_errorMonitor->VerifyFound();
-        }
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysIndirectKHR-stride-04029");
+        vk::CmdTraceRaysIndirectKHR(m_command_buffer, &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion,
+                                    device_address);
+        m_errorMonitor->VerifyFound();
     }
     m_command_buffer.End();
 }
