@@ -40,8 +40,7 @@ CommandBufferSubState::CommandBufferSubState(Validator& gpuav, vvl::CommandBuffe
       gpu_resources_manager(gpuav, false),
       cmd_errors_counts_buffer_(gpuav),
       gpuav_(gpuav),
-      internal_descriptor_buffer_(gpuav),
-      internal_descriptor_heap_(gpuav) {
+      internal_descriptor_buffer_(gpuav) {
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
 }
@@ -201,7 +200,6 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
         cmd_errors_counts_buffer_.Destroy();
 
         internal_descriptor_buffer_.Destroy();
-        internal_descriptor_heap_.Destroy();
     }
 
     draw_index = 0;
