@@ -117,6 +117,27 @@ class Instance : public vvl::InstanceProxy {
                                                                    const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                    VkImageFormatProperties2* pImageFormatProperties,
                                                                    const ErrorObject& error_obj) const override;
+    bool ValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type,
+                                                              VkSampleCountFlagBits samples, VkImageUsageFlags2KHR usage,
+                                                              VkImageTiling tiling,
+                                                              const VkImageUsageFlags2CreateInfoKHR* usage_flags2,
+                                                              const Location& samples_loc) const;
+    bool PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                     VkImageType type, VkSampleCountFlagBits samples,
+                                                                     VkImageUsageFlags usage, VkImageTiling tiling,
+                                                                     uint32_t* pPropertyCount,
+                                                                     VkSparseImageFormatProperties* pProperties,
+                                                                     const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(VkPhysicalDevice physicalDevice,
+                                                                      const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
+                                                                      uint32_t* pPropertyCount,
+                                                                      VkSparseImageFormatProperties2* pProperties,
+                                                                      const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                         const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
+                                                                         uint32_t* pPropertyCount,
+                                                                         VkSparseImageFormatProperties2* pProperties,
+                                                                         const ErrorObject& error_obj) const override;
     bool ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                               const Location& surface_loc) const;
     bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,

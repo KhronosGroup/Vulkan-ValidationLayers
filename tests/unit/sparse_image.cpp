@@ -1372,3 +1372,46 @@ TEST_F(NegativeSparseImage, UnalignedBindOffsets) {
     // Wait for operations to finish before destroying anything
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSparseImage, GetFormatPropertiesSamples) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedFlags);
+    RETURN_IF_SKIP(InitFramework());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    const VkImageType type = VK_IMAGE_TYPE_2D;
+    const VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    // best guess to not be supported
+    const VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_64_BIT;
+
+    VkImageFormatProperties image_format_props;
+    if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), format, type, tiling, usage, 0, &image_format_props) != VK_SUCCESS) {
+        GTEST_SKIP() << "GetPhysicalDeviceImageFormatProperties failed";
+    }
+    if ((image_format_props.sampleCounts & samples) != 0) {
+        GTEST_SKIP() << "VK_SAMPLE_COUNT_64_BIT is supported";
+    }
+
+    uint32_t property_count = 0u;
+    {
+        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceSparseImageFormatProperties-samples-01094");
+        vk::GetPhysicalDeviceSparseImageFormatProperties(Gpu(), format, type, samples, usage, tiling, &property_count, nullptr);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkImageUsageFlags2CreateInfoKHR usage_flags_2 = vku::InitStructHelper();
+        usage_flags_2.usage = VK_IMAGE_USAGE_2_COLOR_ATTACHMENT_BIT_KHR;
+        VkPhysicalDeviceSparseImageFormatInfo2 format_info = vku::InitStructHelper(&usage_flags_2);
+        format_info.format = format;
+        format_info.type = type;
+        format_info.usage = usage;
+        format_info.tiling = tiling;
+        format_info.samples = samples;
+        m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceSparseImageFormatInfo2-samples-01095");
+        vk::GetPhysicalDeviceSparseImageFormatProperties2(Gpu(), &format_info, &property_count, nullptr);
+        m_errorMonitor->VerifyFound();
+    }
+}
