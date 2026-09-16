@@ -2011,7 +2011,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                         uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
                                         const ErrorObject& error_obj) const override;
     bool ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_state, uint32_t indexCount, uint32_t firstIndex,
-                                          const Location& loc, const char* first_index_vuid) const;
+                                          const Location& loc) const;
     bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                        uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
                                        const ErrorObject& error_obj) const override;
