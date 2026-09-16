@@ -1460,6 +1460,18 @@ TEST_F(NegativeQuery, HugeQueryCount) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeQuery, HugeQueryCountOverflow) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09436");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0xFFFFFFF0u, 32);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeQuery, NestedQueryReportsSlot) {
     RETURN_IF_SKIP(Init());
 
