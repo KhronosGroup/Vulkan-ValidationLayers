@@ -855,7 +855,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
 }
 
 bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, const Location& loc,
-                                    uint32_t perf_query_pass, QueryMap* local_query_to_state_map) {
+                                    uint32_t perf_query_pass, const QueryMap* local_query_to_state_map) {
     bool skip = false;
     const auto& state_data = cb_state.dev_data;
 
@@ -910,8 +910,7 @@ bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer& cb_state, const Qu
 }
 
 bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, const Location& loc,
-                                          VkQueryPool& first_perf_query_pool, uint32_t perf_query_pass,
-                                          QueryMap* local_query_to_state_map) {
+                                          core::QueryUpdateState& query_update) {
     bool skip = false;
     const auto& state_data = cb_state.dev_data;
     auto query_pool_state = state_data.Get<vvl::QueryPool>(query_obj.pool);
@@ -921,24 +920,27 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, co
 
     if (query_pool_ci.queryType != VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) return skip;
 
-    if (perf_query_pass >= query_pool_state->n_performance_passes) {
+    if (query_update.perf_query_pass >= query_pool_state->n_performance_passes) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
         skip |= state_data.LogError(
             "VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221", objlist, loc,
             "counterPassIndex (%" PRIu32 ") is not less than number of performance passes (%" PRIu32
             ") for %s\nThe maximum number of passes is queried with vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR.",
-            perf_query_pass, query_pool_state->n_performance_passes, state_data.FormatHandle(query_obj.pool).c_str());
+            query_update.perf_query_pass, query_pool_state->n_performance_passes, state_data.FormatHandle(query_obj.pool).c_str());
     }
 
     if (!cb_state.performance_lock_acquired || cb_state.performance_lock_released) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
-        skip |= state_data.LogError("VUID-vkQueueSubmit-pCommandBuffers-03220", objlist, loc,
+        const char* vuid = query_update.submit_func == Func::vkQueueSubmit ? "VUID-vkQueueSubmit-pCommandBuffers-03220"
+                                                                           : "VUID-vkQueueSubmit2-commandBuffer-03880";
+        skip |= state_data.LogError(vuid, objlist, loc,
                                     "%s was submitted and contains a performance query but the "
                                     "profiling lock was not held continuously throughout the recording of commands.",
                                     state_data.FormatHandle(cb_state).c_str());
     }
 
-    QueryState command_buffer_state = GetLocalQueryState(local_query_to_state_map, query_obj.pool, query_obj.slot, perf_query_pass);
+    QueryState command_buffer_state =
+        GetLocalQueryState(query_update.local_query_to_state_map, query_obj.pool, query_obj.slot, query_update.perf_query_pass);
     if (command_buffer_state == QUERYSTATE_RESET) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
         skip |= state_data.LogError(
@@ -948,8 +950,9 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, co
             "affecting the same query.");
     }
 
-    if (first_perf_query_pool != VK_NULL_HANDLE) {
-        if (first_perf_query_pool != query_obj.pool && !state_data.enabled_features.performanceCounterMultipleQueryPools) {
+    if (query_update.first_perf_query_pool != VK_NULL_HANDLE) {
+        if (query_update.first_perf_query_pool != query_obj.pool &&
+            !state_data.enabled_features.performanceCounterMultipleQueryPools) {
             const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
             skip |= state_data.LogError(
                 query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03226" : "VUID-vkCmdBeginQuery-queryPool-03226",
@@ -959,7 +962,7 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, co
                 state_data.FormatHandle(cb_state).c_str());
         }
     } else {
-        first_perf_query_pool = query_obj.pool;
+        query_update.first_perf_query_pool = query_obj.pool;
     }
 
     return skip;

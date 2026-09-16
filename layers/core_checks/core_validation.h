@@ -60,6 +60,7 @@ struct LocalSize;
 namespace core {
 class CommandBufferSubState;
 struct RenderingAttachment;
+struct QueryUpdateState;
 }  // namespace core
 
 struct SemaphoreSubmitState;
@@ -471,10 +472,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateBindImageMemoryDeviceGroupInfo(const VkBindImageMemoryInfo& bind_info, const vvl::Image* image_state,
                                                 const Location& loc) const;
     static bool VerifyQueryIsReset(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, const Location& loc,
-                                   uint32_t perf_query_pass, QueryMap* local_query_to_state_map);
+                                   uint32_t perf_query_pass, const QueryMap* local_query_to_state_map);
     static bool ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, const Location& loc,
-                                         VkQueryPool& first_perf_query_pool, uint32_t perf_query_pass,
-                                         QueryMap* local_query_to_state_map);
+                                         core::QueryUpdateState& query_update);
     bool ValidateBindTensorMemoryARM(uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
                                      const ErrorObject& error_obj) const;
     bool ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, VkQueryControlFlags flags,
