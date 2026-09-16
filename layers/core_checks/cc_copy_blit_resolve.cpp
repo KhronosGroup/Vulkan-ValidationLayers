@@ -3712,18 +3712,18 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         const VkImageType dst_image_type = dst_image_state->GetImageType();
 
         if (!IsValidAspectMaskForFormat(src_subresource.aspectMask, src_image_state->GetFormat())) {
-            skip |=
-                LogError("VUID-vkCmdResolveImage-srcSubresource-11800", src_objlist, src_subresource_loc.dot(Field::aspectMask),
-                         "(%s) is invalid for image format %s. (%s)", string_VkImageAspectFlags(src_subresource.aspectMask).c_str(),
-                         string_VkFormat(src_image_state->GetFormat()),
-                         DescribeValidAspectMaskForFormat(src_image_state->GetFormat()).c_str());
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-srcSubresource-11800" : "VUID-vkCmdResolveImage-srcSubresource-11800";
+            skip |= LogError(
+                vuid, src_objlist, src_subresource_loc.dot(Field::aspectMask), "(%s) is invalid for image format %s. (%s)",
+                string_VkImageAspectFlags(src_subresource.aspectMask).c_str(), string_VkFormat(src_image_state->GetFormat()),
+                DescribeValidAspectMaskForFormat(src_image_state->GetFormat()).c_str());
         }
         if (!IsValidAspectMaskForFormat(dst_subresource.aspectMask, dst_image_state->GetFormat())) {
-            skip |=
-                LogError("VUID-vkCmdResolveImage-dstSubresource-11801", dst_objlist, dst_subresource_loc.dot(Field::aspectMask),
-                         "(%s) is invalid for image format %s. (%s)", string_VkImageAspectFlags(dst_subresource.aspectMask).c_str(),
-                         string_VkFormat(dst_image_state->GetFormat()),
-                         DescribeValidAspectMaskForFormat(dst_image_state->GetFormat()).c_str());
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-dstSubresource-11801" : "VUID-vkCmdResolveImage-dstSubresource-11801";
+            skip |= LogError(
+                vuid, dst_objlist, dst_subresource_loc.dot(Field::aspectMask), "(%s) is invalid for image format %s. (%s)",
+                string_VkImageAspectFlags(dst_subresource.aspectMask).c_str(), string_VkFormat(dst_image_state->GetFormat()),
+                DescribeValidAspectMaskForFormat(dst_image_state->GetFormat()).c_str());
         }
 
         if (dst_image_type == VK_IMAGE_TYPE_3D) {
