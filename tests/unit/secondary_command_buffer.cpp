@@ -1644,3 +1644,88 @@ TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfo_1_4) {
 
     secondary.End();
 }
+
+TEST_F(NegativeSecondaryCommandBuffer, InputAttachmentColorMapping) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13095");
+    RETURN_IF_SKIP(Init());
+
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+
+    VkAttachmentReference input_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkAttachmentReference rp1_color_refs[] = {
+        {1, VK_IMAGE_LAYOUT_GENERAL},
+        {2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkSubpassDescription rp1_subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input_ref, 3, rp1_color_refs, nullptr, nullptr, 0, nullptr};
+    VkRenderPassCreateInfo rp1_ci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 3, attach, 1, &rp1_subpass, 0, nullptr};
+    vkt::RenderPass render_pass_1(*m_device, rp1_ci);
+
+    // same input attachment (a1), but a1 is now color slot 1 instead of slot 0
+    VkAttachmentReference rp2_color_refs[] = {
+        {2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {1, VK_IMAGE_LAYOUT_GENERAL},
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkSubpassDescription rp2_subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input_ref, 3, rp2_color_refs, nullptr, nullptr, 0, nullptr};
+    VkRenderPassCreateInfo rp2_ci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 3, attach, 1, &rp2_subpass, 0, nullptr};
+    vkt::RenderPass render_pass_2(*m_device, rp2_ci);
+
+    vkt::Image image_a0(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image_a1(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::Image image_a2(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView view_a0 = image_a0.CreateView();
+    vkt::ImageView view_a1 = image_a1.CreateView();
+    vkt::ImageView view_a2 = image_a2.CreateView();
+    VkImageView fb_attachments[] = {view_a0, view_a1, view_a2};
+
+    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper();
+    fb_ci.renderPass = render_pass_1;
+    fb_ci.attachmentCount = 3;
+    fb_ci.pAttachments = fb_attachments;
+    fb_ci.width = 32;
+    fb_ci.height = 32;
+    fb_ci.layers = 1;
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper();
+    cmdbuff_ii.renderPass = render_pass_2;
+    cmdbuff_ii.subpass = 0;
+
+    VkCommandBufferBeginInfo cmdbuff_bi = vku::InitStructHelper();
+    cmdbuff_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cmdbuff_bi.pInheritanceInfo = &cmdbuff_ii;
+    secondary.Begin(&cmdbuff_bi);
+    secondary.End();
+
+    VkRenderPassBeginInfo rp_bi = vku::InitStructHelper();
+    rp_bi.renderPass = render_pass_1;
+    rp_bi.framebuffer = framebuffer;
+    rp_bi.renderArea = VkRect2D{{0, 0}, {32u, 32u}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

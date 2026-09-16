@@ -129,6 +129,30 @@ bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle& rp1_ob
     return skip;
 }
 
+static std::vector<uint32_t> GetAliasedColorSlots(const vku::safe_VkSubpassDescription2& subpass_desc, uint32_t attachment) {
+    std::vector<uint32_t> slots;
+    slots.reserve(subpass_desc.colorAttachmentCount);
+
+    for (uint32_t i = 0; i < subpass_desc.colorAttachmentCount; ++i) {
+        if (subpass_desc.pColorAttachments[i].attachment == attachment) {
+            slots.push_back(i);
+        }
+    }
+    return slots;
+};
+
+static std::string DescribeAliasedColorSlots(const std::vector<uint32_t>& slots) {
+    if (slots.empty()) {
+        return std::string("is not used as a color attachment");
+    }
+    std::ostringstream ss;
+    ss << "is also used as ";
+    for (size_t i = 0; i < slots.size(); ++i) {
+        ss << (i > 0 ? ", " : "") << "pColorAttachments[" << slots[i] << "]";
+    }
+    return ss.str();
+};
+
 bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle& rp1_object, const vvl::RenderPass& rp1_state,
                                               const VulkanTypedHandle& rp2_object, const vvl::RenderPass& rp2_state,
                                               const int subpass, const Location& loc, const char* vuid) const {
@@ -175,6 +199,37 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle& rp1_objec
                                                     subpass_loc.dot(Field::pResolveAttachments, i).dot(Field::attachment), vuid);
         }
     }
+
+    // Input attachment indexes must match up
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13095
+    const uint32_t min_input_attachment_count = std::min(primary_desc.inputAttachmentCount, secondary_desc.inputAttachmentCount);
+    for (uint32_t i = 0; i < min_input_attachment_count; ++i) {
+        const uint32_t primary_input_attach = primary_desc.pInputAttachments[i].attachment;
+        const uint32_t secondary_input_attach = secondary_desc.pInputAttachments[i].attachment;
+        if (primary_input_attach == VK_ATTACHMENT_UNUSED || secondary_input_attach == VK_ATTACHMENT_UNUSED) {
+            continue;
+        }
+        const std::vector<uint32_t> primary_slots = GetAliasedColorSlots(primary_desc, primary_input_attach);
+        const std::vector<uint32_t> secondary_slots = GetAliasedColorSlots(secondary_desc, secondary_input_attach);
+        if (primary_slots != secondary_slots) {
+            const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
+            skip |= LogError(
+                vvl::GetRenderPassCompatibilityVUID(loc, vuid), objlist, loc,
+                "%s is incompatible between %s (from %s) and %s (from %s), the input attachment does not map to the same "
+                "color attachment in both render passes.\n"
+                "%s: attachment %" PRIu32
+                " %s.\n"
+                "%s: attachment %" PRIu32
+                " %s.\n"
+                "Hint: The attachments themselves are compatible (same format and samples), but the VkAttachmentReference can not "
+                "be re-ordered as a driver is not expected to detect it.",
+                subpass_loc.dot(Field::pInputAttachments, i).Fields().c_str(), FormatHandle(rp1_state).c_str(),
+                FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(), FormatHandle(rp2_object).c_str(),
+                FormatHandle(rp1_state).c_str(), primary_input_attach, DescribeAliasedColorSlots(primary_slots).c_str(),
+                FormatHandle(rp2_state).c_str(), secondary_input_attach, DescribeAliasedColorSlots(secondary_slots).c_str());
+        }
+    }
+
     uint32_t primary_depthstencil_attach = VK_ATTACHMENT_UNUSED, secondary_depthstencil_attach = VK_ATTACHMENT_UNUSED;
     if (primary_desc.pDepthStencilAttachment) {
         primary_depthstencil_attach = primary_desc.pDepthStencilAttachment[0].attachment;
