@@ -497,17 +497,6 @@ HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const Resourc
     return {};
 }
 
-HazardResult AccessContext::DetectVideoHazard(const vvl::VideoSession& vs_state, const vvl::VideoPictureResource& resource,
-                                              SyncAccessIndex current_usage) const {
-    const vvl::Image& image = *resource.image_state.get();
-    const auto& sub_state = SubState(image);
-    const auto offset = resource.GetEffectiveImageOffset(vs_state);
-    const auto extent = resource.GetEffectiveImageExtent(vs_state);
-    ImageRangeGen range_gen(sub_state.MakeImageRangeGen(resource.range, offset, extent, false));
-    HazardDetector detector(current_usage, *this);
-    return DetectHazardGeneratedRangeGen(detector, range_gen, DetectOptions::kDetectAll);
-}
-
 HazardResult AccessContext::DetectMarkerHazard(const vvl::Buffer& buffer, const AccessRange& range) const {
     if (!SimpleBinding(buffer)) {
         return HazardResult();

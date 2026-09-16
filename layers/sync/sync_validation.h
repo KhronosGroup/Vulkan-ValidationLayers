@@ -446,6 +446,10 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
                                                 VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
 
+    std::vector<VideoCommand::PictureAccess> CollectVideoDecodePictureAccesses(const vvl::VideoSession& video_session,
+                                                                               const VkVideoDecodeInfoKHR& info) const;
+    std::vector<VideoCommand::PictureAccess> CollectVideoEncodePictureAccesses(const vvl::VideoSession& video_session,
+                                                                               const VkVideoEncodeInfoKHR& info) const;
     bool PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,

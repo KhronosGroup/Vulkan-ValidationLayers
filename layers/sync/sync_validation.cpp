@@ -1929,201 +1929,133 @@ void SyncValidator::PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer comman
     RecordBufferMarkerAMD(commandBuffer, dstBuffer, dstOffset, record_obj.location);
 }
 
+static VideoCommand::PictureAccess MakeVideoPictureAccess(const vvl::VideoSession& video_session,
+                                                          const vvl::VideoPictureResource& resource, VideoCommand::PictureType type,
+                                                          uint32_t reference_index = 0) {
+    const VkOffset3D effective_offset = resource.GetEffectiveImageOffset(video_session);
+    const VkExtent3D effective_extent = resource.GetEffectiveImageExtent(video_session);
+    return {resource.image_view_state.get(),
+            type,
+            reference_index,
+            resource.coded_offset,
+            resource.coded_extent,
+            resource.base_array_layer,
+            resource.range,
+            {effective_offset.x, effective_offset.y},
+            {effective_extent.width, effective_extent.height}};
+}
+
+std::vector<VideoCommand::PictureAccess> SyncValidator::CollectVideoDecodePictureAccesses(const vvl::VideoSession& video_session,
+                                                                                          const VkVideoDecodeInfoKHR& info) const {
+    using PictureType = VideoCommand::PictureType;
+    std::vector<VideoCommand::PictureAccess> pictures;
+
+    const vvl::VideoPictureResource output(*device_state, info.dstPictureResource);
+    if (output) {
+        pictures.push_back(MakeVideoPictureAccess(video_session, output, PictureType::kOutput));
+    }
+    if (info.pSetupReferenceSlot != nullptr && info.pSetupReferenceSlot->pPictureResource != nullptr) {
+        const vvl::VideoPictureResource reconstructed(*device_state, *info.pSetupReferenceSlot->pPictureResource);
+        if (reconstructed && reconstructed != output) {
+            pictures.push_back(MakeVideoPictureAccess(video_session, reconstructed, PictureType::kReconstructed));
+        }
+    }
+    for (uint32_t i = 0; i < info.referenceSlotCount; ++i) {
+        if (info.pReferenceSlots[i].pPictureResource != nullptr) {
+            const vvl::VideoPictureResource reference(*device_state, *info.pReferenceSlots[i].pPictureResource);
+            if (reference) {
+                pictures.push_back(MakeVideoPictureAccess(video_session, reference, PictureType::kReference, i));
+            }
+        }
+    }
+    return pictures;
+}
+
+std::vector<VideoCommand::PictureAccess> SyncValidator::CollectVideoEncodePictureAccesses(const vvl::VideoSession& video_session,
+                                                                                          const VkVideoEncodeInfoKHR& info) const {
+    using PictureType = VideoCommand::PictureType;
+    std::vector<VideoCommand::PictureAccess> pictures;
+
+    if (auto input = vvl::VideoPictureResource(*device_state, info.srcPictureResource)) {
+        pictures.push_back(MakeVideoPictureAccess(video_session, input, PictureType::kInput));
+    }
+    if (info.pSetupReferenceSlot != nullptr && info.pSetupReferenceSlot->pPictureResource != nullptr) {
+        const vvl::VideoPictureResource reconstructed(*device_state, *info.pSetupReferenceSlot->pPictureResource);
+        if (reconstructed) {
+            pictures.push_back(MakeVideoPictureAccess(video_session, reconstructed, PictureType::kReconstructed));
+        }
+    }
+    for (uint32_t i = 0; i < info.referenceSlotCount; ++i) {
+        if (info.pReferenceSlots[i].pPictureResource) {
+            const vvl::VideoPictureResource reference(*device_state, *info.pReferenceSlots[i].pPictureResource);
+            if (reference) {
+                pictures.push_back(MakeVideoPictureAccess(video_session, reference, PictureType::kReference, i));
+            }
+        }
+    }
+    if (info.flags & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
+        auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(info.pNext);
+        if (quantization_map_info) {
+            if (const auto view = Get<vvl::ImageView>(quantization_map_info->quantizationMap)) {
+                pictures.push_back({
+                    view.get(),
+                    PictureType::kQuantizationMap,
+                    0,
+                    {0, 0},
+                    quantization_map_info->quantizationMapExtent,
+                    0,
+                    view->normalized_subresource_range,
+                    {0, 0},
+                    quantization_map_info->quantizationMapExtent,
+                });
+            }
+        }
+    }
+    return pictures;
+}
+
 bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
                                                      const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
 
-    const auto vs_state = cb_state->bound_video_session.get();
-    if (!vs_state) return skip;
-
-    auto src_buffer = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
-    if (src_buffer) {
-        const AccessRange src_range = MakeRange(*src_buffer, pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange);
-        auto hazard = access_context.DetectHazard(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, src_range);
-        if (hazard.IsHazard()) {
-            const std::string resource_description = "bitstream buffer " + FormatHandle(pDecodeInfo->srcBuffer);
-            // TODO: there are no tests for this error
-            const auto error =
-                error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, src_range);
-            skip |= SyncError(hazard.Hazard(), src_buffer->Handle(), error_obj.location, error);
-        }
+    const auto* video_session = cb_state->bound_video_session.get();
+    if (!video_session) {
+        return false;
     }
-
-    auto dst_resource = vvl::VideoPictureResource(*device_state, pDecodeInfo->dstPictureResource);
-    if (dst_resource) {
-        auto hazard = access_context.DetectVideoHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
-        if (hazard.IsHazard()) {
-            std::ostringstream ss;
-            ss << "decode output picture ";
-            ss << Location(Func::Empty, Field::pDecodeInfo).dot(Field::dstPictureResource).Fields();
-            ss << " ";
-            FormatVideoPictureResouce(*this, pDecodeInfo->dstPictureResource, ss);
-            const std::string resouce_description = ss.str();
-            const std::string error =
-                error_messages_.VideoError(hazard, cb_context, error_obj.location.function, resouce_description);
-            skip |= SyncError(hazard.Hazard(), dst_resource.image_view_state->Handle(), error_obj.location, error);
-        }
+    const auto buffer = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
+    if (!buffer) {
+        return false;
     }
-
-    if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        const VkVideoPictureResourceInfoKHR& video_picture = *pDecodeInfo->pSetupReferenceSlot->pPictureResource;
-        auto setup_resource = vvl::VideoPictureResource(*device_state, video_picture);
-        if (setup_resource && (setup_resource != dst_resource)) {
-            auto hazard = access_context.DetectVideoHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
-            if (hazard.IsHazard()) {
-                std::ostringstream ss;
-                ss << "reconstructed picture ";
-                ss << Location(Func::Empty, Field::pDecodeInfo)
-                          .dot(Field::pSetupReferenceSlot)
-                          .dot(Field::pPictureResource)
-                          .Fields();
-                ss << " ";
-                FormatVideoPictureResouce(*this, video_picture, ss);
-                const std::string resouce_description = ss.str();
-                const std::string error =
-                    error_messages_.VideoError(hazard, cb_context, error_obj.location.function, resouce_description);
-                skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(), error_obj.location, error);
-            }
-        }
-    }
-
-    for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
-        if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            const VkVideoPictureResourceInfoKHR& video_picture = *pDecodeInfo->pReferenceSlots[i].pPictureResource;
-            auto reference_resource = vvl::VideoPictureResource(*device_state, video_picture);
-            if (reference_resource) {
-                auto hazard = access_context.DetectVideoHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
-                if (hazard.IsHazard()) {
-                    std::ostringstream ss;
-                    ss << "reference picture " << i << " ";
-                    ss << Location(Func::Empty, Field::pDecodeInfo)
-                              .dot(Field::pReferenceSlots, i)
-                              .dot(Field::pPictureResource)
-                              .Fields();
-                    ss << " ";
-                    FormatVideoPictureResouce(*this, video_picture, ss);
-                    const std::string resouce_description = ss.str();
-                    const std::string error =
-                        error_messages_.VideoError(hazard, cb_context, error_obj.location.function, resouce_description);
-                    skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(), error_obj.location, error);
-                }
-            }
-        }
-    }
-    return skip;
+    const AccessRange range = MakeRange(*buffer, pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange);
+    const auto pictures = CollectVideoDecodePictureAccesses(*video_session, *pDecodeInfo);
+    const VideoCommand command{VideoCommand::Operation::kDecode, *buffer, range, pictures};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                                      const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
 
-    const auto vs_state = cb_state->bound_video_session.get();
-    if (!vs_state) return skip;
-
-    auto dst_buffer = Get<vvl::Buffer>(pEncodeInfo->dstBuffer);
-    if (dst_buffer) {
-        const AccessRange dst_range = MakeRange(*dst_buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
-        auto hazard = access_context.DetectHazard(*dst_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, dst_range);
-        if (hazard.IsHazard()) {
-            const std::string resource_description = "bitstream buffer " + FormatHandle(pEncodeInfo->dstBuffer);
-            const auto error =
-                error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, dst_range);
-            skip |= SyncError(hazard.Hazard(), dst_buffer->Handle(), error_obj.location, error);
-        }
+    const auto* video_session = cb_state->bound_video_session.get();
+    if (!video_session) {
+        return false;
     }
-
-    if (auto src_resource = vvl::VideoPictureResource(*device_state, pEncodeInfo->srcPictureResource)) {
-        auto hazard = access_context.DetectVideoHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
-        if (hazard.IsHazard()) {
-            std::ostringstream ss;
-            ss << "encode input picture ";
-            ss << Location(Func::Empty, Field::pEncodeInfo).dot(Field::srcPictureResource).Fields();
-            ss << " ";
-            FormatVideoPictureResouce(*this, pEncodeInfo->srcPictureResource, ss);
-            const std::string resouce_description = ss.str();
-            // TODO: there are no tests for this error
-            const std::string error =
-                error_messages_.VideoError(hazard, cb_context, error_obj.location.function, resouce_description);
-            skip |= SyncError(hazard.Hazard(), src_resource.image_view_state->Handle(), error_obj.location, error);
-        }
+    const auto buffer = Get<vvl::Buffer>(pEncodeInfo->dstBuffer);
+    if (!buffer) {
+        return false;
     }
-
-    if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        const VkVideoPictureResourceInfoKHR& video_picture = *pEncodeInfo->pSetupReferenceSlot->pPictureResource;
-        auto setup_resource = vvl::VideoPictureResource(*device_state, video_picture);
-        if (setup_resource) {
-            auto hazard = access_context.DetectVideoHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
-            if (hazard.IsHazard()) {
-                std::ostringstream ss;
-                ss << "reconstructed picture ";
-                ss << Location(Func::Empty, Field::pEncodeInfo)
-                          .dot(Field::pSetupReferenceSlot)
-                          .dot(Field::pPictureResource)
-                          .Fields();
-                ss << " ";
-                FormatVideoPictureResouce(*this, video_picture, ss);
-                const std::string resouce_description = ss.str();
-                const std::string error =
-                    error_messages_.VideoError(hazard, cb_context, error_obj.location.function, resouce_description);
-                skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(), error_obj.location, error);
-            }
-        }
-    }
-
-    for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
-        if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            const VkVideoPictureResourceInfoKHR& video_picture = *pEncodeInfo->pReferenceSlots[i].pPictureResource;
-            auto reference_resource = vvl::VideoPictureResource(*device_state, video_picture);
-            if (reference_resource) {
-                auto hazard = access_context.DetectVideoHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
-                if (hazard.IsHazard()) {
-                    std::ostringstream ss;
-                    ss << "reference picture " << i << " ";
-                    ss << Location(Func::Empty, Field::pEncodeInfo)
-                              .dot(Field::pReferenceSlots, i)
-                              .dot(Field::pPictureResource)
-                              .Fields();
-                    ss << " ";
-                    FormatVideoPictureResouce(*this, video_picture, ss);
-                    const std::string resource_description = ss.str();
-                    const std::string error =
-                        error_messages_.VideoError(hazard, cb_context, error_obj.location.function, resource_description);
-                    skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(), error_obj.location, error);
-                }
-            }
-        }
-    }
-
-    if (pEncodeInfo->flags & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
-        auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(pEncodeInfo->pNext);
-        if (quantization_map_info) {
-            auto image_view_state = Get<vvl::ImageView>(quantization_map_info->quantizationMap);
-            if (image_view_state) {
-                VkOffset3D offset = {0, 0, 0};
-                VkExtent3D extent = {quantization_map_info->quantizationMapExtent.width,
-                                     quantization_map_info->quantizationMapExtent.height, 1};
-                auto hazard = access_context.DetectHazard(*image_view_state, offset, extent, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
-                if (hazard.IsHazard()) {
-                    std::ostringstream ss;
-                    ss << "quantization map ";
-                    ss << Location(Func::Empty, Field::pEncodeInfo).dot(Field::quantizationMap).Fields();
-                    ss << " ";
-                    FormatVideoQuantizationMap(*this, *quantization_map_info, ss);
-                    const std::string resource_description = ss.str();
-                    const std::string error =
-                        error_messages_.VideoError(hazard, cb_context, error_obj.location.function, resource_description);
-                    skip |= SyncError(hazard.Hazard(), image_view_state->Handle(), error_obj.location, error);
-                }
-            }
-        }
-    }
-    return skip;
+    const AccessRange range = MakeRange(*buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
+    const auto pictures = CollectVideoEncodePictureAccesses(*video_session, *pEncodeInfo);
+    const VideoCommand command{VideoCommand::Operation::kEncode, *buffer, range, pictures};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {

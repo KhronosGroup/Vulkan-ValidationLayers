@@ -74,6 +74,7 @@ enum class CommandType : uint32_t {
     kDrawIndirectCount,
     kDrawMeshTasks,
     kBuildAccelerationStructures,
+    kVideo,
 };
 
 struct BufferCopyRegion {
@@ -661,6 +662,45 @@ struct BuildAccelerationStructuresCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct VideoCommand {
+    enum class Operation : uint8_t { kDecode, kEncode };
+    enum class PictureType : uint8_t { kOutput, kInput, kReconstructed, kReference, kQuantizationMap };
+
+    struct PictureAccess {
+        const vvl::ImageView* view;
+        PictureType type;
+        uint32_t reference_index;
+        // Original VideoPictureResource fields
+        VkOffset2D coded_offset;
+        VkExtent2D coded_extent;
+        uint32_t base_array_layer;
+        // Resolved during collection
+        VkImageSubresourceRange subresource_range;
+        VkOffset2D effective_offset;
+        VkExtent2D effective_extent;
+    };
+    Operation operation;
+    const vvl::Buffer& bitstream_buffer;
+    AccessRange bitstream_range;
+    vvl::span<const PictureAccess> pictures;
+    uint32_t bitstream_handle_index = vvl::kNoIndex32;
+
+    struct Storage {
+        AccessRange bitstream_range;
+        const vvl::Buffer* bitstream_buffer;
+        uint32_t first_picture;
+        uint32_t picture_count;
+        uint32_t bitstream_handle_index;
+        Operation operation;
+        VideoCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 struct CommandRef {
     CommandType type;
     uint32_t index;
@@ -689,6 +729,7 @@ struct CommandData {
     std::vector<DrawIndirectCountCommand::Storage> draw_indirect_count_commands;
     std::vector<DrawMeshTasksCommand::Storage> draw_mesh_tasks_commands;
     std::vector<BuildAccelerationStructuresCommand::Storage> build_acceleration_structures_commands;
+    std::vector<VideoCommand::Storage> video_commands;
 
     //
     // Resources and additional data used by the commands
@@ -717,6 +758,7 @@ struct CommandData {
     std::vector<MultiDrawVertexInputCommand::Binding> multi_draw_vertex_bindings;
     std::vector<MultiDrawVertexInputCommand::DrawRange> multi_draw_ranges;
     std::vector<BuildAccelerationStructuresCommand::Access> acceleration_structure_build_accesses;
+    std::vector<VideoCommand::PictureAccess> video_picture_accesses;
 
     std::vector<std::shared_ptr<const vvl::DescriptorSet>> descriptor_sets;
     vvl::unordered_set<const vvl::DescriptorSet*> descriptor_set_lookup;
@@ -789,6 +831,7 @@ struct CommandData {
     CommandRef Store(const BuildAccelerationStructuresCommand::Storage& storage) {
         return Store(CommandType::kBuildAccelerationStructures, build_acceleration_structures_commands, storage);
     }
+    CommandRef Store(const VideoCommand::Storage& storage) { return Store(CommandType::kVideo, video_commands, storage); }
 
   private:
     template <typename Storage>
