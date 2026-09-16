@@ -1873,6 +1873,13 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayout) {
     // Bad aspectMask
     transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-09241");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-09601");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+
+    transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-09241");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-09601");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2117,6 +2124,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutMultiPlanar) {
     transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     transition_info.image = image_multi_planar;
     m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-01672");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-09601");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
     vk::FreeMemory(device(), plane_0_memory, nullptr);
@@ -2461,6 +2469,12 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutDepthWrongAspect) {
     transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     transition_info.subresourceRange = range;
     m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-10749");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-09601");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+
+    transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-09601");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2505,6 +2519,12 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutStencilWrongAspect) {
     transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     transition_info.subresourceRange = range;
     m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-10750");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-09601");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+
+    transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-09601");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }

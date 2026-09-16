@@ -2119,6 +2119,22 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
                                  string_VkImageAspectFlags(barrier_aspect_mask).c_str());
             }
         }
+    } else if (vkuFormatIsDepthOnly(image_format)) {
+        if (!has_depth_aspect) {
+            const LogObjectList objlist(cb_state.Handle(), image);
+            auto vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kNotDepthOnlyAspect);
+            skip |= LogError(vuid, objlist, image_loc, "(%s) has depth-only format %s, but its aspectMask is %s.",
+                             FormatHandle(image).c_str(), string_VkFormat(image_format),
+                             string_VkImageAspectFlags(barrier_aspect_mask).c_str());
+        }
+    } else if (vkuFormatIsStencilOnly(image_format)) {
+        if (!has_stencil_aspect) {
+            const LogObjectList objlist(cb_state.Handle(), image);
+            auto vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kNotStencilOnlyAspect);
+            skip |= LogError(vuid, objlist, image_loc, "(%s) has stencil-only format %s, but its aspectMask is %s.",
+                             FormatHandle(image).c_str(), string_VkFormat(image_format),
+                             string_VkImageAspectFlags(barrier_aspect_mask).c_str());
+        }
     }
 
     if (has_depth_aspect) {

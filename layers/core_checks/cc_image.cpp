@@ -2885,6 +2885,9 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                                               transition_loc.dot(Field::subresourceRange));
         skip |= ValidateMemoryIsBoundToImage(LogObjectList(device, transition.image), *image_state,
                                              transition_loc.dot(Field::image), "VUID-VkHostImageLayoutTransitionInfo-image-01932");
+        skip |= ValidateImageAspectMask(image_state->VkHandle(), image_format, aspect_mask, image_state->disjoint,
+                                        transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
+                                        "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-09601");
 
         if (vkuFormatIsColor(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
             if (!vkuFormatIsMultiplane(image_format)) {
