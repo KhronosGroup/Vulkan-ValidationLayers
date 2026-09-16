@@ -2256,6 +2256,13 @@ TEST_F(NegativeDeviceAddressCommands, CopySampleCount) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageFormatProperties image_format_properties;
+    GetImageFormatProps(Gpu(), image_ci, image_format_properties);
+    if ((image_format_properties.sampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
+        GTEST_SKIP() << "Required sample count not supported";
+    }
+
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 

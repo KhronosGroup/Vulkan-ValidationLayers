@@ -5220,18 +5220,25 @@ TEST_F(NegativeDynamicState, SampleLocationsSamplesMismatch) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
     pipe.CreateGraphicsPipeline();
 
-    VkSampleLocationEXT sample_locations[2] = {{0.5f, 0.5f}, {0.5f, 0.5f}};
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(sample_locations_props);
+    const VkSampleCountFlags supported_counts = sample_locations_props.sampleLocationSampleCounts & ~VK_SAMPLE_COUNT_1_BIT;
+    if (supported_counts == 0) {
+        GTEST_SKIP() << "sampleLocationSampleCounts only supports VK_SAMPLE_COUNT_1_BIT";
+    }
+    const auto sample_count = static_cast<VkSampleCountFlagBits>(supported_counts & ~(supported_counts - 1));
+    const std::vector<VkSampleLocationEXT> sample_locations(sample_count, {0.5f, 0.5f});
 
-    VkSampleLocationsInfoEXT sapmle_locations_info = vku::InitStructHelper();
-    sapmle_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_2_BIT;
-    sapmle_locations_info.sampleLocationGridSize = {1u, 1u};
-    sapmle_locations_info.sampleLocationsCount = 2u;
-    sapmle_locations_info.pSampleLocations = sample_locations;
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
+    sample_locations_info.sampleLocationsPerPixel = sample_count;
+    sample_locations_info.sampleLocationGridSize = {1u, 1u};
+    sample_locations_info.sampleLocationsCount = sample_count;
+    sample_locations_info.pSampleLocations = sample_locations.data();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdSetSampleLocationsEnableEXT(m_command_buffer, VK_TRUE);
-    vk::CmdSetSampleLocationsEXT(m_command_buffer, &sapmle_locations_info);
+    vk::CmdSetSampleLocationsEXT(m_command_buffer, &sample_locations_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-sampleLocationsPerPixel-07482");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
@@ -5256,17 +5263,24 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsRasterizationSamplesMismatch)
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
     pipe.CreateGraphicsPipeline();
 
-    VkSampleLocationEXT sample_locations[2] = {{0.5f, 0.5f}, {0.5f, 0.5f}};
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(sample_locations_props);
+    const VkSampleCountFlags supported_counts = sample_locations_props.sampleLocationSampleCounts & ~VK_SAMPLE_COUNT_1_BIT;
+    if (supported_counts == 0) {
+        GTEST_SKIP() << "sampleLocationSampleCounts only supports VK_SAMPLE_COUNT_1_BIT";
+    }
+    const auto sample_count = static_cast<VkSampleCountFlagBits>(supported_counts & ~(supported_counts - 1));
+    const std::vector<VkSampleLocationEXT> sample_locations(sample_count, {0.5f, 0.5f});
 
-    VkSampleLocationsInfoEXT sapmle_locations_info = vku::InitStructHelper();
-    sapmle_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_2_BIT;
-    sapmle_locations_info.sampleLocationGridSize = {1u, 1u};
-    sapmle_locations_info.sampleLocationsCount = 2u;
-    sapmle_locations_info.pSampleLocations = sample_locations;
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
+    sample_locations_info.sampleLocationsPerPixel = sample_count;
+    sample_locations_info.sampleLocationGridSize = {1u, 1u};
+    sample_locations_info.sampleLocationsCount = sample_count;
+    sample_locations_info.pSampleLocations = sample_locations.data();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdSetSampleLocationsEXT(m_command_buffer, &sapmle_locations_info);
+    vk::CmdSetSampleLocationsEXT(m_command_buffer, &sample_locations_info);
     vk::CmdSetSampleLocationsEnableEXT(m_command_buffer, VK_TRUE);
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
