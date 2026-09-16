@@ -42,6 +42,14 @@ static const char* GetBufferNamePrefix(BufferName buffer_name) {
             return "draw count ";
         case BufferName::kTransformFeedbackCounter:
             return "transform feedback counter ";
+        case BufferName::kRaygenShaderBindingTable:
+            return "raygen shader binding table ";
+        case BufferName::kMissShaderBindingTable:
+            return "miss shader binding table ";
+        case BufferName::kHitShaderBindingTable:
+            return "hit shader binding table ";
+        case BufferName::kCallableShaderBindingTable:
+            return "callable shader binding table ";
         default:
             assert(false);
             return "";
@@ -202,6 +210,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.dispatch_indirect_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kTraceRays: {
+                replay_common(command_data.trace_rays_commands[index], access_context, replay_tag);
+                continue;
+            }
             case CommandType::kDraw: {
                 replay_draw(command_data.draw_commands[index], access_context, replay_tag);
                 continue;
@@ -255,6 +267,7 @@ void CommandData::Reset() {
     begin_render_pass_commands.clear();
     shader_access_commands.clear();
     dispatch_indirect_commands.clear();
+    trace_rays_commands.clear();
     draw_commands.clear();
     draw_multi_commands.clear();
     draw_indirect_commands.clear();
@@ -281,6 +294,7 @@ void CommandData::Reset() {
     rendering_attachments.clear();
     descriptor_buffer_accesses.clear();
     descriptor_image_accesses.clear();
+    trace_rays_buffer_accesses.clear();
     vertex_input_accesses.clear();
     multi_draw_vertex_bindings.clear();
     multi_draw_ranges.clear();
@@ -1032,6 +1046,44 @@ bool DispatchIndirectCommand::Validate(const SyncEnvironment& env, const AccessC
 void DispatchIndirectCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     shader_accesses.Apply(env, tag, access_context);
     indirect_access.Apply(env, tag, access_context);
+}
+
+TraceRaysCommand TraceRaysCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const BufferAccessCommand> buffer_accesses;
+    if (buffer_access_count) {
+        buffer_accesses = {&command_data.trace_rays_buffer_accesses[first_buffer_access], buffer_access_count};
+    }
+    return {shader_access_storage.MakeCommand(command_data), buffer_accesses};
+}
+
+TraceRaysCommand::Storage TraceRaysCommand::MakeStorage(CommandData& command_data) const {
+    const uint32_t first_buffer_access = uint32_t(command_data.trace_rays_buffer_accesses.size());
+    const uint32_t buffer_access_count = uint32_t(buffer_accesses.size());
+    for (const BufferAccessCommand& access : buffer_accesses) {
+        command_data.AddBuffer(access.buffer);
+        command_data.trace_rays_buffer_accesses.emplace_back(access);
+    }
+    return {shader_accesses.MakeStorage(command_data), first_buffer_access, buffer_access_count};
+}
+
+bool TraceRaysCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool TraceRaysCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    for (const BufferAccessCommand& access : buffer_accesses) {
+        skip |= access.Validate(env, access_context, cb_context, replay_tag, loc);
+    }
+    return skip;
+}
+
+void TraceRaysCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    shader_accesses.Apply(env, tag, access_context);
+    for (const BufferAccessCommand& access : buffer_accesses) {
+        access.Apply(env, tag, access_context);
+    }
 }
 
 DrawAttachmentCommand DrawAttachmentCommand::Storage::MakeCommand(RenderPassAccessContext* render_pass_context,

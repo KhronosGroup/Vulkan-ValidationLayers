@@ -218,9 +218,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     void EndRenderingInstance();
     const RenderingInstance* GetRenderingInstance() const { return rendering_instance_ ? &*rendering_instance_ : nullptr; }
 
-    bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location& loc) const;
-    void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
-
     DescriptorAccesses CollectDescriptorAccesses(VkPipelineBindPoint pipelineBindPoint) const;
     void RecordShaderAccesses(ResourceUsageTag tag, DescriptorAccesses& descriptor_accesses);
 

@@ -573,7 +573,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncEnvironmen
         return validator.SyncError(hazard.Hazard(), objlist, loc, error);
     };
 
-    // Subpass's inputAttachment has been done in ValidateDispatchDrawDescriptorSet
+    // Input attachment accesses are validated by ShaderAccessCommand
     if (subpass.pColorAttachments && subpass.colorAttachmentCount && !list.empty()) {
         for (const auto location : list) {
             if (location >= subpass.colorAttachmentCount ||
@@ -642,7 +642,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::Pipeline* p
     const auto& subpass = rp_state_->create_info.pSubpasses[current_subpass_];
     AccessContext& current_context = CurrentContext();
 
-    // Subpass's inputAttachment has been done in RecordDispatchDrawDescriptorSet
+    // Input attachment accesses are recorded by ShaderAccessCommand
     if (subpass.pColorAttachments && subpass.colorAttachmentCount && !list.empty()) {
         for (const auto location : list) {
             if (location >= subpass.colorAttachmentCount ||

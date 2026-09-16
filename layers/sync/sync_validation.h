@@ -263,11 +263,6 @@ class SyncValidator : public vvl::DeviceProxy {
     bool PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                       const ErrorObject& error_obj) const override;
 
-    bool ValidateIndirectBuffer(const CommandBufferContext& cb_context, const AccessContext& access_context,
-                                const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
-                                const uint32_t drawCount, const uint32_t stride, const Location& loc) const;
-    void RecordIndirectBuffer(CommandBufferContext& cb_context, ResourceUsageTag tag, const VkDeviceSize struct_size,
-                              const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
     bool ValidateDispatch(VkCommandBuffer commandBuffer, const Location& loc) const;
     void RecordDispatch(VkCommandBuffer commandBuffer, const Location& loc);
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
@@ -581,10 +576,19 @@ class SyncValidator : public vvl::DeviceProxy {
                                                                const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
                                                                const RecordObject& record_obj) override;
 
-    bool ValidateSbtBuffer(const CommandBufferContext& cb_context, const VkStridedDeviceAddressRegionKHR* p_sbt_address_region,
-                           const Location& loc, const char* sbt_buffer_label) const;
-    void RecordSbtBuffer(CommandBufferContext& cb_context, const VkStridedDeviceAddressRegionKHR* p_sbt_address_region,
-                         ResourceUsageTag tag);
+    static constexpr uint32_t kMaxSbtCount = 4;
+    static constexpr uint32_t kMaxTraceRaysBufferAccesses = kMaxSbtCount + 1 /*indirect buffer*/;
+    small_vector<BufferAccessCommand, kMaxTraceRaysBufferAccesses> CollectTraceRaysBufferAccesses(
+        vvl::span<const VkStridedDeviceAddressRegionKHR* const> shader_binding_tables, VkDeviceAddress indirect_address,
+        VkDeviceSize indirect_size) const;
+
+    bool ValidateTraceRays(VkCommandBuffer command_buffer,
+                           vvl::span<const VkStridedDeviceAddressRegionKHR* const> shader_binding_tables,
+                           VkDeviceAddress indirect_address, VkDeviceSize indirect_size, const Location& loc) const;
+    void RecordTraceRays(VkCommandBuffer command_buffer,
+                         vvl::span<const VkStridedDeviceAddressRegionKHR* const> shader_binding_tables,
+                         VkDeviceAddress indirect_address, VkDeviceSize indirect_size, const Location& loc);
+
     bool PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                         const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                         const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
