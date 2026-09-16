@@ -4504,8 +4504,8 @@ TEST_F(NegativeCommand, ResolveImage2DepthImageAspectMask) {
     resolve_info.regionCount = 1;
     resolve_info.pRegions = &resolve_region;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-srcSubresource-11800");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-dstSubresource-11801");
+    m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcSubresource-11800");
+    m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-dstSubresource-11801");
     resolve_info.srcImage = src_depth_image;
     vk::CmdResolveImage2KHR(m_command_buffer, &resolve_info);
     m_errorMonitor->VerifyFound();

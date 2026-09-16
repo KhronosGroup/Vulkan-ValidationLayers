@@ -1515,6 +1515,16 @@ const vvl::unordered_map<ImageError, std::vector<Entry>>& GetImageErrorsMap() {
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-03320"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-03320"},
          }},
+        {ImageError::kNotDepthOnlyAspect,
+         {
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-10749"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-10749"},
+         }},
+        {ImageError::kNotStencilOnlyAspect,
+         {
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-10750"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-10750"},
+         }},
         {ImageError::kSeparateDepthWithStencilLayout,
          {
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-aspectMask-08702"},

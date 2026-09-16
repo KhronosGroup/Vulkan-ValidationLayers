@@ -79,6 +79,8 @@ enum class ImageError {
     kBadPlaneCount,
     kNotDepthOrStencilAspect,
     kNotDepthAndStencilAspect,
+    kNotDepthOnlyAspect,
+    kNotStencilOnlyAspect,
     kSeparateDepthWithStencilLayout,
     kSeparateStencilhWithDepthLayout,
     kRenderPassMismatch,

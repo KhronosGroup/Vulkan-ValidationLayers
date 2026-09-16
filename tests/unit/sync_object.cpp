@@ -399,6 +399,7 @@ TEST_F(NegativeSyncObject, Barriers) {
 
         // DEPTH bit must be set
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-image-10749");
         conc_test("VUID-VkImageMemoryBarrier-subresourceRange-09601");
 
         // No bits other than DEPTH may be set
@@ -418,6 +419,7 @@ TEST_F(NegativeSyncObject, Barriers) {
         // Use of COLOR aspect on depth image is error
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         // must have the VK_IMAGE_ASPECT_STENCIL_BIT set
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-image-10750");
         conc_test("VUID-VkImageMemoryBarrier-subresourceRange-09601");
     }
 
@@ -912,6 +914,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
         // DEPTH bit must be set
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-image-10749");
         conc_test("depth-only image formats must have the VK_IMAGE_ASPECT_DEPTH_BIT set.");
 
         // No bits other than DEPTH may be set
@@ -930,6 +933,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
         // Use of COLOR aspect on depth image is error
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-image-10750");
         conc_test("stencil-only image formats must have the VK_IMAGE_ASPECT_STENCIL_BIT set.");
     }
 
@@ -1189,6 +1193,64 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
     // Having only one of depth or stencil set for DS image is an error
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     conc_test("VUID-VkImageMemoryBarrier2-image-03320");
+}
+
+TEST_F(NegativeSyncObject, DepthOnlyStencilOnlyImageAspect) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    m_command_buffer.Begin();
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    VkImageMemoryBarrier2 barrier2 = vku::InitStructHelper();
+    barrier2.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier2.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+    vkt::Image depth_image(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    barrier.image = depth_image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-subresourceRange-09601");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-image-10749");
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_errorMonitor->VerifyFound();
+
+    barrier2.image = depth_image;
+    barrier2.subresourceRange = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-subresourceRange-09601");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-image-10749");
+    m_command_buffer.Barrier(barrier2);
+    m_errorMonitor->VerifyFound();
+
+    const VkFormat stencil_format = FindSupportedStencilOnlyFormat(Gpu());
+    if (stencil_format != VK_FORMAT_UNDEFINED) {
+        vkt::Image stencil_image(*m_device, 32, 32, stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        barrier.image = stencil_image;
+        barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-subresourceRange-09601");
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-image-10750");
+        m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        m_errorMonitor->VerifyFound();
+
+        barrier2.image = stencil_image;
+        barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-subresourceRange-09601");
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-image-10750");
+        m_command_buffer.Barrier(barrier2);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSyncObject, BarrierQueueFamily) {
