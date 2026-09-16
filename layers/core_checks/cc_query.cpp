@@ -50,16 +50,12 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
     ASSERT_AND_RETURN_SKIP(query_pool_state);
 
-    bool completed_by_get_results = true;
     for (uint32_t i = 0; i < query_pool_state->create_info.queryCount; ++i) {
         auto state = query_pool_state->GetQueryState(i, 0);
         if (state != QUERYSTATE_AVAILABLE) {
-            completed_by_get_results = false;
-            break;
+            skip |= ValidateObjectNotInUse(query_pool_state.get(), error_obj.location, "VUID-vkDestroyQueryPool-queryPool-00793");
+            break;  // only need to check first query
         }
-    }
-    if (!completed_by_get_results) {
-        skip |= ValidateObjectNotInUse(query_pool_state.get(), error_obj.location, "VUID-vkDestroyQueryPool-queryPool-00793");
     }
     return skip;
 }
@@ -1582,6 +1578,16 @@ bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool quer
         skip |= LogError("VUID-vkResetQueryPool-firstQuery-09437", queryPool, error_obj.location,
                          "Query range [%" PRIu32 ", %" PRIu32 ") goes beyond query pool count (%" PRIu32 ") for %s.", firstQuery,
                          firstQuery + queryCount, query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
+    }
+
+    // Same idea as VUID-vkDestroyQueryPool-queryPool-00793
+    const uint32_t last_query = query_pool_state->ClampQueryRange(firstQuery, queryCount);
+    for (uint32_t i = firstQuery; i < last_query; ++i) {
+        const QueryState query_state = query_pool_state->GetQueryState(i, 0);
+        if (query_state != QUERYSTATE_AVAILABLE && query_state != QUERYSTATE_UNKNOWN) {
+            skip |= ValidateObjectNotInUse(query_pool_state.get(), error_obj.location, "VUID-vkResetQueryPool-firstQuery-02741");
+            break;  // only need to check first query
+        }
     }
 
     return skip;

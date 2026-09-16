@@ -803,6 +803,31 @@ TEST_F(NegativeQuery, HostResetBadRange) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeQuery, HostResetInFlight) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
+    RETURN_IF_SKIP(Init());
+
+    if (HasZeroTimestampValidBits()) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.";
+    }
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 4);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 2, 1);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 2);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+
+    m_errorMonitor->SetDesiredError("VUID-vkResetQueryPool-firstQuery-02741");
+    vk::ResetQueryPool(device(), query_pool, 2, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeQuery, HostResetQueryPool) {
     TEST_DESCRIPTION("Invalid queryPool in vkResetQueryPoolEXT");
 
