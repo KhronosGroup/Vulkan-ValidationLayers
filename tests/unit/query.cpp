@@ -299,61 +299,62 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
 
 TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     TEST_DESCRIPTION("Verify that we get an error if we release the profiling lock during the recording of performance queries");
-
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    auto queueFamilyProperties = m_device->Physical().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    auto queue_family_properties = m_device->Physical().queue_properties_;
+    uint32_t queue_family_index = queue_family_properties.size();
     std::vector<VkPerformanceCounterKHR> counters;
-    std::vector<uint32_t> counterIndices;
+    std::vector<uint32_t> counter_indices;
 
     // Find a single counter with VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR scope.
-    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
-        uint32_t nCounters;
+    for (uint32_t idx = 0; idx < queue_family_properties.size(); idx++) {
+        uint32_t n_counters;
 
-        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &nCounters, nullptr, nullptr);
-        if (nCounters == 0) continue;
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &n_counters, nullptr, nullptr);
+        if (n_counters == 0) continue;
 
-        counters.resize(nCounters);
+        counters.resize(n_counters);
         for (auto& c : counters) {
             c = vku::InitStructHelper();
         }
-        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &nCounters, &counters[0], nullptr);
-        queueFamilyIndex = idx;
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(Gpu(), idx, &n_counters, &counters[0], nullptr);
+        queue_family_index = idx;
 
-        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
-            if (counters[counterIdx].scope == VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR) {
-                counterIndices.push_back(counterIdx);
+        for (uint32_t counter_idx = 0; counter_idx < counters.size(); counter_idx++) {
+            if (counters[counter_idx].scope == VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR) {
+                counter_indices.push_back(counter_idx);
                 break;
             }
         }
 
-        if (counterIndices.empty()) {
+        if (counter_indices.empty()) {
             counters.clear();
             continue;
         }
         break;
     }
 
-    if (counterIndices.empty()) {
+    if (counter_indices.empty()) {
         GTEST_SKIP() << "No queue reported any performance counter with render pass scope.";
     }
 
     InitRenderTarget();
 
     VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = vku::InitStructHelper();
-    perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
-    perf_query_pool_ci.counterIndexCount = counterIndices.size();
-    perf_query_pool_ci.pCounterIndices = &counterIndices[0];
+    perf_query_pool_ci.queueFamilyIndex = queue_family_index;
+    perf_query_pool_ci.counterIndexCount = counter_indices.size();
+    perf_query_pool_ci.pCounterIndices = &counter_indices[0];
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkQueue queue = VK_NULL_HANDLE;
-    vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
+    vk::GetDeviceQueue(device(), queue_family_index, 0, &queue);
 
     {
         VkAcquireProfilingLockInfoKHR lock_info = vku::InitStructHelper();
@@ -411,6 +412,15 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
 
         m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-03220");
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit2-commandBuffer-03880");
+        VkCommandBufferSubmitInfo cb_info2 = vku::InitStructHelper();
+        cb_info2.commandBuffer = m_command_buffer;
+        VkSubmitInfo2 submit_info2 = vku::InitStructHelper();
+        submit_info2.commandBufferInfoCount = 1;
+        submit_info2.pCommandBufferInfos = &cb_info2;
+        vk::QueueSubmit2(queue, 1, &submit_info2, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         vk::QueueWaitIdle(queue);

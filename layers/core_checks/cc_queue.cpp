@@ -82,10 +82,10 @@ struct CommandBufferSubmitState {
         }
         UpdateEventSignalStates(local_event_signal_states, cb_sub_state.event_signal_states);
 
-        VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
+        core::QueryUpdateState query_update(core::QueryUpdateState::Mode::Validate, &local_query_to_state_map, perf_pass,
+                                            loc.function);
         for (auto& function : cb_sub_state.query_updates) {
-            skip |= function(const_cast<vvl::CommandBuffer&>(cb_state), /*do_validate*/ true, first_perf_query_pool, perf_pass,
-                             &local_query_to_state_map);
+            skip |= function(const_cast<vvl::CommandBuffer&>(cb_state), query_update);
         }
 
         for (const auto& it : cb_state.video_session_updates) {

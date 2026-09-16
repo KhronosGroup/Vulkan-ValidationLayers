@@ -30,6 +30,36 @@ class CoreChecks;
 
 namespace core {
 
+// State shared by the deferred query_updates callbacks of a single command buffer.
+//
+// Here |core| instead of |vvl| because we define the vector of them in this file
+struct QueryUpdateState {
+    // on QueueSubState::Retire we will want to update the state
+    // we have two modes for the callbacks
+    enum class Mode { StateOnly, Validate };
+    const Mode mode;
+    bool Validate() const { return mode == Mode::Validate; }
+
+    // copy from CommandBufferSubmitState
+    // will be updated in SetQueryState()
+    QueryMap* local_query_to_state_map = nullptr;
+
+    // VK_KHR_performance_query
+    const uint32_t perf_query_pass;
+
+    // The vkQueueSubmit(2) call submitted with (needed for selecting VUID)
+    // Will be Func::Empty in |StateOnly|.
+    const vvl::Func submit_func;
+
+    // The first performance query seen
+    // will be set in ValidatePerformanceQuery
+    VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
+
+    QueryUpdateState(Mode mode, QueryMap* query_map, uint32_t perf_pass, vvl::Func func)
+        : mode(mode), local_query_to_state_map(query_map), perf_query_pass(perf_pass), submit_func(func) {}
+};
+using QueryUpdate = std::function<bool(vvl::CommandBuffer& cb_state, QueryUpdateState& query_state)>;
+
 // CommandBuffer is over 3 times larger than the next largest state object struct, but the majority of the state is only used in
 // CoreChecks. This state object is used by everyone else (best practice, sync val, GPU-AV, etc). For this reason, we have
 // CommandBuffer object only for core and keep only the most basic items in the parent class
@@ -219,9 +249,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         std::function<bool(const vvl::CommandBuffer &secondary, const vvl::CommandBuffer *primary, const vvl::Framebuffer *)>>
         cmd_execute_commands_functions;
 
-    std::vector<std::function<bool(vvl::CommandBuffer &cb_state, bool do_validate, VkQueryPool &first_perf_query_pool,
-                                   uint32_t perf_query_pass, QueryMap *local_query_to_state_map)>>
-        query_updates;
+    std::vector<QueryUpdate> query_updates;
 
   private:
     void ResetCBState();
