@@ -224,10 +224,6 @@ class SyncValidator : public vvl::DeviceProxy {
     void PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
     void PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
 
-    template <typename RegionType>
-    bool ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                      VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType* pRegions,
-                                      const Location& loc) const;
     bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                              VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                              const ErrorObject& error_obj) const override;
@@ -237,10 +233,6 @@ class SyncValidator : public vvl::DeviceProxy {
     bool PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                               const ErrorObject& error_obj) const override;
 
-    template <typename RegionType>
-    bool ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                      VkBuffer dstBuffer, uint32_t regionCount, const RegionType* pRegions,
-                                      const Location& loc) const;
     bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                              const ErrorObject& error_obj) const override;

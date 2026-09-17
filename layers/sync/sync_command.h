@@ -61,6 +61,7 @@ enum class CommandType : uint32_t {
     kBufferCopy,
     kBufferAccess,
     kImageCopy,
+    kBufferImageCopy,
     kPipelineBarrier,
     kSetEvent,
     kResetEvent,
@@ -190,6 +191,34 @@ struct ImageCopyCommand {
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
                   ResourceUsageTag replay_tag, const Location& loc) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct BufferImageCopyCommand {
+    enum class Direction : uint8_t { kBufferToImage, kImageToBuffer };
+
+    const vvl::Buffer& buffer;
+    const vvl::Image& image;
+    vvl::span<const VkBufferImageCopy> regions;
+    Direction direction;
+    uint32_t buffer_handle_index = vvl::kNoIndex32;
+    uint32_t image_handle_index = vvl::kNoIndex32;
+
+    struct Storage {
+        const vvl::Buffer* buffer;
+        const vvl::Image* image;
+        uint32_t first_region;
+        uint32_t region_count;
+        Direction direction;
+        uint32_t first_handle_index;  // source followed by destination
+        BufferImageCopyCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+
+    static small_vector<VkBufferImageCopy, 1> MakeRegions(vvl::span<const VkBufferImageCopy2> regions);
 };
 
 struct BarrierCommand {
@@ -769,6 +798,7 @@ struct CommandData {
     std::vector<BufferCopyCommand::Storage> buffer_copy_commands;
     std::vector<BufferAccessCommand::Storage> buffer_access_commands;
     std::vector<ImageCopyCommand::Storage> image_copy_commands;
+    std::vector<BufferImageCopyCommand::Storage> buffer_image_copy_commands;
     std::vector<BarrierCommand::Storage> barrier_commands;
     std::vector<SetEventCommand::Storage> set_event_commands;
     std::vector<ResetEventCommand::Storage> reset_event_commands;
@@ -796,7 +826,13 @@ struct CommandData {
     uint32_t last_buffer_index = 0;
 
     std::vector<std::shared_ptr<const vvl::Image>> images;
+    vvl::unordered_map<const vvl::Image*, uint32_t> image_lookup;
+    const vvl::Image* last_image = nullptr;  // cache last accessed image
+    uint32_t last_image_index = 0;
+
     std::vector<std::shared_ptr<const vvl::ImageView>> image_views;
+    vvl::unordered_set<const vvl::ImageView*> image_view_lookup;
+    const vvl::ImageView* last_image_view = nullptr;  // cache last accessed image view
 
     std::vector<std::shared_ptr<const vvl::Pipeline>> pipelines;
     vvl::unordered_set<const vvl::Pipeline*> pipeline_lookup;
@@ -805,6 +841,7 @@ struct CommandData {
     std::vector<std::shared_ptr<const vvl::RenderPass>> render_passes;
     std::vector<BufferCopyRegion> buffer_copy_regions;
     std::vector<VkImageCopy> image_copy_regions;
+    std::vector<VkBufferImageCopy> buffer_image_copy_regions;
     std::vector<BarrierSet> barrier_sets;
     std::vector<std::shared_ptr<const vvl::Event>> events;
     std::vector<RenderingAttachment> rendering_attachments;
@@ -839,6 +876,9 @@ struct CommandData {
     }
     CommandRef Store(const ImageCopyCommand::Storage& storage) {
         return Store(CommandType::kImageCopy, image_copy_commands, storage);
+    }
+    CommandRef Store(const BufferImageCopyCommand::Storage& storage) {
+        return Store(CommandType::kBufferImageCopy, buffer_image_copy_commands, storage);
     }
     CommandRef Store(const BarrierCommand::Storage& storage) {
         return Store(CommandType::kPipelineBarrier, barrier_commands, storage);
