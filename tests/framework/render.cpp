@@ -1029,6 +1029,14 @@ void VkRenderFramework::SupportMultiSwapchain() {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 }
 
+void VkRenderFramework::SupportDeferredSwapchainAllocation() {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    // The Android loader accepts VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR and returns a valid swapchain,
+    // but vkAcquireNextImageKHR then calls a null driver entry point and crashes inside libvulkan.so
+    GTEST_SKIP() << "Android currently doesn't support deferred swapchain memory allocation";
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+}
+
 void VkRenderFramework::SupportSurfaceResize() {
     if (!SurfaceContext::CanResize()) {
         GTEST_SKIP() << "VVL test framework does not support surface resizing on the current platform";

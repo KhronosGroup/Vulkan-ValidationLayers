@@ -1448,6 +1448,7 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
 TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
     TEST_DESCRIPTION("QueueWaitIdle waits for present fence");
     AddSurfaceExtension();
+    RETURN_IF_SKIP(SupportMultiSwapchain());
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -1497,6 +1498,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentSemaphores) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8578
     TEST_DESCRIPTION("Delete present wait semaphore after waiting on present fence");
     AddSurfaceExtension();
+    RETURN_IF_SKIP(SupportMultiSwapchain());
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
