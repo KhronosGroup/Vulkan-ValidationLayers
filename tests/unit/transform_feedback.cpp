@@ -50,6 +50,41 @@ static const char* kXfbVsSource = R"asm(
                OpFunctionEnd
         )asm";
 
+// Basic Geometry shader with Xfb OpExecutionMode added
+static const char* kXfbGsSource = R"asm(
+               OpCapability Geometry
+               OpCapability TransformFeedback
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %_
+               OpExecutionMode %main Xfb
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputTriangleStrip
+               OpExecutionMode %main OutputVertices 3
+               OpDecorate %gl_PerVertex Block
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%gl_PerVertex = OpTypeStruct %v4float
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_1 = OpConstant %float 1
+         %14 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %16 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %16 %14
+               OpEmitVertex
+               OpEndPrimitive
+               OpReturn
+               OpFunctionEnd
+        )asm";
+
 class NegativeTransformFeedback : public VkLayerTest {
   public:
     void InitBasicTransformFeedback();
@@ -1172,4 +1207,21 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffersWithDynamicRende
     vk::CmdEndTransformFeedbackEXT(m_command_buffer, 0u, 0u, NULL, NULL);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeTransformFeedback, XfbExecutionModeMultipleStages) {
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(InitBasicTransformFeedback());
+    InitRenderTarget();
+
+    auto vs = VkShaderObj::CreateFromASM(this, kXfbVsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    auto gs = VkShaderObj::CreateFromASM(this, kXfbGsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-02317");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-02318");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
 }
