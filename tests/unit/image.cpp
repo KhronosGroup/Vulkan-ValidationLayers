@@ -1105,22 +1105,9 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
     TEST_DESCRIPTION("Create view with a format that does not have the same features as the image format.");
 
     RETURN_IF_SKIP(Init());
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
+    const VkFormat image_format = VK_FORMAT_B8G8R8A8_UNORM;
 
     uint32_t feature_count = 5;
-    // List of features to be tested
-    VkFormatFeatureFlagBits features[] = {
-        VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT,            // 02274
-        VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,         // 08932 - only need one of 2 features
-        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,            // 02275
-        VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,         // 08931
-        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT  // 02277
-    };
-    // List of usage cases for each feature test
     VkImageUsageFlags usages[] = {
         VK_IMAGE_USAGE_SAMPLED_BIT,                  // 02274
         VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,         // 08932
@@ -1128,6 +1115,12 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,         // 08931
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT  // 02277
     };
+    // Format feature each usage above requires of the view format
+    VkFormatFeatureFlags2 required_features[] = {
+        VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT,
+        VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT, VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT,
+        VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT};
     // List of errors that will be thrown in order of tests run
     // Order is done to make sure adjacent format features are different
     std::string optimal_error_codes[] = {
@@ -1136,78 +1129,62 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
         "VUID-VkImageViewCreateInfo-usage-02277",  // Needs to be last since needs special format
     };
 
-    VkFormatProperties format_props;
+    // The view format has to still have some format features, otherwise VUID-VkImageViewCreateInfo-None-02273 is hit first
+    auto find_view_format = [this](VkFormatFeatureFlags2 without) {
+        for (const VkFormat candidate :
+             {VK_FORMAT_B8G8R8A8_UINT, VK_FORMAT_B8G8R8A8_SINT, VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_SNORM,
+              VK_FORMAT_R8G8B8A8_UINT, VK_FORMAT_R8G8B8A8_SINT, VK_FORMAT_R8G8B8A8_SRGB, VK_FORMAT_R8G8B8A8_SNORM,
+              VK_FORMAT_A8B8G8R8_UINT_PACK32, VK_FORMAT_A8B8G8R8_SRGB_PACK32, VK_FORMAT_A2B10G10R10_UINT_PACK32}) {
+            const VkFormatFeatureFlags2 features = m_device->FormatFeaturesOptimal(candidate);
+            if (features != 0 && !(features & without)) {
+                return candidate;
+            }
+        }
+        return VK_FORMAT_UNDEFINED;
+    };
 
     // All but one test in this loop and do last test after for special format case
     uint32_t i = 0;
     for (i = 0; i < (feature_count - 1); i++) {
-        // Modify formats to have mismatched features
+        if (!(m_device->FormatFeaturesOptimal(image_format) & required_features[i])) {
+            continue;
+        }
+        const VkFormat view_format = find_view_format(required_features[i]);
+        if (view_format == VK_FORMAT_UNDEFINED) {
+            continue;
+        }
 
-        // Format for image
-        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, &format_props);
-        format_props.optimalTilingFeatures |= features[i];
-        fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, format_props);
-
-        memset(&format_props, 0, sizeof(format_props));
-
-        // Format for view
-        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, &format_props);
-        format_props.optimalTilingFeatures = features[(i + 1) % feature_count];
-        fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, format_props);
-
-        // Create image with modified format
-        auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R32G32B32A32_UINT, usages[i]);
+        auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, image_format, usages[i]);
         image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
         vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
-        // Initialize VkImageViewCreateInfo with modified format
         VkImageViewCreateInfo ivci = vku::InitStructHelper();
         ivci.image = image;
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ivci.format = VK_FORMAT_R32G32B32A32_SINT;
+        ivci.format = view_format;
         ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-        // Test for error message
         CreateImageViewTest(ivci, optimal_error_codes[i].c_str());
     }
 
-    // Test for VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.  Needs special formats
+    const VkFormat ds_image_format = VK_FORMAT_D24_UNORM_S8_UINT;
+    const VkFormat ds_view_format = find_view_format(required_features[i]);
+    if (ds_view_format != VK_FORMAT_UNDEFINED && FormatIsSupported(Gpu(), ds_image_format, VK_IMAGE_TILING_OPTIMAL)) {
+        auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, ds_image_format, usages[i]);
+        image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+        vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
-    // Only run this test if format supported
-    if (!FormatIsSupported(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        GTEST_SKIP() << "VK_FORMAT_D24_UNORM_S8_UINT format not supported";
+        VkImageViewCreateInfo ivci = vku::InitStructHelper();
+        ivci.image = image;
+        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ivci.format = ds_view_format;
+        ivci.subresourceRange = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+        // The 02277 VU is 'probably' redundant, but keeping incase a future spec change
+        // This extra VU checked is because depth formats are only compatible with themselves
+        m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01761");
+        CreateImageViewTest(ivci, optimal_error_codes[i].c_str());
     }
-    // Modify formats to have mismatched features
-
-    // Format for image
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, &format_props);
-    format_props.optimalTilingFeatures |= features[i];
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D24_UNORM_S8_UINT, format_props);
-
-    memset(&format_props, 0, sizeof(format_props));
-
-    // Format for view
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, &format_props);
-    format_props.optimalTilingFeatures = features[(i + 1) % feature_count];
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, format_props);
-
-    // Create image with modified format
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_D24_UNORM_S8_UINT, usages[i]);
-    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-    vkt::Image image(*m_device, image_ci, vkt::set_layout);
-
-    // Initialize VkImageViewCreateInfo with modified format
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image;
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    ivci.subresourceRange = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
-
-    // The 02277 VU is 'probably' redundant, but keeping incase a future spec change
-    // This extra VU checked is because depth formats are only compatible with themselves
-    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01761");
-    // Test for error message
-    CreateImageViewTest(ivci, optimal_error_codes[i].c_str());
 }
 
 TEST_F(NegativeImage, ImageViewUsageCreateInfo) {

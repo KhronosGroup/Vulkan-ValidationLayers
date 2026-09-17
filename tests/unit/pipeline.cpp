@@ -2004,20 +2004,15 @@ TEST_F(NegativePipeline, DescriptorSetNotBound) {
 TEST_F(NegativePipeline, MaxPerStageResources) {
     TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
 
-    RETURN_IF_SKIP(InitFramework());
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
+    RETURN_IF_SKIP(Init());
 
-    // Spec requires a minimum of 128 so know this is setting it lower than that
-    const uint32_t maxPerStageResources = 4;
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxPerStageResources = maxPerStageResources;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    RETURN_IF_SKIP(InitState());
+    const VkPhysicalDeviceLimits& limits = m_device->Physical().limits_;
+    const uint32_t maxPerStageResources = limits.maxPerStageResources;
+    if (maxPerStageResources > 1024 || limits.maxPerStageDescriptorUniformBuffers < maxPerStageResources ||
+        limits.maxDescriptorSetUniformBuffers < maxPerStageResources) {
+        GTEST_SKIP() << "Need a maxPerStageResources (" << maxPerStageResources
+                     << ") that can be exceeded with uniform buffers alone";
+    }
     // Adds the one color attachment
     InitRenderTarget();
 

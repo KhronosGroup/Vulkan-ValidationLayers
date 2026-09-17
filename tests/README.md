@@ -129,10 +129,6 @@ To allow a much higher coverage of testing the Validation Layers a test writer c
 
 The Profile Layer can be found in the Vulkan SDK, otherwise, they will need to be cloned from [Vulkan Profiles](https://github.com/KhronosGroup/Vulkan-Profiles). The Validation Layers test builds a test driver (Also known as a `MockICD` or a null driver).
 
-**NOTE**: While using the Test Driver and Profiles layer the test will not be able to use Device Profiles API (`VK_LAYER_LUNARG_device_profile_api`) at the same time.
-- If a feature is needed, it can be adjusted in the profile JSON
-- Allowing both adds complexity due to the order the layers must be in, while adding little over value to test coverage
-
 Here is an example of setting up and running the Profile layer with Test Driver on a Linux environment
 
 ```bash

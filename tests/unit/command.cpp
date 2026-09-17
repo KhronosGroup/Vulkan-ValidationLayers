@@ -2722,26 +2722,15 @@ TEST_F(NegativeCommand, DrawBlendEnabledFormatFeatures) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
     RETURN_IF_SKIP(Init());
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    // Best guess format
+    m_render_target_fmt = VK_FORMAT_B8G8R8A8_USCALED;
+    const VkFormatFeatureFlags2 linear = m_device->FormatFeaturesLinear(m_render_target_fmt);
+    const VkFormatFeatureFlags2 optimal = m_device->FormatFeaturesOptimal(m_render_target_fmt);
+    if (!(linear & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) || (linear & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT) ||
+        !(optimal & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT)) {
+        GTEST_SKIP() << "Need " << string_VkFormat(m_render_target_fmt)
+                     << " to support blending in optimal tiling, but not in linear tiling";
     }
-
-    const VkFormat render_format = GetRenderTargetFormat();
-
-    // Set format features from being found
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), render_format, &formatProps);
-    if ((formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0) {
-        GTEST_SKIP() << "Required linear tiling features not supported";
-    }
-    // Gets pass pipeline creation but not the actual tiling used
-    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
-    // will be caught at draw time that feature for optimal image is not set
-    // InitRenderTarget() should be setting color attachment as VK_IMAGE_TILING_LINEAR
-    formatProps.linearTilingFeatures &= ~VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), render_format, formatProps);
 
     InitRenderTarget();
 
