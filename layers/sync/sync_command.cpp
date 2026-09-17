@@ -242,6 +242,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.build_acceleration_structures_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kAccelerationStructureCopy: {
+                replay_common(command_data.acceleration_structure_copy_commands[index], access_context, replay_tag);
+                continue;
+            }
             case CommandType::kVideo: {
                 replay_common(command_data.video_commands[index], access_context, replay_tag);
                 continue;
@@ -279,6 +283,7 @@ void CommandData::Reset() {
     draw_indirect_count_commands.clear();
     draw_mesh_tasks_commands.clear();
     build_acceleration_structures_commands.clear();
+    acceleration_structure_copy_commands.clear();
     video_commands.clear();
     clear_attachments_commands.clear();
 
@@ -1634,6 +1639,62 @@ void BuildAccelerationStructuresCommand::Apply(SyncEnvironment& env, ResourceUsa
     for (const Access& access : accesses) {
         access_context.UpdateAccessState(*access.buffer, GetAccessIndex(access.type), access.range,
                                          ResourceUsageTagEx{tag, access.handle_index}, 0, env.queue_id);
+    }
+}
+
+AccelerationStructureCopyCommand AccelerationStructureCopyCommand::Storage::MakeCommand(const CommandData&) const {
+    return {src, dst};
+}
+
+AccelerationStructureCopyCommand::Storage AccelerationStructureCopyCommand::MakeStorage(CommandData& command_data) const {
+    if (src.buffer) {
+        command_data.AddBuffer(*src.buffer);
+    }
+    if (dst.buffer) {
+        command_data.AddBuffer(*dst.buffer);
+    }
+    return {src, dst};
+}
+
+bool AccelerationStructureCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool AccelerationStructureCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                const Location& loc) const {
+    const SyncValidator& validator = env.validator;
+    const Location info_loc(vvl::Func::Empty, vvl::Field::pInfo);
+
+    const auto validate_access = [&](const Access& access, SyncAccessIndex access_index, vvl::Field field) {
+        if (!access.buffer) {
+            return false;
+        }
+        const auto hazard = access_context.DetectHazard(*access.buffer, access_index, access.range);
+        if (!hazard.IsHazard()) {
+            return false;
+        }
+        LogObjectList objlist = BaseObjectList(env, cb_context, access.buffer->Handle());
+        objlist.add(access.acceleration_structure);
+        const std::string error = validator.error_messages_.AccelerationStructureError(
+            env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(access.buffer->Handle()), access.range,
+            access.acceleration_structure, info_loc.dot(field));
+        return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    };
+    bool skip = false;
+    skip |= validate_access(src, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, vvl::Field::src);
+    skip |= validate_access(dst, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, vvl::Field::dst);
+    return skip;
+}
+
+void AccelerationStructureCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    if (src.buffer) {
+        access_context.UpdateAccessState(*src.buffer, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, src.range,
+                                         ResourceUsageTagEx{tag, src.handle_index}, 0, env.queue_id);
+    }
+    if (dst.buffer) {
+        access_context.UpdateAccessState(*dst.buffer, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, dst.range,
+                                         ResourceUsageTagEx{tag, dst.handle_index}, 0, env.queue_id);
     }
 }
 

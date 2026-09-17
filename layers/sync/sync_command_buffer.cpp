@@ -934,6 +934,10 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     import_common(command_data.build_acceleration_structures_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
+                case CommandType::kAccelerationStructureCopy: {
+                    import_common(command_data.acceleration_structure_copy_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
                 case CommandType::kVideo: {
                     import_common(command_data.video_commands[index], command_data, tag, entry.tag_count);
                     continue;

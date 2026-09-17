@@ -65,12 +65,6 @@ class ErrorMessages {
                                 ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
                                 uint32_t region_index, AccessRange range) const;
 
-    // TODO: temp legacy version
-    std::string AccelerationStructureError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                           const vvl::Func command, const std::string& resource_description,
-                                           const AccessRange range, VkAccelerationStructureKHR as,
-                                           const Location& as_location) const;
-
     std::string AccelerationStructureError(const SyncEnvironment& env, const HazardResult& hazard,
                                            const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
                                            const std::string& resource_description, AccessRange range,

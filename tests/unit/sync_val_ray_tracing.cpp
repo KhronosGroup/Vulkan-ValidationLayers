@@ -764,6 +764,70 @@ TEST_F(NegativeSyncValRayTracing, DeserializeASHazard) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncValRayTracing, ASCopyAfterBufferWrite) {
+    TEST_DESCRIPTION("AS copy reads its source buffer written by another command buffer");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    const auto blas_src = BuildBLAS();
+    auto blas_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_dst.SetupBuild(true);
+
+    VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.src = blas_src->GetDstAS()->handle();
+    copy_info.dst = blas_dst.GetDstAS()->handle();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, blas_src->GetDstAS()->GetBuffer(), 0, 4, 0);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer copy_cb(*m_device, m_command_pool);
+    copy_cb.Begin();
+    vk::CmdCopyAccelerationStructureKHR(copy_cb, &copy_info);
+    copy_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, copy_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValRayTracing, DeserializeAfterSerialize) {
+    TEST_DESCRIPTION("Deserialization overwrites an AS read by serialization in another command buffer");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by TestICD: serialization size query";
+    }
+
+    const auto blas = BuildBLAS();
+    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas->GetDstAS());
+
+    VkCopyAccelerationStructureToMemoryInfoKHR copy_to_memory = vku::InitStructHelper();
+    copy_to_memory.src = blas->GetDstAS()->handle();
+    copy_to_memory.dst.deviceAddress = serialization_buffer.Address();
+    copy_to_memory.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
+
+    VkCopyMemoryToAccelerationStructureInfoKHR copy_from_memory = vku::InitStructHelper();
+    copy_from_memory.src.deviceAddress = serialization_buffer.Address();
+    copy_from_memory.dst = blas->GetDstAS()->handle();
+    copy_from_memory.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer, &copy_to_memory);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer deserialize_cb(*m_device, m_command_pool);
+    deserialize_cb.Begin();
+    vk::CmdCopyMemoryToAccelerationStructureKHR(deserialize_cb, &copy_from_memory);
+    deserialize_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    m_default_queue->Submit({m_command_buffer, deserialize_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncValRayTracing, BuildAfterBuildSyncASBufferButNotScratch) {
     TEST_DESCRIPTION("Build BLAS after BLAS. Barrier BLAS buffer but not syncs scratch buffer");
     SetTargetApiVersion(VK_API_VERSION_1_3);
