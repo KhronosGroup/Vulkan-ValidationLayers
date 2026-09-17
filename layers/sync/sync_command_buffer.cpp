@@ -853,6 +853,10 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     import_common(command_data.image_copy_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
+                case CommandType::kBufferImageCopy: {
+                    import_common(command_data.buffer_image_copy_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
                 case CommandType::kPipelineBarrier: {
                     import_common(command_data.barrier_commands[index], command_data, tag, entry.tag_count);
                     continue;
@@ -1256,73 +1260,86 @@ void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::I
 }
 
 void CommandBufferSubState::RecordCopyBufferToImage(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout,
-                                                    uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) {
+                                                    uint32_t region_count, const VkBufferImageCopy* p_regions,
+                                                    const Location& loc) {
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
+    const auto src_tag_ex = cb_context.AddCommandHandle(tag, src_buffer_state.Handle());
+    const auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
 
-    auto src_tag_ex = cb_context.AddCommandHandle(tag, src_buffer_state.Handle());
-    auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
+    const auto regions = vvl::make_span(p_regions, region_count);
+    const BufferImageCopyCommand command{
+        src_buffer_state,        dst_image_state,        regions, BufferImageCopyCommand::Direction::kBufferToImage,
+        src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
-    for (const auto& copy_region : vvl::make_span(regions, region_count)) {
-        AccessRange src_range = MakeRange(copy_region.bufferOffset, dst_image_state.GetBufferSizeFromCopyImage(copy_region));
-        context.UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex);
-
-        UpdateImageAccessState(context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(copy_region.imageSubresource),
-                               copy_region.imageOffset, copy_region.imageExtent, dst_tag_ex);
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 
 void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout,
-                                                     uint32_t region_count, const VkBufferImageCopy2* regions,
+                                                     uint32_t region_count, const VkBufferImageCopy2* p_regions,
                                                      const Location& loc) {
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
+    const auto src_tag_ex = cb_context.AddCommandHandle(tag, src_buffer_state.Handle());
+    const auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
 
-    auto src_tag_ex = cb_context.AddCommandHandle(tag, src_buffer_state.Handle());
-    auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_image_state.Handle());
+    const auto regions = BufferImageCopyCommand::MakeRegions(vvl::make_span(p_regions, region_count));
+    const BufferImageCopyCommand command{
+        src_buffer_state,        dst_image_state,        regions, BufferImageCopyCommand::Direction::kBufferToImage,
+        src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
-    for (const auto& copy_region : vvl::make_span(regions, region_count)) {
-        AccessRange src_range = MakeRange(copy_region.bufferOffset, dst_image_state.GetBufferSizeFromCopyImage(copy_region));
-        context.UpdateAccessState(src_buffer_state, SYNC_COPY_TRANSFER_READ, src_range, src_tag_ex);
-
-        UpdateImageAccessState(context, dst_image_state, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(copy_region.imageSubresource),
-                               copy_region.imageOffset, copy_region.imageExtent, dst_tag_ex);
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 
-void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state,
-                                                    VkImageLayout src_image_layout, uint32_t region_count,
-                                                    const VkBufferImageCopy* regions, const Location& loc) {
+void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state, VkImageLayout,
+                                                    uint32_t region_count, const VkBufferImageCopy* p_regions,
+                                                    const Location& loc) {
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
+    const auto src_tag_ex = cb_context.AddCommandHandle(tag, src_image_state.Handle());
+    const auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
 
-    auto src_tag_ex = cb_context.AddCommandHandle(tag, src_image_state.Handle());
-    auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
+    const auto regions = vvl::make_span(p_regions, region_count);
+    const BufferImageCopyCommand command{
+        dst_buffer_state,        src_image_state,        regions, BufferImageCopyCommand::Direction::kImageToBuffer,
+        dst_tag_ex.handle_index, src_tag_ex.handle_index};
 
-    for (const auto& copy_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(context, src_image_state, SYNC_COPY_TRANSFER_READ, RangeFromLayers(copy_region.imageSubresource),
-                               copy_region.imageOffset, copy_region.imageExtent, src_tag_ex);
-
-        AccessRange dst_range = MakeRange(copy_region.bufferOffset, src_image_state.GetBufferSizeFromCopyImage(copy_region));
-        context.UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex);
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 
-void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state,
-                                                     VkImageLayout src_image_layout, uint32_t region_count,
-                                                     const VkBufferImageCopy2* regions, const Location& loc) {
+void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state, VkImageLayout,
+                                                     uint32_t region_count, const VkBufferImageCopy2* p_regions,
+                                                     const Location& loc) {
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
+    const auto src_tag_ex = cb_context.AddCommandHandle(tag, src_image_state.Handle());
+    const auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
 
-    auto src_tag_ex = cb_context.AddCommandHandle(tag, src_image_state.Handle());
-    auto dst_tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
+    const auto regions = BufferImageCopyCommand::MakeRegions(vvl::make_span(p_regions, region_count));
+    const BufferImageCopyCommand command{
+        dst_buffer_state,        src_image_state,        regions, BufferImageCopyCommand::Direction::kImageToBuffer,
+        dst_tag_ex.handle_index, src_tag_ex.handle_index};
 
-    for (const auto& copy_region : vvl::make_span(regions, region_count)) {
-        UpdateImageAccessState(context, src_image_state, SYNC_COPY_TRANSFER_READ, RangeFromLayers(copy_region.imageSubresource),
-                               copy_region.imageOffset, copy_region.imageExtent, src_tag_ex);
-
-        AccessRange dst_range = MakeRange(copy_region.bufferOffset, src_image_state.GetBufferSizeFromCopyImage(copy_region));
-        context.UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, dst_range, dst_tag_ex);
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
     }
 }
 

@@ -1335,6 +1335,100 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncVal, CopyBufferToImageThenCopyImageToBuffer) {
+    TEST_DESCRIPTION("An image read overlaps the buffer-to-image-copy region");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer src_buffer(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer dst_buffer(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, 8, 4, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // Write to two image regions
+    VkBufferImageCopy write_regions[2] = {};
+    write_regions[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    write_regions[0].imageOffset = {0, 0, 0};
+    write_regions[0].imageExtent = {4, 4, 1};
+    write_regions[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    write_regions[1].imageOffset = {4, 0, 0};
+    write_regions[1].imageExtent = {4, 4, 1};
+
+    // Read only from the second image region
+    VkBufferImageCopy2 read_region = vku::InitStructHelper();
+    read_region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    read_region.imageOffset = {4, 0, 0};
+    read_region.imageExtent = {4, 4, 1};
+    VkCopyImageToBufferInfo2 copy_from_image = vku::InitStructHelper();
+    copy_from_image.srcImage = image;
+    copy_from_image.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_from_image.dstBuffer = dst_buffer;
+    copy_from_image.regionCount = 1;
+    copy_from_image.pRegions = &read_region;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, image, VK_IMAGE_LAYOUT_GENERAL, 2, write_regions);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer read_cb(*m_device, m_command_pool);
+    read_cb.Begin();
+    vk::CmdCopyImageToBuffer2(read_cb, &copy_from_image);
+    read_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, read_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncVal, CopyImageToBufferThenCopyBufferToImage) {
+    TEST_DESCRIPTION("A buffer read overlaps a padded image-to-buffer copy");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    const VkImageUsageFlags image_usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image src_image(*m_device, 16, 16, VK_FORMAT_R8G8B8A8_UNORM, image_usage);
+    vkt::Image dst_image(*m_device, 16, 16, VK_FORMAT_R8G8B8A8_UNORM, image_usage);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // Write four rows with padding between them
+    VkBufferImageCopy write_region = {};
+    write_region.bufferOffset = 256;
+    write_region.bufferRowLength = 8;  // 4 image texels + 4 texel gap
+    write_region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    write_region.imageOffset = {8, 8, 0};
+    write_region.imageExtent = {4, 4, 1};
+
+    // Read only the last row of the padded copy
+    VkBufferImageCopy2 read_region = vku::InitStructHelper();
+    read_region.bufferOffset = 256 + 3 * 32 /* 4th row of 8 rgba texels (4 image + 4 gap)*/;
+    read_region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    read_region.imageOffset = {0, 0, 0};
+    read_region.imageExtent = {4, 1, 1};
+    VkCopyBufferToImageInfo2 copy_to_image = vku::InitStructHelper();
+    copy_to_image.srcBuffer = buffer;
+    copy_to_image.dstImage = dst_image;
+    copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_to_image.regionCount = 1;
+    copy_to_image.pRegions = &read_region;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &write_region);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer read_cb(*m_device, m_command_pool);
+    read_cb.Begin();
+    vk::CmdCopyBufferToImage2(read_cb, &copy_to_image);
+    read_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, read_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncVal, BlitImageHazards) {
     RETURN_IF_SKIP(InitSyncVal());
 
