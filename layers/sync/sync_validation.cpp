@@ -3116,180 +3116,96 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
     }
 }
 
+AccelerationStructureCopyCommand SyncValidator::MakeAccelerationStructureCopyCommand(VkAccelerationStructureKHR src,
+                                                                                     VkAccelerationStructureKHR dst) const {
+    auto get_access = [this](VkAccelerationStructureKHR handle) -> AccelerationStructureCopyCommand::Access {
+        const auto accel = Get<vvl::AccelerationStructureKHR>(handle);
+        if (!accel) {
+            return {};
+        }
+        const vvl::BufferAndOffset buffer = accel->GetFirstValidBuffer(*device_state);
+        if (!buffer) {
+            return {};
+        }
+        return {buffer.state, MakeRange(buffer.offset, accel->GetSize()), handle};
+    };
+    return {get_access(src), get_access(dst)};
+}
+
+bool SyncValidator::ValidateCopyAccelerationStructure(VkCommandBuffer command_buffer, VkAccelerationStructureKHR src,
+                                                      VkAccelerationStructureKHR dst, const Location& loc) const {
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    const auto cb_state = Get<vvl::CommandBuffer>(command_buffer);
+    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+    const auto command = MakeAccelerationStructureCopyCommand(src, dst);
+    return command.Validate(cb_context, loc);
+}
+
+void SyncValidator::RecordCopyAccelerationStructure(VkCommandBuffer command_buffer, VkAccelerationStructureKHR src,
+                                                    VkAccelerationStructureKHR dst, const Location& loc) {
+    const auto cb_state = Get<vvl::CommandBuffer>(command_buffer);
+    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
+    const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+
+    auto command = MakeAccelerationStructureCopyCommand(src, dst);
+    if (command.src.buffer) {
+        command.src.handle_index = cb_context.AddCommandHandle(tag, command.src.buffer->Handle()).handle_index;
+    }
+    if (command.dst.buffer) {
+        command.dst.handle_index = cb_context.AddCommandHandle(tag, command.dst.buffer->Handle()).handle_index;
+    }
+
+    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (syncval_settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
+}
+
 bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                    const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                                    const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    const Location info_loc = error_obj.location.dot(Field::pInfo);
-
-    if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        if (const vvl::BufferAndOffset src_as_buffer = src_accel->GetFirstValidBuffer(*device_state)) {
-            const AccessRange range = MakeRange(src_as_buffer.offset, src_accel->GetSize());
-            auto hazard = access_context.DetectHazard(*src_as_buffer.state,
-                                                      SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
-            if (hazard.IsHazard()) {
-                const LogObjectList objlist(cb_state->Handle(), src_as_buffer.state->Handle(), src_accel->Handle());
-                const std::string resource_description = FormatHandle(src_as_buffer.state->Handle());
-                const std::string error =
-                    error_messages_.AccelerationStructureError(hazard, cb_context, error_obj.location.function,
-                                                               resource_description, range, pInfo->src, info_loc.dot(Field::src));
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-            }
-        }
-    }
-    if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        if (const vvl::BufferAndOffset dst_as_buffer = dst_accel->GetFirstValidBuffer(*device_state)) {
-            const AccessRange range = MakeRange(dst_as_buffer.offset, dst_accel->GetSize());
-            auto hazard = access_context.DetectHazard(*dst_as_buffer.state,
-                                                      SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
-            if (hazard.IsHazard()) {
-                const LogObjectList objlist(cb_state->Handle(), dst_as_buffer.state->Handle(), dst_accel->Handle());
-                const std::string resource_description = FormatHandle(dst_as_buffer.state->Handle());
-                const std::string error =
-                    error_messages_.AccelerationStructureError(hazard, cb_context, error_obj.location.function,
-                                                               resource_description, range, pInfo->dst, info_loc.dot(Field::dst));
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-            }
-        }
-    }
-    return skip;
+    return ValidateCopyAccelerationStructure(commandBuffer, pInfo->src, pInfo->dst, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                   const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                                   const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-
-    if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        if (const vvl::BufferAndOffset src_as_buffer = src_accel->GetFirstValidBuffer(*device_state)) {
-            const AccessRange range = MakeRange(src_as_buffer.offset, src_accel->GetSize());
-            const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_as_buffer.state->Handle());
-            access_context.UpdateAccessState(*src_as_buffer.state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ,
-                                             range, tag_ex);
-        }
-    }
-    if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        if (const vvl::BufferAndOffset dst_as_buffer = dst_accel->GetFirstValidBuffer(*device_state)) {
-            const AccessRange range = MakeRange(dst_as_buffer.offset, dst_accel->GetSize());
-            const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_as_buffer.state->Handle());
-            access_context.UpdateAccessState(*dst_as_buffer.state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE,
-                                             range, tag_ex);
-        }
-    }
+    RecordCopyAccelerationStructure(commandBuffer, pInfo->src, pInfo->dst, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
                                                                            const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                                            const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    const Location info_loc = error_obj.location.dot(Field::pInfo);
-
-    if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        if (const vvl::BufferAndOffset src_as_buffer = src_accel->GetFirstValidBuffer(*device_state)) {
-            const AccessRange range = MakeRange(src_as_buffer.offset, src_accel->GetSize());
-            auto hazard = access_context.DetectHazard(*src_as_buffer.state,
-                                                      SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
-            if (hazard.IsHazard()) {
-                const LogObjectList objlist(cb_state->Handle(), src_as_buffer.state->Handle(), src_accel->Handle());
-                const std::string resource_description = FormatHandle(src_as_buffer.state->Handle());
-                const std::string error =
-                    error_messages_.AccelerationStructureError(hazard, cb_context, error_obj.location.function,
-                                                               resource_description, range, pInfo->src, info_loc.dot(Field::src));
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-            }
-        }
-    }
-
-    // NOTE: do not validate src_buffer. This requires recording query and then waiting for it after submit.
-    // Currently syncval does not support this but even if support is available this affects application:
-    // it flushes entire GPU frame and it also affects app scheduling behavior (CPU and GPU frames do not overlap
-    // anymore, and this can hide resource scheduling issues). Such submit-wait-validation can be an optional feature.
-
-    return skip;
+    // Destination accesses are not tracked because the serialized size is unknown.
+    // vkCmdWriteAccelerationStructuresPropertiesKHR can query it using
+    // VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, but waiting
+    // for the result would stall execution
+    return ValidateCopyAccelerationStructure(commandBuffer, pInfo->src, VK_NULL_HANDLE, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
                                                                           const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                                           const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-
-    if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
-        if (const vvl::BufferAndOffset src_as_buffer = src_accel->GetFirstValidBuffer(*device_state)) {
-            const AccessRange range = MakeRange(src_as_buffer.offset, src_accel->GetSize());
-            const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_as_buffer.state->Handle());
-            access_context.UpdateAccessState(*src_as_buffer.state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ,
-                                             range, tag_ex);
-        }
-    }
+    RecordCopyAccelerationStructure(commandBuffer, pInfo->src, VK_NULL_HANDLE, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                            const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
                                                                            const ErrorObject& error_obj) const {
-    bool skip = false;
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    const Location info_loc = error_obj.location.dot(Field::pInfo);
-
-    if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        if (const vvl::BufferAndOffset dst_as_buffer = dst_accel->GetFirstValidBuffer(*device_state)) {
-            const AccessRange range = MakeRange(dst_as_buffer.offset, dst_accel->GetSize());
-            auto hazard = access_context.DetectHazard(*dst_as_buffer.state,
-                                                      SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
-            if (hazard.IsHazard()) {
-                const LogObjectList objlist(cb_state->Handle(), dst_as_buffer.state->Handle(), dst_accel->Handle());
-                const std::string resource_description = FormatHandle(dst_as_buffer.state->Handle());
-                const std::string error =
-                    error_messages_.AccelerationStructureError(hazard, cb_context, error_obj.location.function,
-                                                               resource_description, range, pInfo->dst, info_loc.dot(Field::dst));
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-            }
-        }
-    }
-
-    // NOTE: do not validate src_buffer. This requires recording query and then waiting for it after submit.
-    // Currently syncval does not support this but even if support is available this affects application:
-    // it flushes entire GPU frame and it also affects app scheduling behavior (CPU and GPU frames do not overlap
-    // anymore, and this can hide resource scheduling issues). Such submit-wait-validation can be an optional feature.
-
-    return skip;
+    // Source buffer accesses are not tracked because the API provides an address but no size.
+    // The size is stored in the header at pInfo->src.deviceAddress.
+    // Reading it may require waiting for the GPU to finish execution.
+    return ValidateCopyAccelerationStructure(commandBuffer, VK_NULL_HANDLE, pInfo->dst, error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                           const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
                                                                           const RecordObject& record_obj) {
-    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
-
-    if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
-        if (const vvl::BufferAndOffset dst_as_buffer = dst_accel->GetFirstValidBuffer(*device_state)) {
-            const AccessRange range = MakeRange(dst_as_buffer.offset, dst_accel->GetSize());
-            const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_as_buffer.state->Handle());
-            access_context.UpdateAccessState(*dst_as_buffer.state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE,
-                                             range, tag_ex);
-        }
-    }
+    RecordCopyAccelerationStructure(commandBuffer, VK_NULL_HANDLE, pInfo->dst, record_obj.location);
 }
 
 small_vector<BufferAccessCommand, SyncValidator::kMaxTraceRaysBufferAccesses> SyncValidator::CollectTraceRaysBufferAccesses(

@@ -148,29 +148,6 @@ std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const Haz
     return BufferCopyError(env, hazard, command, resource_description, region_index, range, std::move(additional_info));
 }
 
-std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                                      const vvl::Func command, const std::string& resource_description,
-                                                      const AccessRange range, VkAccelerationStructureKHR as,
-                                                      const Location& as_location) const {
-    AdditionalMessageInfo additional_info;
-
-    std::ostringstream ss;
-    ss << "The buffer backs ";
-    ss << as_location.Fields();
-    ss << " (" << validator_.FormatHandle(as) << "). ";
-    additional_info.pre_synchronization_text = ss.str();
-
-    std::ostringstream ss2;
-    ss2 << "\nBuffer access region: {\n";
-    ss2 << "  offset = " << range.begin << "\n";
-    ss2 << "  size = " << range.end - range.begin << "\n";
-    ss2 << "}\n";
-    additional_info.message_end_text += ss2.str();
-
-    return Error(cb_context.GetSyncEnvironment(), hazard, command, resource_description, "AccelerationStructureError",
-                 additional_info);
-}
-
 std::string ErrorMessages::AccelerationStructureError(const SyncEnvironment& env, const HazardResult& hazard,
                                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
                                                       const Location& loc, const std::string& resource_description,

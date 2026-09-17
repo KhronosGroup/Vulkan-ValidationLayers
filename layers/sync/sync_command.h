@@ -80,6 +80,7 @@ enum class CommandType : uint32_t {
     kDrawIndirectCount,
     kDrawMeshTasks,
     kBuildAccelerationStructures,
+    kAccelerationStructureCopy,
     kVideo,
     kClearAttachments,
 };
@@ -714,6 +715,28 @@ struct BuildAccelerationStructuresCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct AccelerationStructureCopyCommand {
+    struct Access {
+        const vvl::Buffer* buffer;
+        AccessRange range;
+        VkAccelerationStructureKHR acceleration_structure;
+        uint32_t handle_index = vvl::kNoIndex32;
+    };
+    Access src;
+    Access dst;
+
+    struct Storage {
+        Access src;
+        Access dst;
+        AccelerationStructureCopyCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 struct VideoCommand {
     enum class Operation : uint8_t { kDecode, kEncode };
     enum class PictureType : uint8_t { kOutput, kInput, kReconstructed, kReference, kQuantizationMap };
@@ -814,6 +837,7 @@ struct CommandData {
     std::vector<DrawIndirectCountCommand::Storage> draw_indirect_count_commands;
     std::vector<DrawMeshTasksCommand::Storage> draw_mesh_tasks_commands;
     std::vector<BuildAccelerationStructuresCommand::Storage> build_acceleration_structures_commands;
+    std::vector<AccelerationStructureCopyCommand::Storage> acceleration_structure_copy_commands;
     std::vector<VideoCommand::Storage> video_commands;
     std::vector<ClearAttachmentsCommand::Storage> clear_attachments_commands;
 
@@ -932,6 +956,9 @@ struct CommandData {
     }
     CommandRef Store(const BuildAccelerationStructuresCommand::Storage& storage) {
         return Store(CommandType::kBuildAccelerationStructures, build_acceleration_structures_commands, storage);
+    }
+    CommandRef Store(const AccelerationStructureCopyCommand::Storage& storage) {
+        return Store(CommandType::kAccelerationStructureCopy, acceleration_structure_copy_commands, storage);
     }
     CommandRef Store(const VideoCommand::Storage& storage) { return Store(CommandType::kVideo, video_commands, storage); }
     CommandRef Store(const ClearAttachmentsCommand::Storage& storage) {
