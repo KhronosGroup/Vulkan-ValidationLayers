@@ -1340,7 +1340,7 @@
                         "maxPerStageDescriptorStorageBuffers": 1048576,
                         "maxPerStageDescriptorStorageImages": 1048576,
                         "maxPerStageDescriptorUniformBuffers": 1048576,
-                        "maxPerStageResources": 4294967000,
+                        "maxPerStageResources": 1024,
                         "maxPushConstantsSize": 256,
                         "maxSampleMaskWords": 1,
                         "maxSamplerAllocationCount": 4000,
@@ -8760,6 +8760,24 @@
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT"
                         ]
+                    }
+                },
+                "VK_FORMAT_B8G8R8A8_USCALED": {
+                    "VkFormatProperties3": {
+                        "linearTilingFeatures": [
+                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT",
+                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT"
+                        ],
+                        "optimalTilingFeatures": [
+                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
+                            "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT",
+                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
+                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT"
+                        ],
+                        "bufferFeatures": []
                     }
                 }
             },

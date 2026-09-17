@@ -1053,29 +1053,24 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(ray_tracing_features);
     if (!ray_tracing_features.rayTraversalPrimitiveCulling) {
         GTEST_SKIP() << "Feature rayTraversalPrimitiveCulling is not supported.";
     }
 
-    const uint32_t maxPerStageResources = 4;
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxPerStageResources = maxPerStageResources;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-
     RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
+    const VkPhysicalDeviceLimits& limits = m_device->Physical().limits_;
+    const uint32_t maxPerStageResources = limits.maxPerStageResources;
+    if (maxPerStageResources > 1024 || limits.maxPerStageDescriptorUniformBuffers < maxPerStageResources ||
+        limits.maxDescriptorSetUniformBuffers < maxPerStageResources) {
+        GTEST_SKIP() << "Need a maxPerStageResources (" << maxPerStageResources
+                     << ") that can be exceeded with uniform buffers alone";
+    }
+
     const vkt::DescriptorSetLayout ds_layout(
-        *m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->Physical().limits_.maxPerStageResources,
-                     VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
+        *m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxPerStageResources, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
                     {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
     VkShaderObj rgen_shader(*m_device, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
