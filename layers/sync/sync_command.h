@@ -64,6 +64,7 @@ enum class CommandType : uint32_t {
     kBufferImageCopy,
     kImageBlit,
     kImageResolve,
+    kImageClear,
     kPipelineBarrier,
     kSetEvent,
     kResetEvent,
@@ -272,6 +273,25 @@ struct ImageResolveCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 
     static small_vector<VkImageResolve, 1> MakeRegions(vvl::span<const VkImageResolve2> regions);
+};
+
+struct ImageClearCommand {
+    const vvl::Image& image;
+    vvl::span<const VkImageSubresourceRange> ranges;
+    uint32_t handle_index = vvl::kNoIndex32;
+
+    struct Storage {
+        const vvl::Image* image;
+        uint32_t first_range;
+        uint32_t range_count;
+        uint32_t handle_index;
+        ImageClearCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
 struct BarrierCommand {
@@ -876,6 +896,7 @@ struct CommandData {
     std::vector<BufferImageCopyCommand::Storage> buffer_image_copy_commands;
     std::vector<ImageBlitCommand::Storage> image_blit_commands;
     std::vector<ImageResolveCommand::Storage> image_resolve_commands;
+    std::vector<ImageClearCommand::Storage> image_clear_commands;
     std::vector<BarrierCommand::Storage> barrier_commands;
     std::vector<SetEventCommand::Storage> set_event_commands;
     std::vector<ResetEventCommand::Storage> reset_event_commands;
@@ -922,6 +943,7 @@ struct CommandData {
     std::vector<VkBufferImageCopy> buffer_image_copy_regions;
     std::vector<VkImageBlit> image_blit_regions;
     std::vector<VkImageResolve> image_resolve_regions;
+    std::vector<VkImageSubresourceRange> image_clear_ranges;
     std::vector<BarrierSet> barrier_sets;
     std::vector<std::shared_ptr<const vvl::Event>> events;
     std::vector<RenderingAttachment> rendering_attachments;
@@ -962,6 +984,9 @@ struct CommandData {
     }
     CommandRef Store(const ImageResolveCommand::Storage& storage) {
         return Store(CommandType::kImageResolve, image_resolve_commands, storage);
+    }
+    CommandRef Store(const ImageClearCommand::Storage& storage) {
+        return Store(CommandType::kImageClear, image_clear_commands, storage);
     }
     CommandRef Store(const BufferImageCopyCommand::Storage& storage) {
         return Store(CommandType::kBufferImageCopy, buffer_image_copy_commands, storage);

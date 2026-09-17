@@ -18,7 +18,6 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include "sync/sync_command_buffer.h"
 #include "error_message/error_location.h"
-#include "sync/sync_image.h"
 #include "sync/sync_replay.h"
 #include "sync/sync_reporting.h"
 #include "sync/sync_validation.h"
@@ -225,13 +224,6 @@ static SyncAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType 
         }
         return stage_accesses.storage_read;
     }
-}
-
-static void UpdateImageAccessState(AccessContext& access_context, const vvl::Image& image, SyncAccessIndex current_usage,
-                                   const VkImageSubresourceRange& subresource_range, const ResourceUsageTag& tag) {
-    const auto& sub_state = SubState(image);
-    ImageRangeGen range_gen = sub_state.MakeImageRangeGen(subresource_range, false);
-    access_context.UpdateAccessState(range_gen, current_usage, ResourceUsageTagEx{tag});
 }
 
 SyncEnvironment::SyncEnvironment(const SyncValidator& validator, VkQueueFlags queue_flags, QueueId queue_id,
@@ -857,6 +849,10 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     import_common(command_data.image_resolve_commands[index], command_data, tag, entry.tag_count);
                     continue;
                 }
+                case CommandType::kImageClear: {
+                    import_common(command_data.image_clear_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
                 case CommandType::kPipelineBarrier: {
                     import_common(command_data.barrier_commands[index], command_data, tag, entry.tag_count);
                     continue;
@@ -1425,32 +1421,31 @@ void CommandBufferSubState::RecordResolveImage2(vvl::Image& src_image_state, vvl
     }
 }
 
+static void RecordImageClear(CommandBufferContext& cb_context, vvl::Image& image, vvl::span<const VkImageSubresourceRange> ranges,
+                             const Location& loc) {
+    const auto tag = cb_context.NextCommandTag(loc.function);
+    const auto tag_ex = cb_context.AddCommandHandle(tag, image.Handle());
+    const ImageClearCommand command{image, ranges, tag_ex.handle_index};
+
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
+}
+
 void CommandBufferSubState::RecordClearColorImage(vvl::Image& image_state, VkImageLayout, const VkClearColorValue*,
                                                   uint32_t range_count, const VkImageSubresourceRange* ranges,
                                                   const Location& loc) {
-    const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
-
-    cb_context.AddCommandHandle(tag, image_state.Handle());
-
-    for (uint32_t index = 0; index < range_count; index++) {
-        const auto& range = ranges[index];
-        UpdateImageAccessState(context, image_state, SYNC_CLEAR_TRANSFER_WRITE, range, tag);
-    }
+    RecordImageClear(cb_context, image_state, {ranges, range_count}, loc);
 }
 
 void CommandBufferSubState::RecordClearDepthStencilImage(vvl::Image& image_state, VkImageLayout, const VkClearDepthStencilValue*,
                                                          uint32_t range_count, const VkImageSubresourceRange* ranges,
                                                          const Location& loc) {
-    const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
-
-    cb_context.AddCommandHandle(tag, image_state.Handle());
-
-    for (uint32_t index = 0; index < range_count; index++) {
-        const auto& range = ranges[index];
-        UpdateImageAccessState(context, image_state, SYNC_CLEAR_TRANSFER_WRITE, range, tag);
-    }
+    RecordImageClear(cb_context, image_state, {ranges, range_count}, loc);
 }
 
 void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments,
