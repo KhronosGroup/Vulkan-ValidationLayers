@@ -272,6 +272,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 command.Apply(env, base_tag + replay_tag, access_context);
                 continue;
             }
+            case CommandType::kQueryCopy: {
+                replay_common(command_data.query_copy_commands[index], access_context, replay_tag);
+                continue;
+            }
         }
         assert(false);
     }
@@ -304,6 +308,7 @@ void CommandData::Reset() {
     acceleration_structure_copy_commands.clear();
     video_commands.clear();
     clear_attachments_commands.clear();
+    query_copy_commands.clear();
 
     buffers.clear();
     buffer_lookup.clear();
@@ -2225,6 +2230,39 @@ void ClearAttachmentsCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, 
             }
         }
     }
+}
+
+QueryCopyCommand QueryCopyCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    return {*dst_buffer, range, query_pool, handle_index};
+}
+
+QueryCopyCommand::Storage QueryCopyCommand::MakeStorage(CommandData& command_data) const {
+    command_data.AddBuffer(dst_buffer);
+    return {&dst_buffer, range, query_pool, handle_index};
+}
+
+bool QueryCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool QueryCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    const auto hazard = access_context.DetectHazard(dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
+    if (!hazard.IsHazard()) {
+        return false;
+    }
+    const SyncValidator& validator = env.validator;
+    LogObjectList objlist = BaseObjectList(env, cb_context, VulkanTypedHandle(query_pool, kVulkanObjectTypeQueryPool));
+    objlist.add(dst_buffer.Handle());
+    const std::string resource_description = "dstBuffer " + validator.FormatHandle(dst_buffer.Handle());
+    const std::string error =
+        validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
+    return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+}
+
+void QueryCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    access_context.UpdateAccessState(dst_buffer, SYNC_COPY_TRANSFER_WRITE, range, ResourceUsageTagEx{tag, handle_index}, 0,
+                                     env.queue_id);
 }
 
 }  // namespace syncval

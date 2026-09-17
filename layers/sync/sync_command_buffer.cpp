@@ -945,6 +945,10 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                     StoreCommand(tag, command, entry.tag_count);
                     continue;
                 }
+                case CommandType::kQueryCopy: {
+                    import_common(command_data.query_copy_commands[index], command_data, tag, entry.tag_count);
+                    continue;
+                }
             }
             assert(false);
         }
@@ -1545,15 +1549,20 @@ void CommandBufferSubState::RecordCopyQueryPoolResults(vvl::QueryPool& pool_stat
         return;
     }
     const auto tag = cb_context.NextCommandTag(loc.function);
-    AccessContext& context = cb_context.GetCbAccessContext();
 
     const uint32_t query_size = (flags & VK_QUERY_RESULT_64_BIT) ? 8 : 4;
     const VkDeviceSize range_size = (query_count - 1) * stride + query_size;
     const AccessRange range = MakeRange(dst_offset, range_size);
     const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_buffer_state.Handle());
-    context.UpdateAccessState(dst_buffer_state, SYNC_COPY_TRANSFER_WRITE, range, tag_ex);
+    const QueryCopyCommand command{dst_buffer_state, range, pool_state.VkHandle(), tag_ex.handle_index};
 
-    // TODO:Track VkQueryPool
+    const auto& settings = cb_context.GetSyncState().syncval_settings;
+    if (settings.IsRecordTimeValidationEnabled()) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
+    }
+    if (settings.full_validation) {
+        cb_context.StoreCommand(tag, command);
+    }
 }
 
 void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin,

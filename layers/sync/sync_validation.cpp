@@ -1595,28 +1595,22 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
                                                            uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer,
                                                            VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags,
                                                            const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled() || queryCount == 0) {
+        return false;
+    }
+    const auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
+    if (!dst_buffer) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
 
-    auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
+    const uint32_t query_size = (flags & VK_QUERY_RESULT_64_BIT) ? 8 : 4;
+    const VkDeviceSize range_size = (queryCount - 1) * stride + query_size;
+    const AccessRange range = MakeRange(dstOffset, range_size);
 
-    if (dst_buffer && queryCount > 0) {
-        const uint32_t query_size = (flags & VK_QUERY_RESULT_64_BIT) ? 8 : 4;
-        const VkDeviceSize range_size = (queryCount - 1) * stride + query_size;
-        const AccessRange range = MakeRange(dstOffset, range_size);
-        auto hazard = access_context.DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
-        if (hazard.IsHazard()) {
-            const LogObjectList objlist(commandBuffer, queryPool, dstBuffer);
-            const std::string resource_description = "dstBuffer " + FormatHandle(dstBuffer);
-            const auto error =
-                error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, range);
-            skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-        }
-    }
-    // TODO:Track VkQueryPool
-    return skip;
+    const QueryCopyCommand command{*dst_buffer, range, queryPool};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
