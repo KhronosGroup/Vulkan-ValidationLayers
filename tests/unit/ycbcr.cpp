@@ -1608,11 +1608,7 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
         GTEST_SKIP() << "Required format features not supported.";
     }
 
-    VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
-    mod_list.pDrmFormatModifiers = mods.data();
-    mod_list.drmFormatModifierCount = mods.size();
-
-    VkImageCreateInfo image_create_info = vku::InitStructHelper(&mod_list);
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = format;
@@ -1622,6 +1618,17 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    mods = GetSupportedDrmModifiers(Gpu(), mods, image_create_info);
+    if (mods.empty()) {
+        GTEST_SKIP() << "Required format features not supported.";
+    }
+
+    VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
+    mod_list.pDrmFormatModifiers = mods.data();
+    mod_list.drmFormatModifierCount = mods.size();
+    image_create_info.pNext = &mod_list;
+
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper();
