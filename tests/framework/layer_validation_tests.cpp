@@ -90,6 +90,37 @@ VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo& ci, 
     return vk::GetPhysicalDeviceImageFormatProperties(gpu, ci.format, ci.imageType, ci.tiling, ci.usage, ci.flags, &out_limits);
 }
 
+bool IsDrmModifierSupported(VkPhysicalDevice gpu, uint64_t drm_format_modifier, const VkImageCreateInfo& ci,
+                            const void* image_format_info_pnext) {
+    VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier_info =
+        vku::InitStructHelper(const_cast<void*>(image_format_info_pnext));
+    drm_format_modifier_info.drmFormatModifier = drm_format_modifier;
+    drm_format_modifier_info.sharingMode = ci.sharingMode;
+    drm_format_modifier_info.queueFamilyIndexCount = ci.queueFamilyIndexCount;
+    drm_format_modifier_info.pQueueFamilyIndices = ci.pQueueFamilyIndices;
+
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&drm_format_modifier_info);
+    image_format_info.format = ci.format;
+    image_format_info.type = ci.imageType;
+    image_format_info.tiling = ci.tiling;
+    image_format_info.usage = ci.usage;
+    image_format_info.flags = ci.flags;
+
+    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
+    return vk::GetPhysicalDeviceImageFormatProperties2(gpu, &image_format_info, &image_format_properties) == VK_SUCCESS;
+}
+
+std::vector<uint64_t> GetSupportedDrmModifiers(VkPhysicalDevice gpu, const std::vector<uint64_t>& drm_format_modifiers,
+                                               const VkImageCreateInfo& ci, const void* image_format_info_pnext) {
+    std::vector<uint64_t> supported;
+    for (uint64_t drm_format_modifier : drm_format_modifiers) {
+        if (IsDrmModifierSupported(gpu, drm_format_modifier, ci, image_format_info_pnext)) {
+            supported.push_back(drm_format_modifier);
+        }
+    }
+    return supported;
+}
+
 bool IsImageFormatSupported(const VkPhysicalDevice gpu, const VkImageCreateInfo& ci, const VkFormatFeatureFlags features) {
     // Verify physical device support of format features
     if (!FormatFeaturesAreSupported(gpu, ci.format, ci.tiling, features)) {

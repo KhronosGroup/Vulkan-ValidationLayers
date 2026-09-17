@@ -110,6 +110,12 @@ bool FormatFeatures2AreSupported(VkPhysicalDevice gpu, VkFormat format, VkImageT
 // Small wrapprer around vkGetPhysicalDeviceImageFormatProperties
 VkResult GetImageFormatProps(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, VkImageFormatProperties &out_limits);
 
+// VK_EXT_image_drm_format_modifier
+bool IsDrmModifierSupported(VkPhysicalDevice gpu, uint64_t drm_format_modifier, const VkImageCreateInfo& ci,
+                            const void* image_format_info_pnext = nullptr);
+std::vector<uint64_t> GetSupportedDrmModifiers(VkPhysicalDevice gpu, const std::vector<uint64_t>& drm_format_modifiers,
+                                               const VkImageCreateInfo& ci, const void* image_format_info_pnext = nullptr);
+
 // Returns true if format and *all* requested features are available.
 bool IsImageFormatSupported(VkPhysicalDevice gpu, const VkImageCreateInfo &ci, const VkFormatFeatureFlags features);
 

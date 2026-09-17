@@ -16,6 +16,9 @@
 
 class NegativeImageDrm : public ImageDrmTest {};
 
+// DRM_FORMAT_MOD_INVALID
+static constexpr uint64_t kDrmFormatModInvalid = 0x00FFFFFFFFFFFFFFULL;
+
 TEST_F(NegativeImageDrm, Basic) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
@@ -107,6 +110,11 @@ TEST_F(NegativeImageDrm, Basic2) {
 
     VkSubresourceLayout fake_plane_layout = {0, 0, 0, 0, 0};
 
+    mods = GetSupportedDrmModifiers(Gpu(), mods, image_info);
+    if (mods.size() < 2) {
+        GTEST_SKIP() << "Need 2 valid Format Modifiers";
+    }
+
     VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = vku::InitStructHelper();
     drm_format_mod_list.drmFormatModifierCount = mods.size();
     drm_format_mod_list.pDrmFormatModifiers = mods.data();
@@ -187,10 +195,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
 
-    VkImageDrmFormatModifierListCreateInfoEXT list_create_info = vku::InitStructHelper();
-    list_create_info.drmFormatModifierCount = mods.size();
-    list_create_info.pDrmFormatModifiers = mods.data();
-    VkImageCreateInfo create_info = vku::InitStructHelper(&list_create_info);
+    VkImageCreateInfo create_info = vku::InitStructHelper();
     create_info.imageType = VK_IMAGE_TYPE_2D;
     create_info.format = format;
     create_info.extent = {64, 64, 1};
@@ -200,22 +205,15 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
     create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    for (uint64_t mod : mods) {
-        VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
-        drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        drm_format_modifier.drmFormatModifier = mod;
-        VkPhysicalDeviceImageFormatInfo2 image_info = vku::InitStructHelper(&drm_format_modifier);
-        image_info.format = format;
-        image_info.type = create_info.imageType;
-        image_info.tiling = create_info.tiling;
-        image_info.usage = create_info.usage;
-        image_info.flags = create_info.flags;
-        VkImageFormatProperties2 image_properties = vku::InitStructHelper();
-        if (vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties) != VK_SUCCESS) {
-            // Works with Mesa, Pixel 7 doesn't support this combo
-            GTEST_SKIP() << "Required formats/features not supported";
-        }
+    mods = GetSupportedDrmModifiers(Gpu(), mods, create_info);
+    if (mods.empty()) {
+        GTEST_SKIP() << "Required formats/features not supported";
     }
+
+    VkImageDrmFormatModifierListCreateInfoEXT list_create_info = vku::InitStructHelper();
+    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.pDrmFormatModifiers = mods.data();
+    create_info.pNext = &list_create_info;
 
     vkt::Image image(*m_device, create_info, vkt::no_mem);
     if (image.initialized() == false) {
@@ -466,10 +464,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
 
-    auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
-    list_create_info.drmFormatModifierCount = mods.size();
-    list_create_info.pDrmFormatModifiers = mods.data();
-    auto create_info = vku::InitStruct<VkImageCreateInfo>(&list_create_info);
+    auto create_info = vku::InitStruct<VkImageCreateInfo>();
     create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     create_info.imageType = VK_IMAGE_TYPE_2D;
     create_info.format = format;
@@ -480,21 +475,15 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
     create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    for (uint64_t mod : mods) {
-        auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
-        drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        drm_format_modifier.drmFormatModifier = mod;
-        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
-        image_info.format = format;
-        image_info.type = create_info.imageType;
-        image_info.tiling = create_info.tiling;
-        image_info.usage = create_info.usage;
-        image_info.flags = create_info.flags;
-        auto image_properties = vku::InitStruct<VkImageFormatProperties2>();
-        if (vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties) != VK_SUCCESS) {
-            GTEST_SKIP() << "Required formats/features not supported";
-        }
+    mods = GetSupportedDrmModifiers(Gpu(), mods, create_info);
+    if (mods.empty()) {
+        GTEST_SKIP() << "Required formats/features not supported";
     }
+
+    auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.pDrmFormatModifiers = mods.data();
+    create_info.pNext = &list_create_info;
 
     vkt::Image image(*m_device, create_info, vkt::no_mem);
     if (image.initialized() == false) {
@@ -523,10 +512,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
 
-    auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
-    list_create_info.drmFormatModifierCount = mods.size();
-    list_create_info.pDrmFormatModifiers = mods.data();
-    auto create_info = vku::InitStruct<VkImageCreateInfo>(&list_create_info);
+    auto create_info = vku::InitStruct<VkImageCreateInfo>();
     create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     create_info.imageType = VK_IMAGE_TYPE_2D;
     create_info.format = format;
@@ -537,21 +523,15 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    for (uint64_t mod : mods) {
-        auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
-        drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        drm_format_modifier.drmFormatModifier = mod;
-        auto image_info = vku::InitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
-        image_info.format = format;
-        image_info.type = create_info.imageType;
-        image_info.tiling = create_info.tiling;
-        image_info.usage = create_info.usage;
-        image_info.flags = create_info.flags;
-        auto image_properties = vku::InitStruct<VkImageFormatProperties2>();
-        if (vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties) != VK_SUCCESS) {
-            GTEST_SKIP() << "Required formats/features not supported";
-        }
+    mods = GetSupportedDrmModifiers(Gpu(), mods, create_info);
+    if (mods.empty()) {
+        GTEST_SKIP() << "Required formats/features not supported";
     }
+
+    auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.pDrmFormatModifiers = mods.data();
+    create_info.pNext = &list_create_info;
 
     vkt::Image image(*m_device, create_info, vkt::no_mem);
     if (image.initialized() == false) {
@@ -690,14 +670,8 @@ TEST_F(NegativeImageDrm, ModifierListUnsupportedModifier) {
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
-    // DRM_FORMAT_MOD_INVALID, will never be reported as supported
-    mods.push_back(0x00FFFFFFFFFFFFFFULL);
 
-    VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
-    mod_list.drmFormatModifierCount = static_cast<uint32_t>(mods.size());
-    mod_list.pDrmFormatModifiers = mods.data();
-
-    VkImageCreateInfo image_ci = vku::InitStructHelper(&mod_list);
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.extent = {64, 64, 1};
@@ -707,6 +681,21 @@ TEST_F(NegativeImageDrm, ModifierListUnsupportedModifier) {
     image_ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    mods = GetSupportedDrmModifiers(Gpu(), mods, image_ci);
+    if (mods.empty()) {
+        GTEST_SKIP() << "No valid Format Modifier found";
+    }
+    if (IsDrmModifierSupported(Gpu(), kDrmFormatModInvalid, image_ci)) {
+        GTEST_SKIP() << "Driver reports DRM_FORMAT_MOD_INVALID as supported";
+    }
+    mods.push_back(kDrmFormatModInvalid);
+
+    VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
+    mod_list.drmFormatModifierCount = static_cast<uint32_t>(mods.size());
+    mod_list.pDrmFormatModifiers = mods.data();
+    image_ci.pNext = &mod_list;
+
     CreateImageTest(image_ci, "VUID-VkImageDrmFormatModifierListCreateInfoEXT-pDrmFormatModifiers-02263");
 }
 
@@ -721,7 +710,7 @@ TEST_F(NegativeImageDrm, ExplicitUnsupportedModifier) {
     VkSubresourceLayout plane_layouts[2] = {{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}};
 
     VkImageDrmFormatModifierExplicitCreateInfoEXT mod_explicit = vku::InitStructHelper();
-    mod_explicit.drmFormatModifier = 0x00FFFFFFFFFFFFFFULL;  // DRM_FORMAT_MOD_INVALID
+    mod_explicit.drmFormatModifier = kDrmFormatModInvalid;
     mod_explicit.drmFormatModifierPlaneCount = 1;
     mod_explicit.pPlaneLayouts = plane_layouts;
 
@@ -736,9 +725,43 @@ TEST_F(NegativeImageDrm, ExplicitUnsupportedModifier) {
     image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    CreateImageTest(image_ci, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifier-02264");
+    if (IsDrmModifierSupported(Gpu(), kDrmFormatModInvalid, image_ci)) {
+        GTEST_SKIP() << "Driver reports DRM_FORMAT_MOD_INVALID as supported";
+    }
 
-    mod_explicit.drmFormatModifier = mods[0];
+    CreateImageTest(image_ci, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifier-02264");
+}
+
+TEST_F(NegativeImageDrm, ExplicitPlaneCountMismatch) {
+    RETURN_IF_SKIP(InitBasicImageDrm());
+
+    std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+    if (mods.empty()) {
+        GTEST_SKIP() << "No valid Format Modifier found";
+    }
+
+    VkSubresourceLayout plane_layouts[2] = {{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}};
+
+    VkImageDrmFormatModifierExplicitCreateInfoEXT mod_explicit = vku::InitStructHelper();
     mod_explicit.drmFormatModifierPlaneCount = 2;
+    mod_explicit.pPlaneLayouts = plane_layouts;
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper(&mod_explicit);
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {64, 64, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    mods = GetSupportedDrmModifiers(Gpu(), mods, image_ci);
+    if (mods.empty()) {
+        GTEST_SKIP() << "No valid Format Modifier found";
+    }
+    mod_explicit.drmFormatModifier = mods[0];
+
     CreateImageTest(image_ci, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifierPlaneCount-02265");
 }
