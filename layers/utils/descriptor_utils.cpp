@@ -183,7 +183,7 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
         } else if (resource_variable.base_type.Word(7) != 2) {
             return "OpTypeImage Sampled is " + std::to_string(resource_variable.base_type.Word(7)) + ", not 2";
         } else if (resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-            return "is decorated with NonWritable";
+            return "is decorated with NonWritable (READ_ONLY_IMAGE_BIT would match)";
         }
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT) != 0 &&
@@ -215,8 +215,8 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
         }
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT) != 0) {
-        if (!resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-            return "is decorated with NonWritable";
+        if (resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
+            return "is decorated with NonWritable (READ_ONLY_STORAGE_BUFFER_BIT would match)";
         } else if (!resource_variable.type_struct_info) {
             return "is not a OpTypeStruct";
         } else if (!resource_variable.is_storage_buffer) {
