@@ -508,6 +508,11 @@ TEST_F(NegativeDeviceQueue, NoQueues) {
 }
 
 TEST_F(NegativeDeviceQueue, DeviceCreateEnabledLayerNamesPointer) {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    // The Android loader reads ppEnabledLayerNames while building the layer chain, so it faults inside
+    // vulkan::api::CreateDevice before any layer gets a chance to report this
+    GTEST_SKIP() << "Android loader Bug";
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 

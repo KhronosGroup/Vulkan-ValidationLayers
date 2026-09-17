@@ -117,6 +117,7 @@ class VkRenderFramework : public VkTestFramework {
 
     // Swapchain capabilities declaration to be used with RETURN_IF_SKIP
     void SupportMultiSwapchain();
+    void SupportDeferredSwapchainAllocation();
     void SupportSurfaceResize();
 
     void SetPresentImageLayout(VkImage image);
