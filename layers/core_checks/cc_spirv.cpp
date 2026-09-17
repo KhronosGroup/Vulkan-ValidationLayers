@@ -2915,7 +2915,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
             }
         } else {
             // Hopefuly people just have a few mixed up, provide the whole error detail here
-            ss << "The following mappings where not used:\n";
+            ss << "The following mappings were not used:\n";
             for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
                 if (used_mapping_set[i]) {
                     continue;
