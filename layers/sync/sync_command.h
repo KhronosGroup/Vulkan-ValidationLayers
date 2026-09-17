@@ -62,6 +62,8 @@ enum class CommandType : uint32_t {
     kBufferAccess,
     kImageCopy,
     kBufferImageCopy,
+    kImageBlit,
+    kImageResolve,
     kPipelineBarrier,
     kSetEvent,
     kResetEvent,
@@ -220,6 +222,56 @@ struct BufferImageCopyCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 
     static small_vector<VkBufferImageCopy, 1> MakeRegions(vvl::span<const VkBufferImageCopy2> regions);
+};
+
+struct ImageBlitCommand {
+    const vvl::Image& src_image;
+    const vvl::Image& dst_image;
+    vvl::span<const VkImageBlit> regions;
+    uint32_t src_handle_index = vvl::kNoIndex32;
+    uint32_t dst_handle_index = vvl::kNoIndex32;
+
+    struct Storage {
+        const vvl::Image* src_image;
+        const vvl::Image* dst_image;
+        uint32_t first_region;
+        uint32_t region_count;
+        uint32_t src_handle_index;
+        uint32_t dst_handle_index;
+        ImageBlitCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+
+    static small_vector<VkImageBlit, 1> MakeRegions(vvl::span<const VkImageBlit2> regions);
+};
+
+struct ImageResolveCommand {
+    const vvl::Image& src_image;
+    const vvl::Image& dst_image;
+    vvl::span<const VkImageResolve> regions;
+    uint32_t src_handle_index = vvl::kNoIndex32;
+    uint32_t dst_handle_index = vvl::kNoIndex32;
+
+    struct Storage {
+        const vvl::Image* src_image;
+        const vvl::Image* dst_image;
+        uint32_t first_region;
+        uint32_t region_count;
+        uint32_t src_handle_index;
+        uint32_t dst_handle_index;
+        ImageResolveCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+
+    static small_vector<VkImageResolve, 1> MakeRegions(vvl::span<const VkImageResolve2> regions);
 };
 
 struct BarrierCommand {
@@ -822,6 +874,8 @@ struct CommandData {
     std::vector<BufferAccessCommand::Storage> buffer_access_commands;
     std::vector<ImageCopyCommand::Storage> image_copy_commands;
     std::vector<BufferImageCopyCommand::Storage> buffer_image_copy_commands;
+    std::vector<ImageBlitCommand::Storage> image_blit_commands;
+    std::vector<ImageResolveCommand::Storage> image_resolve_commands;
     std::vector<BarrierCommand::Storage> barrier_commands;
     std::vector<SetEventCommand::Storage> set_event_commands;
     std::vector<ResetEventCommand::Storage> reset_event_commands;
@@ -866,6 +920,8 @@ struct CommandData {
     std::vector<BufferCopyRegion> buffer_copy_regions;
     std::vector<VkImageCopy> image_copy_regions;
     std::vector<VkBufferImageCopy> buffer_image_copy_regions;
+    std::vector<VkImageBlit> image_blit_regions;
+    std::vector<VkImageResolve> image_resolve_regions;
     std::vector<BarrierSet> barrier_sets;
     std::vector<std::shared_ptr<const vvl::Event>> events;
     std::vector<RenderingAttachment> rendering_attachments;
@@ -900,6 +956,12 @@ struct CommandData {
     }
     CommandRef Store(const ImageCopyCommand::Storage& storage) {
         return Store(CommandType::kImageCopy, image_copy_commands, storage);
+    }
+    CommandRef Store(const ImageBlitCommand::Storage& storage) {
+        return Store(CommandType::kImageBlit, image_blit_commands, storage);
+    }
+    CommandRef Store(const ImageResolveCommand::Storage& storage) {
+        return Store(CommandType::kImageResolve, image_resolve_commands, storage);
     }
     CommandRef Store(const BufferImageCopyCommand::Storage& storage) {
         return Store(CommandType::kBufferImageCopy, buffer_image_copy_commands, storage);
