@@ -1472,6 +1472,110 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncVal, BlitImageReversedOffsets) {
+    TEST_DESCRIPTION("Blit accesses with reversed offsets conflict across command buffers");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image image_a(*m_device, 8, 4, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    vkt::Image image_b(*m_device, 8, 4, VK_FORMAT_R8G8B8A8_UNORM, usage);
+    vkt::Image image_c(*m_device, 8, 4, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_a.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_c.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // Reverse the x coordinates of both source and destination ranges.
+    VkImageBlit region = {};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.srcOffsets[0] = {8, 0, 0};
+    region.srcOffsets[1] = {0, 4, 1};
+    region.dstSubresource = region.srcSubresource;
+    region.dstOffsets[0] = region.srcOffsets[0];
+    region.dstOffsets[1] = region.srcOffsets[1];
+
+    m_command_buffer.Begin();
+    vk::CmdBlitImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region,
+                     VK_FILTER_NEAREST);
+    m_command_buffer.End();
+
+    VkImageBlit2 region2 = vku::InitStructHelper();
+    region2.srcSubresource = region.srcSubresource;
+    region2.srcOffsets[0] = region.srcOffsets[0];
+    region2.srcOffsets[1] = region.srcOffsets[1];
+    region2.dstSubresource = region.dstSubresource;
+    region2.dstOffsets[0] = region.dstOffsets[0];
+    region2.dstOffsets[1] = region.dstOffsets[1];
+
+    VkBlitImageInfo2 blit_info = vku::InitStructHelper();
+    blit_info.srcImage = image_b;
+    blit_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_info.dstImage = image_c;
+    blit_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    blit_info.regionCount = 1;
+    blit_info.pRegions = &region2;
+    blit_info.filter = VK_FILTER_NEAREST;
+
+    vkt::CommandBuffer blit_cb(*m_device, m_command_pool);
+    blit_cb.Begin();
+    vk::CmdBlitImage2(blit_cb, &blit_info);
+    blit_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, blit_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncVal, ResolveImageAcrossCommandBuffers) {
+    TEST_DESCRIPTION("Image resolves in separate command buffers write the same destination");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(8, 8, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+        GTEST_SKIP() << "Multisampled transfer source image is not supported";
+    }
+    vkt::Image src_image(*m_device, image_ci);
+    vkt::Image dst_image(*m_device, 8, 8, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageResolve region = {};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = region.srcSubresource;
+    region.extent = {8, 8, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdResolveImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_command_buffer.End();
+
+    VkImageResolve2 region2 = vku::InitStructHelper();
+    region2.srcSubresource = region.srcSubresource;
+    region2.dstSubresource = region.dstSubresource;
+    region2.extent = region.extent;
+
+    VkResolveImageInfo2 resolve_info = vku::InitStructHelper();
+    resolve_info.srcImage = src_image;
+    resolve_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_info.dstImage = dst_image;
+    resolve_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    resolve_info.regionCount = 1;
+    resolve_info.pRegions = &region2;
+
+    vkt::CommandBuffer resolve_cb(*m_device, m_command_pool);
+    resolve_cb.Begin();
+    vk::CmdResolveImage2(resolve_cb, &resolve_info);
+    resolve_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, resolve_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());

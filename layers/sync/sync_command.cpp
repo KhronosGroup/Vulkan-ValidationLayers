@@ -30,6 +30,9 @@
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
 
+#include <algorithm>
+#include <cstdlib>
+
 namespace syncval {
 
 static const char* GetBufferNamePrefix(BufferName buffer_name) {
@@ -143,6 +146,14 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
             }
             case CommandType::kBufferImageCopy: {
                 replay_common(command_data.buffer_image_copy_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kImageBlit: {
+                replay_common(command_data.image_blit_commands[index], access_context, replay_tag);
+                continue;
+            }
+            case CommandType::kImageResolve: {
+                replay_common(command_data.image_resolve_commands[index], access_context, replay_tag);
                 continue;
             }
             case CommandType::kPipelineBarrier: {
@@ -268,6 +279,8 @@ void CommandData::Reset() {
     buffer_access_commands.clear();
     image_copy_commands.clear();
     buffer_image_copy_commands.clear();
+    image_blit_commands.clear();
+    image_resolve_commands.clear();
     barrier_commands.clear();
     set_event_commands.clear();
     reset_event_commands.clear();
@@ -305,6 +318,8 @@ void CommandData::Reset() {
     buffer_copy_regions.clear();
     image_copy_regions.clear();
     buffer_image_copy_regions.clear();
+    image_blit_regions.clear();
+    image_resolve_regions.clear();
     barrier_sets.clear();
     events.clear();
     rendering_attachments.clear();
@@ -620,6 +635,178 @@ void ImageCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessC
         UpdateImageAccessState(access_context, src_image, SYNC_COPY_TRANSFER_READ, RangeFromLayers(region.srcSubresource),
                                region.srcOffset, region.extent, src_tag_ex, env.queue_id);
         UpdateImageAccessState(access_context, dst_image, SYNC_COPY_TRANSFER_WRITE, RangeFromLayers(region.dstSubresource),
+                               region.dstOffset, region.extent, dst_tag_ex, env.queue_id);
+    }
+}
+
+static VkOffset3D GetBlitOffset(const VkOffset3D offsets[2]) {
+    return {std::min(offsets[0].x, offsets[1].x), std::min(offsets[0].y, offsets[1].y), std::min(offsets[0].z, offsets[1].z)};
+}
+
+static VkExtent3D GetBlitExtent(const VkOffset3D offsets[2]) {
+    return {static_cast<uint32_t>(std::abs(offsets[1].x - offsets[0].x)),
+            static_cast<uint32_t>(std::abs(offsets[1].y - offsets[0].y)),
+            static_cast<uint32_t>(std::abs(offsets[1].z - offsets[0].z))};
+}
+
+ImageBlitCommand ImageBlitCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const VkImageBlit> regions;
+    if (region_count != 0) {
+        regions = vvl::make_span(&command_data.image_blit_regions[first_region], region_count);
+    }
+    return {*src_image, *dst_image, regions, src_handle_index, dst_handle_index};
+}
+
+ImageBlitCommand::Storage ImageBlitCommand::MakeStorage(CommandData& command_data) const {
+    command_data.AddImage(src_image);
+    command_data.AddImage(dst_image);
+
+    const uint32_t first_region = uint32_t(command_data.image_blit_regions.size());
+    const uint32_t region_count = uint32_t(regions.size());
+    vvl::Append(command_data.image_blit_regions, regions);
+
+    return {&src_image, &dst_image, first_region, region_count, src_handle_index, dst_handle_index};
+}
+
+small_vector<VkImageBlit, 1> ImageBlitCommand::MakeRegions(vvl::span<const VkImageBlit2> regions) {
+    small_vector<VkImageBlit, 1> result;
+    result.reserve(uint32_t(regions.size()));
+    for (const VkImageBlit2& region : regions) {
+        result.emplace_back(VkImageBlit{region.srcSubresource,
+                                        {region.srcOffsets[0], region.srcOffsets[1]},
+                                        region.dstSubresource,
+                                        {region.dstOffsets[0], region.dstOffsets[1]}});
+    }
+    return result;
+}
+
+bool ImageBlitCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool ImageBlitCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    const SyncValidator& validator = env.validator;
+
+    for (const auto [region_index, region] : vvl::enumerate(regions)) {
+        const VkOffset3D src_offset = GetBlitOffset(region.srcOffsets);
+        const VkExtent3D src_extent = GetBlitExtent(region.srcOffsets);
+        const auto src_hazard = access_context.DetectHazard(src_image, RangeFromLayers(region.srcSubresource), src_offset,
+                                                            src_extent, SYNC_BLIT_TRANSFER_READ);
+        if (src_hazard.IsHazard()) {
+            const LogObjectList objlist = BaseObjectList(env, cb_context, src_image.Handle());
+            const std::string resource_description = validator.FormatHandle(src_image);
+            const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
+                env, src_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), src_offset, src_extent,
+                region.srcSubresource);
+            skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
+        }
+        const VkOffset3D dst_offset = GetBlitOffset(region.dstOffsets);
+        const VkExtent3D dst_extent = GetBlitExtent(region.dstOffsets);
+        const auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), dst_offset,
+                                                            dst_extent, SYNC_BLIT_TRANSFER_WRITE);
+        if (dst_hazard.IsHazard()) {
+            const LogObjectList objlist = BaseObjectList(env, cb_context, dst_image.Handle());
+            const std::string resource_description = validator.FormatHandle(dst_image);
+            const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
+                env, dst_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), dst_offset, dst_extent,
+                region.dstSubresource);
+            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
+        }
+        if (skip) {
+            break;
+        }
+    }
+    return skip;
+}
+
+void ImageBlitCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    const ResourceUsageTagEx src_tag_ex{tag, src_handle_index};
+    const ResourceUsageTagEx dst_tag_ex{tag, dst_handle_index};
+
+    for (const VkImageBlit& region : regions) {
+        UpdateImageAccessState(access_context, src_image, SYNC_BLIT_TRANSFER_READ, RangeFromLayers(region.srcSubresource),
+                               GetBlitOffset(region.srcOffsets), GetBlitExtent(region.srcOffsets), src_tag_ex, env.queue_id);
+        UpdateImageAccessState(access_context, dst_image, SYNC_BLIT_TRANSFER_WRITE, RangeFromLayers(region.dstSubresource),
+                               GetBlitOffset(region.dstOffsets), GetBlitExtent(region.dstOffsets), dst_tag_ex, env.queue_id);
+    }
+}
+
+ImageResolveCommand ImageResolveCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const VkImageResolve> regions;
+    if (region_count != 0) {
+        regions = vvl::make_span(&command_data.image_resolve_regions[first_region], region_count);
+    }
+    return {*src_image, *dst_image, regions, src_handle_index, dst_handle_index};
+}
+
+ImageResolveCommand::Storage ImageResolveCommand::MakeStorage(CommandData& command_data) const {
+    command_data.AddImage(src_image);
+    command_data.AddImage(dst_image);
+
+    const uint32_t first_region = uint32_t(command_data.image_resolve_regions.size());
+    const uint32_t region_count = uint32_t(regions.size());
+    vvl::Append(command_data.image_resolve_regions, regions);
+
+    return {&src_image, &dst_image, first_region, region_count, src_handle_index, dst_handle_index};
+}
+
+small_vector<VkImageResolve, 1> ImageResolveCommand::MakeRegions(vvl::span<const VkImageResolve2> regions) {
+    small_vector<VkImageResolve, 1> result;
+    result.reserve(uint32_t(regions.size()));
+    for (const VkImageResolve2& region : regions) {
+        result.emplace_back(
+            VkImageResolve{region.srcSubresource, region.srcOffset, region.dstSubresource, region.dstOffset, region.extent});
+    }
+    return result;
+}
+
+bool ImageResolveCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool ImageResolveCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    const SyncValidator& validator = env.validator;
+
+    for (const auto [region_index, region] : vvl::enumerate(regions)) {
+        auto src_hazard = access_context.DetectHazard(src_image, RangeFromLayers(region.srcSubresource), region.srcOffset,
+                                                      region.extent, SYNC_RESOLVE_TRANSFER_READ);
+        if (src_hazard.IsHazard()) {
+            const LogObjectList objlist = BaseObjectList(env, cb_context, src_image.Handle());
+            const std::string resource_description = validator.FormatHandle(src_image);
+            const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
+                env, src_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), region.srcOffset,
+                region.extent, region.srcSubresource);
+            skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
+        }
+        auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), region.dstOffset,
+                                                      region.extent, SYNC_RESOLVE_TRANSFER_WRITE);
+        if (dst_hazard.IsHazard()) {
+            const LogObjectList objlist = BaseObjectList(env, cb_context, dst_image.Handle());
+            const std::string resource_description = validator.FormatHandle(dst_image);
+            const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
+                env, dst_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), region.dstOffset,
+                region.extent, region.dstSubresource);
+            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
+        }
+        if (skip) {
+            break;
+        }
+    }
+    return skip;
+}
+
+void ImageResolveCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    const ResourceUsageTagEx src_tag_ex{tag, src_handle_index};
+    const ResourceUsageTagEx dst_tag_ex{tag, dst_handle_index};
+
+    for (const VkImageResolve& region : regions) {
+        UpdateImageAccessState(access_context, src_image, SYNC_RESOLVE_TRANSFER_READ, RangeFromLayers(region.srcSubresource),
+                               region.srcOffset, region.extent, src_tag_ex, env.queue_id);
+        UpdateImageAccessState(access_context, dst_image, SYNC_RESOLVE_TRANSFER_WRITE, RangeFromLayers(region.dstSubresource),
                                region.dstOffset, region.extent, dst_tag_ex, env.queue_id);
     }
 }
