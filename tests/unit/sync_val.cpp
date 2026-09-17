@@ -3275,6 +3275,62 @@ TEST_F(NegativeSyncVal, CmdClear) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncVal, ClearColorImageRanges) {
+    TEST_DESCRIPTION("A clear in another command buffer conflicts with the second clear range");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(8, 8, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    const VkClearColorValue clear_color = {};
+    const VkImageSubresourceRange ranges[] = {
+        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1},
+    };
+
+    m_command_buffer.Begin();
+    // clear both layers
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 2, ranges);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer clear_cb(*m_device, m_command_pool);
+    clear_cb.Begin();
+    // clear the second layer
+    vk::CmdClearColorImage(clear_cb, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &ranges[1]);
+    clear_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, clear_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncVal, ClearDepthStencilImageAcrossCommandBuffers) {
+    TEST_DESCRIPTION("Depth/stencil clears in separate command buffers write the same subresource");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 8, 8, FindSupportedDepthStencilFormat(Gpu()), VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    const VkClearDepthStencilValue clear_value = {};
+    const VkImageSubresourceRange range{VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdClearDepthStencilImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &range);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer clear_cb(*m_device, m_command_pool);
+    clear_cb.Begin();
+    vk::CmdClearDepthStencilImage(clear_cb, image, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &range);
+    clear_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, clear_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncVal, CmdQuery) {
     // CmdCopyQueryPoolResults
     all_queue_count_ = true;

@@ -156,6 +156,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 replay_common(command_data.image_resolve_commands[index], access_context, replay_tag);
                 continue;
             }
+            case CommandType::kImageClear: {
+                replay_common(command_data.image_clear_commands[index], access_context, replay_tag);
+                continue;
+            }
             case CommandType::kPipelineBarrier: {
                 replay_common(command_data.barrier_commands[index], access_context, replay_tag);
                 continue;
@@ -281,6 +285,7 @@ void CommandData::Reset() {
     buffer_image_copy_commands.clear();
     image_blit_commands.clear();
     image_resolve_commands.clear();
+    image_clear_commands.clear();
     barrier_commands.clear();
     set_event_commands.clear();
     reset_event_commands.clear();
@@ -320,6 +325,7 @@ void CommandData::Reset() {
     buffer_image_copy_regions.clear();
     image_blit_regions.clear();
     image_resolve_regions.clear();
+    image_clear_ranges.clear();
     barrier_sets.clear();
     events.clear();
     rendering_attachments.clear();
@@ -808,6 +814,52 @@ void ImageResolveCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Acce
                                region.srcOffset, region.extent, src_tag_ex, env.queue_id);
         UpdateImageAccessState(access_context, dst_image, SYNC_RESOLVE_TRANSFER_WRITE, RangeFromLayers(region.dstSubresource),
                                region.dstOffset, region.extent, dst_tag_ex, env.queue_id);
+    }
+}
+
+ImageClearCommand ImageClearCommand::Storage::MakeCommand(const CommandData& command_data) const {
+    vvl::span<const VkImageSubresourceRange> ranges;
+    if (range_count != 0) {
+        ranges = vvl::make_span(&command_data.image_clear_ranges[first_range], range_count);
+    }
+    return {*image, ranges, handle_index};
+}
+
+ImageClearCommand::Storage ImageClearCommand::MakeStorage(CommandData& command_data) const {
+    command_data.AddImage(image);
+    const uint32_t first_range = uint32_t(command_data.image_clear_ranges.size());
+    const uint32_t range_count = uint32_t(ranges.size());
+    vvl::Append(command_data.image_clear_ranges, ranges);
+    return {&image, first_range, range_count, handle_index};
+}
+
+bool ImageClearCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+}
+
+bool ImageClearCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
+                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+    bool skip = false;
+    const SyncValidator& validator = env.validator;
+    for (const auto [range_index, range] : vvl::enumerate(ranges)) {
+        const auto hazard = access_context.DetectHazard(image, range, SYNC_CLEAR_TRANSFER_WRITE);
+        if (hazard.IsHazard()) {
+            const LogObjectList objlist = BaseObjectList(env, cb_context, image.Handle());
+            const std::string resource_description = validator.FormatHandle(image);
+            const std::string error = validator.error_messages_.ImageClearError(env, hazard, cb_context, replay_tag, loc,
+                                                                                resource_description, uint32_t(range_index), range);
+            skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+        }
+    }
+    return skip;
+}
+
+void ImageClearCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
+    const ResourceUsageTagEx tag_ex{tag, handle_index};
+    const auto& image_state = SubState(image);
+    for (const VkImageSubresourceRange& range : ranges) {
+        ImageRangeGen range_gen = image_state.MakeImageRangeGen(range, false);
+        access_context.UpdateAccessState(range_gen, SYNC_CLEAR_TRANSFER_WRITE, tag_ex, 0, env.queue_id);
     }
 }
 

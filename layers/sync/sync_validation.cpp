@@ -1538,23 +1538,17 @@ void SyncValidator::PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer co
 bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearColorValue* pColor, uint32_t rangeCount,
                                                       const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    const auto image_state = Get<vvl::Image>(image);
+    if (!image_state) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    if (auto image_state = Get<vvl::Image>(image)) {
-        for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
-            auto hazard = access_context.DetectHazard(*image_state, range, SYNC_CLEAR_TRANSFER_WRITE);
-            if (hazard.IsHazard()) {
-                const LogObjectList objlist(commandBuffer, image);
-                const auto error = error_messages_.ImageClearError(hazard, cb_context, error_obj.location.function,
-                                                                   FormatHandle(image), range_index, range);
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-            }
-        }
-    }
-    return skip;
+    const ImageClearCommand command{*image_state, {pRanges, rangeCount}};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image,
@@ -1562,23 +1556,17 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                                                              const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                              const VkImageSubresourceRange* pRanges,
                                                              const ErrorObject& error_obj) const {
-    bool skip = false;
+    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+        return false;
+    }
+    const auto image_state = Get<vvl::Image>(image);
+    if (!image_state) {
+        return false;
+    }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
-    const AccessContext& access_context = cb_context.GetCbAccessContext();
-
-    if (auto image_state = Get<vvl::Image>(image)) {
-        for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
-            auto hazard = access_context.DetectHazard(*image_state, range, SYNC_CLEAR_TRANSFER_WRITE);
-            if (hazard.IsHazard()) {
-                const LogObjectList objlist(commandBuffer, image);
-                const auto error = error_messages_.ImageClearError(hazard, cb_context, error_obj.location.function,
-                                                                   FormatHandle(image), range_index, range);
-                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
-            }
-        }
-    }
-    return skip;
+    const ImageClearCommand command{*image_state, {pRanges, rangeCount}};
+    return command.Validate(cb_context, error_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
