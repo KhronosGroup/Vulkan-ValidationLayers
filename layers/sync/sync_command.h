@@ -86,6 +86,7 @@ enum class CommandType : uint32_t {
     kAccelerationStructureCopy,
     kVideo,
     kClearAttachments,
+    kQueryCopy,
 };
 
 struct BufferCopyRegion {
@@ -879,6 +880,26 @@ struct ClearAttachmentsCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
+struct QueryCopyCommand {
+    const vvl::Buffer& dst_buffer;
+    AccessRange range;
+    VkQueryPool query_pool;
+    uint32_t handle_index = vvl::kNoIndex32;
+
+    struct Storage {
+        const vvl::Buffer* dst_buffer;
+        AccessRange range;
+        VkQueryPool query_pool;
+        uint32_t handle_index;
+        QueryCopyCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
+                  ResourceUsageTag replay_tag, const Location& loc) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
 struct CommandRef {
     CommandType type;
     uint32_t index;
@@ -915,6 +936,7 @@ struct CommandData {
     std::vector<AccelerationStructureCopyCommand::Storage> acceleration_structure_copy_commands;
     std::vector<VideoCommand::Storage> video_commands;
     std::vector<ClearAttachmentsCommand::Storage> clear_attachments_commands;
+    std::vector<QueryCopyCommand::Storage> query_copy_commands;
 
     //
     // Resources and additional data used by the commands
@@ -1050,6 +1072,9 @@ struct CommandData {
     CommandRef Store(const VideoCommand::Storage& storage) { return Store(CommandType::kVideo, video_commands, storage); }
     CommandRef Store(const ClearAttachmentsCommand::Storage& storage) {
         return Store(CommandType::kClearAttachments, clear_attachments_commands, storage);
+    }
+    CommandRef Store(const QueryCopyCommand::Storage& storage) {
+        return Store(CommandType::kQueryCopy, query_copy_commands, storage);
     }
 
   private:

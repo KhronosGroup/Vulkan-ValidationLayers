@@ -47,11 +47,6 @@ class ErrorMessages {
                       const std::string& resource_description, const char* message_type,
                       const AdditionalMessageInfo& additional_info = {}) const;
 
-    // TODO: temp legacy version
-    std::string BufferError(const HazardResult& hazard, const CommandBufferContext& cb_context, vvl::Func command,
-                            const std::string& resource_description, const AccessRange range,
-                            AdditionalMessageInfo additional_info = {}) const;
-
     std::string BufferError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
                             ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
                             const AccessRange range) const;

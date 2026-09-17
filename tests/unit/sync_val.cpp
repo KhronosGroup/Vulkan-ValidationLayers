@@ -3374,6 +3374,69 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     // TODO:CmdWriteTimestamp
 }
 
+TEST_F(NegativeSyncVal, ReadAfterCopyQueryPoolResults) {
+    TEST_DESCRIPTION("Read the last query result in a later command buffer without synchronization");
+    RETURN_IF_SKIP(InitSyncVal());
+    if (!m_device->Physical().limits_.timestampComputeAndGraphics) {
+        GTEST_SKIP() << "Timestamps not supported";
+    }
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
+    vkt::Buffer results(*m_device, 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer dst(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 2);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 1);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 2, results, 16 /* offset */, 16 /* stride */,
+                                VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    m_command_buffer.End();
+
+    // The second result occupies [32, 40). Read its upper four bytes
+    VkBufferCopy region{};
+    region.srcOffset = 36;
+    region.dstOffset = 0;
+    region.size = 4;
+
+    vkt::CommandBuffer read_cb(*m_device, m_command_pool);
+    read_cb.Begin();
+    vk::CmdCopyBuffer(read_cb, results, dst, 1, &region);
+    read_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, read_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncVal, CopyQueryPoolResultsAfterWrite) {
+    TEST_DESCRIPTION("Copy a query result over a buffer write from another command buffer");
+    RETURN_IF_SKIP(InitSyncVal());
+    if (!m_device->Physical().limits_.timestampComputeAndGraphics) {
+        GTEST_SKIP() << "Timestamps not supported";
+    }
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
+    vkt::Buffer results(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, results, 0, 4, 0);
+    m_command_buffer.End();
+
+    vkt::CommandBuffer query_cb(*m_device, m_command_pool);
+    query_cb.Begin();
+    vk::CmdResetQueryPool(query_cb, query_pool, 0, 1);
+    vk::CmdWriteTimestamp(query_cb, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    vk::CmdCopyQueryPoolResults(query_cb, query_pool, 0, 1, results, 0, 4, VK_QUERY_RESULT_WAIT_BIT);
+    query_cb.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit({m_command_buffer, query_cb});
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
