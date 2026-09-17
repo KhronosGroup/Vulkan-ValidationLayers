@@ -876,6 +876,11 @@ const char* deprecated_validation[] = {
     "VUID-VkDescriptorSetLayoutCreateInfo-flags-09463",
     "VUID-VkDescriptorSetLayoutCreateInfo-flags-09464",
     "VUID-VkDescriptorSetLayoutBinding-flags-09466",
+
+    // The work for this was prototyped and its a lot for a check that is likely not neeed
+    // TransformFeedback has been legacy for awhile and will only add if someone ACTUALLY needs these
+    "VUID-VkGraphicsPipelineCreateInfo-rasterizationStream-02319",
+    "VUID-VkGraphicsPipelineCreateInfo-rasterizationStream-02320",
 };
 
 // clang-format on

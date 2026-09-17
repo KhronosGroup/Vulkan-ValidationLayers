@@ -838,16 +838,32 @@ bool CoreChecks::ValidateTransformFeedbackPipeline(const spirv::Module& module_s
         }
 
         if (pipeline.pre_raster_state) {
+            VkShaderStageFlagBits xfb_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+            for (const auto& stage_state : pipeline.stage_states) {
+                if (!stage_state.entrypoint || !stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::xfb_bit)) {
+                    continue;
+                }
+                if (xfb_stage == VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM) {
+                    xfb_stage = stage_state.entrypoint->stage;
+                } else if (stage_state.entrypoint->stage != entrypoint.stage) {
+                    // Only report if not same stages (prevent duplicate error messages)
+                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02317", module_state.handle(), loc,
+                                     "shader %s has OpExecutionMode of Xfb, but the Xfb execution mode is already used by %s.",
+                                     entrypoint.Describe().c_str(), string_VkShaderStageFlagBits(xfb_stage));
+                    break;  // Report once we find two stages
+                }
+            }
+
             if (entrypoint.stage != pipeline.pre_raster_state->last_stage) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-02318", module_state.handle(), loc,
-                                 "shader %s has OpExecutionMode of Xfb , but %s is the last pre-rasterization shader stage "
+                                 "shader %s has OpExecutionMode of Xfb, but %s is the last pre-rasterization shader stage "
                                  "(and must be %s).",
                                  entrypoint.Describe().c_str(), string_VkShaderStageFlagBits(pipeline.pre_raster_state->last_stage),
                                  string_VkShaderStageFlagBits(entrypoint.stage));
             }
             if ((pipeline.create_flags & VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT) != 0) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-11001", module_state.handle(), loc,
-                                 "shader %s has OpExecutionMode of Xfb but this pipeline is being created with "
+                                 "shader %s has OpExecutionMode of Xfb, but this pipeline is being created with "
                                  "VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT.",
                                  entrypoint.Describe().c_str());
             }
