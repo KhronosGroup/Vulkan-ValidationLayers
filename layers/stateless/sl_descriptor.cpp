@@ -1060,6 +1060,13 @@ bool Device::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQuer
             }
             break;
         }
+        case VK_QUERY_TYPE_TIME_ELAPSED_QCOM: {
+            if (!enabled_features.elapsedTimerQuery) {
+                skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-12416", device, create_info_loc.dot(Field::queryType),
+                                 "is VK_QUERY_TYPE_TIME_ELAPSED_QCOM but elapsedTimerQuery feature was not enabled.");
+            }
+            break;
+        }
         default:
             break;
     }

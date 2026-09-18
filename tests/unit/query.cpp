@@ -2712,3 +2712,121 @@ TEST_F(NegativeQuery, PrimitivesGeneratedQuerySize) {
     vk::GetQueryPoolResults(*m_device, query_pool, 0u, 1u, 1u, &data, sizeof(data), 0u);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeQuery, CreateElapsedTimerQueryButFeatureNotEnabled) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_QCOM_ELAPSED_TIMER_QUERY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-queryType-12416");
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_TIME_ELAPSED_QCOM, 1u};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeQuery, BeginElapsedTimerQueryWithoutTimestampSupport) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_QCOM_ELAPSED_TIMER_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::elapsedTimerQuery);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    for (uint32_t idx = 0; idx < m_device->Physical().queue_properties_.size(); ++idx) {
+        const auto& properties = m_device->Physical().queue_properties_[idx];
+        if ((properties.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) && properties.timestampValidBits == 0u) {
+            queue_family_index = idx;
+            break;
+        }
+    }
+    if (queue_family_index == VK_QUEUE_FAMILY_IGNORED) {
+        GTEST_SKIP() << "Test requires a graphics or compute queue without timestamp support, skipping test.";
+    }
+
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_TIME_ELAPSED_QCOM, 1u};
+    vkt::CommandPool command_pool{*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT};
+    vkt::CommandBuffer command_buffer{*m_device, command_pool};
+
+    {
+        command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-12423");
+        vk::CmdBeginQuery(command_buffer, query_pool, 0u, 0u);
+        m_errorMonitor->VerifyFound();
+        command_buffer.End();
+    }
+    {
+        command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-12423");
+        vk::CmdBeginQueryIndexedEXT(command_buffer, query_pool, 0u, 0u, 0u);
+        m_errorMonitor->VerifyFound();
+        command_buffer.End();
+    }
+}
+
+TEST_F(NegativeQuery, ElapsedTimerQueryGetResultsWithStatus) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_QCOM_ELAPSED_TIMER_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::elapsedTimerQuery);
+    RETURN_IF_SKIP(Init());
+
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_TIME_ELAPSED_QCOM, 1u};
+
+    {
+        std::array<uint32_t, 2> data = {};
+        m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-12424");
+        m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-11874");
+        vk::GetQueryPoolResults(device(), query_pool, 0u, 1u, sizeof(data), data.data(), sizeof(data),
+                                VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_command_buffer.Begin();
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+        m_command_buffer.End();
+        m_default_queue->SubmitAndWait(m_command_buffer);
+
+        uint32_t data = 0u;
+        m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-12424");
+        vk::GetQueryPoolResults(device(), query_pool, 0u, 1u, sizeof(data), &data, sizeof(data), VK_QUERY_RESULT_PARTIAL_BIT);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::Buffer buffer{*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT};
+        m_command_buffer.Begin();
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-12424");
+        vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0u, 1u, buffer, 0u, sizeof(uint32_t),
+                                    VK_QUERY_RESULT_PARTIAL_BIT);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
+}
+
+TEST_F(NegativeQuery, ElapsedTimerQueryCopyResultsToMemoryPartial) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_ELAPSED_TIMER_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::elapsedTimerQuery);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_TIME_ELAPSED_QCOM, 1u};
+    vkt::Buffer buffer{*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address};
+    const VkStridedDeviceAddressRangeKHR range = buffer.StridedAddressRange(sizeof(uint32_t));
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryType-12424");
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 1u, &range, 0u, VK_QUERY_RESULT_PARTIAL_BIT);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
