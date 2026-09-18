@@ -377,7 +377,8 @@ bool Context::ValidateFlagsImplementation(const Location& loc, vvl::FlagBitmask 
     bool skip = false;
 
     const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
-    const char* zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
+    // Normally zero is invalid already, but a few cases still pass an explicit |flags_zero_vuid| in
+    const char* zero_vuid = (flag_type == kRequiredFlags && flags_zero_vuid) ? flags_zero_vuid : vuid;
     if (required && value == 0) {
         skip |= log.LogError(zero_vuid, error_obj.handle, loc, "is zero.");
     }

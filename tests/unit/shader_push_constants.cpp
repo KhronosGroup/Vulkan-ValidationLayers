@@ -66,7 +66,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
 
     // stageFlags of 0
-    m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-parameter");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
@@ -133,7 +133,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
     VkShaderCreateInfoEXT ci_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &push_constant_range);
 
     // stageFlags of 0
-    m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-parameter");
     shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 

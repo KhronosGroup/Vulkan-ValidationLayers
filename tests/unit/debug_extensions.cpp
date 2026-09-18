@@ -316,7 +316,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsParameterFlags) {
     callback_create_info.pfnUserCallback = DebugUtilsCallback;
     callback_create_info.pUserData = &callback_data;
     VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredError("VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-parameter");
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
     m_errorMonitor->VerifyFound();
 }

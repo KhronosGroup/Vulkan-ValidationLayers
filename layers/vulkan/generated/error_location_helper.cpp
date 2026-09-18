@@ -1656,6 +1656,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceImageViewMinLodFeaturesEXT", 43},
     {"VkPhysicalDeviceImagelessFramebufferFeatures", 45},
     {"VkPhysicalDeviceIndexTypeUint8Features", 39},
+    {"VkPhysicalDeviceInfoPropertiesINTEL", 36},
     {"VkPhysicalDeviceInheritedViewportScissorFeaturesNV", 51},
     {"VkPhysicalDeviceInlineUniformBlockFeatures", 43},
     {"VkPhysicalDeviceInlineUniformBlockProperties", 45},
@@ -2802,6 +2803,9 @@ const char* String(Field field) {
     {"deviceID", 9},
     {"deviceIndex", 12},
     {"deviceIndexCount", 17},
+    {"deviceIpVersionArch", 20},
+    {"deviceIpVersionRelease", 23},
+    {"deviceIpVersionRevision", 24},
     {"deviceLUID", 11},
     {"deviceLUIDValid", 16},
     {"deviceMask", 11},
@@ -6310,6 +6314,7 @@ const char* String(Extension extension) {
     {"VK_IMG_filter_linear_2d", 24},
     {"VK_IMG_format_pvrtc", 20},
     {"VK_IMG_relaxed_line_rasterization", 34},
+    {"VK_INTEL_device_info", 21},
     {"VK_INTEL_performance_query", 27},
     {"VK_INTEL_shader_integer_functions2", 35},
     {"VK_KHR_16bit_storage", 21},
@@ -9695,6 +9700,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceCooperativeMatrixDecodeVectorFeaturesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_BASE_HANDLE_FEATURES_NV:
        return Struct::VkPhysicalDevicePrivateDataBaseHandleFeaturesNV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INFO_PROPERTIES_INTEL:
+       return Struct::VkPhysicalDeviceInfoPropertiesINTEL;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_FEATURES_VALVE:
        return Struct::VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentFeaturesVALVE;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_PROPERTIES_VALVE:
