@@ -1,9 +1,0 @@
-{
-  global:
-    vkGetInstanceProcAddr;
-    vkEnumerateInstanceLayerProperties;
-    vkEnumerateInstanceExtensionProperties;
-    vkNegotiateLoaderLayerInterfaceVersion;
-  local:
-    *;
-};

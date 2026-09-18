@@ -363,5 +363,4 @@ endif()
 
 add_subdirectory(stress)
 add_subdirectory(undefined)
-add_subdirectory(layers)
 add_subdirectory(icd)

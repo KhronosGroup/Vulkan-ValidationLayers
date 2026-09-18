@@ -367,10 +367,6 @@ VkLayerTest::VkLayerTest() {
     m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     instance_layers_.push_back(kValidationLayerName);
 
-    if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
-        instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
-    }
-
     if (InstanceLayerSupported(kSynchronization2LayerName)) {
         instance_layers_.push_back(kSynchronization2LayerName);
     }
@@ -468,121 +464,6 @@ VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysical
         vkGetPhysicalDeviceProperties2KHR(Gpu(), &props2);
     }
     return props2;
-}
-
-bool VkLayerTest::LoadDeviceProfileLayer(
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT& fpvkSetPhysicalDeviceFormatPropertiesEXT,
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT& fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
-    if (IsPlatformMockICD()) {
-        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
-        return false;
-    }
-
-    // Load required functions
-    fpvkSetPhysicalDeviceFormatPropertiesEXT =
-        (PFN_vkSetPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT");
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = (PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(
-        instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
-
-    if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        printf(
-            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n");
-        return false;
-    }
-
-    return true;
-}
-
-bool VkLayerTest::LoadDeviceProfileLayer(
-    PFN_vkSetPhysicalDeviceFormatProperties2EXT& fpvkSetPhysicalDeviceFormatProperties2EXT,
-    PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT& fpvkGetOriginalPhysicalDeviceFormatProperties2EXT) {
-    if (IsPlatformMockICD()) {
-        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
-        return false;
-    }
-
-    // Load required functions
-    fpvkSetPhysicalDeviceFormatProperties2EXT =
-        (PFN_vkSetPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatProperties2EXT");
-    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT =
-        (PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(
-            instance(), "vkGetOriginalPhysicalDeviceFormatProperties2EXT");
-
-    if (!(fpvkSetPhysicalDeviceFormatProperties2EXT) || !(fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
-        printf(
-            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n");
-        return false;
-    }
-
-    return true;
-}
-
-bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT& fpvkSetPhysicalDeviceLimitsEXT,
-                                         PFN_vkGetOriginalPhysicalDeviceLimitsEXT& fpvkGetOriginalPhysicalDeviceLimitsEXT) {
-    if (IsPlatformMockICD()) {
-        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
-        return false;
-    }
-
-    // Load required functions
-    fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-    fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
-
-    if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf(
-            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n");
-        return false;
-    }
-
-    return true;
-}
-
-bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT& fpvkSetPhysicalDeviceFeaturesEXT,
-                                         PFN_vkGetOriginalPhysicalDeviceFeaturesEXT& fpvkGetOriginalPhysicalDeviceFeaturesEXT) {
-    if (IsPlatformMockICD()) {
-        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
-        return false;
-    }
-
-    // Load required functions
-    fpvkSetPhysicalDeviceFeaturesEXT =
-        (PFN_vkSetPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFeaturesEXT");
-    fpvkGetOriginalPhysicalDeviceFeaturesEXT =
-        (PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFeaturesEXT");
-
-    if (!(fpvkSetPhysicalDeviceFeaturesEXT) || !(fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
-        printf(
-            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n");
-        return false;
-    }
-
-    return true;
-}
-
-bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT& fpvkSetPhysicalDeviceProperties2EXT) {
-    if (IsPlatformMockICD()) {
-        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
-        return false;
-    }
-
-    // Load required functions
-    fpvkSetPhysicalDeviceProperties2EXT =
-        (PFN_VkSetPhysicalDeviceProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceProperties2EXT");
-
-    if (!fpvkSetPhysicalDeviceProperties2EXT) {
-        printf(
-            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n");
-        return false;
-    }
-
-    return true;
 }
 
 void PrintAndroid(const char* c) {
