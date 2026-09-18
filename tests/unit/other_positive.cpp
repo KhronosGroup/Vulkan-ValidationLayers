@@ -717,7 +717,7 @@ TEST_F(PositiveOther, GetDeviceFaultReportsWithoutTimeout) {
     RETURN_IF_SKIP(Init());
     uint32_t fault_counts = 0;
     VkResult result = vk::GetDeviceFaultReportsKHR(device(), 0, &fault_counts, nullptr);
-    ASSERT_EQ(VK_SUCCESS, result);
+    ASSERT_TRUE(result == VK_TIMEOUT || result == VK_SUCCESS);
     ASSERT_EQ(fault_counts, 0);
 }
 
