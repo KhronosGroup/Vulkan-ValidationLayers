@@ -572,33 +572,51 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 
-    const auto import_memory_fd_info = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
-    const bool imported_opaque_fd =
-        import_memory_fd_info && import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-    if (imported_opaque_fd) {
-        // There is no reasonable way to query all variations of Image/Buffer creation to see what is supported, but if the import
-        // has dedicated Image/Buffer, we can at least validate that it has import support
-        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3667
-        if (dedicated_image != VK_NULL_HANDLE) {
-            auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
-            if (dedicated_image_state &&
-                !HasExternalMemoryImportSupport(*dedicated_image_state, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
-                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-09862", dedicated_image,
-                                 allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
-                                 "is %s but vkGetPhysicalDeviceImageFormatProperties2 shows no support for "
-                                 "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
-                                 FormatHandle(dedicated_image).c_str());
+    if (const auto import_memory_fd_info = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
+        if (import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT &&
+            pAllocateInfo->memoryTypeIndex < phys_dev_mem_props.memoryTypeCount) {
+            const uint32_t heap_index = phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].heapIndex;
+            const VkMemoryHeap& memory_heap = phys_dev_mem_props.memoryHeaps[heap_index];
+            if (vvl::IsMultiInstance(*pAllocateInfo, memory_heap, device_state->physical_device_count)) {
+                const char* reason =
+                    chained_flags_struct && (chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT)
+                        ? "VkMemoryAllocateFlagsInfo::deviceMask has more than one bit set"
+                        : "the heap has VK_MEMORY_HEAP_MULTI_INSTANCE_BIT and the logical device has more than one physical device";
+                skip |=
+                    LogError("VUID-VkMemoryAllocateInfo-None-12523", device,
+                             allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::handleType),
+                             "is VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT, but more than one instance of the memory will be "
+                             "allocated (%s). (memoryTypeIndex %" PRIu32 " is from heap %" PRIu32
+                             " [flags = %s] and the logical device was created with %" PRIu32 " physical devices).",
+                             reason, pAllocateInfo->memoryTypeIndex, heap_index,
+                             string_VkMemoryHeapFlags(memory_heap.flags).c_str(), device_state->physical_device_count);
             }
         }
-        if (dedicated_buffer != VK_NULL_HANDLE) {
-            auto dedicated_buffer_state = Get<vvl::Buffer>(dedicated_buffer);
-            if (dedicated_buffer_state &&
-                !HasExternalMemoryImportSupport(*dedicated_buffer_state, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
-                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-09862", dedicated_buffer,
-                                 allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
-                                 "is %s but vkGetPhysicalDeviceExternalBufferProperties shows no support for "
-                                 "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
-                                 FormatHandle(dedicated_buffer).c_str());
+        if (import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT) {
+            // There is no reasonable way to query all variations of Image/Buffer creation to see what is supported, but if the
+            // import has dedicated Image/Buffer, we can at least validate that it has import support
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3667
+            if (dedicated_image != VK_NULL_HANDLE) {
+                auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
+                if (dedicated_image_state &&
+                    !HasExternalMemoryImportSupport(*dedicated_image_state, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
+                    skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-09862", dedicated_image,
+                                     allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                                     "is %s but vkGetPhysicalDeviceImageFormatProperties2 shows no support for "
+                                     "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
+                                     FormatHandle(dedicated_image).c_str());
+                }
+            }
+            if (dedicated_buffer != VK_NULL_HANDLE) {
+                auto dedicated_buffer_state = Get<vvl::Buffer>(dedicated_buffer);
+                if (dedicated_buffer_state &&
+                    !HasExternalMemoryImportSupport(*dedicated_buffer_state, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
+                    skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-09862", dedicated_buffer,
+                                     allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
+                                     "is %s but vkGetPhysicalDeviceExternalBufferProperties shows no support for "
+                                     "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
+                                     FormatHandle(dedicated_buffer).c_str());
+                }
             }
         }
     }

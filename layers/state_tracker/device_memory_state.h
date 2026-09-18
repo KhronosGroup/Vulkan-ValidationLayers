@@ -27,6 +27,8 @@ namespace vvl {
 
 std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(const VkMemoryAllocateInfo &alloc_info);
 
+bool IsMultiInstance(const VkMemoryAllocateInfo& alloc_info, const VkMemoryHeap& memory_heap, uint32_t physical_device_count);
+
 struct MemRange {
     VkDeviceSize offset = 0;
     VkDeviceSize size = 0;

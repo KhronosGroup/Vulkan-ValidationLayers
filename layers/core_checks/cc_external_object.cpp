@@ -64,6 +64,13 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
                              string_VkExternalMemoryHandleTypeFlagBits(pGetFdInfo->handleType),
                              string_VkExternalMemoryHandleTypeFlags(export_info->handleTypes).c_str());
         }
+
+        if (pGetFdInfo->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT && memory_state->multi_instance) {
+            skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-12524", pGetFdInfo->memory,
+                             error_obj.location.dot(Field::pGetFdInfo).dot(Field::handleType),
+                             "is VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT, but %s was allocated with multiple instances.",
+                             FormatHandle(pGetFdInfo->memory).c_str());
+        }
     }
     return skip;
 }
