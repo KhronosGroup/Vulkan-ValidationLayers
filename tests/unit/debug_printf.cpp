@@ -5316,7 +5316,149 @@ TEST_F(NegativeDebugPrintf, NoPipelineLayout) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
+    m_errorMonitor->SetDesiredInfo("c == 3");
     m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, ShaderObjectUnboundDescriptorSetLayout) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12597");
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitDynamicRenderTarget();
+
+    const char* fs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) uniform Foo { uint bar; };
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+    )glsl";
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    const vkt::DescriptorSetLayout ds_layout(*m_device, binding);
+
+    const vkt::ShaderEXT vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                     GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl), &ds_layout.handle());
+    const vkt::ShaderEXT frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source),
+                                     &ds_layout.handle());
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.colorAttachmentCount = 0;
+    rendering_info.layerCount = 1;
+    rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    SetDefaultDynamicStatesExcludeEXT({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("float == 3.141500");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, ShaderObjectUnboundDescriptorBufferSetLayout) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12597");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer descriptor_buffer(*m_device, 1024, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) uniform Foo { uint bar; };
+        void main() {
+            debugPrintfEXT("c == %u\n", 3);
+        }
+    )glsl";
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    const vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+
+    const vkt::ShaderEXT cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source),
+                            &ds_layout.handle());
+
+    m_command_buffer.Begin();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
+    vk::CmdBindShadersEXT(m_command_buffer, 1, stages, &cs.handle());
+
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
+    descriptor_buffer_binding_info.address = descriptor_buffer.Address();
+    descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
+
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("c == 3");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, ShaderObjectUselessPushDataDescriptorHeap) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12597");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitDynamicRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            if (gl_VertexIndex == 0) {
+                debugPrintfEXT("x == %u\n", gl_VertexIndex);
+            }
+            gl_Position = vec4(1.0f);
+        }
+    )glsl";
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    // not using ShaderCreateInfoHeap()
+    VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoLinkEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderCreateInfoEXT frag_ci = ShaderCreateInfoLinkEXT(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::ShaderEXT vert_shader(*m_device, vert_ci);
+    vkt::ShaderEXT frag_shader(*m_device, frag_ci);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExcludeEXT();
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &stages[0], &vert_shader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &stages[1], &frag_shader.handle());
+    uint32_t dummy_data = 0;
+    m_command_buffer.PushData(0, 4, &dummy_data);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("x == 0");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDebugPrintf, DescriptorBufferMixClassic) {
