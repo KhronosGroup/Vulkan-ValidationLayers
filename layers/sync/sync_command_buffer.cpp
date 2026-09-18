@@ -18,7 +18,6 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include "sync/sync_command_buffer.h"
 #include "error_message/error_location.h"
-#include "sync/sync_replay.h"
 #include "sync/sync_reporting.h"
 #include "sync/sync_validation.h"
 #include "state_tracker/descriptor_sets.h"
@@ -247,7 +246,6 @@ CommandBufferContext::CommandBufferContext(const SyncValidator& sync_validator, 
       current_context_(&cb_access_context_),
       events_context_(),
       environment_(sync_validator, queue_flags, kQueueIdInvalid, handle, events_context_, *this),
-      render_pass_contexts_(),
       current_renderpass_context_() {}
 
 CommandBufferContext::CommandBufferContext(SyncValidator& sync_validator, vvl::CommandBuffer* cb_state)
@@ -277,7 +275,7 @@ CommandBufferContext::CommandBufferContext(const CommandBufferContext& from, AsP
 
     events_context_ = from.events_context_;
 
-    // We don't want to copy the full render_pass_context_ history just for the proxy.
+    // The proxy uses the flattened access context instead of owning a render-pass context.
     sync_state_.stats.AddCommandBufferContext();
 }
 
@@ -292,7 +290,6 @@ void CommandBufferContext::Reset() {
     if (cb_state_) {
         cbs_referenced_->push_back(cb_state_->shared_from_this());
     }
-    replay_entries_.clear();
     commands_.clear();
     command_data_.Reset();
 
@@ -304,7 +301,6 @@ void CommandBufferContext::Reset() {
 
     current_command_tag_ = vvl::kNoIndex32;
     cb_access_context_.Reset();
-    render_pass_contexts_.clear();
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
     current_render_pass_instance_id_ = 0;
@@ -491,12 +487,10 @@ void CommandBufferContext::RecordShaderAccesses(ResourceUsageTag tag, Descriptor
     descriptor_accesses.RegisterResources(*this, tag);
     const ShaderAccessCommand command = descriptor_accesses.MakeCommand();
     const auto& settings = sync_state_.syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(GetSyncEnvironment(), tag, GetCurrentAccessContext());
     }
-    if (settings.full_validation) {
-        StoreCommand(tag, command);
-    }
+    StoreCommand(tag, command);
 }
 
 VertexInputAccesses CommandBufferContext::CollectVertexAccesses(uint32_t first_vertex, uint32_t vertex_count) const {
@@ -666,7 +660,7 @@ DrawAttachmentCommand CommandBufferContext::GetDrawAttachmentCommand() const {
     }
 
     return {pipeline,
-            current_renderpass_context_,
+            current_renderpass_context_.get(),
             GetRenderingInstance(),
             current_render_pass_instance_id_,
             pipeline && last_bound_state.IsDepthWriteEnable(),
@@ -756,10 +750,9 @@ ResourceUsageTag CommandBufferContext::RecordBeginRenderPass(
     const ResourceUsageTag barrier_tag = NextCommandTag(command, SubCommandType::kSubpassTransition, 0);
     AddCommandHandle(barrier_tag, rp_state.Handle());
     NextSubCommandTag(command, SubCommandType::kLoadOp, 0);
-    render_pass_contexts_.emplace_back(std::make_unique<RenderPassAccessContext>(
-        rp_state, render_area, environment_.queue_flags, attachment_views, cb_access_context_, current_render_pass_instance_id_,
-        environment_.queue_id));
-    current_renderpass_context_ = render_pass_contexts_.back().get();
+    current_renderpass_context_ =
+        std::make_unique<RenderPassAccessContext>(rp_state, render_area, environment_.queue_flags, attachment_views,
+                                                  cb_access_context_, current_render_pass_instance_id_, environment_.queue_id);
     current_context_ = &current_renderpass_context_->CurrentContext();
     return barrier_tag;
 }
@@ -787,15 +780,18 @@ ResourceUsageTag CommandBufferContext::RecordEndRenderPass(vvl::Func command) {
     AddCommandHandle(store_tag, current_renderpass_context_->GetRenderPassState()->Handle());
     NextSubCommandTag(command, SubCommandType::kSubpassTransition);
     current_context_ = &cb_access_context_;
-    current_renderpass_context_ = nullptr;
     current_render_pass_instance_id_++;
     return store_tag;
 }
 
 void CommandBufferContext::RecordDestroyEvent(vvl::Event* event_state) { events_context_.Destroy(event_state); }
 
+bool CommandBufferContext::NeedsCommandStorage() const {
+    const auto& settings = sync_state_.syncval_settings;
+    return settings.full_validation || (settings.record_time_validation && cb_state_ && !cb_state_->IsPrimary());
+}
+
 void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContext& recorded_cb_context) {
-    const AccessContext& recorded_context = recorded_cb_context.GetCbAccessContext();
     const ResourceUsageTag base_tag = GetTagCount();
 
     ImportRecordedAccessLog(recorded_cb_context);
@@ -803,171 +799,163 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
     auto import_common = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag,
                                 uint32_t tag_count) {
         const auto command = storage.MakeCommand(recorded_command_data);
-        command.Apply(environment_, tag, *current_context_);
+        if (sync_state_.syncval_settings.record_time_validation) {
+            command.Apply(environment_, tag, *current_context_);
+        }
         StoreCommand(tag, command, tag_count);
     };
     auto import_draw = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag,
                               uint32_t tag_count) {
-        auto command = storage.MakeCommand(recorded_command_data, current_renderpass_context_, GetRenderingInstance());
+        auto command = storage.MakeCommand(recorded_command_data, current_renderpass_context_.get(), GetRenderingInstance());
         const uint32_t subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
         command.shader_accesses.render_pass_instance_id = current_render_pass_instance_id_;
         command.shader_accesses.subpass = subpass;
         command.attachment_accesses.render_pass_instance_id = current_render_pass_instance_id_;
-        command.Apply(environment_, tag, *current_context_);
+        if (sync_state_.syncval_settings.record_time_validation) {
+            command.Apply(environment_, tag, *current_context_);
+        }
         StoreCommand(tag, command, tag_count);
     };
 
-    const auto& settings = GetSyncState().syncval_settings;
-    if (settings.full_validation && recorded_cb_context.HasAllCommands()) {
-        const CommandData& command_data = recorded_cb_context.GetCommandData();
-        for (const CommandEntry& entry : recorded_cb_context.GetCommands()) {
-            const ResourceUsageTag tag = base_tag + entry.tag;
-            const uint32_t index = entry.command_ref.index;
+    const CommandData& command_data = recorded_cb_context.GetCommandData();
+    for (const CommandEntry& entry : recorded_cb_context.GetCommands()) {
+        const ResourceUsageTag tag = base_tag + entry.tag;
+        const uint32_t index = entry.command_ref.index;
 
-            switch (entry.command_ref.type) {
-                case CommandType::kBufferCopy: {
-                    import_common(command_data.buffer_copy_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kBufferAccess: {
-                    import_common(command_data.buffer_access_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kImageCopy: {
-                    import_common(command_data.image_copy_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kBufferImageCopy: {
-                    import_common(command_data.buffer_image_copy_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kImageBlit: {
-                    import_common(command_data.image_blit_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kImageResolve: {
-                    import_common(command_data.image_resolve_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kImageClear: {
-                    import_common(command_data.image_clear_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kPipelineBarrier: {
-                    import_common(command_data.barrier_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kSetEvent: {
-                    import_common(command_data.set_event_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kResetEvent: {
-                    import_common(command_data.reset_event_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kWaitEvents: {
-                    import_common(command_data.wait_events_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kBeginRendering: {
-                    auto command = command_data.begin_rendering_commands[index].MakeCommand(command_data);
-                    command.render_pass_instance_id = current_render_pass_instance_id_;
-                    command.rendering_instance.InitViewGens(rendering_view_gens_);
-                    rendering_instance_ = command.rendering_instance;
-                    command.Apply(environment_, tag, *current_context_);
-                    StoreCommand(tag, command, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kEndRendering: {
-                    if (!rendering_instance_) {
-                        continue;
-                    }
-                    const EndRenderingCommand command{*rendering_instance_, current_render_pass_instance_id_};
-                    command.Apply(environment_, tag, *current_context_);
-                    StoreCommand(tag, command, entry.tag_count);
-                    EndRenderingInstance();
-                    continue;
-                }
-                case CommandType::kBeginRenderPass:
-                case CommandType::kNextSubpass:
-                case CommandType::kEndRenderPass: {
-                    // [core validation check]: these commands are invalid in secondary command buffers
-                    continue;
-                }
-                case CommandType::kShaderAccess: {
-                    import_common(command_data.shader_access_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kDispatchIndirect: {
-                    import_common(command_data.dispatch_indirect_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kTraceRays: {
-                    import_common(command_data.trace_rays_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kDraw: {
-                    import_draw(command_data.draw_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kDrawMulti: {
-                    import_draw(command_data.draw_multi_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kDrawIndirect: {
-                    import_draw(command_data.draw_indirect_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kDrawIndirectCount: {
-                    import_draw(command_data.draw_indirect_count_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kDrawMeshTasks: {
-                    import_draw(command_data.draw_mesh_tasks_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kBuildAccelerationStructures: {
-                    import_common(command_data.build_acceleration_structures_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kAccelerationStructureCopy: {
-                    import_common(command_data.acceleration_structure_copy_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kVideo: {
-                    import_common(command_data.video_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kClearAttachments: {
-                    auto command = command_data.clear_attachments_commands[index].MakeCommand(command_data);
-                    command.render_pass_instance_id = current_render_pass_instance_id_;
-                    command.Apply(environment_, tag, *current_context_);
-                    StoreCommand(tag, command, entry.tag_count);
-                    continue;
-                }
-                case CommandType::kQueryCopy: {
-                    import_common(command_data.query_copy_commands[index], command_data, tag, entry.tag_count);
-                    continue;
-                }
+        switch (entry.command_ref.type) {
+            case CommandType::kBufferCopy: {
+                import_common(command_data.buffer_copy_commands[index], command_data, tag, entry.tag_count);
+                continue;
             }
-            assert(false);
-        }
-    } else {
-        // Replay synchronization actions against the current destination state. The
-        // secondary's recorded access state already includes their effects and is resolved below.
-        for (const ReplayEntry& entry : recorded_cb_context.GetReplayEntries()) {
-            const bool replay_action = GetReplayContextChange(entry.operation) == nullptr;
-            if (replay_action) {
-                ApplyReplayAction(environment_, entry.operation, *current_context_, base_tag + entry.tag);
+            case CommandType::kBufferAccess: {
+                import_common(command_data.buffer_access_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kImageCopy: {
+                import_common(command_data.image_copy_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kBufferImageCopy: {
+                import_common(command_data.buffer_image_copy_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kImageBlit: {
+                import_common(command_data.image_blit_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kImageResolve: {
+                import_common(command_data.image_resolve_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kImageClear: {
+                import_common(command_data.image_clear_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kPipelineBarrier: {
+                import_common(command_data.barrier_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kSetEvent: {
+                import_common(command_data.set_event_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kResetEvent: {
+                import_common(command_data.reset_event_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kWaitEvents: {
+                import_common(command_data.wait_events_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kBeginRendering: {
+                auto command = command_data.begin_rendering_commands[index].MakeCommand(command_data);
+                command.render_pass_instance_id = current_render_pass_instance_id_;
+                command.rendering_instance.InitViewGens(rendering_view_gens_);
+                rendering_instance_ = command.rendering_instance;
+                if (sync_state_.syncval_settings.record_time_validation) {
+                    command.Apply(environment_, tag, *current_context_);
+                }
+                StoreCommand(tag, command, entry.tag_count);
+                continue;
+            }
+            case CommandType::kEndRendering: {
+                if (!rendering_instance_) {
+                    continue;
+                }
+                const EndRenderingCommand command{*rendering_instance_, current_render_pass_instance_id_};
+                if (sync_state_.syncval_settings.record_time_validation) {
+                    command.Apply(environment_, tag, *current_context_);
+                }
+                StoreCommand(tag, command, entry.tag_count);
+                EndRenderingInstance();
+                continue;
+            }
+            case CommandType::kBeginRenderPass:
+            case CommandType::kNextSubpass:
+            case CommandType::kEndRenderPass: {
+                // [core validation check]: these commands are invalid in secondary command buffers
+                continue;
+            }
+            case CommandType::kShaderAccess: {
+                import_common(command_data.shader_access_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kDispatchIndirect: {
+                import_common(command_data.dispatch_indirect_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kTraceRays: {
+                import_common(command_data.trace_rays_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kDraw: {
+                import_draw(command_data.draw_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kDrawMulti: {
+                import_draw(command_data.draw_multi_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kDrawIndirect: {
+                import_draw(command_data.draw_indirect_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kDrawIndirectCount: {
+                import_draw(command_data.draw_indirect_count_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kDrawMeshTasks: {
+                import_draw(command_data.draw_mesh_tasks_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kBuildAccelerationStructures: {
+                import_common(command_data.build_acceleration_structures_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kAccelerationStructureCopy: {
+                import_common(command_data.acceleration_structure_copy_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kVideo: {
+                import_common(command_data.video_commands[index], command_data, tag, entry.tag_count);
+                continue;
+            }
+            case CommandType::kClearAttachments: {
+                auto command = command_data.clear_attachments_commands[index].MakeCommand(command_data);
+                command.render_pass_instance_id = current_render_pass_instance_id_;
+                if (sync_state_.syncval_settings.record_time_validation) {
+                    command.Apply(environment_, tag, *current_context_);
+                }
+                StoreCommand(tag, command, entry.tag_count);
+                continue;
+            }
+            case CommandType::kQueryCopy: {
+                import_common(command_data.query_copy_commands[index], command_data, tag, entry.tag_count);
+                continue;
             }
         }
-        ResolveExecutedCommandBuffer(recorded_context, base_tag);
+        assert(false);
     }
-}
-
-void CommandBufferContext::ResolveExecutedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset) {
-    auto tag_offset = [offset](AccessState* access) { access->OffsetTag(offset); };
-    current_context_->ResolveFromContext(tag_offset, recorded_context);
 }
 
 void CommandBufferContext::ImportRecordedAccessLog(const CommandBufferContext& recorded_context) {
@@ -1133,8 +1121,8 @@ void CommandBufferContext::UpdateStats(AccessStats& access_stats) const {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
     UpdateAccessMapStats(cb_access_context_.GetAccessMap(), access_stats.cb_access_stats);
 
-    for (const auto& render_pass_context : render_pass_contexts_) {
-        for (const AccessContext& subpass_access_context : render_pass_context->GetSubpassContexts()) {
+    if (current_renderpass_context_) {
+        for (const AccessContext& subpass_access_context : current_renderpass_context_->GetSubpassContexts()) {
             UpdateAccessMapStats(subpass_access_context.GetAccessMap(), access_stats.subpass_access_stats);
         }
     }
@@ -1147,8 +1135,6 @@ CommandBufferSubState::CommandBufferSubState(SyncValidator& dev, vvl::CommandBuf
 }
 
 void CommandBufferSubState::End() {
-    cb_context.GetCbAccessContext().Finalize();
-
     // For threads that are dedicated to recording command buffers but do not submit themselves,
     // the end of recording is a logical point to update memory stats
     cb_context.GetSyncState().stats.UpdateMemoryStats();
@@ -1186,13 +1172,11 @@ void CommandBufferSubState::RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl:
     const BufferCopyCommand command{src_buffer_state, dst_buffer_state, regions, src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,
@@ -1209,13 +1193,11 @@ void CommandBufferSubState::RecordCopyBuffer2(vvl::Buffer& src_buffer_state, vvl
     const BufferCopyCommand command{src_buffer_state, dst_buffer_state, regions, src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordCopyImage(vvl::Image& src_image_state, vvl::Image& dst_image_state,
@@ -1229,13 +1211,11 @@ void CommandBufferSubState::RecordCopyImage(vvl::Image& src_image_state, vvl::Im
     const ImageCopyCommand command{src_image_state, dst_image_state, regions, src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state,
@@ -1254,13 +1234,11 @@ void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::I
     const ImageCopyCommand command{src_image_state, dst_image_state, regions, src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordCopyBufferToImage(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout,
@@ -1276,12 +1254,10 @@ void CommandBufferSubState::RecordCopyBufferToImage(vvl::Buffer& src_buffer_stat
         src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Buffer& src_buffer_state, vvl::Image& dst_image_state, VkImageLayout,
@@ -1297,12 +1273,10 @@ void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Buffer& src_buffer_sta
         src_tag_ex.handle_index, dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state, VkImageLayout,
@@ -1318,12 +1292,10 @@ void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state,
         dst_tag_ex.handle_index, src_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state, vvl::Buffer& dst_buffer_state, VkImageLayout,
@@ -1339,12 +1311,10 @@ void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state
         dst_tag_ex.handle_index, src_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordBlitImage(vvl::Image& src_image_state, vvl::Image& dst_image_state,
@@ -1359,12 +1329,10 @@ void CommandBufferSubState::RecordBlitImage(vvl::Image& src_image_state, vvl::Im
                                    dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordBlitImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state,
@@ -1379,12 +1347,10 @@ void CommandBufferSubState::RecordBlitImage2(vvl::Image& src_image_state, vvl::I
                                    dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordResolveImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, uint32_t region_count,
@@ -1398,12 +1364,10 @@ void CommandBufferSubState::RecordResolveImage(vvl::Image& src_image_state, vvl:
                                       dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordResolveImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, uint32_t region_count,
@@ -1417,12 +1381,10 @@ void CommandBufferSubState::RecordResolveImage2(vvl::Image& src_image_state, vvl
                                       dst_tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 static void RecordImageClear(CommandBufferContext& cb_context, vvl::Image& image, vvl::span<const VkImageSubresourceRange> ranges,
@@ -1432,12 +1394,10 @@ static void RecordImageClear(CommandBufferContext& cb_context, vvl::Image& image
     const ImageClearCommand command{image, ranges, tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordClearColorImage(vvl::Image& image_state, VkImageLayout, const VkClearColorValue*,
@@ -1466,12 +1426,10 @@ void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, co
         attachments, {pRects, rect_count}, cb_context.GetViewMask(), cb_context.GetCurrentRenderPassInstanceId(), current_subpass};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 static void RecordBufferAccess(CommandBufferContext& cb_context, vvl::Buffer& buffer_state, AccessRange range,
@@ -1481,13 +1439,11 @@ static void RecordBufferAccess(CommandBufferContext& cb_context, vvl::Buffer& bu
     const BufferAccessCommand command{buffer_state, range, SYNC_CLEAR_TRANSFER_WRITE, tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         AccessContext& access_context = cb_context.GetCbAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordFillBuffer(vvl::Buffer& buffer_state, VkDeviceSize offset, VkDeviceSize size,
@@ -1514,12 +1470,10 @@ void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const
     const auto pictures = validator.CollectVideoDecodePictureAccesses(vs_state, info);
 
     const VideoCommand command{VideoCommand::Operation::kDecode, *buffer, range, pictures, tag_ex.handle_index};
-    if (validator.syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (validator.syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (validator.syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession& vs_state, const VkVideoEncodeInfoKHR& info, const Location& loc) {
@@ -1534,12 +1488,10 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession& vs_state, const
     const auto pictures = validator.CollectVideoEncodePictureAccesses(vs_state, info);
 
     const VideoCommand command{VideoCommand::Operation::kEncode, *buffer, range, pictures, tag_ex.handle_index};
-    if (validator.syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (validator.syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (validator.syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordCopyQueryPoolResults(vvl::QueryPool& pool_state, vvl::Buffer& dst_buffer_state,
@@ -1557,12 +1509,10 @@ void CommandBufferSubState::RecordCopyQueryPoolResults(vvl::QueryPool& pool_stat
     const QueryCopyCommand command{dst_buffer_state, range, pool_state.VkHandle(), tag_ex.handle_index};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin,
@@ -1588,13 +1538,10 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     RenderPassAccessContext& rp_context = *cb_context.GetCurrentRenderPassContext();
 
     const auto& settings = validator.syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context);
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command, BeginRenderPassCommand::kTagCount);
-    }
-    cb_context.AddReplayEntry(tag, true, ReplayContextChange(std::move(rp_state), std::move(attachments), &rp_context));
+    cb_context.StoreCommand(tag, command, BeginRenderPassCommand::kTagCount);
 }
 
 void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info,
@@ -1613,16 +1560,12 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_
     if (tag == kInvalidTag) {
         return;
     }
-    const ResourceUsageTag transition_tag = tag + 2;
 
     const NextSubpassCommand command{};
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context);
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command, NextSubpassCommand::kTagCount);
-    }
-    cb_context.AddReplayEntry(transition_tag, true, ReplayContextChange(ReplayContextChange::Type::kNextSubpass));
+    cb_context.StoreCommand(tag, command, NextSubpassCommand::kTagCount);
 }
 
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) {
@@ -1639,14 +1582,11 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_
     const ResourceUsageTag tag = cb_context.RecordEndRenderPass(loc.function);
 
     const EndRenderPassCommand command{};
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context, cb_context.GetCbAccessContext());
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command, EndRenderPassCommand::kTagCount);
-    }
-    const ResourceUsageTag transition_tag = tag + 1;
-    cb_context.AddReplayEntry(transition_tag, true, ReplayContextChange(ReplayContextChange::Type::kEndRenderPass));
+    cb_context.StoreCommand(tag, command, EndRenderPassCommand::kTagCount);
+    cb_context.EndRenderPassContext();
 }
 
 void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t cmd_index,

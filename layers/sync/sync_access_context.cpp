@@ -71,21 +71,14 @@ void ApplySingleBufferBarrierFunctor::operator()(const Iterator& pos) const {
 
 ApplySingleImageBarrierFunctor::ApplySingleImageBarrierFunctor(const AccessContext& access_context,
                                                                const BarrierScope& barrier_scope, const SyncBarrier& barrier,
-                                                               bool layout_transition, bool apply_layout_transitions,
-                                                               uint32_t layout_transition_handle_index, ResourceUsageTag exec_tag)
+                                                               bool layout_transition, uint32_t layout_transition_handle_index,
+                                                               ResourceUsageTag exec_tag)
     : access_context(access_context),
       barrier_scope(barrier_scope),
       barrier(barrier),
       exec_tag(exec_tag),
       layout_transition(layout_transition),
-      layout_transition_handle_index(layout_transition_handle_index) {
-    // Suppress layout transition during legacy submit time application.
-    // It adds write access but it is needed only during recorded for legacy submit time mode.
-    if (!apply_layout_transitions) {
-        this->layout_transition = false;
-        this->layout_transition_handle_index = vvl::kNoIndex32;
-    }
-}
+      layout_transition_handle_index(layout_transition_handle_index) {}
 
 AccessMap::iterator ApplySingleImageBarrierFunctor::Infill(AccessMap* accesses, const Iterator& pos_hint,
                                                            const AccessRange& range) const {
@@ -124,12 +117,6 @@ void AccessContext::InitFrom(const AccessContext& other) {
     global_barrier_def_count_ = other.global_barrier_def_count_;
     global_barriers_ = other.global_barriers_;
 
-    // Even though the "other" context may be finalized, we might still need to update "this" copy.
-    // Therefore, the copied context cannot be marked as finalized yet.
-    finalized_ = false;
-
-    sorted_first_accesses_.Clear();
-
     // TODO: the following assignments look incorrect: the copies will reference the old context.
     // Find a scenario when this does not work, write a test and make a fix.
     subpass_barriers_ = other.subpass_barriers_;
@@ -141,16 +128,8 @@ void AccessContext::Reset() {
     async_.clear();
     start_tag_ = {};
     ResetGlobalBarriers();
-    finalized_ = false;
-    sorted_first_accesses_.Clear();
     subpass_barriers_.clear();
     dst_external_ = {};
-}
-
-void AccessContext::Finalize() {
-    assert(!finalized_);  // no need to finalize finalized
-    sorted_first_accesses_.Init(access_state_map_);
-    finalized_ = true;
 }
 
 void AccessContext::RegisterGlobalBarrier(const SyncBarrier& barrier, QueueId queue_id) {
@@ -248,8 +227,7 @@ void AccessContext::ResetGlobalBarriers() {
     global_barriers_.clear();
 }
 
-void AccessContext::TrimAndClearFirstAccess() {
-    assert(!finalized_);
+void AccessContext::Trim() {
     for (auto& [range, access] : access_state_map_) {
         access.Normalize();
     }
@@ -257,7 +235,6 @@ void AccessContext::TrimAndClearFirstAccess() {
 }
 
 void AccessContext::AddReferencedTags(ResourceUsageTagSet& used) const {
-    assert(!finalized_);
     for (const auto& [range, access] : access_state_map_) {
         access.GatherReferencedTags(used);
     }
@@ -273,7 +250,6 @@ const SubpassBarrier& AccessContext::GetSubpassBarrier(uint32_t src_subpass) con
 }
 
 void AccessContext::ResolveFromContextRecursePrev(const AccessContext& from) {
-    assert(!finalized_);
     auto noop_action = [](AccessState* access) {};
     from.ResolveAccessRangeRecursePrev(kFullRange, noop_action, *this, false);
 }
@@ -281,20 +257,14 @@ void AccessContext::ResolveFromContextRecursePrev(const AccessContext& from) {
 void AccessContext::ResolveFromSubpassContext(const ApplySubpassTransitionBarrierAction& subpass_transition_action,
                                               const AccessContext& from_context,
                                               subresource_adapter::ImageRangeGenerator attachment_range_gen) {
-    assert(!finalized_);
     for (; attachment_range_gen->non_empty(); ++attachment_range_gen) {
         from_context.ResolveAccessRangeRecursePrev(*attachment_range_gen, subpass_transition_action, *this, true);
     }
 }
 
-void AccessContext::ResolveAllSubpassDependencies() {
-    assert(!finalized_);
-    ResolveSubpassDependencies(kFullRange, *this, true);
-}
+void AccessContext::ResolveAllSubpassDependencies() { ResolveSubpassDependencies(kFullRange, *this, true); }
 
 void AccessContext::ResolveChildContexts(vvl::span<AccessContext> subpass_contexts) {
-    assert(!finalized_);
-
     for (AccessContext& access_context : subpass_contexts) {
         ApplySubpassBarrierAction barrier_action(access_context.GetDstExternalSubpassBarrier());
         access_context.ResolveAccessRange(kFullRange, barrier_action, *this);
@@ -501,12 +471,6 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
         if (syncAccessReadMask[access_index]) {
             return;  // merge only during writes
         }
-        if (queue_id != kQueueIdInvalid) {
-            // Legacy submit validation uses first accesses from the recorded command buffers
-            // but the first accesses from the queue batch context are unused, so we can safely
-            // clear them here. This allows to merge otherwise equivalent access states
-            updated->second.ClearFirstUse();
-        }
         if (merge_first != end && merge_last->first.end == updated->first.begin &&
             merge_last->second.next_global_barrier_index == updated->second.next_global_barrier_index &&
             merge_last->second == updated->second) {
@@ -573,7 +537,6 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
 void AccessContext::UpdateAccessState(const vvl::Buffer& buffer, SyncAccessIndex current_usage, const AccessRange& range,
                                       ResourceUsageTagEx tag_ex, SyncFlags flags, QueueId queue_id) {
     assert(range.valid());
-    assert(!finalized_);
 
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
@@ -594,7 +557,6 @@ void AccessContext::UpdateAccessState(const vvl::Buffer& buffer, SyncAccessIndex
 
 void AccessContext::UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage, ResourceUsageTagEx tag_ex,
                                       SyncFlags flags, QueueId queue_id) {
-    assert(!finalized_);
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
@@ -607,7 +569,6 @@ void AccessContext::UpdateAccessState(ImageRangeGen& range_gen, SyncAccessIndex 
 void AccessContext::UpdateAttachmentAccessState(ImageRangeGen& range_gen, SyncAccessIndex current_usage,
                                                 const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
                                                 QueueId queue_id) {
-    assert(!finalized_);
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
@@ -643,58 +604,6 @@ void AccessContext::ImportAsyncContexts(const AccessContext& from) {
 
 void AccessContext::AddAsyncContext(const AccessContext& access_context, ResourceUsageTag tag, QueueId queue_id) {
     async_.emplace_back(access_context, tag, queue_id);
-}
-
-void SortedFirstAccesses::Init(const AccessMap& finalized_access_map) {
-    for (const auto& entry : finalized_access_map) {
-        const AccessState& access = entry.second;
-        const ResourceUsageRange range = access.GetFirstAccessRange();
-        if (range.empty()) {
-            continue;
-        }
-        // Access map is not going to be updated (finalized) and we can store references to map entries
-        if (range.size() == 1) {
-            sorted_single_tags.emplace_back(SingleTag{range.begin, &entry});
-        } else {
-            sorted_multi_tags.emplace_back(MultiTag{range, &entry});
-        }
-    }
-    std::sort(sorted_single_tags.begin(), sorted_single_tags.end(),
-              [](const SingleTag& a, const SingleTag& b) { return a.tag < b.tag; });
-    std::sort(sorted_multi_tags.begin(), sorted_multi_tags.end(),
-              [](const auto& a, const auto& b) { return a.range.begin < b.range.begin; });
-}
-
-void SortedFirstAccesses::Clear() {
-    sorted_single_tags.clear();
-    sorted_multi_tags.clear();
-}
-
-std::vector<SortedFirstAccesses::SingleTag>::const_iterator SortedFirstAccesses::SingleTagRange::begin() {
-    return std::lower_bound(sorted_single_tags.begin(), sorted_single_tags.end(), tag_range.begin,
-                            [](const SingleTag& single_tag, ResourceUsageTag tag) { return single_tag.tag < tag; });
-}
-
-std::vector<SortedFirstAccesses::SingleTag>::const_iterator SortedFirstAccesses::SingleTagRange::end() {
-    return std::lower_bound(sorted_single_tags.begin(), sorted_single_tags.end(), tag_range.end,
-                            [](const SingleTag& single_tag, ResourceUsageTag tag) { return single_tag.tag < tag; });
-}
-
-SortedFirstAccesses::SingleTagRange SortedFirstAccesses::IterateSingleTagFirstAccesses(const ResourceUsageRange& tag_range) const {
-    return SingleTagRange{this->sorted_single_tags, tag_range};
-}
-
-std::vector<SortedFirstAccesses::MultiTag>::const_iterator SortedFirstAccesses::MultiTagRange::begin() {
-    return sorted_multi_tags.begin();
-}
-
-std::vector<SortedFirstAccesses::MultiTag>::const_iterator SortedFirstAccesses::MultiTagRange::end() {
-    return std::lower_bound(sorted_multi_tags.begin(), sorted_multi_tags.end(), tag_range.end,
-                            [](const MultiTag& multi_tag, ResourceUsageTag tag) { return multi_tag.range.begin < tag; });
-}
-
-SortedFirstAccesses::MultiTagRange SortedFirstAccesses::IterateMultiTagFirstAccesses(const ResourceUsageRange& tag_range) const {
-    return MultiTagRange{this->sorted_multi_tags, tag_range};
 }
 
 // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest

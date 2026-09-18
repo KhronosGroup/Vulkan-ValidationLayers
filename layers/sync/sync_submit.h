@@ -364,7 +364,6 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
 
     bool ValidateSubmit(const std::vector<CommandBufferConstPtr>& command_buffers, uint64_t submit_index, uint32_t batch_index,
                         std::vector<std::string>& current_label_stack, const Location& submit_loc);
-    void ResolveSubmittedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset);
 
     // For Present
     std::vector<BatchContextPtr> ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores,

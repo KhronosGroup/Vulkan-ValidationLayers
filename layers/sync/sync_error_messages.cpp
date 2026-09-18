@@ -111,9 +111,13 @@ std::string ErrorMessages::BufferError(const SyncEnvironment& env, const HazardR
     return Error(env, hazard, command, resource_description, "BufferError", additional_info);
 }
 
-std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const vvl::Func command,
-                                           const std::string& resource_description, uint32_t region_index, AccessRange range,
-                                           AdditionalMessageInfo additional_info) const {
+std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard,
+                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+                                           const std::string& resource_description, uint32_t region_index,
+                                           AccessRange range) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
     std::ostringstream ss;
@@ -124,15 +128,6 @@ std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const Haz
     additional_info.message_end_text += ss.str();
 
     return Error(env, hazard, command, resource_description, "BufferCopyError", additional_info);
-}
-
-std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard,
-                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
-                                           const std::string& resource_description, uint32_t region_index,
-                                           AccessRange range) const {
-    AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
-    return BufferCopyError(env, hazard, command, resource_description, region_index, range, std::move(additional_info));
 }
 
 std::string ErrorMessages::AccelerationStructureError(const SyncEnvironment& env, const HazardResult& hazard,
@@ -159,11 +154,14 @@ std::string ErrorMessages::AccelerationStructureError(const SyncEnvironment& env
     return Error(env, hazard, command, resource_description, "AccelerationStructureError", additional_info);
 }
 
-std::string ErrorMessages::ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
-                                                     const std::string& resource_description, uint32_t region_index,
-                                                     const VkOffset3D& offset, const VkExtent3D& extent,
-                                                     const VkImageSubresourceLayers& subresource,
-                                                     AdditionalMessageInfo additional_info) const {
+std::string ErrorMessages::ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                                     const Location& loc, const std::string& resource_description,
+                                                     uint32_t region_index, const VkOffset3D& offset, const VkExtent3D& extent,
+                                                     const VkImageSubresourceLayers& subresource) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+
     const char* action = nullptr;
     const char* message_type = nullptr;
     if (IsValueIn(command, {vvl::Func::vkCmdBlitImage, vvl::Func::vkCmdBlitImage2, vvl::Func::vkCmdBlitImage2KHR})) {
@@ -188,17 +186,6 @@ std::string ErrorMessages::ImageCopyResolveBlitError(const SyncEnvironment& env,
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
     return Error(env, hazard, command, resource_description, message_type, additional_info);
-}
-
-std::string ErrorMessages::ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                     const Location& loc, const std::string& resource_description,
-                                                     uint32_t region_index, const VkOffset3D& offset, const VkExtent3D& extent,
-                                                     const VkImageSubresourceLayers& subresource) const {
-    AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
-    return ImageCopyResolveBlitError(env, hazard, command, resource_description, region_index, offset, extent, subresource,
-                                     std::move(additional_info));
 }
 
 std::string ErrorMessages::ImageClearError(const SyncEnvironment& env, const HazardResult& hazard,
@@ -509,9 +496,17 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
                  additional_info);
 }
 
-std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, vvl::Func command,
-                                             const std::string& resource_description, const SyncImageBarrier& barrier,
-                                             AdditionalMessageInfo additional_info) const {
+std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard,
+                                             const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
+                                             const Location& loc, const std::string& resource_description,
+                                             const SyncImageBarrier& barrier) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    // Keep ImageBarrierError for event waits during replay for message-type compatibility.
+    if (IsValueIn(command, {vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR})) {
+        additional_info.message_type_override = nullptr;
+    }
+
     additional_info.access_action = "performs image layout transition on the";
 
     std::ostringstream ss;
@@ -524,78 +519,6 @@ std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const H
     additional_info.message_end_text += ss.str();
 
     return Error(env, hazard, command, resource_description, "ImageBarrierError", additional_info);
-}
-
-std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard,
-                                             const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                             const Location& loc, const std::string& resource_description,
-                                             const SyncImageBarrier& barrier) const {
-    AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
-    // Temporary: preserve the legacy message type for event waits.
-    if (IsValueIn(command, {vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR})) {
-        additional_info.message_type_override = nullptr;
-    }
-    return ImageBarrierError(env, hazard, command, resource_description, barrier, std::move(additional_info));
-}
-
-std::string ErrorMessages::FirstUseError(const SyncEnvironment& env, const HazardResult& hazard,
-                                         const CommandBufferContext& recorded_context, uint32_t command_buffer_index) const {
-    const ResourceUsageInfo recorded_usage_info = recorded_context.GetResourceUsageInfo(hazard.RecordedAccess()->TagEx());
-
-    // Use generic "resource" when resource handle is not specified for some reason (likely just a missing code).
-    // TODO: specify resources in EndRenderPass (NegativeSyncVal.QSOBarrierHazard).
-    const std::string resource_description = (recorded_usage_info.resource_handle != NullVulkanTypedHandle)
-                                                 ? validator_.FormatHandle(recorded_usage_info.resource_handle)
-                                                 : "resource";
-    return SubmitTimeError(env, hazard, recorded_context, hazard.RecordedAccess()->TagEx().tag, command_buffer_index,
-                           resource_description);
-}
-
-std::string ErrorMessages::SubmitTimeError(const SyncEnvironment& env, const HazardResult& hazard,
-                                           const CommandBufferContext& recorded_context, ResourceUsageTag replay_tag,
-                                           uint32_t command_buffer_index, const std::string& resource_description) const {
-    const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
-    const ResourceUsageInfo recorded_usage_info = recorded_context.GetResourceUsageInfo(ResourceUsageTagEx{replay_tag});
-
-    AdditionalMessageInfo additional_info;
-    additional_info.properties.Add(kPropertyCommandBufferIndex, command_buffer_index);
-
-    std::ostringstream ss;
-    ss << vvl::String(recorded_usage_info.command);
-    if (!recorded_usage_info.debug_region_name.empty()) {
-        ss << "[" << recorded_usage_info.debug_region_name << "]";
-    }
-    if (env.handle.type == kVulkanObjectTypeQueue) {
-        ss << " (from " << validator_.FormatHandle(recorded_context.GetCBState().Handle());
-        ss << " submitted on the current ";
-        ss << validator_.FormatHandle(env.handle) << ")";
-    } else {  // primary command buffer executes secondary one
-        assert(env.handle.type == kVulkanObjectTypeCommandBuffer);
-        ss << " (from the secondary " << validator_.FormatHandle(recorded_context.GetCBState().Handle()) << ")";
-    }
-    additional_info.access_initiator = ss.str();
-
-    std::ostringstream ss2;
-    if (prior_usage_info.queue) {
-        if (prior_usage_info.cb) {
-            ss2 << "(from " << validator_.FormatHandle(prior_usage_info.cb->Handle());
-            ss2 << " submitted on " << validator_.FormatHandle(prior_usage_info.queue->Handle()) << ")";
-        } else {  // QueuePresent case (not recorded into command buffer)
-            ss2 << "(submitted on " << validator_.FormatHandle(prior_usage_info.queue->Handle()) << ")";
-        }
-    } else if (prior_usage_info.cb) {
-        // TODO: distinuish between "native" primary command buffer commands and
-        // command recorded from the secondary command buffers.
-        ss2 << "(from the primary " << validator_.FormatHandle(prior_usage_info.cb->Handle()) << ")";
-    }
-    additional_info.brief_description_end_text = ss2.str();
-
-    if (!recorded_usage_info.debug_region_name.empty()) {
-        additional_info.properties.Add(kPropertyDebugRegion, recorded_usage_info.debug_region_name);
-    }
-
-    return Error(env, hazard, recorded_usage_info.command, resource_description, "SubmitTimeError", additional_info);
 }
 
 std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,

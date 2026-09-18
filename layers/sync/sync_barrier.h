@@ -162,8 +162,6 @@ struct SemaphoreScope : SyncExecScope {
     QueueId queue;
 };
 
-// TODO: replay flag is needed only until first-access machinery is removed
-void ApplyBarrier(SyncEnvironment& env, AccessContext& access_context, const BarrierSet& barrier_set, ResourceUsageTag tag,
-                  bool replay = false);
+void ApplyBarrier(SyncEnvironment& env, AccessContext& access_context, const BarrierSet& barrier_set, ResourceUsageTag tag);
 
 }  // namespace syncval

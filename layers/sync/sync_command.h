@@ -325,8 +325,7 @@ struct SetEventCommand {
     bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
                   ResourceUsageTag replay_tag, const Location& loc) const;
 
-    // Return the snapshot so record-time processing can also retain it for legacy replay.
-    std::shared_ptr<const AccessContext> Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
 struct ResetEventCommand {

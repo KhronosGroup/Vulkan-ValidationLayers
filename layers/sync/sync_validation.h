@@ -440,8 +440,8 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) override;
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                     const ErrorObject& error_obj) const override;
-    void RecordCmdSetEvent(CommandBufferContext& cb_context, std::shared_ptr<const vvl::Event>&& event,
-                           const SyncExecScope& src_exec_scope, const Location& loc) const;
+    void RecordCmdSetEvent(CommandBufferContext& cb_context, const vvl::Event& event, const SyncExecScope& src_exec_scope,
+                           const Location& loc) const;
     void PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                    const RecordObject& record_obj) override;
     bool PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfoKHR* pDependencyInfo,
@@ -454,8 +454,8 @@ class SyncValidator : public vvl::DeviceProxy {
                                     const RecordObject& record_obj) override;
     bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                       const ErrorObject& error_obj) const override;
-    void RecordCmdResetEvent(CommandBufferContext& cb_context, std::shared_ptr<const vvl::Event>&& event,
-                             const SyncExecScope& exec_scope, const Location& loc) const;
+    void RecordCmdResetEvent(CommandBufferContext& cb_context, const vvl::Event& event, const SyncExecScope& exec_scope,
+                             const Location& loc) const;
     void PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                      const RecordObject& record_obj) override;
     bool PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,

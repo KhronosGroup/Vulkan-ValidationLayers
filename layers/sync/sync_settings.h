@@ -18,15 +18,9 @@
 #pragma once
 
 struct SyncValSettings {
-    bool full_validation = false;
+    bool full_validation = true;
     bool record_time_validation = true;
-    bool legacy_submit_time_validation = true;  // TODO: remove after refactor
     bool shader_accesses_heuristic = false;
-
-    // TODO: remove this and replace with direct record_time_validation access after refactor
-    bool IsRecordTimeValidationEnabled() const { return record_time_validation || legacy_submit_time_validation; }
-
-    bool IsSubmitTimeProcessingEnabled() const { return legacy_submit_time_validation || full_validation; }
 
     // This validation currently is controlled only by the settings and is disabled by default.
     // There is a discussion https://gitlab.khronos.org/vulkan/vulkan/-/issues/4513 to clarify
