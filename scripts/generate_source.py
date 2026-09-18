@@ -482,7 +482,6 @@ def main(argv):
     if args.generated_version:
         json_files = []
         json_files.append(repo_relative('layers/VkLayer_khronos_validation.json.in'))
-        json_files.append(repo_relative('tests/layers/VkLayer_device_profile_api.json.in'))
         for json_file in json_files:
             with open(json_file, 'r') as file:
                 json_str = file.read()
