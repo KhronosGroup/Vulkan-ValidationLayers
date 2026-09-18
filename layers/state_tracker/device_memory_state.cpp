@@ -64,8 +64,7 @@ std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(const VkMe
     return std::nullopt;
 }
 
-static bool IsMultiInstance(const VkMemoryAllocateInfo& alloc_info, const VkMemoryHeap& memory_heap,
-                            uint32_t physical_device_count) {
+bool IsMultiInstance(const VkMemoryAllocateInfo& alloc_info, const VkMemoryHeap& memory_heap, uint32_t physical_device_count) {
     auto alloc_flags = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(alloc_info.pNext);
     if (alloc_flags && (alloc_flags->flags & VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT)) {
         auto dev_mask = alloc_flags->deviceMask;
