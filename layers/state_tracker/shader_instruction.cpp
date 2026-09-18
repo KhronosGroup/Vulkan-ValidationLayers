@@ -120,13 +120,13 @@ std::string Instruction::Describe() const {
     } else {
         const OperandInfo& info = GetOperandInfo(opcode);
         const uint32_t operands = static_cast<uint32_t>(info.types.size());
-        // Callers validate that the offset names a real instruction before decoding it, so
-        // neither of these can happen for a well formed offset: an unknown opcode falls back
-        // to OpNop and has no operands, and length always covers what has already been printed.
-        assert(operands != 0);
+        // Callers validate that the offset names a real instruction before decoding it, so the
+        // length always covers what has already been printed.
         assert(length >= operand_offset);
         const uint32_t remaining_words = length - operand_offset;
-        for (uint32_t i = 0; i < remaining_words; i++) {
+        // An opcode the grammar table does not know falls back to OpNop, which has no operands.
+        // That is a normal case for extension instructions, so there is nothing to describe.
+        for (uint32_t i = 0; operands != 0 && i < remaining_words; i++) {
             OperandKind kind = (i < operands) ? info.types[i] : info.types.back();
             if (kind == OperandKind::LiteralString) {
                 ss << " [string]";
