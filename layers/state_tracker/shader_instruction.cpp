@@ -117,9 +117,12 @@ std::string Instruction::Describe() const {
     // Exception for some opcode
     if (opcode == spv::OpEntryPoint) {
         ss << " " << string_SpvExecutionModel(Word(1)) << " %" << Word(2) << " [Unknown]";
+    } else if (opcode == spv::OpNop) {
+        ss << "OpNop found, which means something else has gone wrong";
     } else {
         const OperandInfo& info = GetOperandInfo(opcode);
         const uint32_t operands = static_cast<uint32_t>(info.types.size());
+        assert(length >= operand_offset);
         const uint32_t remaining_words = length - operand_offset;
         for (uint32_t i = 0; i < remaining_words; i++) {
             OperandKind kind = (i < operands) ? info.types[i] : info.types.back();
