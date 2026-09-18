@@ -1025,7 +1025,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             ]
                             if vuidName in arrayVuidExceptions:
                                 continue
-                            if lengthMember.optional:
+                            if lengthMember.optional or lengthMember.noAutoValidity:
+                                # VkPipelineBinaryKeyKHR::keySize is exception here
                                 counValueRequired = 'false'
                             elif member.noAutoValidity:
                                 # Handle edge case where XML expresses a non-optional non-pointer value length with noautovalidity
@@ -1218,15 +1219,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         if member.type in self.vk.flags:
                             flagBitsName = self.vk.flags[member.type].bitmaskName
                             flagsType = 'kOptionalFlags' if member.optional else 'kRequiredFlags'
-                            invalidVuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                            zeroVuid = self.GetVuid(callerName, f"{member.name}-requiredbitmask")
                         elif member.type in self.vk.bitmasks:
                             flagBitsName = member.type
                             flagsType = 'kOptionalSingleBit' if member.optional else 'kRequiredSingleBit'
-                            invalidVuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                            zeroVuid = invalidVuid
+                        invalidVuid = self.GetVuid(callerName, f"{member.name}-parameter")
                         allFlagsName = 'All' + flagBitsName
-                        zeroVuidArg = ', nullptr' if member.optional else ', ' + zeroVuid
                         condition = [item for item in self.structMemberValidationConditions if (item['struct'] == structTypeName and item['field'] == flagBitsName)]
                         isInstanceFunction = 'false'
                         if (struct):
@@ -1240,7 +1237,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         extended = getattr(member, 'extendedFlag', None)
                         if (extended):
                             usedLines.append(f'if (!vku::FindStructInPNextChain<{extended.struct}>({valuePrefix}pNext)) {{')
-                        usedLines.append(f'skip |= {context}ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg}, {isInstanceFunction});\n')
+                        usedLines.append(f'skip |= {context}ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}, nullptr, {isInstanceFunction});\n')
                         if (extended):
                             usedLines.append(f'}}')
                     elif member.type == 'VkBool32':

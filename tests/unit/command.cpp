@@ -324,7 +324,7 @@ TEST_F(NegativeCommand, PushConstants) {
     pc_range.offset = 0;
     pc_range.size = 16;
     pc_range.stageFlags = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-parameter");
     vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
@@ -398,7 +398,7 @@ TEST_F(NegativeCommand, PushConstants) {
 
     // Check for invalid stage flag
     // Note that VU 07790 isn't reached due to parameter validation
-    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-stageFlags-parameter");
     vk::CmdPushConstants(m_command_buffer, pipeline_layout_obj, 0, 0, 16, dummy_values);
     m_errorMonitor->VerifyFound();
 
@@ -668,7 +668,7 @@ TEST_F(NegativeCommand, ClearAttachmentsImplicitCheck) {
     clear_rect.layerCount = 1;
 
     color_attachment.aspectMask = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-parameter");
     vk::CmdClearAttachments(m_command_buffer, 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 

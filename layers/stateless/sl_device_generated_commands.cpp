@@ -109,8 +109,7 @@ bool Device::ValidateIndirectExecutionSetShaderInfo(const Context& context, cons
             const Location pc_range_loc = shader_info_loc.dot(Field::pPushConstantRanges, i);
             skip |= context.ValidateFlags(pc_range_loc.dot(Field::stageFlags), vvl::FlagBitmask::VkShaderStageFlagBits,
                                           AllVkShaderStageFlagBits, shader_info.pPushConstantRanges[i].stageFlags, kRequiredFlags,
-                                          "VUID-VkPushConstantRange-stageFlags-parameter",
-                                          "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
+                                          "VUID-VkPushConstantRange-stageFlags-parameter");
         }
     }
 
@@ -173,10 +172,10 @@ bool Device::ValidateIndirectCommandsPushConstantToken(const Context& context,
                                                        VkIndirectCommandsTokenTypeEXT token_type,
                                                        const Location& push_constant_token_loc) const {
     bool skip = false;
-    skip |= context.ValidateFlags(
-        push_constant_token_loc.dot(Field::updateRange).dot(Field::stageFlags), vvl::FlagBitmask::VkShaderStageFlagBits,
-        AllVkShaderStageFlagBits, push_constant_token.updateRange.stageFlags, kRequiredFlags,
-        "VUID-VkPushConstantRange-stageFlags-parameter", "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
+    skip |= context.ValidateFlags(push_constant_token_loc.dot(Field::updateRange).dot(Field::stageFlags),
+                                  vvl::FlagBitmask::VkShaderStageFlagBits, AllVkShaderStageFlagBits,
+                                  push_constant_token.updateRange.stageFlags, kRequiredFlags,
+                                  "VUID-VkPushConstantRange-stageFlags-parameter");
 
     if ((token_type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT ||
          token_type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) &&
@@ -228,8 +227,7 @@ bool Device::ValidateIndirectCommandsExecutionSetToken(const Context& context,
 
     skip |= context.ValidateFlags(exe_set_token_loc.dot(Field::shaderStages), vvl::FlagBitmask::VkShaderStageFlagBits,
                                   AllVkShaderStageFlagBits, exe_set_token.shaderStages, kRequiredFlags,
-                                  "VUID-VkIndirectCommandsExecutionSetTokenEXT-shaderStages-parameter",
-                                  "VUID-VkIndirectCommandsExecutionSetTokenEXT-shaderStages-requiredbitmask");
+                                  "VUID-VkIndirectCommandsExecutionSetTokenEXT-shaderStages-parameter");
 
     const auto& props = phys_dev_ext_props.device_generated_commands_props;
     if ((exe_set_token.shaderStages & (props.supportedIndirectCommandsShaderStagesPipelineBinding |

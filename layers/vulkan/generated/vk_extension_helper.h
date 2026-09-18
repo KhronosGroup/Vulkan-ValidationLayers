@@ -587,6 +587,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_image_tiling_control{kNotSupported};
     ExtEnabled vk_nv_cooperative_matrix_decode_vector{kNotSupported};
     ExtEnabled vk_nv_private_data_base_handle{kNotSupported};
+    ExtEnabled vk_intel_device_info{kNotSupported};
     ExtEnabled vk_valve_buffer_device_address_allocation_alignment{kNotSupported};
     ExtEnabled vk_khr_acceleration_structure{kNotSupported};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotSupported};
@@ -1102,6 +1103,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_image_tiling_control:
         case vvl::Extension::_VK_NV_cooperative_matrix_decode_vector:
         case vvl::Extension::_VK_NV_private_data_base_handle:
+        case vvl::Extension::_VK_INTEL_device_info:
         case vvl::Extension::_VK_VALVE_buffer_device_address_allocation_alignment:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:

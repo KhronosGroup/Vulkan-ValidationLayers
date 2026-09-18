@@ -153,7 +153,7 @@ TEST_F(NegativeOther, RequiredParameter) {
     vk::AllocateMemory(device(), NULL, NULL, &memory);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilReference-faceMask-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilReference-faceMask-parameter");
     // Specify 0 for a required VkFlags parameter
     // Expected to trigger an error with StatelessValidation::ValidateFlags
     vk::CmdSetStencilReference(m_command_buffer, 0, 0);
@@ -880,7 +880,7 @@ TEST_F(NegativeOther, GetPhysicalDeviceImageFormatPropertiesFlags) {
     }
 
     VkImageFormatProperties dummy_props;
-    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties-usage-requiredbitmask");
+    m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties-usage-parameter");
     vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
                                                VK_IMAGE_TILING_OPTIMAL, 0, 0, &dummy_props);
     m_errorMonitor->VerifyFound();

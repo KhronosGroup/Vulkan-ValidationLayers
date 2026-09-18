@@ -1229,7 +1229,7 @@ TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
 
     // Try a zero usage field
     usage_ci.usage = 0;
-    CreateImageViewTest(ivci, "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
+    CreateImageViewTest(ivci, "VUID-VkImageViewUsageCreateInfo-usage-parameter");
 
     // Try an illegal bit in usage field
     usage_ci.usage = 0x10000000 | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -4859,7 +4859,7 @@ TEST_F(NegativeImage, StatelessChainOfLocations) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11912");
     RETURN_IF_SKIP(Init());
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    // VUID-VkImageSubresourceRange-aspectMask-requiredbitmask
+    // VUID-VkImageSubresourceRange-aspectMask-parameter
     m_errorMonitor->SetDesiredError("pCreateInfo->subresourceRange.aspectMask");
     image.CreateView(0);
     m_errorMonitor->VerifyFound();
