@@ -6376,10 +6376,140 @@ TEST_F(NegativeDynamicState, MultiviewInvalidate) {
     vk::CmdNextSubpass(m_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
     // VUID-vkCmdDraw-scissorCount-03418
-    m_errorMonitor->SetDesiredError("When multiview is enabled, vkCmdNextSubpass will invalidate all dynamic state");
+    m_errorMonitor->SetDesiredError("was invalidated by vkCmdNextSubpass");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, ExecuteCommandsInvalidate) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12332");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.End();
+
+    const VkViewport viewport = {0.0f, 0.0f, 32.0f, 32.0f, 0.0f, 1.0f};
+    const VkRect2D scissor = {{0, 0}, {32u, 32u}};
+
+    m_command_buffer.Begin();
+    vk::CmdSetViewport(m_command_buffer, 0u, 1u, &viewport);
+    vk::CmdSetScissor(m_command_buffer, 0u, 1u, &scissor);
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &secondary.handle());
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07831");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07832");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, ViewportScissorInvalidateStaticPipeline) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper static_pipe(*this);
+    static_pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper dynamic_pipe(*this);
+    dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+    dynamic_pipe.CreateGraphicsPipeline();
+
+    const VkViewport viewport = {0.0f, 0.0f, 32.0f, 32.0f, 0.0f, 1.0f};
+    const VkRect2D scissor = {{0, 0}, {32u, 32u}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetViewport(m_command_buffer, 0u, 1u, &viewport);
+    vk::CmdSetScissor(m_command_buffer, 0u, 1u, &scissor);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, static_pipe);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dynamic_pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07831");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07832");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, ExecuteCommandsInvalidateInsideRenderPass) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_7_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance7);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper();
+    inheritance_info.renderPass = m_renderPass;
+    inheritance_info.subpass = 0u;
+    inheritance_info.framebuffer = Framebuffer();
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&begin_info);
+    secondary.End();
+
+    const VkViewport viewport = {0.0f, 0.0f, 32.0f, 32.0f, 0.0f, 1.0f};
+    const VkRect2D scissor = {{0, 0}, {32u, 32u}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdSetViewport(m_command_buffer, 0u, 1u, &viewport);
+    vk::CmdSetScissor(m_command_buffer, 0u, 1u, &scissor);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &secondary.handle());
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07831");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07832");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, ExecuteCommandsInvalidateShaderObject) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+    InitDynamicRenderTarget();
+
+    const vkt::ShaderEXT vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    const vkt::ShaderEXT frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.End();
+
+    m_command_buffer.Begin();
+    SetDefaultDynamicStatesExcludeEXT();
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &secondary.handle());
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
+    m_errorMonitor->SetDesiredError("It was invalidated by vkCmdExecuteCommands");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
 

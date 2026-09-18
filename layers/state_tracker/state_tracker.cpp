@@ -6568,9 +6568,9 @@ void DeviceState::PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(VkCommandBu
                                                                      const RecordObject& record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCommand(record_obj.location);
-    // CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
     cb_state->dynamic_state_status.rtx_stack_size_cb = true;
     cb_state->dynamic_state_status.rtx_stack_size_pipeline = true;
+    cb_state->dynamic_state_invalidation[CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR] = {};
 }
 
 void DeviceState::PostCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
