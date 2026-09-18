@@ -212,7 +212,10 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     VkDescriptorSetLayout GetInstrumentationDescriptorSetLayout(vvl::DescriptorMode mode) {
         return instrumentation_desc_layout_[mode];
     }
-    VkPipelineLayout GetInstrumentationPipelineLayout(vvl::DescriptorMode mode) { return instrumentation_pipeline_layout_[mode]; }
+
+    VkPipelineLayout GetDummyInstrumentationPipelineLayout(vvl::DescriptorMode mode) {
+        return instrumentation_pipeline_layout_[mode];
+    }
 
     // Used for both creating VkPipelineLayout and VkShaderEXT
     vvl::DescriptorMode SelectDescriptorModeFromDSL(uint32_t set_layout_count, const VkDescriptorSetLayout *set_layouts) const;
