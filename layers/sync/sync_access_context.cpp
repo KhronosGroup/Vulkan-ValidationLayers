@@ -488,6 +488,39 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
         ++pos;
     }
 
+    // A write can make previously fragmented ranges identical. Merge those ranges now,
+    // so subsequent accesses (e.g. many draws) can visit less ranges during traversal
+    AccessMap::iterator merge_first = end;
+    AccessMap::iterator merge_last = end;
+    const auto finish_merge = [&]() {
+        if (merge_first != end && merge_first != merge_last) {
+            const AccessRange merged_range(merge_first->first.begin, merge_last->first.end);
+            AccessState merged_state = merge_last->second;
+            const auto next = std::next(merge_last);
+            access_state_map_.Erase(merge_first, next);
+            access_state_map_.Insert(next, merged_range, merged_state);
+        }
+    };
+    const auto track_updated_range = [&](AccessMap::iterator updated) {
+        if (syncAccessReadMask[access_index]) {
+            return;  // merge only during writes
+        }
+        if (queue_id != kQueueIdInvalid) {
+            // Legacy submit validation uses first accesses from the recorded command buffers
+            // but the first accesses from the queue batch context are unused, so we can safely
+            // clear them here. This allows to merge otherwise equivalent access states
+            updated->second.ClearFirstUse();
+        }
+        if (merge_first != end && merge_last->first.end == updated->first.begin &&
+            merge_last->second.next_global_barrier_index == updated->second.next_global_barrier_index &&
+            merge_last->second == updated->second) {
+            merge_last = updated;
+        } else {
+            finish_merge();
+            merge_first = merge_last = updated;
+        }
+    };
+
     AccessMap::index_type current_begin = range.begin;
     while (pos != end && current_begin < range.end) {
         if (current_begin < pos->first.begin) {  // infill the gap
@@ -500,6 +533,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
             AccessState& new_access_state = infilled_it->second;
             ApplyGlobalBarriers(new_access_state);
             new_access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
+            track_updated_range(infilled_it);
 
             // Advance current location.
             // Do not advance pos, as it's the next map entry to visit
@@ -517,6 +551,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
             AccessState& access_state = pos->second;
             ApplyGlobalBarriers(access_state);
             access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
+            track_updated_range(pos);
 
             // Advance both current location and map entry
             current_begin = pos->first.end;
@@ -533,7 +568,9 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
         AccessState& new_access_state = infilled_it->second;
         ApplyGlobalBarriers(new_access_state);
         new_access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
+        track_updated_range(infilled_it);
     }
+    finish_merge();
     return pos;
 }
 
