@@ -114,7 +114,7 @@ void GpuShaderInstrumentor::SetupClassicDescriptor(const Location& loc) {
     result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, nullptr,
                                           &instrumentation_pipeline_layout_[vvl::DescriptorModeClassic]);
     if (result != VK_SUCCESS) {
-        InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal pipeline layout");
+        InternalError(device, loc, "vkCreatePipelineLayout failed for internal pipeline layout");
         Cleanup();
         return;
     }
@@ -169,7 +169,7 @@ void GpuShaderInstrumentor::SetupDescriptorBuffers(const Location& loc) {
     result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_db_info, nullptr,
                                           &instrumentation_pipeline_layout_[vvl::DescriptorModeBuffer]);
     if (result != VK_SUCCESS) {
-        InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal pipeline layout for descriptor buffer");
+        InternalError(device, loc, "vkCreatePipelineLayout failed for internal pipeline layout for descriptor buffer");
         Cleanup();
         return;
     }
@@ -211,12 +211,12 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
     if (!modified_features.fragmentStoresAndAtomics) {
         InternalError(
             device, loc,
-            "GPU Shader Instrumentation requires fragmentStoresAndAtomics to allow witting out data inside the fragment shader.");
+            "GPU Shader Instrumentation requires fragmentStoresAndAtomics to allow writing out data inside the fragment shader.");
         return;
     }
     if (!modified_features.vertexPipelineStoresAndAtomics) {
         InternalError(device, loc,
-                      "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow witting out data inside the "
+                      "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow writing out data inside the "
                       "vertex shader.");
         return;
     }
@@ -227,7 +227,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
         return;
     }
     if (!modified_features.bufferDeviceAddress) {
-        InternalError(device, loc, "GPU Shader Instrumentation requires bufferDeviceAddress to manage witting out of the shader.");
+        InternalError(device, loc, "GPU Shader Instrumentation requires bufferDeviceAddress to manage writing out of the shader.");
         return;
     }
     if (!modified_features.scalarBlockLayout) {
@@ -377,9 +377,9 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
         if (chassis_state.modified_create_info.setLayoutCount > instrumentation_desc_set_bind_index_) {
             std::ostringstream strm;
             strm << "pCreateInfo::setLayoutCount (" << chassis_state.modified_create_info.setLayoutCount
-                 << ") will conflicts with validation's descriptor set at slot " << instrumentation_desc_set_bind_index_ << ". "
+                 << ") will conflict with validation's descriptor set at slot " << instrumentation_desc_set_bind_index_ << ". "
                  << "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
-                    "for pipelines created with it, therefore no validation error will be repored for them by GPU-AV at runtime.";
+                    "for pipelines created with it, therefore no validation error will be reported for them by GPU-AV at runtime.";
             InternalWarning(device, record_obj.location, strm.str().c_str());
         } else {
             vvl::DescriptorMode mode = SelectDescriptorModeFromDSL(pCreateInfo->setLayoutCount, pCreateInfo->pSetLayouts);
@@ -452,11 +452,17 @@ void GpuShaderInstrumentor::PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice dev
             }
         }
 
-        VkPipeline instrumented_pipeline = VK_NULL_HANDLE;
         // Can't instrument ray tracing pipeline post creation,
         // As corresponding shader binding tables may have already been created.
-        if (pipeline_state->linking_shaders == 0 &&
-            IsValueIn(pipeline_state->pipeline_type, {VK_PIPELINE_BIND_POINT_GRAPHICS, VK_PIPELINE_BIND_POINT_COMPUTE})) {
+        if (!IsValueIn(pipeline_state->pipeline_type, {VK_PIPELINE_BIND_POINT_GRAPHICS, VK_PIPELINE_BIND_POINT_COMPUTE})) {
+            InternalWarning(device, record_obj.location,
+                            "Only graphics and compute pipelines can be instrumented after they are created, this pipeline will "
+                            "not be instrumented. Set the name before creating the pipeline to have it selected.");
+            return;
+        }
+
+        VkPipeline instrumented_pipeline = VK_NULL_HANDLE;
+        if (pipeline_state->linking_shaders == 0) {
             std::vector<chassis::ShaderInstrumentationMetadata> shader_instrumentation_metadata;
             if (pipeline_state->pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) {
                 vku::safe_VkGraphicsPipelineCreateInfo new_pipeline_ci(pipeline_state->GraphicsCreateInfo());
@@ -703,9 +709,9 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
         if (new_create_info.setLayoutCount > instrumentation_desc_set_bind_index_) {
             std::ostringstream strm;
             strm << "pCreateInfos[" << i << "]::setLayoutCount (" << new_create_info.setLayoutCount
-                 << ") will conflicts with validation's descriptor set at slot " << instrumentation_desc_set_bind_index_ << ". "
+                 << ") will conflict with validation's descriptor set at slot " << instrumentation_desc_set_bind_index_ << ". "
                  << "This Shader Object has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
-                    "for VkShaderEXT created with it, therefore no validation error will be repored for them by GPU-AV at "
+                    "for VkShaderEXT created with it, therefore no validation error will be reported for them by GPU-AV at "
                     "runtime.";
             InternalWarning(device, record_obj.location, strm.str().c_str());
         }
