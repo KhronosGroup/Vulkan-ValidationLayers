@@ -66,9 +66,22 @@ void GpuAVSettings::SetBufferValidationEnabled(bool enabled) {
     validate_acceleration_structures_builds = enabled;
 }
 
-void GpuAVSettings::SetShaderSelectionRegexes(std::vector<std::string>&& shader_selection_regexes) {
+// We validate the regex is correct once here (and can report the warning)
+void GpuAVSettings::AddShaderSelectionRegex(std::string&& shader_selection_regex, std::vector<std::string>& setting_warnings) {
+    try {
+        const std::regex compile_test(shader_selection_regex, std::regex_constants::ECMAScript);
+    } catch (const std::regex_error& e) {
+        setting_warnings.emplace_back("\"" + shader_selection_regex + "\" is not a valid ECMAScript regular expression (" +
+                                      e.what() + ") and will be ignored when selecting which shaders to instrument.");
+        return;
+    }
+    shader_selection_regexes.emplace_back(std::move(shader_selection_regex));
+}
+
+void GpuAVSettings::SetShaderSelectionRegexes(std::vector<std::string>&& shader_selection_regexes,
+                                              std::vector<std::string>& setting_warnings) {
     for (std::string& r : shader_selection_regexes) {
-        this->shader_selection_regexes.emplace_back(std::move(r));
+        AddShaderSelectionRegex(std::move(r), setting_warnings);
     }
 }
 
@@ -88,9 +101,9 @@ void GpuAVSettings::LoadCDLDump(std::string&& path, std::vector<std::string>& se
     std::regex look_for_pipeline(R"(pipeline:\s*handle:[\s\S]*?\[([^\]]*)\])", std::regex_constants::ECMAScript);
     for (std::smatch matches; (found_pipeline = std::regex_search(cdl_dump_txt, matches, look_for_pipeline));
          cdl_dump_txt = matches.suffix()) {
-        const std::string pipe_name = matches[1];
+        std::string pipe_name = matches[1];
         if (!pipe_name.empty()) {
-            shader_selection_regexes.emplace_back(pipe_name);
+            AddShaderSelectionRegex(std::move(pipe_name), setting_warnings);
         }
     }
     if (!found_pipeline) {
@@ -102,8 +115,10 @@ bool GpuAVSettings::MatchesAnyShaderSelectionRegex(const std::string& debug_name
     if (debug_name.empty()) {
         return false;
     }
+
     for (const std::string& shader_selection_regex_str : shader_selection_regexes) {
-        std::regex regex(shader_selection_regex_str, std::regex_constants::ECMAScript);
+        // AddShaderSelectionRegex() already built this same expression once, so this can't throw
+        const std::regex regex(shader_selection_regex_str, std::regex_constants::ECMAScript);
         if (std::regex_match(debug_name, regex)) {
             return true;
         }

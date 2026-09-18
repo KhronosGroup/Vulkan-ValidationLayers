@@ -78,7 +78,9 @@ struct GpuAVSettings {
     bool IsBufferValidationEnabled() const;
     void SetBufferValidationEnabled(bool enabled);
 
-    void SetShaderSelectionRegexes(std::vector<std::string> &&shader_selection_regexes);
+    void AddShaderSelectionRegex(std::string&& shader_selection_regex, std::vector<std::string>& setting_warnings);
+    void SetShaderSelectionRegexes(std::vector<std::string>&& shader_selection_regexes, std::vector<std::string>& setting_warnings);
+
     void LoadCDLDump(std::string&& path, std::vector<std::string>& setting_warnings);
     bool MatchesAnyShaderSelectionRegex(const std::string &debug_name);
 
