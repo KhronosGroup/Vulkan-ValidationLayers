@@ -198,6 +198,9 @@ const char* VK_LAYER_GPUAV_DEBUG_MAX_INSTRUMENTATIONS_COUNT = "gpuav_debug_max_i
 const char* VK_LAYER_GPUAV_DEBUG_PRINT_INSTRUMENTATION_INFO = "gpuav_debug_print_instrumentation_info";
 const char* VK_LAYER_GPUAV_DEBUG_DISABLE_DONTINLINE = "gpuav_debug_disable_dontinline";
 
+// Only for the Validation Layer test suite
+const char* VK_LAYER_GPUAV_DEBUG_TEST_LOWER_LIMITS = "gpuav_debug_test_lower_limits";
+
 // SyncVal
 // ---
 const char* VK_LAYER_SYNCVAL_FULL_VALIDATION = "syncval_full_validation";
@@ -1481,10 +1484,18 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     ProcessDebugReportSettings(settings_data, layer_setting_set, setting_warnings);
 
     // Grab application name here while we have access to it and know if to save it or not
+    const VkApplicationInfo* app_info = settings_data->create_info->pApplicationInfo;
+    const char* application_name = (app_info && app_info->pApplicationName) ? app_info->pApplicationName : "";
     if (settings_data->debug_report->message_format_settings.display_application_name) {
-        const VkApplicationInfo* app_info = settings_data->create_info->pApplicationInfo;
-        settings_data->debug_report->message_format_settings.application_name =
-            (app_info && app_info->pApplicationName) ? app_info->pApplicationName : "";
+        settings_data->debug_report->message_format_settings.application_name = application_name;
+    }
+
+    // Lowering the device limits is only ever valid for the Validation Layer test suite, ignore it for anyone else
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_TEST_LOWER_LIMITS)) {
+        if (strcmp(application_name, "layer_tests") == 0) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_TEST_LOWER_LIMITS,
+                                    settings_data->global_settings->debug_test_lower_limits);
+        }
     }
 
     for (const auto& warning : setting_warnings) {

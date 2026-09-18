@@ -488,20 +488,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_DispatchWorkgroupSize) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxComputeWorkGroupCount[0] = 2;
-    props.limits.maxComputeWorkGroupCount[1] = 2;
-    props.limits.maxComputeWorkGroupCount[2] = 2;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+    RETURN_IF_SKIP(InitGpuAvFramework({kLowerLimitsSetting}));
 
     RETURN_IF_SKIP(InitState());
     GetPhysicalDeviceProperties2(heap_props);

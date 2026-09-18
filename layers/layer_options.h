@@ -86,6 +86,9 @@ using ValidationEnabled = std::array<bool, kMaxEnableFlags>;
 struct GlobalSettings {
     bool debug_disable_spirv_val = false;
 
+    // Only used by the Validation Layer test suite (gpuav_debug_test_lower_limits).
+    bool debug_test_lower_limits = false;
+
     // Have quick way to know if user only has requsted errors as we can skip larger, expensive parts of the code if the user will
     // never see the message
     bool only_report_errors = false;

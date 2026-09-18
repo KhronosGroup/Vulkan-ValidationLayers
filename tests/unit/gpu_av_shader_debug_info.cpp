@@ -2209,19 +2209,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PostProcessingDebugLabelMultipleCommandBuff
 
 TEST_F(NegativeGpuAVShaderDebugInfo, IndirectCommandDebugLabel) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxComputeWorkGroupCount[0] = 2;
-    props.limits.maxComputeWorkGroupCount[1] = 2;
-    props.limits.maxComputeWorkGroupCount[2] = 2;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+    RETURN_IF_SKIP(InitGpuAvFramework({kLowerLimitsSetting}));
 
     RETURN_IF_SKIP(InitState());
 
@@ -2700,19 +2688,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ReachMaxActionsCommandValidationLimitUnknow
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, ReachMaxErrorLoggerLimitUnkown) {
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
-    props.limits.maxComputeWorkGroupCount[0] = 2;
-    props.limits.maxComputeWorkGroupCount[1] = 2;
-    props.limits.maxComputeWorkGroupCount[2] = 2;
-    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+    RETURN_IF_SKIP(InitGpuAvFramework({kLowerLimitsSetting}));
 
     RETURN_IF_SKIP(InitState());
 

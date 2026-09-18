@@ -912,6 +912,20 @@
                                                     { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
+                                        },
+                                        {
+                                            "key": "gpuav_debug_test_lower_limits",
+                                            "label": "Lower Device Limits for Unit Testing",
+                                            "description": "Only for use by the Validation Layer test suite, ignore otherwise.",
+                                            "type": "BOOL",
+                                            "view": "HIDDEN",
+                                            "default": false,
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true }
+                                                ]
+                                            }
                                         }
                                     ]
                                 },

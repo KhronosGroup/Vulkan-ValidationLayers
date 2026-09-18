@@ -70,6 +70,18 @@ StatelessDeviceData::StatelessDeviceData(DispatchInstance* instance, VkPhysicalD
     instance->GetPhysicalDeviceMemoryProperties(physical_device, &phys_dev_mem_props);
     instance->GetPhysicalDeviceProperties(physical_device, &phys_dev_props);
 
+    // We use to have this VK_LUNARG_device_profile_api internal layer that was created before profiles to spoof device limits.
+    // We replaced it, but GPU-AV has a few tests where its hard to test as the "real" limits are normally around UINT_MAX
+    // The "workaround" is this secret setting that will set limits to a really low level purely for testing a few GPU-AV tests
+    //
+    // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11869
+    if (instance->settings.global_settings.debug_test_lower_limits) {
+        phys_dev_props.limits.maxDrawIndirectCount = 1;
+        phys_dev_props.limits.maxComputeWorkGroupCount[0] = 2;
+        phys_dev_props.limits.maxComputeWorkGroupCount[1] = 2;
+        phys_dev_props.limits.maxComputeWorkGroupCount[2] = 2;
+    }
+
     // Vulkan 1.1 and later can get properties from single struct.
     // The goal is to only use the phys_dev_props_core field and funnel the properties from promoted extensions
     if (IsExtEnabled(extensions.vk_feature_version_1_2)) {
