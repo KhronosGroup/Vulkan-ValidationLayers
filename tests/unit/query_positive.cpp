@@ -856,3 +856,35 @@ TEST_F(PositiveQuery, ResetInPreviousSubmission) {
 
     vk::FreeCommandBuffers(device(), m_command_pool, 3, command_buffer);
 }
+
+TEST_F(PositiveQuery, ElapsedTimerQuery) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_ELAPSED_TIMER_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::elapsedTimerQuery);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::QueryPool query_pool{*m_device, VK_QUERY_TYPE_TIME_ELAPSED_QCOM, 1u};
+    vkt::Buffer buffer{*m_device, sizeof(uint64_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT};
+    vkt::Buffer address_buffer{*m_device, sizeof(uint64_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address};
+    const VkStridedDeviceAddressRangeKHR range = address_buffer.StridedAddressRange(sizeof(uint64_t));
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    m_command_buffer.EndRenderPass();
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0u, 1u, buffer, 0u, sizeof(uint64_t),
+                                VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 1u, &range, 0u,
+                                           VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint64_t data = 0ull;
+    vk::GetQueryPoolResults(device(), query_pool, 0u, 1u, sizeof(data), &data, sizeof(data), VK_QUERY_RESULT_64_BIT);
+}

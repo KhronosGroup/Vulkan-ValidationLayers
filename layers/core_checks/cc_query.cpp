@@ -172,10 +172,16 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
             }
         }
     }
-    if ((query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIMESTAMP) && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
+    if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIMESTAMP && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
         skip |= LogError("VUID-vkGetQueryPoolResults-queryType-09439", queryPool, error_obj.location.dot(Field::flags),
                          "(%s) includes VK_QUERY_RESULT_PARTIAL_BIT, but queryPool (%s) was created with a queryType of "
                          "VK_QUERY_TYPE_TIMESTAMP.",
+                         string_VkQueryResultFlags(flags).c_str(), FormatHandle(queryPool).c_str());
+    }
+    if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIME_ELAPSED_QCOM &&
+        (flags & (VK_QUERY_RESULT_PARTIAL_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR))) {
+        skip |= LogError("VUID-vkGetQueryPoolResults-queryType-12424", queryPool, error_obj.location.dot(Field::flags),
+                         "(%s) includes a result flag that is not supported by elapsed timer queries from queryPool (%s).",
                          string_VkQueryResultFlags(flags).c_str(), FormatHandle(queryPool).c_str());
     }
 
@@ -679,6 +685,20 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const Qu
             }
             break;
         }
+        case VK_QUERY_TYPE_TIME_ELAPSED_QCOM: {
+            const uint32_t timestamp_valid_bits =
+                physical_device_state->queue_family_properties[cb_state.command_pool.queueFamilyIndex].timestampValidBits;
+            if (timestamp_valid_bits == 0) {
+                const char* vuid =
+                    is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-12423" : "VUID-vkCmdBeginQuery-queryType-12423";
+                const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool.Handle(), query_obj.pool);
+                skip |= LogError(vuid, objlist, loc.dot(Field::queryPool),
+                                 "(%s) was created with VK_QUERY_TYPE_TIME_ELAPSED_QCOM, but the command pool's queue family "
+                                 "(index %" PRIu32 ") has a zero-value timestampValidBits.",
+                                 FormatHandle(query_obj.pool).c_str(), cb_state.command_pool.queueFamilyIndex);
+            }
+            break;
+        }
         default:
             break;
     }
@@ -1175,10 +1195,17 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                              FormatHandle(queryPool).c_str());
         }
     }
-    if ((query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIMESTAMP) && ((flags & VK_QUERY_RESULT_PARTIAL_BIT) != 0)) {
+    if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIMESTAMP && ((flags & VK_QUERY_RESULT_PARTIAL_BIT) != 0)) {
         const LogObjectList objlist(commandBuffer, queryPool);
         skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryType-09439", objlist, error_obj.location.dot(Field::flags),
                          "(%s) includes VK_QUERY_RESULT_PARTIAL_BIT, but %s was created with VK_QUERY_TYPE_TIMESTAMP.",
+                         string_VkQueryResultFlags(flags).c_str(), FormatHandle(queryPool).c_str());
+    }
+    if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIME_ELAPSED_QCOM &&
+        (flags & (VK_QUERY_RESULT_PARTIAL_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR))) {
+        const LogObjectList objlist(commandBuffer, queryPool);
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryType-12424", objlist, error_obj.location.dot(Field::flags),
+                         "(%s) includes a result flag that is not supported by elapsed timer queries from queryPool (%s).",
                          string_VkQueryResultFlags(flags).c_str(), FormatHandle(queryPool).c_str());
     }
     if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL) {
@@ -1228,11 +1255,18 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuff
 
     const LogObjectList objlist(commandBuffer, queryPool);
 
-    if ((query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIMESTAMP) && (queryResultFlags & VK_QUERY_RESULT_PARTIAL_BIT)) {
+    if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIMESTAMP && (queryResultFlags & VK_QUERY_RESULT_PARTIAL_BIT)) {
         skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryType-09439", objlist,
                          error_obj.location.dot(Field::queryResultFlags),
                          "(%s) includes VK_QUERY_RESULT_PARTIAL_BIT, but queryPool (%s) was created with a queryType of "
                          "VK_QUERY_TYPE_TIMESTAMP.",
+                         string_VkQueryResultFlags(queryResultFlags).c_str(), FormatHandle(queryPool).c_str());
+    }
+    if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TIME_ELAPSED_QCOM &&
+        (queryResultFlags & (VK_QUERY_RESULT_PARTIAL_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR))) {
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryType-12424", objlist,
+                         error_obj.location.dot(Field::queryResultFlags),
+                         "(%s) includes a result flag that is not supported by elapsed timer queries from queryPool (%s).",
                          string_VkQueryResultFlags(queryResultFlags).c_str(), FormatHandle(queryPool).c_str());
     }
 
