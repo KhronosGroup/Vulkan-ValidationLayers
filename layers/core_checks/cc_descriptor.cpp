@@ -3488,6 +3488,27 @@ bool CoreChecks::ValidateGetDescriptorDataSize(const VkDescriptorGetInfoEXT& des
         } else {
             const auto image_view_state = Get<vvl::ImageView>(combined_image_sampler->imageView);
             if (image_view_state && image_view_state->sampler_conversion != VK_NULL_HANDLE) {
+                uint64_t ahb_external_format = 0;
+                if (const auto conversion_state = Get<vvl::SamplerYcbcrConversion>(image_view_state->sampler_conversion)) {
+                    ahb_external_format = conversion_state->external_format;
+                }
+
+                if (ahb_external_format != 0) {
+                    size *= static_cast<size_t>(phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount);
+                    if (phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount != 0 && size != data_size) {
+                        skip |=
+                            LogError("VUID-vkGetDescriptorEXT-pDescriptorInfo-12521", device, descriptor_info_loc.dot(Field::type),
+                                     "(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) has %s created with an Android external "
+                                     "format (%" PRIu64
+                                     ") and descriptor size is %zu [maxCombinedImageSamplerDescriptorCount "
+                                     "(%" PRIu32 ") times combinedImageSamplerDescriptorSize (%zu)], but dataSize is %zu",
+                                     FormatHandle(image_view_state->sampler_conversion).c_str(), ahb_external_format, size,
+                                     phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount,
+                                     phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize, data_size);
+                    }
+                    return skip;  // the 08125 VU doesn't apply if we are using a SamplerYcbcrConversion
+                }
+
                 VkImageUsageFlags2CreateInfoKHR usage_flags_2 = vku::InitStructHelper();
                 usage_flags_2.usage = image_view_state->inherited_usage;
                 VkPhysicalDeviceImageFormatInfo2 image_format_info = image_view_state->image_state->GetImageFormatInfo2();
@@ -5483,17 +5504,41 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                 }
             }
 
-            if (vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(image_view_ci.pNext)) {
-                VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state->GetImageFormatInfo2();
-                VkSamplerYcbcrConversionImageFormatProperties sampler_ycbcr_image_format_info = vku::InitStructHelper();
-                VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&sampler_ycbcr_image_format_info);
-                DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
-                                                                      &image_format_properties);
-                const VkDeviceSize size =
-                    phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize *
-                    static_cast<VkDeviceSize>(sampler_ycbcr_image_format_info.combinedImageSamplerDescriptorCount);
-                if (static_cast<VkDeviceSize>(descriptor_range.size) < size) {
-                    skip |= LogError("VUID-vkWriteResourceDescriptorsEXT-pResources-11208", image_view_ci.image,
+            if (const auto* ycbcr_conversion_info =
+                    vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(image_view_ci.pNext)) {
+                uint64_t ahb_external_format = 0;
+                if (const auto conversion_state = Get<vvl::SamplerYcbcrConversion>(ycbcr_conversion_info->conversion)) {
+                    ahb_external_format = conversion_state->external_format;
+                }
+
+                if (ahb_external_format != 0) {
+                    const VkDeviceSize size =
+                        expected_size * static_cast<VkDeviceSize>(phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount);
+                    if (phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount != 0 &&
+                        static_cast<VkDeviceSize>(descriptor_range.size) < size) {
+                        skip |= LogError("VUID-vkWriteResourceDescriptorsEXT-pResources-12522", image_view_ci.image,
+                                         error_obj.location.dot(Field::pDescriptors, i).dot(Field::size),
+                                         "is %" PRIu64 ", that is less than the descriptor size (%" PRIu64
+                                         ") * maxCombinedImageSamplerDescriptorCount (%" PRIu32
+                                         "), required because %s was created with an Android external format (%" PRIu64
+                                         ").\npResources[%" PRIu32 "].type = %s",
+                                         static_cast<VkDeviceSize>(descriptor_range.size), expected_size,
+                                         phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount,
+                                         FormatHandle(ycbcr_conversion_info->conversion).c_str(), ahb_external_format, i,
+                                         string_VkDescriptorType(resource.type));
+                    }
+                } else {
+                    VkPhysicalDeviceImageFormatInfo2 image_format_info = image_state->GetImageFormatInfo2();
+                    VkSamplerYcbcrConversionImageFormatProperties sampler_ycbcr_image_format_info = vku::InitStructHelper();
+                    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&sampler_ycbcr_image_format_info);
+                    DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
+                                                                          &image_format_properties);
+                    const VkDeviceSize size =
+                        phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize *
+                        static_cast<VkDeviceSize>(sampler_ycbcr_image_format_info.combinedImageSamplerDescriptorCount);
+                    if (static_cast<VkDeviceSize>(descriptor_range.size) < size) {
+                        skip |=
+                            LogError("VUID-vkWriteResourceDescriptorsEXT-pResources-11208", image_view_ci.image,
                                      error_obj.location.dot(Field::pDescriptors, i).dot(Field::size),
                                      "is %" PRIu64 ", that is less than imageDescriptorSize (%" PRIu64
                                      ") * combinedImageSamplerDescriptorCount (%" PRIu64 ").\npResources[%" PRIu32 "].type = %s",
@@ -5501,6 +5546,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                                      phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize,
                                      static_cast<VkDeviceSize>(sampler_ycbcr_image_format_info.combinedImageSamplerDescriptorCount),
                                      i, string_VkDescriptorType(resource.type));
+                    }
                 }
             }
             if (image_state->GetImageType() == VK_IMAGE_TYPE_3D) {
