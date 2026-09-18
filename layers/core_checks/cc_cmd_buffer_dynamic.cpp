@@ -594,30 +594,6 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) && last_bound_state.IsSampleLocationsEnable()) {
-        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-            if (cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
-                pipeline.MultisampleState()->rasterizationSamples) {
-                skip |= LogError(
-                    CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_LOCATIONS_07482), objlist, loc,
-                    "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
-                    "VkPipelineMultisampleStateCreateInfo::rasterizationSamples from the pipeline was %s.%s",
-                    string_VkSampleCountFlagBits(cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel),
-                    string_VkSampleCountFlagBits(pipeline.MultisampleState()->rasterizationSamples),
-                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT).c_str());
-            }
-        } else if (cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
-                   cb_state.dynamic_state_value.rasterization_samples) {
-            skip |=
-                LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_LOCATIONS_07483), objlist, loc,
-                         "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
-                         "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() was %s.%s",
-                         string_VkSampleCountFlagBits(cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel),
-                         string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
-                         cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT).c_str());
-        }
-    }
-
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
         pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && pipeline.MultisampleState() &&
         last_bound_state.IsSampleLocationsEnable()) {
@@ -655,79 +631,6 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
                                  "which does not match rasterization samples (%s) set with vkCmdSetRasterizationSamplesEXT().",
                                  string_VkSampleCountFlagBits(sample_locations->sampleLocationsInfo.sampleLocationsPerPixel),
                                  string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
-            }
-        }
-    }
-
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
-        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-            if (cb_state.dynamic_state_value.samples_mask_samples < pipeline.MultisampleState()->rasterizationSamples) {
-                skip |=
-                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_MASK_07472), objlist, loc,
-                             "Currently bound pipeline was created with VkPipelineMultisampleStateCreateInfo::rasterizationSamples "
-                             "%s are greater than samples set with vkCmdSetSampleMaskEXT() were %s.%s",
-                             string_VkSampleCountFlagBits(pipeline.MultisampleState()->rasterizationSamples),
-                             string_VkSampleCountFlagBits(cb_state.dynamic_state_value.samples_mask_samples),
-                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT).c_str());
-            }
-        } else if (cb_state.dynamic_state_value.samples_mask_samples < cb_state.dynamic_state_value.rasterization_samples) {
-            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_MASK_07473), objlist, loc,
-                             "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() %s are greater than samples "
-                             "set with vkCmdSetSampleMaskEXT() were %s.%s",
-                             string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
-                             string_VkSampleCountFlagBits(cb_state.dynamic_state_value.samples_mask_samples),
-                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT).c_str());
-        }
-    }
-
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT) &&
-        !enabled_features.primitivesGeneratedQueryWithNonZeroStreams && cb_state.dynamic_state_value.rasterization_stream != 0) {
-        for (const auto& active_query : cb_state.active_queries) {
-            auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
-            if (!query_pool_state || query_pool_state->create_info.queryType != VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-                continue;
-            }
-            skip |= LogError(
-                CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVES_GENERATED_QUERY_07481), cb_state.Handle(), loc,
-                "query %" PRIu32
-                " in %s with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active and the last call to "
-                "vkCmdSetRasterizationStreamEXT() set rasterizationStreams as %" PRIu32
-                " (non-zero), but the primitivesGeneratedQueryWithNonZeroStreams "
-                "feature was not enabled.%s",
-                active_query.slot, FormatHandle(active_query.pool).c_str(), cb_state.dynamic_state_value.rasterization_stream,
-                cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT).c_str());
-
-            break;  // only need to check the feature VUs once
-        }
-    }
-
-    // VK_EXT_shader_tile_image
-    {
-        const bool dyn_depth_write_enable = pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
-        const bool dyn_stencil_write_mask = pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK);
-        auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
-        if ((dyn_depth_write_enable || dyn_stencil_write_mask) && fragment_entry_point) {
-            const bool mode_early_fragment_test =
-                fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit);
-            const bool depth_read =
-                pipeline.fragment_shader_state->fragment_shader->spirv->static_data_.has_shader_tile_image_depth_read;
-            const bool stencil_read =
-                pipeline.fragment_shader_state->fragment_shader->spirv->static_data_.has_shader_tile_image_stencil_read;
-
-            if (depth_read && dyn_depth_write_enable && mode_early_fragment_test &&
-                cb_state.dynamic_state_value.depth_write_enable) {
-                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DEPTH_ENABLE_08715), objlist, loc,
-                                 "Fragment shader contains OpDepthAttachmentReadEXT, but depthWriteEnable parameter in the last "
-                                 "call to vkCmdSetDepthWriteEnable is not false.");
-            }
-
-            if (stencil_read && dyn_stencil_write_mask && mode_early_fragment_test &&
-                ((cb_state.dynamic_state_value.write_mask_front != 0) || (cb_state.dynamic_state_value.write_mask_back != 0))) {
-                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STENCIL_WRITE_MASK_08716), objlist, loc,
-                                 "Fragment shader contains OpStencilAttachmentReadEXT, but writeMask parameter in the last "
-                                 "call to vkCmdSetStencilWriteMask is not equal to 0 for both front (%" PRIu32
-                                 ") and back (%" PRIu32 ").",
-                                 cb_state.dynamic_state_value.write_mask_front, cb_state.dynamic_state_value.write_mask_back);
             }
         }
     }
@@ -1118,6 +1021,109 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
     const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
     const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::FRAGMENT);
 
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) && last_bound_state.IsSampleLocationsEnable()) {
+        if (!last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+            // Only a Pipeline can have a static rasterizationSamples
+            if (cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
+                pipeline_state->MultisampleState()->rasterizationSamples) {
+                skip |= LogError(
+                    CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_LOCATIONS_07482),
+                    cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                    "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
+                    "VkPipelineMultisampleStateCreateInfo::rasterizationSamples from the pipeline was %s.%s",
+                    string_VkSampleCountFlagBits(cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel),
+                    string_VkSampleCountFlagBits(pipeline_state->MultisampleState()->rasterizationSamples),
+                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT).c_str());
+            }
+        } else if (cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel !=
+                   cb_state.dynamic_state_value.rasterization_samples) {
+            skip |=
+                LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_LOCATIONS_07483),
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                         "sampleLocationsPerPixel set with vkCmdSetSampleLocationsEXT() was %s, but "
+                         "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() was %s.%s",
+                         string_VkSampleCountFlagBits(cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel),
+                         string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                         cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT).c_str());
+        }
+    }
+
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
+        if (!last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+            // Only a Pipeline can have a static rasterizationSamples
+            if (cb_state.dynamic_state_value.samples_mask_samples < pipeline_state->MultisampleState()->rasterizationSamples) {
+                skip |=
+                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_MASK_07472),
+                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "Currently bound pipeline was created with VkPipelineMultisampleStateCreateInfo::rasterizationSamples "
+                             "%s are greater than samples set with vkCmdSetSampleMaskEXT() were %s.%s",
+                             string_VkSampleCountFlagBits(pipeline_state->MultisampleState()->rasterizationSamples),
+                             string_VkSampleCountFlagBits(cb_state.dynamic_state_value.samples_mask_samples),
+                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT).c_str());
+            }
+        } else if (cb_state.dynamic_state_value.samples_mask_samples < cb_state.dynamic_state_value.rasterization_samples) {
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_MASK_07473),
+                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() %s are greater than samples "
+                             "set with vkCmdSetSampleMaskEXT() were %s.%s",
+                             string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                             string_VkSampleCountFlagBits(cb_state.dynamic_state_value.samples_mask_samples),
+                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT).c_str());
+        }
+    }
+
+    const bool rasterization_stream_used = has_pipeline || last_bound_state.IsValidShaderObjectBound(ShaderObjectStage::GEOMETRY);
+    if (rasterization_stream_used && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT) &&
+        !enabled_features.primitivesGeneratedQueryWithNonZeroStreams && cb_state.dynamic_state_value.rasterization_stream != 0) {
+        for (const auto& active_query : cb_state.active_queries) {
+            auto query_pool_state = Get<vvl::QueryPool>(active_query.pool);
+            if (!query_pool_state || query_pool_state->create_info.queryType != VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
+                continue;
+            }
+            skip |= LogError(
+                CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVES_GENERATED_QUERY_07481), cb_state.Handle(), loc,
+                "query %" PRIu32
+                " in %s with type VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT is active and the last call to "
+                "vkCmdSetRasterizationStreamEXT() set rasterizationStreams as %" PRIu32
+                " (non-zero), but the primitivesGeneratedQueryWithNonZeroStreams "
+                "feature was not enabled.%s",
+                active_query.slot, FormatHandle(active_query.pool).c_str(), cb_state.dynamic_state_value.rasterization_stream,
+                cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT).c_str());
+
+            break;  // only need to check the feature VUs once
+        }
+    }
+
+    const spirv::EntryPoint* fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
+
+    // VK_EXT_shader_tile_image
+    if (fragment_entry_point && fragment_entry_point->execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit)) {
+        const bool dyn_depth_write_enable = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+        const bool dyn_stencil_write_mask = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK);
+        const spirv::Module* fragment_spirv = last_bound_state.GetFragmentSpirvModule();
+        if ((dyn_depth_write_enable || dyn_stencil_write_mask) && fragment_spirv) {
+            const bool depth_read = fragment_spirv->static_data_.has_shader_tile_image_depth_read;
+            const bool stencil_read = fragment_spirv->static_data_.has_shader_tile_image_stencil_read;
+
+            if (depth_read && dyn_depth_write_enable && cb_state.dynamic_state_value.depth_write_enable) {
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DEPTH_ENABLE_08715),
+                                 cb_state.GetObjectList(VK_SHADER_STAGE_FRAGMENT_BIT), loc,
+                                 "Fragment shader contains OpDepthAttachmentReadEXT, but depthWriteEnable parameter in the last "
+                                 "call to vkCmdSetDepthWriteEnable is not false.");
+            }
+
+            if (stencil_read && dyn_stencil_write_mask &&
+                ((cb_state.dynamic_state_value.write_mask_front != 0) || (cb_state.dynamic_state_value.write_mask_back != 0))) {
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STENCIL_WRITE_MASK_08716),
+                                 cb_state.GetObjectList(VK_SHADER_STAGE_FRAGMENT_BIT), loc,
+                                 "Fragment shader contains OpStencilAttachmentReadEXT, but writeMask parameter in the last "
+                                 "call to vkCmdSetStencilWriteMask is not equal to 0 for both front (%" PRIu32
+                                 ") and back (%" PRIu32 ").",
+                                 cb_state.dynamic_state_value.write_mask_front, cb_state.dynamic_state_value.write_mask_back);
+            }
+        }
+    }
+
     if (!last_bound_state.IsRasterizationDisabled()) {
         if (IsExtEnabled(extensions.vk_ext_discard_rectangles) && last_bound_state.IsDiscardRectangleEnable() &&
             last_bound_state.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
@@ -1364,7 +1370,6 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
 
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
         cb_state.dynamic_state_value.alpha_to_coverage_enable) {
-        auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
         if (fragment_entry_point && !fragment_entry_point->has_alpha_to_coverage_variable) {
             LogObjectList objlist(cb_state.Handle());
             if (has_pipeline) {

@@ -1512,6 +1512,9 @@ TEST_F(NegativeShaderObjectEXT, RasterizationSamplesMismatch) {
     SetDefaultDynamicStatesExcludeEXT();
     m_command_buffer.BindShadersEXT(m_vert_shader, m_frag_shader);
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_2_BIT);
+    // Keep the sample mask samples in sync with the rasterization samples so only 08644 is triggered
+    VkSampleMask sample_mask = 0xFFFFFFFF;
+    vk::CmdSetSampleMaskEXT(m_command_buffer, VK_SAMPLE_COUNT_2_BIT, &sample_mask);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08644");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
@@ -8703,4 +8706,178 @@ TEST_F(NegativeShaderObjectEXT, DestroyedLinkedShader2) {
     m_errorMonitor->VerifyFound();
 
     vk::DestroyShaderEXT(*m_device, shaders[0], nullptr);
+}
+
+TEST_F(NegativeShaderObjectEXT, SampleLocationsRasterizationSamplesMismatch) {
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+    CreateMinimalShaders();
+
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(sample_locations_props);
+    const VkSampleCountFlags supported_counts = sample_locations_props.sampleLocationSampleCounts & ~VK_SAMPLE_COUNT_1_BIT;
+    if (supported_counts == 0) {
+        GTEST_SKIP() << "sampleLocationSampleCounts only supports VK_SAMPLE_COUNT_1_BIT";
+    }
+    const auto sample_count = static_cast<VkSampleCountFlagBits>(supported_counts & ~(supported_counts - 1));
+    const std::vector<VkSampleLocationEXT> sample_locations(sample_count, {0.5f, 0.5f});
+
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
+    sample_locations_info.sampleLocationsPerPixel = sample_count;
+    sample_locations_info.sampleLocationGridSize = {1u, 1u};
+    sample_locations_info.sampleLocationsCount = sample_count;
+    sample_locations_info.pSampleLocations = sample_locations.data();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExcludeEXT();
+    m_command_buffer.BindShadersEXT(m_vert_shader, m_frag_shader);
+    vk::CmdSetSampleLocationsEXT(m_command_buffer, &sample_locations_info);
+    vk::CmdSetSampleLocationsEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-sampleLocationsPerPixel-07483");
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObjectEXT, SampleMaskRasterizationSamplesMismatch) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    CreateMinimalShaders();
+
+    const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    if ((m_device->FormatFeaturesOptimal(color_format) & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0) {
+        GTEST_SKIP() << "color attachment format not supported";
+    }
+    VkImageFormatProperties image_format_props;
+    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), color_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0u, &image_format_props);
+    if ((image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) == 0) {
+        GTEST_SKIP() << "Required VK_SAMPLE_COUNT_4_BIT not supported";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image color_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1u;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1u;
+    begin_rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+
+    VkSampleMask sample_mask = 0xFFFFFFFF;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    SetDefaultDynamicStatesExcludeEXT();
+    m_command_buffer.BindShadersEXT(m_vert_shader, m_frag_shader);
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_4_BIT);
+    vk::CmdSetSampleMaskEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT, &sample_mask);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-samples-07473");
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObjectEXT, PrimitivesGeneratedQueryWithNonZeroStreams) {
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::geometryStreams);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+    CreateMinimalShaders();
+
+    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(transform_feedback_props);
+    if (!transform_feedback_props.transformFeedbackRasterizationStreamSelect) {
+        GTEST_SKIP() << "transformFeedbackRasterizationStreamSelect not supported";
+    }
+
+    vkt::QueryPool pg_query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
+    const vkt::ShaderEXT geom_shader(*m_device, VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
+
+    m_command_buffer.Begin();
+    vk::CmdBeginQuery(m_command_buffer, pg_query_pool, 0u, 0u);
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExcludeEXT();
+    m_command_buffer.BindShadersEXT(m_vert_shader, geom_shader, m_frag_shader);
+    vk::CmdSetRasterizationStreamEXT(m_command_buffer, 1u);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-07481");
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    vk::CmdEndQuery(m_command_buffer, pg_query_pool, 0u);
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObjectEXT, ShaderTileImageRead) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderTileImageDepthReadAccess);
+    AddRequiredFeature(vkt::Feature::shaderTileImageStencilReadAccess);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    const vkt::ShaderEXT vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    std::vector<uint32_t> frag_spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, kShaderTileImageDepthStencilReadSpv, frag_spv);
+    const vkt::ShaderEXT frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_spv);
+
+    const VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    const VkExtent2D render_area = GetRenderTargetArea().extent;
+    vkt::Image depth_image(*m_device, render_area.width, render_area.height, depth_format,
+                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    depth_image.SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = GetDynamicRenderTarget();
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageView = depth_image_view;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.colorAttachmentCount = 1u;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.pStencilAttachment = &depth_attachment;
+    begin_rendering_info.layerCount = 1u;
+    begin_rendering_info.renderArea = GetRenderTargetArea();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    SetDefaultDynamicStatesExcludeEXT();
+    m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
+    vk::CmdSetDepthWriteEnable(m_command_buffer, VK_TRUE);
+    vk::CmdSetStencilWriteMask(m_command_buffer, VK_STENCIL_FACE_FRONT_BIT, 0xff);
+    vk::CmdSetStencilWriteMask(m_command_buffer, VK_STENCIL_FACE_BACK_BIT, 0u);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pDynamicStates-08715");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pDynamicStates-08716");
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }
