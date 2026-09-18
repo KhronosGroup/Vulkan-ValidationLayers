@@ -145,36 +145,6 @@ class HazardDetectorAttachment {
     const bool detect_load_op_after_store_op_hazards_;
 };
 
-class HazardDetectFirstUse {
-  public:
-    HazardDetectFirstUse(const AccessState& recorded_use, QueueId queue_id, const ResourceUsageRange& tag_range,
-                         const AccessContext& destination_context, bool detect_load_op_after_store_op_hazards)
-        : recorded_use_(recorded_use),
-          queue_id_(queue_id),
-          tag_range_(tag_range),
-          destination_context_(destination_context),
-          detect_load_op_after_store_op_hazards(detect_load_op_after_store_op_hazards) {}
-
-    HazardResult Detect(const AccessMap::const_iterator& pos) const {
-        return DoDetect(destination_context_, pos->second, [this](const AccessState& access_state) {
-            return access_state.DetectHazard(recorded_use_, queue_id_, tag_range_, detect_load_op_after_store_op_hazards);
-        });
-    }
-
-    HazardResult DetectAsync(const AccessMap::const_iterator& pos, ResourceUsageTag start_tag, QueueId queue_id) const {
-        return DoDetect(destination_context_, pos->second, [this, start_tag, queue_id](const AccessState& access_state) {
-            return access_state.DetectAsyncHazard(recorded_use_, tag_range_, start_tag, queue_id);
-        });
-    }
-
-  private:
-    const AccessState& recorded_use_;
-    const QueueId queue_id_;
-    const ResourceUsageRange& tag_range_;
-    const AccessContext& destination_context_;
-    const bool detect_load_op_after_store_op_hazards;
-};
-
 struct HazardDetectorMarker {
     HazardDetectorMarker(const AccessContext& access_context) : access_context(access_context) {}
 
@@ -440,61 +410,6 @@ HazardResult AccessContext::DetectSubpassTransitionHazard(const SubpassBarrier& 
     }
 
     return hazard;
-}
-
-// Detect first-use hazards from this recorded context against the destination context.
-HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange& tag_range,
-                                                 const AccessContext& destination_context) const {
-    // If the context is finalized we have a fast path to find first accesses within a range
-    if (finalized_) {
-        for (const auto& single_tag : sorted_first_accesses_.IterateSingleTagFirstAccesses(tag_range)) {
-            const AccessRange access_range = single_tag.p_key_value->first;
-            const AccessState& access = single_tag.p_key_value->second;
-
-            // For single tag first accesses we have exact search and can assert the find
-            assert(access.FirstAccessInTagRange(tag_range));
-
-            HazardDetectFirstUse detector(access, queue_id, tag_range, destination_context,
-                                          validator->syncval_settings.load_op_after_store_op_validation);
-            HazardResult hazard = destination_context.DetectHazardRange(detector, access_range, DetectOptions::kDetectAll);
-            if (hazard.IsHazard()) {
-                return hazard;
-            }
-        }
-        for (const auto& multi_tag : sorted_first_accesses_.IterateMultiTagFirstAccesses(tag_range)) {
-            const AccessRange access_range = multi_tag.p_key_value->first;
-            const AccessState& access = multi_tag.p_key_value->second;
-
-            // For multi tag first accesses the search is not exact, so we need to check for range inclusion
-            // (on average multi tag search is faster than going over the entire access map)
-            if (!access.FirstAccessInTagRange(tag_range)) {
-                continue;
-            }
-
-            HazardDetectFirstUse detector(access, queue_id, tag_range, destination_context,
-                                          validator->syncval_settings.load_op_after_store_op_validation);
-            HazardResult hazard = destination_context.DetectHazardRange(detector, access_range, DetectOptions::kDetectAll);
-            if (hazard.IsHazard()) {
-                return hazard;
-            }
-        }
-    }
-    // The context is not finalized. We have to iterate over the entire access map
-    else {
-        for (const auto& recorded_access : access_state_map_) {
-            // Cull any entries not in the current tag range
-            if (!recorded_access.second.FirstAccessInTagRange(tag_range)) {
-                continue;
-            }
-            HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range, destination_context,
-                                          validator->syncval_settings.load_op_after_store_op_validation);
-            HazardResult hazard = destination_context.DetectHazardRange(detector, recorded_access.first, DetectOptions::kDetectAll);
-            if (hazard.IsHazard()) {
-                return hazard;
-            }
-        }
-    }
-    return {};
 }
 
 HazardResult AccessContext::DetectMarkerHazard(const vvl::Buffer& buffer, const AccessRange& range) const {

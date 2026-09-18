@@ -510,8 +510,6 @@ target_sources(vvl PRIVATE
     sync/sync_hazard_detection.cpp
     sync/sync_image.cpp
     sync/sync_image.h
-    sync/sync_replay.cpp
-    sync/sync_replay.h
     sync/sync_render_pass.cpp
     sync/sync_render_pass.h
     sync/sync_reporting.cpp

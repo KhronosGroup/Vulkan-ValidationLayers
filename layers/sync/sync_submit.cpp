@@ -284,7 +284,7 @@ QueueBatchContext::~QueueBatchContext() { sync_state_.stats.RemoveQueueBatchCont
 
 void QueueBatchContext::Trim() {
     // Clean up unneeded access context contents and log information
-    access_context_.TrimAndClearFirstAccess();
+    access_context_.Trim();
 
     ResourceUsageTagSet used_tags;
     access_context_.AddReferencedTags(used_tags);
@@ -294,10 +294,6 @@ void QueueBatchContext::Trim() {
 
     // Only conserve AccessLog references that are referenced by used_tags
     batch_log_.Trim(used_tags);
-}
-
-void QueueBatchContext::ResolveSubmittedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset) {
-    GetAccessContext().ResolveFromContext(QueueTagOffsetBarrierAction(GetQueueId(), offset), recorded_context);
 }
 
 template <typename Predicate>
@@ -741,13 +737,7 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
 
             batch_log_.Import(batch, cb_context, current_label_stack);
 
-            if (sync_state_.syncval_settings.full_validation && cb_context.HasAllCommands()) {
-                skip |= ReplayCommands(GetSyncEnvironment(), GetAccessContext(), cb_context, batch.base_tag, cb_loc);
-            } else {
-                skip |= ValidateFirstUseHazards(GetSyncEnvironment(), cb_context, GetAccessContext(), batch.base_tag, cb_loc);
-                // The barriers have already been applied in ValidateFirstUseHazards
-                ResolveSubmittedCommandBuffer(cb_context.GetCbAccessContext(), batch.base_tag);
-            }
+            skip |= ReplayCommands(GetSyncEnvironment(), GetAccessContext(), cb_context, batch.base_tag, cb_loc);
             batch.base_tag += cb_context.GetTagCount();
         }
         // Apply debug label commands

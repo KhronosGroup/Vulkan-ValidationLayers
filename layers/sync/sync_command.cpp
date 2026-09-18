@@ -1016,7 +1016,7 @@ bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& a
 }
 
 void BarrierCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
-    ApplyBarrier(env, access_context, barrier_set, tag, true);
+    ApplyBarrier(env, access_context, barrier_set, tag);
 }
 
 SetEventCommand SetEventCommand::Storage::MakeCommand(const CommandData&) const { return {*event, src_exec_scope, command}; }
@@ -1035,19 +1035,17 @@ bool SetEventCommand::Validate(const SyncEnvironment& env, const AccessContext& 
     const Location command_loc(command);
     const Location& error_loc = (replay_tag == kInvalidTag) ? loc : command_loc;
 
-    // kInvalidTag disables the tag cutoff used by legacy replay
-    return ValidateCmdSetEvent(env, event, src_exec_scope, kInvalidTag, error_loc);
+    return ValidateCmdSetEvent(env, event, src_exec_scope, error_loc);
 }
 
-std::shared_ptr<const AccessContext> SetEventCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag,
-                                                            AccessContext& access_context) const {
+void SetEventCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     // Capture the state at this execution of SetEvent for later inspection at wait time.
-    // TODO: revisit this solution if copy shows in profiler (especially during replay)
+    // TODO: Profile the full access-map copy for event-heavy workloads. During submit replay this copies
+    // the queue access map; consider sharing immutable state or storing only the event source scope.
     auto src_access_context = std::make_shared<AccessContext>(env.validator);
     src_access_context->InitFrom(access_context);
 
     ApplyCmdSetEvent(env, event, src_exec_scope, src_access_context, tag, command);
-    return src_access_context;
 }
 
 ResetEventCommand ResetEventCommand::Storage::MakeCommand(const CommandData&) const { return {*event, exec_scope, command}; }
@@ -1065,7 +1063,7 @@ bool ResetEventCommand::Validate(const SyncEnvironment& env, const AccessContext
                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
     const Location command_loc(command);
     const Location& error_loc = replay_tag == kInvalidTag ? loc : command_loc;
-    return ValidateCmdResetEvent(env, event, exec_scope, kInvalidTag, error_loc);
+    return ValidateCmdResetEvent(env, event, exec_scope, error_loc);
 }
 
 void ResetEventCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
@@ -1102,13 +1100,13 @@ bool WaitEventsCommand::Validate(const SyncEnvironment& env, const AccessContext
     const Location& error_loc = replay_tag == kInvalidTag ? loc : command_loc;
 
     bool skip = false;
-    skip = ValidateCmdWaitEvents(env, events, kInvalidTag, error_loc);
+    skip = ValidateCmdWaitEvents(env, events, error_loc);
     skip |= DetectCmdWaitEventsImageBarrierHazard(env, access_context, cb_context, events, barrier_sets, replay_tag, loc);
     return skip;
 }
 
 void WaitEventsCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
-    ApplyCmdWaitEvents(env, access_context, events, barrier_sets, tag, command, true);
+    ApplyCmdWaitEvents(env, access_context, events, barrier_sets, tag, command);
 }
 
 BeginRenderingCommand BeginRenderingCommand::Storage::MakeCommand(const CommandData& command_data) const {

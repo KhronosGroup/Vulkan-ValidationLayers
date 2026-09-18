@@ -255,14 +255,11 @@ void SyncEventState::AddReferencedTags(ResourceUsageTagSet& referenced) const {
 }
 
 bool ValidateCmdSetEvent(const SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& src_exec_scope,
-                         ResourceUsageTag base_tag, const Location& loc) {
+                         const Location& loc) {
     bool skip = false;
     const SyncEventState* sync_event = env.events_context.Get(event);
     if (!sync_event) {
         return skip;
-    }
-    if (sync_event->last_command_tag >= base_tag) {
-        return skip;  // for replay we don't want to revalidate internal "last commmand"
     }
     if (!sync_event->HasBarrier(src_exec_scope.stage_mask, src_exec_scope.exec_scope)) {
         const std::string vuid_prefix = std::string("SYNC-") + vvl::String(loc.function);
@@ -292,14 +289,11 @@ bool ValidateCmdSetEvent(const SyncEnvironment& env, const vvl::Event& event, co
 }
 
 bool ValidateCmdResetEvent(const SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& exec_scope,
-                           ResourceUsageTag base_tag, const Location& loc) {
+                           const Location& loc) {
     bool skip = false;
     const SyncEventState* sync_event = env.events_context.Get(event);
     if (!sync_event) {
         return skip;
-    }
-    if (sync_event->last_command_tag > base_tag) {
-        return skip;  // if we validated this in recording of the secondary, don't repeat
     }
     if (IsValueIn(sync_event->last_command, {vvl::Func::vkCmdSetEvent, vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR}) &&
         !sync_event->HasBarrier(exec_scope.stage_mask, exec_scope.exec_scope)) {
@@ -312,16 +306,12 @@ bool ValidateCmdResetEvent(const SyncEnvironment& env, const vvl::Event& event, 
 }
 
 bool ValidateCmdWaitEvents(const SyncEnvironment& env, vvl::span<const std::shared_ptr<const vvl::Event>> events,
-                           const ResourceUsageTag base_tag, const Location& loc) {
+                           const Location& loc) {
     bool skip = false;
     for (const auto& event : events) {
         const SyncEventState* sync_event = env.events_context.Get(event);
         if (!sync_event || !sync_event->first_scope) {
             continue;  // [core validation check]: invalid event
-        }
-        if (sync_event->last_command_tag >= base_tag) {
-            // for replay calls, don't revalidate "same command buffer" events
-            continue;
         }
         if (sync_event->unsynchronized_set != vvl::Func::Empty) {
             skip |= env.validator.LogError("SYNC-vkCmdWaitEvents-unsynchronized-setops", sync_event->event->VkHandle(), loc,
@@ -329,53 +319,6 @@ bool ValidateCmdWaitEvents(const SyncEnvironment& env, vvl::span<const std::shar
                                            vvl::String(sync_event->last_command),
                                            env.validator.FormatHandle(sync_event->event->Handle()).c_str());
         }
-    }
-    return skip;
-}
-
-bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const AccessContext& access_context,
-                                           const std::vector<std::shared_ptr<const vvl::Event>>& events,
-                                           const vvl::span<const BarrierSet>& barrier_sets, ResourceUsageTag base_tag,
-                                           const Location& loc) {
-    bool skip = false;
-
-    size_t index = 0;
-    size_t index_incr = (barrier_sets.size() == 1) ? 0 : 1;
-    for (const auto& event : events) {
-        const auto* sync_event = env.events_context.Get(event);
-        if (!sync_event || !sync_event->first_scope) {
-            index += index_incr;
-            continue;  // [core validation check]: invalid event
-        }
-        if (sync_event->last_command_tag >= base_tag) {
-            // for replay calls, don't revalidate "same command buffer" events
-            index += index_incr;
-            continue;
-        }
-        const auto& barrier_set = barrier_sets[index];
-        if (barrier_set.image_barriers.empty()) {
-            index += index_incr;
-            continue;
-        }
-        for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
-            const auto& image = barrier.image;
-            if (!image || !barrier.layout_transition) {
-                continue;
-            }
-            const HazardResult hazard = access_context.DetectImageBarrierHazard(
-                *image, barrier.subresource_range, sync_event->scope.exec_scope, barrier.barrier.src_access_scope, env.queue_id,
-                sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
-
-            if (hazard.IsHazard()) {
-                LogObjectList objlist(env.handle, image->Handle());
-                const auto& messages = env.validator.error_messages_;
-                const auto resource_description = env.validator.FormatHandle(image->Handle());
-                const auto error = messages.ImageBarrierError(env, hazard, loc.function, resource_description, barrier);
-                skip |= env.validator.SyncError(hazard.Hazard(), image->Handle(), loc, error);
-                break;
-            }
-        }
-        index += index_incr;
     }
     return skip;
 }
@@ -453,7 +396,7 @@ void ApplyCmdResetEvent(SyncEnvironment& env, const vvl::Event& event, ResourceU
 
 void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
                         vvl::span<const std::shared_ptr<const vvl::Event>> events, vvl::span<const BarrierSet> barrier_sets,
-                        ResourceUsageTag tag, vvl::Func command, bool replay) {
+                        ResourceUsageTag tag, vvl::Func command) {
     // Unlike PipelineBarrier, WaitEvent is *not* limited to accesses within the current subpass (if any) and thus needs to import
     // all accesses. Can instead import for all first_scopes, or a union of them, if this becomes a performance/memory issue,
     // but with no idea of the performance of the union, nor of whether it even matters... take the simplest approach here,
@@ -504,7 +447,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
             ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
             EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
             ApplyMarkupFunctor markup_action(barrier.layout_transition);
-            if (replay && barrier.layout_transition) {
+            if (barrier.layout_transition) {
                 // The transition writes the whole barrier range, including regions that had
                 // no access before SetEvent. Only its source accesses are limited by the event.
                 access_context.UpdateMemoryAccessState(markup_action, range_gen);
@@ -542,7 +485,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
             if (SimpleBinding(*barrier.buffer)) {
                 const SyncBarrier event_barrier = RestrictToEvent(barrier.barrier, *sync_event);
                 const BarrierScope barrier_scope(event_barrier, env.queue_id, sync_event->first_scope_tag);
-                CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, false, false, vvl::kNoIndex32,
+                CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, false, vvl::kNoIndex32,
                                                         pending_barriers);
 
                 const VkDeviceSize base_address = ResourceBaseAddress(*barrier.buffer);
@@ -555,7 +498,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
         for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
             const SyncBarrier event_barrier = RestrictToEvent(barrier.barrier, *sync_event);
             const BarrierScope barrier_scope(event_barrier, env.queue_id, sync_event->first_scope_tag);
-            CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, barrier.layout_transition, replay,
+            CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, barrier.layout_transition,
                                                     barrier.handle_index, pending_barriers);
 
             const auto& sub_state = SubState(*barrier.image);
@@ -564,7 +507,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
             ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
             EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
 
-            if (replay && barrier.layout_transition) {
+            if (barrier.layout_transition) {
                 access_context.UpdateMemoryAccessState(collect_barriers, range_gen);
             } else {
                 access_context.UpdateMemoryAccessState(collect_barriers, filtered_range_gen);
@@ -576,7 +519,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
         for (const auto& barrier : barrier_set.memory_barriers) {
             const SyncBarrier event_barrier = RestrictToEvent(barrier, *sync_event);
             const BarrierScope barrier_scope(event_barrier, env.queue_id, sync_event->first_scope_tag);
-            CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, false, false, vvl::kNoIndex32,
+            CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, false, vvl::kNoIndex32,
                                                     pending_barriers);
 
             auto range_gen = global_range_gen;  // intentional copy

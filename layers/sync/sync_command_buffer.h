@@ -20,7 +20,6 @@
 #include "sync/sync_dynamic_rendering.h"
 #include "sync/sync_event.h"
 #include "sync/sync_render_pass.h"
-#include "sync/sync_replay.h"
 #include "state_tracker/cmd_buffer_state.h"
 
 struct RecordObject;
@@ -208,8 +207,9 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     AccessContext& GetCbAccessContext() { return cb_access_context_; }
     const AccessContext& GetCbAccessContext() const { return cb_access_context_; }
 
-    RenderPassAccessContext* GetCurrentRenderPassContext() { return current_renderpass_context_; }
-    const RenderPassAccessContext* GetCurrentRenderPassContext() const { return current_renderpass_context_; }
+    RenderPassAccessContext* GetCurrentRenderPassContext() { return current_renderpass_context_.get(); }
+    const RenderPassAccessContext* GetCurrentRenderPassContext() const { return current_renderpass_context_.get(); }
+    void EndRenderPassContext() { current_renderpass_context_.reset(); }
     uint32_t GetCurrentRenderPassInstanceId() const { return current_render_pass_instance_id_; }
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass& rp_state, const VkRect2D& render_area,
                                            const std::vector<std::shared_ptr<const vvl::ImageView>>& attachment_views);
@@ -238,7 +238,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     void RecordDestroyEvent(vvl::Event* event_state);
 
     void RecordExecutedCommandBuffer(const CommandBufferContext& recorded_context);
-    void ResolveExecutedCommandBuffer(const AccessContext& recorded_context, ResourceUsageTag offset);
 
     size_t GetTagCount() const { return access_log_->size(); }
 
@@ -253,14 +252,13 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     // The following method allows to set subcommand handles independently of the main command.
     void AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle, uint32_t index);
 
-    // NOTE: templated Operation is a GCC workaround (see the ReplayEntry constructor)
-    template <typename Operation>
-    void AddReplayEntry(ResourceUsageTag tag, bool validate_layout_transition_first_use, Operation&& operation) {
-        replay_entries_.emplace_back(tag, validate_layout_transition_first_use, std::forward<Operation>(operation));
-    }
+    bool NeedsCommandStorage() const;
 
     template <typename Command>
     void StoreCommand(ResourceUsageTag tag, const Command& command, uint32_t tag_count = 1) {
+        if (!NeedsCommandStorage()) {
+            return;
+        }
         const auto storage = command.MakeStorage(command_data_);
         commands_.push_back({command_data_.Store(storage), tag, tag_count});
     }
@@ -273,28 +271,8 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     std::shared_ptr<AccessLog> GetAccessLogShared() const { return access_log_; }
     std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
-    const std::vector<ReplayEntry>& GetReplayEntries() const { return replay_entries_; }
     const std::vector<CommandEntry>& GetCommands() const { return commands_; }
     const CommandData& GetCommandData() const { return command_data_; }
-
-    // TODO: remove after convertion to commands is finished
-    bool HasAllCommands() const {
-        size_t command_index = 0;
-        for (ResourceUsageTag tag = 0; tag < access_log_->size(); tag++) {
-            if (command_index < commands_.size() && commands_[command_index].tag == tag) {
-                tag += commands_[command_index].tag_count - 1;
-                command_index++;
-                continue;
-            }
-            // We dont create replay commands for CmdExecuteCommands
-            const ResourceUsageRecord& record = (*access_log_)[tag];
-            if (record.command == vvl::Func::vkCmdExecuteCommands && record.sub_command_type == SubCommandType::kIndex) {
-                continue;
-            }
-            return false;
-        }
-        return command_index == commands_.size();
-    }
 
     // DebugNameProvider
     std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;
@@ -340,14 +318,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     SyncEnvironment environment_;
 
-    // NOTE: Don't need the following for proxy contexts (that validate secondary execution).
-    // They flatten the source's current access state into cb_access_context_
-    //
-    // TODO: After removing legacy submit-time replay, replace this context history and the
-    // non-owning current pointer with a single owning current context.
-    std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
-    RenderPassAccessContext* current_renderpass_context_;
-    std::vector<ReplayEntry> replay_entries_;
+    std::unique_ptr<RenderPassAccessContext> current_renderpass_context_;
 
     std::vector<CommandEntry> commands_;
     CommandData command_data_;

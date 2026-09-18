@@ -117,7 +117,9 @@ In this case, a read-after-write check is done for R based on W0 and M, and a wr
 
 ### Tracking Across Command Buffers
 
-For multiple command buffers/secondary buffers, a partial recording of memory accesses and synchronization operations is required.  Current design targets the use of storing the “first” access information (first reads, first write), along with the either a recording of all synchronization operations *or* some "barrier state" that can be stored with each “first access”.  This approach should be familiar to those that have seen the “image layout” queue-submit, and execute-command validation, which validates against a similar “first” record.
+The current implementation records memory accesses and synchronization operations as commands. Full validation replays these commands in order against the queue batch access context, validating each command and then applying its accesses and synchronization effects. This context includes access state inherited from previous submissions. The access maps track current access state; no first-access history is recorded.
+
+Record-time validation operates on command-buffer access contexts. Secondary command buffers also store commands when only record-time validation is enabled, so `vkCmdExecuteCommands` can validate their accesses against the primary command buffer using the same command replay machinery.
 
 Overall the operations to perform include
 
@@ -1119,16 +1121,16 @@ Recorded action command describe compute, graphics, or transfer actions to be ex
    </td>
    <td><code>vkCmdExecuteCommands</code>
    </td>
-   <td>Not supported in initial release.
+   <td>Secondary command buffers are validated using command replay.
    </td>
   </tr>
 </table>
 
 
 
-**TODO/KNOWN LIMITATION:** ExecuteCommands and QueueSubmit not supported in phase 1
+When record-time validation is enabled, `vkCmdExecuteCommands` validates the secondary command buffers by replaying their commands against a temporary copy of the primary command buffer's current access context. Recording the execute command then applies the secondary commands to the primary access context and imports them into its command stream when command storage is needed.
 
-Recording and validating `vkCmdExecuteCommands `which is more similar in scope to the various `vkQueue… `commands.  The “first” access state of the executed command buffers must be added to the access context of the calling parent buffer. Record time validation of `vkCmdExecuteCommands `may require a replay of the secondary command buffer synchronization operations up to the point of the first access within the secondary command buffer. TODO: Finish in phase 2 design, with as much code reuse w.r.t. queue submit as possible.
+With full validation enabled, queue submission replays the resulting command stream against the queue batch access context. If record-time validation is disabled, recording `vkCmdExecuteCommands` imports the secondary commands without validating or applying their accesses until submission.
 
 
 #### Command Buffer State Bindings

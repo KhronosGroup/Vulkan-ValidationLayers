@@ -375,7 +375,7 @@ void SyncValidator::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchai
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                                  uint32_t regionCount, const VkBufferCopy* pRegions,
                                                  const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
@@ -397,7 +397,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                                   const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     if (!pCopyBufferInfo) {
@@ -428,7 +428,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuff
 bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkImageCopy* pRegions, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     auto src_image = Get<vvl::Image>(srcImage);
@@ -445,7 +445,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
 
 bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
                                                  const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     if (!pCopyImageInfo) {
@@ -479,7 +479,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(
     VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -510,16 +510,11 @@ void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, B
         }
     }
     const BarrierCommand command{barrier_set};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         AccessContext& access_context = cb_context.GetCurrentAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
-    // TODO: Keep this unconditional because secondary command buffer validation and
-    // recording still use replay entries. Revisit when secondaries use the command model.
-    cb_context.AddReplayEntry(tag, true, PipelineBarrierReplay(std::move(barrier_set)));
+    cb_context.StoreCommand(tag, command);
 }
 
 void SyncValidator::PostCallRecordCmdPipelineBarrier(
@@ -546,7 +541,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer comman
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
                                                        const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     if (!pDependencyInfo) {
@@ -644,7 +639,7 @@ void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore s
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfo* pSubpassBeginInfo, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     if (!pRenderPassBegin) {
@@ -672,7 +667,7 @@ bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const
 
 bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                            const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -682,7 +677,7 @@ bool SyncValidator::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const 
 }
 
 bool SyncValidator::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -751,7 +746,7 @@ bool SyncValidator::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandB
 
 bool SyncValidator::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                                      const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     if (!pRenderingInfo) {
@@ -788,12 +783,10 @@ void SyncValidator::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffe
     const RenderingInstance& rendering_instance = cb_context.BeginRenderingInstance(*pRenderingInfo);
 
     const BeginRenderingCommand command{rendering_instance, cb_context.GetCurrentRenderPassInstanceId()};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
@@ -801,7 +794,7 @@ bool SyncValidator::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuf
 }
 
 bool SyncValidator::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -830,19 +823,17 @@ void SyncValidator::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, 
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function, SubCommandType::kStoreOp);
 
     const EndRenderingCommand command{*rendering_instance, cb_context.GetCurrentRenderPassInstanceId()};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
     cb_context.EndRenderingInstance();
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                         VkImageLayout dstImageLayout, uint32_t regionCount,
                                                         const VkBufferImageCopy* pRegions, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto buffer = Get<vvl::Buffer>(srcBuffer);
@@ -867,7 +858,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer comm
 bool SyncValidator::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                                          const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                                          const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto buffer = Get<vvl::Buffer>(pCopyBufferToImageInfo->srcBuffer);
@@ -888,7 +879,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer command
 bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                         VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount,
                                                         const VkBufferImageCopy* pRegions, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto buffer = Get<vvl::Buffer>(dstBuffer);
@@ -913,7 +904,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer comm
 bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                          const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
                                                          const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto buffer = Get<vvl::Buffer>(pCopyImageToBufferInfo->dstBuffer);
@@ -934,7 +925,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer command
 bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkImageBlit* pRegions, VkFilter filter, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto src_image = Get<vvl::Image>(srcImage);
@@ -955,7 +946,7 @@ bool SyncValidator::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffe
 
 bool SyncValidator::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                                  const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto src_image = Get<vvl::Image>(pBlitImageInfo->srcImage);
@@ -971,7 +962,7 @@ bool SyncValidator::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, 
 }
 
 bool SyncValidator::ValidateDispatch(VkCommandBuffer commandBuffer, const Location& loc) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1027,7 +1018,7 @@ void SyncValidator::PostCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuff
 
 bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     auto indirect_buffer = Get<vvl::Buffer>(buffer);
@@ -1067,18 +1058,16 @@ void SyncValidator::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuf
         BufferAccessCommand{*indirect_buffer, range, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, indirect_buffer_tag_ex.handle_index,
                             0, BufferName::kIndirect}};
 
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         AccessContext& access_context = cb_context.GetCurrentAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                            uint32_t firstVertex, uint32_t firstInstance, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1105,18 +1094,16 @@ void SyncValidator::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_
 
     const DrawCommand command{descriptor_accesses.MakeCommand(), vertex_accesses.MakeCommand(),
                               cb_context.GetDrawAttachmentCommand()};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                                   uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
                                                   const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1144,12 +1131,10 @@ void SyncValidator::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, 
 
     const DrawCommand command{descriptor_accesses.MakeCommand(), vertex_accesses.MakeCommand(),
                               cb_context.GetDrawAttachmentCommand()};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1279,7 +1264,7 @@ void SyncValidator::PostCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer
 
 bool SyncValidator::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                                        uint32_t groupCountZ, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1300,12 +1285,10 @@ void SyncValidator::PostCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuf
     descriptor_accesses.RegisterResources(cb_context, tag);
 
     const DrawMeshTasksCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand()};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1325,7 +1308,7 @@ bool SyncValidator::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer comman
                                                           const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
                                                           uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
                                                           const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled() || !pIndexInfo) {
+    if (!syncval_settings.record_time_validation || !pIndexInfo) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1357,18 +1340,16 @@ void SyncValidator::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer command
 
     const DrawMultiCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand(),
                                    vertex_accesses.MakeCommand()};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                    const VkMultiDrawInfoEXT* pVertexInfo, uint32_t instanceCount,
                                                    uint32_t firstInstance, uint32_t stride, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled() || !pVertexInfo) {
+    if (!syncval_settings.record_time_validation || !pVertexInfo) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1399,17 +1380,15 @@ void SyncValidator::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer,
 
     const DrawMultiCommand command{descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand(),
                                    vertex_accesses.MakeCommand()};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::ValidateDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                          uint32_t stride, uint32_t access_size, BufferName buffer_name, const Location& loc) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled() || count == 0) {
+    if (!syncval_settings.record_time_validation || count == 0) {
         return false;
     }
     const auto buffer_state = Get<vvl::Buffer>(buffer);
@@ -1449,17 +1428,15 @@ void SyncValidator::RecordDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer b
         StridedBufferAccessCommand{*buffer_state, offset, count, stride, access_size, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ,
                                    buffer_tag_ex.handle_index, buffer_name}};
 
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                               const Location& loc) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto count_buffer = Get<vvl::Buffer>(countBuffer);
@@ -1497,12 +1474,10 @@ void SyncValidator::RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuf
         BufferAccessCommand{*count_buffer, MakeRange(countBufferOffset, sizeof(uint32_t)), SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ,
                             count_tag_ex.handle_index, 0, BufferName::kDrawCount}};
 
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -1538,7 +1513,7 @@ void SyncValidator::PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer co
 bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearColorValue* pColor, uint32_t rangeCount,
                                                       const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto image_state = Get<vvl::Image>(image);
@@ -1556,7 +1531,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                                                              const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                              const VkImageSubresourceRange* pRanges,
                                                              const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto image_state = Get<vvl::Image>(image);
@@ -1572,7 +1547,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
 bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                        const VkClearAttachment* pAttachments, uint32_t rectCount,
                                                        const VkClearRect* pRects, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1595,7 +1570,7 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
                                                            uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer,
                                                            VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags,
                                                            const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled() || queryCount == 0) {
+    if (!syncval_settings.record_time_validation || queryCount == 0) {
         return false;
     }
     const auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
@@ -1616,7 +1591,7 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
 bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                    VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                    const VkImageResolve* pRegions, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto src_image = Get<vvl::Image>(srcImage);
@@ -1632,7 +1607,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
 
 bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
                                                     const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto src_image = Get<vvl::Image>(pResolveImageInfo->srcImage);
@@ -1655,7 +1630,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBu
 
 bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                  VkDeviceSize size, uint32_t data, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
@@ -1672,7 +1647,7 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
 
 bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                    VkDeviceSize dataSize, const void* pData, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
@@ -1689,7 +1664,7 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
 
 bool SyncValidator::ValidateBufferMarkerAMD(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                             const Location& loc) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
@@ -1719,13 +1694,11 @@ void SyncValidator::RecordBufferMarkerAMD(VkCommandBuffer commandBuffer, VkBuffe
     const BufferAccessCommand command{*dst_buffer, range, SYNC_COPY_TRANSFER_WRITE, tag_ex.handle_index, SyncFlag::kMarker};
 
     const auto& settings = cb_context.GetSyncState().syncval_settings;
-    if (settings.IsRecordTimeValidationEnabled()) {
+    if (settings.record_time_validation) {
         AccessContext& access_context = cb_context.GetCurrentAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    if (settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
@@ -1839,7 +1812,7 @@ std::vector<VideoCommand::PictureAccess> SyncValidator::CollectVideoEncodePictur
 
 bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
                                                      const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1861,7 +1834,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
 
 bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                                      const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1901,7 +1874,7 @@ void SyncValidator::PostCallRecordResetEvent(VkDevice device, VkEvent event, con
 
 bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto event_state = Get<vvl::Event>(event);
@@ -1916,27 +1889,16 @@ bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
     return command.Validate(cb_context, error_obj.location);
 }
 
-void SyncValidator::RecordCmdSetEvent(CommandBufferContext& cb_context, std::shared_ptr<const vvl::Event>&& event,
+void SyncValidator::RecordCmdSetEvent(CommandBufferContext& cb_context, const vvl::Event& event,
                                       const SyncExecScope& src_exec_scope, const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
-    std::shared_ptr<const AccessContext> src_access_context;
 
-    const SetEventCommand command{*event, src_exec_scope, loc.function};
+    const SetEventCommand command{event, src_exec_scope, loc.function};
 
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
-        src_access_context = command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
-    } else {
-        // Keep a snapshot for command buffers that fall back to legacy replay.
-        // TODO: remove this when legacy replay is removed
-        auto recorded_context = std::make_shared<AccessContext>(*this);
-        recorded_context->InitFrom(cb_context.GetCurrentAccessContext());
-        src_access_context = std::move(recorded_context);
+    if (syncval_settings.record_time_validation) {
+        command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
-    // TODO: Remove legacy replay entries when all commands are converted.
-    cb_context.AddReplayEntry(tag, false, SetEventReplay(std::move(event), src_exec_scope, std::move(src_access_context), loc));
+    cb_context.StoreCommand(tag, command);
 }
 
 void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -1950,7 +1912,7 @@ void SyncValidator::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkE
     const VkQueueFlags queue_flags = cb_state->GetQueueFlags();
 
     const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stageMask);
-    RecordCmdSetEvent(cb_context, std::move(event_state), src_exec_scope, record_obj.location);
+    RecordCmdSetEvent(cb_context, *event_state, src_exec_scope, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -1960,7 +1922,7 @@ bool SyncValidator::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer
 
 bool SyncValidator::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                 const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     if (!pDependencyInfo) {
@@ -1998,12 +1960,12 @@ void SyncValidator::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, Vk
     const VkQueueFlags queue_flags = cb_state->GetQueueFlags();
 
     const SyncExecScope src_exec_scope = SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(*pDependencyInfo).src);
-    RecordCmdSetEvent(cb_context, std::move(event_state), src_exec_scope, record_obj.location);
+    RecordCmdSetEvent(cb_context, *event_state, src_exec_scope, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                  const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto event_state = Get<vvl::Event>(event);
@@ -2018,18 +1980,14 @@ bool SyncValidator::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, 
     return command.Validate(cb_context, error_obj.location);
 }
 
-void SyncValidator::RecordCmdResetEvent(CommandBufferContext& cb_context, std::shared_ptr<const vvl::Event>&& event,
-                                        const SyncExecScope& exec_scope, const Location& loc) const {
+void SyncValidator::RecordCmdResetEvent(CommandBufferContext& cb_context, const vvl::Event& event, const SyncExecScope& exec_scope,
+                                        const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
-    const ResetEventCommand command{*event, exec_scope, loc.function};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    const ResetEventCommand command{event, exec_scope, loc.function};
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
-    // TODO: Remove legacy replay entries when all commands are converted.
-    cb_context.AddReplayEntry(tag, false, ResetEventReplay(std::move(event), exec_scope, loc));
+    cb_context.StoreCommand(tag, command);
 }
 
 void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -2043,12 +2001,12 @@ void SyncValidator::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, V
     const VkQueueFlags queue_flags = cb_state->GetQueueFlags();
 
     const SyncExecScope exec_scope = SyncExecScope::MakeSrc(queue_flags, stageMask);
-    RecordCmdResetEvent(cb_context, std::move(event_state), exec_scope, record_obj.location);
+    RecordCmdResetEvent(cb_context, *event_state, exec_scope, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                                   const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto event_state = Get<vvl::Event>(event);
@@ -2084,7 +2042,7 @@ void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, 
     const VkQueueFlags queue_flags = cb_state->GetQueueFlags();
 
     const SyncExecScope exec_scope = SyncExecScope::MakeSrc(queue_flags, stageMask);
-    RecordCmdResetEvent(cb_context, std::move(event_state), exec_scope, record_obj.location);
+    RecordCmdResetEvent(cb_context, *event_state, exec_scope, record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -2094,7 +2052,7 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
                                                  const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                                  uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
                                                  const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -2127,14 +2085,10 @@ void SyncValidator::RecordCmdWaitEvents(CommandBufferContext& cb_context, std::v
         }
     }
     const WaitEventsCommand command{events, barrier_sets, loc.function};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
-    // TODO: Remove legacy replay entries when all commands are converted.
-    cb_context.AddReplayEntry(tag, false, WaitEventsReplay(std::move(events), std::move(barrier_sets), loc));
+    cb_context.StoreCommand(tag, command);
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -2175,7 +2129,7 @@ void SyncValidator::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffe
 
 bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                                   const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     if (!pDependencyInfos) {
@@ -2220,6 +2174,9 @@ void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, 
 
 bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                       const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+    if (!syncval_settings.record_time_validation) {
+        return false;
+    }
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     const CommandBufferContext& cb_context = GetCommandBufferContext(*cb_state);
@@ -2251,15 +2208,8 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         proxy_cb_context.ImportRecordedAccessLog(recorded_cb_context);
 
-        if (syncval_settings.full_validation && recorded_cb_context.HasAllCommands()) {
-            skip |= ReplayCommands(proxy_cb_context.GetSyncEnvironment(), proxy_cb_context.GetCbAccessContext(),
-                                   recorded_cb_context, base_tag, cb_loc);
-        } else {
-            skip |= ValidateFirstUseHazards(proxy_cb_context.GetSyncEnvironment(), recorded_cb_context,
-                                            proxy_cb_context.GetCbAccessContext(), base_tag, cb_loc);
-            // The barriers have already been applied in ValidateFirstUseHazards
-            proxy_cb_context.ResolveExecutedCommandBuffer(recorded_cb_context.GetCbAccessContext(), base_tag);
-        }
+        skip |= ReplayCommands(proxy_cb_context.GetSyncEnvironment(), proxy_cb_context.GetCbAccessContext(), recorded_cb_context,
+                               base_tag, cb_loc);
     }
     proxy_label_commands.clear();
     return skip;
@@ -2289,7 +2239,7 @@ void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t 
 }
 
 void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS || !syncval_settings.IsSubmitTimeProcessingEnabled() || queue == VK_NULL_HANDLE) {
+    if (record_obj.result != VK_SUCCESS || !syncval_settings.full_validation || queue == VK_NULL_HANDLE) {
         return;
     }
     const QueueId waited_queue = GetQueueId(queue);
@@ -2337,7 +2287,7 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
 bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return skip;
     }
     std::lock_guard lock_guard(queue_mutex_);
@@ -2421,7 +2371,7 @@ uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR& present_info, B
 void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                       VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                       const RecordObject& record_obj) {
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return;
     }
     RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
@@ -2429,7 +2379,7 @@ void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapcha
 
 void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
                                                        uint32_t* pImageIndex, const RecordObject& record_obj) {
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return;
     }
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
@@ -2494,7 +2444,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return skip;
     }
 
@@ -2509,7 +2459,7 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return skip;
     }
     std::lock_guard lock_guard(queue_mutex_);
@@ -2710,7 +2660,7 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {
 }
 
 void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject& record_obj) {
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return;
     }
     if (record_obj.result == VK_SUCCESS) {
@@ -2721,7 +2671,7 @@ void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence,
 
 void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                                 uint64_t timeout, const RecordObject& record_obj) {
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return;
     }
     if ((record_obj.result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
@@ -2735,7 +2685,7 @@ void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceC
 bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return skip;
     }
     // Although SignalSemaphore does not run on the queue, the signalling can resolve
@@ -2778,7 +2728,7 @@ bool SyncValidator::ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSig
 
 void SyncValidator::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
                                                  const RecordObject& record_obj) {
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return;
     }
     const bool wait_all = pWaitInfo->semaphoreCount == 1 || (pWaitInfo->flags & VK_SEMAPHORE_WAIT_ANY_BIT) == 0;
@@ -2796,7 +2746,7 @@ void SyncValidator::PostCallRecordWaitSemaphoresKHR(VkDevice device, const VkSem
 
 void SyncValidator::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
                                                            const RecordObject& record_obj) {
-    if (!syncval_settings.IsSubmitTimeProcessingEnabled()) {
+    if (!syncval_settings.full_validation) {
         return;
     }
     if (record_obj.result == VK_SUCCESS) {
@@ -2984,7 +2934,7 @@ std::vector<BuildAccelerationStructuresCommand::Access> SyncValidator::CollectAc
 bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -3008,12 +2958,10 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
     }
 
     const BuildAccelerationStructuresCommand command{vvl::make_span(std::as_const(accesses))};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 AccelerationStructureCopyCommand SyncValidator::MakeAccelerationStructureCopyCommand(VkAccelerationStructureKHR src,
@@ -3034,7 +2982,7 @@ AccelerationStructureCopyCommand SyncValidator::MakeAccelerationStructureCopyCom
 
 bool SyncValidator::ValidateCopyAccelerationStructure(VkCommandBuffer command_buffer, VkAccelerationStructureKHR src,
                                                       VkAccelerationStructureKHR dst, const Location& loc) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(command_buffer);
@@ -3057,12 +3005,10 @@ void SyncValidator::RecordCopyAccelerationStructure(VkCommandBuffer command_buff
         command.dst.handle_index = cb_context.AddCommandHandle(tag, command.dst.buffer->Handle()).handle_index;
     }
 
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
@@ -3144,7 +3090,7 @@ small_vector<BufferAccessCommand, SyncValidator::kMaxTraceRaysBufferAccesses> Sy
 bool SyncValidator::ValidateTraceRays(VkCommandBuffer command_buffer,
                                       vvl::span<const VkStridedDeviceAddressRegionKHR* const> shader_binding_tables,
                                       VkDeviceAddress indirect_address, VkDeviceSize indirect_size, const Location& loc) const {
-    if (!syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(command_buffer);
@@ -3173,12 +3119,10 @@ void SyncValidator::RecordTraceRays(VkCommandBuffer command_buffer,
     }
 
     const TraceRaysCommand command{descriptor_accesses.MakeCommand(), buffer_accesses};
-    if (syncval_settings.IsRecordTimeValidationEnabled()) {
+    if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
-    if (syncval_settings.full_validation) {
-        cb_context.StoreCommand(tag, command);
-    }
+    cb_context.StoreCommand(tag, command);
 }
 
 bool SyncValidator::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
