@@ -35,8 +35,6 @@ target_sources(VkLayer_utils PRIVATE
     error_message/logging.cpp
     error_message/error_location.cpp
     error_message/error_location.h
-    error_message/error_strings.h
-    error_message/error_strings.cpp
     error_message/record_object.h
     error_message/log_message_type.h
     external/xxhash.h
@@ -268,6 +266,8 @@ target_sources(vvl PRIVATE
     drawdispatch/descriptor_validator.h
     drawdispatch/drawdispatch_vuids.cpp
     drawdispatch/drawdispatch_vuids.h
+    error_message/error_strings.h
+    error_message/error_strings.cpp
     error_message/spirv_logging.h
     error_message/spirv_logging.cpp
     error_message/unimplementable_validation.h
