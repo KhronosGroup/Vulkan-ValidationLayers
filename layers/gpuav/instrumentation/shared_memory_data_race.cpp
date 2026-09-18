@@ -105,16 +105,22 @@ void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubSt
                         //      inst_position didn't fit in the 17-bit field, only happens on huge shaders
                         //  - kInstOffsetBits
                         //      slot was still SENTINEL when an atomicOr-path access ran, so its offset wasn't recorded
-                        const bool have_offset = collide_inst_offset != 0 && collide_inst_offset != inst_offset_bits &&
-                                                 collide_inst_offset < instrumented_shader->original_spirv.size();
+                        // FindShaderSource range checks the offset itself and reports why it is unusable
+                        const bool have_offset = collide_inst_offset != 0 && collide_inst_offset != inst_offset_bits;
                         if (have_offset && collide_inst_offset == self_inst_offset) {
                             // If instruction is racing against itself, don't want to print two source lines
                             strm << "\nThis race is between two invocations executing the same instruction.\n";
                         } else {
                             strm << "\nThe other access in this race was at:\n";
                             if (have_offset) {
-                                ::spirv::FindShaderSource(strm, instrumented_shader->original_spirv, collide_inst_offset,
-                                                          gpuav.gpuav_settings.debug_printf_only);
+                                if (!::spirv::FindShaderSource(strm, instrumented_shader->original_spirv, collide_inst_offset,
+                                                               gpuav.gpuav_settings.debug_printf_only)) {
+                                    // This offset is unpacked from the previous contents of the shadow slot. If the
+                                    // application indexed its shared memory out of bounds, the slot was out of range
+                                    // too and that word was never a packed offset.
+                                    strm << "The shared memory array is likely being accessed out of bounds, which would "
+                                            "also make this race report unreliable.\n";
+                                }
                             } else {
                                 strm << "(specific conflicting instruction not recorded)\n";
                             }
