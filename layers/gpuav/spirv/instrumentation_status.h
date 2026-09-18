@@ -25,6 +25,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include <vector>
+#include "state_tracker/descriptor_mode.h"
 
 namespace gpuav {
 namespace spirv {
@@ -50,6 +51,10 @@ struct InstrumentationStatus {
 
         // Prevent allocating DebugPrintf buffers if the shader didn't use it
         bool has_debug_printf = false;
+
+        // Which mode the instrumentation descriptor set layout was built with.
+        // (Only for Shader Objects)
+        vvl::DescriptorMode descriptor_mode = vvl::DescriptorModeUnknown;
     } host;
 
     // Things that will be read back only on an error message
@@ -63,6 +68,9 @@ struct InstrumentationStatus {
     void Append(InstrumentationStatus other) {
         host.is_instrumented |= other.host.is_instrumented;
         host.has_debug_printf |= other.host.has_debug_printf;
+        if (other.host.descriptor_mode != vvl::DescriptorModeUnknown) {
+            host.descriptor_mode = other.host.descriptor_mode;
+        }
     }
 };
 
