@@ -1912,7 +1912,7 @@ TEST_F(PositiveGpuAVRayTracing, BlasReference1DescriptorHeap) {
     RETURN_IF_SKIP(CheckSlangSupport());
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    vkt::DescriptorHeap::AddDescriptorHeapRequirements(*this);
+    vkt::DescriptorHeapEXT::AddDescriptorHeapRequirements(*this);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
@@ -1986,7 +1986,7 @@ TEST_F(PositiveGpuAVRayTracing, BlasReference1DescriptorHeap) {
     auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     std::memset(debug_buffer_ptr, 0, (size_t)debug_buffer.CreateInfo().size);
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(1024, true);
     const VkDeviceSize as_heap_offset = desc_heap.WriteAccelerationStructureDescriptor(*tlas_build_info[0].GetDstAS());
     const VkDeviceSize debug_buffer_heap_offset = desc_heap.WriteBufferDescriptor(debug_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);

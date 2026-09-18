@@ -158,7 +158,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenShaderRecordDescriptorHeap) {
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    vkt::DescriptorHeap::AddDescriptorHeapRequirements(*this);
+    vkt::DescriptorHeapEXT::AddDescriptorHeapRequirements(*this);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -184,7 +184,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenShaderRecordDescriptorHeap) {
 
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(1024, true);
     const VkDeviceSize as_heap_offset = desc_heap.WriteAccelerationStructureDescriptor(*tlas.GetDstAS());
 
@@ -403,7 +403,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShaderDesc
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    vkt::DescriptorHeap::AddDescriptorHeapRequirements(*this);
+    vkt::DescriptorHeapEXT::AddDescriptorHeapRequirements(*this);
     RETURN_IF_SKIP(InitFrameworkWithPrintfBufferSize(1024 * 1024));
     RETURN_IF_SKIP(InitState());
 
@@ -428,7 +428,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShaderDesc
 
     vkt::Buffer dummy_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(1024, true);
     const VkDeviceSize buffer_heap_offset = desc_heap.WriteBufferDescriptor(dummy_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     const VkDeviceSize as_heap_offset = desc_heap.WriteAccelerationStructureDescriptor(*tlas.GetDstAS());
@@ -567,7 +567,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShaderDesc
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    vkt::DescriptorHeap::AddDescriptorHeapRequirements(*this);
+    vkt::DescriptorHeapEXT::AddDescriptorHeapRequirements(*this);
     RETURN_IF_SKIP(InitFrameworkWithPrintfBufferSize(1024 * 1024));
     RETURN_IF_SKIP(InitState());
 
@@ -721,7 +721,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShaderDesc
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    vkt::DescriptorHeap::AddDescriptorHeapRequirements(*this);
+    vkt::DescriptorHeapEXT::AddDescriptorHeapRequirements(*this);
     RETURN_IF_SKIP(InitFrameworkWithPrintfBufferSize(1024 * 1024));
     RETURN_IF_SKIP(InitState());
 

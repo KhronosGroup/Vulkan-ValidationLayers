@@ -22,9 +22,9 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 
-class PositiveDescriptorHeap : public DescriptorHeapTest {};
+class PositiveDescriptorHeapEXT : public DescriptorHeapTestEXT {};
 
-void DescriptorHeapTest::InitBasicDescriptorHeap() {
+void DescriptorHeapTestEXT::InitBasicDescriptorHeap() {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
@@ -36,9 +36,9 @@ void DescriptorHeapTest::InitBasicDescriptorHeap() {
     GetPhysicalDeviceProperties2(heap_props);
 }
 
-TEST_F(PositiveDescriptorHeap, Basic) {
+TEST_F(PositiveDescriptorHeapEXT, Basic) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -75,7 +75,7 @@ TEST_F(PositiveDescriptorHeap, Basic) {
             b = 4;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -85,7 +85,7 @@ TEST_F(PositiveDescriptorHeap, Basic) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, NormalUsageWithFeature) {
+TEST_F(PositiveDescriptorHeapEXT, NormalUsageWithFeature) {
     TEST_DESCRIPTION("Ensure just enabling descriptor heap doesn't have false positive with a normal workflow");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     const char* cs_source = R"glsl(
@@ -135,11 +135,11 @@ TEST_F(PositiveDescriptorHeap, NormalUsageWithFeature) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, ComputeBuffer) {
+TEST_F(PositiveDescriptorHeapEXT, ComputeBuffer) {
     TEST_DESCRIPTION("Basic descriptor heap test with compute pipeline and storage buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const uint32_t expected_value = 0x42424242;
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     const VkDeviceSize data_buffer_size = 256;
@@ -174,7 +174,7 @@ TEST_F(PositiveDescriptorHeap, ComputeBuffer) {
             result[gl_LocalInvocationID.x] = data[gl_LocalInvocationID.x];
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -184,7 +184,7 @@ TEST_F(PositiveDescriptorHeap, ComputeBuffer) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
+TEST_F(PositiveDescriptorHeapEXT, GraphicsPushData) {
     TEST_DESCRIPTION("Basic descriptor heap test with graphics pipeline and push data");
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -192,7 +192,7 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
 
     const uint32_t expected_value = 3;
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer out_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -257,7 +257,7 @@ TEST_F(PositiveDescriptorHeap, GraphicsPushData) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
+TEST_F(PositiveDescriptorHeapEXT, ResourceParameterDataNull) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT null pointer when nullDescriptor enabled");
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
@@ -279,14 +279,14 @@ TEST_F(PositiveDescriptorHeap, ResourceParameterDataNull) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, ResetCommandBufferOverlappingResource) {
+TEST_F(PositiveDescriptorHeapEXT, ResetCommandBufferOverlappingResource) {
     TEST_DESCRIPTION("Validate reservedRangeOffset improperly bind to resource heap");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (heap_props.minResourceHeapReservedRange == 0) {
         GTEST_SKIP() << "Test requires minResourceHeapReservedRange != 0";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = std::max(heap_props.resourceHeapAlignment, heap_props.imageDescriptorAlignment);
     desc_heap.CreateResourceHeap(resource_stride * 4);
 
@@ -314,7 +314,7 @@ TEST_F(PositiveDescriptorHeap, ResetCommandBufferOverlappingResource) {
     cmd_buffer2.End();
 }
 
-TEST_F(PositiveDescriptorHeap, ResetCommandBufferTypeChange) {
+TEST_F(PositiveDescriptorHeapEXT, ResetCommandBufferTypeChange) {
     TEST_DESCRIPTION(
         "Validate that command buffer reset also resets descriptor heap binding as a sampler descriptor heap and buffer can be "
         "bound as a resource descriptor heap");
@@ -327,7 +327,7 @@ TEST_F(PositiveDescriptorHeap, ResetCommandBufferTypeChange) {
         GTEST_SKIP() << "Test requires minSamplerHeapReservedRange != 0";
     }
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(std::max(heap_props.samplerDescriptorSize, heap_props.bufferDescriptorSize));
 
     vkt::CommandPool command_pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -355,12 +355,12 @@ TEST_F(PositiveDescriptorHeap, ResetCommandBufferTypeChange) {
     cmd_buffer1.End();
 }
 
-TEST_F(PositiveDescriptorHeap, PushData) {
+TEST_F(PositiveDescriptorHeapEXT, PushData) {
     TEST_DESCRIPTION("Descriptor heap with VkPushDataInfoEXT, but vkCmdPushConstants() is called before and invalidated later");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -382,7 +382,7 @@ TEST_F(PositiveDescriptorHeap, PushData) {
             a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     uint32_t src_data = 4321u;
 
@@ -407,7 +407,7 @@ TEST_F(PositiveDescriptorHeap, PushData) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, MixedDraws) {
+TEST_F(PositiveDescriptorHeapEXT, MixedDraws) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -415,7 +415,7 @@ TEST_F(PositiveDescriptorHeap, MixedDraws) {
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride);
     desc_heap.WriteBufferDescriptor(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
@@ -502,11 +502,11 @@ TEST_F(PositiveDescriptorHeap, MixedDraws) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, SamplerInheritance) {
+TEST_F(PositiveDescriptorHeapEXT, SamplerInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize * 2);
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -532,11 +532,11 @@ TEST_F(PositiveDescriptorHeap, SamplerInheritance) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, SecondaryCmdBufferMixHeap) {
+TEST_F(PositiveDescriptorHeapEXT, SecondaryCmdBufferMixHeap) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6662#note_613576");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize, true);
@@ -556,7 +556,7 @@ TEST_F(PositiveDescriptorHeap, SecondaryCmdBufferMixHeap) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT sampler_bind_info = vku::InitStructHelper();
     sampler_bind_info.heapRange = desc_heap.sampler_heap_.AddressRange();
@@ -585,11 +585,11 @@ TEST_F(PositiveDescriptorHeap, SecondaryCmdBufferMixHeap) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, ResourceInheritance) {
+TEST_F(PositiveDescriptorHeapEXT, ResourceInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
@@ -617,11 +617,11 @@ TEST_F(PositiveDescriptorHeap, ResourceInheritance) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, Sampler) {
+TEST_F(PositiveDescriptorHeapEXT, Sampler) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = std::max(heap_props.imageDescriptorSize, heap_props.bufferDescriptorSize);
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -661,7 +661,7 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 3u;
     mapping_info.pMappings = mappings;
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -688,10 +688,10 @@ TEST_F(PositiveDescriptorHeap, Sampler) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
+TEST_F(PositiveDescriptorHeapEXT, CombinedImageSampler) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize buffer_offset = Align(heap_props.imageDescriptorSize, heap_props.resourceHeapAlignment);
     desc_heap.CreateResourceHeap(buffer_offset + heap_props.bufferDescriptorSize);
@@ -729,7 +729,7 @@ TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -756,9 +756,9 @@ TEST_F(PositiveDescriptorHeap, CombinedImageSampler) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexPushIndex) {
+TEST_F(PositiveDescriptorHeapEXT, UseCombinedImageSamplerIndexPushIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize * 3);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize * 3);
 
@@ -794,7 +794,7 @@ TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexPushIndex) {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -827,9 +827,9 @@ TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexPushIndex) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexIndirectIndex) {
+TEST_F(PositiveDescriptorHeapEXT, UseCombinedImageSamplerIndexIndirectIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize * 3);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize * 3);
 
@@ -867,7 +867,7 @@ TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexIndirectIndex) {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -904,9 +904,9 @@ TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexIndirectIndex) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexIndirectIndexArray) {
+TEST_F(PositiveDescriptorHeapEXT, UseCombinedImageSamplerIndexIndirectIndexArray) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize * 3);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize * 3);
 
@@ -952,7 +952,7 @@ TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexIndirectIndexArray) {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 3u;
     mapping_info.pMappings = mappings;
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -993,11 +993,11 @@ TEST_F(PositiveDescriptorHeap, UseCombinedImageSamplerIndexIndirectIndexArray) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
+TEST_F(PositiveDescriptorHeapEXT, EmbeddedSampler) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize buffer_offset = Align(heap_props.imageDescriptorSize, heap_props.resourceHeapAlignment);
     desc_heap.CreateResourceHeap(buffer_offset + heap_props.bufferDescriptorSize);
@@ -1043,7 +1043,7 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
     mapping_info.mappingCount = 3u;
     mapping_info.pMappings = mappings;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -1070,11 +1070,11 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSampler) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
+TEST_F(PositiveDescriptorHeapEXT, EmbeddedSamplerNoBoundHeap) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11558");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize buffer_offset = 0u;
     const VkDeviceSize image_offset = Align(heap_props.bufferDescriptorSize, heap_props.resourceHeapAlignment);
     desc_heap.CreateResourceHeap(image_offset + heap_props.imageDescriptorSize);
@@ -1116,7 +1116,7 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
             result[gl_LocalInvocationIndex] = int(color.r);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     // Don't need to call vkCmdBindSamplerHeapEXT if only using embedded
     m_command_buffer.Begin();
@@ -1128,7 +1128,7 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSamplerNoBoundHeap) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
+TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapWithPushIndex) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1139,7 +1139,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
     const VkDeviceSize offset = heap_props.bufferDescriptorSize * (push_offset + heap_offset);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(offset + resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -1205,7 +1205,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithPushIndex) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
+TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapWithIndirectIndex) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1219,7 +1219,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
     heap_index_data[address_offset / sizeof(uint32_t)] = static_cast<uint32_t>(offset / heap_props.bufferDescriptorSize);
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(offset + resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -1289,7 +1289,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndex) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
+TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapWithIndirectIndexArray) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1303,7 +1303,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
     heap_index_data[address_offset / sizeof(uint32_t)] = static_cast<uint32_t>(offset / heap_props.bufferDescriptorSize);
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(offset + resource_stride);
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -1372,7 +1372,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapWithIndirectIndexArray) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
+TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapData) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1381,7 +1381,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
     // [ padding, read_data, padding, write_data descriptor]
     const uint32_t read_data_alignment = static_cast<uint32_t>(physDevProps_.limits.minUniformBufferOffsetAlignment);
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     // large enought to hold everything
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 8);
 
@@ -1463,7 +1463,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceHeapData) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
+TEST_F(PositiveDescriptorHeapEXT, MappingSourcePushData) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1474,7 +1474,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
     const VkDeviceSize write_offset = Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(write_offset + resource_stride);
     desc_heap.WriteBufferDescriptorAtOffset(write_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
 
@@ -1551,7 +1551,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushData) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
+TEST_F(PositiveDescriptorHeapEXT, MappingSourcePushAddress) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1567,7 +1567,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
     const VkDeviceSize write_offset = Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(write_offset + resource_stride);
     desc_heap.WriteBufferDescriptorAtOffset(write_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
 
@@ -1641,7 +1641,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourcePushAddress) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
+TEST_F(PositiveDescriptorHeapEXT, MappingSourceIndirectAddress) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -1663,7 +1663,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
     const VkDeviceSize write_offset = Align(read_offset + heap_props.bufferDescriptorSize * 7u, heap_props.bufferDescriptorSize);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(write_offset + resource_stride);
     desc_heap.WriteBufferDescriptorAtOffset(write_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, write_offset);
 
@@ -1738,13 +1738,13 @@ TEST_F(PositiveDescriptorHeap, MappingSourceIndirectAddress) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, NestedResourceInheritance) {
+TEST_F(PositiveDescriptorHeapEXT, NestedResourceInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
     AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nestedCommandBuffer);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     vkt::CommandBuffer secondary1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -1775,7 +1775,7 @@ TEST_F(PositiveDescriptorHeap, NestedResourceInheritance) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, ConstantMemoryAccess) {
+TEST_F(PositiveDescriptorHeapEXT, ConstantMemoryAccess) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
@@ -1793,7 +1793,7 @@ TEST_F(PositiveDescriptorHeap, ConstantMemoryAccess) {
 	        data[0] = 4u;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     char const* cs_source2 = R"glsl(
         #version 450
@@ -1805,10 +1805,10 @@ TEST_F(PositiveDescriptorHeap, ConstantMemoryAccess) {
             atomicExchange(data[0], 4u);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
 }
 
-TEST_F(PositiveDescriptorHeap, ConstantImageMemoryAccess) {
+TEST_F(PositiveDescriptorHeapEXT, ConstantImageMemoryAccess) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
@@ -1840,10 +1840,10 @@ TEST_F(PositiveDescriptorHeap, ConstantImageMemoryAccess) {
 	        data = texture(sampler2D(tex[7], sampl), vec2(0.5f));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 }
 
-TEST_F(PositiveDescriptorHeap, CmdPushData) {
+TEST_F(PositiveDescriptorHeapEXT, CmdPushData) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     std::vector<uint8_t> payload(static_cast<size_t>(heap_props.maxPushDataSize));
@@ -1868,12 +1868,12 @@ TEST_F(PositiveDescriptorHeap, CmdPushData) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, PushDataUnusedStatic) {
+TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedStatic) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
@@ -1896,7 +1896,7 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedStatic) {
             data = b + c;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     uint8_t data[8];
@@ -1910,12 +1910,12 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedStatic) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, PushDataUnusedStaticIndex) {
+TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedStaticIndex) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
@@ -1939,7 +1939,7 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedStaticIndex) {
             data = c[x];
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     uint8_t data[32];
@@ -1953,12 +1953,12 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedStaticIndex) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, PushDataUnusedDynamic) {
+TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedDynamic) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
@@ -1979,7 +1979,7 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedDynamic) {
             data = b[a];
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     uint8_t data[8];
@@ -1993,12 +1993,12 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedDynamic) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, PushDataUnusedHole) {
+TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedHole) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
@@ -2019,7 +2019,7 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedHole) {
             data = a + b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     uint8_t data = 0;
@@ -2034,12 +2034,12 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedHole) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, PushDataUnusedStructStaticIndex) {
+TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedStructStaticIndex) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
@@ -2065,7 +2065,7 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedStructStaticIndex) {
             data = a[0].a + a[1].a;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
     uint8_t data = 0;
@@ -2080,12 +2080,12 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedStructStaticIndex) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, PushDataUnusedChainedAccessChains) {
+TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedChainedAccessChains) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
@@ -2137,7 +2137,7 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedChainedAccessChains) {
                OpReturn
                OpFunctionEnd
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     uint8_t data = 0;
@@ -2152,14 +2152,14 @@ TEST_F(PositiveDescriptorHeap, PushDataUnusedChainedAccessChains) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, DescriptorBufferInvalidating) {
+TEST_F(PositiveDescriptorHeapEXT, DescriptorBufferInvalidating) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7504#note_616506");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     vkt::Buffer descriptor_buffer(*m_device, 256u, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
@@ -2183,7 +2183,7 @@ TEST_F(PositiveDescriptorHeap, DescriptorBufferInvalidating) {
             b = 4;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -2197,7 +2197,7 @@ TEST_F(PositiveDescriptorHeap, DescriptorBufferInvalidating) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 }
 
-TEST_F(PositiveDescriptorHeap, ResourceMask) {
+TEST_F(PositiveDescriptorHeapEXT, ResourceMask) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     uint32_t resource_offset = 0;
@@ -2217,7 +2217,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMask) {
     resource_offset += (uint32_t)heap_props.bufferDescriptorSize;
 
     const VkDeviceSize resource_heap_size_app = Align(resource_offset, (uint32_t)heap_props.resourceHeapAlignment);
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_heap_size_app);
 
     const VkDeviceSize sampler_heap_size_app = heap_props.samplerDescriptorSize;
@@ -2298,7 +2298,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMask) {
             imageStore(readWriteImage, ivec2(0, 0), color);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2309,7 +2309,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMask) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, ResourceMaskSameBinding) {
+TEST_F(PositiveDescriptorHeapEXT, ResourceMaskSameBinding) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     uint32_t resource_offset = 0;
@@ -2329,7 +2329,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMaskSameBinding) {
     resource_offset += (uint32_t)heap_props.bufferDescriptorSize;
 
     const VkDeviceSize resource_heap_size_app = Align(resource_offset, (uint32_t)heap_props.resourceHeapAlignment);
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_heap_size_app);
 
     const VkDeviceSize sampler_heap_size_app = heap_props.samplerDescriptorSize;
@@ -2525,7 +2525,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMaskSameBinding) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2536,7 +2536,7 @@ TEST_F(PositiveDescriptorHeap, ResourceMaskSameBinding) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, UboAndSsboBindings) {
+TEST_F(PositiveDescriptorHeapEXT, UboAndSsboBindings) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     char const* cs_source = R"glsl(
@@ -2623,10 +2623,10 @@ TEST_F(PositiveDescriptorHeap, UboAndSsboBindings) {
     mapping_info.mappingCount = 32;
     mapping_info.pMappings = mappings;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 }
 
-TEST_F(PositiveDescriptorHeap, NonConstantMemoryAccess) {
+TEST_F(PositiveDescriptorHeapEXT, NonConstantMemoryAccess) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
@@ -2652,7 +2652,7 @@ TEST_F(PositiveDescriptorHeap, NonConstantMemoryAccess) {
 	        data[index] = 4u;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe1(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe1(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     char const* cs_source2 = R"glsl(
         #version 450
@@ -2667,10 +2667,10 @@ TEST_F(PositiveDescriptorHeap, NonConstantMemoryAccess) {
 	        ssbos[37].data[index] = 4u;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
 }
 
-TEST_F(PositiveDescriptorHeap, PartitionedAccelerationStructure) {
+TEST_F(PositiveDescriptorHeapEXT, PartitionedAccelerationStructure) {
     TEST_DESCRIPTION("Test WriteResourceDescriptorsEXT with PTLAS descriptor type");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -2698,7 +2698,7 @@ TEST_F(PositiveDescriptorHeap, PartitionedAccelerationStructure) {
     vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &descriptor);
 }
 
-TEST_F(PositiveDescriptorHeap, ComputeTensor) {
+TEST_F(PositiveDescriptorHeapEXT, ComputeTensor) {
     TEST_DESCRIPTION("Create and execute a shader using a tensor via descriptor heap");
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
@@ -2736,7 +2736,7 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
     const VkDeviceSize tensor_desc_offset = 0;
     const VkDeviceSize buffer_desc_offset = resource_stride;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
     constexpr uint32_t n_resources = 2;
@@ -2773,7 +2773,7 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
     mapping_info.mappingCount = n_resources;
     mapping_info.pMappings = mappings;
 
-    vkt::HeapComputePipeline pipe(*m_device, kMinimalTensorGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, kMinimalTensorGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2783,7 +2783,7 @@ TEST_F(PositiveDescriptorHeap, ComputeTensor) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, MappingSourceWithoutHeap) {
+TEST_F(PositiveDescriptorHeapEXT, MappingSourceWithoutHeap) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -2851,7 +2851,7 @@ TEST_F(PositiveDescriptorHeap, MappingSourceWithoutHeap) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, YcbcrImage) {
+TEST_F(PositiveDescriptorHeapEXT, YcbcrImage) {
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -2863,7 +2863,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
 
     // Handle if driver has combinedImageSamplerDescriptorCount of 4 (the most it should ever possibily be)
     const size_t ycbcr_descriptor_size = heap_props.imageDescriptorSize * 4;
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(ycbcr_descriptor_size);
 
     auto image_ci =
@@ -2951,7 +2951,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImage) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, YcbcrImageDifferentMapping) {
+TEST_F(PositiveDescriptorHeapEXT, YcbcrImageDifferentMapping) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108");
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -3025,7 +3025,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageDifferentMapping) {
     pipe.CreateGraphicsPipeline(false);
 }
 
-TEST_F(PositiveDescriptorHeap, YcbcrImageSharedMapping) {
+TEST_F(PositiveDescriptorHeapEXT, YcbcrImageSharedMapping) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12108");
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -3089,7 +3089,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageSharedMapping) {
     vkt::Sampler sampler(*m_device, sampler_info);
 }
 
-TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
+TEST_F(PositiveDescriptorHeapEXT, YcbcrImageShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
@@ -3105,7 +3105,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
 
     // Handle if driver has combinedImageSamplerDescriptorCount of 4 (the most it should ever possibily be)
     const size_t ycbcr_descriptor_size = heap_props.imageDescriptorSize * 4;
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(ycbcr_descriptor_size);
 
     auto image_ci =
@@ -3196,7 +3196,7 @@ TEST_F(PositiveDescriptorHeap, YcbcrImageShaderObject) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, ResetInheritanceDescriptorHeapInfo) {
+TEST_F(PositiveDescriptorHeapEXT, ResetInheritanceDescriptorHeapInfo) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = heap_props.minSamplerHeapReservedRange + 2 * heap_props.samplerDescriptorSize;
@@ -3232,12 +3232,12 @@ TEST_F(PositiveDescriptorHeap, ResetInheritanceDescriptorHeapInfo) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, NullDescriptorBuffer) {
+TEST_F(PositiveDescriptorHeapEXT, NullDescriptorBuffer) {
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
     desc_heap.WriteNullDescriptorAtOffset(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
@@ -3266,7 +3266,7 @@ TEST_F(PositiveDescriptorHeap, NullDescriptorBuffer) {
             b = a;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3276,14 +3276,14 @@ TEST_F(PositiveDescriptorHeap, NullDescriptorBuffer) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
+TEST_F(PositiveDescriptorHeapEXT, DescriptorIndexing) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize ubo_offset = physDevProps_.limits.minUniformBufferOffsetAlignment;
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     // [SSBO, UBO(0), UBO(1), UBO(2), .... UBO(15)]
     // Where SSBO is the output
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride * 17);
 
     vkt::Buffer ubo_buffer(*m_device, (ubo_offset * 16) + 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
@@ -3396,7 +3396,7 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
     mapping_info.mappingCount = 5u;
     mapping_info.pMappings = mappings;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3430,13 +3430,13 @@ TEST_F(PositiveDescriptorHeap, DescriptorIndexing) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, ReservedRangeInFront) {
+TEST_F(PositiveDescriptorHeapEXT, ReservedRangeInFront) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize buffer_offset = Align(heap_props.imageDescriptorSize, heap_props.resourceHeapAlignment);
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(buffer_offset + heap_props.bufferDescriptorSize, true);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize, true);
 
@@ -3477,7 +3477,7 @@ TEST_F(PositiveDescriptorHeap, ReservedRangeInFront) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -3504,7 +3504,7 @@ TEST_F(PositiveDescriptorHeap, ReservedRangeInFront) {
     }
 }
 
-TEST_F(PositiveDescriptorHeap, ComputeShaderRecordMapping) {
+TEST_F(PositiveDescriptorHeapEXT, ComputeShaderRecordMapping) {
     TEST_DESCRIPTION("You are allowed to have bogus SHADER_RECORD if it doesn't match anything in the shader");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -3540,9 +3540,9 @@ TEST_F(PositiveDescriptorHeap, ComputeShaderRecordMapping) {
     pipe.CreateComputePipeline(false);
 }
 
-TEST_F(PositiveDescriptorHeap, MaxBindingCount) {
+TEST_F(PositiveDescriptorHeapEXT, MaxBindingCount) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -3570,7 +3570,7 @@ TEST_F(PositiveDescriptorHeap, MaxBindingCount) {
             b = a;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3580,7 +3580,7 @@ TEST_F(PositiveDescriptorHeap, MaxBindingCount) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, EmbeddedSamplerAlignment) {
+TEST_F(PositiveDescriptorHeapEXT, EmbeddedSamplerAlignment) {
     TEST_DESCRIPTION("Ignore invalid sampler mappings when using embedded samplers");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -3602,16 +3602,16 @@ TEST_F(PositiveDescriptorHeap, EmbeddedSamplerAlignment) {
             vec4 color = textureLod(tex, vec2(gl_GlobalInvocationID.xy), 0);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 }
 
-TEST_F(PositiveDescriptorHeap, ImageViewUsage) {
+TEST_F(PositiveDescriptorHeapEXT, ImageViewUsage) {
     AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedFlags);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize);
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
@@ -3677,16 +3677,16 @@ TEST_F(PositiveDescriptorHeap, ImageViewUsage) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveDescriptorHeap, SecondSamplerHeap) {
+TEST_F(PositiveDescriptorHeapEXT, SecondSamplerHeap) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (heap_props.minSamplerHeapReservedRange == 0) {
         GTEST_SKIP() << "Test requires minSamplerHeapReservedRange != 0";
     }
 
-    vkt::DescriptorHeap heap1(*this);
+    vkt::DescriptorHeapEXT heap1(*this);
     heap1.CreateSamplerHeap(heap_props.samplerDescriptorSize);
-    vkt::DescriptorHeap heap2(*this);
+    vkt::DescriptorHeapEXT heap2(*this);
     heap2.CreateSamplerHeap(heap_props.samplerDescriptorSize);
 
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
@@ -3707,7 +3707,7 @@ TEST_F(PositiveDescriptorHeap, SecondSamplerHeap) {
     m_default_queue->SubmitAndWait(cb2);
 }
 
-TEST_F(PositiveDescriptorHeap, InputAttachment) {
+TEST_F(PositiveDescriptorHeapEXT, InputAttachment) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -3720,7 +3720,7 @@ TEST_F(PositiveDescriptorHeap, InputAttachment) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer fp(*m_device, rp, 1, &image_view.handle());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize);
     desc_heap.WriteImageDescriptor(image, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_IMAGE_LAYOUT_GENERAL);
 
@@ -3766,7 +3766,7 @@ TEST_F(PositiveDescriptorHeap, InputAttachment) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDescriptorHeap, InputAttachmentLocalRead) {
+TEST_F(PositiveDescriptorHeapEXT, InputAttachmentLocalRead) {
     TEST_DESCRIPTION("Test both dynamic rendering and injecting a NonWritable");
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -3778,7 +3778,7 @@ TEST_F(PositiveDescriptorHeap, InputAttachmentLocalRead) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize);
     desc_heap.WriteImageDescriptor(image, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_IMAGE_LAYOUT_GENERAL);
 

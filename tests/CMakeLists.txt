@@ -59,10 +59,10 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/legacy_positive.cpp
     unit/descriptor_buffer.cpp
     unit/descriptor_buffer_positive.cpp
-    unit/descriptor_heap.cpp
-    unit/descriptor_heap_positive.cpp
-    unit/descriptor_heap_untyped.cpp
-    unit/descriptor_heap_untyped_positive.cpp
+    unit/descriptor_heap_ext.cpp
+    unit/descriptor_heap_ext_positive.cpp
+    unit/descriptor_heap_untyped_ext.cpp
+    unit/descriptor_heap_untyped_ext_positive.cpp
     unit/descriptor_indexing.cpp
     unit/descriptor_indexing_positive.cpp
     unit/descriptors.cpp
@@ -111,8 +111,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_descriptor_class_general_buffer_coop_mat_positive.cpp
     unit/gpu_av_descriptor_class_texel_buffer.cpp
     unit/gpu_av_descriptor_class_texel_buffer_positive.cpp
-    unit/gpu_av_descriptor_heap.cpp
-    unit/gpu_av_descriptor_heap_positive.cpp
+    unit/gpu_av_descriptor_heap_ext.cpp
+    unit/gpu_av_descriptor_heap_ext_positive.cpp
     unit/gpu_av_descriptor_indexing.cpp
     unit/gpu_av_descriptor_indexing_positive.cpp
     unit/gpu_av_descriptor_post_process.cpp

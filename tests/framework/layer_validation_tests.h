@@ -290,7 +290,7 @@ class GpuAVRayQueryTest : public GpuAVTest {
     void InitGpuAVRayQuery(std::vector<VkLayerSettingEXT> layer_settings = {});
 };
 
-class GpuAVDescriptorHeap : public GpuAVTest {
+class GpuAVDescriptorHeapEXT : public GpuAVTest {
   public:
     void InitGpuAVDescriptorHeap(std::vector<VkLayerSettingEXT> layer_settings = {}, bool safe_mode = true);
 
@@ -336,7 +336,7 @@ class DescriptorIndexingTest : public VkLayerTest {
     void ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings);
 };
 
-class DescriptorHeapTest : public VkLayerTest {
+class DescriptorHeapTestEXT : public VkLayerTest {
   public:
     void InitBasicDescriptorHeap();
     void InitUntypedDescriptorHeap();

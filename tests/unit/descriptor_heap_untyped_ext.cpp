@@ -17,9 +17,9 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 
-class NegativeDescriptorHeapUntyped : public DescriptorHeapTest {};
+class NegativeDescriptorHeapUntypedEXT : public DescriptorHeapTestEXT {};
 
-TEST_F(NegativeDescriptorHeapUntyped, PipelineLayoutNotNull) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, PipelineLayoutNotNull) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     char const* cs_source = R"glsl(
@@ -39,7 +39,7 @@ TEST_F(NegativeDescriptorHeapUntyped, PipelineLayoutNotNull) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, ResourceHeapNotBound) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, ResourceHeapNotBound) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     vkt::Buffer buffer_a(*m_device, 32, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -58,7 +58,7 @@ TEST_F(NegativeDescriptorHeapUntyped, ResourceHeapNotBound) {
             heap[73].a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -68,11 +68,11 @@ TEST_F(NegativeDescriptorHeapUntyped, ResourceHeapNotBound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, SamplerHeapNotBound) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, SamplerHeapNotBound) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(256);
 
     char const* cs_source = R"glsl(
@@ -87,7 +87,7 @@ TEST_F(NegativeDescriptorHeapUntyped, SamplerHeapNotBound) {
             heapBuffer[16].data = texture(sampler2D(heapTextures[0], heapSamplers[0]), vec2(0.5f));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
 
@@ -99,11 +99,11 @@ TEST_F(NegativeDescriptorHeapUntyped, SamplerHeapNotBound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferHeapMissingInheritance) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, SecondaryCmdBufferHeapMissingInheritance) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -166,11 +166,11 @@ TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferHeapMissingInheritance) 
     secondary.End();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferResourceHeapUnbound) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, SecondaryCmdBufferResourceHeapUnbound) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -245,7 +245,7 @@ TEST_F(NegativeDescriptorHeapUntyped, SecondaryCmdBufferResourceHeapUnbound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedBuffer) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, OffsetIdNotAlignedBuffer) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     // What the shader looks like
@@ -302,11 +302,11 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedBuffer) {
 
     )";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedMixedType) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, OffsetIdNotAlignedMixedType) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     bool is_aligned = (heap_props.samplerDescriptorSize & (heap_props.imageDescriptorAlignment - 1)) == 0;
@@ -373,7 +373,7 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedMixedType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedImageAndSampler) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, OffsetIdNotAlignedImageAndSampler) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     char const* cs_source = R"(
@@ -408,11 +408,11 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedImageAndSampler) {
     )";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-samplerDescriptorAlignment-11476");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedConstant) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, OffsetIdNotAlignedConstant) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     char const* cs_source = R"(
@@ -441,11 +441,11 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedConstant) {
             OpFunctionEnd
     )";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedSpecConstantDefault) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, OffsetIdNotAlignedSpecConstantDefault) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     char const* cs_source = R"(
@@ -478,15 +478,15 @@ TEST_F(NegativeDescriptorHeapUntyped, OffsetIdNotAlignedSpecConstantDefault) {
             OpFunctionEnd
     )";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, SamplerHeapBoundResourceHeapNotBound) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, SamplerHeapBoundResourceHeapNotBound) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -505,7 +505,7 @@ TEST_F(NegativeDescriptorHeapUntyped, SamplerHeapBoundResourceHeapNotBound) {
             heapBuffer[16].data = texture(sampler2D(heapTextures[0], heapSamplers[0]), vec2(0.5f));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -516,7 +516,7 @@ TEST_F(NegativeDescriptorHeapUntyped, SamplerHeapBoundResourceHeapNotBound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeapUntyped, GlslStructuredBadSize) {
+TEST_F(NegativeDescriptorHeapUntypedEXT, GlslStructuredBadSize) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     if (heap_props.bufferDescriptorSize <= 4) {
         GTEST_SKIP() << "bufferDescriptorSize too small";
@@ -542,6 +542,6 @@ TEST_F(NegativeDescriptorHeapUntyped, GlslStructuredBadSize) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }

@@ -5843,8 +5843,8 @@ TEST_F(NegativeDebugPrintf, DescriptorHeap) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
@@ -6024,7 +6024,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapUntypedPointers) {
             debugPrintfEXT("c == %u\n", heapBuffer[2].data);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
@@ -6264,7 +6264,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapPushConstantOnly) {
             debugPrintfEXT("int == %u", pc.x);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -6338,7 +6338,7 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeap) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
@@ -6700,7 +6700,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();

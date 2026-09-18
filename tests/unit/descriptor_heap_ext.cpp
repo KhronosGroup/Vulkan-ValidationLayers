@@ -22,9 +22,9 @@
 #include <cstdint>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-class NegativeDescriptorHeap : public DescriptorHeapTest {};
+class NegativeDescriptorHeapEXT : public DescriptorHeapTestEXT {};
 
-TEST_F(NegativeDescriptorHeap, NotEnabled) {
+TEST_F(NegativeDescriptorHeapEXT, NotEnabled) {
     TEST_DESCRIPTION("Tests for descriptor heap when feature is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
@@ -85,7 +85,7 @@ TEST_F(NegativeDescriptorHeap, NotEnabled) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerParameterSize) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerParameterSize) {
     TEST_DESCRIPTION("Validate vkWriteSamplerDescriptorsEXT size parameter");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -107,7 +107,7 @@ TEST_F(NegativeDescriptorHeap, SamplerParameterSize) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerParameterYCbCr) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerParameterYCbCr) {
     TEST_DESCRIPTION("Validate vkWriteSamplerDescriptorsEXT with YCbCr conversion");
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -130,7 +130,7 @@ TEST_F(NegativeDescriptorHeap, SamplerParameterYCbCr) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerParameterDebugUtilsObjectName) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerParameterDebugUtilsObjectName) {
     TEST_DESCRIPTION("Validate vkWriteSamplerDescriptorsEXT with DebugUilsObjectName");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -147,7 +147,7 @@ TEST_F(NegativeDescriptorHeap, SamplerParameterDebugUtilsObjectName) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerParameterCustomBorderColor) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerParameterCustomBorderColor) {
     TEST_DESCRIPTION("Validate vkWriteSamplerDescriptorsEXT with custom border color");
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::customBorderColors);
@@ -182,7 +182,7 @@ TEST_F(NegativeDescriptorHeap, SamplerParameterCustomBorderColor) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerParameterPSamplersStateless) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerParameterPSamplersStateless) {
     TEST_DESCRIPTION("Validate vkWriteSamplerDescriptorsEXT check stateless path");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -199,7 +199,7 @@ TEST_F(NegativeDescriptorHeap, SamplerParameterPSamplersStateless) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerParameterPSamplersCore) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerParameterPSamplersCore) {
     TEST_DESCRIPTION("Validate vkWriteSamplerDescriptorsEXT check core validation path");
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -313,7 +313,7 @@ TEST_F(NegativeDescriptorHeap, SamplerParameterPSamplersCore) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterTypeInvalid) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterTypeInvalid) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with unacceptable type");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -329,7 +329,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterTypeInvalid) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterSize) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterSize) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT size parameter");
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -361,7 +361,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterSize) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterDataNull) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterDataNull) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT null pointer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -399,7 +399,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataNull) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterDataNullAS) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterDataNullAS) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT nullDescriptor for acceleration structure");
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
@@ -417,7 +417,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataNullAS) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterDataNullTensor) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterDataNullTensor) {
     AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -434,7 +434,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataNullTensor) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterDebugUtilsObjectName) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterDebugUtilsObjectName) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with DebugUilsObjectName");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -460,7 +460,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDebugUtilsObjectName) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterDataAddressZero) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterDataAddressZero) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT case when address is 0, but size is not");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -498,7 +498,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataAddressZero) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterDataSizeZero) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterDataSizeZero) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT case when size is 0");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -524,7 +524,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterDataSizeZero) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterUniformAlign) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterUniformAlign) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT for VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -556,7 +556,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterUniformAlign) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterStorageAlign) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterStorageAlign) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT for VK_DESCRIPTOR_TYPE_STORAGE_BUFFER");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -587,7 +587,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterStorageAlign) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterAccelerationStructureAlign) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterAccelerationStructureAlign) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT for VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR");
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
@@ -616,7 +616,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterAccelerationStructureAlign) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentFalse) {
+TEST_F(NegativeDescriptorHeapEXT, UniformTexelBufferOffsetSingleTexelAlignmentFalse) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with uniformTexelBufferOffsetSingleTexelAlignment == VK_FALSE");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -655,7 +655,7 @@ TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentFalse
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentTrue) {
+TEST_F(NegativeDescriptorHeapEXT, UniformTexelBufferOffsetSingleTexelAlignmentTrue) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with uniformTexelBufferOffsetSingleTexelAlignment == VK_TRUE");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -696,7 +696,7 @@ TEST_F(NegativeDescriptorHeap, UniformTexelBufferOffsetSingleTexelAlignmentTrue)
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse) {
+TEST_F(NegativeDescriptorHeapEXT, StorageTexelBufferOffsetSingleTexelAlignmentFalse) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with storageTexelBufferOffsetSingleTexelAlignment == VK_FALSE");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -735,7 +735,7 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentFalse
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentTrue) {
+TEST_F(NegativeDescriptorHeapEXT, StorageTexelBufferOffsetSingleTexelAlignmentTrue) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with storageTexelBufferOffsetSingleTexelAlignment == VK_TRUE");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -776,7 +776,7 @@ TEST_F(NegativeDescriptorHeap, StorageTexelBufferOffsetSingleTexelAlignmentTrue)
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
+TEST_F(NegativeDescriptorHeapEXT, MinTexelBufferOffsetAlignment) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with minTexelBufferOffsetAlignment");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
@@ -815,7 +815,7 @@ TEST_F(NegativeDescriptorHeap, MinTexelBufferOffsetAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterYCbCr) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterYCbCr) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with YCbCr conversion");
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -879,7 +879,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterYCbCr) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterSubsampledImage) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterSubsampledImage) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with subsampled image");
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::fragmentDensityMap);
@@ -953,7 +953,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterSubsampledImage) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterPViewNull) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterPViewNull) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT with pView nullptr");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -982,7 +982,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterPViewNull) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceParameterPView) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceParameterPView) {
     TEST_DESCRIPTION("Validate vkWriteResourceDescriptorsEXT triggers all validation paths for pView");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1031,7 +1031,7 @@ TEST_F(NegativeDescriptorHeap, ResourceParameterPView) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeap) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindSamplerHeap) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1096,7 +1096,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeap) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeSize) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindSamplerHeapReservedRangeSize) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT ReservedRangeSize is greater than or equal minSamplerHeapReservedRange");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1118,7 +1118,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeSize) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapAlign) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindSamplerHeapAlign) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT addr alignement");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1143,7 +1143,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapAlign) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeAlign) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindSamplerHeapReservedRangeAlign) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT reservedRange alignement");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1163,7 +1163,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapReservedRangeAlign) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapSecondaryBuffer) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindSamplerHeapSecondaryBuffer) {
     TEST_DESCRIPTION("Validate vkCmdBindSamplerHeapEXT command written to secondary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1198,7 +1198,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindSamplerHeapSecondaryBuffer) {
     secondary.End();
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindResourceHeap) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeap) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const VkDeviceSize heap_size = heap_props.bufferDescriptorSize + heap_props.minResourceHeapReservedRange;
@@ -1269,7 +1269,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeap) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerInheritance) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1310,7 +1310,7 @@ TEST_F(NegativeDescriptorHeap, SamplerInheritance) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ResourceInheritance) {
+TEST_F(NegativeDescriptorHeapEXT, ResourceInheritance) {
     TEST_DESCRIPTION("Validate that inherited ranges match primary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1351,7 +1351,7 @@ TEST_F(NegativeDescriptorHeap, ResourceInheritance) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapAlign) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeapAlign) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     EXPECT_GT(heap_props.resourceHeapAlignment, 0u);
@@ -1377,7 +1377,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapAlign) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapReservedRangeAlign) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeapReservedRangeAlign) {
     TEST_DESCRIPTION("Validate vkCmdBindResourceHeapEXT reservedRangeOffset alignment");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1399,7 +1399,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapReservedRangeAlign) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBuffer) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeapSecondaryBuffer) {
     TEST_DESCRIPTION("Validate vkCmdBindResourceHeapEXT command written to secondary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1431,7 +1431,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBuffer) {
     secondary.End();
 }
 
-TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBufferMemoryTests) {
+TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeapSecondaryBufferMemoryTests) {
     TEST_DESCRIPTION("Validate memory overflow corruption and binding written to secondary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1516,7 +1516,7 @@ TEST_F(NegativeDescriptorHeap, CmdBindResourceHeapSecondaryBufferMemoryTests) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, CmdPushData) {
+TEST_F(NegativeDescriptorHeapEXT, CmdPushData) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     std::vector<uint8_t> payload(static_cast<size_t>(4 * heap_props.maxPushDataSize));
@@ -1553,7 +1553,7 @@ TEST_F(NegativeDescriptorHeap, CmdPushData) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ShaderDescriptorSetAndBindingMapping) {
+TEST_F(NegativeDescriptorHeapEXT, ShaderDescriptorSetAndBindingMapping) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -1642,7 +1642,7 @@ TEST_F(NegativeDescriptorHeap, ShaderDescriptorSetAndBindingMapping) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingPipeline) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
     TEST_DESCRIPTION("Validate VkDescriptorSetAndBindingMappingEXT structure using pipeline");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -1917,7 +1917,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingPipeline) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingShaderObject) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingShaderObject) {
     TEST_DESCRIPTION("Validate VkDescriptorSetAndBindingMappingEXT structure using shader object");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -1965,7 +1965,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorSetAndBindingMappingShaderObject) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, OpaqueCaptureDescriptorDataCreateInfo) {
+TEST_F(NegativeDescriptorHeapEXT, OpaqueCaptureDescriptorDataCreateInfo) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -2022,7 +2022,7 @@ TEST_F(NegativeDescriptorHeap, OpaqueCaptureDescriptorDataCreateInfo) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushIndex) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourcePushIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
@@ -2055,7 +2055,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushIndex) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimit) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourcePushDataLimit) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -2087,7 +2087,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimit) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimitSampler) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourcePushDataLimitSampler) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -2141,7 +2141,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourcePushDataLimitSampler) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceIndirectIndex) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping = {};
@@ -2189,7 +2189,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceIndirectIndex) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceHeapData) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceHeapData) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping = {};
@@ -2238,7 +2238,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceHeapData) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceIndirectAddress) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectAddress) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping = {};
@@ -2286,7 +2286,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceIndirectAddress) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceShaderRecordIndexAlign) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceShaderRecordIndexAlign) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping =
@@ -2307,7 +2307,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceShaderRecordIndexAlign) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceShaderRecordIndexSize) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceShaderRecordIndexSize) {
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -2333,7 +2333,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceShaderRecordIndexSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceIndirectIndexArray) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectIndexArray) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping = {};
@@ -2381,7 +2381,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorMappingSourceIndirectIndexArray) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, OpaqueCaptureDataCreateInfo) {
+TEST_F(NegativeDescriptorHeapEXT, OpaqueCaptureDataCreateInfo) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     std::vector<uint8_t> data(heap_props.imageCaptureReplayOpaqueDataSize + 1);
@@ -2414,7 +2414,7 @@ TEST_F(NegativeDescriptorHeap, OpaqueCaptureDataCreateInfo) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, OpaqueCaptureDataCreateInfoSize) {
+TEST_F(NegativeDescriptorHeapEXT, OpaqueCaptureDataCreateInfoSize) {
     AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -2442,7 +2442,7 @@ TEST_F(NegativeDescriptorHeap, OpaqueCaptureDataCreateInfoSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureData) {
+TEST_F(NegativeDescriptorHeapEXT, GetImageOpaqueCaptureData) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
@@ -2477,7 +2477,7 @@ TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureData) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureDataMissingFlag) {
+TEST_F(NegativeDescriptorHeapEXT, GetImageOpaqueCaptureDataMissingFlag) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddressCaptureReplay);
@@ -2517,7 +2517,7 @@ TEST_F(NegativeDescriptorHeap, GetImageOpaqueCaptureDataMissingFlag) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, RegisterCustomBorderColor) {
+TEST_F(NegativeDescriptorHeapEXT, RegisterCustomBorderColor) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::customBorderColors);
@@ -2534,7 +2534,7 @@ TEST_F(NegativeDescriptorHeap, RegisterCustomBorderColor) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, UnregisterCustomBorderColor) {
+TEST_F(NegativeDescriptorHeapEXT, UnregisterCustomBorderColor) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::customBorderColors);
@@ -2548,7 +2548,7 @@ TEST_F(NegativeDescriptorHeap, UnregisterCustomBorderColor) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerCreateWithBorder) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerCreateWithBorder) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::customBorderColors);
@@ -2568,7 +2568,7 @@ TEST_F(NegativeDescriptorHeap, SamplerCreateWithBorder) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorHeapPipelineCreateFlag) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorHeapPipelineCreateFlag) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
@@ -2600,7 +2600,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorHeapPipelineCreateFlag) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, PipelineShaderStageCreateInfoNotEnabled) {
+TEST_F(NegativeDescriptorHeapEXT, PipelineShaderStageCreateInfoNotEnabled) {
     TEST_DESCRIPTION("Validate VkPipelineShaderStageCreateInfo mappingCount to be zero when descriptorHeap is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
@@ -2623,7 +2623,7 @@ TEST_F(NegativeDescriptorHeap, PipelineShaderStageCreateInfoNotEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, IndirectExecutionSetShaderInfoInitialShaderFlagSame) {
+TEST_F(NegativeDescriptorHeapEXT, IndirectExecutionSetShaderInfoInitialShaderFlagSame) {
     TEST_DESCRIPTION(
         "Validate that all VkIndirectExecutionSetShaderInfoEXT.pInitialShaders are created with same descriptor heap "
         "flag state");
@@ -2679,7 +2679,7 @@ TEST_F(NegativeDescriptorHeap, IndirectExecutionSetShaderInfoInitialShaderFlagSa
     }
 }
 
-TEST_F(NegativeDescriptorHeap, IndirectExecutionSetShaderInfoSetLayoutNull) {
+TEST_F(NegativeDescriptorHeapEXT, IndirectExecutionSetShaderInfoSetLayoutNull) {
     TEST_DESCRIPTION("Validate that all VkIndirectExecutionSetShaderInfoEXT.pSetLayoutInfos is null");
     AddRequiredExtensions(VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -2721,7 +2721,7 @@ TEST_F(NegativeDescriptorHeap, IndirectExecutionSetShaderInfoSetLayoutNull) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ShaderCreateInfoPushConstant) {
+TEST_F(NegativeDescriptorHeapEXT, ShaderCreateInfoPushConstant) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -2751,7 +2751,7 @@ TEST_F(NegativeDescriptorHeap, ShaderCreateInfoPushConstant) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ShaderObjectIndependentSet) {
+TEST_F(NegativeDescriptorHeapEXT, ShaderObjectIndependentSet) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance11);
@@ -2767,7 +2767,7 @@ TEST_F(NegativeDescriptorHeap, ShaderObjectIndependentSet) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorType) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorType) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceDescriptorSizeEXT-type-11362");
@@ -2775,7 +2775,7 @@ TEST_F(NegativeDescriptorHeap, DescriptorType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
+TEST_F(NegativeDescriptorHeapEXT, BindHeapInfoBufferHeapUsage) {
     TEST_DESCRIPTION("Validate VkBindHeapInfoEXT uses buffer address from buffer with heap usage and memory usage for the command");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -2872,7 +2872,7 @@ TEST_F(NegativeDescriptorHeap, BindHeapInfoBufferHeapUsage) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, BindOverlappingRangesSampler) {
+TEST_F(NegativeDescriptorHeapEXT, BindOverlappingRangesSampler) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // std::max allows the test to run when minSamplerHeapReservedRange is zero or smaller than samplerDescriptorSize
@@ -2925,7 +2925,7 @@ TEST_F(NegativeDescriptorHeap, BindOverlappingRangesSampler) {
     cmd_buffer1.End();
 }
 
-TEST_F(NegativeDescriptorHeap, BindOverlappingRangesResource) {
+TEST_F(NegativeDescriptorHeapEXT, BindOverlappingRangesResource) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // std::max allows the test to run when minResourceHeapReservedRange is zero or smaller than bufferDescriptorSize
@@ -2983,7 +2983,7 @@ TEST_F(NegativeDescriptorHeap, BindOverlappingRangesResource) {
     cmd_buffer1.End();
 }
 
-TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTests) {
+TEST_F(NegativeDescriptorHeapEXT, WriteResourceDescriptorsMemoryTests) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props = vku::InitStructHelper();
@@ -3028,7 +3028,7 @@ TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTests) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTestsAS) {
+TEST_F(NegativeDescriptorHeapEXT, WriteResourceDescriptorsMemoryTestsAS) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -3087,7 +3087,7 @@ TEST_F(NegativeDescriptorHeap, WriteResourceDescriptorsMemoryTestsAS) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, OpTypeImage) {
+TEST_F(NegativeDescriptorHeapEXT, OpTypeImage) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
@@ -3134,12 +3134,12 @@ TEST_F(NegativeDescriptorHeap, OpTypeImage) {
         mappings.sourceData.constantOffset.heapArrayStride = (i % 2 == 0) ? 0 : 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11251");
-        vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
+        vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
         m_errorMonitor->VerifyFound();
     }
 }
 
-TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniform) {
+TEST_F(NegativeDescriptorHeapEXT, MappedPushIsBlockUniform) {
     TEST_DESCRIPTION("Validate that mapped push data is backed by block uniform");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
@@ -3175,15 +3175,15 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniform) {
     )slang";
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    vkt::HeapComputePipeline pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
+TEST_F(NegativeDescriptorHeapEXT, MappedStructLessThanMaxPushDataSize) {
     TEST_DESCRIPTION("Validate that mapped structure is less than maxPushDataSize");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
@@ -3234,15 +3234,15 @@ TEST_F(NegativeDescriptorHeap, MappedStructLessThanMaxPushDataSize) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11316");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source.str().c_str(), SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source.str().c_str(), SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    vkt::HeapComputePipeline pipe2(*m_device, slang_shader.str().c_str(), SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, slang_shader.str().c_str(), SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, MaxPushDataSizeShaderObject) {
+TEST_F(NegativeDescriptorHeapEXT, MaxPushDataSizeShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -3281,7 +3281,7 @@ TEST_F(NegativeDescriptorHeap, MaxPushDataSizeShaderObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, OpTypeStruct) {
+TEST_F(NegativeDescriptorHeapEXT, OpTypeStruct) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
@@ -3326,12 +3326,12 @@ TEST_F(NegativeDescriptorHeap, OpTypeStruct) {
         mappings.sourceData.constantOffset.heapArrayStride = (i % 2 == 0) ? 0 : 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11252");
-        vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
+        vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
         m_errorMonitor->VerifyFound();
     }
 }
 
-TEST_F(NegativeDescriptorHeap, OpTypeSampler) {
+TEST_F(NegativeDescriptorHeapEXT, OpTypeSampler) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
@@ -3423,29 +3423,29 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampler) {
     mappings[1].sourceData.constantOffset.heapOffset = 1;
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source0, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source0, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     mappings[1].sourceData.constantOffset.heapOffset = 0;
     mappings[1].sourceData.constantOffset.heapArrayStride = 1;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     mappings[1].sourceData.constantOffset.heapOffset = 1;
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
-    vkt::HeapComputePipeline pipe3(*m_device, slang_shader0, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    vkt::HeapComputePipelineEXT pipe3(*m_device, slang_shader0, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     m_errorMonitor->VerifyFound();
 
     mappings[1].sourceData.constantOffset.heapOffset = 0;
     mappings[1].sourceData.constantOffset.heapArrayStride = 1;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11253");
-    vkt::HeapComputePipeline pipe4(*m_device, slang_shader1, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    vkt::HeapComputePipelineEXT pipe4(*m_device, slang_shader1, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedSampler) {
+TEST_F(NegativeDescriptorHeapEXT, OpTypeSampledImageAlignedSampler) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
@@ -3497,12 +3497,12 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedSampler) {
         mappings[1].sourceData.constantOffset.samplerHeapArrayStride = (i % 2 == 0) ? 0 : 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-11254");
-        vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
+        vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_0, &mapping_info, source_type);
         m_errorMonitor->VerifyFound();
     }
 }
 
-TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedImage) {
+TEST_F(NegativeDescriptorHeapEXT, OpTypeSampledImageAlignedImage) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (heap_props.imageDescriptorAlignment < 2) {
@@ -3537,11 +3537,11 @@ TEST_F(NegativeDescriptorHeap, OpTypeSampledImageAlignedImage) {
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12406");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, NoMappingStruct) {
+TEST_F(NegativeDescriptorHeapEXT, NoMappingStruct) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -3556,11 +3556,11 @@ TEST_F(NegativeDescriptorHeap, NoMappingStruct) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, MappingWithoutFlag) {
+TEST_F(NegativeDescriptorHeapEXT, MappingWithoutFlag) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
@@ -3590,7 +3590,7 @@ TEST_F(NegativeDescriptorHeap, MappingWithoutFlag) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, NoMappingShaderObject) {
+TEST_F(NegativeDescriptorHeapEXT, NoMappingShaderObject) {
     TEST_DESCRIPTION("Check that descriptor set bindings have a mappings when using VkShaderCreateFlagsEXT");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -3622,7 +3622,7 @@ TEST_F(NegativeDescriptorHeap, NoMappingShaderObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, NoMappingComputePipeline) {
+TEST_F(NegativeDescriptorHeapEXT, NoMappingComputePipeline) {
     TEST_DESCRIPTION("Check that descriptor set bindings have a mappings");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
@@ -3661,15 +3661,15 @@ TEST_F(NegativeDescriptorHeap, NoMappingComputePipeline) {
         }
     )slang";
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    vkt::HeapComputePipeline pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappings) {
+TEST_F(NegativeDescriptorHeapEXT, NoMappingMultipleMappings) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[5];
@@ -3706,11 +3706,11 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappings) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsAllUsed) {
+TEST_F(NegativeDescriptorHeapEXT, NoMappingMultipleMappingsAllUsed) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
@@ -3739,11 +3739,11 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsAllUsed) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMostUsed) {
+TEST_F(NegativeDescriptorHeapEXT, NoMappingMultipleMappingsMostUsed) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[9];
@@ -3782,11 +3782,11 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMostUsed) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMany) {
+TEST_F(NegativeDescriptorHeapEXT, NoMappingMultipleMappingsMany) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[512];
@@ -3825,11 +3825,11 @@ TEST_F(NegativeDescriptorHeap, NoMappingMultipleMappingsMany) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
+TEST_F(NegativeDescriptorHeapEXT, EmbeddedSamplerReservedArea) {
     TEST_DESCRIPTION("Validate that embedded sampler mapping have reserved area");
     AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
@@ -3936,8 +3936,8 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
         }
     )slang";
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
-    vkt::HeapComputePipeline pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, slang_shader, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     for (int i = 0; i < 2; ++i) {
         m_command_buffer.Begin();
 
@@ -3957,7 +3957,7 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerReservedArea) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, EmbeddedSamplerArray) {
+TEST_F(NegativeDescriptorHeapEXT, EmbeddedSamplerArray) {
     TEST_DESCRIPTION("Validate that embedded sampler mapping as an array");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
@@ -4035,15 +4035,15 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerArray) {
     mapping_info.pMappings = mappings;
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11399");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source_glsl, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source_glsl, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11399");
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source_hlsl, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source_hlsl, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_SLANG);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
+TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedPipeline) {
     TEST_DESCRIPTION("Check that push data used in shader code has been set for pipeline based shaders");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4086,7 +4086,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
         mapping_info.mappingCount = 1;
         mapping_info.pMappings = &mappings;
 
-        vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+        vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
         std::vector<uint8_t> payload(4);
 
         m_command_buffer.Begin();
@@ -4108,7 +4108,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedPipeline) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, PushDataAssignedShaderObject) {
+TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedShaderObject) {
     TEST_DESCRIPTION("Check that push data used in shader code has been set using shader object");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -4187,7 +4187,7 @@ TEST_F(NegativeDescriptorHeap, PushDataAssignedShaderObject) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, BufferDescriptorHeapUsageMemoryAllocationInfo) {
+TEST_F(NegativeDescriptorHeapEXT, BufferDescriptorHeapUsageMemoryAllocationInfo) {
     TEST_DESCRIPTION("Validate that memory allocated for descriptor heap contains buffer device address");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4200,7 +4200,7 @@ TEST_F(NegativeDescriptorHeap, BufferDescriptorHeapUsageMemoryAllocationInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DuplicatedPushDataSequenceIndex) {
+TEST_F(NegativeDescriptorHeapEXT, DuplicatedPushDataSequenceIndex) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::deviceGeneratedCommands);
@@ -4243,7 +4243,7 @@ TEST_F(NegativeDescriptorHeap, DuplicatedPushDataSequenceIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, CaptureReplayBit) {
+TEST_F(NegativeDescriptorHeapEXT, CaptureReplayBit) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::descriptorHeapCaptureReplay);
 
@@ -4275,7 +4275,7 @@ TEST_F(NegativeDescriptorHeap, CaptureReplayBit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ImageType3DView3D) {
+TEST_F(NegativeDescriptorHeapEXT, ImageType3DView3D) {
     TEST_DESCRIPTION("Validate that input attachment cannot be a 3D image");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4317,7 +4317,7 @@ TEST_F(NegativeDescriptorHeap, ImageType3DView3D) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ImageType3DView2DArray) {
+TEST_F(NegativeDescriptorHeapEXT, ImageType3DView2DArray) {
     TEST_DESCRIPTION("Validate that input attachment cannot be a 3D image even if viewtype is 2D array");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4371,7 +4371,7 @@ TEST_F(NegativeDescriptorHeap, ImageType3DView2DArray) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ImageType3DViewImage2DViewOf3D) {
+TEST_F(NegativeDescriptorHeapEXT, ImageType3DViewImage2DViewOf3D) {
     TEST_DESCRIPTION(
         "Validate that input attachment cannot be a 3D image even if view type 2D and image2DViewOf3D feature is not enabled");
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
@@ -4416,7 +4416,7 @@ TEST_F(NegativeDescriptorHeap, ImageType3DViewImage2DViewOf3D) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ImageType3DViewSampler2DViewOf3D) {
+TEST_F(NegativeDescriptorHeapEXT, ImageType3DViewSampler2DViewOf3D) {
     TEST_DESCRIPTION(
         "Validate that input attachment cannot be a 3D image even if view type 2D and sampler2DViewOf3D feature is not enabled");
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
@@ -4461,7 +4461,7 @@ TEST_F(NegativeDescriptorHeap, ImageType3DViewSampler2DViewOf3D) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, ImageType3DView2DWithoutCompatibility) {
+TEST_F(NegativeDescriptorHeapEXT, ImageType3DView2DWithoutCompatibility) {
     TEST_DESCRIPTION("Validate that image cannot be a 3D image if viewtype is 2D and no compatibility bit");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4502,7 +4502,7 @@ TEST_F(NegativeDescriptorHeap, ImageType3DView2DWithoutCompatibility) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ImageTypeDepthStencilAttachment) {
+TEST_F(NegativeDescriptorHeapEXT, ImageTypeDepthStencilAttachment) {
     TEST_DESCRIPTION("Validate that aspectMask contains depth or stencil if image is a depth stencil format");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4544,7 +4544,7 @@ TEST_F(NegativeDescriptorHeap, ImageTypeDepthStencilAttachment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, PushDataRange) {
+TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
     TEST_DESCRIPTION("Descriptor heap with VkPushDataInfoEXT but part of the range is missing");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4579,7 +4579,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
             a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange = descriptor_heap.AddressRange();
@@ -4650,12 +4650,12 @@ TEST_F(NegativeDescriptorHeap, PushDataRange) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(NegativeDescriptorHeap, PushDataRangeNonDword) {
+TEST_F(NegativeDescriptorHeapEXT, PushDataRangeNonDword) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::storagePushConstant8);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -4673,7 +4673,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRangeNonDword) {
             a = uint(b[0]);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     char const* cs_source2 = R"glsl(
         #version 450
@@ -4686,7 +4686,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRangeNonDword) {
             a = uint(b[1]);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -4706,7 +4706,7 @@ TEST_F(NegativeDescriptorHeap, PushDataRangeNonDword) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, MaxPushDataSizeStatic) {
+TEST_F(NegativeDescriptorHeapEXT, MaxPushDataSizeStatic) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     if (heap_props.maxPushDataSize != 256) {
         GTEST_SKIP() << "maxPushDataSize is not 256";
@@ -4728,7 +4728,7 @@ TEST_F(NegativeDescriptorHeap, MaxPushDataSizeStatic) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxPushDataSize-12455");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     char const* cs_source2 = R"glsl(
@@ -4742,7 +4742,7 @@ TEST_F(NegativeDescriptorHeap, MaxPushDataSizeStatic) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxPushDataSize-12455");
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     char const* cs_source3 = R"glsl(
@@ -4757,11 +4757,11 @@ TEST_F(NegativeDescriptorHeap, MaxPushDataSizeStatic) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxPushDataSize-12455");
-    vkt::HeapComputePipeline pipe3(*m_device, cs_source3, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe3(*m_device, cs_source3, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, NonConstantImageMemoryAccess) {
+TEST_F(NegativeDescriptorHeapEXT, NonConstantImageMemoryAccess) {
     TEST_DESCRIPTION("Non constant image memory access with incompatible mapping source");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
@@ -4799,11 +4799,11 @@ TEST_F(NegativeDescriptorHeap, NonConstantImageMemoryAccess) {
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ArrayLengthOnMappingSourceAddress) {
+TEST_F(NegativeDescriptorHeapEXT, ArrayLengthOnMappingSourceAddress) {
     TEST_DESCRIPTION("OpArrayLength instruction on incompatible mapping source type");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -4821,11 +4821,11 @@ TEST_F(NegativeDescriptorHeap, ArrayLengthOnMappingSourceAddress) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11378");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCount) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // limit we have in max_profile.json
@@ -4854,7 +4854,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
     for (uint32_t i = 0; i < sampler_count; i++) {
@@ -4871,7 +4871,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCount) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCountPipeline) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     const uint32_t max_samplers = m_device->Physical().limits_.maxSamplerAllocationCount;
@@ -4907,7 +4907,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_errorMonitor->VerifyFound();
 
@@ -4916,7 +4916,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountPipeline) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCountShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -4963,7 +4963,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationCountShaderObject) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, MaxEmbeddedSamplers) {
+TEST_F(NegativeDescriptorHeapEXT, MaxEmbeddedSamplers) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     // Creating this many emedded samplers is really slow on many drivers
@@ -5003,7 +5003,7 @@ TEST_F(NegativeDescriptorHeap, MaxEmbeddedSamplers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerAllocationTotalCountShaderObject) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationTotalCountShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -5041,7 +5041,7 @@ TEST_F(NegativeDescriptorHeap, SamplerAllocationTotalCountShaderObject) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, NonConstantMemoryAccess) {
+TEST_F(NegativeDescriptorHeapEXT, NonConstantMemoryAccess) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -5090,16 +5090,16 @@ TEST_F(NegativeDescriptorHeap, NonConstantMemoryAccess) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source1, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11318");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, UsagesValidation) {
+TEST_F(NegativeDescriptorHeapEXT, UsagesValidation) {
     TEST_DESCRIPTION("Tests that buffers and images were created with appropriate usage flags");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -5185,7 +5185,7 @@ TEST_F(NegativeDescriptorHeap, UsagesValidation) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, InputAttachmentIsNotNull) {
+TEST_F(NegativeDescriptorHeapEXT, InputAttachmentIsNotNull) {
     TEST_DESCRIPTION("Validate VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT cannot be nullDescriptor");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
@@ -5206,7 +5206,7 @@ TEST_F(NegativeDescriptorHeap, InputAttachmentIsNotNull) {
     }
 }
 
-TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniformArray) {
+TEST_F(NegativeDescriptorHeapEXT, MappedPushIsBlockUniformArray) {
     TEST_DESCRIPTION("Validate that mapped push data is backed by block uniform");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -5229,11 +5229,11 @@ TEST_F(NegativeDescriptorHeap, MappedPushIsBlockUniformArray) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11315");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsBindDescriptorSets) {
+TEST_F(NegativeDescriptorHeapEXT, InvalidateComputeBoundDescriptorSetsBindDescriptorSets) {
     TEST_DESCRIPTION("Descriptor heap cmd functions do reset previously bound with CmdBindDescriptorSets descriptor sets");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -5243,7 +5243,7 @@ TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsBindDescripto
         void main() { x = 0; }
     )glsl";
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     for (int i = 0; i < 3; i++) {
         const auto ds_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         OneOffDescriptorSet ds(m_device, {{0, ds_type, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}}, 0, nullptr);
@@ -5293,7 +5293,7 @@ TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsBindDescripto
     }
 }
 
-TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsPushDescriptor) {
+TEST_F(NegativeDescriptorHeapEXT, InvalidateComputeBoundDescriptorSetsPushDescriptor) {
     TEST_DESCRIPTION("Descriptor heap cmd functions do reset previously bound with CmdPushDataEXT descriptor sets");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -5304,7 +5304,7 @@ TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsPushDescripto
         void main() { x = 0; }
     )glsl";
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     for (int i = 0; i < 3; i++) {
         const auto ds_type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         OneOffDescriptorSet ds(m_device, {{0, ds_type, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
@@ -5353,10 +5353,10 @@ TEST_F(NegativeDescriptorHeap, InvalidateComputeBoundDescriptorSetsPushDescripto
     }
 }
 
-TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
+TEST_F(NegativeDescriptorHeapEXT, SecondaryCmdBufferSamplerHeapUnbound) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
 
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize buffer_offset = Align(heap_props.imageDescriptorSize, heap_props.resourceHeapAlignment);
@@ -5404,7 +5404,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
     mapping_info.mappingCount = 3u;
     mapping_info.pMappings = mappings;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5440,9 +5440,9 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferSamplerHeapUnbound) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferUnbind) {
+TEST_F(NegativeDescriptorHeapEXT, SecondaryCmdBufferUnbind) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2, true);
 
     char const* cs_source = R"glsl(
@@ -5459,7 +5459,7 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferUnbind) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
@@ -5488,9 +5488,9 @@ TEST_F(NegativeDescriptorHeap, SecondaryCmdBufferUnbind) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
+TEST_F(NegativeDescriptorHeapEXT, UnboundResourceHeap) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2, true);
 
     vkt::Buffer buffer_a(*m_device, 512, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -5525,7 +5525,7 @@ TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
             b = 4;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
@@ -5549,7 +5549,7 @@ TEST_F(NegativeDescriptorHeap, UnboundResourceHeap) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, PushDescriptorSet) {
+TEST_F(NegativeDescriptorHeapEXT, PushDescriptorSet) {
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
@@ -5588,7 +5588,7 @@ TEST_F(NegativeDescriptorHeap, PushDescriptorSet) {
     secondary.End();
 }
 
-TEST_F(NegativeDescriptorHeap, ImageDescriptorLayout) {
+TEST_F(NegativeDescriptorHeapEXT, ImageDescriptorLayout) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -5618,7 +5618,7 @@ TEST_F(NegativeDescriptorHeap, ImageDescriptorLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ImageDescriptorAspect) {
+TEST_F(NegativeDescriptorHeapEXT, ImageDescriptorAspect) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkFormat depth_format = FindSupportedDepthStencilFormat(gpu_);
@@ -5649,7 +5649,7 @@ TEST_F(NegativeDescriptorHeap, ImageDescriptorAspect) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ResetPushConstsWithPushData) {
+TEST_F(NegativeDescriptorHeapEXT, ResetPushConstsWithPushData) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
@@ -5697,7 +5697,7 @@ TEST_F(NegativeDescriptorHeap, ResetPushConstsWithPushData) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorIndexingHeapData) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorIndexingHeapData) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -5744,18 +5744,18 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingHeapData) {
 
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushData) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorIndexingPushData) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -5800,18 +5800,18 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushData) {
 
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushAddress) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorIndexingPushAddress) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -5856,18 +5856,18 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingPushAddress) {
 
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, DescriptorIndexingIndirectAddress) {
+TEST_F(NegativeDescriptorHeapEXT, DescriptorIndexingIndirectAddress) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -5914,18 +5914,18 @@ TEST_F(NegativeDescriptorHeap, DescriptorIndexingIndirectAddress) {
 
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source_static, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 
     // VUID-VkPipelineShaderStageCreateInfo-pNext-11315
     m_errorMonitor->SetDesiredError("but it is an array");
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4804#note_605752
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-DescriptorSet-11385");
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source_runtime, SPV_ENV_VULKAN_1_2, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, MaxBufferRange) {
+TEST_F(NegativeDescriptorHeapEXT, MaxBufferRange) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     if (!IsPlatformMockICD()) {
@@ -5956,13 +5956,13 @@ TEST_F(NegativeDescriptorHeap, MaxBufferRange) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, CombinedImageSamplerMissingSamplerHeap) {
+TEST_F(NegativeDescriptorHeapEXT, CombinedImageSamplerMissingSamplerHeap) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
     const VkDeviceSize image_offset = 0u;
     const VkDeviceSize buffer_offset = Align(heap_props.imageDescriptorSize, heap_props.resourceHeapAlignment);
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(buffer_offset + heap_props.bufferDescriptorSize);
 
     vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -5994,7 +5994,7 @@ TEST_F(NegativeDescriptorHeap, CombinedImageSamplerMissingSamplerHeap) {
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -6005,7 +6005,7 @@ TEST_F(NegativeDescriptorHeap, CombinedImageSamplerMissingSamplerHeap) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDescriptorHeap, ReadOnlyStorageBufferHlsl) {
+TEST_F(NegativeDescriptorHeapEXT, ReadOnlyStorageBufferHlsl) {
     TEST_DESCRIPTION(
         "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12100 and "
         "https://gitlab.khronos.org/vulkan/vulkan/-/issues/4789");
@@ -6082,7 +6082,7 @@ TEST_F(NegativeDescriptorHeap, ReadOnlyStorageBufferHlsl) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ComputeShaderRecordMapping) {
+TEST_F(NegativeDescriptorHeapEXT, ComputeShaderRecordMapping) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
@@ -6121,7 +6121,7 @@ TEST_F(NegativeDescriptorHeap, ComputeShaderRecordMapping) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, SamplerMappingWarning) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerMappingWarning) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 
@@ -6170,11 +6170,11 @@ TEST_F(NegativeDescriptorHeap, SamplerMappingWarning) {
     m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-pushIndex-sampler");
     m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler");
     m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-sampler");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, EmbeddedSamplerResourceTypeAll) {
+TEST_F(NegativeDescriptorHeapEXT, EmbeddedSamplerResourceTypeAll) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_ALL_EXT);
@@ -6195,7 +6195,7 @@ TEST_F(NegativeDescriptorHeap, EmbeddedSamplerResourceTypeAll) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, ImageViewUsage) {
+TEST_F(NegativeDescriptorHeapEXT, ImageViewUsage) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     std::vector<uint8_t> data(static_cast<size_t>(heap_props.imageDescriptorSize));
@@ -6225,7 +6225,7 @@ TEST_F(NegativeDescriptorHeap, ImageViewUsage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeap, InputAttachmentReadOnly) {
+TEST_F(NegativeDescriptorHeapEXT, InputAttachmentReadOnly) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
 

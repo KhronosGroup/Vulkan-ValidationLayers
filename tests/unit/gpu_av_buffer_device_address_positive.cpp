@@ -2715,7 +2715,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
     VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(heap_props);
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
 
