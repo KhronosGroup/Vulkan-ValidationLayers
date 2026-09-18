@@ -21,6 +21,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
+#include <sstream>
 #include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
@@ -255,11 +256,18 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
                 break;
         }
 
-        return LogError(CreateActionVuid(loc.function, vuid), objlist, loc,
-                        "%s state is dynamic, but the command buffer never called %s.\n%s%s", DynamicStateToString(dynamic_state),
-                        DescribeDynamicStateCommand(dynamic_state).c_str(),
-                        DescribeDynamicStateDependency(dynamic_state, pipeline).c_str(),
-                        last_bound_state.cb_state.DescribeInvalidatedState(dynamic_state).c_str());
+        const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+        std::ostringstream ss;
+        ss << DynamicStateToString(dynamic_state) << " state is dynamic";
+        if (cb_state.WasDynamicStateInvalidated(dynamic_state)) {
+            ss << " and " << DescribeDynamicStateCommand(dynamic_state)
+               << " was called, but the state was invalidated and needs to be set again."
+               << cb_state.DescribeInvalidatedState(dynamic_state);
+        } else {
+            ss << ", but the command buffer never called " << DescribeDynamicStateCommand(dynamic_state);
+        }
+        ss << '\n' << DescribeDynamicStateDependency(dynamic_state, pipeline);
+        return LogError(CreateActionVuid(loc.function, vuid), objlist, loc, "%s", ss.str().c_str());
     }
     return false;
 }
@@ -767,10 +775,10 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
     if (!pipeline.RasterizationDisabled() && viewport_state && (cb_sub_state.viewport.inherited_depths.empty())) {
         const bool dyn_scissor = pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR);
 
-        // NB (akeley98): Current validation layers do not detect the error where vkCmdSetViewport (or scissor) was called, but
-        // the dynamic state set is overwritten by binding a graphics pipeline with static viewport (scissor) state.
-        // This condition be detected by checking trashedViewportMask & viewportMask (trashedScissorMask & scissorMask) is
-        // nonzero in the range of bits needed by the pipeline.
+        // Unlike every other dynamic state, VK_DYNAMIC_STATE_VIEWPORT/SCISSOR are not checked with
+        // ValidateDynamicStateIsSet() because we need to know which viewport/scissor index is bad.
+        // |mask| says a vkCmdSet* was ever called for that index, |trashed_mask| says the call was later
+        // invalidated (by a pipeline with it as static state, or by vkCmdExecuteCommands).
         if (dyn_viewport) {
             const auto required_viewports_mask = (1 << viewport_state->viewportCount) - 1;
             const auto missing_viewport_mask = ~cb_sub_state.viewport.mask & required_viewports_mask;
@@ -779,6 +787,11 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
                                  "Dynamic viewport(s) (0x%x) are used by pipeline state object, but were not provided via calls "
                                  "to vkCmdSetViewport().",
                                  missing_viewport_mask);
+            } else if (const uint32_t trashed_viewport_mask = cb_sub_state.viewport.trashed_mask & required_viewports_mask) {
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::VIEWPORT_07831), objlist, loc,
+                                 "Dynamic viewport(s) (0x%x) are used by pipeline state object and vkCmdSetViewport() was called, "
+                                 "but the state was invalidated and needs to be set again.%s",
+                                 trashed_viewport_mask, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_VIEWPORT).c_str());
             }
         }
 
@@ -790,6 +803,11 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
                                  "Dynamic scissor(s) (0x%x) are used by pipeline state object, but were not provided via calls "
                                  "to vkCmdSetScissor().",
                                  missing_scissor_mask);
+            } else if (const uint32_t trashed_scissor_mask = cb_sub_state.scissor.trashed_mask & required_scissor_mask) {
+                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SCISSOR_07832), objlist, loc,
+                                 "Dynamic scissor(s) (0x%x) are used by pipeline state object and vkCmdSetScissor() was called, "
+                                 "but the state was invalidated and needs to be set again.%s",
+                                 trashed_scissor_mask, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SCISSOR).c_str());
             }
         }
     }
@@ -1596,9 +1614,19 @@ bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bo
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
         if (!cb_state.dynamic_state_status.rtx_stack_size_cb) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RTX_STACK_SIZE_09458), objlist, loc,
+            if (cb_state.WasDynamicStateInvalidated(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
+                skip |= LogError(
+                    CreateActionVuid(loc.function, vvl::ActionVUID::RTX_STACK_SIZE_09458), objlist, loc,
+                    "VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR state is dynamic and "
+                    "vkCmdSetRayTracingPipelineStackSizeKHR() was called, but the state was invalidated and needs to be set "
+                    "again.%s",
+                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR).c_str());
+            } else {
+                skip |=
+                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::RTX_STACK_SIZE_09458), objlist, loc,
                              "VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR state is dynamic, but the command buffer never "
                              "called vkCmdSetRayTracingPipelineStackSizeKHR().");
+            }
         }
     } else {
         if (cb_state.dynamic_state_status.rtx_stack_size_pipeline) {

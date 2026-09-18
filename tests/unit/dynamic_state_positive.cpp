@@ -1902,3 +1902,32 @@ TEST_F(PositiveDynamicState, DepthWriteFromVertexShader) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+TEST_F(PositiveDynamicState, ExecuteCommandsInvalidate) {
+    TEST_DESCRIPTION("Re-set the dynamic state after vkCmdExecuteCommands invalidated it");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.End();
+
+    const VkViewport viewport = {0.0f, 0.0f, 32.0f, 32.0f, 0.0f, 1.0f};
+    const VkRect2D scissor = {{0, 0}, {32u, 32u}};
+
+    m_command_buffer.Begin();
+    vk::CmdSetViewport(m_command_buffer, 0u, 1u, &viewport);
+    vk::CmdSetScissor(m_command_buffer, 0u, 1u, &scissor);
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &secondary.handle());
+    vk::CmdSetViewport(m_command_buffer, 0u, 1u, &viewport);
+    vk::CmdSetScissor(m_command_buffer, 0u, 1u, &scissor);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

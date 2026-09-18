@@ -3646,6 +3646,39 @@ TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStackExecuteCommands) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD, will fail alignment sometimes";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    pipeline.AddDynamicState(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR);
+    pipeline.Build();
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.End();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vk::CmdSetRayTracingPipelineStackSizeKHR(m_command_buffer, 4096u);
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &secondary.handle());
+    m_errorMonitor->SetDesiredError("It was invalidated by vkCmdExecuteCommands");
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12635
 TEST_F(NegativeRayTracing, DISABLED_UpdatedFirstPrimitiveCount) {
     TEST_DESCRIPTION(

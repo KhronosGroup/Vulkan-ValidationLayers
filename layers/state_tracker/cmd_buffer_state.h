@@ -191,16 +191,24 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         CBDynamicFlags cb;        // for lifetime of CommandBuffer (invalidated if static pipeline is bound)
         CBDynamicFlags pipeline;  // for lifetime since last bound pipeline
 
-        CBDynamicFlags history;  // for lifetime of CommandBuffer, regardless if invalidated, used for better error messages
-
         // There is currently only a single non-graphics dynamic state, for now manage manually to save memory
         bool rtx_stack_size_cb;        // for lifetime of CommandBuffer
         bool rtx_stack_size_pipeline;  // for lifetime since last bound pipeline
     } dynamic_state_status;
 
-    // used to mark which pipeline invalidated dynamic state so error message knows
-    // Note that index zero is not used due to the enum size being bitset friendly
-    VkPipeline invalidated_state_pipe[CB_DYNAMIC_STATE_STATUS_NUM];
+    // Dynamic State is tricky and can be "invalidated" for various reasons.
+    // The user will likely be confused why they are getting an error message, but called vkCmdSet*
+    // somewhere, so we need to prove/help show them what happened.
+    struct DynamicStateInvalidation {
+        // Track pipeline that didn't have dynamic state
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        // The command that made it invalid (empty means never been invalidated)
+        Func command = Func::Empty;
+    };
+    std::array<DynamicStateInvalidation, CB_DYNAMIC_STATE_STATUS_NUM> dynamic_state_invalidation;
+    bool WasDynamicStateInvalidated(CBDynamicState dynamic_state) const {
+        return dynamic_state_invalidation[dynamic_state].command != Func::Empty;
+    }
     std::string DescribeInvalidatedState(CBDynamicState dynamic_state) const;
 
     // Return true if the corresponding vkCmdSet* call has occurred in the command buffer.
@@ -859,7 +867,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
     void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
     void RecordVideoEncodeQuantizationMap(const VkVideoEncodeQuantizationMapInfoKHR &quant_map_info);
-    void UnbindResources();
+    void UnbindResources(Func command);
+    void RecordInvalidateDynamicState(const CBDynamicFlags& invalidated, Func command, VkPipeline pipeline);
 };
 
 class CommandBufferSubState {

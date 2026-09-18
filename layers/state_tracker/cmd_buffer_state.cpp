@@ -338,12 +338,11 @@ void CommandBuffer::ResetCBState() {
 
     dynamic_state_status.cb.reset();
     dynamic_state_status.pipeline.reset();
-    dynamic_state_status.history.reset();
     dynamic_state_status.rtx_stack_size_cb = false;
     dynamic_state_status.rtx_stack_size_pipeline = false;
     CBDynamicFlags all;
     dynamic_state_value.reset(all.set());
-    memset(&invalidated_state_pipe, 0, sizeof(VkPipeline) * CB_DYNAMIC_STATE_STATUS_NUM);
+    dynamic_state_invalidation.fill({});
 
     dirty_static_state = false;
 
@@ -867,7 +866,7 @@ void CommandBuffer::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pa
 
     // Spec states that after BeginRenderPass all resources should be rebound
     if (active_render_pass->has_multiview_enabled) {
-        UnbindResources();
+        UnbindResources(loc.function);
     }
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(render_pass_begin.pNext);
@@ -909,7 +908,7 @@ void CommandBuffer::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_in
 
     // Spec states that after NextSubpass all resources should be rebound
     if (active_render_pass->has_multiview_enabled) {
-        UnbindResources();
+        UnbindResources(loc.function);
     }
 
     for (auto& item : sub_states_) {
@@ -1532,6 +1531,21 @@ void CommandBuffer::End(VkResult result) {
 
 void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers, const Location& loc) {
     RecordCommand(loc);
+
+    // "all state of the primary command buffer is undefined after an execute secondary command buffer command is recorded".
+    // The render pass/subpass state is an explicit exception, and the descriptor heap exception is handled in the loop below.
+    // Done up front because the loop below can bail out early if a secondary command buffer is not found.
+    RecordInvalidateDynamicState(dynamic_state_status.cb, loc.function, VK_NULL_HANDLE);
+    dynamic_state_value.reset(dynamic_state_status.cb);
+    dynamic_state_status.cb.reset();
+    dynamic_state_status.pipeline.reset();
+    if (dynamic_state_status.rtx_stack_size_cb) {
+        dynamic_state_invalidation[CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR] = {VK_NULL_HANDLE, loc.function};
+    }
+    dynamic_state_status.rtx_stack_size_cb = false;
+    dynamic_state_status.rtx_stack_size_pipeline = false;
+    dirty_static_state = false;
+
     uint32_t cmd_index = 0;
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto secondary_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
@@ -1706,12 +1720,7 @@ void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipe
             // Reset dynamic state values
             dynamic_state_value.reset(invalidated_state);
 
-            for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {
-                CBDynamicState status = static_cast<CBDynamicState>(index);
-                if (invalidated_state[status]) {
-                    invalidated_state_pipe[index] = pipeline.VkHandle();
-                }
-            }
+            RecordInvalidateDynamicState(invalidated_state, Func::vkCmdBindPipeline, pipeline.VkHandle());
         }
 
         if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
@@ -1742,6 +1751,10 @@ void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipe
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         dynamic_state_status.rtx_stack_size_pipeline = false;
         if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
+            if (dynamic_state_status.rtx_stack_size_cb) {
+                dynamic_state_invalidation[CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR] = {pipeline.VkHandle(),
+                                                                                                    Func::vkCmdBindPipeline};
+            }
             dynamic_state_status.rtx_stack_size_cb = false;  // invalidated
         }
     }
@@ -2042,7 +2055,7 @@ void CommandBuffer::RecordStateCmd(CBDynamicState dynamic_state) {
 void CommandBuffer::RecordDynamicState(CBDynamicState dynamic_state) {
     dynamic_state_status.cb.set(dynamic_state);
     dynamic_state_status.pipeline.set(dynamic_state);
-    dynamic_state_status.history.set(dynamic_state);
+    dynamic_state_invalidation[dynamic_state] = {};
 }
 
 void CommandBuffer::RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count, const VkViewport* viewports) {
@@ -2635,7 +2648,7 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
 
 // Only called for Graphics and during Multiview
 // "When multiview is enabled, at the beginning of each subpass all non-render pass state is undefined."
-void CommandBuffer::UnbindResources() {
+void CommandBuffer::UnbindResources(Func command) {
     // Vertex and index buffers
     index_buffer_binding = {};
     current_vertex_buffer_binding_info.clear();
@@ -2644,12 +2657,25 @@ void CommandBuffer::UnbindResources() {
     push_constant_ranges_layout.reset();
 
     // Reset status of graphics cb to force rebinding of all resources
+    RecordInvalidateDynamicState(dynamic_state_status.cb, command, VK_NULL_HANDLE);
+    dynamic_state_value.reset(dynamic_state_status.cb);
     dynamic_state_status.cb.reset();
     dynamic_state_status.pipeline.reset();
-    dynamic_state_status.history.reset();
 
     // Pipeline and descriptor sets
     lastBound[vvl::BindPointGraphics].Reset();
+}
+
+void CommandBuffer::RecordInvalidateDynamicState(const CBDynamicFlags& invalidated, Func command, VkPipeline pipeline) {
+    if (invalidated.none()) {
+        return;  // nothing was set yet, most common case
+    }
+    // enum is not zero based
+    for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {
+        if (invalidated[static_cast<CBDynamicState>(index)]) {
+            dynamic_state_invalidation[index] = {pipeline, command};
+        }
+    }
 }
 
 LogObjectList CommandBuffer::GetObjectList(VkShaderStageFlagBits stage) const {
@@ -2768,17 +2794,39 @@ uint32_t CommandBuffer::GetLastLabelCommandIndex() const {
 }
 
 std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state) const {
-    std::ostringstream ss;
-    if (dynamic_state_status.history[dynamic_state] && !dynamic_state_status.cb[dynamic_state]) {
-        ss << " (There was a call to vkCmdBindPipeline";
-        if (auto pipeline = dev_data.Get<vvl::Pipeline>(invalidated_state_pipe[dynamic_state])) {
-            ss << " with " << dev_data.FormatHandle(*pipeline);
-        }
-        ss << " that didn't have " << DynamicStateToString(dynamic_state) << " and invalidated the prior "
-           << DescribeDynamicStateCommand(dynamic_state) << " call)";
+    const DynamicStateInvalidation& invalidation = dynamic_state_invalidation[dynamic_state];
+    if (invalidation.command == Func::Empty) {
+        return std::string();
     }
-    if (GetActiveSubpass() != 0 && active_render_pass->has_multiview_enabled) {
-        ss << " (When multiview is enabled, vkCmdNextSubpass will invalidate all dynamic state)";
+
+    // Starts on its own line as this is always appended to a message that already named the vkCmdSet* call
+    std::ostringstream ss;
+    ss << "\nIt was invalidated by " << vvl::String(invalidation.command);
+    switch (invalidation.command) {
+        case Func::vkCmdBindPipeline:
+            ss << " which bound ";
+            if (auto pipeline = dev_data.Get<vvl::Pipeline>(invalidation.pipeline)) {
+                ss << dev_data.FormatHandle(*pipeline);
+            } else {
+                ss << "a pipeline";
+            }
+            ss << " without " << DynamicStateToString(dynamic_state) << " in VkPipelineDynamicStateCreateInfo::pDynamicStates.";
+            break;
+        case Func::vkCmdBeginRenderPass:
+        case Func::vkCmdBeginRenderPass2:
+        case Func::vkCmdBeginRenderPass2KHR:
+        case Func::vkCmdNextSubpass:
+        case Func::vkCmdNextSubpass2:
+        case Func::vkCmdNextSubpass2KHR:
+            ss << " because when multiview is enabled all dynamic state is undefined at the start of each subpass.";
+            break;
+        case Func::vkCmdExecuteCommands:
+            ss << " because all state of a primary command buffer is undefined after recording a secondary command buffer.";
+            break;
+        default:
+            // Any new source of invalidation should get a case here explaining "why" to the user
+            ss << ".";
+            break;
     }
     return ss.str();
 }
