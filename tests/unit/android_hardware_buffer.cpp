@@ -1423,4 +1423,122 @@ TEST_F(NegativeAndroidHardwareBuffer, NullAHBImport) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeAndroidHardwareBuffer, DescriptorBufferDescriptorHeapYcbcr) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420, AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE, 64, 64);
+    if (!ahb.handle()) {
+        GTEST_SKIP() << "could not allocate AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420";
+    }
+
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper();
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb.handle(), &ahb_props);
+    if (ahb_fmt_props.externalFormat == 0) {
+        GTEST_SKIP() << "externalFormat was zero which is not valid";
+    }
+
+    VkExternalFormatANDROID external_format = vku::InitStructHelper();
+    external_format.externalFormat = ahb_fmt_props.externalFormat;
+
+    VkExternalMemoryImageCreateInfo external_image_info = vku::InitStructHelper(&external_format);
+    external_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper(&external_image_info);
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_UNDEFINED;
+    image_ci.extent = {64, 64, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
+    dedicated_info.image = image;
+
+    VkImportAndroidHardwareBufferInfoANDROID import_info = vku::InitStructHelper(&dedicated_info);
+    import_info.buffer = ahb.handle();
+
+    VkMemoryAllocateInfo memory_ci = vku::InitStructHelper(&import_info);
+    if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_ci)) {
+        GTEST_SKIP() << "No valid memory type index could be found";
+    }
+    vkt::DeviceMemory memory(*m_device, memory_ci);
+    vk::BindImageMemory(device(), image, memory, 0);
+
+    VkSamplerYcbcrConversionCreateInfo conversion_ci = vku::InitStructHelper(&external_format);
+    conversion_ci.format = VK_FORMAT_UNDEFINED;
+    conversion_ci.ycbcrModel = ahb_fmt_props.suggestedYcbcrModel;
+    conversion_ci.ycbcrRange = ahb_fmt_props.suggestedYcbcrRange;
+    conversion_ci.components = ahb_fmt_props.samplerYcbcrConversionComponents;
+    conversion_ci.xChromaOffset = ahb_fmt_props.suggestedXChromaOffset;
+    conversion_ci.yChromaOffset = ahb_fmt_props.suggestedYChromaOffset;
+    conversion_ci.chromaFilter = VK_FILTER_NEAREST;
+    conversion_ci.forceExplicitReconstruction = VK_FALSE;
+    vkt::SamplerYcbcrConversion conversion(*m_device, conversion_ci);
+
+    VkSamplerYcbcrConversionInfo conversion_info = vku::InitStructHelper();
+    conversion_info.conversion = conversion;
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper(&conversion_info);
+    image_view_ci.image = image;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = VK_FORMAT_UNDEFINED;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView image_view(*m_device, image_view_ci);
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.pNext = &conversion_info;
+    sampler_ci.magFilter = VK_FILTER_NEAREST;
+    sampler_ci.minFilter = VK_FILTER_NEAREST;
+    vkt::Sampler sampler(*m_device, sampler_ci);
+
+    uint8_t descriptor_data[256];
+
+    // VK_EXT_descriptor_buffer
+    {
+        VkDescriptorImageInfo image_info = {sampler, image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        VkDescriptorGetInfoEXT get_info = vku::InitStructHelper();
+        get_info.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        get_info.data.pCombinedImageSampler = &image_info;
+
+        m_errorMonitor->SetDesiredError("VUID-vkGetDescriptorEXT-pDescriptorInfo-12521");
+        vk::GetDescriptorEXT(device(), &get_info, 256, descriptor_data);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // VK_EXT_descriptor_heap
+    {
+        VkImageDescriptorInfoEXT image_info = vku::InitStructHelper();
+        image_info.pView = &image_view_ci;
+        image_info.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+        VkResourceDescriptorInfoEXT resource_desc_info = vku::InitStructHelper();
+        resource_desc_info.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        resource_desc_info.data.pImage = &image_info;
+
+        VkHostAddressRangeEXT descriptors = {descriptor_data, 256};
+
+        m_errorMonitor->SetDesiredError("VUID-vkWriteResourceDescriptorsEXT-pResources-12522");
+        vk::WriteResourceDescriptorsEXT(device(), 1u, &resource_desc_info, &descriptors);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
