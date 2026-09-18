@@ -47,6 +47,19 @@ void AccessMap::Erase(iterator first, iterator last) {
     }
 }
 
+AccessMap::iterator AccessMap::Merge(iterator first, iterator last) {
+    assert(first != last);
+    auto merge_last = last;
+    --merge_last;
+    assert(first != merge_last);
+
+    const AccessRange merged_range(first->first.begin, merge_last->first.end);
+    auto node = impl_map_.extract(merge_last);
+    Erase(first, last);
+    node.key() = merged_range;
+    return impl_map_.insert(last, std::move(node));
+}
+
 AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange& range, const AccessState& access_state) {
     assert(range.non_empty());
     bool hint_open;
@@ -193,16 +206,7 @@ void Consolidate(AccessMap& map) {
 
         // Current isn't in the active merge range. If there is a non-trivial merge range, we resolve it here.
         if (merge_first != merge_last) {
-            // IFF there is more than one range in (merge_first, merge_last)  <- again noting the *inclusive* last
-            // Create a new Val spanning (first, last), substitute it for the multiple entries.
-
-            const AccessRange merged_range(merge_first->first.begin, merge_last->first.end);
-            AccessState access = merge_last->second;
-
-            // Note that current points to merge_last + 1, and is valid even if at map_end for these operations
-            map.Erase(merge_first, current);
-
-            map.Insert(current, merged_range, std::move(access));
+            map.Merge(merge_first, current);
         }
     }
 }

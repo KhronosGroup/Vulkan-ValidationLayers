@@ -494,11 +494,7 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
     AccessMap::iterator merge_last = end;
     const auto finish_merge = [&]() {
         if (merge_first != end && merge_first != merge_last) {
-            const AccessRange merged_range(merge_first->first.begin, merge_last->first.end);
-            AccessState merged_state = merge_last->second;
-            const auto next = std::next(merge_last);
-            access_state_map_.Erase(merge_first, next);
-            access_state_map_.Insert(next, merged_range, merged_state);
+            access_state_map_.Merge(merge_first, std::next(merge_last));
         }
     };
     const auto track_updated_range = [&](AccessMap::iterator updated) {
