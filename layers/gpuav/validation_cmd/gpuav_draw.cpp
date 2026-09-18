@@ -30,6 +30,7 @@
 #include "gpuav/shaders/validation_cmd/push_data.h"
 #include "generated/gpuav_offline_spirv.h"
 #include "utils/vk_api_utils.h"
+#include "utils/assert_utils.h"
 
 namespace gpuav {
 namespace valcmd {
@@ -122,8 +123,10 @@ void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Loca
         return;
     }
     // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
-        return;
+    for (const auto& lb : cb_state.base.lastBound) {
+        if (lb.GetDescriptorMode() == vvl::DescriptorModeBuffer) {
+            return;
+        }
     }
 
     const char* vuid = vuid_selector(gpuav, last_bound);
@@ -145,8 +148,8 @@ void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Loca
             gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
         valpipe::ComputePipeline<FirstInstanceValidationShader>& validation_pipeline =
             gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<FirstInstanceValidationShader>>(
-                gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-        if (!validation_pipeline.valid) {
+                gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+        if (!validation_pipeline.Valid()) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create FirstInstanceValidationShader.");
             return;
         }
@@ -178,16 +181,17 @@ void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Loca
                                                               VK_WHOLE_SIZE};
             }
 
-            if (!BindShaderResources(validation_pipeline, gpuav, cb_state, draw_i, error_logger_i, shader_resources)) {
-                gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
-                return;
-            }
+            ASSERT_AND_RETURN(validation_pipeline.BindShaderResources(gpuav, cb_state, shader_resources,
+                                                                      valpipe::ErrorLogging{draw_i, error_logger_i}));
         }
 
         // Setup validation pipeline
         // ---
         {
-            DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
+            if (!validation_pipeline.BindComputePipeline(gpuav, cb_state.base,
+                                                         cb_state.base.GetLastBoundCompute().GetActionDescriptorMode())) {
+                return;
+            }
 
             uint32_t max_held_draw_cmds = 0;
             if (draw_buffer_state->GetSize() > api_offset) {
@@ -366,8 +370,10 @@ void CountBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const Locati
         return;
     }
     // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
-        return;
+    for (const auto& lb : cb_state.base.lastBound) {
+        if (lb.GetDescriptorMode() == vvl::DescriptorModeBuffer) {
+            return;
+        }
     }
 
     auto draw_buffer_state = gpuav.Get<vvl::Buffer>(api_buffer);
@@ -390,8 +396,8 @@ void CountBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const Locati
             gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
         valpipe::ComputePipeline<CountBufferValidationShader>& validation_pipeline =
             gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<CountBufferValidationShader>>(
-                gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-        if (!validation_pipeline.valid) {
+                gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+        if (!validation_pipeline.Valid()) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create CountBufferValidationShader.");
             return;
         }
@@ -409,16 +415,17 @@ void CountBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const Locati
             shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
             shader_resources.push_constants.api_count_buffer_offset_dwords = uint32_t(api_count_buffer_offset / sizeof(uint32_t));
 
-            if (!BindShaderResources(validation_pipeline, gpuav, cb_state, draw_i, error_logger_i, shader_resources)) {
-                gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
-                return;
-            }
+            ASSERT_AND_RETURN(validation_pipeline.BindShaderResources(gpuav, cb_state, shader_resources,
+                                                                      valpipe::ErrorLogging{draw_i, error_logger_i}));
         }
 
         // Setup validation pipeline
         // ---
         {
-            DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
+            if (!validation_pipeline.BindComputePipeline(gpuav, cb_state.base,
+                                                         cb_state.base.GetLastBoundCompute().GetActionDescriptorMode())) {
+                return;
+            }
             DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
             // synchronize draw buffer validation (read) against subsequent writes
             VkBufferMemoryBarrier count_buffer_memory_barrier = vku::InitStructHelper();
@@ -524,8 +531,10 @@ void DrawMeshIndirect(Validator& gpuav, CommandBufferSubState& cb_state, const L
         return;
     }
     // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
-        return;
+    for (const auto& lb : cb_state.base.lastBound) {
+        if (lb.GetDescriptorMode() == vvl::DescriptorModeBuffer) {
+            return;
+        }
     }
 
     auto draw_buffer_state = gpuav.Get<vvl::Buffer>(api_buffer);
@@ -551,8 +560,8 @@ void DrawMeshIndirect(Validator& gpuav, CommandBufferSubState& cb_state, const L
             gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
         valpipe::ComputePipeline<MeshValidationShader>& validation_pipeline =
             gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<MeshValidationShader>>(
-                gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-        if (!validation_pipeline.valid) {
+                gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+        if (!validation_pipeline.Valid()) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create MeshValidationShader.");
             return;
         }
@@ -588,15 +597,17 @@ void DrawMeshIndirect(Validator& gpuav, CommandBufferSubState& cb_state, const L
                                                               VK_WHOLE_SIZE};
             }
 
-            if (!BindShaderResources(validation_pipeline, gpuav, cb_state, draw_i, error_logger_i, shader_resources)) {
-                return;
-            }
+            ASSERT_AND_RETURN(validation_pipeline.BindShaderResources(gpuav, cb_state, shader_resources,
+                                                                      valpipe::ErrorLogging{draw_i, error_logger_i}));
         }
 
         // Setup validation pipeline
         // ---
         {
-            DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
+            if (!validation_pipeline.BindComputePipeline(gpuav, cb_state.base,
+                                                         cb_state.base.GetLastBoundCompute().GetActionDescriptorMode())) {
+                return;
+            }
 
             uint32_t max_held_draw_cmds = 0;
             if (draw_buffer_full_size > api_offset) {
@@ -814,8 +825,10 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
         }
     }
     // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-    if (last_bound.GetDescriptorMode() == vvl::DescriptorModeBuffer || last_bound.GetDescriptorMode() == vvl::DescriptorModeHeap) {
-        return;
+    for (const auto& lb : cb_state.base.lastBound) {
+        if (lb.GetDescriptorMode() == vvl::DescriptorModeBuffer) {
+            return;
+        }
     }
 
     if (!cb_state.base.IsPrimary()) {
@@ -840,7 +853,7 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
         }
         valpipe::ComputePipeline<SetupDrawCountDispatchIndirectShader>& setup_validation_dispatch_pipeline =
             gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<SetupDrawCountDispatchIndirectShader>>(gpuav, loc);
-        if (!setup_validation_dispatch_pipeline.valid) {
+        if (!setup_validation_dispatch_pipeline.Valid()) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create SetupDrawCountDispatchIndirectShader.");
             return;
         }
@@ -848,8 +861,8 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
             gpuav.shared_resources_cache.GetOrCreate<ValidationCommandsGpuavState>(gpuav, loc);
         valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader>& validation_pipeline =
             gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader>>(
-                gpuav, loc, val_cmd_gpuav_state.error_logging_desc_set_layout_);
-        if (!validation_pipeline.valid) {
+                gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
+        if (!validation_pipeline.Valid()) {
             gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to create DrawIndexedIndirectIndexBufferShader.");
             return;
         }
@@ -885,13 +898,13 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
             setup_validation_shader_resources.dispatch_indirect_buffer_binding.info =
                 validation_dispatch_params_buffer_range.GetDescriptorBufferInfo();
 
-            if (!setup_validation_dispatch_pipeline.BindShaderResources(gpuav, cb_state, setup_validation_shader_resources)) {
-                gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
+            ASSERT_AND_RETURN(
+                setup_validation_dispatch_pipeline.BindShaderResources(gpuav, cb_state, setup_validation_shader_resources));
+
+            if (!setup_validation_dispatch_pipeline.BindComputePipeline(
+                    gpuav, cb_state.base, cb_state.base.GetLastBoundCompute().GetActionDescriptorMode())) {
                 return;
             }
-
-            DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    setup_validation_dispatch_pipeline.pipeline);
 
             // Sync indirect buffer writes - the same command buffer could be executed concurrently
             // for all we know
@@ -937,12 +950,13 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
             }
             validation_shader_resources.draw_buffer_binding.info = {api_buffer, 0, VK_WHOLE_SIZE};
 
-            if (!BindShaderResources(validation_pipeline, gpuav, cb_state, draw_i, error_logger_i, validation_shader_resources)) {
-                gpuav.InternalError(cb_state.VkHandle(), loc, "Failed to GetManagedDescriptorSet in BindShaderResources");
+            ASSERT_AND_RETURN(validation_pipeline.BindShaderResources(gpuav, cb_state, validation_shader_resources,
+                                                                      valpipe::ErrorLogging{draw_i, error_logger_i}));
+
+            if (!validation_pipeline.BindComputePipeline(gpuav, cb_state.base,
+                                                         cb_state.base.GetLastBoundCompute().GetActionDescriptorMode())) {
                 return;
             }
-
-            DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
 
             // One draw will check all VkDrawIndexedIndirectCommand
             DispatchCmdDispatchIndirect(cb_state.VkHandle(), validation_dispatch_params_buffer_range.buffer,

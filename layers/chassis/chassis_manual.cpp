@@ -1160,6 +1160,62 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     return result;
 }
 
+// This API needs the ability to modify a down-chain parameter
+VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkAllocateMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+
+    {
+        VVL_ZoneScopedN("PreCallValidate_AllocateMemory");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateAllocateMemory]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+
+    chassis::AllocateMemory chassis_state{};
+    chassis_state.allocate_info_copy = pAllocateInfo;
+
+    RecordObject record_obj(vvl::Func::vkAllocateMemory);
+    {
+        VVL_ZoneScopedN("PreCallRecord_AllocateMemory");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj, chassis_state);
+        }
+    }
+
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_AllocateMemory");
+        result = device_dispatch->AllocateMemory(device, chassis_state.allocate_info_copy, pAllocator, pMemory);
+    }
+    record_obj.result = result;
+
+    {
+        VVL_ZoneScopedN("PostCallRecord_AllocateMemory");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordAllocateMemory]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
+        }
+    }
+    return result;
+}
+
 // This API needs to ensure that per-swapchain VkResult results are available
 VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
     VVL_ZoneScoped;

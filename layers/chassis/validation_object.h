@@ -58,6 +58,7 @@ struct ShaderBinaryData;
 struct CreatePipelineLayout;
 struct CreateBuffer;
 struct CmdBindDescriptorBuffers;
+struct AllocateMemory;
 }  // namespace chassis
 
 namespace vvl {
@@ -460,6 +461,13 @@ class BaseDevice : public Logger {
                                                           const RecordObject& record_obj,
                                                           chassis::CmdBindDescriptorBuffers& chassis_state) {
         PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
+    }
+
+    // Modify a parameter to AllocateMemory
+    virtual void PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
+                                             const RecordObject& record_obj, chassis::AllocateMemory& chassis_state) {
+        PreCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
     }
 
 #include "generated/validation_object_device_methods.h"

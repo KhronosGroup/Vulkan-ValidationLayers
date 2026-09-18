@@ -335,7 +335,7 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
         cb.gpuav_.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<AccelerationStructureGpuStateUpdateShader>>(
             cb.gpuav_, Location(vvl::Func::Empty));
 
-    if (!as_gpu_state_update_pipeline.valid) {
+    if (!as_gpu_state_update_pipeline.Valid()) {
         return;
     }
 
@@ -354,7 +354,8 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
                                    &barrier_write_after_read, 0, nullptr, 0, nullptr);
     }
 
-    DispatchCmdBindPipeline(cb.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, as_gpu_state_update_pipeline.pipeline);
+    ASSERT_AND_RETURN(
+        as_gpu_state_update_pipeline.BindComputePipeline(cb.base, cb.base.GetLastBoundCompute().GetActionDescriptorMode()));
 
     for (uint32_t info_i = 0; info_i < info_count; ++info_i) {
         const VkAccelerationStructureBuildGeometryInfoKHR& info = infos[info_i];
@@ -375,9 +376,7 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
         shader_resources.push_constants.state |= (uint32_t)info.mode << glsl::kBuildModeShift;
         VkAccelerationStructureTypeKHR type = dst_as_state->GetType();
         shader_resources.push_constants.state |= (uint32_t)type << glsl::kAsTypeShift;
-        if (!as_gpu_state_update_pipeline.BindShaderResources(gpuav, cb, shader_resources)) {
-            return;
-        }
+        ASSERT_AND_RETURN(as_gpu_state_update_pipeline.BindShaderResources(gpuav, cb, shader_resources));
 
         DispatchCmdDispatch(cb.VkHandle(), 1, 1, 1);
     }
