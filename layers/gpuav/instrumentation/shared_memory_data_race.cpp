@@ -115,11 +115,9 @@ void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubSt
                             if (have_offset) {
                                 if (!::spirv::FindShaderSource(strm, instrumented_shader->original_spirv, collide_inst_offset,
                                                                gpuav.gpuav_settings.debug_printf_only)) {
-                                    // This offset is unpacked from the previous contents of the shadow slot. If the
-                                    // application indexed its shared memory out of bounds, the slot was out of range
-                                    // too and that word was never a packed offset.
-                                    strm << "The shared memory array is likely being accessed out of bounds, which would "
-                                            "also make this race report unreliable.\n";
+                                    strm << "Unable to detect source code, most likely because it did an OOB access on the "
+                                            "shared memory array.\nNote: The shared memory data race report is now "
+                                            "unreliable.\n";
                                 }
                             } else {
                                 strm << "(specific conflicting instruction not recorded)\n";

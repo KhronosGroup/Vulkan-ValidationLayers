@@ -1239,13 +1239,6 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicVsCoopMatStore) {
                                    R"((?=[\s\S]*The other access in this race was at:))");
 }
 
-// The next few tests verify the offender's SPIR-V op kind is reported correctly.
-// They use GLSL without debug info so the offender renders as "SPIR-V Instruction:
-// Op<Kind>", which is easy to grep for.
-
-// Two invocations execute the same OpStore. The detector's and offender's inst_offset
-// match, so the message should call out the same-instruction case instead of repeating
-// the source line.
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SharedMemoryIndexOutOfBounds) {
     TEST_DESCRIPTION(
         "The application indexes its own shared array out of bounds, so the slot index computed from that index is out of "
@@ -1269,6 +1262,13 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SharedMemoryIndexOutOfBounds) {
     TestHelper(shader_source, SPV_SOURCE_GLSL, 1, VK_SCOPE_DEVICE_KHR, "A data race was detected");
 }
 
+// The next few tests verify the offender's SPIR-V op kind is reported correctly.
+// They use GLSL without debug info so the offender renders as "SPIR-V Instruction:
+// Op<Kind>", which is easy to grep for.
+
+// Two invocations execute the same OpStore. The detector's and offender's inst_offset
+// match, so the message should call out the same-instruction case instead of repeating
+// the source line.
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SelfRaceSameInstruction) {
     RETURN_IF_SKIP(InitSharedMemoryDataRace());
 
