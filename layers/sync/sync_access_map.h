@@ -76,6 +76,9 @@ class AccessMap {
     void Clear() { impl_map_.clear(); }
     iterator Erase(const iterator& pos);
     void Erase(iterator first, iterator last);
+    // Merge at least two entries in [first, last), retaining the last entry's state.
+    // The caller must ensure the entries are adjacent and their states can be merged.
+    iterator Merge(iterator first, iterator last);
     iterator Insert(const_iterator hint, const AccessRange& range, const AccessState& access_state);
     iterator InfillGap(const_iterator range_lower_bound, const AccessRange& range, const AccessState& access_state);
     void InfillGaps(const AccessRange& range, const AccessState& access_state);
