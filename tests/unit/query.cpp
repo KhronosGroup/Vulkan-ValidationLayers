@@ -500,7 +500,8 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
-    query_pool_ci.queryCount = 1;
+    // The stride VUs tested below only apply when queryCount is greater than one, so a second query is needed
+    query_pool_ci.queryCount = 2;
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkQueue queue = VK_NULL_HANDLE;
@@ -520,12 +521,16 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        vk::ResetQueryPoolEXT(device(), query_pool, 0, 1);
+        vk::ResetQueryPoolEXT(device(), query_pool, 0, 2);
 
         m_command_buffer.Begin(&command_buffer_begin_info);
         vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
         vk::CmdFillBuffer(m_command_buffer, buffer, 0, buf_size, 0);
         vk::CmdEndQuery(m_command_buffer, query_pool, 0);
+        // Both queries have to be written in every pass or reading them back reports incomplete passes
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 1, 0);
+        vk::CmdFillBuffer(m_command_buffer, buffer, 0, buf_size, 0);
+        vk::CmdEndQuery(m_command_buffer, query_pool, 1);
         m_command_buffer.End();
 
         // Invalid pass index
@@ -541,7 +546,8 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
             submit_info.signalSemaphoreCount = 0;
             submit_info.pSignalSemaphores = NULL;
 
-            m_errorMonitor->SetDesiredError("VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221");
+            // Reported once per vkCmdBeginQuery recorded in the command buffer, and there are two queries
+            m_errorMonitor->SetDesiredError("VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221", 2);
             vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
             m_errorMonitor->VerifyFound();
         }
@@ -590,23 +596,24 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
 
         vk::QueueWaitIdle(queue);
 
-        // The stride is too small to return the data
+        // The stride is too small to hold one query worth of counters
         if (counterIndices.size() > 2) {
+            const VkDeviceSize small_stride = sizeof(VkPerformanceCounterResultKHR) * (results.size() - 1);
+            std::vector<VkPerformanceCounterResultKHR> results_small_stride(results.size() * 2);
             m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-04519");
-            vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                    sizeof(VkPerformanceCounterResultKHR) * (results.size() - 1), 0);
+            vk::GetQueryPoolResults(device(), query_pool, 0, 2, sizeof(VkPerformanceCounterResultKHR) * results_small_stride.size(),
+                                    &results_small_stride[0], small_stride, 0);
             m_errorMonitor->VerifyFound();
         }
 
-        // Invalid stride
+        // Stride is not a multiple of sizeof(VkPerformanceCounterResultKHR)
         {
-            std::vector<VkPerformanceCounterResultKHR> results_invalid_stride;
-            results_invalid_stride.resize(counterIndices.size() * 2);
-            m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-03229");
-            vk::GetQueryPoolResults(
-                device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size(),
-                &results_invalid_stride[0], sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size() + 4,
-                VK_QUERY_RESULT_WAIT_BIT);
+            const VkDeviceSize unaligned_stride = sizeof(VkPerformanceCounterResultKHR) * results.size() + 4;
+            std::vector<VkPerformanceCounterResultKHR> results_invalid_stride(results.size() * 3);
+            m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryCount-12253");
+            vk::GetQueryPoolResults(device(), query_pool, 0, 2,
+                                    sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size(),
+                                    &results_invalid_stride[0], unaligned_stride, 0);
             m_errorMonitor->VerifyFound();
         }
 
