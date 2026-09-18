@@ -18,6 +18,7 @@
 #include "spirv_logging.h"
 #include <string>
 #include <cstring>
+#include "containers/limits.h"
 
 // Fix GCC 13 issues with regex
 #if defined(__GNUC__) && (__GNUC__ > 12)
@@ -36,6 +37,7 @@
 
 namespace spirv {
 
+static constexpr uint32_t kInvalidValue = vvl::kNoIndex32;
 static const int kModuleStartingOffset = 5;  // first 5 words of module are the headers
 static inline uint32_t Opcode(uint32_t instruction) { return instruction & 0x0ffffu; }
 static inline uint32_t Length(uint32_t instruction) { return instruction >> 16; }
@@ -457,11 +459,19 @@ static uint32_t GetDebugLineOffset(const std::vector<uint32_t>& instructions, ui
             last_line_inst_offset = 0;  // debug lines can't cross functions boundaries
         }
 
+        if (length == 0) {
+            return kInvalidValue;
+        }
         offset += length;
 
         if (offset >= instruction_position_offset) {
             break;
         }
+    }
+
+    if (offset != instruction_position_offset) {
+        // something went wrong
+        return kInvalidValue;
     }
 
     return last_line_inst_offset;
@@ -470,9 +480,20 @@ static uint32_t GetDebugLineOffset(const std::vector<uint32_t>& instructions, ui
 // There are 2 ways to inject source into a shader:
 // 1. The "old" way using OpLine/OpSource
 // 2. The "new" way using NonSemantic Shader DebugInfo
-void FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
+bool FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
                       bool debug_printf_only) {
+    if (instruction_position_offset >= instructions.size()) {
+        ss << "(instruction offset [" << instruction_position_offset << " is larger than SPIR-V word size [ " << instructions.size()
+           << "])\n";
+        return false;
+    }
+
     const uint32_t last_line_offset = GetDebugLineOffset(instructions, instruction_position_offset);
+    if (last_line_offset == kInvalidValue) {
+        ss << "(instruction offset does not point to an instruction)\n";
+        return false;
+    }
+
     if (last_line_offset != 0) {
         Instruction last_line_inst(instructions.data() + last_line_offset);
         ss << (debug_printf_only ? "Debug shader printf message generated at " : "Shader validation error occurred at ");
@@ -484,6 +505,7 @@ void FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instr
     } else {
         ss << "(This check was instrumented at the start of your entrypoint function)\n";
     }
+    return true;
 }
 
 void FindGlobalName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t find_opcode, uint32_t find_id) {
