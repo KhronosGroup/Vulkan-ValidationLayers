@@ -186,11 +186,11 @@ TEST_F(NegativeShaderLimits, MaxClipDistances) {
     VkShaderObj fs(*m_device, source.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     // hit both limits
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710");
     const auto set_fs = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_fs, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-maxClipDistances-00708");
+    CreatePipelineHelper::OneshotTest(*this, set_fs, kErrorBit, "VUID-RuntimeSpirv-maxClipDistances-00708");
 }
 
 TEST_F(NegativeShaderLimits, MaxCullDistances) {
@@ -246,11 +246,11 @@ TEST_F(NegativeShaderLimits, MaxCullDistances) {
     VkShaderObj vs(*m_device, source.str().c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     // hit both limits
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710");
     const auto set_vs = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_vs, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-maxCullDistances-00709");
+    CreatePipelineHelper::OneshotTest(*this, set_vs, kErrorBit, "VUID-RuntimeSpirv-maxCullDistances-00709");
 }
 
 TEST_F(NegativeShaderLimits, MaxCombinedClipAndCullDistances) {
@@ -317,8 +317,7 @@ TEST_F(NegativeShaderLimits, MaxCombinedClipAndCullDistances) {
     const auto set_vs = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_vs, kErrorBit,
-                                      "VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710");
+    CreatePipelineHelper::OneshotTest(*this, set_vs, kErrorBit, "VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710");
 }
 
 TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {

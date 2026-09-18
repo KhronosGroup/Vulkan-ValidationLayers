@@ -4736,8 +4736,8 @@ TEST_F(NegativeShaderObjectEXT, MaxClipDistances) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shader;
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-pCode-08450");  // hit both limits
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08448");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710");  // hit both limits
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxClipDistances-00708");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
@@ -4797,8 +4797,8 @@ TEST_F(NegativeShaderObjectEXT, MaxCullDistances) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shader;
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-pCode-08450");  // hit both limits
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08449");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710");  // hit both limits
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxCullDistances-00709");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
@@ -4867,7 +4867,7 @@ TEST_F(NegativeShaderObjectEXT, MaxCombinedClipAndCullDistances) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderEXT shader;
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08450");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710");
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }

@@ -368,8 +368,6 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
     uint32_t clip_distance_total = 0;
     uint32_t cull_distance_total = 0;
 
-    // ... so apperently Vulkan 1.0 (and like 2% of random devices don't support clip/cull somehow)
-    // Not sure if we should really be validating these yet
     // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4965
     const bool skip_clip_cull = phys_dev_props.limits.maxClipDistances == 0 || phys_dev_props.limits.maxCullDistances == 0 ||
                                 phys_dev_props.limits.maxCombinedClipAndCullDistances == 0;
@@ -404,9 +402,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
                     const uint32_t array_size = module_state.GetFlattenArraySize(*variable->type_struct_info->members[i].insn);
                     clip_distance_total += array_size;
                     if (array_size > phys_dev_props.limits.maxClipDistances) {
-                        const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxClipDistances-00708"
-                                                    : "VUID-VkShaderCreateInfoEXT-pCode-08448";
-                        skip |= LogError(vuid, module_state.handle(), loc,
+                        skip |= LogError("VUID-RuntimeSpirv-maxClipDistances-00708", module_state.handle(), loc,
                                          "shader %s ClipDistance BuiltIn array size is %" PRIu32
                                          " which exceeds maxClipDistances of %" PRIu32 ".",
                                          entrypoint.Describe().c_str(), array_size, phys_dev_props.limits.maxClipDistances);
@@ -415,9 +411,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
                     const uint32_t array_size = module_state.GetFlattenArraySize(*variable->type_struct_info->members[i].insn);
                     cull_distance_total += array_size;
                     if (array_size > phys_dev_props.limits.maxCullDistances) {
-                        const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxCullDistances-00709"
-                                                    : "VUID-VkShaderCreateInfoEXT-pCode-08449";
-                        skip |= LogError(vuid, module_state.handle(), loc,
+                        skip |= LogError("VUID-RuntimeSpirv-maxCullDistances-00709", module_state.handle(), loc,
                                          "shader %s CullDistance BuiltIn array size is %" PRIu32
                                          " which exceeds maxCullDistances of %" PRIu32 ".",
                                          entrypoint.Describe().c_str(), array_size, phys_dev_props.limits.maxCullDistances);
@@ -427,9 +421,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
         } else if (variable->decorations.built_in == spv::BuiltInClipDistance) {
             clip_distance_total += variable->array_size;
             if (variable->array_size > phys_dev_props.limits.maxClipDistances) {
-                const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxClipDistances-00708"
-                                            : "VUID-VkShaderCreateInfoEXT-pCode-08448";
-                skip |= LogError(vuid, module_state.handle(), loc,
+                skip |= LogError("VUID-RuntimeSpirv-maxClipDistances-00708", module_state.handle(), loc,
                                  "shader %s ClipDistance BuiltIn array size is %" PRIu32
                                  " which exceeds maxClipDistances of %" PRIu32 ".",
                                  entrypoint.Describe().c_str(), variable->array_size, phys_dev_props.limits.maxClipDistances);
@@ -437,9 +429,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
         } else if (variable->decorations.built_in == spv::BuiltInCullDistance) {
             cull_distance_total += variable->array_size;
             if (variable->array_size > phys_dev_props.limits.maxCullDistances) {
-                const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxCullDistances-00709"
-                                            : "VUID-VkShaderCreateInfoEXT-pCode-08449";
-                skip |= LogError(vuid, module_state.handle(), loc,
+                skip |= LogError("VUID-RuntimeSpirv-maxCullDistances-00709", module_state.handle(), loc,
                                  "shader %s CullDistance BuiltIn array size is %" PRIu32
                                  " which exceeds maxCullDistances of %" PRIu32 ".",
                                  entrypoint.Describe().c_str(), variable->array_size, phys_dev_props.limits.maxCullDistances);
@@ -448,9 +438,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
     }
 
     if (!skip_clip_cull && (clip_distance_total + cull_distance_total) > phys_dev_props.limits.maxCombinedClipAndCullDistances) {
-        const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-maxCombinedClipAndCullDistances-00710"
-                                    : "VUID-VkShaderCreateInfoEXT-pCode-08450";
-        skip |= LogError(vuid, module_state.handle(), loc,
+        skip |= LogError("VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710", module_state.handle(), loc,
                          "shader %s has a ClipDistance BuiltIn array size of %" PRIu32
                          " and a CullDistance BuiltIn array size of %" PRIu32 " which sum to %" PRIu32
                          " and exceed maxCombinedClipAndCullDistances of %" PRIu32 ".",

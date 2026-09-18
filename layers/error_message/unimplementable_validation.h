@@ -828,6 +828,15 @@ const char* not_going_to_do[] = {
     // This falls under the failure of the sparse memory spec/testing
     // so going to skip until someone complains loudly
     "VUID-vkCmdDraw-None-08119",
+
+    // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4965
+    // Apparently some ARM devices support no clip/cull and guarded by the
+    // shaderClipDistance/shaderCullDistance features such that these are not possible to even hit
+    // This whole thing is an issue because glslang adds the Clip/Cull to the gl_vertex output struct
+    // but only if you use it does it use the OpCapabilty
+    // ... so these are just here because of the decision of glslang years ago
+    "VUID-RuntimeSpirv-maxClipDistances-08448",
+    "VUID-RuntimeSpirv-maxCullDistances-08449",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
