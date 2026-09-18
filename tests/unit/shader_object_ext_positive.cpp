@@ -1716,6 +1716,8 @@ TEST_F(PositiveShaderObjectEXT, CustomResolve) {
     m_command_buffer.BeginRendering(begin_rendering_info);
     SetDefaultDynamicStatesExcludeEXT();
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_4_BIT);
+    VkSampleMask sample_mask = 0xFFFFFFFF;
+    vk::CmdSetSampleMaskEXT(m_command_buffer, VK_SAMPLE_COUNT_4_BIT, &sample_mask);
     m_command_buffer.BindShadersEXT(m_vert_shader, m_frag_shader);
     vk::CmdBeginCustomResolveEXT(m_command_buffer, &begin_resolve_info);
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
