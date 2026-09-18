@@ -26,10 +26,10 @@
 #include "shader_templates.h"
 #include "test_framework.h"
 
-class NegativeGpuAVDescriptorHeap : public GpuAVDescriptorHeap {};
+class NegativeGpuAVDescriptorHeapEXT : public GpuAVDescriptorHeapEXT {};
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_IndexBufferOOB) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, DISABLED_IndexBufferOOB) {
     TEST_DESCRIPTION("Validate overruning the index buffer");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
@@ -69,7 +69,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_IndexBufferOOB) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, NoMappings) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, NoMappings) {
     TEST_DESCRIPTION("Validate illegal index buffer values with no VkShaderDescriptorSetAndBindingMappingInfoEXT provided");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
@@ -130,7 +130,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, NoMappings) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, NoHeapBound) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, NoHeapBound) {
     TEST_DESCRIPTION("Validate illegal index buffer values when no descriptor heap is bound");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
@@ -191,12 +191,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, NoHeapBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundBeforePipeline) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HeapBoundBeforePipeline) {
     TEST_DESCRIPTION("Validate illegal index buffer values when descriptor heap is bound before the pipeline");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4u);
 
     const char* vsSource = R"glsl(
@@ -257,11 +257,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundBeforePipeline) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundAfterPipeline) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HeapBoundAfterPipeline) {
     TEST_DESCRIPTION("Validate illegal index buffer values when descriptor heap is bound after pipeline");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4u);
 
     const char* vsSource = R"glsl(
@@ -322,12 +322,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapBoundAfterPipeline) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, SamplerHeapBound) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, SamplerHeapBound) {
     TEST_DESCRIPTION("Validate illegal index buffer values when sampler heap is bound");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize * 4u);
 
     const char* vsSource = R"glsl(
@@ -389,13 +389,13 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerHeapBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingsUsed) {
     TEST_DESCRIPTION("Validate illegal index buffer values when custom mappings are used");
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4u);
 
     vkt::Buffer buffer1(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -483,7 +483,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingsUsed) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12657
-TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_DispatchWorkgroupSize) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, DISABLED_DispatchWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand with descriptor heap");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
@@ -521,7 +521,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_DispatchWorkgroupSize) {
     ptr->y = 2;
     ptr->z = 3;  // over
 
-    vkt::HeapComputePipeline pipe(*m_device, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0);
+    vkt::HeapComputePipelineEXT pipe(*m_device, kMinimalShaderGlsl, SPV_ENV_VULKAN_1_0);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -563,13 +563,13 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_DispatchWorkgroupSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HeapRebound) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HeapRebound) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
     const VkDeviceSize app_size = heap_props.bufferDescriptorAlignment * 4u;
-    vkt::DescriptorHeap desc_heap1(*this);
-    vkt::DescriptorHeap desc_heap2(*this);
+    vkt::DescriptorHeapEXT desc_heap1(*this);
+    vkt::DescriptorHeapEXT desc_heap2(*this);
     desc_heap1.CreateResourceHeap(app_size);
     desc_heap2.CreateResourceHeap(app_size);
 
@@ -634,7 +634,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HeapRebound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ShaderObjects) {
     TEST_DESCRIPTION("Validate illegal index buffer values with shader objects");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -642,7 +642,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitDynamicRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4u);
 
     const char* vsSource = R"glsl(
@@ -737,9 +737,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ShaderObjects) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffset) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBConstantOffset) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -764,7 +764,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffset) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -776,9 +776,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffsetDynamicIndex) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBConstantOffsetDynamicIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2, true);
 
@@ -806,7 +806,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffsetDynamicIndex) {
             ssbo[index].result = 99;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -818,9 +818,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBConstantOffsetDynamicIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBMultipleBinding) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBMultipleBinding) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -866,7 +866,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBMultipleBinding) {
             d = 4;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -878,9 +878,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBMultipleBinding) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBPushIndex) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBPushIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -906,7 +906,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBPushIndex) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -922,10 +922,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBPushIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBIndirectIndex) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBIndirectIndex) {
     TEST_DESCRIPTION("Also tests having different bindings and calling things twice");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 4, true);
 
@@ -967,7 +967,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBIndirectIndex) {
             y[b_index].b = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -1008,7 +1008,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBIndirectIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBShaderObjects) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -1016,7 +1016,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitDynamicRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -1070,9 +1070,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBShaderObjects) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBRebindHeap) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBRebindHeap) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2, true);
 
@@ -1096,7 +1096,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBRebindHeap) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -1121,9 +1121,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBRebindHeap) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryInheritance) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryInheritance) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -1141,7 +1141,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryInheritance) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
@@ -1168,9 +1168,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryInheritance) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryBind) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryBind) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -1188,7 +1188,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryBind) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
@@ -1211,9 +1211,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBSecondaryBind) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, SamplerOOB) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
@@ -1248,12 +1248,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
         }
     )glsl";
     // bad image mappings
-    vkt::HeapComputePipeline pipe_image(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe_image(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
     mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minSamplerHeapReservedRange + sampler_stride);
     // bad sampler mappings
-    vkt::HeapComputePipeline pipe_sampler(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe_sampler(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1270,9 +1270,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOB) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, SamplerOOBCombinedImageSampler) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
@@ -1304,12 +1304,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
         }
     )glsl";
     // bad image mappings
-    vkt::HeapComputePipeline pipe_image(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe_image(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
     mapping.sourceData.constantOffset.samplerHeapOffset = (uint32_t)(heap_props.minSamplerHeapReservedRange + sampler_stride);
     // bad sampler mappings
-    vkt::HeapComputePipeline pipe_sampler(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe_sampler(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1327,9 +1327,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBCombinedImageSampler) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBStorageImage) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBStorageImage) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -1354,7 +1354,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBStorageImage) {
             imageStore(good_si, ivec2(1, 1), texel * 2);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1367,14 +1367,14 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBStorageImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBuffer) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBUntypedPointersBuffer) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     const char* cs_source = R"glsl(
@@ -1389,7 +1389,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBuffer) {
             heapBuffer[10000].data = 0;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1402,14 +1402,14 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferOldGlsl) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBUntypedPointersBufferOldGlsl) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     // Same shader above in ResourceOOBUntypedPointers, but using the old (still valid) GLSL output
@@ -1450,7 +1450,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferOldGlsl) {
                OpReturn
                OpFunctionEnd
     )asm";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1463,14 +1463,14 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferOldGlsl) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferAtomics) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBUntypedPointersBufferAtomics) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if ((heap_props.minResourceHeapReservedRange / heap_props.bufferDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     const char* cs_source = R"glsl(
@@ -1486,7 +1486,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferAtomics) {
             atomicStore(heapBuffer[10000].a, 0u, gl_ScopeDevice, 0, 0);
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1499,14 +1499,14 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersBufferAtomics) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersStorageImage) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBUntypedPointersStorageImage) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if ((heap_props.minResourceHeapReservedRange / heap_props.imageDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -1529,7 +1529,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersStorageImage) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1542,14 +1542,14 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersStorageImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersSampledImage) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBUntypedPointersSampledImage) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if ((heap_props.minResourceHeapReservedRange / heap_props.imageDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
 
@@ -1573,7 +1573,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersSampledImage) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1587,14 +1587,14 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersSampledImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBUntypedPointers) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, SamplerOOBUntypedPointers) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if ((heap_props.minSamplerHeapReservedRange / heap_props.samplerDescriptorSize) >= 10000) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
 
@@ -1608,7 +1608,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBUntypedPointers) {
             vec4 data = texture(sampler2D(heapTextures[0], heapSamplers[10000]), vec2(0.5f));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1622,12 +1622,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerOOBUntypedPointers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersOffsetId) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBUntypedPointersOffsetId) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     vkt::Buffer buffer_0(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -1686,7 +1686,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersOffsetId) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1699,7 +1699,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBUntypedPointersOffsetId) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, UntypedPointersOffsetIdNonArray) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
@@ -1707,7 +1707,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
         GTEST_SKIP() << "reserved range is too large, access will not be OOB";
     }
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 3);
 
@@ -1780,7 +1780,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1793,9 +1793,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, UntypedPointersOffsetIdNonArray) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentMapping) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, BufferDescriptorAlignmentMapping) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     // [SSBO, SSBO, UBO, UBO]
     desc_heap.CreateResourceHeap(resource_stride * 4);
@@ -1834,7 +1834,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentMapping) {
             a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1854,9 +1854,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentMapping) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ImageSamplerDescriptorAlignment) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ImageSamplerDescriptorAlignment) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
@@ -1891,7 +1891,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ImageSamplerDescriptorAlignment) {
             vec4 out_color = texture(sampler2D(kTextures2D, kSampler), vec2(0));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     uint32_t* indirect_data = (uint32_t*)indirect_buffer.Memory().Map();
@@ -1919,11 +1919,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, ImageSamplerDescriptorAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentUntypedPointers) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, BufferDescriptorAlignmentUntypedPointers) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -1985,7 +1985,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentUntypedPointers) {
     )";
     // spirv-val can detect this, but still want to test at GPU-AV time
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1998,11 +1998,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, BufferDescriptorAlignmentUntypedPointers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, StorageImageDescriptorAlignmentUntypedPointers) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, StorageImageDescriptorAlignmentUntypedPointers) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -2059,7 +2059,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, StorageImageDescriptorAlignmentUntypedPointe
     const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
     // spirv-val can detect this, but still want to test at GPU-AV time
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2072,11 +2072,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, StorageImageDescriptorAlignmentUntypedPointe
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, StorageImageAtomicDescriptorAlignmentUntypedPointers) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, StorageImageAtomicDescriptorAlignmentUntypedPointers) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -2134,7 +2134,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, StorageImageAtomicDescriptorAlignmentUntyped
     const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
     // spirv-val can detect this, but still want to test at GPU-AV time
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2147,12 +2147,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, StorageImageAtomicDescriptorAlignmentUntyped
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceReservedRange) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceReservedRange) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if (heap_props.minResourceHeapReservedRange == 0) {
         GTEST_SKIP() << "minResourceHeapReservedRange is zero";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -2174,7 +2174,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceReservedRange) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2186,12 +2186,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceReservedRange) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, SamplerReservedRange) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, SamplerReservedRange) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     if (heap_props.minSamplerHeapReservedRange == 0) {
         GTEST_SKIP() << "minSamplerHeapReservedRange is zero";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
@@ -2224,7 +2224,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerReservedRange) {
             vec4 out_color = texture(sampler2D(kTextures2D, kSampler), vec2(0));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2238,9 +2238,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, SamplerReservedRange) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexPushDataAlignment) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectIndexPushDataAlignment) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2261,7 +2261,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexPushDataAlignment) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     VkDeviceAddress indirect_address = indirect_buffer.Address() + 1;
@@ -2277,9 +2277,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexPushDataAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexPushDataAlignment2) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectIndexPushDataAlignment2) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize, true);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2300,7 +2300,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexPushDataAlignment2) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::Buffer indirect_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     uint32_t* indirect_data = (uint32_t*)indirect_buffer.Memory().Map();
@@ -2330,7 +2330,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexPushDataAlignment2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, PushDataNotSet) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, PushDataNotSet) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping =
@@ -2346,7 +2346,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataNotSet) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     // only update one of the dwords to force it to be non-aligned
     uint32_t bad_dword = 0x11111111;
@@ -2362,9 +2362,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataNotSet) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, PushDataNotSetOOB) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, PushDataNotSetOOB) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize, true);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
@@ -2385,7 +2385,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataNotSetOOB) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2398,7 +2398,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataNotSetOOB) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressPushDataAlignment) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectAddressPushDataAlignment) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping =
@@ -2414,7 +2414,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressPushDataAlignment) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     VkDeviceAddress indirect_address = indirect_buffer.Address() + 1;
@@ -2429,9 +2429,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressPushDataAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignment) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingAddressBufferAlignment) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -2460,7 +2460,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignment) {
             a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkDeviceAddress ssbo_address = ssbo_buffer.Address() + 1;
     VkDeviceAddress ubo_address = ubo_buffer.Address() + 0;
@@ -2484,9 +2484,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignmentHeap) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingAddressBufferAlignmentHeap) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2513,7 +2513,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignmentHeap) {
             a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2530,9 +2530,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingAddressBufferAlignmentHeap) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, MappingIndirectAddressBufferAlignment) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingIndirectAddressBufferAlignment) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -2563,7 +2563,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingIndirectAddressBufferAlignment) {
             a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     VkDeviceAddress* indirect_data = (VkDeviceAddress*)indirect_buffer.Memory().Map();
@@ -2589,9 +2589,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingIndirectAddressBufferAlignment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexNullIndirect) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectIndexNullIndirect) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
@@ -2607,7 +2607,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexNullIndirect) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkDeviceAddress null_address = 0;
 
@@ -2622,7 +2622,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectIndexNullIndirect) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, PushAddressNullIndirect) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, PushAddressNullIndirect) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -2636,7 +2636,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushAddressNullIndirect) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkDeviceAddress null_address = 0;
 
@@ -2650,7 +2650,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushAddressNullIndirect) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressNullIndirect) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectAddressNullIndirect) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT);
@@ -2665,7 +2665,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressNullIndirect) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkDeviceAddress null_address = 0;
 
@@ -2689,9 +2689,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, IndirectAddressNullIndirect) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, UseCombinedImageSamplerIndex) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, UseCombinedImageSamplerIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize * 3);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize * 3);
 
@@ -2726,7 +2726,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, UseCombinedImageSamplerIndex) {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 2u;
     mapping_info.pMappings = mappings;
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     VkDeviceAddress ssbo_address = buffer.Address();
@@ -2748,9 +2748,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, UseCombinedImageSamplerIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, MappingBindingCountAlias) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingBindingCountAlias) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 4, true);
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2774,7 +2774,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingBindingCountAlias) {
             y[2].b = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     char const* cs_source2 = R"glsl(
         #version 450
@@ -2786,7 +2786,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingBindingCountAlias) {
             x.d = y.d + z.d + w.d;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2807,8 +2807,8 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingBindingCountAlias) {
     mapping.sourceData.indirectIndexArray.pushOffset = 0;
     mapping.sourceData.indirectIndexArray.addressOffset = 4;
 
-    vkt::HeapComputePipeline pipe3(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
-    vkt::HeapComputePipeline pipe4(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe3(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe4(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::Buffer ubo_buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     uint32_t* ubo_data = (uint32_t*)ubo_buffer.Memory().Map();
@@ -2833,9 +2833,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, MappingBindingCountAlias) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, DifferentMappingResourceMask) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, DifferentMappingResourceMask) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2, true);
     vkt::Buffer ssbo_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2861,7 +2861,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DifferentMappingResourceMask) {
             b.b = a.a;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2874,9 +2874,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, DifferentMappingResourceMask) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, PushDataPushIndex) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, PushDataPushIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -2910,7 +2910,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataPushIndex) {
             b = 4;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     uint32_t bad_push_index = 512;
@@ -2940,7 +2940,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataPushIndex) {
             b = data[19];
         }
     )glsl";
-    vkt::HeapComputePipeline pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_command_buffer.Begin();
     uint32_t garbage[20];
     m_command_buffer.PushData(0, 80, garbage);
@@ -2956,9 +2956,9 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataPushIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, PushDataIndirectIndex) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, PushDataIndirectIndex) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -2993,7 +2993,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataIndirectIndex) {
             b = data[19];
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     vkt::Buffer indirect_buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
     uint32_t* indirect_data = (uint32_t*)indirect_buffer.Memory().Map();
@@ -3018,10 +3018,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, PushDataIndirectIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceHeapDataOOB) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4861");
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     // create an extra 256 bytes that we will not bind
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize + 512, true);
     const VkDeviceSize min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
@@ -3051,7 +3051,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
             a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
 
@@ -3073,10 +3073,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceHeapDataOOB) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptor) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingNoDescriptor) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -3097,7 +3097,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptor) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3109,7 +3109,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptor) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptor) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingWrongDescriptor) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
 
@@ -3118,7 +3118,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptor) {
         GTEST_SKIP() << "Currently the find() on the GPU only checks a single size";
     }
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -3145,7 +3145,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptor) {
             a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3157,7 +3157,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptor) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptorUntyped) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingWrongDescriptorUntyped) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
@@ -3168,7 +3168,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptorUntyped) {
         GTEST_SKIP() << "Currently the find() on the GPU only checks a single size";
     }
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 2);
 
@@ -3185,7 +3185,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptorUntyped) {
             s_heap[0].data = u_heap[1].data;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3197,18 +3197,18 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingWrongDescriptorUntyped) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorUntypedSlang) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingNoDescriptorUntypedSlang) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     // Because of -spirv-unified-descriptor-heap-stride
     const VkDeviceSize resource_stride = std::max(heap_props.imageDescriptorSize, heap_props.bufferDescriptorSize);
     desc_heap.CreateResourceHeap(resource_stride * 4);
 
-    // Same shader as PositiveDescriptorHeapUntyped.SlangBasicBuffer
+    // Same shader as PositiveDescriptorHeapUntypedEXT.SlangBasicBuffer
     char const* cs_source = R"(
                OpCapability UntypedPointersKHR
                OpCapability DescriptorHeapEXT
@@ -3266,7 +3266,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorUntypedSlang) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     uint32_t index = 2;
@@ -3281,10 +3281,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorUntypedSlang) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorCombinedImageSampler) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingNoDescriptorCombinedImageSampler) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.imageDescriptorSize;
     const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
@@ -3314,7 +3314,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorCombinedImageSampler) {
             vec4 out_color = texture(tex, vec2(0.5f));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     desc_heap.BindSamplerHeap(m_command_buffer);
@@ -3326,7 +3326,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNoDescriptorCombinedImageSampler) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingNullDescriptor) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingNullDescriptor) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
@@ -3337,7 +3337,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNullDescriptor) {
         GTEST_SKIP() << "Currently the find() on the GPU only checks a single size";
     }
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -3356,7 +3356,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNullDescriptor) {
             a = 0;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3368,7 +3368,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingNullDescriptor) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingToManyDescriptors) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingToManyDescriptors) {
     const uint32_t limit = 256;
     std::vector<VkLayerSettingEXT> layer_settings = {
         {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
@@ -3394,10 +3394,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingToManyDescriptors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingDeviceLocal) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingDeviceLocal) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
 
     VkDeviceSize resource_heap_size_app = Align(heap_props.bufferDescriptorSize, heap_props.bufferDescriptorAlignment);
     resource_heap_size_app = Align(resource_heap_size_app, heap_props.imageDescriptorAlignment);
@@ -3423,7 +3423,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingDeviceLocal) {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
@@ -3471,10 +3471,10 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingDeviceLocal) {
     }
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBWithHashingOn) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBWithHashingOn) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
@@ -3492,7 +3492,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBWithHashingOn) {
             a = 2;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3504,12 +3504,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, ResourceOOBWithHashingOn) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HardcodedOffsetOOB) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HardcodedOffsetOOB) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
     if (desc_heap.resource_heap_.CreateInfo().size > 131072) {
         GTEST_SKIP() << "too much reserved range";
@@ -3572,7 +3572,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HardcodedOffsetOOB) {
                OpFunctionEnd
 
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3586,7 +3586,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HardcodedOffsetOOB) {
 }
 
 // Currently don't handle logic to get stride of multiple arrays
-TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_MultidimensionalArrayOOB) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, DISABLED_MultidimensionalArrayOOB) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6645");
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
@@ -3596,7 +3596,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_MultidimensionalArrayOOB) {
         GTEST_SKIP() << "minResourceHeapReservedRange is not zero";
     }
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     // one less than needed
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4);
 
@@ -3645,7 +3645,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_MultidimensionalArrayOOB) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3658,11 +3658,11 @@ TEST_F(NegativeGpuAVDescriptorHeap, DISABLED_MultidimensionalArrayOOB) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, HashingCombinedSampler) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingCombinedSampler) {
     const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}));
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
 
@@ -3682,7 +3682,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingCombinedSampler) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -3696,12 +3696,12 @@ TEST_F(NegativeGpuAVDescriptorHeap, HashingCombinedSampler) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorHeap, UntypedHardcodedArrayStride) {
+TEST_F(NegativeGpuAVDescriptorHeapEXT, UntypedHardcodedArrayStride) {
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = 256;  // the max any descriptor can be
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -3752,7 +3752,7 @@ TEST_F(NegativeGpuAVDescriptorHeap, UntypedHardcodedArrayStride) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);

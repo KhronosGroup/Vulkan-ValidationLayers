@@ -227,12 +227,12 @@ class SimpleGPL {
 
 // Helper to more quickly build heap pipelines
 // (which don't have things like pipeline layouts or descriptor sets)
-class HeapComputePipeline {
+class HeapComputePipelineEXT {
   public:
     // Force spirv env as likely don't want to build with 1.0
-    HeapComputePipeline(vkt::Device& device, const char* source, const spv_target_env env,
-                        const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info = nullptr,
-                        SpvSourceType source_type = SPV_SOURCE_GLSL, const VkSpecializationInfo* specialization_info = nullptr);
+    HeapComputePipelineEXT(vkt::Device& device, const char* source, const spv_target_env env,
+                           const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info = nullptr,
+                           SpvSourceType source_type = SPV_SOURCE_GLSL, const VkSpecializationInfo* specialization_info = nullptr);
 
     const VkPipeline& Handle() const { return pipe_.handle(); }
     operator VkPipeline() const { return pipe_; }

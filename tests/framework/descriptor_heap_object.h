@@ -30,12 +30,12 @@ namespace as {
 class AccelerationStructureKHR;
 }
 
-class DescriptorHeap {
+class DescriptorHeapEXT {
   public:
     static void AddDescriptorHeapRequirements(VkLayerTest& test);
     static void AddUntypedDescriptorHeapRequirements(VkLayerTest &test);
 
-    DescriptorHeap(VkLayerTest& test);
+    DescriptorHeapEXT(VkLayerTest& test);
     void CreateResourceHeap(VkDeviceSize app_size, bool reserved_range_in_front = false);
     void CreateSamplerHeap(VkDeviceSize app_size, bool reserved_range_in_front = false, bool use_embedded_samplers = false);
 

@@ -274,6 +274,6 @@ TEST_F(NegativeShader64BitIndexing, ConstantSizeOfLength64) {
                OpFunctionEnd
     )";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpConstantSizeOfEXT-11475");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }

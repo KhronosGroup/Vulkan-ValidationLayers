@@ -21,9 +21,9 @@
 
 constexpr uint32_t kMaxSSBO = 128;  // max bufferDescriptorSize is allowed to be
 
-class PositiveDescriptorHeapUntyped : public DescriptorHeapTest {};
+class PositiveDescriptorHeapUntypedEXT : public DescriptorHeapTestEXT {};
 
-void DescriptorHeapTest::InitUntypedDescriptorHeap() {
+void DescriptorHeapTestEXT::InitUntypedDescriptorHeap() {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
@@ -35,10 +35,10 @@ void DescriptorHeapTest::InitUntypedDescriptorHeap() {
     GetPhysicalDeviceProperties2(heap_props);
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, BasicBuffer) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, BasicBuffer) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -57,7 +57,7 @@ TEST_F(PositiveDescriptorHeapUntyped, BasicBuffer) {
             heap[0].a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     uint32_t src_data = 4321u;
 
@@ -82,10 +82,10 @@ TEST_F(PositiveDescriptorHeapUntyped, BasicBuffer) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, Buffer) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, Buffer) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -123,7 +123,7 @@ TEST_F(PositiveDescriptorHeapUntyped, Buffer) {
         OpReturn
         OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -138,7 +138,7 @@ TEST_F(PositiveDescriptorHeapUntyped, Buffer) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, ArrayStrideIdEXT) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, ArrayStrideIdEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_4);
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
@@ -180,10 +180,10 @@ TEST_F(PositiveDescriptorHeapUntyped, ArrayStrideIdEXT) {
     const VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
     const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_4, nullptr, SPV_SOURCE_ASM, &specialization_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_4, nullptr, SPV_SOURCE_ASM, &specialization_info);
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, ImageAndSampler) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, ImageAndSampler) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
 
@@ -195,7 +195,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSampler) {
     const VkDeviceSize buffer_size = heap_props.bufferDescriptorSize;
     const VkDeviceSize resource_heap_app_size = buffer_offset + buffer_size;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_heap_app_size);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -239,7 +239,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSampler) {
             heapBuffer[16].data = texture(sampler2D(heapTextures[0], heapSamplers[0]), vec2(0.5f));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
 
@@ -266,7 +266,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSampler) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlang) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, ImageAndSamplerSlang) {
     TEST_DESCRIPTION("called without -spirv-unified-descriptor-heap-stride");
     AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
@@ -280,7 +280,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlang) {
     const VkDeviceSize image_offset = heap_props.imageDescriptorSize * image_index;
     const VkDeviceSize buffer_offset = heap_props.bufferDescriptorSize * buffer_index;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride * 10);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -388,7 +388,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlang) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     m_command_buffer.PushData(0, 4, &buffer_index);
@@ -417,7 +417,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlang) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlangUnified) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, ImageAndSamplerSlangUnified) {
     TEST_DESCRIPTION("called with -spirv-unified-descriptor-heap-stride");
     AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
@@ -431,7 +431,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlangUnified) {
     const VkDeviceSize image_offset = resource_stride * image_index;
     const VkDeviceSize buffer_offset = resource_stride * buffer_index;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride * 4);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -543,7 +543,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlangUnified) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     m_command_buffer.PushData(0, 4, &buffer_index);
@@ -572,7 +572,7 @@ TEST_F(PositiveDescriptorHeapUntyped, ImageAndSamplerSlangUnified) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, StorageImage) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, StorageImage) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
 
@@ -584,7 +584,7 @@ TEST_F(PositiveDescriptorHeapUntyped, StorageImage) {
     const VkDeviceSize buffer_size = heap_props.bufferDescriptorSize;
     const VkDeviceSize resource_heap_app_size = buffer_offset + buffer_size;
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_heap_app_size);
 
     vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -624,7 +624,7 @@ TEST_F(PositiveDescriptorHeapUntyped, StorageImage) {
 	        heapBuffer[16].data = imageLoad(heapImages[0], ivec2(0));
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
 
@@ -669,10 +669,10 @@ TEST_F(PositiveDescriptorHeapUntyped, StorageImage) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferCompute) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, SecondaryCmdBufferCompute) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -691,7 +691,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferCompute) {
             heap[0].a = b;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     uint32_t src_data = 4321u;
 
@@ -735,11 +735,11 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferCompute) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferGraphics) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, SecondaryCmdBufferGraphics) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -819,12 +819,12 @@ TEST_F(PositiveDescriptorHeapUntyped, SecondaryCmdBufferGraphics) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, VertexStorage) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, VertexStorage) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -880,14 +880,14 @@ TEST_F(PositiveDescriptorHeapUntyped, VertexStorage) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, HardcodedOffsetIntoStruct) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, HardcodedOffsetIntoStruct) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     if (resource_stride != 64) {
         GTEST_SKIP() << "SPIR-V hardcoded for bufferDescriptorSize of 64";
     }
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(resource_stride * 4);
 
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
@@ -972,7 +972,7 @@ TEST_F(PositiveDescriptorHeapUntyped, HardcodedOffsetIntoStruct) {
                OpFunctionEnd
 
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
 
     uint32_t src_data = 4321u;
 
@@ -997,11 +997,11 @@ TEST_F(PositiveDescriptorHeapUntyped, HardcodedOffsetIntoStruct) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, SingleElementNoArray) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, SingleElementNoArray) {
     TEST_DESCRIPTION("GLSL only allows arrays of descriptor, force it to be a single element");
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -1056,7 +1056,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SingleElementNoArray) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, nullptr, SPV_SOURCE_ASM);
 
     uint32_t src_data = 4321u;
 
@@ -1081,10 +1081,10 @@ TEST_F(PositiveDescriptorHeapUntyped, SingleElementNoArray) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, BadArrayStrideWithSingleDescriptor) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, BadArrayStrideWithSingleDescriptor) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride);
 
@@ -1139,7 +1139,7 @@ TEST_F(PositiveDescriptorHeapUntyped, BadArrayStrideWithSingleDescriptor) {
     // spirv-val will now catch this early, but want to still test VVL will not look at
     // garbage array strides if they are not used
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1155,10 +1155,10 @@ TEST_F(PositiveDescriptorHeapUntyped, BadArrayStrideWithSingleDescriptor) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, StrideByTwoSpecConstantOp) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, StrideByTwoSpecConstantOp) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 6);
 
@@ -1233,7 +1233,7 @@ TEST_F(PositiveDescriptorHeapUntyped, StrideByTwoSpecConstantOp) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1250,10 +1250,10 @@ TEST_F(PositiveDescriptorHeapUntyped, StrideByTwoSpecConstantOp) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, StaticHeapArraySize) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, StaticHeapArraySize) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 6);
 
@@ -1321,7 +1321,7 @@ TEST_F(PositiveDescriptorHeapUntyped, StaticHeapArraySize) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1338,10 +1338,10 @@ TEST_F(PositiveDescriptorHeapUntyped, StaticHeapArraySize) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, OffsetId) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, OffsetId) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 6);
 
@@ -1414,7 +1414,7 @@ TEST_F(PositiveDescriptorHeapUntyped, OffsetId) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1432,10 +1432,10 @@ TEST_F(PositiveDescriptorHeapUntyped, OffsetId) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, OffsetIdStaticArraySize) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, OffsetIdStaticArraySize) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 4);
 
@@ -1500,7 +1500,7 @@ TEST_F(PositiveDescriptorHeapUntyped, OffsetIdStaticArraySize) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1515,11 +1515,11 @@ TEST_F(PositiveDescriptorHeapUntyped, OffsetIdStaticArraySize) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, MultidimensionalArray) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, MultidimensionalArray) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6645");
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride * 32);
 
@@ -1572,7 +1572,7 @@ TEST_F(PositiveDescriptorHeapUntyped, MultidimensionalArray) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -1587,12 +1587,12 @@ TEST_F(PositiveDescriptorHeapUntyped, MultidimensionalArray) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, BufferAsFunctionParameter) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, BufferAsFunctionParameter) {
     AddRequiredFeature(vkt::Feature::variablePointers);
     AddRequiredFeature(vkt::Feature::variablePointersStorageBuffer);
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4);
 
     vkt::Buffer buffer_0(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -1719,7 +1719,7 @@ TEST_F(PositiveDescriptorHeapUntyped, BufferAsFunctionParameter) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     data = static_cast<uint32_t*>(buffer_0.Memory().Map());
 
@@ -1772,10 +1772,10 @@ TEST_F(PositiveDescriptorHeapUntyped, BufferAsFunctionParameter) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, SlangBasicBuffer) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, SlangBasicBuffer) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     // Because of -spirv-unified-descriptor-heap-stride
     const VkDeviceSize resource_stride = std::max(heap_props.imageDescriptorSize, heap_props.bufferDescriptorSize);
     desc_heap.CreateResourceHeap(resource_stride * 2);
@@ -1855,7 +1855,7 @@ TEST_F(PositiveDescriptorHeapUntyped, SlangBasicBuffer) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     uint32_t index = 0;
@@ -1878,12 +1878,12 @@ TEST_F(PositiveDescriptorHeapUntyped, SlangBasicBuffer) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, PushDataUnused) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, PushDataUnused) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6753");
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
@@ -1958,7 +1958,7 @@ TEST_F(PositiveDescriptorHeapUntyped, PushDataUnused) {
                OpReturn
                OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     uint32_t a_value = 3;
@@ -1980,10 +1980,10 @@ TEST_F(PositiveDescriptorHeapUntyped, PushDataUnused) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUint) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, DirectAccessUint) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4);
 
     uint32_t in_data[4] = {22, 33, 44, 55};
@@ -2068,7 +2068,7 @@ TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUint) {
         OpReturn
         OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2086,10 +2086,10 @@ TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUint) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUintWithMapping) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, DirectAccessUintWithMapping) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 4);
 
     uint32_t in_data[4] = {22, 33, 44, 55};
@@ -2176,7 +2176,7 @@ TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUintWithMapping) {
         OpReturn
         OpFunctionEnd
     )";
-    vkt::HeapComputePipeline pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
+    vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2194,12 +2194,12 @@ TEST_F(PositiveDescriptorHeapUntyped, DirectAccessUintWithMapping) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredBasic) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, GlslStructuredBasic) {
     // https://github.com/KhronosGroup/GLSL/blob/main/extensions/ext/GLSL_EXT_structured_descriptor_heap.txt
     TEST_DESCRIPTION("Basic usage of GLSL_EXT_structured_descriptor_heap");
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     vkt::Buffer ssbo_a(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2231,7 +2231,7 @@ TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredBasic) {
             bufferHeap.buf_b.z = bufferHeap.buf_a.x;
         }
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     uint32_t* data = static_cast<uint32_t*>(ssbo_a.Memory().Map());
     data[0] = 42;
@@ -2249,12 +2249,12 @@ TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredBasic) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredWithMapping) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, GlslStructuredWithMapping) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
 
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
 
     vkt::Buffer ssbo_a(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2298,7 +2298,7 @@ TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredWithMapping) {
     const VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
     const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &offset_size};
 
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_GLSL, &specialization_info);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_GLSL, &specialization_info);
 
     uint32_t* data_a = static_cast<uint32_t*>(ssbo_a.Memory().Map());
     data_a[0] = 22;
@@ -2320,10 +2320,10 @@ TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredWithMapping) {
     }
 }
 
-TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredSampler) {
+TEST_F(PositiveDescriptorHeapUntypedEXT, GlslStructuredSampler) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
     InitRenderTarget();
-    vkt::DescriptorHeap desc_heap(*this);
+    vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap((heap_props.bufferDescriptorSize * 3) + (heap_props.imageDescriptorSize * 2));
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -2367,7 +2367,7 @@ TEST_F(PositiveDescriptorHeapUntyped, GlslStructuredSampler) {
         }
 
     )glsl";
-    vkt::HeapComputePipeline pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
 
     m_command_buffer.Begin();
 

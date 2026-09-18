@@ -468,9 +468,9 @@ SimpleGPL::SimpleGPL(VkLayerTest& test, VkPipelineLayout layout, const char* ver
     pipe_.Init(*device, exe_pipe_ci);
 }
 
-HeapComputePipeline::HeapComputePipeline(vkt::Device& device, const char* source, const spv_target_env env,
-                                         const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info,
-                                         SpvSourceType source_type, const VkSpecializationInfo* specialization_info) {
+HeapComputePipelineEXT::HeapComputePipelineEXT(vkt::Device& device, const char* source, const spv_target_env env,
+                                               const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info,
+                                               SpvSourceType source_type, const VkSpecializationInfo* specialization_info) {
     VkShaderObj cs_module(device, source, VK_SHADER_STAGE_COMPUTE_BIT, env, source_type, specialization_info);
 
     VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper();
