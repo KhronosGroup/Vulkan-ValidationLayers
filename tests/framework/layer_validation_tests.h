@@ -74,6 +74,10 @@
 [[maybe_unused]] static const VkBool32 kVkFalse = VK_FALSE;
 [[maybe_unused]] static const VkBool32 kVkTrue = VK_TRUE;
 
+// Way to inject lower limits for tests that need to test limits
+static const VkLayerSettingEXT kLowerLimitsSetting = {OBJECT_LAYER_NAME, "gpuav_debug_test_lower_limits",
+                                                      VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+
 // This is only for tests where you have a good reason to have more than the default (10) duplicate message limit.
 // It is highly suggested you first try to breakup your test up into smaller tests if you are trying to use this.
 static const VkLayerSettingEXT kDisableMessageLimitSetting = {OBJECT_LAYER_NAME, "enable_message_limit",
