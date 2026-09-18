@@ -467,11 +467,41 @@ static uint32_t GetDebugLineOffset(const std::vector<uint32_t>& instructions, ui
     return last_line_inst_offset;
 }
 
+// Most callers pass an offset GPU-AV wrote into the error record, which always names an instruction. The shared
+// memory data race check is different: it recovers its offset from the previous contents of a shadow slot, so if
+// the application indexed its shared memory out of bounds that word is not a packed offset at all and can still
+// land inside the module. Walking the module is the only way to tell, and this only runs while building an error
+// message.
+static bool IsInstructionBoundary(const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset) {
+    if (instruction_position_offset < kModuleStartingOffset || instruction_position_offset >= instructions.size()) {
+        return false;
+    }
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        if (offset == instruction_position_offset) {
+            const uint32_t length = Length(instructions[offset]);
+            // the instruction has to fit in what is left of the module
+            return length != 0 && (instructions.size() - offset) >= length;
+        }
+        const uint32_t length = Length(instructions[offset]);
+        if (length == 0) {
+            return false;  // malformed, stop rather than spin
+        }
+        offset += length;
+    }
+    return false;
+}
+
 // There are 2 ways to inject source into a shader:
 // 1. The "old" way using OpLine/OpSource
 // 2. The "new" way using NonSemantic Shader DebugInfo
 void FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
                       bool debug_printf_only) {
+    // See IsInstructionBoundary: an offset recovered from a shadow slot may not name an instruction.
+    if (instruction_position_offset != 0 && !IsInstructionBoundary(instructions, instruction_position_offset)) {
+        ss << "(specific instruction not recorded)\n";
+        return;
+    }
     const uint32_t last_line_offset = GetDebugLineOffset(instructions, instruction_position_offset);
     if (last_line_offset != 0) {
         Instruction last_line_inst(instructions.data() + last_line_offset);

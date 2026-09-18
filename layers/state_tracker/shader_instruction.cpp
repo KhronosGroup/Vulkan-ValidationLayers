@@ -120,6 +120,11 @@ std::string Instruction::Describe() const {
     } else {
         const OperandInfo& info = GetOperandInfo(opcode);
         const uint32_t operands = static_cast<uint32_t>(info.types.size());
+        // Callers validate that the offset names a real instruction before decoding it, so
+        // neither of these can happen for a well formed offset: an unknown opcode falls back
+        // to OpNop and has no operands, and length always covers what has already been printed.
+        assert(operands != 0);
+        assert(length >= operand_offset);
         const uint32_t remaining_words = length - operand_offset;
         for (uint32_t i = 0; i < remaining_words; i++) {
             OperandKind kind = (i < operands) ? info.types[i] : info.types.back();
