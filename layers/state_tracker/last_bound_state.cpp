@@ -1066,6 +1066,17 @@ const spirv::EntryPoint* LastBound::GetFragmentEntryPoint() const {
     return nullptr;
 }
 
+const spirv::Module* LastBound::GetFragmentSpirvModule() const {
+    if (pipeline_state && pipeline_state->fragment_shader_state) {
+        if (const auto& fragment_shader = pipeline_state->fragment_shader_state->fragment_shader) {
+            return fragment_shader->spirv.get();
+        }
+    } else if (const auto* shader_object = GetShaderObjectState(ShaderObjectStage::FRAGMENT)) {
+        return shader_object->stage.spirv_state.get();
+    }
+    return nullptr;
+}
+
 vvl::DescriptorMode LastBound::GetActionDescriptorMode() const {
     if (descriptor_mode != vvl::DescriptorModeUnknown) {
         return descriptor_mode;  // Most common case

@@ -37,6 +37,7 @@ class PipelineLayout;
 
 namespace spirv {
 struct EntryPoint;
+struct Module;
 }  // namespace spirv
 
 struct ShaderStageState;
@@ -174,7 +175,8 @@ struct LastBound {
     std::string DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
 
     const spirv::EntryPoint *GetVertexEntryPoint() const;
-    const spirv::EntryPoint *GetFragmentEntryPoint() const;
+    const spirv::EntryPoint* GetFragmentEntryPoint() const;
+    const spirv::Module* GetFragmentSpirvModule() const;
 
     // Since GPU-AV uses this to access an array, force a getter to ensure people use this correctly.
     vvl::DescriptorMode GetActionDescriptorMode() const;
