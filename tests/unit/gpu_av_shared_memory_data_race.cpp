@@ -1239,6 +1239,29 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicVsCoopMatStore) {
                                    R"((?=[\s\S]*The other access in this race was at:))");
 }
 
+TEST_F(NegativeGpuAVSharedMemoryDataRace, SharedMemoryIndexOutOfBounds) {
+    TEST_DESCRIPTION(
+        "The application indexes its own shared array out of bounds, so the slot index computed from that index is out of "
+        "range too and the word read back was never a packed shadow word. This test is here to make sure building the error "
+        "message does not crash, the reported race itself is not the point. "
+        "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13134");
+
+    // gl_NumWorkGroups keeps the index away from constant folding
+    const char* shader_source = R"glsl(
+        #version 450
+        layout(local_size_x = 4) in;
+        shared uint temp[4];
+        void main() {
+            uint oob = gl_LocalInvocationIndex + gl_NumWorkGroups.x * 64u;
+            temp[oob] = 0;
+            barrier();
+            uint x = temp[gl_LocalInvocationIndex];
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL, 1, VK_SCOPE_DEVICE_KHR, "A data race was detected");
+}
+
 // The next few tests verify the offender's SPIR-V op kind is reported correctly.
 // They use GLSL without debug info so the offender renders as "SPIR-V Instruction:
 // Op<Kind>", which is easy to grep for.

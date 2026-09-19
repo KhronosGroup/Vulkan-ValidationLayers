@@ -431,7 +431,14 @@ void GetExecutionModelNames(const std::vector<uint32_t>& instructions, std::ostr
 
 // Find the OpLine/DebugLine just before the failing instruction indicated by the debug info.
 // Return the offset into the instructions array
-static uint32_t GetDebugLineOffset(const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset) {
+struct DebugLineInfo {
+    uint32_t last_line_offset;
+    // The walk below already visits every instruction boundary, so it can also say whether
+    // instruction_position_offset landed on one without costing a second pass over the module.
+    bool valid_offset;
+};
+
+static DebugLineInfo GetDebugLineOffset(const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset) {
     uint32_t shader_debug_info_set_id = 0;
     uint32_t last_line_inst_offset = 0;
 
@@ -457,6 +464,9 @@ static uint32_t GetDebugLineOffset(const std::vector<uint32_t>& instructions, ui
             last_line_inst_offset = 0;  // debug lines can't cross functions boundaries
         }
 
+        if (length == 0) {
+            return {0, false};  // malformed, stop rather than spin
+        }
         offset += length;
 
         if (offset >= instruction_position_offset) {
@@ -464,15 +474,32 @@ static uint32_t GetDebugLineOffset(const std::vector<uint32_t>& instructions, ui
         }
     }
 
-    return last_line_inst_offset;
+    if (offset != instruction_position_offset) {
+        // stepping instruction to instruction never landed on it, so it is not an instruction
+        return {0, false};
+    }
+
+    return {last_line_inst_offset, true};
 }
 
 // There are 2 ways to inject source into a shader:
 // 1. The "old" way using OpLine/OpSource
 // 2. The "new" way using NonSemantic Shader DebugInfo
-void FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
+bool FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
                       bool debug_printf_only) {
-    const uint32_t last_line_offset = GetDebugLineOffset(instructions, instruction_position_offset);
+    if (instruction_position_offset != 0 &&
+        (instruction_position_offset < kModuleStartingOffset || instruction_position_offset >= instructions.size())) {
+        ss << "(instruction offset is larger than SPIR-V)\n";
+        return false;
+    }
+
+    const DebugLineInfo debug_line_info = GetDebugLineOffset(instructions, instruction_position_offset);
+    if (!debug_line_info.valid_offset) {
+        ss << "(instruction offset does not point to an instruction)\n";
+        return false;
+    }
+
+    const uint32_t last_line_offset = debug_line_info.last_line_offset;
     if (last_line_offset != 0) {
         Instruction last_line_inst(instructions.data() + last_line_offset);
         ss << (debug_printf_only ? "Debug shader printf message generated at " : "Shader validation error occurred at ");
@@ -484,6 +511,7 @@ void FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instr
     } else {
         ss << "(This check was instrumented at the start of your entrypoint function)\n";
     }
+    return true;
 }
 
 void FindGlobalName(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t find_opcode, uint32_t find_id) {

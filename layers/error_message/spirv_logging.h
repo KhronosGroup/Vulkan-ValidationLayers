@@ -30,8 +30,10 @@ class Instruction;
 void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<uint32_t> &instructions,
                          const spirv::Instruction &last_line_insn);
 
-// Will either call GetShaderSourceInfo or print out the raw SPIR-V info
-void FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
+// Will either call GetShaderSourceInfo or print out the raw SPIR-V info.
+// Returns false when instruction_position_offset does not name an instruction, which the caller can use
+// to add why that might be (for shared memory data races, the application indexing shared memory OOB).
+bool FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
                       bool debug_printf_only);
 
 // Will inject the name found from OpName (or OpString in ShaderDebugInfo if no OpName is present)
