@@ -96,7 +96,12 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
     PushConstantRangesId shader_object_push_constant_ranges_id;
     std::vector<VkPushConstantRange> const* push_constant_ranges;
     if (pipeline) {
-        push_constant_ranges = pipeline->PipelineLayoutState()->push_constant_ranges_layout.get();
+        // A null pipeline layout validated elsewhere
+        const auto& pipeline_layout_state = pipeline->PipelineLayoutState();
+        if (!pipeline_layout_state) {
+            return skip;
+        }
+        push_constant_ranges = pipeline_layout_state->push_constant_ranges_layout.get();
     } else {
         shader_object_push_constant_ranges_id = GetCanonicalId(stage_state.shader_object_create_info->pushConstantRangeCount,
                                                                stage_state.shader_object_create_info->pPushConstantRanges);

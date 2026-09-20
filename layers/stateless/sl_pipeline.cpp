@@ -1162,8 +1162,11 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
 
             const bool has_dynamic_binding_stride = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
-            vvl::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
-            for (uint32_t d = 0; d < vertex_input_state->vertexBindingDescriptionCount; ++d) {
+
+            const uint32_t vertex_binding_count =
+                vertex_input_state->pVertexBindingDescriptions ? vertex_input_state->vertexBindingDescriptionCount : 0;
+            vvl::unordered_set<uint32_t> vertex_bindings(vertex_binding_count);
+            for (uint32_t d = 0; d < vertex_binding_count; ++d) {
                 const Location binding_loc = vertex_loc.dot(Field::pVertexBindingDescriptions, d);
                 auto const& vertex_bind_desc = vertex_input_state->pVertexBindingDescriptions[d];
                 auto const& binding_it = vertex_bindings.find(vertex_bind_desc.binding);
@@ -1191,8 +1194,10 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 }
             }
 
-            vvl::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
-            for (uint32_t d = 0; d < vertex_input_state->vertexAttributeDescriptionCount; ++d) {
+            const uint32_t vertex_attribute_count =
+                vertex_input_state->pVertexAttributeDescriptions ? vertex_input_state->vertexAttributeDescriptionCount : 0;
+            vvl::unordered_set<uint32_t> attribute_locations(vertex_attribute_count);
+            for (uint32_t d = 0; d < vertex_attribute_count; ++d) {
                 const Location attribute_loc = vertex_loc.dot(Field::pVertexAttributeDescriptions, d);
                 auto const& vertex_attrib_desc = vertex_input_state->pVertexAttributeDescriptions[d];
                 auto const& location_it = attribute_locations.find(vertex_attrib_desc.location);

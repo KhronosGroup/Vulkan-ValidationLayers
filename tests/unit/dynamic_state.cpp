@@ -6806,3 +6806,15 @@ TEST_F(NegativeDynamicState, InvalidLineRasterizationMode) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicState, DiscardRectangleFirstOverflow) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const VkRect2D rect = {{0, 0}, {16, 16}};
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585");
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0xFFFFFFFFu, 1u, &rect);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

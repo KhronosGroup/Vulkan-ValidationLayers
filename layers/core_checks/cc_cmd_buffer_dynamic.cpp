@@ -1877,7 +1877,8 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
                              "(%" PRId32 ") is negative.", pDiscardRectangles[i].offset.y);
         }
     }
-    if (firstDiscardRectangle + discardRectangleCount > phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
+    if (static_cast<uint64_t>(firstDiscardRectangle) + discardRectangleCount >
+        phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
         skip |=
             LogError("VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585", commandBuffer,
                      error_obj.location.dot(Field::firstDiscardRectangle),

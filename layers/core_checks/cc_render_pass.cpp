@@ -4934,8 +4934,17 @@ bool CoreChecks::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const Err
         return skip;
     }
 
+    if (cb_state->active_render_pass->UsesDynamicRendering()) {
+        vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-03102" : "VUID-vkCmdNextSubpass-None-00909";
+        skip |= LogError(vuid, commandBuffer, error_obj.location,
+                         "Called when the render pass instance was begun with vkCmdBeginRendering().\nEither use "
+                         "vkCmdBeginRenderPass or if trying to migrate to using dynamic rendering, look at "
+                         "VK_KHR_dynamic_rendering_local_read as there are no more subpasses.");
+        return skip;
+    }
+
     auto subpass_count = cb_state->active_render_pass->create_info.subpassCount;
-    if (cb_state->GetActiveSubpass() == subpass_count - 1) {
+    if (cb_state->GetActiveSubpass() + 1 >= subpass_count) {
         vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-03102" : "VUID-vkCmdNextSubpass-None-00909";
         skip |= LogError(vuid, commandBuffer, error_obj.location, "Attempted to advance beyond final subpass.");
     }

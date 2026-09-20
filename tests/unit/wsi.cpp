@@ -7159,3 +7159,42 @@ TEST_F(NegativeWsi, MSRTSInvalidSurface) {
     vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeWsi, PastPresentationTimingWithoutQueries) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = GetSwapchainExtent(m_surface_capabilities);
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    VkPastPresentationTimingEXT presentation_timings[2];
+    memset(presentation_timings, 0, sizeof(presentation_timings));
+    for (auto& timing : presentation_timings) {
+        timing.reportComplete = VK_TRUE;
+    }
+    VkPastPresentationTimingInfoEXT timing_info = vku::InitStructHelper();
+    timing_info.swapchain = swapchain;
+    VkPastPresentationTimingPropertiesEXT timing_props = vku::InitStructHelper();
+    timing_props.presentationTimingCount = 2;
+    timing_props.pPresentationTimings = presentation_timings;
+    vk::GetPastPresentationTimingEXT(device(), &timing_info, &timing_props);
+}

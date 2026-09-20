@@ -4300,3 +4300,24 @@ TEST_F(NegativePipeline, ExclusiveScissorCountLessThanViewportCount) {
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
                                       "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029");
 }
+
+TEST_F(NegativePipeline, NullLayoutPushConstant) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(push_constant) uniform PC { vec4 pos; } pc;
+        void main() { gl_Position = pc.pos; }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.LateBindPipelineInfo();
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-07826");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-06602");
+    pipe.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}
