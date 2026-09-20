@@ -483,7 +483,7 @@ static uint32_t GetDebugLineOffset(const std::vector<uint32_t>& instructions, ui
 bool FindShaderSource(std::ostringstream& ss, const std::vector<uint32_t>& instructions, uint32_t instruction_position_offset,
                       bool debug_printf_only) {
     if (instruction_position_offset >= instructions.size()) {
-        ss << "(instruction offset [" << instruction_position_offset << " is larger than SPIR-V word size [ " << instructions.size()
+        ss << "(instruction offset [" << instruction_position_offset << "] is larger than SPIR-V word size [" << instructions.size()
            << "])\n";
         return false;
     }
