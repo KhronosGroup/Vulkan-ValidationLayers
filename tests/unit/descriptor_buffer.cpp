@@ -2317,3 +2317,24 @@ TEST_F(NegativeDescriptorBuffer, DescriptorAddressRangeAtOffset) {
     vk::GetDescriptorEXT(device(), &get_info, descriptor.size(), descriptor.data());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorBuffer, EmbeddedSamplersNullSetLayoutGPL) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()};
+    vkt::DescriptorSetLayout embedded_dsl(*m_device, binding,
+                                          VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&embedded_dsl, nullptr});
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08070");
+    vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

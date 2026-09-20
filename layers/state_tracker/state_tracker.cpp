@@ -4936,8 +4936,15 @@ void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
     VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties, const RecordObject& record_obj) {
     if (pPastPresentationTimingProperties->pPresentationTimings != nullptr) {
         auto swapchain = Get<Swapchain>(pPastPresentationTimingInfo->swapchain);
+        ASSERT_AND_RETURN(swapchain);
         for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
             if (pPastPresentationTimingProperties->pPresentationTimings[i].reportComplete) {
+                // The results come from the driver, and the application owns the array they are written into, so there is no
+                // guarantee there is a queued query for every completed timing reported here.
+                if (swapchain->present_timing_stage_queries.empty()) {
+                    break;
+                }
+
                 const SubmissionReference present_submission_ref =
                     swapchain->present_timing_stage_queries.front().second.present_submission_ref;
                 present_submission_ref.queue->NotifyAndWait(record_obj.location, present_submission_ref.seq);

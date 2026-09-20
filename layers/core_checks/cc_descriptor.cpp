@@ -2748,13 +2748,21 @@ bool CoreChecks::ValidateCmdBindDescriptorBufferEmbeddedSamplers(const vvl::Comm
                          "VkPipelineLayoutCreateInfo::setLayoutCount (%" PRIuLEAST64 ") when layout was created.",
                          set, (uint64_t)pipeline_layout->set_layouts.list.size());
     } else {
-        auto set_layout = pipeline_layout->set_layouts.list[set];
-        if (!(set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT)) {
+        const auto& set_layout = pipeline_layout->set_layouts.list[set];
+        if (!set_layout ||
+            (set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) == 0) {
             const char* vuid = is_2 ? "VUID-VkBindDescriptorBufferEmbeddedSamplersInfoEXT-set-08070"
                                     : "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08070";
-            skip |= LogError(vuid, cb_state.Handle(), loc,
-                             "layout must have been created with the "
-                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT flag set.");
+            // Can be null... for GPL only of course
+            if (!set_layout) {
+                skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::set),
+                                 "(%" PRIu32 ") points to a VK_NULL_HANDLE descriptor set layout in %s.", set,
+                                 FormatHandle(layout).c_str());
+            } else {
+                skip |= LogError(vuid, cb_state.Handle(), loc,
+                                 "layout must have been created with the "
+                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT flag set.");
+            }
         }
     }
 

@@ -2162,3 +2162,17 @@ TEST_F(NegativeVertexInput, VertexInputRebinding) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeVertexInput, NullDescriptionArrays) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = nullptr;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-parameter");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}

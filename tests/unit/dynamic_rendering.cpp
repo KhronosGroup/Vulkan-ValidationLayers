@@ -8646,3 +8646,35 @@ TEST_F(NegativeDynamicRendering, ImageView3D) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicRendering, NextSubpassInDynamicRendering) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdNextSubpass-None-00909");
+    vk::CmdNextSubpass(m_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyFound();
+
+    VkSubpassBeginInfo subpass_begin_info = vku::InitStructHelper();
+    subpass_begin_info.contents = VK_SUBPASS_CONTENTS_INLINE;
+    VkSubpassEndInfo subpass_end_info = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdNextSubpass2-None-03102");
+    vk::CmdNextSubpass2(m_command_buffer, &subpass_begin_info, &subpass_end_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
