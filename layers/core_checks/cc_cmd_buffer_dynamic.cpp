@@ -1870,26 +1870,6 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |=
         ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788", error_obj.location);
-    for (uint32_t i = 0; i < discardRectangleCount; ++i) {
-        if (pDiscardRectangles[i].offset.x < 0) {
-            skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-x-00587", commandBuffer,
-                             error_obj.location.dot(Field::pDiscardRectangles, i).dot(Field::offset).dot(Field::x),
-                             "(%" PRId32 ") is negative.", pDiscardRectangles[i].offset.x);
-        }
-        if (pDiscardRectangles[i].offset.y < 0) {
-            skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-x-00587", commandBuffer,
-                             error_obj.location.dot(Field::pDiscardRectangles, i).dot(Field::offset).dot(Field::y),
-                             "(%" PRId32 ") is negative.", pDiscardRectangles[i].offset.y);
-        }
-    }
-    if (static_cast<uint64_t>(firstDiscardRectangle) + discardRectangleCount >
-        phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
-        skip |=
-            LogError("VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585", commandBuffer,
-                     error_obj.location.dot(Field::firstDiscardRectangle),
-                     "(%" PRIu32 ") + discardRectangleCount (%" PRIu32 ") is not less than maxDiscardRectangles (%" PRIu32 ").",
-                     firstDiscardRectangle, discardRectangleCount, phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
-    }
     return skip;
 }
 
@@ -2353,10 +2333,6 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer comman
                                                           const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    if (!enabled_features.extendedDynamicState3ColorBlendEnable && !enabled_features.shaderObject) {
-        skip |= LogError("VUID-vkCmdSetColorBlendEnableEXT-None-09423", commandBuffer, error_obj.location,
-                         "extendedDynamicState3ColorBlendEnable and shaderObject features were not enabled.");
-    }
     skip |= ValidateCmd(*cb_state, error_obj.location);
     return skip;
 }
@@ -2367,60 +2343,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
                                                             const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    if (!enabled_features.extendedDynamicState3ColorBlendEquation && !enabled_features.shaderObject) {
-        skip |= LogError("VUID-vkCmdSetColorBlendEquationEXT-None-09423", commandBuffer, error_obj.location,
-                         "extendedDynamicState3ColorBlendEquation and shaderObject features were not enabled.");
-    }
     skip |= ValidateCmd(*cb_state, error_obj.location);
-
-    for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
-        const Location equation_loc = error_obj.location.dot(Field::pColorBlendEquations, attachment);
-        VkColorBlendEquationEXT const& equation = pColorBlendEquations[attachment];
-        if (!enabled_features.dualSrcBlend) {
-            if (IsSecondaryColorInputBlendFactor(equation.srcColorBlendFactor)) {
-                skip |= LogError(
-                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357", commandBuffer, equation_loc.dot(Field::srcColorBlendFactor),
-                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.srcColorBlendFactor));
-            }
-            if (IsSecondaryColorInputBlendFactor(equation.dstColorBlendFactor)) {
-                skip |= LogError(
-                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07358", commandBuffer, equation_loc.dot(Field::dstColorBlendFactor),
-                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.dstColorBlendFactor));
-            }
-            if (IsSecondaryColorInputBlendFactor(equation.srcAlphaBlendFactor)) {
-                skip |= LogError(
-                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07359", commandBuffer, equation_loc.dot(Field::srcAlphaBlendFactor),
-                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.srcAlphaBlendFactor));
-            }
-            if (IsSecondaryColorInputBlendFactor(equation.dstAlphaBlendFactor)) {
-                skip |= LogError(
-                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07360", commandBuffer, equation_loc.dot(Field::dstAlphaBlendFactor),
-                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.dstAlphaBlendFactor));
-            }
-        }
-        if (IsAdvanceBlendOperation(equation.colorBlendOp) || IsAdvanceBlendOperation(equation.alphaBlendOp)) {
-            skip |=
-                LogError("VUID-VkColorBlendEquationEXT-colorBlendOp-07361", commandBuffer, equation_loc.dot(Field::colorBlendOp),
-                         "(%s) and alphaBlendOp (%s) must not be an advanced blending operation.",
-                         string_VkBlendOp(equation.colorBlendOp), string_VkBlendOp(equation.alphaBlendOp));
-        }
-        if (IsExtEnabled(extensions.vk_khr_portability_subset) && !enabled_features.constantAlphaColorBlendFactors) {
-            if (equation.srcColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
-                equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
-                skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362", commandBuffer,
-                                 equation_loc.dot(Field::srcColorBlendFactor),
-                                 "is %s but the constantAlphaColorBlendFactors feature was not enabled.",
-                                 string_VkBlendFactor(equation.srcColorBlendFactor));
-            }
-            if (equation.dstColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
-                equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
-                skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363", commandBuffer,
-                                 equation_loc.dot(Field::dstColorBlendFactor),
-                                 "is %s but the constantAlphaColorBlendFactors feature was not enabled.",
-                                 string_VkBlendFactor(equation.dstColorBlendFactor));
-            }
-        }
-    }
     return skip;
 }
 
@@ -2429,10 +2352,6 @@ bool CoreChecks::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandB
                                                         const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    if (!enabled_features.extendedDynamicState3ColorWriteMask && !enabled_features.shaderObject) {
-        skip |= LogError("VUID-vkCmdSetColorWriteMaskEXT-None-09423", commandBuffer, error_obj.location,
-                         "extendedDynamicState3ColorWriteMask and shaderObject features were not enabled.");
-    }
     skip |= ValidateCmd(*cb_state, error_obj.location);
     return skip;
 }
@@ -2540,34 +2459,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
                                                             const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-    if (!enabled_features.extendedDynamicState3ColorBlendAdvanced && !enabled_features.shaderObject) {
-        skip |= LogError("VUID-vkCmdSetColorBlendAdvancedEXT-None-09423", commandBuffer, error_obj.location,
-                         "extendedDynamicState3ColorBlendAdvanced and shaderObject features were not enabled.");
-    }
     skip |= ValidateCmd(*cb_state, error_obj.location);
-
-    for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
-        VkColorBlendAdvancedEXT const& advanced = pColorBlendAdvanced[attachment];
-        if (advanced.srcPremultiplied == VK_TRUE &&
-            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
-            skip |= LogError("VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505", commandBuffer,
-                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::srcPremultiplied),
-                             "is VK_TRUE but the advancedBlendNonPremultipliedSrcColor feature was not enabled.");
-        }
-        if (advanced.dstPremultiplied == VK_TRUE &&
-            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
-            skip |= LogError("VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506", commandBuffer,
-                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::dstPremultiplied),
-                             "is VK_TRUE but the advancedBlendNonPremultipliedDstColor feature was not enabled.");
-        }
-        if (advanced.blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT &&
-            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
-            skip |= LogError("VUID-VkColorBlendAdvancedEXT-blendOverlap-07507", commandBuffer,
-                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::blendOverlap),
-                             "is %s, but the advancedBlendCorrelatedOverlap feature was not enabled.",
-                             string_VkBlendOverlapEXT(advanced.blendOverlap));
-        }
-    }
     return skip;
 }
 

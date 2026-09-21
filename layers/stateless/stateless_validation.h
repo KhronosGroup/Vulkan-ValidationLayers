@@ -1215,6 +1215,20 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                          uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles,
                                                          const Context &context) const;
+    bool manual_PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                         uint32_t attachmentCount, const VkBool32* pColorBlendEnables,
+                                                         const Context& context) const;
+    bool manual_PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                           uint32_t attachmentCount,
+                                                           const VkColorBlendEquationEXT* pColorBlendEquations,
+                                                           const Context& context) const;
+    bool manual_PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                       uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks,
+                                                       const Context& context) const;
+    bool manual_PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                           uint32_t attachmentCount,
+                                                           const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
+                                                           const Context& context) const;
     bool manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                    size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                                    const Context &context) const;
