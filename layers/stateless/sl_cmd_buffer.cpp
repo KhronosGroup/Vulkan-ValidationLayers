@@ -393,11 +393,83 @@ bool Device::manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                     uint32_t queryCount, const Context& context) const {
+    const LogObjectList objlist(commandBuffer, queryPool);
+    return ValidateUint32Overflow(firstQuery, queryCount, objlist, context.error_obj.location.dot(Field::firstQuery),
+                                  Field::queryCount);
+}
+
+bool Device::manual_PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                                  const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+    const LogObjectList objlist(device, queryPool);
+
+    if (!enabled_features.hostQueryReset) {
+        skip |= LogError("VUID-vkResetQueryPool-None-02665", device, error_obj.location, "hostQueryReset feature was not enabled.");
+    }
+
+    skip |= ValidateUint32Overflow(firstQuery, queryCount, objlist, context.error_obj.location.dot(Field::firstQuery),
+                                   Field::queryCount);
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                                           uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer,
+                                                           VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags,
+                                                           const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+    const LogObjectList objlist(commandBuffer, queryPool);
+
+    skip |= ValidateUint32Overflow(firstQuery, queryCount, objlist, error_obj.location.dot(Field::firstQuery), Field::queryCount);
+
+    if (flags & VK_QUERY_RESULT_64_BIT) {
+        if (queryCount > 1 && !IsIntegerMultipleOf(stride, 8)) {
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryCount-12255", objlist, error_obj.location.dot(Field::stride),
+                             "(%" PRIu64 ") is not a multiple of 8. (queryCount is %" PRIu32 ")", stride, queryCount);
+        }
+        if (!IsIntegerMultipleOf(dstOffset, 8)) {
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-flags-00823", objlist, error_obj.location.dot(Field::dstOffset),
+                             "(%" PRIu64 ") is not a multiple of 8.", dstOffset);
+        }
+    } else {
+        if (queryCount > 1 && !IsIntegerMultipleOf(stride, 4)) {
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryCount-12254", objlist, error_obj.location.dot(Field::stride),
+                             "(%" PRIu64 ") is not a multiple of 4. (queryCount is %" PRIu32 ")", stride, queryCount);
+        }
+        if (!IsIntegerMultipleOf(dstOffset, 4)) {
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-flags-00822", objlist, error_obj.location.dot(Field::dstOffset),
+                             "(%" PRIu64 ") is not a multiple of 4.", dstOffset);
+        }
+    }
+
+    if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-flags-09443", objlist, error_obj.location.dot(Field::flags),
+                         "(%s) include both STATUS_BIT and AVAILABILITY_BIT.", string_VkQueryResultFlags(flags).c_str());
+    }
+
+    if (queryCount > 1 && stride == 0) {
+        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryCount-09438", objlist, error_obj.location.dot(Field::queryCount),
+                         "is %" PRIu32 " but stride is zero.", queryCount);
+    }
+    return skip;
+}
+
 bool Device::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                        uint32_t queryCount, size_t dataSize, void* pData, VkDeviceSize stride,
                                                        VkQueryResultFlags flags, const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
+
+    const LogObjectList objlist(device, queryPool);
+    skip |= ValidateUint32Overflow(firstQuery, queryCount, objlist, error_obj.location.dot(Field::firstQuery), Field::queryCount);
+
+    if (queryCount > 1 && stride == 0) {
+        skip |= LogError("VUID-vkGetQueryPoolResults-queryCount-09438", queryPool, error_obj.location.dot(Field::queryCount),
+                         "is %" PRIu32 " but stride is zero.", queryCount);
+    }
 
     if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
         skip |= LogError("VUID-vkGetQueryPoolResults-flags-09443", device, error_obj.location.dot(Field::flags),
@@ -417,6 +489,10 @@ bool Device::manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandB
 
     const auto& error_obj = context.error_obj;
     skip |= context.ValidateDeviceAddressFlags(error_obj.location.dot(Field::dstFlags), dstFlags);
+
+    const LogObjectList query_objlist(commandBuffer, queryPool);
+    skip |=
+        ValidateUint32Overflow(firstQuery, queryCount, query_objlist, error_obj.location.dot(Field::firstQuery), Field::queryCount);
 
     if (queryCount > 1 && pDstRange->stride == 0) {
         const LogObjectList objlist(commandBuffer, queryPool);

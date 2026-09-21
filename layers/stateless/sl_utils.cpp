@@ -71,7 +71,7 @@ bool Device::OutputExtensionError(const Location& loc, const vvl::Extensions& ex
 bool Device::ValidateUint32Overflow(uint32_t first, uint32_t count, const LogObjectList& objlist, const Location& first_loc,
                                     Field count_field) const {
     const uint64_t sum = static_cast<uint64_t>(first) + static_cast<uint64_t>(count);
-    if (sum >= vvl::kU32Max) {
+    if (sum > vvl::kU32Max) {
         return LogError("UNASSIGNED-UINT32-OVERFLOW", objlist, first_loc,
                         "(%" PRIu32 ") + %s (%" PRIu32 ") is %" PRIu64 " which will overflow uint32_t", first, String(count_field),
                         count, sum);

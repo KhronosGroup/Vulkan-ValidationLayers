@@ -10884,6 +10884,7 @@ bool Device::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQ
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
+    if (!skip) skip |= manual_PreCallValidateCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount, context);
     return skip;
 }
 
@@ -10910,6 +10911,9 @@ bool Device::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffe
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstBuffer), dstBuffer);
     skip |= context.ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkQueryResultFlagBits, AllVkQueryResultFlagBits, flags,
                                   kOptionalFlags, "VUID-vkCmdCopyQueryPoolResults-flags-parameter", nullptr, false);
+    if (!skip)
+        skip |= manual_PreCallValidateCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer,
+                                                              dstOffset, stride, flags, context);
     return skip;
 }
 
@@ -13533,6 +13537,7 @@ bool Device::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPoo
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
+    if (!skip) skip |= manual_PreCallValidateResetQueryPool(device, queryPool, firstQuery, queryCount, context);
     return skip;
 }
 
