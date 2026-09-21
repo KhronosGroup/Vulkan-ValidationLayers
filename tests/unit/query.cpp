@@ -836,18 +836,14 @@ TEST_F(NegativeQuery, HostResetInFlight) {
 }
 
 TEST_F(NegativeQuery, HostResetQueryPool) {
-    TEST_DESCRIPTION("Invalid queryPool in vkResetQueryPoolEXT");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::hostQueryReset);
     RETURN_IF_SKIP(Init());
 
-    // Create and destroy a query pool.
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
     VkQueryPool bad_pool = query_pool;
     query_pool.Destroy();
 
-    // Attempt to reuse the query pool handle.
     m_errorMonitor->SetDesiredError("VUID-vkResetQueryPool-queryPool-parameter");
     vk::ResetQueryPool(device(), bad_pool, 0, 1);
     m_errorMonitor->VerifyFound();
@@ -1095,7 +1091,6 @@ TEST_F(NegativeQuery, Sizes) {
     m_errorMonitor->VerifyFound();
 
     // sum of firstQuery and queryCount is too large
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-firstQuery-09437");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryCount-09438");
     vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool, 1, query_pool_size, buffer, 0, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1490,28 +1485,46 @@ TEST_F(NegativeQuery, GetResultsAccelerationStructureSize) {
 }
 
 TEST_F(NegativeQuery, HugeQueryCount) {
-    TEST_DESCRIPTION("Make sure we are not looping 2^32 times for something like this");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
     RETURN_IF_SKIP(Init());
 
-    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
+    {
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
+        m_command_buffer.Begin();
 
-    m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
-    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 0xFFFFFFFFu);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
-}
+        m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 0xFFFFFFFFu);
+        m_errorMonitor->VerifyFound();
 
-TEST_F(NegativeQuery, HugeQueryCountOverflow) {
-    RETURN_IF_SKIP(Init());
+        m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09436");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0xFFFFFFF0u, 32);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
+    {
+        const VkDeviceSize buffer_size = 128;
+        vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 4);
 
-    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
-    m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09436");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
-    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0xFFFFFFF0u, 32);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
+        m_errorMonitor->SetDesiredError("VUID-vkResetQueryPool-firstQuery-09436");
+        vk::ResetQueryPool(device(), query_pool, vvl::kU32Max, 2);
+        m_errorMonitor->VerifyFound();
+
+        const size_t out_data_size = 16;
+        uint8_t data[out_data_size];
+        m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-firstQuery-09436");
+        m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-firstQuery-09437");
+        vk::GetQueryPoolResults(device(), query_pool, vvl::kU32Max, 2, out_data_size, &data, 4, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryCount-09438");
+        vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, vvl::kU32Max, 2, buffer, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
 }
 
 TEST_F(NegativeQuery, NestedQueryReportsSlot) {
@@ -2106,7 +2119,6 @@ TEST_F(NegativeQuery, CmdCopyQueryPoolResultsWithoutQueryPool) {
 }
 
 TEST_F(NegativeQuery, CmdResetQueryPoolWithoutQueryPool) {
-    TEST_DESCRIPTION("call vkCmdResetQueryPool with queryPool being invalid.");
     RETURN_IF_SKIP(Init());
     VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
     m_command_buffer.Begin();
@@ -2117,8 +2129,8 @@ TEST_F(NegativeQuery, CmdResetQueryPoolWithoutQueryPool) {
 }
 
 TEST_F(NegativeQuery, ResetQueryPoolWithoutQueryPool) {
-    TEST_DESCRIPTION("call vkResetQueryPool with queryPool being invalid.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
     RETURN_IF_SKIP(Init());
     VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
     m_errorMonitor->SetDesiredError("VUID-vkResetQueryPool-queryPool-parameter");

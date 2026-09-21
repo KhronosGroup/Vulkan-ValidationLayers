@@ -196,6 +196,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBeginRendering',
             'vkCmdSetDiscardRectangleEXT',
             'vkGetQueryPoolResults',
+            'vkResetQueryPool',
+            'vkCmdCopyQueryPoolResults',
             'vkCmdBeginConditionalRenderingEXT',
             'vkGetDeviceImageMemoryRequirements',
             'vkGetDeviceImageSparseMemoryRequirements',

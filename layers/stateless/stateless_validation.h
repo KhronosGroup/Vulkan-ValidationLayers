@@ -1218,6 +1218,11 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                    size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                                    const Context &context) const;
+    bool manual_PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                              const Context& context) const;
+    bool manual_PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                       uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                       VkDeviceSize stride, VkQueryResultFlags flags, const Context& context) const;
     bool manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
                                                                   uint32_t firstQuery, uint32_t queryCount,
                                                                   const VkStridedDeviceAddressRangeKHR* pDstRange,
