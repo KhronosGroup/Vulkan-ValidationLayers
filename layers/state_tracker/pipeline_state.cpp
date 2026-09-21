@@ -676,7 +676,9 @@ static bool IgnoreColorAttachments(const DeviceState& state_data, Pipeline& pipe
     if (pipe_state.library_create_info) {
         for (uint32_t i = 0; i < pipe_state.library_create_info->libraryCount; i++) {
             const auto lib = state_data.Get<vvl::Pipeline>(pipe_state.library_create_info->pLibraries[i]);
-            if (lib->ignore_color_attachments) return true;
+            if (lib && lib->ignore_color_attachments) {
+                return true;
+            }
         }
     }
     // According to the spec, pAttachments is to be ignored if the pipeline is created with

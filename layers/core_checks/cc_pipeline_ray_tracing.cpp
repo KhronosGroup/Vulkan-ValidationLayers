@@ -320,7 +320,12 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline& pipeline
             continue;
         }
 
-        if ((lib->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
+        if (lib->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+            skip |=
+                LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381", lib->Handle(), library_loc,
+                         "is a %s pipeline, not a ray tracing pipeline library.", string_VkPipelineBindPoint(lib->pipeline_type));
+            continue;
+        } else if ((lib->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
             skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381", lib->Handle(), library_loc,
                              "was created with %s.", string_VkPipelineCreateFlags2(lib->create_flags).c_str());
         }
