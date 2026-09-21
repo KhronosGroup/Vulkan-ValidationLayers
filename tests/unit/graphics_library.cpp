@@ -4265,3 +4265,25 @@ TEST_F(NegativeGraphicsLibrary, LinkingIncompatibleRenderPass) {
     frag_shader_lib.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGraphicsLibrary, LinkNonGraphicsPipeline) {
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreateComputePipelineHelper compute_pipe(*this);
+    compute_pipe.CreateComputePipeline();
+
+    VkPipeline libraries[1] = {compute_pipe};
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = libraries;
+
+    CreatePipelineHelper pipe(*this, &link_info);
+    pipe.LateBindPipelineInfo();
+    pipe.gp_ci_.stageCount = 0;
+    pipe.gp_ci_.pStages = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08901");
+    pipe.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
+}

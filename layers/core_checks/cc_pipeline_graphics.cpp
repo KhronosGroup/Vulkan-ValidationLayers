@@ -333,6 +333,13 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline& pipeline
         }
 
         const Location& library_loc = create_info_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR, Field::pLibraries, i);
+
+        if (lib->pipeline_type != VK_PIPELINE_BIND_POINT_GRAPHICS) {
+            skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381", lib->Handle(), library_loc,
+                             "is a %s pipeline, not a graphics pipeline library.", string_VkPipelineBindPoint(lib->pipeline_type));
+            continue;
+        }
+
         const VkPipelineCreateFlags2 lib_pipeline_flags = lib->create_flags;
 
         if ((pipeline_flags & VK_PIPELINE_CREATE_2_OPACITY_MICROMAP_DISALLOW_MIXED_SPECIAL_INDEX_BIT_KHR) &&
@@ -938,7 +945,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
         // extra loop here to set values for the unified checks below
         for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
             const auto lib = Get<vvl::Pipeline>(pipeline.library_create_info->pLibraries[i]);
-            if (!lib) {
+            if (!lib || lib->pipeline_type != VK_PIPELINE_BIND_POINT_GRAPHICS) {
                 continue;
             }
 
