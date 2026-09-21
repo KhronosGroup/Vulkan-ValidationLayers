@@ -145,11 +145,6 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
     if (disabled[query_validation]) return false;
     bool skip = false;
 
-    if (queryCount > 1 && stride == 0) {
-        skip |= LogError("VUID-vkGetQueryPoolResults-queryCount-09438", queryPool, error_obj.location.dot(Field::queryCount),
-                         "is %" PRIu32 " but stride is zero.", queryCount);
-    }
-
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
     ASSERT_AND_RETURN_SKIP(query_pool_state);
 
@@ -1137,26 +1132,6 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buff_state, error_obj.location.dot(Field::dstBuffer),
                                           "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00826");
 
-    if (flags & VK_QUERY_RESULT_64_BIT) {
-        if (queryCount > 1 && !IsIntegerMultipleOf(stride, 8)) {
-            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryCount-12255", device, error_obj.location.dot(Field::stride),
-                             "(%" PRIu64 ") is not a multiple of 8. (queryCount is %" PRIu32 ")", stride, queryCount);
-        }
-        if (!IsIntegerMultipleOf(dstOffset, 8)) {
-            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-flags-00823", device, error_obj.location.dot(Field::dstOffset),
-                             "(%" PRIu64 ") is not a multiple of 8.", dstOffset);
-        }
-    } else {
-        if (queryCount > 1 && !IsIntegerMultipleOf(stride, 4)) {
-            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryCount-12254", device, error_obj.location.dot(Field::stride),
-                             "(%" PRIu64 ") is not a multiple of 4. (queryCount is %" PRIu32 ")", stride, queryCount);
-        }
-        if (!IsIntegerMultipleOf(dstOffset, 4)) {
-            skip |= LogError("VUID-vkCmdCopyQueryPoolResults-flags-00822", device, error_obj.location.dot(Field::dstOffset),
-                             "(%" PRIu64 ") is not a multiple of 4.", dstOffset);
-        }
-    }
-
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(buffer_objlist, *dst_buff_state, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825", error_obj.location.dot(Field::dstBuffer));
@@ -1182,17 +1157,6 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                          required_size, FormatHandle(dst_buff_state->Handle()).c_str(), dst_buff_state->GetSize(), dstOffset,
                          queryCount, stride, query_size);
         }
-    }
-
-    if ((flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
-        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-flags-09443", commandBuffer, error_obj.location.dot(Field::flags),
-                         "(%s) include both STATUS_BIT and AVAILABILITY_BIT.", string_VkQueryResultFlags(flags).c_str());
-    }
-
-    if (queryCount > 1 && stride == 0) {
-        const LogObjectList objlist(commandBuffer, queryPool);
-        skip |= LogError("VUID-vkCmdCopyQueryPoolResults-queryCount-09438", objlist, error_obj.location.dot(Field::queryCount),
-                         "is %" PRIu32 " but stride is zero.", queryCount);
     }
 
     skip |= ValidateQueryPoolIndex(commandBuffer, *query_pool_state, firstQuery, queryCount, error_obj.location,
@@ -1560,10 +1524,6 @@ bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool quer
                                                const ErrorObject& error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
-
-    if (!enabled_features.hostQueryReset) {
-        skip |= LogError("VUID-vkResetQueryPool-None-02665", device, error_obj.location, "hostQueryReset feature was not enabled.");
-    }
 
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
     ASSERT_AND_RETURN_SKIP(query_pool_state);
