@@ -27280,6 +27280,9 @@ bool Device::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuf
         context.ValidateBool32Array(loc.dot(Field::attachmentCount), loc.dot(Field::pColorBlendEnables), attachmentCount,
                                     pColorBlendEnables, true, true, "VUID-vkCmdSetColorBlendEnableEXT-attachmentCount-arraylength",
                                     "VUID-vkCmdSetColorBlendEnableEXT-pColorBlendEnables-parameter");
+    if (!skip)
+        skip |= manual_PreCallValidateCmdSetColorBlendEnableEXT(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables,
+                                                                context);
     return skip;
 }
 
@@ -27324,6 +27327,9 @@ bool Device::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandB
                                                "VUID-VkColorBlendEquationEXT-alphaBlendOp-parameter");
         }
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdSetColorBlendEquationEXT(commandBuffer, firstAttachment, attachmentCount,
+                                                                  pColorBlendEquations, context);
     return skip;
 }
 
@@ -27339,6 +27345,9 @@ bool Device::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffe
                                        vvl::FlagBitmask::VkColorComponentFlagBits, AllVkColorComponentFlagBits, attachmentCount,
                                        pColorWriteMasks, true, "VUID-vkCmdSetColorWriteMaskEXT-attachmentCount-arraylength",
                                        "VUID-vkCmdSetColorWriteMaskEXT-pColorWriteMasks-parameter");
+    if (!skip)
+        skip |= manual_PreCallValidateCmdSetColorWriteMaskEXT(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks,
+                                                              context);
     return skip;
 }
 
@@ -27444,6 +27453,9 @@ bool Device::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandB
                                            pColorBlendAdvanced[attachmentIndex].clampResults);
         }
     }
+    if (!skip)
+        skip |= manual_PreCallValidateCmdSetColorBlendAdvancedEXT(commandBuffer, firstAttachment, attachmentCount,
+                                                                  pColorBlendAdvanced, context);
     return skip;
 }
 

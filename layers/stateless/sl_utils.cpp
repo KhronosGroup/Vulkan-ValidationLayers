@@ -21,6 +21,7 @@
 #include "stateless/stateless_validation.h"
 #include "sl_vuid_maps.h"
 #include "containers/small_vector.h"
+#include "containers/limits.h"
 
 namespace stateless {
 bool Instance::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location& loc,
@@ -61,6 +62,21 @@ bool Instance::OutputExtensionError(const Location& loc, const vvl::Extensions& 
 bool Device::OutputExtensionError(const Location& loc, const vvl::Extensions& extensions) const {
     return LogError("UNASSIGNED-GeneralParameterError-ExtensionNotEnabled", device, loc,
                     "function required extension %s which has not been enabled.\n", String(extensions).c_str());
+}
+
+// There are some various cases where you can have a UINT32 overflow, there is no explicit VU for these, but we still want to catch
+// it for the user because no other tool will.
+// The goal of doing it in stateless is also that other things like CoreChecks/GPU-AV can just expect there is no overflow and not
+// have to do redundant casts.
+bool Device::ValidateUint32Overflow(uint32_t first, uint32_t count, const LogObjectList& objlist, const Location& first_loc,
+                                    Field count_field) const {
+    const uint64_t sum = static_cast<uint64_t>(first) + static_cast<uint64_t>(count);
+    if (sum >= vvl::kU32Max) {
+        return LogError("UNASSIGNED-UINT32-OVERFLOW", objlist, first_loc,
+                        "(%" PRIu32 ") + %s (%" PRIu32 ") is %" PRIu64 " which will overflow uint32_t", first, String(count_field),
+                        count, sum);
+    }
+    return false;
 }
 
 static const uint8_t kUtF8OneByteCode = 0xC0;

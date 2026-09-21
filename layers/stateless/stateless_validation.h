@@ -491,6 +491,9 @@ class Device : public vvl::BaseDevice {
 
     bool OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const;
 
+    bool ValidateUint32Overflow(uint32_t first, uint32_t count, const LogObjectList& objlist, const Location& first_loc,
+                                Field count_field) const;
+
     bool ValidateSubpassGraphicsFlags(const VkRenderPassCreateInfo2 &create_info, uint32_t subpass, VkPipelineStageFlags2 stages,
                                       const char *vuid, const Location &loc) const;
 
@@ -940,9 +943,9 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT *pDescriptorInfo, size_t dataSize,
                                                 void *pDescriptor, const Context &context) const;
 
-    bool ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer, VkPipelineLayout layout, uint32_t setCount,
-                                               const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets,
-                                               const Location &loc) const;
+    bool ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer, VkPipelineLayout layout, uint32_t firstSet,
+                                               uint32_t setCount, const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+                                               const Location& loc) const;
 
     bool manual_PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer,
                                                                 VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
@@ -1215,6 +1218,20 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                          uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles,
                                                          const Context &context) const;
+    bool manual_PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                         uint32_t attachmentCount, const VkBool32* pColorBlendEnables,
+                                                         const Context& context) const;
+    bool manual_PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                           uint32_t attachmentCount,
+                                                           const VkColorBlendEquationEXT* pColorBlendEquations,
+                                                           const Context& context) const;
+    bool manual_PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                       uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks,
+                                                       const Context& context) const;
+    bool manual_PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                           uint32_t attachmentCount,
+                                                           const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
+                                                           const Context& context) const;
     bool manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                    size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                                    const Context &context) const;

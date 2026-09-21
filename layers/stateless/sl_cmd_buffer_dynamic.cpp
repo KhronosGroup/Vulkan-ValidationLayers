@@ -265,11 +265,44 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                             uint32_t attachmentCount, const VkBool32* pColorBlendEnables,
+                                                             const Context& context) const {
+    return ValidateUint32Overflow(firstAttachment, attachmentCount, commandBuffer,
+                                  context.error_obj.location.dot(Field::firstAttachment), Field::attachmentCount);
+}
+
+bool Device::manual_PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                               uint32_t attachmentCount,
+                                                               const VkColorBlendEquationEXT* pColorBlendEquations,
+                                                               const Context& context) const {
+    return ValidateUint32Overflow(firstAttachment, attachmentCount, commandBuffer,
+                                  context.error_obj.location.dot(Field::firstAttachment), Field::attachmentCount);
+}
+
+bool Device::manual_PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                           uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks,
+                                                           const Context& context) const {
+    return ValidateUint32Overflow(firstAttachment, attachmentCount, commandBuffer,
+                                  context.error_obj.location.dot(Field::firstAttachment), Field::attachmentCount);
+}
+
+bool Device::manual_PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                               uint32_t attachmentCount,
+                                                               const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
+                                                               const Context& context) const {
+    return ValidateUint32Overflow(firstAttachment, attachmentCount, commandBuffer,
+                                  context.error_obj.location.dot(Field::firstAttachment), Field::attachmentCount);
+}
+
 bool Device::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                              uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles,
                                                              const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
+
+    skip |= ValidateUint32Overflow(firstDiscardRectangle, discardRectangleCount, commandBuffer,
+                                   error_obj.location.dot(Field::firstDiscardRectangle), Field::discardRectangleCount);
 
     if (!pDiscardRectangles) {
         return skip;

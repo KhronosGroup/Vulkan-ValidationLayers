@@ -2513,7 +2513,8 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
                          firstSet, setCount, (uint64_t)pipeline_layout->set_layouts.list.size());
 
         // Clamp so that we don't attempt to access invalid stuff
-        setCount = std::min(setCount, static_cast<uint32_t>(pipeline_layout->set_layouts.list.size()));
+        const uint32_t set_layout_count = static_cast<uint32_t>(pipeline_layout->set_layouts.list.size());
+        setCount = (firstSet < set_layout_count) ? std::min(setCount, set_layout_count - firstSet) : 0;
     }
 
     if (cb_state.descriptor_buffer.binding_info.empty()) {

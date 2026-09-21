@@ -6807,14 +6807,36 @@ TEST_F(NegativeDynamicState, InvalidLineRasterizationMode) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeDynamicState, DiscardRectangleFirstOverflow) {
+TEST_F(NegativeDynamicState, Uint32Overflow) {
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
     RETURN_IF_SKIP(Init());
 
-    const VkRect2D rect = {{0, 0}, {16, 16}};
+    const VkBool32 enable = VK_TRUE;
+    const VkColorBlendEquationEXT equation = {VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD,
+                                              VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD};
+    const VkColorComponentFlags write_mask = VK_COLOR_COMPONENT_R_BIT;
+
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585");
-    vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0xFFFFFFFFu, 1u, &rect);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-UINT32-OVERFLOW");
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer, vvl::kU32Max, 1u, &enable);
     m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-UINT32-OVERFLOW");
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer, vvl::kU32Max, 1u, &equation);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-UINT32-OVERFLOW");
+    vk::CmdSetColorWriteMaskEXT(m_command_buffer, vvl::kU32Max, 1u, &write_mask);
+    m_errorMonitor->VerifyFound();
+
+    const VkRect2D rect = {{0, 0}, {16, 16}};
+    m_errorMonitor->SetDesiredError("UNASSIGNED-UINT32-OVERFLOW");
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer, vvl::kU32Max, 1u, &rect);
+    m_errorMonitor->VerifyFound();
+
     m_command_buffer.End();
 }

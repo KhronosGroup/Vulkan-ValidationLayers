@@ -1343,11 +1343,13 @@ bool Device::manual_PreCallValidateGetDescriptorEXT(VkDevice device, const VkDes
     return skip;
 }
 
-bool Device::ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer, VkPipelineLayout layout, uint32_t setCount,
-                                                   const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+bool Device::ValidateCmdSetDescriptorBufferOffsets(VkCommandBuffer commandBuffer, VkPipelineLayout layout, uint32_t firstSet,
+                                                   uint32_t setCount, const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
                                                    const Location& loc) const {
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdSetDescriptorBufferOffsetsEXT;
+
+    skip |= ValidateUint32Overflow(firstSet, setCount, commandBuffer, loc.dot(Field::firstSet), Field::setCount);
 
     if (!enabled_features.descriptorBuffer) {
         const char* vuid = is_2 ? "VUID-vkCmdSetDescriptorBufferOffsets2EXT-descriptorBuffer-09470"
@@ -1387,7 +1389,7 @@ bool Device::manual_PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuf
                                                                     uint32_t firstSet, uint32_t setCount,
                                                                     const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
                                                                     const Context& context) const {
-    return ValidateCmdSetDescriptorBufferOffsets(commandBuffer, layout, setCount, pBufferIndices, pOffsets,
+    return ValidateCmdSetDescriptorBufferOffsets(commandBuffer, layout, firstSet, setCount, pBufferIndices, pOffsets,
                                                  context.error_obj.location);
 }
 
@@ -1397,8 +1399,9 @@ bool Device::manual_PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
     bool skip = false;
     const auto& error_obj = context.error_obj;
     skip |= ValidateCmdSetDescriptorBufferOffsets(
-        commandBuffer, pSetDescriptorBufferOffsetsInfo->layout, pSetDescriptorBufferOffsetsInfo->setCount,
-        pSetDescriptorBufferOffsetsInfo->pBufferIndices, pSetDescriptorBufferOffsetsInfo->pOffsets, error_obj.location);
+        commandBuffer, pSetDescriptorBufferOffsetsInfo->layout, pSetDescriptorBufferOffsetsInfo->firstSet,
+        pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
+        pSetDescriptorBufferOffsetsInfo->pOffsets, error_obj.location);
 
     if (pSetDescriptorBufferOffsetsInfo->layout == VK_NULL_HANDLE) {
         if (!enabled_features.dynamicPipelineLayout) {
