@@ -5671,6 +5671,64 @@ TEST_F(NegativeDescriptors, PushDescriptorWithoutInfo) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDescriptors, DescriptorSetLayoutSupport) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11861");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceMaintenance3Properties maintenance3_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&maintenance3_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
+
+    const uint32_t descriptor_count = (maintenance3_props.maxPerSetDescriptors / 2) + 1;
+    const VkDescriptorSetLayoutBinding bindings[2] = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, descriptor_count, VK_SHADER_STAGE_ALL, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_count, VK_SHADER_STAGE_ALL, nullptr}};
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.bindingCount = 2;
+    ds_layout_ci.pBindings = bindings;
+
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    vk::GetDescriptorSetLayoutSupport(device(), &ds_layout_ci, &support);
+    if (support.supported) {
+        GTEST_SKIP() << "Implementation supports a descriptor set layout over maxPerSetDescriptors";
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-vkCreateDescriptorSetLayout-support-09582");
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, DescriptorSetLayoutSupportMutable) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11861");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorType descriptor_types[2] = {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+    VkMutableDescriptorTypeListEXT type_list = {2, descriptor_types};
+    VkMutableDescriptorTypeCreateInfoEXT mutable_ci = vku::InitStructHelper();
+    mutable_ci.mutableDescriptorTypeListCount = 1;
+    mutable_ci.pMutableDescriptorTypeLists = &type_list;
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&mutable_ci);
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &binding;
+
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    vk::GetDescriptorSetLayoutSupport(device(), &ds_layout_ci, &support);
+    if (support.supported) {
+        GTEST_SKIP() << "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER is supported as a mutable descriptor type";
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-vkCreateDescriptorSetLayout-support-09582");
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, GetSupportMutableDescriptorType) {
     TEST_DESCRIPTION("Test vkGetDescriptorSetLayoutSupport with mutable descriptor set layout support");
     SetTargetApiVersion(VK_API_VERSION_1_1);

@@ -839,11 +839,60 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
     return skip;
 }
 
+// See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11861 and
+// https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6269 We need ensure when creating the VkDescriptorSetLayout that we
+// call the vkGetDescriptorSetLayoutSupport for the user to ensure it is already valid
+bool CoreChecks::ValidateDescriptorSetLayoutSupport(const VkDescriptorSetLayoutCreateInfo& create_info,
+                                                    const Location& create_info_loc) const {
+    bool skip = false;
+    if (!IsExtEnabled(extensions.vk_khr_maintenance3)) {
+        return skip;
+    }
+
+    uint64_t descriptor_count = 0;
+    bool has_mutable_type = false;
+    for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
+        const VkDescriptorSetLayoutBinding& binding = create_info.pBindings[i];
+        descriptor_count += (binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) ? 1 : binding.descriptorCount;
+        has_mutable_type |= (binding.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT);
+    }
+
+    const bool over_max_per_set = descriptor_count > phys_dev_props_core11.maxPerSetDescriptors;
+    if (!over_max_per_set && !has_mutable_type) {
+        return skip;  // guaranteed to be supported
+    }
+
+    VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
+    if (api_version < VK_API_VERSION_1_1) {
+        DispatchGetDescriptorSetLayoutSupportKHR(device, &create_info, &support);
+    } else {
+        DispatchGetDescriptorSetLayoutSupport(device, &create_info, &support);
+    }
+
+    if (!support.supported) {
+        std::ostringstream ss;
+        ss << "was passed to vkGetDescriptorSetLayoutSupport which reported this layout is not supported";
+        if (over_max_per_set) {
+            ss << ".\nThe layout has " << descriptor_count << " total descriptors which is more than maxPerSetDescriptors ("
+               << phys_dev_props_core11.maxPerSetDescriptors << ")";
+        }
+        if (has_mutable_type) {
+            ss << ".\nNote: not every driver supports every mutable descriptor type (such as "
+                  "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)";
+        }
+        skip |= LogError("VUID-vkCreateDescriptorSetLayout-support-09582", device, create_info_loc, "%s", ss.str().c_str());
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkDescriptorSetLayout* pSetLayout, const ErrorObject& error_obj) const {
     bool skip = false;
-    skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    skip |= ValidateDescriptorSetLayoutCreateInfo(*pCreateInfo, create_info_loc);
+    skip |= ValidateDescriptorSetLayoutSupport(*pCreateInfo, create_info_loc);
     return skip;
 }
 
