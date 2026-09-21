@@ -18,6 +18,7 @@
 
 #include "stateless/stateless_validation.h"
 #include "generated/dispatch_functions.h"
+#include "utils/vk_api_utils.h"
 
 namespace stateless {
 
@@ -265,6 +266,158 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
     return skip;
 }
 
+bool Device::manual_PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                             uint32_t attachmentCount, const VkBool32* pColorBlendEnables,
+                                                             const Context& context) const {
+    bool skip = false;
+    if (!enabled_features.extendedDynamicState3ColorBlendEnable && !enabled_features.shaderObject) {
+        skip |= LogError("VUID-vkCmdSetColorBlendEnableEXT-None-09423", commandBuffer, context.error_obj.location,
+                         "extendedDynamicState3ColorBlendEnable and shaderObject features were not enabled.");
+    }
+
+    if (static_cast<uint64_t>(firstAttachment) + attachmentCount > phys_dev_props.limits.maxColorAttachments) {
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
+        skip |= LogError("UNASSIGNED-vkCmdSetColorBlendEnableEXT-limit", commandBuffer,
+                         context.error_obj.location.dot(Field::firstAttachment),
+                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is not less than maxColorAttachments (%" PRIu32 ").",
+                         firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
+    }
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                               uint32_t attachmentCount,
+                                                               const VkColorBlendEquationEXT* pColorBlendEquations,
+                                                               const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+    if (!enabled_features.extendedDynamicState3ColorBlendEquation && !enabled_features.shaderObject) {
+        skip |= LogError("VUID-vkCmdSetColorBlendEquationEXT-None-09423", commandBuffer, error_obj.location,
+                         "extendedDynamicState3ColorBlendEquation and shaderObject features were not enabled.");
+    }
+
+    if (static_cast<uint64_t>(firstAttachment) + attachmentCount > phys_dev_props.limits.maxColorAttachments) {
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
+        skip |= LogError("UNASSIGNED-vkCmdSetColorBlendEquationEXT-limit", commandBuffer,
+                         context.error_obj.location.dot(Field::firstAttachment),
+                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is not less than maxColorAttachments (%" PRIu32 ").",
+                         firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
+    }
+
+    for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
+        const Location equation_loc = error_obj.location.dot(Field::pColorBlendEquations, attachment);
+        VkColorBlendEquationEXT const& equation = pColorBlendEquations[attachment];
+        if (!enabled_features.dualSrcBlend) {
+            if (IsSecondaryColorInputBlendFactor(equation.srcColorBlendFactor)) {
+                skip |= LogError(
+                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357", commandBuffer, equation_loc.dot(Field::srcColorBlendFactor),
+                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.srcColorBlendFactor));
+            }
+            if (IsSecondaryColorInputBlendFactor(equation.dstColorBlendFactor)) {
+                skip |= LogError(
+                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07358", commandBuffer, equation_loc.dot(Field::dstColorBlendFactor),
+                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.dstColorBlendFactor));
+            }
+            if (IsSecondaryColorInputBlendFactor(equation.srcAlphaBlendFactor)) {
+                skip |= LogError(
+                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07359", commandBuffer, equation_loc.dot(Field::srcAlphaBlendFactor),
+                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.srcAlphaBlendFactor));
+            }
+            if (IsSecondaryColorInputBlendFactor(equation.dstAlphaBlendFactor)) {
+                skip |= LogError(
+                    "VUID-VkColorBlendEquationEXT-dualSrcBlend-07360", commandBuffer, equation_loc.dot(Field::dstAlphaBlendFactor),
+                    "is %s but the dualSrcBlend feature was not enabled.", string_VkBlendFactor(equation.dstAlphaBlendFactor));
+            }
+        }
+        if (IsAdvanceBlendOperation(equation.colorBlendOp) || IsAdvanceBlendOperation(equation.alphaBlendOp)) {
+            skip |=
+                LogError("VUID-VkColorBlendEquationEXT-colorBlendOp-07361", commandBuffer, equation_loc.dot(Field::colorBlendOp),
+                         "(%s) and alphaBlendOp (%s) must not be an advanced blending operation.",
+                         string_VkBlendOp(equation.colorBlendOp), string_VkBlendOp(equation.alphaBlendOp));
+        }
+        if (IsExtEnabled(extensions.vk_khr_portability_subset) && !enabled_features.constantAlphaColorBlendFactors) {
+            if (equation.srcColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
+                equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
+                skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362", commandBuffer,
+                                 equation_loc.dot(Field::srcColorBlendFactor),
+                                 "is %s but the constantAlphaColorBlendFactors feature was not enabled.",
+                                 string_VkBlendFactor(equation.srcColorBlendFactor));
+            }
+            if (equation.dstColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
+                equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
+                skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363", commandBuffer,
+                                 equation_loc.dot(Field::dstColorBlendFactor),
+                                 "is %s but the constantAlphaColorBlendFactors feature was not enabled.",
+                                 string_VkBlendFactor(equation.dstColorBlendFactor));
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                           uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks,
+                                                           const Context& context) const {
+    bool skip = false;
+    if (!enabled_features.extendedDynamicState3ColorWriteMask && !enabled_features.shaderObject) {
+        skip |= LogError("VUID-vkCmdSetColorWriteMaskEXT-None-09423", commandBuffer, context.error_obj.location,
+                         "extendedDynamicState3ColorWriteMask and shaderObject features were not enabled.");
+    }
+    if (static_cast<uint64_t>(firstAttachment) + attachmentCount > phys_dev_props.limits.maxColorAttachments) {
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
+        skip |= LogError("UNASSIGNED-vkCmdSetColorWriteMaskEXT-limit", commandBuffer,
+                         context.error_obj.location.dot(Field::firstAttachment),
+                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is not less than maxColorAttachments (%" PRIu32 ").",
+                         firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
+    }
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
+                                                               uint32_t attachmentCount,
+                                                               const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
+                                                               const Context& context) const {
+    bool skip = false;
+    const auto& error_obj = context.error_obj;
+    if (!enabled_features.extendedDynamicState3ColorBlendAdvanced && !enabled_features.shaderObject) {
+        skip |= LogError("VUID-vkCmdSetColorBlendAdvancedEXT-None-09423", commandBuffer, error_obj.location,
+                         "extendedDynamicState3ColorBlendAdvanced and shaderObject features were not enabled.");
+    }
+
+    if (static_cast<uint64_t>(firstAttachment) + attachmentCount > phys_dev_props.limits.maxColorAttachments) {
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
+        skip |= LogError("UNASSIGNED-vkCmdSetColorBlendAdvancedEXT-limit", commandBuffer,
+                         context.error_obj.location.dot(Field::firstAttachment),
+                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is not less than maxColorAttachments (%" PRIu32 ").",
+                         firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
+    }
+
+    for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
+        VkColorBlendAdvancedEXT const& advanced = pColorBlendAdvanced[attachment];
+        if (advanced.srcPremultiplied == VK_TRUE &&
+            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
+            skip |= LogError("VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505", commandBuffer,
+                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::srcPremultiplied),
+                             "is VK_TRUE but the advancedBlendNonPremultipliedSrcColor feature was not enabled.");
+        }
+        if (advanced.dstPremultiplied == VK_TRUE &&
+            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
+            skip |= LogError("VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506", commandBuffer,
+                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::dstPremultiplied),
+                             "is VK_TRUE but the advancedBlendNonPremultipliedDstColor feature was not enabled.");
+        }
+        if (advanced.blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT &&
+            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
+            skip |= LogError("VUID-VkColorBlendAdvancedEXT-blendOverlap-07507", commandBuffer,
+                             error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::blendOverlap),
+                             "is %s, but the advancedBlendCorrelatedOverlap feature was not enabled.",
+                             string_VkBlendOverlapEXT(advanced.blendOverlap));
+        }
+    }
+    return skip;
+}
+
 bool Device::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                              uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles,
                                                              const Context& context) const {
@@ -274,22 +427,43 @@ bool Device::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer com
     if (!pDiscardRectangles) {
         return skip;
     }
+
+    if (static_cast<uint64_t>(firstDiscardRectangle) + discardRectangleCount >
+        phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles) {
+        skip |=
+            LogError("VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585", commandBuffer,
+                     error_obj.location.dot(Field::firstDiscardRectangle),
+                     "(%" PRIu32 ") + discardRectangleCount (%" PRIu32 ") is not less than maxDiscardRectangles (%" PRIu32 ").",
+                     firstDiscardRectangle, discardRectangleCount, phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
+    }
+
     for (uint32_t i = 0; i < discardRectangleCount; ++i) {
         const Location loc = error_obj.location.dot(Field::pDiscardRectangles, i);
-        const int64_t x_sum =
-            static_cast<int64_t>(pDiscardRectangles[i].offset.x) + static_cast<int64_t>(pDiscardRectangles[i].extent.width);
+        const VkRect2D& rect = pDiscardRectangles[i];
+
+        const int64_t x_sum = static_cast<int64_t>(rect.offset.x) + static_cast<int64_t>(rect.extent.width);
         if (x_sum > vvl::kI32Max) {
             skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00588", commandBuffer, loc,
                              "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
-                             pDiscardRectangles[i].offset.x, pDiscardRectangles[i].extent.width, x_sum);
+                             rect.offset.x, rect.extent.width, x_sum);
         }
 
-        const int64_t y_sum =
-            static_cast<int64_t>(pDiscardRectangles[i].offset.y) + static_cast<int64_t>(pDiscardRectangles[i].extent.height);
+        const int64_t y_sum = static_cast<int64_t>(rect.offset.y) + static_cast<int64_t>(rect.extent.height);
         if (y_sum > vvl::kI32Max) {
             skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00589", commandBuffer, loc,
                              "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
-                             pDiscardRectangles[i].offset.y, pDiscardRectangles[i].extent.height, y_sum);
+                             rect.offset.y, rect.extent.height, y_sum);
+        }
+
+        if (rect.offset.x < 0) {
+            skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-x-00587", commandBuffer,
+                             error_obj.location.dot(Field::pDiscardRectangles, i).dot(Field::offset).dot(Field::x),
+                             "(%" PRId32 ") is negative.", rect.offset.x);
+        }
+        if (rect.offset.y < 0) {
+            skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-x-00587", commandBuffer,
+                             error_obj.location.dot(Field::pDiscardRectangles, i).dot(Field::offset).dot(Field::y),
+                             "(%" PRId32 ") is negative.", rect.offset.y);
         }
     }
 
