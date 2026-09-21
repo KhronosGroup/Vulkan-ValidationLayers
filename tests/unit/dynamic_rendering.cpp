@@ -8647,6 +8647,84 @@ TEST_F(NegativeDynamicRendering, ImageView3D) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDynamicRendering, SuspendThenRenderPassInstanceSecondary) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.BeginRendering(GetSimpleRenderingInfo());
+    secondary.EndRendering();
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(GetSimpleSuspendInfo());
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-06022");
+    m_command_buffer.ExecuteCommands(secondary);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenRenderPassInstanceSecondary2) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::CommandBuffer secondaries[3] = {{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY},
+                                         {*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY},
+                                         {*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY}};
+    VkCommandBuffer secondary_handles[3] = {secondaries[0], secondaries[1], secondaries[2]};
+
+    // suspends
+    secondaries[0].Begin();
+    secondaries[0].BeginRendering(GetSimpleSuspendInfo());
+    secondaries[0].EndRendering();
+    secondaries[0].End();
+
+    // brand new render pass instance in the middle of the suspend/resume pair
+    secondaries[1].Begin();
+    secondaries[1].BeginRendering(GetSimpleRenderingInfo());
+    secondaries[1].EndRendering();
+    secondaries[1].End();
+
+    // resumes secondaries[0]
+    secondaries[2].Begin();
+    secondaries[2].BeginRendering(GetSimpleResumeInfo());
+    secondaries[2].EndRendering();
+    secondaries[2].End();
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-06022");
+    vk::CmdExecuteCommands(m_command_buffer, 3, secondary_handles);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendThenRenderPassInstanceSecondary3) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::CommandBuffer secondaries[2] = {{*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY},
+                                         {*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY}};
+    VkCommandBuffer secondary_handles[2] = {secondaries[0], secondaries[1]};
+
+    secondaries[0].Begin();
+    secondaries[0].BeginRendering(GetSimpleSuspendInfo());
+    secondaries[0].EndRendering();
+    secondaries[0].End();
+
+    // the resume is here, but the unrelated instance in front of it is not allowed
+    secondaries[1].Begin();
+    secondaries[1].BeginRendering(GetSimpleRenderingInfo());
+    secondaries[1].EndRendering();
+    secondaries[1].BeginRendering(GetSimpleResumeInfo());
+    secondaries[1].EndRendering();
+    secondaries[1].End();
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-06022");
+    vk::CmdExecuteCommands(m_command_buffer, 2, secondary_handles);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicRendering, NextSubpassInDynamicRendering) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 

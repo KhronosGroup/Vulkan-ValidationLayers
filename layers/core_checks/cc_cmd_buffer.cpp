@@ -37,6 +37,7 @@
 #include "generated/enum_flag_bits.h"
 #include "containers/container_utils.h"
 #include "utils/image_layout_utils.h"
+#include "utils/image_utils.h"
 #include "utils/math_utils.h"
 #include "utils/vk_api_utils.h"
 
@@ -1491,6 +1492,10 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     bool suspended_render_pass_instance =
         cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended && !cb_state.active_render_pass;
 
+    // Who suspended the render pass instance that is currently open
+    // kNoIndex32 means the primary command buffer itself suspended it, otherwise it is the index into pCommandBuffers
+    uint32_t suspend_source_index = vvl::kNoIndex32;
+
     const VkRenderingInfo* last_rendering_info =
         cb_state.last_rendering_info.has_value() ? cb_state.last_rendering_info.value().ptr() : nullptr;
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
@@ -1583,15 +1588,37 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
 
         // Validate dynamic rendering suspended state
-        if (suspended_render_pass_instance &&
-            HasActionOrSyncCommandBeforeBeginRendering(secondary_cb_state.first_action_or_sync_command)) {
-            const LogObjectList objlist(commandBuffer, secondary_cb);
-            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-06021", objlist, secondary_cb_loc,
-                             "records %s while a render pass instance is suspended.",
-                             vvl::String(secondary_cb_state.first_action_or_sync_command));
+        if (suspended_render_pass_instance) {
+            if (HasActionOrSyncCommandBeforeBeginRendering(secondary_cb_state.first_action_or_sync_command)) {
+                const LogObjectList objlist(commandBuffer, secondary_cb);
+                std::ostringstream ss;
+                ss << "records " << String(secondary_cb_state.first_action_or_sync_command)
+                   << ", but the render pass instance suspended by ";
+                if (suspend_source_index == vvl::kNoIndex32) {
+                    ss << "commandBuffer";
+                } else {
+                    ss << "pCommandBuffers[" << suspend_source_index << "]";
+                }
+                ss << " has not been resumed yet.";
+                skip |=
+                    LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-06021", objlist, secondary_cb_loc, "%s", ss.str().c_str());
+            }
+            if (secondary_cb_state.has_render_pass_instance && !secondary_cb_state.resumes_render_pass_instance) {
+                const LogObjectList objlist(commandBuffer, secondary_cb);
+                std::ostringstream ss;
+                ss << "starts a render pass instance that does not resume the render pass instance suspended by ";
+                if (suspend_source_index == vvl::kNoIndex32) {
+                    ss << "commandBuffer";
+                } else {
+                    ss << "pCommandBuffers[" << suspend_source_index << "]";
+                }
+                skip |=
+                    LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-06022", objlist, secondary_cb_loc, "%s", ss.str().c_str());
+            }
         }
         if (secondary_cb_state.last_suspend_state != vvl::CommandBuffer::SuspendState::Empty) {
             suspended_render_pass_instance = (secondary_cb_state.last_suspend_state == vvl::CommandBuffer::SuspendState::Suspended);
+            suspend_source_index = i;
         }
         if (secondary_cb_state.first_rendering_info.has_value() && last_rendering_info) {
             const LogObjectList objlist(commandBuffer, secondary_cb);
@@ -2329,6 +2356,50 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingInherited(const core:
                         string_VkSampleCountFlagBits(resolve_image_view_state->image_state->GetSamples()));
                 }
             }
+        }
+    }
+
+    // extra loop of attachments for VK_ANDROID_external_format_resolve
+    if (enabled_features.externalFormatResolve) {
+        for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; i++) {
+            if (rendering_info.pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID) {
+                continue;
+            }
+
+            uint64_t resolve_external_format = 0;
+            if (auto resolve_image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].resolveImageView)) {
+                resolve_external_format = resolve_image_view_state->image_state->ahb_format;
+            }
+            const void* inheritance_pnext = secondary_cb_state.inheritance_info.pNext;
+            const uint64_t inheritance_external_format = GetExternalFormat(inheritance_pnext);
+            if (inheritance_external_format != resolve_external_format) {
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+                skip |= LogError("VUID-vkCmdExecuteCommands-pNext-09299", objlist, secondary_cb_loc,
+                                 "(%s) was recorded with a VkCommandBufferInheritanceInfo pNext chain with an externalFormat of "
+                                 "%" PRIu64 ", but VkRenderingInfo::pColorAttachments[%" PRIu32
+                                 "] uses VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID with a resolve attachment created "
+                                 "with an externalFormat of %" PRIu64 ".%s",
+                                 FormatHandle(secondary_cb_state.Handle()).c_str(), inheritance_external_format, i,
+                                 resolve_external_format,
+                                 inheritance_external_format == 0
+                                     ? "\nNo VkExternalFormatANDROID was found in the VkCommandBufferInheritanceInfo pNext chain."
+                                     : "");
+            }
+
+            if (!vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(inheritance_pnext) &&
+                inheritance_rendering_info.rasterizationSamples != VK_SAMPLE_COUNT_1_BIT) {
+                const LogObjectList objlist(cb_sub_state.Handle(), secondary_cb_state.Handle(), rp_state.Handle());
+                skip |=
+                    LogError("VUID-vkCmdExecuteCommands-pNext-09300", objlist, secondary_cb_loc,
+                             "(%s) was recorded with VkCommandBufferInheritanceRenderingInfo::rasterizationSamples (%s), but "
+                             "VkRenderingInfo::pColorAttachments[%" PRIu32
+                             "] uses VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID and there is no "
+                             "VkAttachmentSampleCountInfo(AMD/NV) in the VkCommandBufferInheritanceInfo pNext chain, so it must "
+                             "be VK_SAMPLE_COUNT_1_BIT.",
+                             FormatHandle(secondary_cb_state.Handle()).c_str(),
+                             string_VkSampleCountFlagBits(inheritance_rendering_info.rasterizationSamples), i);
+            }
+            break;
         }
     }
 

@@ -837,6 +837,13 @@ const char* not_going_to_do[] = {
     // ... so these are just here because of the decision of glslang years ago
     "VUID-RuntimeSpirv-maxClipDistances-08448",
     "VUID-RuntimeSpirv-maxCullDistances-08449",
+
+    // Sync Val already covers these, just without an explicit VU
+    // I decided to not try and remove these from the spec (but they should be)
+    "VUID-vkCmdExecuteCommands-commandBuffer-06533",
+    "VUID-vkCmdExecuteCommands-commandBuffer-06534",
+    "VUID-vkCmdExecuteCommands-pCommandBuffers-06535",
+    "VUID-vkCmdExecuteCommands-pCommandBuffers-06536",
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
