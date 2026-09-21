@@ -4664,8 +4664,7 @@ TEST_F(NegativeWsi, PresentMismatchedSwapchainCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, InvalidRectLayer) {
-    TEST_DESCRIPTION("Present with RectLayer that is not valid");
+TEST_F(NegativeWsi, RectLayer) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -4719,6 +4718,18 @@ TEST_F(NegativeWsi, InvalidRectLayer) {
     rectangle.layer = 0u;
     rectangle.offset.x = 1;
     m_errorMonitor->SetDesiredError("VUID-VkRectLayerKHR-offset-04864");
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_regions);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+
+    rectangle.offset.x = -static_cast<int32_t>(swapchain_ci.imageExtent.width);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRectLayerKHR-offset-width");
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_regions);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+
+    rectangle.offset.x -= 1;
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkRectLayerKHR-offset-width");
     m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_regions);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();

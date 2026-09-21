@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <cstdint>
 #include <sstream>
 #include <vector>
 
@@ -909,24 +910,44 @@ bool CoreChecks::ValidatePresentRegions(VkQueue queue, const VkPresentInfoKHR& p
                 std::swap(rect.offset.x, rect.offset.y);
                 std::swap(rect.extent.width, rect.extent.height);
             }
-            if ((rect.offset.x + rect.extent.width) > swapchain_state->create_info.imageExtent.width) {
+            const int64_t final_width = static_cast<int64_t>(rect.offset.x) + rect.extent.width;
+            if (final_width <= 0) {
+                const LogObjectList objlist(queue, present_info.pSwapchains[i]);
+                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8577
+                skip |= LogError("UNASSIGNED-VkRectLayerKHR-offset-width", objlist, rect_loc,
+                                 "sum of offset.x (%" PRId32 ") and extent.width (%" PRIu32
+                                 ") after applying preTransform (%s) is %" PRId64 " which is not greater than zero.",
+                                 rect.offset.x, rect.extent.width,
+                                 string_VkSurfaceTransformFlagBitsKHR(swapchain_state->create_info.preTransform), final_width);
+            } else if (final_width > swapchain_state->create_info.imageExtent.width) {
                 const LogObjectList objlist(queue, present_info.pSwapchains[i]);
                 skip |= LogError("VUID-VkRectLayerKHR-offset-04864", objlist, rect_loc,
                                  "sum of offset.x (%" PRId32 ") and extent.width (%" PRIu32
-                                 ") after applying preTransform (%s) is greater "
+                                 ") after applying preTransform (%s) is %" PRId64
+                                 " which is greater "
                                  "than the corresponding swapchain's imageExtent.width (%" PRIu32 ").",
                                  rect.offset.x, rect.extent.width,
-                                 string_VkSurfaceTransformFlagBitsKHR(swapchain_state->create_info.preTransform),
+                                 string_VkSurfaceTransformFlagBitsKHR(swapchain_state->create_info.preTransform), final_width,
                                  swapchain_state->create_info.imageExtent.width);
             }
-            if ((rect.offset.y + rect.extent.height) > swapchain_state->create_info.imageExtent.height) {
+            const int64_t final_height = static_cast<int64_t>(rect.offset.y) + rect.extent.height;
+            if (final_height <= 0) {
+                const LogObjectList objlist(queue, present_info.pSwapchains[i]);
+                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8577
+                skip |= LogError("UNASSIGNED-VkRectLayerKHR-offset-height", objlist, rect_loc,
+                                 "sum of offset.y (%" PRId32 ") and extent.height (%" PRIu32
+                                 ") after applying preTransform (%s) is  %" PRId64 " which is not greater than zero.",
+                                 rect.offset.y, rect.extent.height,
+                                 string_VkSurfaceTransformFlagBitsKHR(swapchain_state->create_info.preTransform), final_height);
+            } else if (final_height > swapchain_state->create_info.imageExtent.height) {
                 const LogObjectList objlist(queue, present_info.pSwapchains[i]);
                 skip |= LogError("VUID-VkRectLayerKHR-offset-04864", objlist, rect_loc,
                                  "sum of offset.y (%" PRId32 ") and extent.height (%" PRIu32
-                                 ") after applying preTransform (%s) is greater "
+                                 ") after applying preTransform (%s) %" PRId64
+                                 " which is greater "
                                  "than the corresponding swapchain's imageExtent.height (%" PRIu32 ").",
                                  rect.offset.y, rect.extent.height,
-                                 string_VkSurfaceTransformFlagBitsKHR(swapchain_state->create_info.preTransform),
+                                 string_VkSurfaceTransformFlagBitsKHR(swapchain_state->create_info.preTransform), final_height,
                                  swapchain_state->create_info.imageExtent.height);
             }
             if (rect.layer >= swapchain_state->create_info.imageArrayLayers) {
