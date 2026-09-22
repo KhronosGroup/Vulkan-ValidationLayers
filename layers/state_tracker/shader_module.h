@@ -530,7 +530,6 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool is_combined_image_sampler{false};
     bool is_acceleration_structure{false};
     bool is_acceleration_structure_nv{false};
-    bool is_partitioned_acceleration_structure{false};
     bool is_storage_tensor{false};
     // Way to print out extra useful information
     bool is_buffer_block{false};

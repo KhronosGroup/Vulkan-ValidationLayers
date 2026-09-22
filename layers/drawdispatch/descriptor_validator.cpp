@@ -1526,6 +1526,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(mem_binding->Handle()).c_str(), DescribeInstruction().c_str());
             }
         }
+    } else if (descriptor.IsPartitionedNV()) {
+        return skip;  // no supported
     } else {
         auto acc = descriptor.GetAccelerationStructureNV();
         auto acc_node = descriptor.GetAccelerationStructureStateNV();

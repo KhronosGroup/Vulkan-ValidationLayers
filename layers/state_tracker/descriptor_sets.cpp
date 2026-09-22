@@ -1236,10 +1236,11 @@ void vvl::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet& set_state,
 
     if (acc_info_partition_nv) {
         // Partitioned AS are referenced by VkDeviceAddress, not by a handle, so there is no state object to track.
+        is_partition_nv_ = true;
         acc_partition_nv_ = acc_info_partition_nv->pAccelerationStructures[index];
-        ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
         return;
     }
+    is_partition_nv_ = false;
     is_khr_ = (acc_info != NULL);
     if (is_khr_) {
         acc_ = acc_info->pAccelerationStructures[index];
@@ -1266,6 +1267,11 @@ void vvl::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet& set_state, 
         return;
     }
     auto acc_desc = static_cast<const AccelerationStructureDescriptor&>(src);
+    is_partition_nv_ = acc_desc.is_partition_nv_;
+    if (is_partition_nv_) {
+        acc_partition_nv_ = acc_desc.acc_partition_nv_;
+        return;
+    }
     is_khr_ = acc_desc.is_khr_;
     if (is_khr_) {
         acc_ = acc_desc.acc_;
@@ -1295,7 +1301,9 @@ void vvl::AccelerationStructureDescriptor::RemoveParent(StateObject* state_objec
     }
 }
 bool vvl::AccelerationStructureDescriptor::Invalid() const {
-    if (is_khr_) {
+    if (is_partition_nv_) {
+        return false;  // no AS object
+    } else if (is_khr_) {
         return !acc_state_ || acc_state_->Invalid();
     } else {
         return !acc_state_nv_ || acc_state_nv_->Invalid();
