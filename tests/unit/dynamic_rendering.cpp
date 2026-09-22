@@ -8725,6 +8725,70 @@ TEST_F(NegativeDynamicRendering, SuspendThenRenderPassInstanceSecondary3) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDynamicRendering, SuspendResumeDepthAttachmentNullMismatch) {
+    TEST_DESCRIPTION("Resume a suspended rendering instance that had no depth attachment with one that has one");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+    vkt::Image depth_image(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = depth_image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {1, 1};
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.pDepthAttachment = &depth_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(suspend_rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_command_buffer.BeginRendering(resume_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicRendering, SuspendResumeColorAttachmentCountMismatch) {
+    TEST_DESCRIPTION("Resume a suspended rendering instance with more color attachments than it was suspended with");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachments[3];
+    for (auto& color_attachment : color_attachments) {
+        color_attachment = vku::InitStructHelper();
+        color_attachment.imageView = image_view;
+        color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+
+    VkRenderingInfo suspend_rendering_info = vku::InitStructHelper();
+    suspend_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    suspend_rendering_info.layerCount = 1;
+    suspend_rendering_info.renderArea.extent = {1, 1};
+    suspend_rendering_info.colorAttachmentCount = 1;
+    suspend_rendering_info.pColorAttachments = color_attachments;
+
+    VkRenderingInfo resume_rendering_info = suspend_rendering_info;
+    resume_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
+    resume_rendering_info.colorAttachmentCount = 3;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(suspend_rendering_info);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-RenderingInfo-SuspendResume-Mismatch");
+    m_command_buffer.BeginRendering(resume_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicRendering, NextSubpassInDynamicRendering) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 

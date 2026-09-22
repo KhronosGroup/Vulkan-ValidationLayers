@@ -4287,3 +4287,59 @@ TEST_F(NegativeGraphicsLibrary, LinkNonGraphicsPipeline) {
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGraphicsLibrary, DescriptorHeapLibrariesLinkedWithLayout) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfoKHR create_flags = vku::InitStructHelper();
+    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &create_flags);
+        pre_raster_lib.gp_ci_.layout = VK_NULL_HANDLE;
+        pre_raster_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &create_flags);
+        frag_shader_lib.gp_ci_.layout = VK_NULL_HANDLE;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib,
+        pre_raster_lib,
+        frag_shader_lib,
+        frag_out_lib,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {});
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pipeline_layout;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-11274");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-11274");
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    m_errorMonitor->VerifyFound();
+}

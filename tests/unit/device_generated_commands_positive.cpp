@@ -807,3 +807,52 @@ TEST_F(PositiveDeviceGeneratedCommands, ShaderObjectQuery) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDeviceGeneratedCommands, IndirectExecutionSetNullSetLayout) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    VkShaderCreateInfoEXT vert_create_info =
+        ShaderCreateInfoFlagEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT,
+                                VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT | VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    VkDescriptorSetLayout shader_set_layouts[2] = {VK_NULL_HANDLE, descriptor_set.layout_.handle()};
+    vert_create_info.setLayoutCount = 2;
+    vert_create_info.pSetLayouts = shader_set_layouts;
+    const vkt::ShaderEXT vert_shader(*m_device, vert_create_info);
+    const VkShaderEXT shaders[] = {vert_shader};
+
+    VkIndirectExecutionSetShaderLayoutInfoEXT exe_set_layouts = vku::InitStructHelper();
+    exe_set_layouts.setLayoutCount = 2;
+    exe_set_layouts.pSetLayouts = shader_set_layouts;
+
+    VkIndirectExecutionSetShaderInfoEXT exe_set_shader_info = vku::InitStructHelper();
+    exe_set_shader_info.shaderCount = 1;
+    exe_set_shader_info.pInitialShaders = shaders;
+    exe_set_shader_info.pSetLayoutInfos = &exe_set_layouts;
+    exe_set_shader_info.maxShaderCount = 1;
+    exe_set_shader_info.pushConstantRangeCount = 0;
+    vkt::IndirectExecutionSet exe_set(*m_device, exe_set_shader_info);
+}
+
+TEST_F(PositiveDeviceGeneratedCommands, IndirectExecutionSetGPL) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfo create_flags = vku::InitStructHelper();
+    create_flags.flags = VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo(&create_flags);
+    frag_out_lib.gp_ci_.layout = VK_NULL_HANDLE;
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    vkt::IndirectExecutionSet exe_set(*m_device, frag_out_lib, 1);
+}

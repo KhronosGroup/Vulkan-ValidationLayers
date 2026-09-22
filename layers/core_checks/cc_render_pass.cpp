@@ -4237,8 +4237,9 @@ bool CoreChecks::ValidateSuspendResumeMismatch(const char* vuid, const LogObject
         skip |= LogError(vuid, objlist, loc, message_uint, resume_info.colorAttachmentCount, suspend_info.colorAttachmentCount);
     }
 
-    if (resume_info.pColorAttachments) {
-        for (uint32_t i = 0; i < resume_info.colorAttachmentCount; i++) {
+    if (resume_info.pColorAttachments && suspend_info.pColorAttachments) {
+        const uint32_t color_attachment_count = std::min(resume_info.colorAttachmentCount, suspend_info.colorAttachmentCount);
+        for (uint32_t i = 0; i < color_attachment_count; i++) {
             const Location attachment_loc = resume_info_loc.dot(vvl::Field::pColorAttachments, i);
             skip |= CheckAttachmentInfoMismatch(*this, vuid, objlist, resume_info.pColorAttachments[i],
                                                 suspend_info.pColorAttachments[i], attachment_loc);
@@ -4250,7 +4251,7 @@ bool CoreChecks::ValidateSuspendResumeMismatch(const char* vuid, const LogObject
 
     skip |= CheckAttachmentNullMismatch(*this, vuid, objlist, resume_info.pDepthAttachment, suspend_info.pDepthAttachment,
                                         resume_info_loc.dot(vvl::Field::pDepthAttachment));
-    if (resume_info.pDepthAttachment) {
+    if (resume_info.pDepthAttachment && suspend_info.pDepthAttachment) {
         const Location attachment_loc = resume_info_loc.dot(vvl::Field::pDepthAttachment);
         skip |= CheckAttachmentInfoMismatch(*this, vuid, objlist, *resume_info.pDepthAttachment, *suspend_info.pDepthAttachment,
                                             attachment_loc);
@@ -4258,7 +4259,7 @@ bool CoreChecks::ValidateSuspendResumeMismatch(const char* vuid, const LogObject
 
     skip |= CheckAttachmentNullMismatch(*this, vuid, objlist, resume_info.pStencilAttachment, suspend_info.pStencilAttachment,
                                         resume_info_loc.dot(vvl::Field::pStencilAttachment));
-    if (resume_info.pStencilAttachment) {
+    if (resume_info.pStencilAttachment && suspend_info.pStencilAttachment) {
         const Location attachment_loc = resume_info_loc.dot(vvl::Field::pStencilAttachment);
         skip |= CheckAttachmentInfoMismatch(*this, vuid, objlist, *resume_info.pStencilAttachment, *suspend_info.pStencilAttachment,
                                             attachment_loc);

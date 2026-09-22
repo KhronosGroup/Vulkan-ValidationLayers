@@ -327,7 +327,7 @@ bool CoreChecks::ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecut
 
     auto pipeline_layout = initial_pipeline->PipelineLayoutState();
     if (!pipeline_layout) {
-        assert(initial_pipeline->descriptor_heap_mode);
+        assert(initial_pipeline->descriptor_heap_mode || initial_pipeline->IsGraphicsLibrary());
         return skip;
     }
     for (uint32_t i = 0; i < pipeline_layout->set_layouts.list.size(); i++) {
@@ -407,7 +407,7 @@ bool CoreChecks::ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutio
             for (uint32_t layout_i = 0; layout_i < ies_shader_layout_info.setLayoutCount; layout_i++) {
                 const auto ies_dsl = Get<vvl::DescriptorSetLayout>(ies_shader_layout_info.pSetLayouts[layout_i]);
                 if (!ies_dsl) {
-                    assert(shader_object->descriptor_heap_mode);
+                    assert(shader_object->descriptor_heap_mode || shader_object->is_independent_set);
                     continue;
                 }
                 const auto& bindings = ies_dsl->GetBindings();

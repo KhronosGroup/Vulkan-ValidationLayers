@@ -814,13 +814,13 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
         // If the complete state is defined by libraries, we need to check for compatibility with each library's layout
         const bool from_libraries_only = pipeline.graphics_lib_type == AllVkGraphicsPipelineLibraryFlagBitsEXT;
         if (from_libraries_only) {
+            const auto pre_rast_pl_state = pipeline.PreRasterPipelineLayoutState();
+            const auto frag_shader_pl_state = pipeline.FragmentShaderPipelineLayoutState();
+
             const VkPipelineLayout linking_layout_handle =
                 pipeline_layout_state ? pipeline_layout_state->VkHandle() : VK_NULL_HANDLE;
-            const VkPipelineLayout pre_raster_layout_handle =
-                pipeline.PreRasterPipelineLayoutState() ? pipeline.PreRasterPipelineLayoutState()->VkHandle() : VK_NULL_HANDLE;
-            const VkPipelineLayout fs_layout_handle = pipeline.FragmentShaderPipelineLayoutState()
-                                                          ? pipeline.FragmentShaderPipelineLayoutState()->VkHandle()
-                                                          : VK_NULL_HANDLE;
+            const VkPipelineLayout pre_raster_layout_handle = pre_rast_pl_state ? pre_rast_pl_state->VkHandle() : VK_NULL_HANDLE;
+            const VkPipelineLayout fs_layout_handle = frag_shader_pl_state ? frag_shader_pl_state->VkHandle() : VK_NULL_HANDLE;
 
             const bool pre_raster_independent_set = pipeline.pre_raster_state && pipeline.pre_raster_state->IsIndependentSets();
             // NOTE: it is possible for an executable pipeline to not contain FS state
@@ -829,8 +829,9 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
                 // The layout defined at link time must be compatible with each (pre-raster and fragment shader) library state's
                 // layout (vertex input and fragment output state do not contain a layout)
                 if (pipeline_layout_state) {
-                    if (std::string err_msg; !VerifyPipelineLayoutCompatibility(
-                            *pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
+                    std::string err_msg;
+                    if (pre_rast_pl_state &&
+                        !VerifyPipelineLayoutCompatibility(*pipeline_layout_state, *pre_rast_pl_state, err_msg)) {
                         LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle);
                         skip |=
                             LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
@@ -838,8 +839,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
                                      FormatHandle(linking_layout_handle).c_str(), FormatHandle(pre_raster_layout_handle).c_str(),
                                      err_msg.c_str());
                     }
-                    if (std::string err_msg; !VerifyPipelineLayoutCompatibility(
-                            *pipeline_layout_state, *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
+                    if (frag_shader_pl_state &&
+                        !VerifyPipelineLayoutCompatibility(*pipeline_layout_state, *frag_shader_pl_state, err_msg)) {
                         LogObjectList objlist(linking_layout_handle, fs_layout_handle);
                         skip |= LogError(
                             "VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
