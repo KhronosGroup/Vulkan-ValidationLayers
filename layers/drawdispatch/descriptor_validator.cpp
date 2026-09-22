@@ -365,7 +365,7 @@ bool DescriptorValidator::ValidateImageDescriptorQCOM(const spirv::ResourceInter
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError("VUID-RuntimeSpirv-tileShadingImageProcessing-10712", objlist, loc.Get(),
                              "the %s is TileAttachmentQCOM storage class, it is backed by %s which is "
-                             "consumed by image-processing instruction, but "
+                             "consumed by an image-processing instruction, but "
                              "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingImageProcessing isn't enabled.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(image_view).c_str(), DescribeInstruction().c_str());
@@ -747,7 +747,7 @@ bool DescriptorValidator::ValidateSampledImageDescriptor(const spirv::ResourceIn
         } else if (!dev_proxy.enabled_features.sparseImageInt64Atomics && image_state.sparse_residency) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view_state.VkHandle(), image_state.Handle());
             skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::IMAGE_VIEW_SPARSE_04474), objlist, loc.Get(),
-                             "the %s has a OpTypeImage's Sampled Type has a width of 64 backed by a sparse Image, but "
+                             "the %s has an OpTypeImage whose Sampled Type has a width of 64 and is backed by a sparse Image, but "
                              "sparseImageInt64Atomics is not enabled.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), DescribeInstruction().c_str());
         }
@@ -818,7 +818,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
         if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state.Handle(), image_view_state.Handle());
             skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::LINEAR_FILTER_04553), objlist, loc.Get(),
-                             "the %s has %s which is set to use VK_FILTER_LINEAR with compareEnable is set "
+                             "the %s has %s which is set to use VK_FILTER_LINEAR with compareEnable set "
                              "to VK_FALSE, but image view's (%s) format (%s) does not contain "
                              "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -828,7 +828,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state.Handle(), image_view_state.Handle());
             skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::LINEAR_MIPMAP_04770), objlist, loc.Get(),
                              "the %s has %s which is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
-                             "compareEnable is set to VK_FALSE, but image view's (%s) format (%s) does not contain "
+                             "compareEnable set to VK_FALSE, but image view's (%s) format (%s) does not contain "
                              "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(sampler_state.Handle()).c_str(), FormatHandle(image_view_state.Handle()).c_str(),
@@ -844,7 +844,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state.Handle(), image_view_state.Handle());
             skip |= LogError(
                 CreateActionVuid(loc.Get().function, vvl::ActionVUID::LINEAR_FILTER_09598), objlist, loc.Get(),
-                "the %s has %s which is set to use VK_FILTER_LINEAR with reductionMode is set "
+                "the %s has %s which is set to use VK_FILTER_LINEAR with reductionMode set "
                 "to %s, but image view's (%s) format (%s) does not contain "
                 "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT in its format features.%s",
                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(sampler_state.Handle()).c_str(),
@@ -855,7 +855,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
             skip |= LogError(
                 CreateActionVuid(loc.Get().function, vvl::ActionVUID::LINEAR_MIPMAP_09599), objlist, loc.Get(),
                 "the %s has %s which is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
-                "reductionMode is set to %s, but image view's (%s) format (%s) does not contain "
+                "reductionMode set to %s, but image view's (%s) format (%s) does not contain "
                 "VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT in its format features.%s",
                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(sampler_state.Handle()).c_str(),
                 string_VkSamplerReductionMode(sampler_reduction->reductionMode), FormatHandle(image_view_state.Handle()).c_str(),
@@ -976,7 +976,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
             // instructions with ImplicitLod, Dref or Proj in their name
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view_state.Handle(), sampler_state.Handle());
             skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::SAMPLER_DREF_PROJ_08610), objlist, loc.Get(),
-                             "the %s (%s) is used by %s that uses invalid operator.%s",
+                             "the %s (%s) is used by %s that uses an invalid operator.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(image_view_state.Handle()).c_str(), FormatHandle(sampler_state.Handle()).c_str(),
                              DescribeInstruction().c_str());
@@ -985,7 +985,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
             // instructions that includes a LOD bias or any offset values
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view_state.Handle(), sampler_state.Handle());
             skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::SAMPLER_BIAS_OFFSET_08611), objlist, loc.Get(),
-                             "the %s (%s) is used by %s that uses invalid bias or offset operator.%s",
+                             "the %s (%s) is used by %s that uses an invalid bias or offset operator.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(image_view_state.Handle()).c_str(), FormatHandle(sampler_state.Handle()).c_str(),
                              DescribeInstruction().c_str());
@@ -1252,7 +1252,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             if (texel_component_count != 4) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
                 skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_IMAGE_TEXEL_08796), objlist, loc.Get(),
-                                 "the %s (%s) is mapped to a OpImage format of VK_FORMAT_A8_UNORM, "
+                                 "the %s (%s) is mapped to an OpImage format of VK_FORMAT_A8_UNORM, "
                                  "but the OpImageWrite Texel "
                                  "operand only contains %" PRIu32 " components.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
@@ -1261,7 +1261,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         } else if (texel_component_count < format_component_count) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view);
             skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_IMAGE_TEXEL_08795), objlist, loc.Get(),
-                             "the %s (%s) is mapped to a OpImage format of %s which has %" PRIu32
+                             "the %s (%s) is mapped to an OpImage format of %s which has %" PRIu32
                              " components, but the OpImageWrite Texel operand only contains %" PRIu32 " components.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(image_view).c_str(), string_VkFormat(image_view_format), format_component_count,
@@ -1485,7 +1485,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         if (texel_component_count < format_component_count) {
             const LogObjectList objlist(this->objlist, descriptor_set.Handle(), buffer_view);
             skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::STORAGE_TEXEL_04469), objlist, loc.Get(),
-                             "the %s (%s) is mapped to a OpImage format of %s which has %" PRIu32
+                             "the %s (%s) is mapped to an OpImage format of %s which has %" PRIu32
                              " components, but the OpImageWrite Texel operand only contains %" PRIu32 " components.%s",
                              DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                              FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format), format_component_count,

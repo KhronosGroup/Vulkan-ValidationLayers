@@ -275,15 +275,15 @@ bool Tracker::ValidateDestroyObject(VulkanTypedHandle object, const VkAllocation
             if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
                 // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
                 // it cannot verify that these allocation callbacks are compatible with each other.
-                skip |=
-                    LogError(expected_custom_allocator_code, object, loc,
-                             "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64 " but specified at creation.",
-                             string_VulkanObjectType(object_type), object_handle);
+                skip |= LogError(expected_custom_allocator_code, object, loc,
+                                 "Custom allocator not specified while destroying %s Object 0x%" PRIxLEAST64
+                                 ", but it was specified at creation.",
+                                 string_VulkanObjectType(object_type), object_handle);
             } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != kVUIDUndefined) {
-                skip |=
-                    LogError(expected_default_allocator_code, object, loc,
-                             "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64 " but not specified at creation.",
-                             string_VulkanObjectType(object_type), object_handle);
+                skip |= LogError(expected_default_allocator_code, object, loc,
+                                 "Custom allocator specified while destroying %s Object 0x%" PRIxLEAST64
+                                 ", but it was not specified at creation.",
+                                 string_VulkanObjectType(object_type), object_handle);
             }
         }
     }
@@ -1432,8 +1432,8 @@ bool Device::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const Vk
     } else if (object_type == VK_OBJECT_TYPE_DEVICE) {
         if (HandleToUint64(device) != object_handle) {
             skip |= LogError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874", device, error_obj.location.dot(Field::objectType),
-                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", object_handle,
-                             FormatHandle(device).c_str());
+                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") is not equal to device (%s).",
+                             object_handle, FormatHandle(device).c_str());
         }
     } else {
         skip |= ValidateAnonymousObject(object_handle, object_type, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590",
@@ -1459,8 +1459,8 @@ bool Device::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkD
         if (HandleToUint64(device) != object_handle) {
             skip |= LogError("VUID-vkSetDebugUtilsObjectTagEXT-pNameInfo-07877", device,
                              error_obj.location.dot(Field::pTagInfo).dot(Field::objectType),
-                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", object_handle,
-                             FormatHandle(device).c_str());
+                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") is not equal to device (%s).",
+                             object_handle, FormatHandle(device).c_str());
         }
     } else {
         skip |= ValidateAnonymousObject(object_handle, object_type, "VUID-VkDebugUtilsObjectTagInfoEXT-objectHandle-01910",
@@ -1783,13 +1783,13 @@ bool Device::PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectT
     bool skip = false;
 
     if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
-        skip |= LogError("VUID-vkSetPrivateData-objectHandle-04016", device, error_obj.location.dot(Field::objectType), "is %s.",
-                         string_VkObjectType(objectType));
+        skip |= LogError("VUID-vkSetPrivateData-objectHandle-04016", device, error_obj.location.dot(Field::objectType),
+                         "is %s, but must be a device-level object type.", string_VkObjectType(objectType));
     } else if (objectType == VK_OBJECT_TYPE_DEVICE) {
         // Need to check device handle as has no parent to check as the caller is the same device object
         if (HandleToUint64(device) != objectHandle) {
             skip |= LogError("VUID-vkSetPrivateData-objectHandle-04016", device, error_obj.location.dot(Field::objectType),
-                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", objectHandle,
+                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") is not equal to device (%s).", objectHandle,
                              FormatHandle(device).c_str());
         }
     } else {
@@ -1808,13 +1808,13 @@ bool Device::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectT
                                            VkPrivateDataSlot privateDataSlot, uint64_t* pData, const ErrorObject& error_obj) const {
     bool skip = false;
     if (IsInstanceVkObjectType(objectType) || objectType == VK_OBJECT_TYPE_UNKNOWN) {
-        skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectType), "is %s.",
-                         string_VkObjectType(objectType));
+        skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectType),
+                         "is %s, but must be a device-level object type.", string_VkObjectType(objectType));
     } else if (objectType == VK_OBJECT_TYPE_DEVICE) {
         // Need to check device handle as has no parent to check as the caller is the same device object
         if (HandleToUint64(device) != objectHandle) {
             skip |= LogError("VUID-vkGetPrivateData-objectType-04018", device, error_obj.location.dot(Field::objectType),
-                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") != device (%s).", objectHandle,
+                             "is VK_OBJECT_TYPE_DEVICE but objectHandle (0x%" PRIx64 ") is not equal to device (%s).", objectHandle,
                              FormatHandle(device).c_str());
         }
     } else {

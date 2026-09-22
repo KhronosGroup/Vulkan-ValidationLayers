@@ -1604,7 +1604,7 @@ bool stateless::SpirvValidator::ValidateShaderCapabilitiesAndExtensions(const sp
         if (has_support == false) {
             const char* vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08740" : "VUID-VkShaderCreateInfoEXT-pCode-08740";
             skip |= LogError(vuid, module_state.handle(), loc,
-                             "SPIR-V Capability %s was declared, but one of the following requirements is required (%s).",
+                             "SPIR-V Capability %s was declared, but one of the following requirements must be met (%s).",
                              string_SpvCapability(insn_capability), SpvCapabilityRequirements(insn_capability));
         }
 
@@ -1613,8 +1613,8 @@ bool stateless::SpirvValidator::ValidateShaderCapabilitiesAndExtensions(const sp
             if ((VK_FALSE == enabled_features.shaderSampleRateInterpolationFunctions) &&
                 (spv::CapabilityInterpolationFunction == insn_capability)) {
                 skip |= LogError("VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325", module_state.handle(), loc,
-                                 "SPIR-V (portability error) InterpolationFunction Capability are not supported "
-                                 "by this platform");
+                                 "SPIR-V (portability error) InterpolationFunction Capability is not supported "
+                                 "by this platform.");
             }
         }
     } else if (insn.Opcode() == spv::OpExtension) {
@@ -1664,7 +1664,7 @@ bool stateless::SpirvValidator::ValidateShaderCapabilitiesAndExtensions(const sp
         if (has_support == false) {
             const char* vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08742" : "VUID-VkShaderCreateInfoEXT-pCode-08742";
             skip |= LogError(vuid, module_state.handle(), loc,
-                             "SPIR-V Extension %s was declared, but one of the following requirements is required (%s).",
+                             "SPIR-V Extension %s was declared, but one of the following requirements must be met (%s).",
                              extension_name.c_str(), SpvExtensionRequirements(extension_name).c_str());
         }
     }  // spv::OpExtension
