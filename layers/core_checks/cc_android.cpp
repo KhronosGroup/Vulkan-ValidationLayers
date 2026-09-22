@@ -18,6 +18,7 @@
  */
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include "core_validation.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/sampler_state.h"
@@ -234,7 +235,10 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
                 pdifi2.usage |= (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
             }
             if (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER & ahb_desc.usage) {
-                pdifi2.usage |= (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+                // AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER maps both the COLOR and DS, but no format supports both at once
+                // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8673
+                pdifi2.usage |= vkuFormatIsDepthOrStencil(pdifi2.format) ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+                                                                         : VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             }
             if (AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP & ahb_desc.usage) {
                 pdifi2.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
