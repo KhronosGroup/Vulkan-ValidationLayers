@@ -1488,3 +1488,75 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasRuntimeDescriptorArrayHLSL) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorPostProcess, ImageQuerySizeRuntimeArray) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13181");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::shaderStorageImageArrayNonUniformIndexing);
+    AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 0, r32i) uniform readonly iimage2D storage_images[];
+        layout(set = 0, binding = 1) uniform sampler2D sampled_images[];
+        layout(set = 0, binding = 2) buffer SSBO {
+            uint index;
+            ivec2 storage_dim;
+            ivec2 sampled_dim;
+        };
+
+        void main() {
+            // OpImageQuerySize
+            storage_dim = imageSize(storage_images[nonuniformEXT(index)]);
+            // OpImageQuerySizeLod
+            sampled_dim = textureSize(sampled_images[nonuniformEXT(index)], 0);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                          {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    auto storage_image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R32_SINT, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image storage_image(*m_device, storage_image_ci);
+    storage_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView storage_image_view = storage_image.CreateView();
+
+    auto sampled_image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image sampled_image(*m_device, sampled_image_ci);
+    sampled_image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView sampled_image_view = sampled_image.CreateView();
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t* data = (uint32_t*)buffer.Memory().Map();
+    *data = 1;
+
+    pipe.descriptor_set_.WriteDescriptorImageInfo(0, storage_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                  VK_IMAGE_LAYOUT_GENERAL, 0);
+    pipe.descriptor_set_.WriteDescriptorImageInfo(0, storage_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                  VK_IMAGE_LAYOUT_GENERAL, 1);
+    pipe.descriptor_set_.WriteDescriptorImageInfo(1, sampled_image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    pipe.descriptor_set_.WriteDescriptorImageInfo(1, sampled_image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

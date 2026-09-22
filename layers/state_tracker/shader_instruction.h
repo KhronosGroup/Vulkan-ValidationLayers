@@ -189,6 +189,9 @@ struct ImageInstruction {
     bool is_sign_extended = false;
     bool is_zero_extended = false;
 
+    // Currently not used, but might when we rework image acesses to not count these as an "access"
+    bool is_non_access_query = false;
+
     // Image processing instruction usage mask
     uint32_t image_proc_usage_mask = ImageProcUsageBit::kNone;
 
