@@ -581,7 +581,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                                                                              CommonDescriptorUpdate& out_update) mutable {
         // struct DescriptorHeapEncoding
         const uint32_t bound_heap_info_size = sizeof(VkDeviceAddress) * 3;
-        uint32_t buffer_size = bound_heap_info_size + (uint32_t)gpuav.phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
+        uint32_t buffer_size = bound_heap_info_size + (uint32_t)gpuav.phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize;
         vko::BufferRange output_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(buffer_size);
 
         VkDeviceAddress* bound_heap_info = (VkDeviceAddress*)output_range.offset_mapped_ptr;

@@ -231,13 +231,13 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                              mapping.sourceData.pushDataOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
             }
 
-            if (mapping.sourceData.pushDataOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
+            if (mapping.sourceData.pushDataOffset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 4) {
                 skip |=
                     LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12452", device, data_loc.dot(Field::pushDataOffset),
                              "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                              ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushDataOffset points to data "
                              "inside the push data at and this is currently going to access OOB",
-                             mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                             mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize,
                              string_VkDescriptorMappingSourceEXT(mapping.source));
             }
         }
@@ -249,14 +249,14 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                  mapping.sourceData.pushAddressOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
             }
 
-            if (mapping.sourceData.pushAddressOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
+            if (mapping.sourceData.pushAddressOffset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 8) {
                 skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12453", device,
                                  data_loc.dot(Field::pushAddressOffset),
                                  "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                                  ") - 8\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushAddressOffset points to an "
                                  "address (8 bytes) "
                                  "inside the push data, this is currently going to access OOB.",
-                                 mapping.sourceData.pushAddressOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                                 mapping.sourceData.pushAddressOffset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize,
                                  string_VkDescriptorMappingSourceEXT(mapping.source));
             }
         }
@@ -290,14 +290,14 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                  "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
                                  push_index.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
             }
-            if (push_index.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
+            if (push_index.pushOffset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 4) {
                 skip |= LogError(
                     "VUID-VkDescriptorMappingSourcePushIndexEXT-pushOffset-11259", device,
                     data_loc.dot(Field::pushIndex).dot(Field::pushOffset),
                     "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                     ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushOffset points to an uint32_t (4 bytes) "
                     "inside the push data, this is currently going to access OOB.",
-                    push_index.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                    push_index.pushOffset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize,
                     string_VkDescriptorMappingSourceEXT(mapping.source));
             }
         }
@@ -310,14 +310,14 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                  "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
                                  indirect_index.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
             }
-            if (indirect_index.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
+            if (indirect_index.pushOffset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 8) {
                 skip |= LogError(
                     "VUID-VkDescriptorMappingSourceIndirectIndexEXT-pushOffset-11261", device,
                     data_loc.dot(Field::indirectIndex).dot(Field::pushOffset),
                     "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                     ") - 8\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushOffset points to an address (8 bytes) "
                     "inside the push data, this is currently going to access OOB.",
-                    indirect_index.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                    indirect_index.pushOffset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize,
                     string_VkDescriptorMappingSourceEXT(mapping.source));
             }
             if (!IsIntegerMultipleOf(indirect_index.addressOffset, 4)) {
@@ -343,14 +343,14 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                  "(%" PRIu32 ") is not a multiple of 4\nVkDescriptorSetAndBindingMappingEXT::source = %s",
                                  heap_data.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
             }
-            if (heap_data.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
+            if (heap_data.pushOffset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 4) {
                 skip |= LogError(
                     "VUID-VkDescriptorMappingSourceHeapDataEXT-pushOffset-11265", device,
                     data_loc.dot(Field::heapData).dot(Field::pushOffset),
                     "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                     ") - 4\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushOffset points to an uint32_t (4 bytes) "
                     "inside the push data, this is currently going to access OOB.",
-                    heap_data.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                    heap_data.pushOffset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize,
                     string_VkDescriptorMappingSourceEXT(mapping.source));
             }
         }
@@ -362,14 +362,14 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                  "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
                                  indirect_address.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
             }
-            if (indirect_address.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
+            if (indirect_address.pushOffset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 8) {
                 skip |= LogError(
                     "VUID-VkDescriptorMappingSourceIndirectAddressEXT-pushOffset-11267", device,
                     data_loc.dot(Field::indirectAddress).dot(Field::pushOffset),
                     "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                     ") - 8\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushOffset points to an address (8 bytes) "
                     "inside the push data, this is currently going to access OOB.",
-                    indirect_address.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                    indirect_address.pushOffset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize,
                     string_VkDescriptorMappingSourceEXT(mapping.source));
             }
             if (!IsIntegerMultipleOf(indirect_address.addressOffset, 8)) {
@@ -407,14 +407,14 @@ bool Device::ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDesc
                                  "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
                                  indirect_index_array.pushOffset, string_VkDescriptorMappingSourceEXT(mapping.source));
             }
-            if (indirect_index_array.pushOffset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
+            if (indirect_index_array.pushOffset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 8) {
                 skip |= LogError(
                     "VUID-VkDescriptorMappingSourceIndirectIndexArrayEXT-pushOffset-11360", device,
                     data_loc.dot(Field::indirectIndexArray).dot(Field::pushOffset),
                     "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
                     ") - 8.\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - pushOffset points to an address (8 bytes) "
                     "inside the push data, this is currently going to access OOB.",
-                    indirect_index_array.pushOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
+                    indirect_index_array.pushOffset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize,
                     string_VkDescriptorMappingSourceEXT(mapping.source));
             }
             if (!IsIntegerMultipleOf(indirect_index_array.addressOffset, 4)) {

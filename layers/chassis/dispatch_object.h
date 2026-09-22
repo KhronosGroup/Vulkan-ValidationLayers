@@ -116,7 +116,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR copy_memory_indirect_props;
     VkPhysicalDeviceOpacityMicromapPropertiesKHR micromap_props;
     VkPhysicalDeviceTileMemoryHeapPropertiesQCOM tile_memory_heap_props;
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_props;
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_props_ext;
     VkPhysicalDeviceDescriptorHeapTensorPropertiesARM descriptor_heap_tensor_props;
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID android_format_resolve_props;

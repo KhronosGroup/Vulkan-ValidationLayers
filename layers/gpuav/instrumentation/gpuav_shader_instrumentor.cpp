@@ -195,7 +195,7 @@ void GpuShaderInstrumentor::SetupDescriptorHeap(const Location& loc) {
 
     heap_indirect_buffer_stride_ = sizeof(VkDeviceAddress) * glsl::kTotalBindings;
 
-    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props;
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_props = phys_dev_ext_props.descriptor_heap_props_ext;
     push_data_offset_ = static_cast<uint32_t>(descriptor_heap_props.maxPushDataSize) - 8u;
 }
 
