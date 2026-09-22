@@ -2337,10 +2337,10 @@ bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, c
     if (pRenderPassBegin) {
         [[maybe_unused]] const Location pRenderPassBegin_loc = error_obj.location.dot(Field::pRenderPassBegin);
         skip |= ValidateObject(pRenderPassBegin->renderPass, kVulkanObjectTypeRenderPass, false,
-                               "VUID-VkRenderPassBeginInfo-renderPass-parameter", "VUID-VkRenderPassBeginInfo-commonparent",
+                               "VUID-VkRenderPassBeginInfo-renderPass-parameter", "VUID-vkCmdBeginRenderPass2-framebuffer-02779",
                                pRenderPassBegin_loc.dot(Field::renderPass));
         skip |= ValidateObject(pRenderPassBegin->framebuffer, kVulkanObjectTypeFramebuffer, false,
-                               "VUID-VkRenderPassBeginInfo-framebuffer-parameter", "VUID-VkRenderPassBeginInfo-commonparent",
+                               "VUID-VkRenderPassBeginInfo-framebuffer-parameter", "VUID-vkCmdBeginRenderPass2-framebuffer-02779",
                                pRenderPassBegin_loc.dot(Field::framebuffer));
         if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext)) {
             [[maybe_unused]] const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
@@ -7438,7 +7438,7 @@ bool Device::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPi
         [[maybe_unused]] const Location pPipelineInfo_loc = error_obj.location.dot(Field::pPipelineInfo);
         skip |=
             ValidateObject(pPipelineInfo->pipeline, kVulkanObjectTypePipeline, false, "VUID-VkPipelineInfoKHR-pipeline-parameter",
-                           "UNASSIGNED-VkPipelineInfoKHR-pipeline-parent", pPipelineInfo_loc.dot(Field::pipeline));
+                           "VUID-vkGetPipelinePropertiesEXT-pipeline-06738", pPipelineInfo_loc.dot(Field::pipeline));
     }
 
     return skip;

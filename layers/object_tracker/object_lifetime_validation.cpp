@@ -1365,7 +1365,7 @@ bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebuff
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         for (uint32_t index1 = 0; index1 < pCreateInfo->attachmentCount; ++index1) {
             skip |= ValidateObject(pCreateInfo->pAttachments[index1], kVulkanObjectTypeImageView, true,
-                                   "VUID-VkFramebufferCreateInfo-flags-02778", "VUID-VkFramebufferCreateInfo-commonparent",
+                                   "VUID-VkFramebufferCreateInfo-flags-02778", "VUID-vkCreateFramebuffer-pCreateInfo-02777",
                                    create_info_loc.dot(Field::pAttachments, index1));
         }
     }
