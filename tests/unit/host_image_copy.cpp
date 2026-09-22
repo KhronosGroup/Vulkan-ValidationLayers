@@ -2383,6 +2383,7 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     // LAYOUT_UNDEFINED will not be allowed, but image has no memory
     m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-srcImageLayout-09065");
     m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09109");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07966");
     vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
     m_errorMonitor->VerifyFound();
 
@@ -2403,6 +2404,7 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     // LAYOUT_UNDEFINED will not be allowed, but image has no memory
     m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-dstImageLayout-09059");
     m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09109");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07966");
     vk::CopyMemoryToImageEXT(*m_device, &copy_memory_to_image);
     m_errorMonitor->VerifyFound();
 
@@ -2423,8 +2425,10 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     copy_image_to_image.dstImage = image2;
     m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcImageLayout-09072");
     m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-09109");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07966");
     m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstImageLayout-09071");
     m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-09109");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07966");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
 }
