@@ -106,6 +106,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline& pipeline, const v
             skip |= ValidateGraphicsPipelineExternalFormatResolve(pipeline, *rp_state, *subpass_desc, create_info_loc);
             skip |= ValidateGraphicsPipelineMultisampleState(pipeline, *rp_state, *subpass_desc, create_info_loc);
             skip |= ValidateGraphicsPipelineRenderPassRasterization(pipeline, *rp_state, *subpass_desc, create_info_loc);
+            skip |= ValidateGraphicsPipelineBlendEnable(pipeline, *rp_state, *subpass_desc, create_info_loc);
 
             if (subpass_desc->viewMask != 0) {
                 skip |= ValidateMultiViewShaders(pipeline, create_info_loc.dot(Field::pSubpasses, subpass).dot(Field::viewMask),
@@ -157,7 +158,6 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline& pipeline, const v
     skip |= ValidateGraphicsPipelineRasterizationOrderAttachmentAccess(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
-    skip |= ValidateGraphicsPipelineBlendEnable(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineMeshTask(pipeline, create_info_loc);
 
     // pStages are ignored if not using one of these library states
@@ -1433,26 +1433,17 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeline, const Location& create_info_loc) const {
+bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
+                                                     const vku::safe_VkSubpassDescription2& subpass_desc,
+                                                     const Location& create_info_loc) const {
     bool skip = false;
-    const auto rp_state = pipeline.RenderPassState();
-    if (!rp_state || rp_state->UsesDynamicRendering()) {
-        return skip;
-    }
-
-    const auto subpass = pipeline.Subpass();
-    const auto* subpass_desc = &rp_state->create_info.pSubpasses[subpass];
-    if (!subpass_desc) {
-        return skip;
-    }
-
-    for (uint32_t i = 0; i < pipeline.AttachmentStates().size() && i < subpass_desc->colorAttachmentCount; ++i) {
-        const auto attachment = subpass_desc->pColorAttachments[i].attachment;
+    for (uint32_t i = 0; i < pipeline.AttachmentStates().size() && i < subpass_desc.colorAttachmentCount; ++i) {
+        const auto attachment = subpass_desc.pColorAttachments[i].attachment;
         if (attachment == VK_ATTACHMENT_UNUSED) {
             continue;
         }
 
-        const auto attachment_desc = rp_state->create_info.pAttachments[attachment];
+        const auto attachment_desc = rp_state.create_info.pAttachments[attachment];
 
         if (!pipeline.RasterizationDisabled() && pipeline.AttachmentStates()[i].blendEnable) {
             const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(attachment_desc.format);
@@ -1461,7 +1452,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeli
                                  create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, i).dot(Field::blendEnable),
                                  "is VK_TRUE but format %s of the corresponding attachment description (subpass %" PRIu32
                                  ", attachment %" PRIu32 ") doesn't support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.\n%s",
-                                 string_VkFormat(attachment_desc.format), subpass, attachment,
+                                 string_VkFormat(attachment_desc.format), pipeline.Subpass(), attachment,
                                  string_VkFormatFeatureFlags2(format_features).c_str());
             }
         }

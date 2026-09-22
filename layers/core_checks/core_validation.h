@@ -862,7 +862,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                            const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
-    bool ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineInputAssemblyState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineTessellationState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineColorBlendAttachmentState(const vvl::Pipeline& pipeline,
@@ -884,6 +883,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateGraphicsPipelineRenderPassRasterization(const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
                                                          const vku::safe_VkSubpassDescription2& subpass_desc,
                                                          const Location& create_info_loc) const;
+    bool ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
+                                             const vku::safe_VkSubpassDescription2& subpass_desc,
+                                             const Location& create_info_loc) const;
     bool ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline& pipeline, const vvl::RenderPass& rp_state,
                                                   const vku::safe_VkSubpassDescription2& subpass_desc,
                                                   const Location& create_info_loc) const;
