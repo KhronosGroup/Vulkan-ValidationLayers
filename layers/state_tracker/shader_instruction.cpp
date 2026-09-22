@@ -612,7 +612,8 @@ ImageInstruction::ImageInstruction(const uint32_t* words) {
         }
 
         case spv::OpImageSampleExplicitLod:
-        case spv::OpImageSparseSampleExplicitLod: {
+        case spv::OpImageSparseSampleExplicitLod:
+        case spv::OpImageSampleFootprintNV: {
             is_sampler_sampled = true;
             break;
         }
@@ -647,6 +648,7 @@ ImageInstruction::ImageInstruction(const uint32_t* words) {
         case spv::OpAtomicFMinEXT:
         case spv::OpAtomicFMaxEXT:
         case spv::OpAtomicFAddEXT:
+        case spv::OpImageGatherQCOM:
             break;
 
         case spv::OpImageSampleWeightedQCOM:
@@ -676,6 +678,16 @@ ImageInstruction::ImageInstruction(const uint32_t* words) {
 
         case spv::OpImageSparseTexelsResident:
             assert(false);  // This is not a proper OpImage* instruction, has no OpImage operand
+            break;
+
+        // From the spec
+        // "return properties of the image descriptor that would be accessed. The image itself is not accessed."
+        case spv::OpImage:
+        case spv::OpImageQuerySizeLod:
+        case spv::OpImageQuerySize:
+        case spv::OpImageQueryLevels:
+        case spv::OpImageQuerySamples:
+            is_non_access_query = true;
             break;
 
         default:
