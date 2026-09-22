@@ -136,7 +136,7 @@ bool Device::manual_PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device
         if (!pCreateInfo->info.pPipelineInfo) {
             skip |= LogError("VUID-VkIndirectExecutionSetCreateInfoEXT-pPipelineInfo-parameter", device,
                              create_info_loc.dot(Field::type),
-                             "is VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT, but info.pPipelineInfo is null.");
+                             "is VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT, but info.pPipelineInfo is NULL.");
         } else {
             skip |= ValidateIndirectExecutionSetPipelineInfo(context, *pCreateInfo->info.pPipelineInfo,
                                                              info_loc.dot(Field::pPipelineInfo));
@@ -157,7 +157,7 @@ bool Device::manual_PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device
         if (!pCreateInfo->info.pShaderInfo) {
             skip |=
                 LogError("VUID-VkIndirectExecutionSetCreateInfoEXT-pShaderInfo-parameter", device, create_info_loc.dot(Field::type),
-                         "is VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT, but info.pShaderInfo is null.");
+                         "is VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT, but info.pShaderInfo is NULL.");
         } else {
             skip |=
                 ValidateIndirectExecutionSetShaderInfo(context, *pCreateInfo->info.pShaderInfo, info_loc.dot(Field::pShaderInfo));
@@ -190,9 +190,9 @@ bool Device::ValidateIndirectCommandsPushConstantToken(const Context& context,
         if (push_constant_token.updateRange.stageFlags != VK_SHADER_STAGE_ALL) {
             skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-type-11333", device,
                              push_constant_token_loc.dot(Field::updateRange).dot(Field::stageFlags),
-                             "is %s but stageFlags is %s (needs to be VK_SHADER_STAGE_ALL).",
-                             string_VkIndirectCommandsTokenTypeEXT(token_type),
-                             string_VkShaderStageFlags(push_constant_token.updateRange.stageFlags).c_str());
+                             "is %s, but must be VK_SHADER_STAGE_ALL when the token type is %s.",
+                             string_VkShaderStageFlags(push_constant_token.updateRange.stageFlags).c_str(),
+                             string_VkIndirectCommandsTokenTypeEXT(token_type));
         }
     }
 
@@ -257,7 +257,7 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
             if (!token.data.pPushConstant) {
                 skip |=
                     LogError("VUID-VkIndirectCommandsLayoutTokenEXT-pPushConstant-parameter", device, token_loc.dot(Field::type),
-                             "is %s, but data.pPushConstant is null.", string_VkIndirectCommandsTokenTypeEXT(token.type));
+                             "is %s, but data.pPushConstant is NULL.", string_VkIndirectCommandsTokenTypeEXT(token.type));
             } else {
                 skip |= ValidateIndirectCommandsPushConstantToken(context, *token.data.pPushConstant, token.type,
                                                                   data_loc.dot(Field::pPushConstant));
@@ -267,13 +267,13 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
             if (!token.data.pVertexBuffer) {
                 skip |=
                     LogError("VUID-VkIndirectCommandsLayoutTokenEXT-pVertexBuffer-parameter", device, token_loc.dot(Field::type),
-                             "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT, but data.pVertexBuffer is null.");
+                             "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT, but data.pVertexBuffer is NULL.");
             }
             break;
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT:
             if (!token.data.pIndexBuffer) {
                 skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-pIndexBuffer-parameter", device, token_loc.dot(Field::type),
-                                 "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT, but data.pIndexBuffer is null.");
+                                 "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT, but data.pIndexBuffer is NULL.");
             } else {
                 skip |=
                     ValidateIndirectCommandsIndexBufferToken(context, *token.data.pIndexBuffer, data_loc.dot(Field::pIndexBuffer));
@@ -283,7 +283,7 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
             if (!token.data.pExecutionSet) {
                 skip |=
                     LogError("VUID-VkIndirectCommandsLayoutTokenEXT-pExecutionSet-parameter", device, token_loc.dot(Field::type),
-                             "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT, but data.pExecutionSet is null.");
+                             "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT, but data.pExecutionSet is NULL.");
             } else {
                 skip |= ValidateIndirectCommandsExecutionSetToken(context, *token.data.pExecutionSet,
                                                                   data_loc.dot(Field::pExecutionSet));
@@ -297,7 +297,7 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
     if (IsMeshCommand(token.type)) {
         if (!enabled_features.meshShader || !enabled_features.taskShader) {
             skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-meshShader-11126", device, token_loc.dot(Field::type),
-                             "is %s but meshShader and taskShader features are disabled.",
+                             "is %s, but the meshShader and taskShader features were not enabled.",
                              string_VkIndirectCommandsTokenTypeEXT(token.type));
         } else if (!props.deviceGeneratedCommandsMultiDrawIndirectCount) {
             if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_EXT) {
@@ -322,13 +322,14 @@ bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const V
         }
     } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT && !enabled_features.rayTracingMaintenance1) {
         skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-rayTracingMaintenance1-11128", device, token_loc.dot(Field::type),
-                         "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT but rayTracingMaintenance1 was not enabled.");
+                         "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT, but the rayTracingMaintenance1 feature was not "
+                         "enabled.");
     } else if (token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT ||
                token.type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT) {
         if (!enabled_features.descriptorHeap) {
-            skip |=
-                LogError("VUID-VkIndirectCommandsLayoutTokenEXT-descriptorHeap-11332", device, token_loc.dot(Field::type),
-                         "is %s but descriptorHeap feature was not enabled.", string_VkIndirectCommandsTokenTypeEXT(token.type));
+            skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-descriptorHeap-11332", device, token_loc.dot(Field::type),
+                             "is %s, but the descriptorHeap feature was not enabled.",
+                             string_VkIndirectCommandsTokenTypeEXT(token.type));
         }
     }
 
@@ -435,7 +436,7 @@ bool Device::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice devi
     if (shader_stages & ~props.supportedIndirectCommandsShaderStages) {
         skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-shaderStages-11091", device,
                          create_info_loc.dot(Field::shaderStages),
-                         "is %s which contain stages not found in supportedIndirectCommandsShaderStages (%s)",
+                         "(%s) contains stages not found in supportedIndirectCommandsShaderStages (%s).",
                          string_VkShaderStageFlags(shader_stages).c_str(),
                          string_VkShaderStageFlags(props.supportedIndirectCommandsShaderStages).c_str());
     }
@@ -450,7 +451,7 @@ bool Device::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice devi
         if (!(shader_stages & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_EXT))) {
             skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-shaderStages-11113", device,
                              create_info_loc.dot(Field::shaderStages),
-                             "(%s) contains VK_SHADER_STAGE_FRAGMENT_BIT but does not contains VK_SHADER_STAGE_VERTEX_BIT or "
+                             "(%s) contains VK_SHADER_STAGE_FRAGMENT_BIT but does not contain VK_SHADER_STAGE_VERTEX_BIT or "
                              "VK_SHADER_STAGE_MESH_BIT_EXT.",
                              string_VkShaderStageFlags(shader_stages).c_str());
         }

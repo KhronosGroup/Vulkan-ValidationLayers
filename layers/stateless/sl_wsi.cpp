@@ -48,7 +48,7 @@ bool Device::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const V
 
     if (pAcquireInfo->semaphore == VK_NULL_HANDLE && pAcquireInfo->fence == VK_NULL_HANDLE) {
         skip |= LogError("VUID-VkAcquireNextImageInfoKHR-semaphore-01782", pAcquireInfo->swapchain,
-                         error_obj.location.dot(Field::pAcquireInfo), "semaphore and fence are both VK_NULL_HANDLE.");
+                         error_obj.location.dot(Field::pAcquireInfo), "has both semaphore and fence set to VK_NULL_HANDLE.");
     }
 
     return skip;
@@ -63,7 +63,8 @@ bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfo
 
     if (vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoKHR>(create_info.pNext)) {
         skip |= LogError("VUID-VkSwapchainCreateInfoKHR-swapchainMaintenance1-10155", device, loc.dot(Field::pNext),
-                         "contains VkSwapchainPresentModesCreateInfoKHR, but swapchainMaintenance1 is not enabled");
+                         "contains VkSwapchainPresentModesCreateInfoKHR, but the swapchainMaintenance1 feature was not "
+                         "enabled.");
     }
 
     if (const auto* present_scaling_create_info =
@@ -71,24 +72,24 @@ bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfo
         if (present_scaling_create_info->scalingBehavior != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
-                             "is %s, but swapchainMaintenance1 is not enabled",
+                             "is %s, but the swapchainMaintenance1 feature was not enabled.",
                              string_VkPresentScalingFlagsKHR(present_scaling_create_info->scalingBehavior).c_str());
         } else if (present_scaling_create_info->presentGravityX != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityX),
-                             "is %s, but swapchainMaintenance1 is not enabled",
+                             "is %s, but the swapchainMaintenance1 feature was not enabled.",
                              string_VkPresentGravityFlagsKHR(present_scaling_create_info->presentGravityX).c_str());
         } else if (present_scaling_create_info->presentGravityY != 0) {
             skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-swapchainMaintenance1-10154", device,
                              loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::presentGravityY),
-                             "is %s, but swapchainMaintenance1 is not enabled",
+                             "is %s, but the swapchainMaintenance1 feature was not enabled.",
                              string_VkPresentGravityFlagsKHR(present_scaling_create_info->presentGravityY).c_str());
         }
     }
 
     if (create_info.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT) {
         skip |= LogError("VUID-VkSwapchainCreateInfoKHR-swapchainMaintenance1-10157", device, loc.dot(Field::flags),
-                         "is %s, but swapchainMaintenance1 is not enabled",
+                         "is %s, but the swapchainMaintenance1 feature was not enabled.",
                          string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str());
     }
 
@@ -126,7 +127,7 @@ bool Device::ValidateSwapchainCreateInfo(const Context& context, const VkSwapcha
         if (((create_info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (view_format_count > 1)) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-04100", device,
                              loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
-                             "is %" PRIu32 " but flag (%s) does not includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR.",
+                             "is %" PRIu32 " but flags (%s) does not include VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR.",
                              view_format_count, string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str());
         }
 
@@ -174,7 +175,7 @@ bool Device::ValidateSwapchainCreateInfo(const Context& context, const VkSwapcha
 
     if (create_info.presentMode == VK_PRESENT_MODE_FIFO_LATEST_READY_KHR && !enabled_features.presentModeFifoLatestReady) {
         skip |= LogError("VUID-VkSwapchainCreateInfoKHR-presentModeFifoLatestReady-10161", device, loc.dot(Field::presentMode),
-                         "is %s, but feature presentModeFifoLatestReady is not enabled",
+                         "is %s, but the presentModeFifoLatestReady feature was not enabled.",
                          string_VkPresentModeKHR(create_info.presentMode));
     }
 
@@ -216,7 +217,7 @@ bool Device::ValidateSwapchainCreateInfo(const Context& context, const VkSwapcha
     if (create_info.flags & VK_SWAPCHAIN_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT) {
         if (!enabled_features.multisampledRenderToSwapchain) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-multisampledRenderToSwapchain-12447", device, loc.dot(Field::flags),
-                             "is %s, but multisampledRenderToSwapchain is not enabled.",
+                             "is %s, but the multisampledRenderToSwapchain feature was not enabled.",
                              string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str());
         }
     }
@@ -232,7 +233,7 @@ bool Device::manual_PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, co
 
     if (!enabled_features.swapchainMaintenance1) {
         skip |= LogError("VUID-vkReleaseSwapchainImagesKHR-swapchainMaintenance1-10159", device, context.error_obj.location,
-                         "swapchainMaintenance1 is not enabled");
+                         "swapchainMaintenance1 feature was not enabled.");
     }
 
     return skip;
@@ -278,7 +279,7 @@ bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     if (vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoKHR>(pPresentInfo->pNext) &&
         !enabled_features.swapchainMaintenance1) {
         skip |= LogError("VUID-VkPresentInfoKHR-swapchainMaintenance1-10158", queue, present_info_loc.dot(Field::pNext),
-                         "contains VkSwapchainPresentFenceInfoKHR, but swapchainMaintenance1 is not enabled\n%s",
+                         "contains VkSwapchainPresentFenceInfoKHR, but the swapchainMaintenance1 feature was not enabled.\n%s",
                          PrintPNextChain(vvl::Struct::VkPresentInfoKHR, pPresentInfo->pNext).c_str());
     }
 
@@ -312,18 +313,19 @@ bool Device::manual_PreCallValidateGetSwapchainTimeDomainPropertiesEXT(
     uint64_t* pTimeDomainsCounter, const Context& context) const {
     bool skip = false;
 
+    const Location properties_loc = context.error_obj.location.dot(Field::pSwapchainTimeDomainProperties);
     const bool time_domains = pSwapchainTimeDomainProperties->pTimeDomains != nullptr;
     const bool time_domain_ids = pSwapchainTimeDomainProperties->pTimeDomainIds != nullptr;
     if (time_domains && time_domain_ids) {
         if (pSwapchainTimeDomainProperties->timeDomainCount == 0) {
-            skip |= LogError("VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12371", swapchain, context.error_obj.location,
-                             "pTimeDomains and pTimeDomainIds are not null, but timeDomainCount is 0.");
+            skip |= LogError("VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12371", swapchain,
+                             properties_loc.dot(Field::timeDomainCount),
+                             "is 0, but pTimeDomains and pTimeDomainIds are both non-NULL.");
         }
     } else if (time_domains || time_domain_ids) {
-        const char* msg = time_domains ? "pTimeDomains is not null, but pTimeDomainIds is null"
-                                       : "pTimeDomainIds is not null, but pTimeDomains is null";
-        skip |= LogError("VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12370", swapchain, context.error_obj.location, "%s",
-                         msg);
+        const char* msg = time_domains ? "pTimeDomains is not NULL, but pTimeDomainIds is NULL."
+                                       : "pTimeDomainIds is not NULL, but pTimeDomains is NULL.";
+        skip |= LogError("VUID-VkSwapchainTimeDomainPropertiesEXT-pTimeDomains-12370", swapchain, properties_loc, "%s", msg);
     }
 
     return skip;
@@ -508,7 +510,8 @@ bool Instance::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, 
     const auto& error_obj = context.error_obj;
 
     if (pCreateInfo->hwnd == nullptr) {
-        skip |= LogError("VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308", instance, error_obj.location, "pCreateInfo->hwnd is NULL.");
+        skip |= LogError("VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308", instance,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::hwnd), "is NULL.");
     }
 
     return skip;
@@ -573,12 +576,12 @@ bool Instance::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance
 
     if (display == nullptr) {
         skip |= LogError("VUID-VkWaylandSurfaceCreateInfoKHR-display-01304", instance,
-                         error_obj.location.dot(Field::pCreateInfo).dot(Field::display), "is NULL!");
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::display), "is NULL.");
     }
 
     if (surface == nullptr) {
         skip |= LogError("VUID-VkWaylandSurfaceCreateInfoKHR-surface-01305", instance,
-                         error_obj.location.dot(Field::pCreateInfo).dot(Field::surface), "is NULL!");
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::surface), "is NULL.");
     }
 
     return skip;
@@ -597,7 +600,7 @@ bool Instance::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, co
 
     if (connection == nullptr) {
         skip |= LogError("VUID-VkXcbSurfaceCreateInfoKHR-connection-01310", instance,
-                         error_obj.location.dot(Field::pCreateInfo).dot(Field::connection), "is NULL!");
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::connection), "is NULL.");
     }
 
     skip |= context.ValidateNotZero(window == 0, "VUID-VkXcbSurfaceCreateInfoKHR-window-01311",
@@ -619,7 +622,7 @@ bool Instance::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, c
 
     if (display == nullptr) {
         skip |= LogError("VUID-VkXlibSurfaceCreateInfoKHR-dpy-01313", instance,
-                         error_obj.location.dot(Field::pCreateInfo).dot(Field::dpy), "is NULL!");
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::dpy), "is NULL.");
     }
 
     skip |= context.ValidateNotZero(window == 0, "VUID-VkXlibSurfaceCreateInfoKHR-window-01314",

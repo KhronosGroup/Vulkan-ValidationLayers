@@ -28,7 +28,7 @@ bool Instance::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const L
     bool skip = false;
     if (api_version < promoted_version) {
         skip |= LogError("UNASSIGNED-API-Version-Violation", instance, loc,
-                         "Attempted to call with an effective API version of %s"
+                         "Attempted to call with an effective API version of %s, "
                          "but this API was not promoted until version %s.",
                          StringAPIVersion(api_version).c_str(), StringAPIVersion(promoted_version).c_str());
     }
@@ -43,7 +43,7 @@ bool Instance::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const
         auto effective_api_version = std::min(APIVersion(target_pdev->second->apiVersion), api_version);
         if (effective_api_version < promoted_version) {
             skip |= LogError(
-                "UNASSIGNED-API-Version-Violation", instance, loc,
+                "UNASSIGNED-API-Version-Violation", pdev, loc,
                 "Attempted to call with an effective API version of %s, "
                 "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "
                 "but this API was not promoted until version %s.",
@@ -221,7 +221,7 @@ bool Context::ValidatePnextStructExtension(const Location& loc, const VkBaseOutS
                 skip |= log.LogWarning(
                     "WARNING-VkPipelineCreateFlags2CreateInfo-Extension", error_obj.handle, loc.dot(Field::pNext),
                     "points to a VkPipelineCreateFlags2CreateInfo struct but VK_KHR_maintenance5 has not been enabled. "
-                    "Without checking for and enabling the extension, you might have a situation where your buffer usage "
+                    "Without checking for and enabling the extension, you might have a situation where your pipeline create "
                     "flags are ignored if the driver doesn't support VK_KHR_maintenance5");
             }
         } break;
@@ -391,8 +391,9 @@ bool Context::ValidateFlagsImplementation(const Location& loc, vvl::FlagBitmask 
 
     const bool is_bits_type = flag_type == kRequiredSingleBit || flag_type == kOptionalSingleBit;
     if (is_bits_type && !HasMaxOneBitSet(value)) {
-        skip |= log.LogError(vuid, error_obj.handle, loc, "contains multiple members of %s when only a single value is allowed.",
-                             String(flag_bitmask));
+        skip |= log.LogError(vuid, error_obj.handle, loc,
+                             "(0x%" PRIx64 ") contains multiple members of %s when only a single value is allowed.",
+                             static_cast<uint64_t>(value), String(flag_bitmask));
     }
 
     return skip;
@@ -421,7 +422,7 @@ bool Context::ValidateFlags(const Location& loc, vvl::FlagBitmask flag_bitmask, 
             // This is a quick fix, without adding yet another ValidateFlags overload, to give better info around WSI
             const bool image_usage_hint = loc.field == Field::imageUsage;
             skip |=
-                log.LogError(vuid, error_obj.handle, loc, "has %s values (%s) that requires the extensions %s.%s",
+                log.LogError(vuid, error_obj.handle, loc, "has %s values (%s) that require the extensions %s.%s",
                              String(flag_bitmask), DescribeFlagBitmaskValue(flag_bitmask, value).c_str(), String(required).c_str(),
                              image_usage_hint ? "\nHint: Make sure to filter the supportedUsageFlags from "
                                                 "vkGetPhysicalDeviceSurfaceCapabilitiesKHR to only use what is desired."
@@ -449,7 +450,7 @@ bool Context::ValidateFlags(const Location& loc, vvl::FlagBitmask flag_bitmask, 
     if (!skip && value != 0) {
         vvl::Extensions required = IsValidFlag64Value(flag_bitmask, value, instance_function);
         if (!required.empty()) {
-            skip |= log.LogError(vuid, error_obj.handle, loc, "has %s values (%s) that requires the extensions %s.",
+            skip |= log.LogError(vuid, error_obj.handle, loc, "has %s values (%s) that require the extensions %s.",
                                  String(flag_bitmask), DescribeFlagBitmaskValue64(flag_bitmask, value).c_str(),
                                  String(required).c_str());
         }
@@ -470,7 +471,8 @@ bool Context::ValidateFlagsArray(const Location& count_loc, const Location& arra
         for (uint32_t i = 0; i < count; ++i) {
             if ((array[i] & (~all_flags)) != 0) {
                 skip |= log.LogError(array_required_vuid, error_obj.handle, array_loc.dot(i),
-                                     "contains flag bits that are not recognized members of %s.", String(flag_bitmask));
+                                     "contains flag bits (0x%" PRIx32 ") which are not recognized members of %s.", array[i],
+                                     String(flag_bitmask));
             }
         }
     }

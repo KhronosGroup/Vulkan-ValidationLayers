@@ -62,8 +62,10 @@ bool Device::manual_PreCallValidateCreateMicromapEXT(VkDevice device, const VkMi
 
     if ((pCreateInfo->createFlags & VK_MICROMAP_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT) &&
         !enabled_features.micromapCaptureReplayEXT) {
-        skip |= LogError("VUID-VkMicromapCreateInfoEXT-micromapCaptureReplay-11616", device, error_obj.location,
-                         "micromapCaptureReplay feature was not enabled.");
+        skip |= LogError("VUID-VkMicromapCreateInfoEXT-micromapCaptureReplay-11616", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::createFlags),
+                         "includes VK_MICROMAP_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT, but the micromapCaptureReplay "
+                         "feature was not enabled.");
     }
 
     return skip;
@@ -87,7 +89,7 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
     const auto& error_obj = context.error_obj;
 
     if (!enabled_features.micromapEXT) {
-        skip |= LogError("VUID-vkCmdBuildMicromapsEXT-micromap-11648", device, error_obj.location,
+        skip |= LogError("VUID-vkCmdBuildMicromapsEXT-micromap-11648", commandBuffer, error_obj.location,
                          "The VkPhysicalDeviceOpacityMicromapFeaturesEXT::micromap feature was not enabled.");
     }
 
@@ -105,8 +107,8 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
 
         if (info.triangleArray.deviceAddress == 0) {
             // TODO - This needs to be in CoreChecks and use cc_buffer_address.cpp
-            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10897", device,
-                             info_loc.dot(Field::triangleArray).dot(Field::deviceAddress), "is NULL.");
+            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10897", commandBuffer,
+                             info_loc.dot(Field::triangleArray).dot(Field::deviceAddress), "is zero.");
         } else if (!IsPointerAligned(info.triangleArray.deviceAddress, 256)) {
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07515", commandBuffer,
                              info_loc.dot(Field::triangleArray).dot(Field::deviceAddress),
@@ -115,8 +117,8 @@ bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandB
 
         if (info.data.deviceAddress == 0) {
             // TODO - This needs to be in CoreChecks and use cc_buffer_address.cpp
-            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10896", device,
-                             info_loc.dot(Field::data).dot(Field::deviceAddress), "is NULL.");
+            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-10896", commandBuffer,
+                             info_loc.dot(Field::data).dot(Field::deviceAddress), "is zero.");
         } else if (!IsPointerAligned(info.data.deviceAddress, 256)) {
             skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07515", commandBuffer,
                              info_loc.dot(Field::data).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256.",
@@ -143,11 +145,11 @@ bool Device::manual_PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferred
         const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
         if (!info.data.hostAddress) {
             skip |= LogError("VUID-vkBuildMicromapsEXT-pInfos-07553", device, info_loc.dot(Field::data).dot(Field::hostAddress),
-                             "is zero.");
+                             "is NULL.");
         }
         if (!info.triangleArray.hostAddress) {
             skip |= LogError("VUID-vkBuildMicromapsEXT-pInfos-07554", device,
-                             info_loc.dot(Field::triangleArray).dot(Field::hostAddress), "is zero.");
+                             info_loc.dot(Field::triangleArray).dot(Field::hostAddress), "is NULL.");
         }
 
         skip |= ValidateMicromapBuildInfo(context, info, info_loc);
@@ -194,7 +196,7 @@ bool Device::manual_PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDe
 
     if (!pInfo->dst.hostAddress) {
         skip |= LogError("VUID-vkCopyMicromapToMemoryEXT-pInfo-07569", device, info_loc.dot(Field::dst).dot(Field::hostAddress),
-                         "is zero.");
+                         "is NULL.");
     } else if (!IsPointerAligned(pInfo->dst.hostAddress, 16)) {
         skip |= LogError("VUID-vkCopyMicromapToMemoryEXT-pInfo-07570", device, info_loc.dot(Field::dst).dot(Field::hostAddress),
                          "(%p) must be aligned to 16 bytes.", pInfo->dst.hostAddress);
@@ -222,7 +224,7 @@ bool Device::manual_PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDe
 
     if (!pInfo->src.hostAddress) {
         skip |= LogError("VUID-vkCopyMemoryToMicromapEXT-pInfo-07563", device, info_loc.dot(Field::src).dot(Field::hostAddress),
-                         "is zero.");
+                         "is NULL.");
     } else if (!IsPointerAligned(pInfo->src.hostAddress, 16)) {
         skip |= LogError("VUID-vkCopyMemoryToMicromapEXT-pInfo-07564", device, info_loc.dot(Field::src).dot(Field::hostAddress),
                          "(%p) must be aligned to 16 bytes.", pInfo->src.hostAddress);
@@ -239,8 +241,8 @@ bool Device::manual_PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, 
     const auto& error_obj = context.error_obj;
 
     if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT && queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
-        skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-queryType-07503", device, error_obj.location, "is %s.",
-                         string_VkQueryType(queryType));
+        skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-queryType-07503", device, error_obj.location.dot(Field::queryType),
+                         "is %s.", string_VkQueryType(queryType));
     }
 
     return skip;
@@ -273,12 +275,12 @@ bool Device::manual_PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer co
     }
 
     if (pInfo->dst.deviceAddress == 0) {
-        skip |= LogError("VUID-vkCmdCopyMicromapToMemoryEXT-pInfo-07536", device,
-                         info_loc.dot(Field::dst).dot(Field::deviceAddress), "is NULL.");
+        skip |= LogError("VUID-vkCmdCopyMicromapToMemoryEXT-pInfo-07536", commandBuffer,
+                         info_loc.dot(Field::dst).dot(Field::deviceAddress), "is zero.");
     } else if (!IsPointerAligned(pInfo->dst.deviceAddress, 256)) {
-        skip |=
-            LogError("VUID-vkCmdCopyMicromapToMemoryEXT-pInfo-07537", device, info_loc.dot(Field::dst).dot(Field::deviceAddress),
-                     "(0x%" PRIx64 ") must be aligned to 256 bytes.", pInfo->dst.deviceAddress);
+        skip |= LogError("VUID-vkCmdCopyMicromapToMemoryEXT-pInfo-07537", commandBuffer,
+                         info_loc.dot(Field::dst).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256 bytes.",
+                         pInfo->dst.deviceAddress);
     }
 
     return skip;
@@ -297,12 +299,12 @@ bool Device::manual_PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer co
     }
 
     if (pInfo->src.deviceAddress == 0) {
-        skip |= LogError("VUID-vkCmdCopyMemoryToMicromapEXT-pInfo-07543", device,
-                         info_loc.dot(Field::src).dot(Field::deviceAddress), "is NULL.");
+        skip |= LogError("VUID-vkCmdCopyMemoryToMicromapEXT-pInfo-07543", commandBuffer,
+                         info_loc.dot(Field::src).dot(Field::deviceAddress), "is zero.");
     } else if (!IsPointerAligned(pInfo->src.deviceAddress, 256)) {
-        skip |=
-            LogError("VUID-vkCmdCopyMemoryToMicromapEXT-pInfo-07544", device, info_loc.dot(Field::src).dot(Field::deviceAddress),
-                     "(0x%" PRIx64 ") must be aligned to 256 bytes.", pInfo->src.deviceAddress);
+        skip |= LogError("VUID-vkCmdCopyMemoryToMicromapEXT-pInfo-07544", commandBuffer,
+                         info_loc.dot(Field::src).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be aligned to 256 bytes.",
+                         pInfo->src.deviceAddress);
     }
 
     return skip;
@@ -316,8 +318,8 @@ bool Device::manual_PreCallValidateCmdWriteMicromapsPropertiesEXT(VkCommandBuffe
     const auto& error_obj = context.error_obj;
 
     if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT && queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
-        skip |= LogError("VUID-vkCmdWriteMicromapsPropertiesEXT-queryType-07503", commandBuffer, error_obj.location, "is %s.",
-                         string_VkQueryType(queryType));
+        skip |= LogError("VUID-vkCmdWriteMicromapsPropertiesEXT-queryType-07503", commandBuffer,
+                         error_obj.location.dot(Field::queryType), "is %s.", string_VkQueryType(queryType));
     }
 
     return skip;

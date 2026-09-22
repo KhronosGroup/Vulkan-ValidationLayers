@@ -41,7 +41,7 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM& descript
     if (const auto* strides = description.pStrides) {
         if (description.tiling == VK_TENSOR_TILING_OPTIMAL_ARM) {
             skip |= LogError("VUID-VkTensorCreateInfoARM-pDescription-09720", device, description_loc.dot(Field::tiling),
-                             "is VK_TENSOR_TILING_OPTIMAL_ARM, but pDescription::pStrides (%p) is not null", description.pStrides);
+                             "is VK_TENSOR_TILING_OPTIMAL_ARM, but pStrides is not NULL.");
         }
 
         const uint32_t texel_block_size = vkuFormatTexelBlockSize(description.format);
@@ -67,16 +67,16 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM& descript
 
             if (strides[i] <= 0 || strides[i] > phys_dev_ext_props.tensor_properties.maxTensorStride) {
                 skip |= LogError("VUID-VkTensorDescriptionARM-pStrides-09738", device, description_loc.dot(Field::pStrides, i),
-                                 "(%" PRIi64 ") is <= 0 or > maxTensorStride (%" PRIu64 ")", strides[i],
-                                 phys_dev_ext_props.tensor_properties.maxTensorStride);
+                                 "(%" PRIi64 ") must be greater than 0 and not greater than maxTensorStride (%" PRIu64 ").",
+                                 strides[i], phys_dev_ext_props.tensor_properties.maxTensorStride);
             }
 
             if (i > 0) {
                 if (strides[i - 1] < static_cast<int64_t>(strides[i] * description.pDimensions[i])) {
-                    skip |=
-                        LogError("VUID-VkTensorDescriptionARM-pStrides-09739", device, description_loc.dot(Field::pStrides, i - 1),
-                                 "(%" PRIi64 ") < pStrides[%" PRIu32 "] (%" PRIi64 ") * pDimensions[%" PRIu32 "] (%" PRIu64 ")",
-                                 strides[i - 1], i, strides[i], i, description.pDimensions[i]);
+                    skip |= LogError(
+                        "VUID-VkTensorDescriptionARM-pStrides-09739", device, description_loc.dot(Field::pStrides, i - 1),
+                        "(%" PRIi64 ") is less than pStrides[%" PRIu32 "] (%" PRIi64 ") * pDimensions[%" PRIu32 "] (%" PRIi64 ").",
+                        strides[i - 1], i, strides[i], i, description.pDimensions[i]);
                 }
             }
         }
@@ -129,10 +129,16 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM& descript
                              phys_dev_ext_props.tensor_properties.maxPerDimensionTensorElements);
             }
         }
-        if (static_cast<uint64_t>(total_elements) > phys_dev_ext_props.tensor_properties.maxTensorElements || would_overflow) {
+        if (would_overflow) {
             skip |= LogError("VUID-VkTensorCreateInfoARM-tensorElements-09721", device, description_loc.dot(Field::pDimensions),
-                             "the total number of elements (%" PRIi64 ") is greater than maxTensorElements (%" PRIu64 ")",
-                             total_elements, phys_dev_ext_props.tensor_properties.maxTensorElements);
+                             "describe a total number of elements that overflows a 64-bit signed integer, which is greater than "
+                             "maxTensorElements (%" PRIu64 ").",
+                             phys_dev_ext_props.tensor_properties.maxTensorElements);
+        } else if (static_cast<uint64_t>(total_elements) > phys_dev_ext_props.tensor_properties.maxTensorElements) {
+            skip |=
+                LogError("VUID-VkTensorCreateInfoARM-tensorElements-09721", device, description_loc.dot(Field::pDimensions),
+                         "describe a total number of elements (%" PRIi64 ") which is greater than maxTensorElements (%" PRIu64 ").",
+                         total_elements, phys_dev_ext_props.tensor_properties.maxTensorElements);
         }
     }
 
@@ -141,14 +147,14 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM& descript
         if (description.pDimensions[description.dimensionCount - 1] > 4) {
             skip |= LogError("VUID-VkTensorDescriptionARM-tiling-09741", device, description_loc.dot(Field::tiling),
                              "is VK_TENSOR_TILING_OPTIMAL_ARM and usage (%s) includes VK_TENSOR_USAGE_IMAGE_ALIASING_BIT_ARM "
-                             "but pDimensions[%" PRIu32 "] (%" PRIu64 ") > 4",
+                             "but pDimensions[%" PRIu32 "] (%" PRIi64 ") is greater than 4.",
                              string_VkTensorUsageFlagsARM(description.usage).c_str(), (description.dimensionCount - 1),
                              description.pDimensions[description.dimensionCount - 1]);
         }
     }
     if (description.tiling == VK_TENSOR_TILING_LINEAR_ARM && image_aliasing) {
         skip |= LogError("VUID-VkTensorDescriptionARM-tiling-09742", device, description_loc.dot(Field::tiling),
-                         "is VK_TENSOR_TILING_LINEAR_ARM but usage (%s) includes VK_TENSOR_USAGE_IMAGE_ALIASING_BIT_ARM",
+                         "is VK_TENSOR_TILING_LINEAR_ARM, but usage (%s) includes VK_TENSOR_USAGE_IMAGE_ALIASING_BIT_ARM.",
                          string_VkTensorUsageFlagsARM(description.usage).c_str());
     }
     return skip;
@@ -160,8 +166,8 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
     bool skip = false;
 
     if (!enabled_features.tensors) {
-        skip |=
-            LogError("VUID-vkCreateTensorARM-tensors-09832", device, context.error_obj.location, "tensors feature is not enabled");
+        skip |= LogError("VUID-vkCreateTensorARM-tensors-09832", device, context.error_obj.location,
+                         "tensors feature was not enabled.");
     }
 
     const Location create_info_loc = context.error_obj.location.dot(Field::pCreateInfo);
@@ -179,7 +185,8 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
         } else if (pCreateInfo->queueFamilyIndexCount <= 1) {
             skip |= LogError("VUID-VkTensorCreateInfoARM-sharingMode-09723", device, create_info_loc.dot(Field::sharingMode),
                              "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32
-                             " (needs to be at least 2)\nqueueFamilyIndexCount can be 1 if the maintenance11 feature is enabled.",
+                             " (needs to be at least 2)\nHint: queueFamilyIndexCount can be 1 if the maintenance11 feature is "
+                             "enabled.",
                              pCreateInfo->queueFamilyIndexCount);
         }
 
@@ -201,26 +208,27 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
     if ((pCreateInfo->flags & VK_TENSOR_CREATE_PROTECTED_BIT_ARM) != 0) {
         if (!enabled_features.protectedMemory) {
             skip |= LogError("VUID-VkTensorCreateInfoARM-protectedMemory-09729", device, create_info_loc.dot(Field::flags),
-                             "%s has the (%s) bit set but the protectedMemory device feature is not enabled.",
-                             string_VkTensorCreateFlagsARM(pCreateInfo->flags).c_str(),
-                             string_VkTensorCreateFlagsARM(VK_TENSOR_CREATE_PROTECTED_BIT_ARM).c_str());
+                             "(%s) includes VK_TENSOR_CREATE_PROTECTED_BIT_ARM, but the protectedMemory feature was not "
+                             "enabled.",
+                             string_VkTensorCreateFlagsARM(pCreateInfo->flags).c_str());
         }
     }
 
     if ((pCreateInfo->flags & VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM) != 0) {
         if (!enabled_features.descriptorBufferCaptureReplay) {
             skip |= LogError("VUID-VkTensorCreateInfoARM-flags-09726", device, create_info_loc.dot(Field::flags),
-                             "(%s) includes (%s), but the descriptorBufferCaptureReplay feature is not enabled.",
-                             string_VkTensorCreateFlagsARM(pCreateInfo->flags).c_str(),
-                             string_VkTensorCreateFlagsARM(VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM).c_str());
+                             "(%s) includes VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM, but the "
+                             "descriptorBufferCaptureReplay feature was not enabled.",
+                             string_VkTensorCreateFlagsARM(pCreateInfo->flags).c_str());
         }
     }
 
     if (IsValueIn(description.tiling, {VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM, VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM}) &&
-         description.pDimensions[description.dimensionCount - 1] > 4) {
+        description.pDimensions[description.dimensionCount - 1] > 4) {
         skip |= LogError("VUID-VkTensorDescriptionARM-tiling-09842", device,
                          create_info_loc.dot(Field::pDescription).dot(Field::tiling),
-                         "(%s) is incompatible with pDimensions[dimensionCount-1] (%" PRIi64 ") > 4\ndimensionCount = %" PRIu32 "",
+                         "(%s) requires pDimensions[dimensionCount - 1] (%" PRIi64
+                         ") to be less than or equal to 4 (dimensionCount is %" PRIu32 ").",
                          string_VkTensorTilingARM(description.tiling), description.pDimensions[description.dimensionCount - 1],
                          description.dimensionCount);
     }
@@ -228,10 +236,9 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
         IsValueIn(description.tiling,
                   {VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM, VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM,
                    VK_TENSOR_TILING_BRICK_16_WIDE_ARM, VK_TENSOR_TILING_BRICK_8_WIDE_ARM, VK_TENSOR_TILING_BRICK_4_WIDE_ARM})) {
-        skip |= LogError(
-            "VUID-VkTensorDescriptionARM-tiling-09843", device, create_info_loc.dot(Field::pDescription).dot(Field::tiling),
-            "(%s) is incompatible with non-NULL pStrides (%p).",
-            string_VkTensorTilingARM(description.tiling), description.pStrides);
+        skip |= LogError("VUID-VkTensorDescriptionARM-tiling-09843", device,
+                         create_info_loc.dot(Field::pDescription).dot(Field::tiling), "(%s) requires pStrides to be NULL.",
+                         string_VkTensorTilingARM(description.tiling));
     }
 
     if (auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryTensorCreateInfoARM>(pCreateInfo->pNext)) {

@@ -77,7 +77,8 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
         if ((usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 &&
             !phys_dev_ext_props.descriptor_heap_props.protectedDescriptorHeaps) {
             skip |= LogError("VUID-VkBufferCreateInfo-flags-11277", device, create_info_loc.dot(Field::flags),
-                             "includes VK_BUFFER_CREATE_PROTECTED_BIT, but the usage is %s.",
+                             "includes VK_BUFFER_CREATE_PROTECTED_BIT, and the usage (%s) includes "
+                             "VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, but protectedDescriptorHeaps is VK_FALSE.",
                              string_VkBufferUsageFlags2(usage).c_str());
         }
     }
@@ -87,7 +88,7 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
         auto dedicated_allocation_buffer = vku::FindStructInPNextChain<VkDedicatedAllocationBufferCreateInfoNV>(pCreateInfo->pNext);
         if (dedicated_allocation_buffer && dedicated_allocation_buffer->dedicatedAllocation == VK_TRUE) {
             skip |= LogError("VUID-VkBufferCreateInfo-pNext-01571", device, create_info_loc.dot(Field::flags),
-                             "%s when VkDedicatedAllocationBufferCreateInfoNV::dedicatedAllocation is VK_TRUE.",
+                             "is %s, but VkDedicatedAllocationBufferCreateInfoNV::dedicatedAllocation is VK_TRUE.",
                              string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
         }
         if ((usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 &&
@@ -137,8 +138,8 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
         // see https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4849
         skip |= LogError("UNASSIGNED-VkBufferViewCreateInfo-depthStencil-format", pCreateInfo->buffer,
                          create_info_loc.dot(Field::format),
-                         "is a depth/stencil format (%s) but depth/stencil formats do not have a "
-                         "defined sizes for alignment, replace with a color format.",
+                         "is a depth/stencil format (%s), but depth/stencil formats do not have a "
+                         "defined size for alignment, replace with a color format.",
                          string_VkFormat(format));
     }
 
@@ -149,7 +150,7 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
 
         if (range == 0) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-range-00928", pCreateInfo->buffer, create_info_loc.dot(Field::range),
-                             "(%" PRIuLEAST64 ") does not equal VK_WHOLE_SIZE, range must be greater than 0.", range);
+                             "is 0, but must either be greater than 0 or VK_WHOLE_SIZE.");
         }
 
         if (!IsIntegerMultipleOf(range, texel_block_size)) {
@@ -163,8 +164,8 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
         if (texels > static_cast<VkDeviceSize>(phys_dev_props.limits.maxTexelBufferElements)) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-range-00930", pCreateInfo->buffer, create_info_loc.dot(Field::range),
                              "(%" PRIuLEAST64 "), %s texel block size (%" PRIuLEAST64 "), and texels per block (%" PRIuLEAST64
-                             ") is a total of (%" PRIuLEAST64
-                             ") texels which is more than VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
+                             ") is a total of %" PRIuLEAST64
+                             " texels which is more than VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
                              range, string_VkFormat(format), texel_block_size, texels_per_block, texels,
                              phys_dev_props.limits.maxTexelBufferElements);
         }
@@ -174,9 +175,8 @@ bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBuf
         if (IsValueIn(pCreateInfo->format,
                       {VK_FORMAT_G8_B8R8_2PLANE_444_UNORM, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16,
                        VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16, VK_FORMAT_G16_B16R16_2PLANE_444_UNORM})) {
-            skip |= LogError("VUID-VkBufferViewCreateInfo-None-12278", device,
-                             context.error_obj.location.dot(Field::pCreateInfo).dot(Field::format), "is %s.",
-                             string_VkFormat(pCreateInfo->format));
+            skip |= LogError("VUID-VkBufferViewCreateInfo-None-12278", pCreateInfo->buffer, create_info_loc.dot(Field::format),
+                             "is %s.", string_VkFormat(pCreateInfo->format));
         }
     }
 
