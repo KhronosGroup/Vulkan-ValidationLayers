@@ -5397,3 +5397,28 @@ TEST_F(PositiveSyncVal, PartialRenderAreaFeedback) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveSyncVal, DynamicRenderingNullAttachmentLoad) {
+    TEST_DESCRIPTION("Ignore LOAD for a null dynamic rendering attachment");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
+    attachment.imageView = VK_NULL_HANDLE;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering = vku::InitStructHelper();
+    rendering.renderArea.extent = {1, 1};
+    rendering.layerCount = 1;
+    rendering.colorAttachmentCount = 1;
+    rendering.pColorAttachments = &attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
