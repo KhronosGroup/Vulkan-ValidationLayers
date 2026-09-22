@@ -56,6 +56,13 @@ struct HashedUint64 {
     }
 };
 
+// We query support to normally use the vkGetPhysicalDeviceFormatProperties2,
+// so we need to also ensure the app has it enabled as well
+static inline bool QueryFormatFeatureFlags2(const DeviceExtensions& extensions) {
+    return IsExtEnabled(extensions.vk_khr_get_physical_device_properties2) &&
+           IsExtSupported(extensions.vk_khr_format_feature_flags2);
+}
+
 namespace vvl {
 class BaseInstance;
 class BaseDevice;

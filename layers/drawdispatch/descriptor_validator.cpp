@@ -1190,7 +1190,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // When KHR_format_feature_flags2 is supported, the read/write without
     // format support is reported per format rather than a single physical
     // device feature.
-    if (dev_proxy.device_state->special_supported.vk_khr_format_feature_flags2) {
+    if (QueryFormatFeatureFlags2(dev_proxy.extensions)) {
         const VkFormatFeatureFlags2 format_features = image_view_state->format_features;
 
         if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
@@ -1443,7 +1443,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // When KHR_format_feature_flags2 is supported, the read/write without
     // format support is reported per format rather than a single physical
     // device feature.
-    if (dev_proxy.device_state->special_supported.vk_khr_format_feature_flags2) {
+    if (QueryFormatFeatureFlags2(dev_proxy.extensions)) {
         if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
             if ((resource_variable.info.is_read_without_format) &&
                 !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {

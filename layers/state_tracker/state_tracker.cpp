@@ -343,14 +343,14 @@ VkFormat DeviceState::GetExternalFormatResolveANDROID(uint64_t external_format) 
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-VkFormatFeatureFlags2 InstanceState::GetImageFormatFeatures(VkPhysicalDevice physical_device, bool has_format_feature2,
+VkFormatFeatureFlags2 InstanceState::GetImageFormatFeatures(VkPhysicalDevice physical_device, bool query_format_feature2,
                                                             bool has_drm_modifiers, VkDevice device, VkImage image, VkFormat format,
                                                             VkImageTiling tiling) {
     VkFormatFeatureFlags2 format_features = 0;
 
     // Add feature support according to Image Format Features (vkspec.html#resources-image-format-features)
     // if format is AHB external format then the features are already set
-    if (has_format_feature2) {
+    if (query_format_feature2) {
         VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
         auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>(has_drm_modifiers ? &fmt_drm_props : nullptr);
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
@@ -441,7 +441,7 @@ void DeviceState::PostCallRecordCreateImage(VkDevice device, const VkImageCreate
         format_features = GetExternalFormatFeaturesANDROID(pCreateInfo->pNext);
     }
     if (format_features == 0) {
-        format_features = instance_state->GetImageFormatFeatures(physical_device, special_supported.vk_khr_format_feature_flags2,
+        format_features = instance_state->GetImageFormatFeatures(physical_device, QueryFormatFeatureFlags2(extensions),
                                                                  IsExtEnabled(extensions.vk_ext_image_drm_format_modifier), device,
                                                                  *pImage, pCreateInfo->format, pCreateInfo->tiling);
     }
@@ -716,7 +716,7 @@ void DeviceState::PostCallRecordCreateBufferView(VkDevice device, const VkBuffer
     auto buffer_state = Get<Buffer>(pCreateInfo->buffer);
 
     VkFormatFeatureFlags2 buffer_features;
-    if (special_supported.vk_khr_format_feature_flags2) {
+    if (QueryFormatFeatureFlags2(extensions)) {
         VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
         DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, pCreateInfo->format, &fmt_props_2);
@@ -786,10 +786,9 @@ void DeviceState::PostCallRecordCreateImageView(VkDevice device, const VkImageVi
         // The ImageView uses same Image's format feature since they share same AHB
         format_features = image_state->format_features;
     } else {
-        format_features =
-            instance_state->GetImageFormatFeatures(physical_device, special_supported.vk_khr_format_feature_flags2,
-                                                   IsExtEnabled(extensions.vk_ext_image_drm_format_modifier), device,
-                                                   image_state->VkHandle(), pCreateInfo->format, image_state->GetTiling());
+        format_features = instance_state->GetImageFormatFeatures(
+            physical_device, QueryFormatFeatureFlags2(extensions), IsExtEnabled(extensions.vk_ext_image_drm_format_modifier),
+            device, image_state->VkHandle(), pCreateInfo->format, image_state->GetTiling());
     }
 
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
@@ -1144,7 +1143,7 @@ VkFormatFeatureFlags2 DeviceState::GetPotentialFormatFeatures(VkFormat format) c
     VkFormatFeatureFlags2 format_features = 0;
 
     if (format != VK_FORMAT_UNDEFINED) {
-        if (special_supported.vk_khr_format_feature_flags2) {
+        if (QueryFormatFeatureFlags2(extensions)) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>(
                 IsExtEnabled(extensions.vk_ext_image_drm_format_modifier) ? &fmt_drm_props : nullptr);
@@ -4645,7 +4644,7 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
             const auto& image_ci = swapchain->image_create_info;
             for (uint32_t i = 0; i < swapchain_image_count; ++i) {
                 auto format_features =
-                    instance_state->GetImageFormatFeatures(physical_device, special_supported.vk_khr_format_feature_flags2,
+                    instance_state->GetImageFormatFeatures(physical_device, QueryFormatFeatureFlags2(extensions),
                                                            IsExtEnabled(extensions.vk_ext_image_drm_format_modifier), device,
                                                            swapchain_images[i], image_ci.format, image_ci.tiling);
                 auto image_state = CreateImageState(swapchain_images[i], image_ci.ptr(), swapchain->VkHandle(), i, format_features);
