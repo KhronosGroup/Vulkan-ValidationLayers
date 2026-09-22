@@ -582,7 +582,19 @@ void AccessContext::UpdateAttachmentAccessState(const AttachmentViewGen& view_ge
                                                 SyncAccessIndex current_usage, const AttachmentAccess& attachment_access,
                                                 ResourceUsageTagEx tag_ex, uint32_t view_mask, QueueId queue_id) {
     if (view_mask == 0) {
-        ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type);
+        const bool draw_access = attachment_access.type == AttachmentAccessType::Access;
+        const AttachmentViewGen::Gen optimized_gen_type = draw_access ? view_gen.GetOptimizedDrawGen(gen_type) : gen_type;
+        ImageRangeGen range_gen = view_gen.GetRangeGen(optimized_gen_type);
+
+        // LOAD only reads the render area. Track the draw over the whole subresource only if its
+        // write has no hazard. Check again at submission, when accesses from earlier command buffers
+        // are also known
+        if (optimized_gen_type != gen_type && view_gen.DrawOptimizationNeedsHazardCheck(gen_type)) {
+            ImageRangeGen probe = range_gen;
+            if (DetectAttachmentHazard(probe, current_usage, attachment_access, queue_id).IsHazard()) {
+                range_gen = view_gen.GetRangeGen(gen_type);
+            }
+        }
         UpdateAttachmentAccessState(range_gen, current_usage, attachment_access, tag_ex, queue_id);
     } else {
         uint32_t view_index = 0;
@@ -610,35 +622,43 @@ void AccessContext::AddAsyncContext(const AccessContext& access_context, Resourc
 // unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
 ResourceUsageTag AccessContext::AsyncReference::StartTag() const { return (tag_ == kInvalidTag) ? context_->StartTag() : tag_; }
 
-AttachmentViewGen::AttachmentViewGen(const vvl::ImageView* image_view, const VkOffset3D& offset, const VkExtent3D& extent)
-    : view_(image_view) {
-    gen_store_[Gen::kViewSubresource].emplace(MakeImageRangeGen(*image_view));
+AttachmentViewGen::AttachmentViewGen(const vvl::ImageView& image_view, const VkOffset3D& offset, const VkExtent3D& extent,
+                                     bool feedback_enabled, VkImageAspectFlags use_full_extent_aspects,
+                                     VkImageAspectFlags try_full_extent_aspects)
+    : view_(&image_view),
+      feedback_enabled_(feedback_enabled),
+      use_full_extent_aspects_(use_full_extent_aspects),
+      try_full_extent_aspects_(try_full_extent_aspects) {
+    assert((use_full_extent_aspects & try_full_extent_aspects) == 0);
 
-    const bool has_depth = vkuFormatHasDepth(image_view->create_info.format);
-    const bool has_stencil = vkuFormatHasStencil(image_view->create_info.format);
+    const bool has_depth = vkuFormatHasDepth(image_view.create_info.format);
+    const bool has_stencil = vkuFormatHasStencil(image_view.create_info.format);
 
-    // For depth-stencil attachment, the view's aspect flags are ignored according to the spec.
-    // MakeImageRangeGen works with the aspect flags. Derive aspect from format.
+    // Attachment operations ignore the view's aspect mask for depth-stencil formats.
+    // MakeImageRangeGen uses the view's aspect mask by default, but accepts an override.
     VkImageAspectFlags override_aspect_flags = 0;
     if (has_depth || has_stencil) {
         override_aspect_flags |= has_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
         override_aspect_flags |= has_stencil ? VK_IMAGE_ASPECT_STENCIL_BIT : 0;
     }
 
-    // Range gen for attachment's render area
-    gen_store_[Gen::kRenderArea].emplace(MakeImageRangeGen(*image_view, offset, extent, override_aspect_flags));
+    gen_store_[Gen::kViewSubresource].emplace(MakeImageRangeGen(image_view));
+    gen_store_[Gen::kRenderArea].emplace(MakeImageRangeGen(image_view, offset, extent, override_aspect_flags));
 
-    // If attachment has both depth and stencil aspects then add range gens to represent each aspect separately.
-    if (has_depth && has_stencil) {
-        gen_store_[Gen::kDepthOnlyRenderArea].emplace(MakeImageRangeGen(*image_view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
-        gen_store_[Gen::kStencilOnlyRenderArea].emplace(
-            MakeImageRangeGen(*image_view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
+    if (has_depth) {
+        gen_store_[Gen::kDepthOnlyRenderArea].emplace(MakeImageRangeGen(image_view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
+        gen_store_[Gen::kDepthOnlySubresource].emplace(MakeImageRangeGen(image_view, 0, VK_IMAGE_ASPECT_DEPTH_BIT));
+    }
+    if (has_stencil) {
+        gen_store_[Gen::kStencilOnlyRenderArea].emplace(MakeImageRangeGen(image_view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
+        gen_store_[Gen::kStencilOnlySubresource].emplace(MakeImageRangeGen(image_view, 0, VK_IMAGE_ASPECT_STENCIL_BIT));
     }
 }
 
 ImageRangeGen AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type, uint32_t view_index) const {
     // Restrict image view's subresource range to a specific multiview layer
     if (view_index != vvl::kNoIndex32) {
+        // TODO: Use type to select the aspects and whether to restrict this layer to the render area
         VkImageSubresourceRange subresource = view_->normalized_subresource_range;
         if (view_index >= subresource.layerCount) {
             return {};  // invalid view index
@@ -649,36 +669,53 @@ ImageRangeGen AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type, uint32
         return range_gen;
     }
 
-    // If a single aspect of depth-stencil attachment is requested, but the attachment actually
-    // consist of a single aspect, then the render area's range gen is what was requested
-    // (in this case we also don't cache separate depth/stencil-only range gens).
-    const bool asked_depth_aspect_for_depth_only =
-        (type == kDepthOnlyRenderArea) && vkuFormatIsDepthOnly(view_->create_info.format);
-    const bool asked_stencil_aspect_for_stencil_only =
-        (type == kStencilOnlyRenderArea) && vkuFormatIsStencilOnly(view_->create_info.format);
-    if (asked_depth_aspect_for_depth_only || asked_stencil_aspect_for_stencil_only) {
-        type = Gen::kRenderArea;
-    }
     assert(gen_store_[type].has_value());
     return *gen_store_[type];
 }
 
-AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const {
-    assert(vkuFormatIsDepthOrStencil(view_->create_info.format));
-    if (depth_op) {
-        assert(vkuFormatHasDepth(view_->create_info.format));
-        if (stencil_op) {
-            assert(vkuFormatHasStencil(view_->create_info.format));
-            return kRenderArea;
-        }
-        return kDepthOnlyRenderArea;
+AttachmentViewGen::Gen AttachmentViewGen::GetLoadGen(VkImageAspectFlags aspect_mask, VkAttachmentLoadOp load_op) const {
+    const bool full_extent = !feedback_enabled_ && LoadOpWrites(load_op);
+    return GetGen(aspect_mask, full_extent);
+}
+
+AttachmentViewGen::Gen AttachmentViewGen::GetStoreGen(VkImageAspectFlags aspect_mask) const {
+    const bool full_extent = !feedback_enabled_;
+    return GetGen(aspect_mask, full_extent);
+}
+
+AttachmentViewGen::Gen AttachmentViewGen::GetOptimizedDrawGen(Gen render_area_gen) const {
+    const VkImageAspectFlags aspect = GetDrawAspect(render_area_gen);
+    const bool full_extent = ((use_full_extent_aspects_ | try_full_extent_aspects_) & aspect) != 0;
+    return GetGen(aspect, full_extent);
+}
+
+bool AttachmentViewGen::DrawOptimizationNeedsHazardCheck(Gen render_area_gen) const {
+    return (try_full_extent_aspects_ & GetDrawAspect(render_area_gen)) != 0;
+}
+
+AttachmentViewGen::Gen AttachmentViewGen::GetGen(VkImageAspectFlags aspect_mask, bool full_extent) {
+    if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+        return full_extent ? kDepthOnlySubresource : kDepthOnlyRenderArea;
     }
-    if (stencil_op) {
-        assert(vkuFormatHasStencil(view_->create_info.format));
-        return kStencilOnlyRenderArea;
+    if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+        return full_extent ? kStencilOnlySubresource : kStencilOnlyRenderArea;
     }
-    assert(depth_op || stencil_op);
-    return kRenderArea;
+    return full_extent ? kViewSubresource : kRenderArea;
+}
+
+VkImageAspectFlags AttachmentViewGen::GetDrawAspect(Gen render_area_gen) {
+    switch (render_area_gen) {
+        case kRenderArea:
+            return VK_IMAGE_ASPECT_COLOR_BIT;
+        case kDepthOnlyRenderArea:
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
+        case kStencilOnlyRenderArea:
+            return VK_IMAGE_ASPECT_STENCIL_BIT;
+        default:
+            // expect a generator returned by GetDrawGen()
+            assert(false);
+            return 0;
+    }
 }
 
 SubpassBarrier::SubpassBarrier(const AccessContext& src_subpass_context, VkQueueFlags queue_flags,

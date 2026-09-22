@@ -37,7 +37,7 @@ using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
 class RenderPassAccessContext {
   public:
-    static AttachmentViewGenVector CreateAttachmentViewGen(const VkRect2D& render_area,
+    static AttachmentViewGenVector CreateAttachmentViewGen(const vvl::RenderPass& rp_state, const VkRect2D& render_area,
                                                            vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views);
     RenderPassAccessContext(const vvl::RenderPass& rp_state, const VkRect2D& render_area, VkQueueFlags queue_flags,
                             vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views,

@@ -601,33 +601,7 @@ bool ImageRangeGenerator::Convert2DCompatibleTo3D() {
 }
 ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
                                          VkDeviceSize base_address, bool is_depth_sliced)
-    : encoder_(&encoder),
-      subres_range_(GetRemaining(encoder.FullRange(), subres_range)),
-      offset_(),
-      extent_(),
-      base_address_(base_address),
-      is_depth_sliced_(is_depth_sliced) {
-#ifndef NDEBUG
-    assert(IsValid(*encoder_, subres_range_));
-#endif
-    if (SubresourceRangeIsEmpty(subres_range)) {
-        // Not robust to empty ranges, so for to "at end" condition.
-        pos_ = {0, 0};
-        return;
-    }
-
-    SetUpSubresInfo();
-    extent_ = subres_info_->extent;
-    const bool converted = Convert2DCompatibleTo3D();
-    SetUpIncrementerDefaults();
-    if (converted && (extent_.depth != subres_info_->extent.depth)) {
-        SetUpIncrementer(true, true, false);
-    } else {
-        SetUpSubresIncrementer();
-    }
-    SetInitialPos(subres_range_.baseArrayLayer, aspect_index_);
-    pos_ = incr_state_.y_base;
-}
+    : ImageRangeGenerator(encoder, subres_range, base_address, is_depth_sliced, 0) {}
 
 ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
                                          VkDeviceSize base_address, bool is_depth_sliced, uint32_t view_mask)
@@ -654,9 +628,10 @@ ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const
         SetUpSubresIncrementer();
     }
 
-    // baseArrayLayer is taken into account inside SetInitialPosMultiviewLayers
-    uint32_t relative_base_layer = view_mask ? (uint32_t)LeastSignificantBit(view_mask) : 0;
-    SetInitialPos(relative_base_layer, aspect_index_);
+    // With multiview, baseArrayLayer is taken into account inside SetInitialPosMultiviewLayers.
+    // Otherwise, pass baseArrayLayer directly.
+    const uint32_t initial_layer = view_mask ? static_cast<uint32_t>(LeastSignificantBit(view_mask)) : subres_range_.baseArrayLayer;
+    SetInitialPos(initial_layer, aspect_index_);
     pos_ = incr_state_.y_base;
 }
 

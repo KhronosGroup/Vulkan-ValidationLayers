@@ -7928,3 +7928,172 @@ TEST_F(NegativeSyncVal, DrawMultiIndexInputRAW) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncVal, PartialRenderAreaLoadWrite) {
+    TEST_DESCRIPTION("A writing load can conflict with a copy outside the render area");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    const vkt::ImageView view = image.CreateView();
+    vkt::Buffer buffer(*m_device, 16 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    VkBufferImageCopy copy{};
+    copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy.imageOffset = {16, 0, 0};
+    copy.imageExtent = {16, 32, 1};
+    VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
+    attachment.imageView = view;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    VkRenderingInfo rendering = vku::InitStructHelper();
+    rendering.renderArea.extent = {16, 32};
+    rendering.layerCount = 1;
+    rendering.colorAttachmentCount = 1;
+    rendering.pColorAttachments = &attachment;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_command_buffer.BeginRendering(rendering);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, StoreNoneAfterDepthClear) {
+    TEST_DESCRIPTION("STORE_OP_NONE after load CLEAR is STORE_OP_DONT_CARE");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = FindSupportedDepthOnlyFormat(Gpu());
+    vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    const vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
+    attachment.imageView = view;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering = vku::InitStructHelper();
+    rendering.renderArea.extent = {16, 32};
+    rendering.layerCount = 1;
+    rendering.pDepthAttachment = &attachment;
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT;  // Covers CLEAR, but not the store
+    barrier.srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+
+    VkBufferImageCopy copy{};
+    copy.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    copy.imageOffset = {16, 0, 0};
+    copy.imageExtent = {16, 32, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering);
+    m_command_buffer.EndRendering();
+    m_command_buffer.Barrier(barrier);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &copy);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, StoreHazardOutsideRenderAreaAfterDraw) {
+    TEST_DESCRIPTION("Store conflicts with an earlier write outside the render area");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = FindSupportedDepthOnlyFormat(Gpu());
+    vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    const vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::Buffer source(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy right_half_copy{};
+    right_half_copy.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    right_half_copy.imageOffset = {16, 0, 0};
+    right_half_copy.imageExtent = {16, 32, 1};
+
+    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
+    pipeline_rendering.depthAttachmentFormat = format;
+    VkPipelineDepthStencilStateCreateInfo depth = vku::InitStructHelper();
+    depth.depthTestEnable = VK_TRUE;
+    depth.depthWriteEnable = VK_TRUE;
+    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    pipe.gp_ci_.pDepthStencilState = &depth;
+    const VkRect2D scissor = {{0, 0}, {16, 32}};
+    pipe.vp_state_ci_.pScissors = &scissor;
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
+    attachment.imageView = view;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    VkRenderingInfo rendering = vku::InitStructHelper();
+
+    rendering.renderArea = scissor;
+    rendering.layerCount = 1;
+    rendering.pDepthAttachment = &attachment;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, source, image, VK_IMAGE_LAYOUT_GENERAL, 1, &right_half_copy);
+    m_command_buffer.BeginRendering(rendering);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    // Draws are restricted to the left half. The store must detect the earlier write in the right half
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_command_buffer.EndRendering();
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.Reset();
+}
+
+TEST_F(NegativeSyncVal, PartialRenderAreaStoreWrite) {
+    TEST_DESCRIPTION("A copy outside the render area conflicts with an earlier DONT_CARE store");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredExtensions(VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    const vkt::ImageView view = image.CreateView();
+    vkt::Buffer destination(*m_device, 16 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferImageCopy copy{};
+    copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy.imageOffset = {16, 0, 0};
+    copy.imageExtent = {16, 32, 1};
+
+    VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
+    attachment.imageView = view;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    VkRenderingInfo rendering = vku::InitStructHelper();
+    rendering.renderArea.extent = {16, 32};
+    rendering.layerCount = 1;
+    rendering.colorAttachmentCount = 1;
+    rendering.pColorAttachments = &attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering);
+    m_command_buffer.EndRendering();
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, destination, 1, &copy);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
