@@ -2367,8 +2367,7 @@ bool CoreChecks::ValidateBindImageMemorySwapchainInfo(const VkBindImageMemoryInf
                                  loc.pNext(Struct::VkBindImageMemorySwapchainInfoKHR, Field::swapchain),
                                  "imageIndex (%" PRIu32 ") is out of bounds of %s images (size: %zu)", swapchain_info->imageIndex,
                                  FormatHandle(swapchain_info->swapchain).c_str(), swapchain_state->images.size());
-            }
-            if (swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT) {
+            } else if (swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT) {
                 if (swapchain_state->images[swapchain_info->imageIndex].acquired == false) {
                     const LogObjectList objlist(bind_info.image, swapchain_info->swapchain);
                     skip |= LogError("VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756", objlist,
