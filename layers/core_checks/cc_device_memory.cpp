@@ -104,6 +104,12 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList& objlist, cons
                 result |= VerifyBoundMemoryIsValid(state.get(), objlist, image_state.Handle(), loc, vuid);
             }
         }
+    } else if (!image_state.sparse_residency && !image_state.HasFullRangeBound()) {
+        result |= LogError(vuid, objlist, loc,
+                           "%s was created with VK_IMAGE_CREATE_SPARSE_BINDING_BIT but not "
+                           "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, so it cannot be partially resident, but its memory has not "
+                           "been fully bound with vkQueueBindSparse().",
+                           FormatHandle(image_state).c_str());
     }
     return result;
 }
