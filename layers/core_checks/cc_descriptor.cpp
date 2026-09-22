@@ -376,12 +376,19 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer& cb_stat
                                     const LogObjectList objlist(cb_state.Handle(), set_handle, buffer_descriptor->GetBuffer());
                                     const char* vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-01979"
                                                             : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979";
-                                    skip |= LogError(
-                                        vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
-                                        "is %" PRIu32 ", which when added to the buffer descriptor's range (%" PRIu64
-                                        ") and offset (%" PRIu64 ") is greater than the size of the buffer (%" PRIu64
-                                        ") in descriptorSet #%" PRIu32 " binding #%" PRIu32 " descriptor[%" PRIu32 "].",
-                                        offset, bound_range, bound_offset, buffer_state->GetSize(), set_idx, binding_index, j);
+                                    std::ostringstream ss;
+                                    ss << "is " << offset << ", which when added to the buffer descriptor's range (" << bound_range
+                                       << ") and offset (" << bound_offset << ") is greater than the size of the buffer ("
+                                       << buffer_state->GetSize() << ") in descriptorSet #" << set_idx << " binding #"
+                                       << binding_index << " descriptor[" << j << "].";
+                                    if ((bound_offset == 0) && (bound_range == buffer_state->GetSize())) {
+                                        ss << "\nThe descriptor's range covers the entire buffer, so there is nothing left for a "
+                                              "dynamic offset to move into. VkDescriptorBufferInfo::range is the size of the "
+                                              "region the shader accesses starting at the dynamic offset, not the size of the "
+                                              "buffer.\nSee https://docs.vulkan.org/guide/latest/descriptor_dynamic_offset.html\n";
+                                    }
+                                    skip |= LogError(vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset), "%s",
+                                                     ss.str().c_str());
                                 }
                             }
                             cur_dyn_offset++;
