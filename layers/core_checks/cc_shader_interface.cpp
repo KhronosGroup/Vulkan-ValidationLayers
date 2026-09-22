@@ -382,7 +382,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
             const bool glsl_name = module_state.static_data_.source_language != spv::SourceLanguageHLSL &&
                                    module_state.static_data_.source_language != spv::SourceLanguageSlang;
             skip |= LogError(vuid, module_state.handle(), loc,
-                             "shader %s SampleMask BuiltIn (%s) array sizes is %" PRIu32
+                             "shader %s SampleMask BuiltIn (%s) array size is %" PRIu32
                              " which exceeds "
                              "maxSampleMaskWords of %" PRIu32 ".",
                              entrypoint.Describe().c_str(), glsl_name ? "gl_SampleMask[]" : "SV_SampleMask", variable->array_size,
@@ -479,7 +479,7 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module& module_state, co
     if (has_tess) {
         if (!IsSameTopologyClass(geom_input_topology, tess_output_topology)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00739", module_state.handle(), loc,
-                             "shader %s has declares in the shader input topology %s, but tessellation shader output "
+                             "shader %s declares an input topology of %s, but the tessellation shader output "
                              "topology is %s.",
                              entrypoint.Describe().c_str(), string_VkPrimitiveTopology(geom_input_topology),
                              string_VkPrimitiveTopology(tess_output_topology));
@@ -488,7 +488,7 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module& module_state, co
         VkPrimitiveTopology vertex_input_topology = pipeline.InputAssemblyState()->topology;
         if (!IsSameTopologyClass(geom_input_topology, vertex_input_topology)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00738", module_state.handle(), loc,
-                             "shader %s has declares in the shader input topology %s, but pipeline was created with "
+                             "shader %s declares an input topology of %s, but the pipeline was created with "
                              "a vertex input primitive topology of %s.",
                              entrypoint.Describe().c_str(), string_VkPrimitiveTopology(geom_input_topology),
                              string_VkPrimitiveTopology(vertex_input_topology));
@@ -1072,7 +1072,7 @@ bool CoreChecks::ValidatePipelineTessellationStages(const ShaderStageState& tesc
                tesc_subdivision != tese_subdivision) {
         const LogObjectList objlist(tesc_stage.spirv_state->handle(), tese_stage.spirv_state->handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00733", objlist, create_info_loc,
-                         "Subdivision specified in tessellation control shader is %s, but subdivison type specified in "
+                         "Subdivision specified in tessellation control shader is %s, but subdivision type specified in "
                          "tessellation evaluation shader is %s",
                          string_SpvExecutionMode(tesc_subdivision), string_SpvExecutionMode(tese_subdivision));
     }

@@ -109,8 +109,8 @@ struct CommandBufferSubmitState {
                 barrier.dstQueueFamilyIndex != queue_state.queue_family_index) {
                 skip |= core.LogError("VUID-VkTensorMemoryBarrierARM-tensor-09757", cb_state.Handle(), loc,
                                       "Tensor (%s) used in barrier has sharing mode VK_SHARING_MODE_EXCLUSIVE but neither "
-                                      "srcQueueFamilyIndex (%" PRIu32 ") or dstQueueFamilyIndex (%" PRIu32
-                                      ") are VK_QUEUE_FAMILY_IGNORED or "
+                                      "srcQueueFamilyIndex (%" PRIu32 ") nor dstQueueFamilyIndex (%" PRIu32
+                                      ") is VK_QUEUE_FAMILY_IGNORED or "
                                       "the same queue family as this queue which is executing the barrier (%" PRIu32 ")",
                                       core.FormatHandle(barrier.tensor).c_str(), barrier.srcQueueFamilyIndex,
                                       barrier.dstQueueFamilyIndex, queue_state.queue_family_index);
@@ -306,8 +306,8 @@ bool CoreChecks::ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::Co
     if (!rp_submit_info) {
         if (cb_state.has_render_pass_striped && !cb_state.resumes_render_pass_instance) {
             skip |= LogError("VUID-VkCommandBufferSubmitInfo-commandBuffer-09445", objlist, loc.dot(Field::pNext),
-                             "missing VkRenderPassStripeSubmitInfoARM struct because command buffer contain begin info "
-                             "with renderpass striped struct");
+                             "missing VkRenderPassStripeSubmitInfoARM struct because the command buffer contains a begin "
+                             "info with a renderpass striped struct");
         }
         return skip;
     }
@@ -579,7 +579,7 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location& loc, const
         !(cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
         const auto& vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kCmdNotSimultaneous);
 
-        skip |= LogError(vuid, device, loc, "%s is already in use and is not marked for simultaneous use.%s",
+        skip |= LogError(vuid, cb_state.Handle(), loc, "%s is already in use and is not marked for simultaneous use.%s",
                          FormatHandle(cb_state).c_str(),
                          is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)" : "");
     }

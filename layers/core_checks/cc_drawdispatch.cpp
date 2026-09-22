@@ -79,7 +79,7 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const LastBound& last_bound, const L
         if (cb_sub_state.custom_primitive_restart_index > max_index_value) {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::PRIMITIVE_RESTART_INDEX_12401),
                              cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                             "The last vkCmdBindIndexBuffer call bound %s which max index is 0x%" PRIx32
+                             "The last vkCmdBindIndexBuffer call bound %s whose max index is 0x%" PRIx32
                              ", but the last call to vkCmdSetPrimitiveRestartIndexEXT set the primitiveRestartIndex 0x%" PRIx32
                              " which is over the limit.",
                              string_VkIndexType(cb_state.index_buffer_binding.index_type), max_index_value,
@@ -981,22 +981,28 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::callableShaderBindingOffset),
-                         "must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         callableShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment);
     }
     if (!IsIntegerMultipleOf(callableShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02465",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::callableShaderBindingStride),
-                         "must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize (%" PRIu32 ").",
+                         callableShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize);
     }
     if (callableShaderBindingStride > phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02468",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::callableShaderBindingStride),
-                         "must be less than or equal to "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride. ");
+                         "(%" PRIu64
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride (%" PRIu32 ").",
+                         callableShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride);
     }
 
     // hitShader
@@ -1004,22 +1010,28 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::hitShaderBindingOffset),
-                         "must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         hitShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment);
     }
     if (!IsIntegerMultipleOf(hitShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02464",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::hitShaderBindingStride),
-                         "must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize (%" PRIu32 ").",
+                         hitShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize);
     }
     if (hitShaderBindingStride > phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02467",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::hitShaderBindingStride),
-                         "must be less than or equal to "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride.");
+                         "(%" PRIu64
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride (%" PRIu32 ").",
+                         hitShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride);
     }
 
     // missShader
@@ -1027,22 +1039,28 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::missShaderBindingOffset),
-                         "must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         missShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment);
     }
     if (!IsIntegerMultipleOf(missShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize)) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingStride-02463",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::missShaderBindingStride),
-                         "must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize (%" PRIu32 ").",
+                         missShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupHandleSize);
     }
     if (missShaderBindingStride > phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingStride-02466",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::missShaderBindingStride),
-                         "must be less than or equal to "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride.");
+                         "(%" PRIu64
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride (%" PRIu32 ").",
+                         missShaderBindingStride, phys_dev_ext_props.ray_tracing_props_nv.maxShaderGroupStride);
     }
 
     // raygenShader
@@ -1050,23 +1068,34 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         skip |= LogError("VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02456",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::raygenShaderBindingOffset),
-                         "must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
+                         "(%" PRIu64
+                         ") must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment (%" PRIu32 ").",
+                         raygenShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment);
     }
     if (width > phys_dev_props.limits.maxComputeWorkGroupCount[0]) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-width-02469", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::width),
-                         "must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0].");
+                         "(%" PRIu32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] (%" PRIu32 ").",
+                         width, phys_dev_props.limits.maxComputeWorkGroupCount[0]);
     }
     if (height > phys_dev_props.limits.maxComputeWorkGroupCount[1]) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-height-02470", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::height),
-                         "must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1].");
+                         "(%" PRIu32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] (%" PRIu32 ").",
+                         height, phys_dev_props.limits.maxComputeWorkGroupCount[1]);
     }
     if (depth > phys_dev_props.limits.maxComputeWorkGroupCount[2]) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-depth-02471", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
                          error_obj.location.dot(Field::depth),
-                         "must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2].");
+                         "(%" PRIu32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] (%" PRIu32 ").",
+                         depth, phys_dev_props.limits.maxComputeWorkGroupCount[2]);
     }
 
     auto callable_shader_buffer_state = Get<vvl::Buffer>(callableShaderBindingTableBuffer);
@@ -1075,7 +1104,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         objlist.add(callableShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02461", objlist,
                          error_obj.location.dot(Field::callableShaderBindingOffset),
-                         "%" PRIu64 " must be less than the size of callableShaderBindingTableBuffer %" PRIu64 " .",
+                         "(%" PRIu64 ") must be less than the size of callableShaderBindingTableBuffer (%" PRIu64 ").",
                          callableShaderBindingOffset, callable_shader_buffer_state->GetSize());
     }
     auto hit_shader_buffer_state = Get<vvl::Buffer>(hitShaderBindingTableBuffer);
@@ -1084,7 +1113,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         objlist.add(hitShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02459", objlist,
                          error_obj.location.dot(Field::hitShaderBindingOffset),
-                         "%" PRIu64 " must be less than the size of hitShaderBindingTableBuffer %" PRIu64 " .",
+                         "(%" PRIu64 ") must be less than the size of hitShaderBindingTableBuffer (%" PRIu64 ").",
                          hitShaderBindingOffset, hit_shader_buffer_state->GetSize());
     }
     auto miss_shader_buffer_state = Get<vvl::Buffer>(missShaderBindingTableBuffer);
@@ -1093,7 +1122,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         objlist.add(missShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02457", objlist,
                          error_obj.location.dot(Field::missShaderBindingOffset),
-                         "%" PRIu64 " must be less than the size of missShaderBindingTableBuffer %" PRIu64 " .",
+                         "(%" PRIu64 ") must be less than the size of missShaderBindingTableBuffer (%" PRIu64 ").",
                          missShaderBindingOffset, miss_shader_buffer_state->GetSize());
     }
     auto raygen_shader_buffer_state = Get<vvl::Buffer>(raygenShaderBindingTableBuffer);
@@ -1102,7 +1131,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
         objlist.add(raygenShaderBindingTableBuffer);
         skip |= LogError("VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02455", objlist,
                          error_obj.location.dot(Field::raygenShaderBindingOffset),
-                         "%" PRIu64 " must be less than the size of raygenShaderBindingTableBuffer %" PRIu64 " .",
+                         "(%" PRIu64 ") must be less than the size of raygenShaderBindingTableBuffer (%" PRIu64 ").",
                          raygenShaderBindingOffset, raygen_shader_buffer_state->GetSize());
     }
     return skip;
@@ -1126,7 +1155,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location& loc, const LastBound& l
                 const char* vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03514" : "VUID-vkCmdTraceRaysKHR-flags-03514";
                 skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
-                                 "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
+                                 "either size (%" PRIu64 ") or stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
                                  pHitShaderBindingTable->stride);
             }
         }
@@ -1135,7 +1164,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location& loc, const LastBound& l
                 const char* vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03513" : "VUID-vkCmdTraceRaysKHR-flags-03513";
                 skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
-                                 "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
+                                 "either size (%" PRIu64 ") or stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
                                  pHitShaderBindingTable->stride);
             }
         }
@@ -1146,7 +1175,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location& loc, const LastBound& l
                 const char* vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03512" : "VUID-vkCmdTraceRaysKHR-flags-03512";
                 skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
-                                 "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
+                                 "either size (%" PRIu64 ") or stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
                                  pHitShaderBindingTable->stride);
             }
         }
@@ -1261,7 +1290,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
             "VUID-vkCmdDrawMeshTasksNV-taskCount-02119", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
             error_obj.location.dot(Field::taskCount),
             "(0x%" PRIxLEAST32
-            "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount (0x%" PRIxLEAST32 ").",
+            ") must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount (0x%" PRIxLEAST32 ").",
             taskCount, phys_dev_ext_props.mesh_shader_props_nv.maxDrawMeshTasksCount);
     }
     return skip;
@@ -1389,7 +1418,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
         const char* limit_vuid = has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07326";
         skip |= LogError(
             limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::groupCountX),
-            "(%" PRIu32 "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[0] (%" PRIu32 ").",
+            "(%" PRIu32 ") must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[0] (%" PRIu32 ").",
             groupCountX, String(work_group_count_field), max_x);
     }
 
@@ -1399,7 +1428,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
         const char* limit_vuid = has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07327";
         skip |= LogError(
             limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::groupCountY),
-            "(%" PRIu32 "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[1] (%" PRIu32 ").",
+            "(%" PRIu32 ") must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[1] (%" PRIu32 ").",
             groupCountY, String(work_group_count_field), max_y);
     }
 
@@ -1409,7 +1438,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
         const char* limit_vuid = has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07328";
         skip |= LogError(
             limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::groupCountZ),
-            "(%" PRIu32 "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[2] (%" PRIu32 ").",
+            "(%" PRIu32 ") must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::%s[2] (%" PRIu32 ").",
             groupCountZ, String(work_group_count_field), max_z);
     }
 
@@ -1489,7 +1518,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
     if (drawCount > phys_dev_props.limits.maxDrawIndirectCount) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::drawCount),
-                         "%" PRIu32 ") is not less than or equal to maxDrawIndirectCount (%" PRIu32 ").", drawCount,
+                         "(%" PRIu32 ") is not less than or equal to maxDrawIndirectCount (%" PRIu32 ").", drawCount,
                          phys_dev_props.limits.maxDrawIndirectCount);
     }
     return skip;

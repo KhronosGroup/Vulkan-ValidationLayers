@@ -214,8 +214,8 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                     } else if (!dynamic_layout_create) {
                         skip |=
                             LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11102", device, token_loc.dot(Field::type),
-                                     "is %s, pipelineLayout is VK_NULL_HANDLE, but no "
-                                     "there is no VkPipelineLayoutCreateInfo structure attached to the pNext chain.\n%s",
+                                     "is %s, pipelineLayout is VK_NULL_HANDLE, but there is no "
+                                     "VkPipelineLayoutCreateInfo structure attached to the pNext chain.\n%s",
                                      string_VkIndirectCommandsTokenTypeEXT(token.type),
                                      PrintPNextChain(Struct::VkIndirectCommandsLayoutCreateInfoEXT, pCreateInfo->pNext).c_str());
                     }
@@ -243,7 +243,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
     if (!IsActionCommand(final_token_type)) {
         skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11100", device,
                          create_info_loc.dot(Field::pTokens, final_token_index).dot(Field::type),
-                         "is %s, but needs to be an action command (ex. Draw, Dispatch, Trace Rays, etc ).",
+                         "is %s, but needs to be an action command (ex. Draw, Dispatch, Trace Rays, etc).",
                          string_VkIndirectCommandsTokenTypeEXT(final_token_type));
     } else {
         if (!IsValueIn(final_token_type, {VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_EXT,
@@ -522,7 +522,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
         if (count >= limit) {
             skip |= LogError(
                 "VUID-VkGeneratedCommandsInfoEXT-maxDrawCount-11078", cb_state.Handle(), info_loc.dot(Field::maxDrawCount),
-                "(%" PRIu32 ") time maxSequenceCount (%" PRIu32 ") is %" PRIu64 " which is over the limit of 2^24 (16777216)",
+                "(%" PRIu32 ") times maxSequenceCount (%" PRIu32 ") is %" PRIu64 " which is over the limit of 2^24 (16777216)",
                 generated_commands_info.maxDrawCount, generated_commands_info.maxSequenceCount, count);
         }
     }
@@ -915,7 +915,7 @@ bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevi
         if (count >= limit) {
             skip |= LogError(
                 "VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-maxDrawCount-11146", device, info_loc.dot(Field::maxDrawCount),
-                "(%" PRIu32 ") time maxSequenceCount (%" PRIu32 ") is %" PRIu64 " which is over the limit of 2^24 (16777216)",
+                "(%" PRIu32 ") times maxSequenceCount (%" PRIu32 ") is %" PRIu64 " which is over the limit of 2^24 (16777216)",
                 pInfo->maxDrawCount, pInfo->maxSequenceCount, count);
         }
     }
@@ -1199,8 +1199,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
 
         if (set_shader.index >= indirect_execution_set->max_shader_count) {
             skip |= LogError("VUID-VkWriteIndirectExecutionSetShaderEXT-index-11031", device, set_write_loc.dot(Field::index),
-                             "(%" PRIu32
-                             ") is not less than the sum of VkIndirectExecutionSetShaderInfoEXT::maxShaderCount (%" PRIu32 ").",
+                             "(%" PRIu32 ") is not less than VkIndirectExecutionSetShaderInfoEXT::maxShaderCount (%" PRIu32 ").",
                              set_shader.index, indirect_execution_set->max_shader_count);
         }
 

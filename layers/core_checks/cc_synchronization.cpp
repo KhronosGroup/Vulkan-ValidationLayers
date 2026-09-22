@@ -1028,7 +1028,8 @@ bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEv
     skip |= ValidateCmd(*cb_state, error_obj.location);
     const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
     if ((pDependencyInfo->dependencyFlags & ~VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0) {
-        skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-03825", objlist, dep_info_loc.dot(Field::dependencyFlags), "is (%s).",
+        skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-03825", objlist, dep_info_loc.dot(Field::dependencyFlags),
+                         "is (%s), but the only flag allowed here is VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR.",
                          string_VkDependencyFlags(pDependencyInfo->dependencyFlags).c_str());
     }
     skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, *pDependencyInfo);
@@ -1180,12 +1181,12 @@ struct RenderPassDepState {
                                    (barrier_dst_stages == (subpass_dst_stages & barrier_dst_stages));
             if (is_subset) return false;  // subset is found, return skip value (false)
         }
-        return core.LogError(vuid, rp_handle, barrier_loc.dot(Field::srcStageMask),
-                             "(%s) and dstStageMask (%s) is not a subset of subpass dependency's srcStageMask and dstStageMask for "
-                             "any self-dependency of subpass %" PRIu32 " of %s.",
-                             string_VkPipelineStageFlags2(src_stage_mask).c_str(),
-                             string_VkPipelineStageFlags2(dst_stage_mask).c_str(), active_subpass,
-                             core.FormatHandle(rp_handle).c_str());
+        return core.LogError(
+            vuid, rp_handle, barrier_loc.dot(Field::srcStageMask),
+            "(%s) and dstStageMask (%s) are not a subset of subpass dependency's srcStageMask and dstStageMask for "
+            "any self-dependency of subpass %" PRIu32 " of %s.",
+            string_VkPipelineStageFlags2(src_stage_mask).c_str(), string_VkPipelineStageFlags2(dst_stage_mask).c_str(),
+            active_subpass, core.FormatHandle(rp_handle).c_str());
     }
 
     bool ValidateAccess(const Location& barrier_loc, VkAccessFlags2 src_access_mask, VkAccessFlags2 dst_access_mask) const {
@@ -1197,7 +1198,7 @@ struct RenderPassDepState {
             if (is_subset) return false;  // subset is found, return skip value (false)
         }
         return core.LogError(vuid, rp_handle, barrier_loc.dot(Field::srcAccessMask),
-                             "(%s) and dstAccessMask (%s) is not a subset of subpass dependency's srcAccessMask and dstAccessMask "
+                             "(%s) and dstAccessMask (%s) are not a subset of subpass dependency's srcAccessMask and dstAccessMask "
                              "of subpass %" PRIu32 " of %s.",
                              string_VkAccessFlags2(src_access_mask).c_str(), string_VkAccessFlags2(dst_access_mask).c_str(),
                              active_subpass, core.FormatHandle(rp_handle).c_str());
@@ -1315,7 +1316,7 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location& outer_loc, const vvl
     if (CountSetBits(sub_desc.viewMask) > 1 && ((dependency_flags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0)) {
         const LogObjectList objlist(cb_state.Handle(), state.rp_handle);
         skip |= LogError("VUID-vkCmdPipelineBarrier-None-07893", objlist, outer_loc.dot(Field::dependencyFlags),
-                         "%s is missing VK_DEPENDENCY_VIEW_LOCAL_BIT and subpass %" PRIu32 " has viewMasks 0x%" PRIx32 ".",
+                         "(%s) is missing VK_DEPENDENCY_VIEW_LOCAL_BIT and subpass %" PRIu32 " has viewMasks 0x%" PRIx32 ".",
                          string_VkDependencyFlags(dependency_flags).c_str(), state.active_subpass, sub_desc.viewMask);
     }
 
@@ -1383,7 +1384,7 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location& outer_loc, const vvl
     if (CountSetBits(sub_desc.viewMask) > 1 && ((dep_info.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0)) {
         const LogObjectList objlist(cb_state.Handle(), state.rp_handle);
         skip |= LogError("VUID-vkCmdPipelineBarrier2-None-07893", objlist, outer_loc.dot(Field::dependencyFlags),
-                         "%s is missing VK_DEPENDENCY_VIEW_LOCAL_BIT and subpass %" PRIu32 " has viewMasks 0x%" PRIx32 ".",
+                         "(%s) is missing VK_DEPENDENCY_VIEW_LOCAL_BIT and subpass %" PRIu32 " has viewMasks 0x%" PRIx32 ".",
                          string_VkDependencyFlags(dep_info.dependencyFlags).c_str(), state.active_subpass, sub_desc.viewMask);
     }
 
@@ -1932,7 +1933,8 @@ bool CoreChecks::ValidateSubpassDependency(const Location& loc, const VkSubpassD
         const bool use_rp2 = loc.function != Func::vkCreateRenderPass;
         auto vuid = use_rp2 ? "VUID-VkSubpassDependency2-dependencyFlags-10204" : "VUID-VkSubpassDependency-dependencyFlags-10203";
         skip |= LogError(vuid, device, loc.dot(Field::dependencyFlags),
-                         "contains VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR");
+                         "contains VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, which is not "
+                         "allowed in a subpass dependency.");
     }
 
     VkMemoryBarrier2 converted_barrier;
@@ -2141,22 +2143,22 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
         if (IsImageLayoutStencilOnly(old_layout) || IsImageLayoutStencilOnly(new_layout)) {
             const LogObjectList objlist(cb_state.Handle(), image);
             auto vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kSeparateDepthWithStencilLayout);
-            skip |= LogError(
-                vuid, objlist, image_loc,
-                "(%s) has stencil format %s has depth aspect with stencil only layouts, oldLayout = %s and newLayout = %s.",
-                FormatHandle(image).c_str(), string_VkFormat(image_format), string_VkImageLayout(old_layout),
-                string_VkImageLayout(new_layout));
+            skip |= LogError(vuid, objlist, image_loc,
+                             "(%s) has stencil format %s, but has a depth aspect with stencil-only layouts, oldLayout = %s and "
+                             "newLayout = %s.",
+                             FormatHandle(image).c_str(), string_VkFormat(image_format), string_VkImageLayout(old_layout),
+                             string_VkImageLayout(new_layout));
         }
     }
     if (has_stencil_aspect) {
         if (IsImageLayoutDepthOnly(old_layout) || IsImageLayoutDepthOnly(new_layout)) {
             const LogObjectList objlist(cb_state.Handle(), image);
             auto vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kSeparateStencilhWithDepthLayout);
-            skip |=
-                LogError(vuid, objlist, image_loc,
-                         "(%s) has depth format %s has stencil aspect with depth only layouts, oldLayout = %s and newLayout = %s.",
-                         FormatHandle(image).c_str(), string_VkFormat(image_format), string_VkImageLayout(old_layout),
-                         string_VkImageLayout(new_layout));
+            skip |= LogError(vuid, objlist, image_loc,
+                             "(%s) has depth format %s, but has a stencil aspect with depth-only layouts, oldLayout = %s and "
+                             "newLayout = %s.",
+                             FormatHandle(image).c_str(), string_VkFormat(image_format), string_VkImageLayout(old_layout),
+                             string_VkImageLayout(new_layout));
         }
     }
 
@@ -2211,7 +2213,7 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
         if (!IsValidPlaneAspect(image_format, barrier_aspect_mask) && ((barrier_aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) == 0)) {
             const LogObjectList objlist(cb_state.Handle(), image);
             const auto& vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kBadMultiplanarAspect);
-            skip |= LogError(vuid, objlist, image_loc, "(%s) has Multiplane format %s, but its aspectMask is %s.",
+            skip |= LogError(vuid, objlist, image_loc, "(%s) has multi-planar format %s, but its aspectMask is %s.",
                              FormatHandle(image).c_str(), string_VkFormat(image_format),
                              string_VkImageAspectFlags(barrier_aspect_mask).c_str());
         }
@@ -2646,15 +2648,14 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList& objects, const Locat
             const auto& vuid = GetBufferBarrierVUID(offset_loc, vvl::BufferError::kOffsetTooBig);
             skip |=
                 LogError(vuid, objects, offset_loc, "%s has offset 0x%" PRIx64 " which is not less than total size 0x%" PRIx64 ".",
-                         FormatHandle(mem_barrier.buffer).c_str(), HandleToUint64(mem_barrier.offset), HandleToUint64(buffer_size));
+                         FormatHandle(mem_barrier.buffer).c_str(), mem_barrier.offset, buffer_size);
         } else if (!is_memory_range && mem_barrier.size != VK_WHOLE_SIZE && (mem_barrier.offset + mem_barrier.size > buffer_size)) {
             auto size_loc = barrier_loc.dot(Field::size);
             const auto& vuid = GetBufferBarrierVUID(size_loc, vvl::BufferError::kSizeOutOfRange);
             skip |=
                 LogError(vuid, objects, size_loc,
                          "%s has offset 0x%" PRIx64 " and size 0x%" PRIx64 " whose sum is greater than total size 0x%" PRIx64 ".",
-                         FormatHandle(mem_barrier.buffer).c_str(), HandleToUint64(mem_barrier.offset),
-                         HandleToUint64(mem_barrier.size), HandleToUint64(buffer_size));
+                         FormatHandle(mem_barrier.buffer).c_str(), mem_barrier.offset, mem_barrier.size, buffer_size);
         }
         if (mem_barrier.size == 0) {
             auto size_loc = barrier_loc.dot(Field::size);
@@ -2986,7 +2987,7 @@ bool CoreChecks::ValidateDynamicRenderingBarriersCommon(const LogObjectList& obj
         const auto& feature_error_vuid =
             GetDynamicRenderingBarrierVUID(outer_loc, vvl::DynamicRenderingBarrierError::kFeatureError);
         skip |= LogError(feature_error_vuid, objlist, outer_loc,
-                         "can not be called inside a dynamic rendering instance. This can be fixed by enabling the "
+                         "cannot be called inside a dynamic rendering instance. This can be fixed by enabling the "
                          "VK_KHR_dynamic_rendering_local_read or VK_EXT_shader_tile_image features.");
     }
 
@@ -2995,8 +2996,8 @@ bool CoreChecks::ValidateDynamicRenderingBarriersCommon(const LogObjectList& obj
             const auto& buf_img_vuid =
                 GetDynamicRenderingBarrierVUID(outer_loc, vvl::DynamicRenderingBarrierError::kNoBuffersOrImages);
             skip |= LogError(buf_img_vuid, objlist, outer_loc,
-                             "can only include memory barriers, while application specify image barrier count %" PRIu32
-                             " and buffer barrier count %" PRIu32,
+                             "can only include memory barriers, but the application specified an image barrier count of %" PRIu32
+                             " and a buffer barrier count of %" PRIu32,
                              image_barrier_count, buffer_barrier_count);
         }
     }
@@ -3067,12 +3068,12 @@ bool CoreChecks::ValidateTensorQueueFamilyIndex(uint32_t src_q, uint32_t dst_q, 
         }
     } else if (VK_SHARING_MODE_CONCURRENT == tensor_state.create_info.sharingMode) {
         if (src_q != VK_QUEUE_FAMILY_IGNORED || dst_q != VK_QUEUE_FAMILY_IGNORED) {
-            skip |= LogError(
-                "VUID-VkTensorMemoryBarrierARM-tensor-09755", objlist, loc,
-                "Tensor (%s) was created with a sharing mode VK_SHARING_MODE_CONCURRENT but either/or srcQueueFamilyIndex (%" PRIu32
-                ") and "
-                "dstQueueFamilyIndex (%" PRIu32 ") are not VK_QUEUE_FAMILY_IGNORED",
-                FormatHandle(tensor_state.Handle()).c_str(), src_q, dst_q);
+            skip |=
+                LogError("VUID-VkTensorMemoryBarrierARM-tensor-09755", objlist, loc,
+                         "Tensor (%s) was created with a sharing mode VK_SHARING_MODE_CONCURRENT but srcQueueFamilyIndex (%" PRIu32
+                         ") and "
+                         "dstQueueFamilyIndex (%" PRIu32 ") are not both VK_QUEUE_FAMILY_IGNORED",
+                         FormatHandle(tensor_state.Handle()).c_str(), src_q, dst_q);
         }
     }
     return skip;

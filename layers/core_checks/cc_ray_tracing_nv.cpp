@@ -136,10 +136,10 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     if (pInfo != nullptr && pInfo->geometryCount > phys_dev_ext_props.ray_tracing_props_nv.maxGeometryCount) {
         skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241", commandBuffer,
                          error_obj.location.dot(Field::pInfo).dot(Field::geometryCount),
-                         "geometryCount [%" PRIu32
-                         "] must be less than or equal to "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount.",
-                         pInfo->geometryCount);
+                         "(%" PRIu32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount (%" PRIu64 ").",
+                         pInfo->geometryCount, phys_dev_ext_props.ray_tracing_props_nv.maxGeometryCount);
     }
 
     auto dst_as_state = Get<vvl::AccelerationStructureNV>(dst);
@@ -182,7 +182,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                 if (create_geometry_data.triangles.vertexCount < build_geometry_data.triangles.vertexCount) {
                     skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-dst-02488", commandBuffer, error_obj.location,
                                      "create info pGeometries[%" PRIu32 "].geometry.triangles.vertexCount [%" PRIu32
-                                     "]"
+                                     "] "
                                      "must be greater than or equal to build info pGeometries[%" PRIu32
                                      "].geometry.triangles.vertexCount [%" PRIu32 "].",
                                      i, create_geometry_data.triangles.vertexCount, i, build_geometry_data.triangles.vertexCount);
@@ -191,7 +191,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                 if (create_geometry_data.triangles.indexCount < build_geometry_data.triangles.indexCount) {
                     skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-dst-02488", commandBuffer, error_obj.location,
                                      "create info pGeometries[%" PRIu32 "].geometry.triangles.indexCount [%" PRIu32
-                                     "]"
+                                     "] "
                                      "must be greater than or equal to build info pGeometries[%" PRIu32
                                      "].geometry.triangles.indexCount [%" PRIu32 "].",
                                      i, create_geometry_data.triangles.indexCount, i, build_geometry_data.triangles.indexCount);
@@ -200,7 +200,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                 if (create_geometry_data.aabbs.numAABBs < build_geometry_data.aabbs.numAABBs) {
                     skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-dst-02488", commandBuffer, error_obj.location,
                                      "create info pGeometries[%" PRIu32 "].geometry.aabbs.numAABBs [%" PRIu32
-                                     "]"
+                                     "] "
                                      "must be greater than or equal to build info pGeometries[%" PRIu32
                                      "].geometry.aabbs.numAABBs [%" PRIu32 "].",
                                      i, create_geometry_data.aabbs.numAABBs, i, build_geometry_data.aabbs.numAABBs);
@@ -232,7 +232,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         if (scratch_buffer_state && dst_as_state &&
             dst_as_state->update_scratch_memory_requirements.size > (scratch_buffer_state->GetSize() - scratchOffset)) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-update-02492", commandBuffer, error_obj.location,
-                             "If update is VK_TRUE, The size member of the "
+                             "If update is VK_TRUE, the size member of the "
                              "VkMemoryRequirements structure returned from a call to "
                              "vkGetAccelerationStructureMemoryRequirementsNV with "
                              "VkAccelerationStructureMemoryRequirementsInfoNV::accelerationStructure set to dst and "
@@ -244,7 +244,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         if (scratch_buffer_state && dst_as_state &&
             dst_as_state->build_scratch_memory_requirements.size > (scratch_buffer_state->GetSize() - scratchOffset)) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-update-02491", commandBuffer, error_obj.location,
-                             "If update is VK_FALSE, The size member of the "
+                             "If update is VK_FALSE, the size member of the "
                              "VkMemoryRequirements structure returned from a call to "
                              "vkGetAccelerationStructureMemoryRequirementsNV with "
                              "VkAccelerationStructureMemoryRequirementsInfoNV::accelerationStructure set to dst and "
@@ -303,7 +303,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
     }
     if (!(mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV || mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR)) {
         skip |= LogError("VUID-vkCmdCopyAccelerationStructureNV-mode-03410", commandBuffer, error_obj.location,
-                         "mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR"
+                         "mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR "
                          "or VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR.");
     }
     return skip;
@@ -332,8 +332,8 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     if (query_pool_ci.queryType != queryType) {
         skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryPool-03755", commandBuffer,
                          error_obj.location.dot(Field::queryType),
-                         "was created with %s which is differnent from the type queryPool was created with %s.",
-                         string_VkQueryType(queryType), string_VkQueryType(query_pool_ci.queryType));
+                         "is %s which is different from the queryType %s was created with (%s).", string_VkQueryType(queryType),
+                         FormatHandle(queryPool).c_str(), string_VkQueryType(query_pool_ci.queryType));
     }
     for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
         if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
@@ -356,17 +356,23 @@ bool CoreChecks::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV& triang
 
     auto vb_state = Get<vvl::Buffer>(triangles.vertexData);
     if (vb_state && vb_state->GetSize() <= triangles.vertexOffset) {
-        skip |= LogError("VUID-VkGeometryTrianglesNV-vertexOffset-02428", device, loc, "is invalid.");
+        skip |= LogError("VUID-VkGeometryTrianglesNV-vertexOffset-02428", vb_state->Handle(), loc.dot(Field::vertexOffset),
+                         "(%" PRIu64 ") must be less than the size of vertexData %s (%" PRIu64 ").", triangles.vertexOffset,
+                         FormatHandle(vb_state->Handle()).c_str(), vb_state->GetSize());
     }
 
     auto ib_state = Get<vvl::Buffer>(triangles.indexData);
     if (ib_state && ib_state->GetSize() <= triangles.indexOffset) {
-        skip |= LogError("VUID-VkGeometryTrianglesNV-indexOffset-02431", device, loc, "is invalid.");
+        skip |= LogError("VUID-VkGeometryTrianglesNV-indexOffset-02431", ib_state->Handle(), loc.dot(Field::indexOffset),
+                         "(%" PRIu64 ") must be less than the size of indexData %s (%" PRIu64 ").", triangles.indexOffset,
+                         FormatHandle(ib_state->Handle()).c_str(), ib_state->GetSize());
     }
 
     auto td_state = Get<vvl::Buffer>(triangles.transformData);
     if (td_state && td_state->GetSize() <= triangles.transformOffset) {
-        skip |= LogError("VUID-VkGeometryTrianglesNV-transformOffset-02437", device, loc, "is invalid.");
+        skip |= LogError("VUID-VkGeometryTrianglesNV-transformOffset-02437", td_state->Handle(), loc.dot(Field::transformOffset),
+                         "(%" PRIu64 ") must be less than the size of transformData %s (%" PRIu64 ").", triangles.transformOffset,
+                         FormatHandle(td_state->Handle()).c_str(), td_state->GetSize());
     }
 
     return skip;
@@ -377,7 +383,9 @@ bool CoreChecks::ValidateGeometryAABBNV(const VkGeometryAABBNV& aabbs, const Loc
 
     auto aabb_state = Get<vvl::Buffer>(aabbs.aabbData);
     if (aabb_state && aabb_state->GetSize() > 0 && aabb_state->GetSize() <= aabbs.offset) {
-        skip |= LogError("VUID-VkGeometryAABBNV-offset-02439", device, loc, "is invalid.");
+        skip |= LogError("VUID-VkGeometryAABBNV-offset-02439", aabb_state->Handle(), loc.dot(Field::offset),
+                         "(%" PRIu64 ") must be less than the size of aabbData %s (%" PRIu64 ").", aabbs.offset,
+                         FormatHandle(aabb_state->Handle()).c_str(), aabb_state->GetSize());
     }
 
     return skip;
@@ -386,9 +394,9 @@ bool CoreChecks::ValidateGeometryAABBNV(const VkGeometryAABBNV& aabbs, const Loc
 bool CoreChecks::ValidateGeometryNV(const VkGeometryNV& geometry, const Location& loc) const {
     bool skip = false;
     if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_NV) {
-        skip |= ValidateGeometryTrianglesNV(geometry.geometry.triangles, loc);
+        skip |= ValidateGeometryTrianglesNV(geometry.geometry.triangles, loc.dot(Field::geometry).dot(Field::triangles));
     } else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_NV) {
-        skip |= ValidateGeometryAABBNV(geometry.geometry.aabbs, loc);
+        skip |= ValidateGeometryAABBNV(geometry.geometry.aabbs, loc.dot(Field::geometry).dot(Field::aabbs));
     }
     return skip;
 }
@@ -591,8 +599,8 @@ bool CoreChecks::PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV
         skip |= LogError("VUID-VkPartitionedAccelerationStructureInstancesInputNV-partitionCount-10535", device,
                          error_obj.location.dot(Field::pInfo).dot(Field::partitionCount),
                          "(%" PRIu32 ") and maxInstanceInGlobalPartitionCount (%" PRIu32
-                         ") sum must be less than or equal to "
-                         "maxPartitionCount (%" PRIu32 ") ",
+                         ") must sum to less than or equal to "
+                         "maxPartitionCount (%" PRIu32 ").",
                          pInfo->partitionCount, pInfo->maxInstanceInGlobalPartitionCount,
                          phys_dev_ext_props.partitioned_acceleration_structure_props.maxPartitionCount);
     }
@@ -625,7 +633,7 @@ bool CoreChecks::ValidateBuildPartitionedAccelerationStructureInfoNV(
 
     if (!IsPointerAligned(build_info.srcInfosCount, 4)) {
         skip |= LogError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfosCount-10563", device,
-                         build_info_loc.dot(Field::srcInfosCount), "(0x%" PRIx64 ") must be aligned to 256 bytes",
+                         build_info_loc.dot(Field::srcInfosCount), "(0x%" PRIx64 ") must be aligned to 4 bytes",
                          build_info.srcInfosCount);
     }
     return skip;
@@ -983,7 +991,8 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
     if (command_infos.srcInfosArray.stride < stride_min && command_infos.srcInfosArray.stride != 0) {
         skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosArray-10476", objlist,
                          command_infos_loc.dot(Field::srcInfosArray).dot(Field::stride),
-                         "(%" PRIu64 ") must be greater than size of %s (%" PRIu32 ")", command_infos.srcInfosArray.stride,
+                         "(%" PRIu64 ") must be greater than or equal to the size of %s (%" PRIu32 ")",
+                         command_infos.srcInfosArray.stride,
                          string_VkClusterAccelerationStructureOpTypeNV(command_infos.input.opType), stride_min);
     }
 

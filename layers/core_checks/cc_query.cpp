@@ -733,7 +733,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const Qu
                 is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800" : "VUID-vkCmdBeginQuery-queryType-00800";
             const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
             skip |= LogError(vuid, objlist, loc.dot(Field::flags),
-                             "includes VK_QUERY_CONTROL_PRECISE_BIT provided, but pool query type is not VK_QUERY_TYPE_OCCLUSION.");
+                             "includes VK_QUERY_CONTROL_PRECISE_BIT, but the pool query type is not VK_QUERY_TYPE_OCCLUSION.");
         }
     }
 
@@ -854,7 +854,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
         if (!enabled_features.primitivesGeneratedQuery) {
             const LogObjectList objlist(commandBuffer, queryPool);
             skip |= LogError("VUID-vkCmdBeginQuery-queryType-06688", objlist, error_obj.location.dot(Field::queryPool),
-                             "was created with a queryType VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, but "
+                             "was created with a queryType of VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, but "
                              "primitivesGeneratedQuery feature was not enabled.");
         }
     }
@@ -1483,7 +1483,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
             skip |= LogError(
                 "VUID-vkCmdBeginQueryIndexedEXT-queryType-02339", commandBuffer, error_obj.location.dot(Field::index),
                 "(%" PRIu32
-                ") must be less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams %" PRIu32 ".",
+                ") must be less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ").",
                 index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
         }
     } else if (index != 0) {
@@ -1527,7 +1527,7 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
             skip |= LogError("VUID-vkCmdEndQueryIndexedEXT-queryType-06694", commandBuffer, error_obj.location.dot(Field::index),
                              "(%" PRIu32
                              ") must be less than "
-                             "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams %" PRIu32 ".",
+                             "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ").",
                              index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
         }
         for (const auto& query_object : cb_state->started_queries) {

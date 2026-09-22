@@ -89,7 +89,7 @@ bool CoreChecks::ValidateSwapchainImageExtent(const VkSwapchainCreateInfoKHR& cr
 
     if (create_info.imageExtent.width == 0 || create_info.imageExtent.height == 0) {
         skip |= LogError("VUID-VkSwapchainCreateInfoKHR-imageExtent-01689", device, create_info_loc.dot(Field::imageExtent),
-                         "(%s) is invalid.", string_VkExtent2D(create_info.imageExtent).c_str());
+                         "(%s) has a width or height of zero.", string_VkExtent2D(create_info.imageExtent).c_str());
         return skip;  // do not continue, other extent checks will fail
     }
 
@@ -281,7 +281,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
                     (scaling_caps.supportedPresentScaling & pres_scale_ci->scalingBehavior) == 0) {
                     skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoKHR-scalingBehavior-07771", device,
                                      create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoKHR, Field::scalingBehavior),
-                                     "(%s) is not a valid present scaling benavior as returned in "
+                                     "(%s) is not a valid present scaling behavior as returned in "
                                      "VkSurfacePresentScalingCapabilitiesKHR::supportedPresentScaling for %s (%s).",
                                      string_VkPresentScalingFlagsKHR(pres_scale_ci->scalingBehavior).c_str(),
                                      present_mode_loc.Fields().c_str(),
@@ -480,7 +480,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
     // Validate pCreateInfo->imageArrayLayers against VkSurfaceCapabilitiesKHR::maxImageArrayLayers:
     if (create_info.imageArrayLayers > surface_caps.maxImageArrayLayers) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", device, create_info_loc.dot(Field::imageArrayLayers),
-                     "%" PRIu32 " is more than maxImageArrayLayers %" PRIu32 ".", create_info.imageArrayLayers,
+                     "(%" PRIu32 ") is more than maxImageArrayLayers (%" PRIu32 ").", create_info.imageArrayLayers,
                      surface_caps.maxImageArrayLayers)) {
             return true;
         }
@@ -527,13 +527,15 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
         if (!found_match && !formats.empty()) {
             if (!found_format) {
                 if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01273", device, create_info_loc.dot(Field::imageFormat),
-                             "is %s.", string_VkFormat(create_info.imageFormat))) {
+                             "is %s, but this is not a supported format for the surface (imageColorSpace is %s).",
+                             string_VkFormat(create_info.imageFormat), string_VkColorSpaceKHR(create_info.imageColorSpace))) {
                     return true;
                 }
             }
             if (!found_color_space) {
                 if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01273", device, create_info_loc.dot(Field::imageColorSpace),
-                             "is %s.", string_VkColorSpaceKHR(create_info.imageColorSpace))) {
+                             "is %s, but this is not a supported color space for the surface (imageFormat is %s).",
+                             string_VkColorSpaceKHR(create_info.imageColorSpace), string_VkFormat(create_info.imageFormat))) {
                     return true;
                 }
             }
@@ -702,8 +704,9 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
     // Validate pCreateInfo->imageArrayLayers against VkImageFormatProperties::maxArrayLayers
     if (create_info.imageArrayLayers > image_properties.maxArrayLayers) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageArrayLayers),
-                     "%" PRIu32 ", but Maximum value returned by vkGetPhysicalDeviceImageFormatProperties() is %" PRIu32 " "
-                     "for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL.",
+                     "(%" PRIu32 ") is greater than the maximum value returned by "
+                     "vkGetPhysicalDeviceImageFormatProperties() (%" PRIu32
+                     ") for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL.",
                      create_info.imageArrayLayers, image_properties.maxArrayLayers, string_VkFormat(create_info.imageFormat))) {
             return true;
         }
@@ -749,14 +752,14 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
         if (result != VK_SUCCESS) {
             skip |= LogError(
                 "VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-01244", device,
-                create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::surfaceCounters),
+                create_info_loc.pNext(Struct::VkSwapchainCounterCreateInfoEXT, Field::surfaceCounters),
                 "is %s, but the counters are not supported because the vkGetPhysicalDeviceSurfaceCapabilities2EXT query failed",
                 string_VkSurfaceCounterFlagsEXT(swapchain_counter->surfaceCounters).c_str());
         } else {
             if ((swapchain_counter->surfaceCounters & surface_capabilities.supportedSurfaceCounters) !=
                 swapchain_counter->surfaceCounters) {
                 skip |= LogError("VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-01244", device,
-                                 create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoKHR, Field::surfaceCounters),
+                                 create_info_loc.pNext(Struct::VkSwapchainCounterCreateInfoEXT, Field::surfaceCounters),
                                  "is %s, but calling vkGetPhysicalDeviceSurfaceCapabilities2EXT shows only %s is supported",
                                  string_VkSurfaceCounterFlagsEXT(swapchain_counter->surfaceCounters).c_str(),
                                  string_VkSurfaceCounterFlagsEXT(surface_capabilities.supportedSurfaceCounters).c_str());
@@ -778,8 +781,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_
 
         if ((create_info.flags & swapchain_flags.swapchainSupportedFlags) != create_info.flags) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-12448", device, create_info_loc.dot(Field::flags),
-                             "(%s) contains flags that are not supported for this surface. Supported flags queries with "
-                             "vkGetPhysicalDeviceSurfaceCapabilities2KHR are: %s.",
+                             "(%s) contains flags that are not supported for this surface. The supported flags, queried with "
+                             "vkGetPhysicalDeviceSurfaceCapabilities2KHR, are: %s.",
                              string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str(),
                              string_VkSwapchainCreateFlagsKHR(swapchain_flags.swapchainSupportedFlags).c_str());
         }
@@ -936,14 +939,14 @@ bool CoreChecks::ValidatePresentRegions(VkQueue queue, const VkPresentInfoKHR& p
                 // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8577
                 skip |= LogError("UNASSIGNED-VkRectLayerKHR-offset-height", objlist, rect_loc,
                                  "sum of offset.y (%" PRId32 ") and extent.height (%" PRIu32
-                                 ") after applying preTransform (%s) is  %" PRId64 " which is not greater than zero.",
+                                 ") after applying preTransform (%s) is %" PRId64 " which is not greater than zero.",
                                  rect.offset.y, rect.extent.height,
                                  string_VkSurfaceTransformFlagBitsKHR(swapchain_state->create_info.preTransform), final_height);
             } else if (final_height > swapchain_state->create_info.imageExtent.height) {
                 const LogObjectList objlist(queue, present_info.pSwapchains[i]);
                 skip |= LogError("VUID-VkRectLayerKHR-offset-04864", objlist, rect_loc,
                                  "sum of offset.y (%" PRId32 ") and extent.height (%" PRIu32
-                                 ") after applying preTransform (%s) %" PRId64
+                                 ") after applying preTransform (%s) is %" PRId64
                                  " which is greater "
                                  "than the corresponding swapchain's imageExtent.height (%" PRIu32 ").",
                                  rect.offset.y, rect.extent.height,
@@ -1252,8 +1255,8 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             const LogObjectList objlist(queue, pPresentInfo->pWaitSemaphores[i]);
             skip |=
                 LogError("VUID-vkQueuePresentKHR-pWaitSemaphores-03267", objlist, present_info_loc.dot(Field::pWaitSemaphores, i),
-                         "(%s) is %s but it needs to be VK_SEMAPHORE_TYPE_BINARY", string_VkSemaphoreType(semaphore_state->type),
-                         FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
+                         "(%s) is %s but it needs to be VK_SEMAPHORE_TYPE_BINARY",
+                         FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str(), string_VkSemaphoreType(semaphore_state->type));
             continue;
         }
         skip |= sem_submit_state.ValidateWaitSemaphore(present_info_loc.dot(Field::pWaitSemaphores, i), *semaphore_state, 0);
@@ -1384,14 +1387,14 @@ bool CoreChecks::PreCallValidateReleaseSwapchainImagesKHR(VkDevice device, const
         if (image_index >= swapchain_state->images.size()) {
             skip |= LogError("VUID-VkReleaseSwapchainImagesInfoKHR-pImageIndices-07785", pReleaseInfo->swapchain,
                              release_info_loc.dot(Field::pImageIndices, i),
-                             "%" PRIu32 " is too large, there are only %" PRIu32 " images in this swapchain.", image_index,
+                             "(%" PRIu32 ") is too large, there are only %" PRIu32 " images in this swapchain.", image_index,
                              static_cast<uint32_t>(swapchain_state->images.size()));
         } else {
             if (!swapchain_state->images[image_index].acquired) {
                 assert(swapchain_state->images[image_index].image_state);
                 skip |= LogError("VUID-VkReleaseSwapchainImagesInfoKHR-pImageIndices-07785", pReleaseInfo->swapchain,
-                                 release_info_loc.dot(Field::pImageIndices, i), "%" PRIu32 " was not acquired from the swapchain.",
-                                 image_index);
+                                 release_info_loc.dot(Field::pImageIndices, i),
+                                 "(%" PRIu32 ") was not acquired from the swapchain.", image_index);
             }
             if (swapchain_state->images[image_index].image_state->InUse()) {
                 image_in_use = true;
@@ -1624,7 +1627,7 @@ bool CoreChecks::PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainK
     bool skip = false;
     if (!enabled_features.presentWait2) {
         skip |= LogError("VUID-vkWaitForPresent2KHR-presentWait2-10814", swapchain, error_obj.location,
-                         "presentWait feature is not enabled.");
+                         "the presentWait2 feature was not enabled.");
     }
 
     if (auto swapchain_state = Get<vvl::Swapchain>(swapchain)) {
@@ -1848,7 +1851,7 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
             LogError("VUID-VkDisplaySurfaceCreateInfoKHR-planeIndex-01252", display_mode, create_info_loc.dot(Field::planeIndex),
                      "(%" PRIu32 ") is not less than the %" PRIu32
                      " plane(s) returned by "
-                     "vkGetPhysicalDeviceDisplayPlanePropertiesKHR\n:Hint: Do you have the plane index hardcoded?",
+                     "vkGetPhysicalDeviceDisplayPlanePropertiesKHR\nHint: Do you have the plane index hardcoded?",
                      pCreateInfo->planeIndex, display_plane_property_count);
     } else {
         // call here once we know the plane index used is a valid plane index
@@ -2203,7 +2206,7 @@ bool core::Instance::ValidateGetPhysicalDeviceDisplayPlaneProperties(VkPhysicalD
         skip |= LogError("VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, plane_index_loc,
                          "(%" PRIu32 ") must be in the range [0, %" PRIu32
                          "] that was returned by "
-                         "vkGetPhysicalDeviceDisplayPlanePropertiesKHR\n:Hint: Do you have the plane index hardcoded?",
+                         "vkGetPhysicalDeviceDisplayPlanePropertiesKHR\nHint: Do you have the plane index hardcoded?",
                          planeIndex, display_plane_property_count - 1);
     }
 

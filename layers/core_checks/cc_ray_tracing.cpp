@@ -361,7 +361,7 @@ bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing
                                     "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702",
                                     LogObjectList(cmd_buffer, dst_as_state->VkHandle(), other_dst_as_state->VkHandle()),
                                     info_i_loc.dot(Field::dstAccelerationStructure),
-                                    "overlaps with dstAccelerationStructure of pInfos[%" PRIu32 "], on device address range %s.",
+                                    "overlaps with dstAccelerationStructure of pInfos[%" PRIu32 "] on device address range %s.",
                                     overlapped_address_range->info_i, string_range_hex(dst_as_other_dst_as_intersection).c_str());
                             }
                             break;
@@ -424,7 +424,7 @@ bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing
                             skip |= LogError(
                                 "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03703",
                                 LogObjectList(cmd_buffer, other_dst_as_state->VkHandle()), info_i_loc.dot(Field::scratchData),
-                                "overlaps with dstAccelerationStructure of pInfos[%" PRIu32 "], on device address range %s.",
+                                "overlaps with dstAccelerationStructure of pInfos[%" PRIu32 "] on device address range %s.",
                                 overlapped_address_range->info_i, string_range_hex(dst_as_other_dst_as_intersection).c_str());
                         }
                         break;
@@ -520,7 +520,7 @@ bool CoreChecks::ValidateAccelerationVertex(VkFormat vertex_format, VkDeviceOrHo
                                ? "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexStride-10421"
                                : "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03735";
         skip |= LogError(vuid, objlist, loc.dot(Field::vertexStride),
-                         "(%" PRIu64 ") is not a multiple to the %s (%" PRIu32 ") of its corresponding vertexFormat (%s).",
+                         "(%" PRIu64 ") is not a multiple of the %s (%" PRIu32 ") of its corresponding vertexFormat (%s).",
                          vertex_stride, is_packed ? "texel block size" : "minimum component byte size", format_alignment,
                          string_VkFormat(vertex_format));
     }
@@ -687,8 +687,7 @@ bool CoreChecks::ValidateAccelerationStructureBuildGeometryInfoDevice(
                     skip |= LogError("VUID-VkAccelerationStructureTrianglesOpacityMicromapKHR-micromap-parameter", cb_objlist,
                                      p_geom_geom_triangles_loc.pNext(Struct::VkAccelerationStructureTrianglesOpacityMicromapKHR,
                                                                      Field::micromap),
-                                     "(%s) is not a valid VkAccelerationStructureKHR handle.",
-                                     FormatHandle(micromap_khr->micromap).c_str());
+                                     "(%s) is not a valid VkMicromapEXT handle.", FormatHandle(micromap_khr->micromap).c_str());
                 }
             }
         } else if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
@@ -1062,7 +1061,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                     const LogObjectList objlist(commandBuffer, info.dstAccelerationStructure);
                     skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-10126", objlist,
                                      info_loc.dot(Field::dstAccelerationStructure),
-                                     " was created with size (%" PRIu64
+                                     "was created with size (%" PRIu64
                                      "), but an acceleration structure build with corresponding ppBuildRangeInfos[%" PRIu32
                                      "] requires a minimum size of (%" PRIu64 ").",
                                      dst_as_state->GetSize(), info_i, as_minimum_size);
@@ -1229,7 +1228,7 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
                     const LogObjectList objlist(info.dstAccelerationStructure);
                     skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-10126", objlist,
                                      info_loc.dot(Field::dstAccelerationStructure),
-                                     " was created with size (%" PRIu64
+                                     "was created with size (%" PRIu64
                                      "), but an acceleration structure build with corresponding ppBuildRangeInfos[%" PRIu32
                                      "] requires a minimum size of (%" PRIu64 ").",
                                      dst_as_state->GetSize(), info_i, as_minimum_size);

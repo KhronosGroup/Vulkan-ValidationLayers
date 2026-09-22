@@ -71,14 +71,14 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
         const VkDeviceSize max_size = phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
         if (push_constant_variable->size > max_size) {
             skip |= LogError("VUID-RuntimeSpirv-maxPushDataSize-12455", module_state.handle(), loc,
-                             "shader %s defines a push constant statically (\"%s\") that block size %" PRIu32
-                             " is larger than maxPushDataSize (%" PRIu64 ").\nEven if only bytes [0:%" PRIu64
+                             "shader %s defines a push constant statically (\"%s\") whose block size (%" PRIu32
+                             ") is larger than maxPushDataSize (%" PRIu64 ").\nEven if only bytes [0:%" PRIu64
                              "] are accessed, compilers may need to allocate the amount of memory declared statically.",
                              stage_state.entrypoint->Describe().c_str(), push_constant_variable->debug_name.c_str(),
                              push_constant_variable->size, max_size, max_size - 1);
         } else if ((push_constant_variable->offset + push_constant_variable->size) > max_size) {
             skip |= LogError("VUID-RuntimeSpirv-maxPushDataSize-12455", module_state.handle(), loc,
-                             "shader %s defines a push constant statically (\"%s\") that block offset (%" PRIu32
+                             "shader %s defines a push constant statically (\"%s\") whose block offset (%" PRIu32
                              ") + size (%" PRIu32 ") is larger than maxPushDataSize (%" PRIu64 ").\nEven if only bytes [%" PRIu32
                              ":%" PRIu64 "] are accessed, compilers may need to allocate the amount of memory declared statically.",
                              stage_state.entrypoint->Describe().c_str(), push_constant_variable->debug_name.c_str(),
@@ -118,7 +118,7 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
             msg = "VkShaderCreateInfoEXT::pPushConstantRanges";
         }
         skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::PushConstantStage_07987), objlist,
-                         loc, "shader %s is using push constants, but no VkPushConstantRange were found in %s.",
+                         loc, "shader %s is using push constants, but no VkPushConstantRange was found in %s.",
                          entrypoint.Describe().c_str(), msg.c_str());
         return skip;
     }
@@ -403,7 +403,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module& module_state,
                              entrypoint.Describe().c_str());
         } else if (!enabled_features.shaderTessellationAndGeometryPointSize && entrypoint.written_built_in_point_size) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07724", module_state.handle(), loc,
-                             "shader %s PointSize is written to, shaderTessellationAndGeometryPointSize "
+                             "shader %s PointSize is written to, but shaderTessellationAndGeometryPointSize "
                              "was not enabled (gl_PointSize must NOT be written and a default of 1.0 is assumed).",
                              entrypoint.Describe().c_str());
         }
@@ -573,7 +573,7 @@ bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module& module_sta
     if (variable.is_uniform_buffer && variable.type_struct_info && variable.type_struct_info->has_runtime_array &&
         !enabled_features.shaderUniformBufferUnsizedArray) {
         skip |= LogError("VUID-RuntimeSpirv-shaderUniformBufferUnsizedArray-11806", module_state.handle(), loc,
-                         "shader %s uses descriptor %s which is an uniform buffer with a runtime array, but "
+                         "shader %s uses descriptor %s which is a uniform buffer with a runtime array, but "
                          "shaderUniformBufferUnsizedArray was not enabled.",
                          entrypoint.Describe().c_str(), variable.DescribeDescriptor().c_str());
     }
@@ -733,7 +733,7 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module& module_
     } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.IsArray()) {
         skip |=
             LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::Inline_10391), objlist, loc,
-                     "shader %s uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor."
+                     "shader %s uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptors."
                      "\n(VkDescriptorSetLayout from %s)",
                      entrypoint.Describe().c_str(), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
 
@@ -979,7 +979,7 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module& module_state, cons
             !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) && (ds_state && ds_state->depthWriteEnable);
         if (mode_early_fragment_test && write_enabled) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-08711", module_state.handle(), loc,
-                             "shader %s contains OpDepthAttachmentReadEXT, and depthWriteEnable is not false.",
+                             "shader %s contains OpDepthAttachmentReadEXT, but depthWriteEnable is VK_TRUE.",
                              entrypoint.Describe().c_str());
         }
     }
@@ -991,7 +991,7 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module& module_state, cons
         if (mode_early_fragment_test && is_write_mask_set) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-08712", module_state.handle(), loc,
                              "shader %s contains OpStencilAttachmentReadEXT, and stencil write mask is not equal to 0 for "
-                             "both front(%" PRIu32 ") and back (%" PRIu32 ").",
+                             "both front (%" PRIu32 ") and back (%" PRIu32 ").",
                              entrypoint.Describe().c_str(), ds_state->front.writeMask, ds_state->back.writeMask);
         }
     }
@@ -1565,9 +1565,9 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo& 
 
     const uint32_t first_dword = create_info.pCode[0];
     if (!IsIntegerMultipleOf(create_info.codeSize, 4)) {
-        skip |=
-            LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
-                     "(%zu) must be a multiple of 4. You might have forgot to multiply by sizeof(uint32_t).", create_info.codeSize);
+        skip |= LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
+                         "(%zu) must be a multiple of 4. You might have forgotten to multiply by sizeof(uint32_t).",
+                         create_info.codeSize);
     } else if (first_dword != spv::MagicNumber) {
         skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-08738", device, create_info_loc.dot(Field::pCode),
                          "doesn't point to a SPIR-V module. The first dword (0x%" PRIx32
@@ -1659,21 +1659,21 @@ bool CoreChecks::ValidateRequiredSubgroupSize(const spirv::Module& module_state,
         }
     }
     if (!IsPowerOfTwo(required_subgroup_size)) {
-        skip |= LogError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02760",
-                         module_state.handle(), pNext_loc.dot(Field::requiredSubgroupSizeStages),
-                         "(%" PRIu32 ") is not a power of 2.", required_subgroup_size);
+        skip |=
+            LogError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02760", module_state.handle(),
+                     pNext_loc.dot(Field::requiredSubgroupSize), "(%" PRIu32 ") is not a power of 2.", required_subgroup_size);
     }
     if (required_subgroup_size < phys_dev_props_core13.minSubgroupSize) {
         skip |=
             LogError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02761", module_state.handle(),
-                     pNext_loc.dot(Field::requiredSubgroupSizeStages), "(%" PRIu32 ") is less than minSubgroupSize (%" PRIu32 ").",
+                     pNext_loc.dot(Field::requiredSubgroupSize), "(%" PRIu32 ") is less than minSubgroupSize (%" PRIu32 ").",
                      required_subgroup_size, phys_dev_props_core13.minSubgroupSize);
     }
     if (required_subgroup_size > phys_dev_props_core13.maxSubgroupSize) {
-        skip |= LogError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762",
-                         module_state.handle(), pNext_loc.dot(Field::requiredSubgroupSizeStages),
-                         "(%" PRIu32 ") is greater than maxSubgroupSize (%" PRIu32 ").", required_subgroup_size,
-                         phys_dev_props_core13.maxSubgroupSize);
+        skip |=
+            LogError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762", module_state.handle(),
+                     pNext_loc.dot(Field::requiredSubgroupSize), "(%" PRIu32 ") is greater than maxSubgroupSize (%" PRIu32 ").",
+                     required_subgroup_size, phys_dev_props_core13.maxSubgroupSize);
     }
 
     return skip;
@@ -1903,11 +1903,10 @@ bool CoreChecks::ValidateTaskShaderLimits(const spirv::Module& module_state, con
                          phys_dev_ext_props.mesh_shader_props_ext.maxTaskPayloadAndSharedMemorySize);
     }
     if (total_task_payload_memory > phys_dev_ext_props.mesh_shader_props_ext.maxTaskPayloadSize) {
-        skip |= LogError("VUID-RuntimeSpirv-maxTaskPayloadSize-08758", module_state.handle(), loc,
-                         "shader %s uses %" PRIu32 " bytes of task payload memory, which is more than maxTaskPayloadSize (%" PRIu32
-                         ").",
-                         entrypoint.Describe().c_str(), total_workgroup_shared_memory,
-                         phys_dev_ext_props.mesh_shader_props_ext.maxTaskPayloadSize);
+        skip |= LogError(
+            "VUID-RuntimeSpirv-maxTaskPayloadSize-08758", module_state.handle(), loc,
+            "shader %s uses %" PRIu32 " bytes of task payload memory, which is more than maxTaskPayloadSize (%" PRIu32 ").",
+            entrypoint.Describe().c_str(), total_task_payload_memory, phys_dev_ext_props.mesh_shader_props_ext.maxTaskPayloadSize);
     }
 
     return skip;
@@ -2003,7 +2002,7 @@ bool CoreChecks::ValidateDataGraphPipelineShaderModuleSpirv(VkDevice device, con
             wrong_names << ep->name;
         }
         skip |= LogError("VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-pName-09872", device,
-                         dg_shader_ci_loc.dot(Field::pName), " is '%s' but names in OpGraphEntryPointARM instructions are: '%s'",
+                         dg_shader_ci_loc.dot(Field::pName), "is '%s' but names in OpGraphEntryPointARM instructions are: '%s'",
                          dg_shader_ci.pName, wrong_names.str().c_str());
 
         // from here on we must have the correct entrypoint
@@ -2263,7 +2262,7 @@ bool CoreChecks::ValidateDataGraphConstants(const spirv::Module& module_spirv, c
                 }
                 if (tensor_desc->tiling != VK_TENSOR_TILING_LINEAR_ARM) {
                     skip |= LogError(
-                        "VUID-VkDataGraphPipelineConstantARM-pNext-09917", device, constant_loc.dot(Field::tiling),
+                        "VUID-VkDataGraphPipelineConstantARM-pNext-09917", device, constant_loc.dot(Field::id),
                         "(%" PRIu32
                         ") is a graph constant of tensor type but its matching VkTensorDescriptionARM has an invalid tiling (%s)",
                         constant.id, string_VkTensorTilingARM(tensor_desc->tiling));

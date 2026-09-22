@@ -1042,14 +1042,14 @@ bool CoreChecks::ValidateImageBarrierLayouts(const vvl::CommandBuffer& cb_state,
                         const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                         const VkImageSubresource vk_subresource = image_state.subresource_encoder.MakeVkSubresource(subresource);
                         const LogObjectList objlist(cb_state.Handle(), image_barrier.image);
-                        subres_skip =
-                            LogError(vuid, objlist, image_loc,
-                                     "(%s) cannot transition the layout of aspect=%" PRIu32 ", level=%" PRIu32 ", layer=%" PRIu32
-                                     " from %s when the "
-                                     "%s layout is %s.",
-                                     FormatHandle(image_barrier.image).c_str(), vk_subresource.aspectMask, vk_subresource.mipLevel,
-                                     vk_subresource.arrayLayer, string_VkImageLayout(image_barrier.oldLayout), layout_check.message,
-                                     string_VkImageLayout(layout_check.layout));
+                        subres_skip = LogError(
+                            vuid, objlist, image_loc,
+                            "(%s) cannot transition the layout of aspect=%s, level=%" PRIu32 ", layer=%" PRIu32
+                            " from %s when the "
+                            "%s layout is %s.",
+                            FormatHandle(image_barrier.image).c_str(), string_VkImageAspectFlags(vk_subresource.aspectMask).c_str(),
+                            vk_subresource.mipLevel, vk_subresource.arrayLayer, string_VkImageLayout(image_barrier.oldLayout),
+                            layout_check.message, string_VkImageLayout(layout_check.layout));
                     }
                     return subres_skip;
                 });

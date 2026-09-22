@@ -123,7 +123,7 @@ static inline const char* string_AHardwareBufferFormat(uint32_t format) {
         default:
             break;
     }
-    return "Unkown AHardwareBuffer_Format";
+    return "Unknown AHardwareBuffer_Format";
 }
 
 static uint32_t FullMipChainLevels(VkExtent3D extent) {
@@ -168,9 +168,10 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
         skip |= LogError("VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-handleTypes-01882", device,
                          error_obj.location.dot(Field::pInfo).dot(Field::memory),
                          "(%s) was not allocated for export, or the "
-                         "export handleTypes (0x%" PRIx32
-                         ") did not contain VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID.",
-                         FormatHandle(pInfo->memory).c_str(), mem_info->export_handle_types);
+                         "export handleTypes (%s) did not contain "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID.",
+                         FormatHandle(pInfo->memory).c_str(),
+                         string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_types).c_str());
     }
 
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
@@ -305,7 +306,10 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
             if (0 == (ahb_desc.usage & (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE |
                                         AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02386", device, ahb_loc,
-                                 "AHardwareBuffer's usage is 0x%" PRIx64 ". (AHB = %p).", ahb_desc.usage, import_ahb_info->buffer);
+                                 "AHardwareBuffer_Desc's usage (0x%" PRIx64
+                                 ") includes none of AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER, "
+                                 "AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE, or AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER. (AHB = %p).",
+                                 ahb_desc.usage, import_ahb_info->buffer);
             }
 
             auto image_state = Get<vvl::Image>(mem_ded_alloc_info->image);
@@ -334,12 +338,12 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& alloc
             // The width, height, and array layer dimensions of image and the Android hardwarebuffer must be identical
             if ((image_state->GetExtent().width != ahb_desc.width) || (image_state->GetExtent().height != ahb_desc.height) ||
                 (image_state->GetArrayLayers() != ahb_desc.layers)) {
-                skip |=
-                    LogError("VUID-VkMemoryAllocateInfo-pNext-02388", mem_ded_alloc_info->image, dedicated_image_loc,
-                             "was created with width (%" PRId32 "), height (%" PRId32 "), and arrayLayers (%" PRId32
-                             ") which not match those of the %s AHardwareBuffer (%" PRId32 " %" PRId32 " %" PRId32 "). (AHB = %p).",
-                             image_state->GetExtent().width, image_state->GetExtent().height, image_state->GetArrayLayers(),
-                             ahb_loc.Fields().c_str(), ahb_desc.width, ahb_desc.height, ahb_desc.layers, import_ahb_info->buffer);
+                skip |= LogError(
+                    "VUID-VkMemoryAllocateInfo-pNext-02388", mem_ded_alloc_info->image, dedicated_image_loc,
+                    "was created with width (%" PRIu32 "), height (%" PRIu32 "), and arrayLayers (%" PRIu32
+                    ") which do not match those of the %s AHardwareBuffer (%" PRIu32 " %" PRIu32 " %" PRIu32 "). (AHB = %p).",
+                    image_state->GetExtent().width, image_state->GetExtent().height, image_state->GetArrayLayers(),
+                    ahb_loc.Fields().c_str(), ahb_desc.width, ahb_desc.height, ahb_desc.layers, import_ahb_info->buffer);
             }
 
             if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) != 0) {
@@ -496,8 +500,8 @@ bool CoreChecks::ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeF
                                                                     : "VUID-VkBindBufferMemoryInfo-memory-02986";
         const LogObjectList objlist(buffer, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memory),
-                         "(%s) was created with an AHB import operation which is not set "
-                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkBuffer (%s) "
+                         "(%s) was created with an AHB import operation, but "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID is not set in the VkBuffer (%s) "
                          "VkExternalMemoryBufferCreateInfo::handleTypes (%s)",
                          FormatHandle(memory).c_str(), FormatHandle(buffer).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
@@ -513,8 +517,8 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFl
                                                                    : "VUID-VkBindImageMemoryInfo-memory-02990";
         const LogObjectList objlist(image, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memory),
-                         "(%s) was created with an AHB import operation which is not set "
-                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkImage (%s) "
+                         "(%s) was created with an AHB import operation, but "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID is not set in the VkImage (%s) "
                          "VkExternalMemoryImageCreateInfo::handleTypes (%s)",
                          FormatHandle(memory).c_str(), FormatHandle(image).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
@@ -528,8 +532,8 @@ bool CoreChecks::ValidateTensorImportedHandleANDROID(VkExternalMemoryHandleTypeF
     if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
         const LogObjectList objlist(tensor, memory);
         skip |= LogError("VUID-VkBindTensorMemoryInfoARM-memory-09897", objlist, loc.dot(Field::memory),
-                         "(%s) was created with an AHB import operation which is not set "
-                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkTensorARM (%s) "
+                         "(%s) was created with an AHB import operation, but "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID is not set in the VkTensorARM (%s) "
                          "VkExternalMemoryTensorCreateInfoARM::handleTypes (%s)",
                          FormatHandle(memory).c_str(), FormatHandle(tensor).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
@@ -577,7 +581,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo& create_info
         if (VK_IMAGE_TILING_OPTIMAL != create_info.tiling) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-02398", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
-                             "(%" PRIu64 ") is non-zero, but layout is %s.", ext_fmt_android->externalFormat,
+                             "(%" PRIu64 ") is non-zero, but tiling is %s.", ext_fmt_android->externalFormat,
                              string_VkImageTiling(create_info.tiling));
         }
         ReadLockGuard guard(device_state->ahb_lock_);
@@ -656,7 +660,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo& cre
             skip |= LogError("VUID-VkImageViewCreateInfo-image-02400", objlist,
                              create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
                              "(%s) was created with externalFormat (%" PRIu64
-                             ") which is different then image chain VkExternalFormatANDROID::externalFormat (%" PRIu64 ").",
+                             ") which is different than the image's VkExternalFormatANDROID::externalFormat (%" PRIu64 ").",
                              FormatHandle(ycbcr_conv_info->conversion).c_str(), external_format, image_state.ahb_format);
         }
 

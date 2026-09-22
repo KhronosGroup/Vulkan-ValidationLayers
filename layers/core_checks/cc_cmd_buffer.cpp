@@ -293,7 +293,7 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
 
             if ((api_version < VK_API_VERSION_1_3) && (!enabled_features.dynamicRendering)) {
                 skip |=
-                    LogError("VUID-VkCommandBufferBeginInfo-flags-09240", cb_state.Handle(), inheritance_loc.dot(Field::renderpass),
+                    LogError("VUID-VkCommandBufferBeginInfo-flags-09240", cb_state.Handle(), inheritance_loc.dot(Field::renderPass),
                              "is VK_NULL_HANDLE and VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT is set, but the "
                              "dynamicRendering feature was not enabled.");
             }
@@ -537,7 +537,7 @@ bool CoreChecks::ValidateBeginCommandBufferRenderPassTileShadingCreateInfo(const
         skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-10619", objlist,
                          inheritance_loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM, Field::flags),
                          "(%s) contains VK_TILE_SHADING_RENDER_PASS_ENABLE_BIT_QCOM bit, but "
-                         "tileApronSize (%s) aren't equal to that "
+                         "tileApronSize (%s) is not equal to the "
                          "tileApronSize (%s) used to create VkCommandBufferInheritanceInfo::renderPass.",
                          string_VkTileShadingRenderPassFlagsQCOM(rp_tile_shading_ci->flags).c_str(),
                          string_VkExtent2D(rp_tile_shading_ci->tileApronSize).c_str(),
@@ -918,12 +918,12 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& c
     if ((cb_state.unprotected == false) && (secondary_sub_state.base.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-01820", objlist, secondary_cb_loc,
-                         "(%s) is a unprotected while primary command buffer (%s) is protected.",
+                         "(%s) is unprotected while primary command buffer (%s) is protected.",
                          FormatHandle(secondary_sub_state.Handle()).c_str(), FormatHandle(cb_state.Handle()).c_str());
     } else if ((cb_state.unprotected == true) && (secondary_sub_state.base.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-commandBuffer-01821", objlist, secondary_cb_loc,
-                         "(%s) is a protected while primary command buffer (%s) is unprotected.",
+                         "(%s) is protected while primary command buffer (%s) is unprotected.",
                          FormatHandle(secondary_sub_state.Handle()).c_str(), FormatHandle(cb_state.Handle()).c_str());
     }
 
@@ -945,7 +945,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& c
             !enabled_features.nestedCommandBufferSimultaneousUse) {
             const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-nestedCommandBufferSimultaneousUse-09378", objlist, secondary_cb_loc,
-                             "(%s) was recorded with VkCommandBufferBeginInfo::flag including "
+                             "(%s) was recorded with VkCommandBufferBeginInfo::flags including "
                              "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, but the nestedCommandBufferSimultaneousUse feature "
                              "was not enabled.",
                              FormatHandle(secondary_sub_state.Handle()).c_str());
@@ -1108,7 +1108,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& 
                     // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/2456
                     skip |= LogError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001", objlist, secondary_cb_loc,
                                      "was executed using %s (subresource: aspectMask %s, array layer %" PRIu32
-                                     ", mip level %" PRIu32 ") which expects layout %s--instead, image %s is %s.",
+                                     ", mip level %" PRIu32 ") which expects layout %s, but image %s is %s.",
                                      FormatHandle(image).c_str(), string_VkImageAspectFlags(subresource.aspectMask).c_str(),
                                      subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
                                      string_VkImageLayout(cb_layout));
@@ -1331,7 +1331,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 if (inherited_viewport->minDepth != expected_viewport_depth->minDepth ||
                     inherited_viewport->maxDepth != expected_viewport_depth->maxDepth) {
                     return log_.LogError("VUID-vkCmdDraw-None-07850", primary_state_->Handle(), cb_loc,
-                                         "(%s) consume inherited viewport %" PRIu32
+                                         "(%s) consumes inherited viewport %" PRIu32
                                          " %s"
                                          "but this state was not inherited as its depth range [%f, %f] does not match "
                                          "pViewportDepths[%" PRIu32 "] = [%f, %f]",
@@ -1372,7 +1372,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
             }
 
             std::ostringstream ss;
-            ss << "(" << log_.FormatHandle(secondary_state.Handle()).c_str() << ") consume inherited " << state_name << " ";
+            ss << "(" << log_.FormatHandle(secondary_state.Handle()).c_str() << ") consumes inherited " << state_name << " ";
             if (format_index) {
                 if (index >= static_use_count) {
                     ss << "(with count) ";
@@ -1419,7 +1419,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         if (secondary_state.viewport.used_dynamic_count &&
             viewport_count_to_inherit_ > secondary_state.viewport.inherited_depths.size()) {
             skip |= log_.LogError("VUID-vkCmdDraw-None-07850", primary_state_->Handle(), cb_loc,
-                                  "(%s) consume inherited dynamic viewport with count state "
+                                  "(%s) consumes inherited dynamic viewport with count state "
                                   "but the dynamic viewport count (%" PRIu32
                                   ") exceeds the inheritance limit (viewportDepthCount=%" PRIu32 ").",
                                   log_.FormatHandle(secondary_state.Handle()).c_str(), unsigned(viewport_count_to_inherit_),
@@ -1466,7 +1466,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             skip |= LogError(
                 "VUID-vkCmdExecuteCommands-nestedCommandBufferRendering-09377", commandBuffer,
                 error_obj.location.dot(Field::commandBuffer),
-                "is a secondary command buffer and was recorded with VkCommandBufferBeginInfo::flag including "
+                "is a secondary command buffer and was recorded with VkCommandBufferBeginInfo::flags including "
                 "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, but the nestedCommandBufferRendering feature was not enabled.");
         }
     }
@@ -1856,7 +1856,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritanceCustomResolve(
                 "VUID-vkCmdExecuteCommands-colorAttachmentCount-11532", objlist, secondary_cb_loc,
                 "(%s) is executed within a dynamic renderpass instance with VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but "
                 "VkRenderingInfo::colorAttachmentCount (%" PRIu32
-                ") that doesn't match the pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::colorAttachmentCount (%" PRIu32
+                ") which doesn't match the pInheritanceInfo->pNext<VkCustomResolveCreateInfoEXT>::colorAttachmentCount (%" PRIu32
                 ")",
                 FormatHandle(secondary_sub_state.Handle()).c_str(), rendering_info.colorAttachmentCount,
                 inheritance_cr_info->colorAttachmentCount);
@@ -2016,7 +2016,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritanceTileShading(cons
             const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-tileApronSize-10622", objlist, secondary_cb_loc,
                              "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::tileApronSize "
-                             "(%s) that isn't equal to that tileApronSize (%s) used to create the render pass.",
+                             "(%s) that isn't equal to the tileApronSize (%s) used to create the render pass.",
                              string_VkExtent2D(rp_tile_shading_ci->tileApronSize).c_str(),
                              string_VkExtent2D(rp_tile_shading_ci_of_rp->tileApronSize).c_str());
         }
@@ -2050,7 +2050,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritanceTileShading(cons
     } else if (!cb_state.per_tile_execution_model_enabled && has_rp_per_tile_exec_bit) {
         const LogObjectList objlist(cb_state.Handle(), secondary_sub_state.Handle(), rp_state.Handle());
         skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-10624", objlist, secondary_cb_loc,
-                         "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::flags (%s) "
+                         "has been recorded with VkRenderPassTileShadingCreateInfoQCOM::flags (%s) that "
                          "includes VK_TILE_SHADING_RENDER_PASS_PER_TILE_EXECUTION_BIT_QCOM bit, but "
                          "the per-tile execution model isn't enabled in the command buffer. "
                          "(Can be enabled by calling vkCmdBeginPerTileExecutionQCOM)",

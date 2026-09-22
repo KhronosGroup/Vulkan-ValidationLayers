@@ -393,7 +393,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                                                      : "VUID-VkPipelineShaderStageCreateInfo-module-10169";
                         skip |= LogError(vuid_string, module_state.handle(), loc,
                                          "shader %s has a local workgroup size in the X dimension (%" PRIu32
-                                         ") is not a multiple of subgroupSize (%" PRIu32 ").",
+                                         ") that is not a multiple of subgroupSize (%" PRIu32 ").",
                                          entrypoint.Describe().c_str(), local_size.x, effective_subgroup_size);
                         found_error = true;
                     }
@@ -403,7 +403,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                             skip |= LogError(
                                 "VUID-VkPipelineShaderStageCreateInfo-module-10169", module_state.handle(), loc,
                                 "shader %s has a total local workgroup size (%" PRIu64
-                                ") is larger than cooperativeMatrixWorkgroupScopeMaxWorkgroupSize (%" PRIu32 ").",
+                                ") that is larger than cooperativeMatrixWorkgroupScopeMaxWorkgroupSize (%" PRIu32 ").",
                                 entrypoint.Describe().c_str(), workgroup_size,
                                 phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize);
                             found_error = true;
@@ -764,7 +764,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                     found_error = true;
                     skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixNV-06316", module_state.handle(), loc,
                                      "shader %s has an OpTypeCooperativeMatrixNV (result id = %" PRIu32
-                                     ") operand that don't match a supported matrix type (%s).",
+                                     ") operand that does not match a supported matrix type (%s).",
                                      entrypoint.Describe().c_str(), insn.Word(1), m.Describe().c_str());
                 }
                 break;
