@@ -2822,3 +2822,22 @@ TEST_F(NegativeExternalMemorySync, ZeroInitializeFeature) {
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeExternalMemorySync, ImageFormatPropertiesMissingExternalInfo) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9002");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
+    image_format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_format_info.type = VK_IMAGE_TYPE_2D;
+    image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_format_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkExternalImageFormatProperties external_properties = vku::InitStructHelper();
+    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&external_properties);
+
+    m_errorMonitor->SetDesiredWarning("WARNING-vkGetPhysicalDeviceImageFormatProperties2-missing-external-info");
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_format_info, &image_format_properties);
+    m_errorMonitor->VerifyFound();
+}
