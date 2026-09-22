@@ -569,8 +569,7 @@ bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalD
                                                                      VkImageFormatProperties2* pImageFormatProperties,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    const auto* copy_perf_query = vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQuery>(pImageFormatProperties->pNext);
-    if (copy_perf_query) {
+    if (vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQuery>(pImageFormatProperties->pNext)) {
         const VkImageUsageFlags2KHR usage_flags = GetImageUsageFlags(*pImageFormatInfo);
         if ((usage_flags & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) == 0) {
             skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", gpu, error_obj.location,
@@ -580,6 +579,18 @@ bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalD
                              string_VkImageUsageFlags2KHR(usage_flags).c_str());
         }
     }
+
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9002
+    // Working group decided to add this warning
+    if (vku::FindStructInPNextChain<VkExternalImageFormatProperties>(pImageFormatProperties->pNext) &&
+        !vku::FindStructInPNextChain<VkPhysicalDeviceExternalImageFormatInfo>(pImageFormatInfo->pNext)) {
+        skip |= LogWarning("WARNING-vkGetPhysicalDeviceImageFormatProperties2-missing-external-info", gpu, error_obj.location,
+                           "pImageFormatProperties->pNext contains VkExternalImageFormatProperties, but "
+                           "pImageFormatInfo->pNext does not contain VkPhysicalDeviceExternalImageFormatInfo to say which "
+                           "handleType is being asked about. The driver will ignore the output struct and leave "
+                           "externalMemoryProperties untouched.");
+    }
+
     return skip;
 }
 
