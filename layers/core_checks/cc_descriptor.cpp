@@ -2533,6 +2533,9 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
 
     for (uint32_t i = 0; i < setCount; i++) {
         const auto set_layout = pipeline_layout->set_layouts.list[firstSet + i];
+        if (!set_layout) {
+            continue;  // possible with GPL
+        }
         const VkDescriptorSetLayoutCreateFlags create_flags = set_layout->GetCreateFlags();
         if ((create_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
             const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
