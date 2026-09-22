@@ -378,7 +378,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     } else if (pCreateInfo->ppEnabledLayerNames) {
         skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledLayerNames-12385", physicalDevice,
                          create_info_loc.dot(Field::ppEnabledLayerNames),
-                         "is %p (not null).\nDevice Layers have never worked since Vulkan 1.0 and only Instance Layers should be "
+                         "is %p (not NULL).\nDevice Layers have never worked since Vulkan 1.0 and only Instance Layers should be "
                          "used instead: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-devicelayers",
                          pCreateInfo->ppEnabledLayerNames);
     }
@@ -502,11 +502,11 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                                                                 VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES};
         while (current) {
             if (IsValueIn(current->sType, illegal_feature_structs_with_11)) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-02829", physicalDevice, error_obj.location,
-                                 "If the pNext chain includes a VkPhysicalDeviceVulkan11Features structure, then "
-                                 "it must not include a %s structure. The features in %s were promoted in Vulkan 1.1 and is also "
-                                 "found in VkPhysicalDeviceVulkan11Features. To prevent one feature setting something to VK_TRUE "
-                                 "and the other to VK_FALSE, only one struct containing the feature is allowed.\n%s",
+                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-02829", physicalDevice, create_info_loc.dot(Field::pNext),
+                                 "chain includes a VkPhysicalDeviceVulkan11Features structure, then it must not "
+                                 "include a %s structure. The features in %s were promoted in Vulkan 1.1 and is also found in "
+                                 "VkPhysicalDeviceVulkan11Features. To prevent one feature setting something to VK_TRUE and the "
+                                 "other to VK_FALSE, only one struct containing the feature is allowed.\n%s",
                                  string_VkStructureName(current->sType), string_VkStructureName(current->sType),
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
@@ -563,8 +563,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         if (vulkan_12_features->samplerMirrorClampToEdge == VK_FALSE &&
             enabled_extensions.find(vvl::Extension::_VK_KHR_sampler_mirror_clamp_to_edge) != enabled_extensions.end()) {
             skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-02832", physicalDevice, error_obj.location,
-                             " %s is enabled but VkPhysicalDeviceVulkan12Features::samplerMirrorClampToEdge "
-                             "is not VK_TRUE.",
+                             "%s is enabled but VkPhysicalDeviceVulkan12Features::samplerMirrorClampToEdge is not VK_TRUE.",
                              VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
         }
         if (vulkan_12_features->descriptorIndexing == VK_FALSE &&
@@ -868,11 +867,10 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
         for (uint32_t i = 0; i + 1 < device_group_ci->physicalDeviceCount; ++i) {
             for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
                 if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
-                    skip |=
-                        LogError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375", physicalDevice, error_obj.location,
-                                 "VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
-                                 "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
-                                 i, j);
+                    skip |= LogError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375", physicalDevice,
+                                     create_info_loc.pNext(Struct::VkDeviceGroupDeviceCreateInfo, Field::pPhysicalDevices, i),
+                                     "and pPhysicalDevices[%" PRIu32 "] are both %s.", j,
+                                     FormatHandle(device_group_ci->pPhysicalDevices[i]).c_str());
                 }
             }
         }
@@ -955,7 +953,7 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                             "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315", physicalDevice,
                             format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT, Field::sharingMode),
                             "is VK_SHARING_MODE_CONCURRENT, but queueFamilyIndexCount is %" PRIu32
-                            " (Needs to be at least 2)\nHint: queueFamilyIndexCount can be 1 if the VK_KHR_maintenance11 extension "
+                            " (must be at least 2)\nHint: queueFamilyIndexCount can be 1 if the VK_KHR_maintenance11 extension "
                             "is supported on the device.",
                             image_drm_format->queueFamilyIndexCount);
                     }
@@ -1018,20 +1016,19 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
             if (!image_view_info) {
                 skip |= LogError(
                     "VUID-VkFilterCubicImageViewImageFormatPropertiesEXT-pNext-02627", physicalDevice,
-                    error_obj.location.dot(Field::pImageFormatProperties).pNext(Struct::VkFilterCubicImageViewImageFormatPropertiesEXT),
+                    error_obj.location.dot(Field::pImageFormatProperties)
+                        .pNext(Struct::VkFilterCubicImageViewImageFormatPropertiesEXT),
                     "is included in the pNext chain of pImageFormatProperties, but "
-                    "VkPhysicalDeviceImageViewImageFormatInfoEXT isn't included in the pNext chain of pImageFormatInfo.\n%s",
+                    "VkPhysicalDeviceImageViewImageFormatInfoEXT is not included in the pNext chain of pImageFormatInfo.\n%s",
                     PrintPNextChain(Struct::VkPhysicalDeviceImageFormatInfo2, pImageFormatInfo->pNext).c_str());
             } else if (!IsImageViewTypeCompatibleWithImageType(physical_device_extensions.at(physicalDevice),
                                                                image_view_info->imageViewType, pImageFormatInfo->type,
                                                                GetImageCreateFlags(*pImageFormatInfo))) {
-                skip |= LogError(
-                    "VUID-VkFilterCubicImageViewImageFormatPropertiesEXT-pNext-02627", physicalDevice,
-                    format_info_loc.pNext(Struct::VkPhysicalDeviceImageViewImageFormatInfoEXT, Field::imageViewType),
-                    "(%s) is not compatible with (%s) that has (%s).",
-                    string_VkImageViewType(image_view_info->imageViewType),
-                    string_VkImageType(pImageFormatInfo->type),
-                    string_VkImageCreateFlags2KHR(GetImageCreateFlags(*pImageFormatInfo)).c_str());
+                skip |= LogError("VUID-VkFilterCubicImageViewImageFormatPropertiesEXT-pNext-02627", physicalDevice,
+                                 format_info_loc.pNext(Struct::VkPhysicalDeviceImageViewImageFormatInfoEXT, Field::imageViewType),
+                                 "(%s) is not compatible with (%s) that has (%s).",
+                                 string_VkImageViewType(image_view_info->imageViewType), string_VkImageType(pImageFormatInfo->type),
+                                 string_VkImageCreateFlags2KHR(GetImageCreateFlags(*pImageFormatInfo)).c_str());
             }
         }
     }
@@ -1268,7 +1265,7 @@ bool Device::manual_PreCallValidateCreatePrivateDataSlot(VkDevice device, const 
     const auto& error_obj = context.error_obj;
     if (!enabled_features.privateData) {
         skip |= LogError("VUID-vkCreatePrivateDataSlot-privateData-04564", device, error_obj.location,
-                         "The privateData feature was not enabled.");
+                         "privateData feature was not enabled.");
     }
     if (((pCreateInfo->flags & VK_PRIVATE_DATA_SLOT_CREATE_BASE_OBJECT_HANDLE_BIT_NV) != 0) &&
         !enabled_features.privateDataBaseHandle) {

@@ -57,11 +57,12 @@ bool Device::manual_PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, 
 
     if (!enabled_features.dataGraph) {
         skip |= LogError("VUID-vkCreateDataGraphPipelinesARM-dataGraph-09760", device, error_obj.location,
-                         "dataGraph feature is not enabled");
+                         "dataGraph feature was not enabled.");
     }
     if (deferredOperation != VK_NULL_HANDLE) {
         skip |= LogError("VUID-vkCreateDataGraphPipelinesARM-deferredOperation-09761", deferredOperation,
-                         error_obj.location.dot(Field::deferredOperation), "must be VK_NULL_HANDLE");
+                         error_obj.location.dot(Field::deferredOperation), "is %s, but must be VK_NULL_HANDLE.",
+                         FormatHandle(deferredOperation).c_str());
     }
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
@@ -83,7 +84,7 @@ bool Device::manual_PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, 
                 skip |= LogError("VUID-vkCreateDataGraphPipelinesARM-pNext-09928", device,
                                  create_info_loc.pNext(Struct::VkDataGraphPipelineIdentifierCreateInfoARM),
                                  "exists but pipelineCache is VK_NULL_HANDLE.\n%s",
-                                 PrintPNextChain(Struct::VkDataGraphPipelineConstantARM, create_info.pNext).c_str());
+                                 PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
             }
         }
 

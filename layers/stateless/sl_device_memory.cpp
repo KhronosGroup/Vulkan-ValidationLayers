@@ -38,8 +38,8 @@ bool Device::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     auto chained_prio_struct = vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext);
     if (chained_prio_struct && (chained_prio_struct->priority < 0.0f || chained_prio_struct->priority > 1.0f)) {
         skip |= LogError("VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602", device,
-                         allocate_info_loc.pNext(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority), "is %f",
-                         chained_prio_struct->priority);
+                         allocate_info_loc.pNext(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority),
+                         "is %f, but must be between 0.0 and 1.0 (inclusive).", chained_prio_struct->priority);
     }
 
     auto flags_info = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
@@ -159,7 +159,7 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer comman
 
     if (!enabled_features.memoryDecompression) {
         skip |= LogError("VUID-vkCmdDecompressMemoryEXT-memoryDecompression-11761", commandBuffer, error_obj.location,
-                         "The memoryDecompression feature must be enabled.");
+                         "memoryDecompression feature was not enabled.");
     }
 
     const auto& props = phys_dev_ext_props.memory_decompression_props;
@@ -170,8 +170,7 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer comman
     }
 
     if (!IsPowerOfTwo(pDecompressMemoryInfoEXT->decompressionMethod)) {
-        skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-07690", commandBuffer,
-                         error_obj.location.dot(Field::pDecompressMemoryInfoEXT).dot(Field::decompressionMethod),
+        skip |= LogError("VUID-VkDecompressMemoryInfoEXT-decompressionMethod-07690", commandBuffer, method_loc,
                          "(0x%" PRIx64 ") must have a single bit set.", pDecompressMemoryInfoEXT->decompressionMethod);
     }
 
@@ -229,7 +228,7 @@ bool Device::manual_PreCallValidateCmdDecompressMemoryIndirectCountEXT(
 
     if (!enabled_features.memoryDecompression) {
         skip |= LogError("VUID-vkCmdDecompressMemoryIndirectCountEXT-None-07692", commandBuffer, error_obj.location,
-                         "The memoryDecompression feature must be enabled.");
+                         "memoryDecompression feature was not enabled.");
     }
 
     const auto& props = phys_dev_ext_props.memory_decompression_props;
@@ -333,8 +332,8 @@ bool Device::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, V
     bool skip = false;
     const auto& error_obj = context.error_obj;
     if (!IsBetweenInclusive(priority, 0.0F, 1.0F)) {
-        skip |= LogError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258", device, error_obj.location.dot(Field::priority),
-                         "is %f.", priority);
+        skip |= LogError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258", memory, error_obj.location.dot(Field::priority),
+                         "is %f, but must be between 0.0 and 1.0 (inclusive).", priority);
     }
     return skip;
 }
@@ -370,8 +369,7 @@ bool Device::ValidateTileMemorySizeInfo(const VkTileMemorySizeInfoQCOM& tile_mem
         if (found_tile_heap) {
             skip |= LogError("VUID-VkTileMemorySizeInfoQCOM-size-10729", device, loc.dot(Field::size),
                              "(%" PRIu64 ") must be less than or equal to %" PRIu64 ", found at memoryHeaps[%" PRIu32
-                             "],"
-                             " the largest VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM heap.",
+                             "], the largest VK_MEMORY_HEAP_TILE_MEMORY_BIT_QCOM heap.",
                              tile_memory_size_info.size, largest_heap_size, heap_index);
         } else {
             // Without reporting this, the error above would point at memoryHeaps[0] which is not a tile memory heap

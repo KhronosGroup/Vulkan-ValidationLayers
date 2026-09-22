@@ -20,27 +20,25 @@
 
 namespace stateless {
 
-bool Device::manual_PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM *pPerfHintInfo,
-                                                        const Context &context) const {
+bool Device::manual_PreCallValidateQueueSetPerfHintQCOM(VkQueue queue, const VkPerfHintInfoQCOM* pPerfHintInfo,
+                                                        const Context& context) const {
     bool skip = false;
 
     if (!enabled_features.queuePerfHint) {
         skip |= LogError("VUID-vkQueueSetPerfHintQCOM-queuePerfHint-12387", queue, context.error_obj.location,
-                         "VkPhysicalDeviceQueuePerfHintFeaturesQCOM::queuePerfHint feature isn't enabled.");
+                         "queuePerfHint feature was not enabled.");
     }
 
     if (pPerfHintInfo) {
         if (pPerfHintInfo->type != VK_PERF_HINT_TYPE_FREQUENCY_SCALED_QCOM && pPerfHintInfo->scale != 0) {
-            const Location perf_hint_scale_loc = context.error_obj.location.pNext(Struct::VkPerfHintInfoQCOM, Field::scale);
-            skip |= LogError("VUID-VkPerfHintInfoQCOM-type-12389", queue, perf_hint_scale_loc,
-                             "(%" PRIu32 ") is non zero, but VkPerfHintInfoQCOM::type is %s.",
-                             pPerfHintInfo->scale, string_VkPerfHintTypeQCOM(pPerfHintInfo->type));
+            skip |= LogError(
+                "VUID-VkPerfHintInfoQCOM-type-12389", queue, context.error_obj.location.dot(Field::pPerfHintInfo).dot(Field::scale),
+                "(%" PRIu32 ") is non-zero, but type is %s.", pPerfHintInfo->scale, string_VkPerfHintTypeQCOM(pPerfHintInfo->type));
         }
         if (pPerfHintInfo->scale > 100) {
-            const Location perf_hint_scale_loc = context.error_obj.location.pNext(Struct::VkPerfHintInfoQCOM, Field::scale);
-            skip |= LogError("VUID-VkPerfHintInfoQCOM-scale-12390", queue, perf_hint_scale_loc,
-                             "(%" PRIu32 ") is greater than 100.",
-                             pPerfHintInfo->scale);
+            skip |= LogError("VUID-VkPerfHintInfoQCOM-scale-12390", queue,
+                             context.error_obj.location.dot(Field::pPerfHintInfo).dot(Field::scale),
+                             "(%" PRIu32 ") is greater than 100.", pPerfHintInfo->scale);
         }
     }
 

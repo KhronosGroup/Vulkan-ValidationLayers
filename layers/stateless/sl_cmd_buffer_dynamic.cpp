@@ -37,9 +37,7 @@ bool Device::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer comma
         if (viewportCount < 1 || viewportCount > phys_dev_props.limits.maxViewports) {
             skip |= LogError("VUID-vkCmdSetViewportWithCount-viewportCount-03394", commandBuffer,
                              error_obj.location.dot(Field::viewportCount),
-                             "(%" PRIu32
-                             ") must "
-                             "not be zero nor greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
+                             "(%" PRIu32 ") must not be zero nor greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
                              viewportCount, phys_dev_props.limits.maxViewports);
         }
     }
@@ -145,7 +143,8 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
         if (!binding_found) {
             skip |= LogError("VUID-vkCmdSetVertexInputEXT-binding-04793", commandBuffer,
                              error_obj.location.dot(Field::pVertexAttributeDescriptions, attribute),
-                             "references an unspecified binding.");
+                             "has a binding of %" PRIu32 ", but no element of pVertexBindingDescriptions has that binding.",
+                             pVertexAttributeDescriptions[attribute].binding);
         }
     }
 
@@ -198,8 +197,7 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
         if (pVertexBindingDescriptions[binding].divisor == 0 && (!enabled_features.vertexAttributeInstanceRateZeroDivisor)) {
             skip |=
                 LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04798", commandBuffer, binding_loc.dot(Field::divisor),
-                         "is zero but "
-                         "vertexAttributeInstanceRateZeroDivisor feature was not enabled");
+                         "is zero, but the vertexAttributeInstanceRateZeroDivisor feature was not enabled.");
         }
 
         if (pVertexBindingDescriptions[binding].divisor > 1) {
@@ -207,8 +205,8 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
                 skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04799", commandBuffer,
                                  binding_loc.dot(Field::divisor),
                                  "is %" PRIu32
-                                 " (greater than 1) but "
-                                 "vertexAttributeInstanceRateDivisor feature was not enabled",
+                                 " (greater than 1), but the vertexAttributeInstanceRateDivisor feature was not "
+                                 "enabled.",
                                  pVertexBindingDescriptions[binding].divisor);
             } else {
                 if (pVertexBindingDescriptions[binding].divisor > phys_dev_props_core14.maxVertexAttribDivisor) {
@@ -279,7 +277,7 @@ bool Device::manual_PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer com
         // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
         skip |= LogError("UNASSIGNED-vkCmdSetColorBlendEnableEXT-limit", commandBuffer,
                          context.error_obj.location.dot(Field::firstAttachment),
-                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is not less than maxColorAttachments (%" PRIu32 ").",
+                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
                          firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
     return skip;
@@ -300,7 +298,7 @@ bool Device::manual_PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer c
         // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
         skip |= LogError("UNASSIGNED-vkCmdSetColorBlendEquationEXT-limit", commandBuffer,
                          context.error_obj.location.dot(Field::firstAttachment),
-                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is not less than maxColorAttachments (%" PRIu32 ").",
+                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
                          firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
 
@@ -368,7 +366,7 @@ bool Device::manual_PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer comma
         // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
         skip |= LogError("UNASSIGNED-vkCmdSetColorWriteMaskEXT-limit", commandBuffer,
                          context.error_obj.location.dot(Field::firstAttachment),
-                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is not less than maxColorAttachments (%" PRIu32 ").",
+                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
                          firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
     return skip;
@@ -389,7 +387,7 @@ bool Device::manual_PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer c
         // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
         skip |= LogError("UNASSIGNED-vkCmdSetColorBlendAdvancedEXT-limit", commandBuffer,
                          context.error_obj.location.dot(Field::firstAttachment),
-                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is not less than maxColorAttachments (%" PRIu32 ").",
+                         "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
                          firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
 
@@ -433,7 +431,7 @@ bool Device::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer com
         skip |=
             LogError("VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585", commandBuffer,
                      error_obj.location.dot(Field::firstDiscardRectangle),
-                     "(%" PRIu32 ") + discardRectangleCount (%" PRIu32 ") is not less than maxDiscardRectangles (%" PRIu32 ").",
+                     "(%" PRIu32 ") + discardRectangleCount (%" PRIu32 ") is greater than maxDiscardRectangles (%" PRIu32 ").",
                      firstDiscardRectangle, discardRectangleCount, phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
     }
 
@@ -607,7 +605,7 @@ bool Device::manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandB
     if (sum > phys_dev_props.limits.maxViewports) {
         skip |= LogError("VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067", commandBuffer, error_obj.location,
                          "firstViewport (%" PRIu32 ") + viewportCount (%" PRIu32 ") is %" PRIu64
-                         ") which is greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
+                         " which is greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
                          firstViewport, viewportCount, sum, phys_dev_props.limits.maxViewports);
     }
 
@@ -623,9 +621,10 @@ bool Device::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer com
     const auto& error_obj = context.error_obj;
 
     if (sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV && customSampleOrderCount != 0) {
-        skip |= LogError("VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081", commandBuffer, error_obj.location,
-                         "If sampleOrderType is not VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, "
-                         "customSampleOrderCount must be 0.");
+        skip |= LogError("VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081", commandBuffer,
+                         error_obj.location.dot(Field::customSampleOrderCount),
+                         "is %" PRIu32 ", but must be 0 because sampleOrderType is %s.", customSampleOrderCount,
+                         string_VkCoarseSampleOrderTypeNV(sampleOrderType));
     }
 
     for (uint32_t order_i = 0; order_i < customSampleOrderCount; ++order_i) {
@@ -752,7 +751,7 @@ bool Device::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer
 
     if (!enabled_features.wideLines && (lineWidth != 1.0f)) {
         skip |= LogError("VUID-vkCmdSetLineWidth-lineWidth-00788", commandBuffer, error_obj.location.dot(Field::lineWidth),
-                         "is %f (not 1.0), but wideLines was not enabled.", lineWidth);
+                         "is %f (not 1.0), but the wideLines feature was not enabled.", lineWidth);
     }
 
     return skip;
@@ -765,7 +764,8 @@ bool Device::manual_PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuff
 
     if (lineStippleFactor < 1 || lineStippleFactor > 256) {
         skip |= LogError("VUID-vkCmdSetLineStipple-lineStippleFactor-02776", commandBuffer,
-                         error_obj.location.dot(Field::lineStippleFactor), "%" PRIu32 " is not in [1,256].", lineStippleFactor);
+                         error_obj.location.dot(Field::lineStippleFactor), "(%" PRIu32 ") is not in the range [1, 256].",
+                         lineStippleFactor);
     }
 
     return skip;

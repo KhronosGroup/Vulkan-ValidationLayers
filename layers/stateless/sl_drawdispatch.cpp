@@ -188,7 +188,7 @@ bool Device::manual_PreCallValidateCmdDrawIndirectCount2KHR(VkCommandBuffer comm
     }
     if (address_range.stride == 0) {
         if (pInfo->maxDrawCount > 1) {
-            skip |= LogError("VUID-vkCmdDrawIndirectCount2KHR-pInfo-13111", commandBuffer, info_loc.dot(Field::drawCount),
+            skip |= LogError("VUID-vkCmdDrawIndirectCount2KHR-pInfo-13111", commandBuffer, info_loc.dot(Field::maxDrawCount),
                              "is %" PRIu32 ", but addressRange.stride is 0.", pInfo->maxDrawCount);
         }
     } else if (address_range.stride < sizeof(VkDrawIndirectCommand)) {
