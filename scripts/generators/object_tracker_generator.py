@@ -833,6 +833,8 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         if structName == 'VkVideoEncodeQuantizationMapInfoKHR' and memberName == 'quantizationMap':
             return '"UNASSIGNED-VkVideoEncodeQuantizationMapInfoKHR-quantizationMap-parent"'
         if structName == 'VkPipelineInfoKHR' and memberName == 'pipeline':
+            if commandName == 'vkGetPipelinePropertiesEXT':
+                return '"VUID-vkGetPipelinePropertiesEXT-pipeline-06738"'
             return '"UNASSIGNED-VkPipelineInfoKHR-pipeline-parent"'
         if structName == 'VkMemoryGetMetalHandleInfoEXT' and memberName == 'memory':
             return '"UNASSIGNED-VkMemoryGetMetalHandleInfoEXT-memory-parent"'
@@ -912,6 +914,9 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         # Common parents
         if structName =='VkRenderPassAttachmentBeginInfo' and memberName == 'pAttachments':
             return '"VUID-VkRenderPassBeginInfo-framebuffer-02780"'
+        if structName == 'VkRenderPassBeginInfo' and memberName in ('renderPass', 'framebuffer'):
+            if commandName.startswith('vkCmdBeginRenderPass2'):
+                return '"VUID-vkCmdBeginRenderPass2-framebuffer-02779"'
 
         return None
 

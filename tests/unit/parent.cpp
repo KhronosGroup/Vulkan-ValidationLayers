@@ -191,6 +191,20 @@ TEST_F(NegativeParent, RenderPassFramebuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeParent, FramebufferAttachment) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    auto features = m_device->Physical().Features();
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features);
+
+    vkt::Image image(*m_second_device, m_width, m_height, m_render_target_fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCreateFramebuffer-pCreateInfo-02777");
+    vkt::Framebuffer fb(*m_device, m_renderPass, 1, &image_view.handle(), m_width, m_height);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     TEST_DESCRIPTION("Test RenderPass and Imageless Framebuffer");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -256,8 +270,8 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
 
     command_buffer.Begin();
     // one for each the framebuffer and renderpass being different from the CommandBuffer
-    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-commonparent");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-commonparent");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass2-framebuffer-02779");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass2-framebuffer-02779");
     auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfo>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBeginRenderPass2(command_buffer, &m_renderPassBeginInfo, &subpass_begin_info);
     m_errorMonitor->VerifyFound();
@@ -628,8 +642,7 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9176
-TEST_F(NegativeParent, DISABLED_PipelineInfoEXT) {
+TEST_F(NegativeParent, PipelineInfoEXT) {
     TEST_DESCRIPTION("Try making calls without pipelineExecutableInfo.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME);
@@ -646,13 +659,11 @@ TEST_F(NegativeParent, DISABLED_PipelineInfoEXT) {
     pipe.CreateGraphicsPipeline();
 
     VkPipelineInfoEXT pipeline_info = vku::InitStructHelper();
-    pipeline_info.sType = VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT;
     pipeline_info.pipeline = pipe;
 
-    VkBaseOutStructure out_struct;
-    out_struct.sType = VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelinePropertiesEXT-pipeline-06738");
-    vk::GetPipelinePropertiesEXT(*m_second_device, &pipeline_info, &out_struct);
+    VkPipelinePropertiesIdentifierEXT properties = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-vkGetPipelinePropertiesEXT-pipeline-06738");
+    vk::GetPipelinePropertiesEXT(*m_second_device, &pipeline_info, reinterpret_cast<VkBaseOutStructure*>(&properties));
     m_errorMonitor->VerifyFound();
 }
 
