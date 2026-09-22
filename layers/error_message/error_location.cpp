@@ -17,6 +17,7 @@
  */
 #include "error_location.h"
 #include "generated/error_location_helper.h"
+#include <algorithm>
 
 void Location::AppendFields(std::ostream& out) const {
     if (prev) {
