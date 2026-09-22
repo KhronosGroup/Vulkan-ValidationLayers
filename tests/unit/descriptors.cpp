@@ -6455,3 +6455,23 @@ TEST_F(NegativeDescriptors, ImmutableSamplerIdenticallyDefinedFilterMinmax) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDescriptors, DynamicOffsetRangeCoversWholeBuffer) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8650");
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer buffer(*m_device, 2048, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 2048, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    uint32_t dynamic_offset = static_cast<uint32_t>(m_device->Physical().limits_.minStorageBufferOffsetAlignment);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 1,
+                              &dynamic_offset);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
