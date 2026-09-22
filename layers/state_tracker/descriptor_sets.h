@@ -647,6 +647,8 @@ class AccelerationStructureDescriptor : public Descriptor {
     void CopyUpdate(DescriptorSet &set_state, const DeviceState &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
     bool IsKHR() const { return is_khr_; }
+    bool IsPartitionedNV() const { return is_partition_nv_; }
+    VkDeviceAddress GetPartitionedAccelerationStructureNV() const { return acc_partition_nv_; }
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
@@ -654,6 +656,7 @@ class AccelerationStructureDescriptor : public Descriptor {
 
   private:
     bool is_khr_{false};
+    bool is_partition_nv_{false};
     VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
     std::shared_ptr<vvl::AccelerationStructureKHR> acc_state_;
     VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};

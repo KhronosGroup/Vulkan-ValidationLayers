@@ -2651,14 +2651,10 @@ vvl::unordered_set<VkDescriptorType> ResourceInterfaceVariable::GetAllDescriptor
         types.insert(VK_DESCRIPTOR_TYPE_TENSOR_ARM);
     } else if (is_acceleration_structure) {
         types.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
-        if (is_partitioned_acceleration_structure) {
-            types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
-        }
+        types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
     } else if (is_acceleration_structure_nv) {
         types.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
-        if (is_partitioned_acceleration_structure) {
-            types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
-        }
+        types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
     }
 
     assert(!types.empty() || IsHeap());
@@ -2826,11 +2822,6 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
             is_acceleration_structure_nv = true;
         } else {
             is_acceleration_structure = true;
-        }
-
-        // Additionally allow PTLAS if shader uses cluster acceleration structure features
-        if (module_state.HasCapability(spv::CapabilityRayTracingClusterAccelerationStructureNV)) {
-            is_partitioned_acceleration_structure = true;
         }
     }
 
