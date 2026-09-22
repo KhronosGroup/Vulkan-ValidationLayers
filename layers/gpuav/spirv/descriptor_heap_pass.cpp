@@ -55,7 +55,7 @@ const static OfflineFunction kOfflineFunction[] = {
 };
 
 DescriptorHeapPass::DescriptorHeapPass(Module& module)
-    : Pass(module, kOfflineModule), descriptor_heap_props(module.settings_.phys_dev_ext_props->descriptor_heap_props) {
+    : Pass(module, kOfflineModule), descriptor_heap_props(module.settings_.phys_dev_ext_props->descriptor_heap_props_ext) {
     module.use_bda_ = true;
 }
 

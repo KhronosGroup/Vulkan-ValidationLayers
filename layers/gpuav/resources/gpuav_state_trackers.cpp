@@ -147,7 +147,7 @@ void CommandBufferSubState::ClearPushConstants() { push_constant_data_chunks.cle
 
 void CommandBufferSubState::RecordPushData(const VkPushDataInfoEXT& push_data_info) {
     if (push_data_value.empty()) {
-        push_data_value.resize((size_t)base.dev_data.phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
+        push_data_value.resize((size_t)base.dev_data.phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize);
     }
 
     memcpy(push_data_value.data() + push_data_info.offset, push_data_info.data.address, push_data_info.data.size);
