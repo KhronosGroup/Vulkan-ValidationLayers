@@ -1360,3 +1360,40 @@ TEST_F(NegativeObjectLifetime, LeakBufferAndBufferView) {
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeObjectLifetime, CmdBufferInvalidationChainMessage) {
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer foo { int x; } bar;
+        void main() { bar.x = 1; }
+    )glsl";
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    {
+        vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        descriptor_set.UpdateDescriptorSets();
+
+        m_command_buffer.Begin();
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                                  nullptr);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+        m_command_buffer.End();
+    }
+
+    // VUID-vkQueueSubmit-pCommandBuffers-00070
+    m_errorMonitor->SetDesiredError("which was used by VkDescriptorSet");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
