@@ -37,6 +37,9 @@ constexpr SyncOrdering kStoreOrder = SyncOrdering::kRaster;
 RenderingAttachment::RenderingAttachment(const SyncValidator& validator, const VkRenderingAttachmentInfo& info,
                                          const AttachmentType type)
     : type(type), load_op(info.loadOp), store_op(info.storeOp), resolve_mode(info.resolveMode) {
+    const bool feedback_image_layout = info.imageLayout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+    const auto* feedback = vku::FindStructInPNextChain<VkAttachmentFeedbackLoopInfoEXT>(info.pNext);
+    feedback_enabled = feedback_image_layout || (feedback && feedback->feedbackLoopEnable);
     view = validator.Get<vvl::ImageView>(info.imageView);
     if (view && info.resolveImageView != VK_NULL_HANDLE && resolve_mode != VK_RESOLVE_MODE_NONE) {
         resolve_view = validator.Get<vvl::ImageView>(info.resolveImageView);
@@ -48,21 +51,13 @@ ImageRangeGen RenderingAttachment::GetRangeGen(const VkRect2D& render_area, uint
     if (!view) {
         return {};
     }
-    // Multiview is disabled: return range gen for render area
-    if (view_mask == 0) {
-        const VkOffset3D offset = CastTo3D(render_area.offset);
-        const VkExtent3D extent = CastTo3D(render_area.extent);
-        if (type == AttachmentType::kColor) {
-            return MakeImageRangeGen(*view, offset, extent);
-        } else if (type == AttachmentType::kDepth) {
-            return MakeImageRangeGen(*view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
-        } else {
-            return MakeImageRangeGen(*view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
-        }
+    // With feedback enabled, load/store operations must stay within the render area.
+    // TODO: Always select render-area ranges whenever feedback is enabled.
+    // GetRenderAreaRangeGen needs to support the layers selected by view_mask.
+    if (view_mask == 0 && feedback_enabled) {
+        return GetRenderAreaRangeGen(render_area);
     }
-    // Initialize range gen based on view mask. The render area is not applied on purpose:
-    // load/store/resolve operations can access the entire attachment subresource.
-    // The non-multiview path keeps the original render-area model.
+
     if (type == AttachmentType::kColor) {
         return MakeImageRangeGen(*view, view_mask);
     } else if (type == AttachmentType::kDepth) {
@@ -70,6 +65,22 @@ ImageRangeGen RenderingAttachment::GetRangeGen(const VkRect2D& render_area, uint
     } else {
         return MakeImageRangeGen(*view, view_mask, VK_IMAGE_ASPECT_STENCIL_BIT);
     }
+}
+
+bool RenderingAttachment::CanOptimizeDrawAccess() const {
+    const bool write_load = LoadOpWrites(load_op);
+    const bool read_load_with_store = load_op == VK_ATTACHMENT_LOAD_OP_LOAD && store_op != VK_ATTACHMENT_STORE_OP_NONE;
+    return !feedback_enabled && (write_load || read_load_with_store);
+}
+
+ImageRangeGen RenderingAttachment::GetRenderAreaRangeGen(const VkRect2D& render_area) const {
+    VkImageAspectFlags override_aspect_flags = 0;
+    if (type == AttachmentType::kDepth) {
+        override_aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else if (type == AttachmentType::kStencil) {
+        override_aspect_flags = VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    return MakeImageRangeGen(*view, CastTo3D(render_area.offset), CastTo3D(render_area.extent), override_aspect_flags);
 }
 
 ImageRangeGen RenderingAttachment::GetResolveRangeGen(const VkRect2D& render_area) const {
@@ -98,7 +109,7 @@ SyncAccessIndex RenderingAttachment::GetLoadUsage() const {
 }
 
 SyncAccessIndex RenderingAttachment::GetStoreUsage() const {
-    if (store_op == VK_ATTACHMENT_STORE_OP_NONE) {
+    if (!StoreOpWrites(store_op, load_op)) {
         return SYNC_ACCESS_INDEX_NONE;
     } else if (type == AttachmentType::kColor) {
         return SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
@@ -165,6 +176,56 @@ void RenderingInstance::InitViewGens(std::vector<ImageRangeGen>& view_gen_storag
     view_gens = view_gen_storage;  // init span
 }
 
+ImageRangeGen RenderingInstance::GetOptimizedDrawRangeGen(const AccessContext& access_context, uint32_t attachment_index,
+                                                          SyncAccessIndex usage, const AttachmentAccess& attachment_access,
+                                                          QueueId queue_id) const {
+    const auto& attachment = attachments[attachment_index];
+    ImageRangeGen range_gen = view_gens[attachment_index];
+
+    // TODO: Remove this early return once GetRenderAreaRangeGen supports
+    // the layers selected by view_mask. Update DetectDrawHazard too.
+    if (view_mask != 0) {
+        return range_gen;
+    }
+
+    if (!attachment.CanOptimizeDrawAccess()) {
+        return attachment.GetRenderAreaRangeGen(render_area);
+    }
+    // LOAD reads only the render area.
+    // Use the whole subresource optimization for the draw only if its write has no hazard
+    if (attachment.load_op == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        auto probe = range_gen;
+        if (access_context.DetectAttachmentHazard(probe, usage, attachment_access, queue_id).IsHazard()) {
+            return attachment.GetRenderAreaRangeGen(render_area);
+        }
+    }
+    return range_gen;
+}
+
+HazardResult RenderingInstance::DetectDrawHazard(const AccessContext& access_context, uint32_t attachment_index,
+                                                 SyncAccessIndex usage, const AttachmentAccess& attachment_access,
+                                                 QueueId queue_id) const {
+    // TODO: Remove this early return once GetRenderAreaRangeGen supports
+    // the layers selected by view_mask
+    if (view_mask != 0) {
+        ImageRangeGen range_gen = view_gens[attachment_index];
+        return access_context.DetectAttachmentHazard(range_gen, usage, attachment_access, queue_id);
+    }
+
+    const RenderingAttachment& attachment = attachments[attachment_index];
+    const bool can_optimize_draw = attachment.CanOptimizeDrawAccess();
+    ImageRangeGen range_gen = can_optimize_draw ? view_gens[attachment_index] : attachment.GetRenderAreaRangeGen(render_area);
+
+    auto hazard = access_context.DetectAttachmentHazard(range_gen, usage, attachment_access, queue_id);
+
+    // Validate again without the full-subresource optimization before reporting a hazard
+    if (hazard.IsHazard() && can_optimize_draw && attachment.load_op == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        range_gen = attachment.GetRenderAreaRangeGen(render_area);
+        hazard = access_context.DetectAttachmentHazard(range_gen, usage, attachment_access, queue_id);
+    }
+    return hazard;
+}
+
 const vvl::ImageView* RenderingInstance::GetClearAttachmentView(const VkClearAttachment& clear_attachment) const {
     if (clear_attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
         if (clear_attachment.colorAttachment < color_attachment_count) {
@@ -198,7 +259,11 @@ bool RenderingInstance::ValidateBeginRendering(const SyncEnvironment& env, const
         }
         const AttachmentAccess attachment_access = {AttachmentAccessType::LoadOp, attachment.GetOrdering(),
                                                     render_pass_instance_id};
-        ImageRangeGen range_gen = view_gens[i];
+        // TODO: Use GetRenderAreaRangeGen for multiview LOAD reads too once
+        // GetRenderAreaRangeGen supports the layers selected by view_mask.
+        ImageRangeGen range_gen = attachment.load_op == VK_ATTACHMENT_LOAD_OP_LOAD && view_mask == 0
+                                      ? attachment.GetRenderAreaRangeGen(render_area)
+                                      : view_gens[i];
         const HazardResult hazard = access_context.DetectAttachmentHazard(range_gen, load_index, attachment_access, env.queue_id);
         if (hazard.IsHazard()) {
             const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
@@ -233,7 +298,11 @@ void RenderingInstance::RecordBeginRendering(AccessContext& access_context, uint
         if (load_index == SYNC_ACCESS_INDEX_NONE) {
             continue;
         }
-        ImageRangeGen range_gen = view_gens[i];
+        // TODO: Use GetRenderAreaRangeGen for multiview LOAD reads too once
+        // GetRenderAreaRangeGen supports the layers selected by view_mask.
+        ImageRangeGen range_gen = attachment.load_op == VK_ATTACHMENT_LOAD_OP_LOAD && view_mask == 0
+                                      ? attachment.GetRenderAreaRangeGen(render_area)
+                                      : view_gens[i];
         const AttachmentAccess attachment_access = {AttachmentAccessType::LoadOp, attachment.GetOrdering(),
                                                     render_pass_instance_id};
         access_context.UpdateAttachmentAccessState(range_gen, load_index, attachment_access, ResourceUsageTagEx{tag}, queue_id);
@@ -266,7 +335,9 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
 
             const AttachmentAccess resolve_read_access = {AttachmentAccessType::ResolveRead, kResolveOrder,
                                                           render_pass_instance_id};
-            ImageRangeGen view_gen = view_gens[i];
+            // TODO: Use GetRenderAreaRangeGen for multiview resolve reads too once
+            // GetRenderAreaRangeGen supports the layers selected by view_mask
+            ImageRangeGen view_gen = view_mask ? view_gens[i] : attachment.GetRenderAreaRangeGen(render_area);
             HazardResult hazard = access_context.DetectAttachmentHazard(view_gen, kResolveRead, resolve_read_access, env.queue_id);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
@@ -309,9 +380,8 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
         const SyncAccessIndex store_access = attachment.GetStoreUsage();
         if (store_access != SYNC_ACCESS_INDEX_NONE) {
             const AttachmentAccess attachment_access = {AttachmentAccessType::StoreOp, kStoreOrder, render_pass_instance_id};
-            ImageRangeGen view_gen = view_gens[i];
-
-            HazardResult hazard = access_context.DetectAttachmentHazard(view_gen, store_access, attachment_access, env.queue_id);
+            ImageRangeGen store_gen = view_gens[i];
+            HazardResult hazard = access_context.DetectAttachmentHazard(store_gen, store_access, attachment_access, env.queue_id);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
 
@@ -345,7 +415,9 @@ void RenderingInstance::RecordEndRendering(AccessContext& access_context, uint32
 
             const AttachmentAccess resolve_read_access = {AttachmentAccessType::ResolveRead, kResolveOrder,
                                                           render_pass_instance_id};
-            ImageRangeGen view_gen = view_gens[i];
+            // TODO: Use GetRenderAreaRangeGen for multiview resolve reads too once
+            // GetRenderAreaRangeGen supports the layers selected by view_mask
+            ImageRangeGen view_gen = view_mask ? view_gens[i] : attachment.GetRenderAreaRangeGen(render_area);
             access_context.UpdateAttachmentAccessState(view_gen, kResolveRead, resolve_read_access, ResourceUsageTagEx{tag},
                                                        queue_id);
 
@@ -386,9 +458,8 @@ bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, cons
         }
         const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kColorAttachment,
                                                  render_pass_instance_id, vvl::kNoIndex32};
-        ImageRangeGen view_gen = view_gens[output_location];
-        HazardResult hazard = access_context.DetectAttachmentHazard(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                                                    attachment_access, env.queue_id);
+        HazardResult hazard = DetectDrawHazard(access_context, output_location, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                               attachment_access, env.queue_id);
 
         if (hazard.IsHazard()) {
             const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
@@ -412,9 +483,9 @@ bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, cons
         if (writeable) {
             const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kDepthStencilAttachment,
                                                      render_pass_instance_id, vvl::kNoIndex32};
-            ImageRangeGen view_gen = view_gens[i];
-            HazardResult hazard = access_context.DetectAttachmentHazard(
-                view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access, env.queue_id);
+            HazardResult hazard =
+                DetectDrawHazard(access_context, uint32_t(i), SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                 attachment_access, env.queue_id);
 
             if (hazard.IsHazard()) {
                 const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
@@ -447,7 +518,8 @@ void RenderingInstance::RecordDrawAttachments(AccessContext& access_context, uin
         }
         const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kColorAttachment,
                                                  render_pass_instance_id, vvl::kNoIndex32};
-        ImageRangeGen view_gen = view_gens[output_location];
+        ImageRangeGen view_gen = GetOptimizedDrawRangeGen(
+            access_context, output_location, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access, queue_id);
         access_context.UpdateAttachmentAccessState(view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, attachment_access,
                                                    ResourceUsageTagEx{tag}, queue_id);
     }
@@ -465,7 +537,8 @@ void RenderingInstance::RecordDrawAttachments(AccessContext& access_context, uin
         if (writeable) {
             const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kDepthStencilAttachment,
                                                      render_pass_instance_id, vvl::kNoIndex32};
-            ImageRangeGen view_gen = view_gens[i];
+            ImageRangeGen view_gen = GetOptimizedDrawRangeGen(
+                access_context, i, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, attachment_access, queue_id);
             access_context.UpdateAttachmentAccessState(view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                                        attachment_access, ResourceUsageTagEx{tag}, queue_id);
         }

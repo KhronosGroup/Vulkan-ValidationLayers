@@ -1193,7 +1193,8 @@ bool BeginRenderPassCommand::Validate(const SyncEnvironment& env, const AccessCo
     temp_context.InitFrom(0, env.queue_flags, render_pass.subpass_dependency_infos, nullptr, access_context, env.queue_id);
 
     // Validation runs before the render-pass context exists, so create the attachment view generators locally
-    const AttachmentViewGenVector view_gens = RenderPassAccessContext::CreateAttachmentViewGen(render_area, attachment_views);
+    const AttachmentViewGenVector view_gens =
+        RenderPassAccessContext::CreateAttachmentViewGen(render_pass, render_area, attachment_views);
 
     skip |= RenderPassAccessContext::ValidateLayoutTransitions(env, temp_context, render_pass, render_pass_instance_id, 0,
                                                                view_mask, view_gens, cb_context, replay_tag, loc);

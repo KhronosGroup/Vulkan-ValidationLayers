@@ -31,8 +31,10 @@ class Pipeline;
 namespace syncval {
 class AccessContext;
 class CommandBufferContext;
+class HazardResult;
 class SyncValidator;
 struct SyncEnvironment;
+struct AttachmentAccess;
 enum class SyncOrdering : uint8_t;
 
 enum class AttachmentType { kColor, kDepth, kStencil };
@@ -42,12 +44,17 @@ struct RenderingAttachment {
     VkAttachmentLoadOp load_op;
     VkAttachmentStoreOp store_op;
     VkResolveModeFlagBits resolve_mode;
+    bool feedback_enabled;
     std::shared_ptr<const vvl::ImageView> view;
     std::shared_ptr<const vvl::ImageView> resolve_view;
 
     RenderingAttachment(const SyncValidator& validator, const VkRenderingAttachmentInfo& info, const AttachmentType type);
 
+    // Range for writing load/store operations
     ImageRangeGen GetRangeGen(const VkRect2D& render_area, uint32_t view_mask = 0) const;
+
+    bool CanOptimizeDrawAccess() const;
+    ImageRangeGen GetRenderAreaRangeGen(const VkRect2D& render_area) const;
     ImageRangeGen GetResolveRangeGen(const VkRect2D& render_area) const;
     SyncAccessIndex GetLoadUsage() const;
     SyncAccessIndex GetStoreUsage() const;
@@ -91,6 +98,12 @@ struct RenderingInstance {
                                  bool stencil_write) const;
     void RecordDrawAttachments(AccessContext& access_context, uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline,
                                bool depth_write, bool stencil_write, ResourceUsageTag tag, QueueId queue_id) const;
+
+  private:
+    ImageRangeGen GetOptimizedDrawRangeGen(const AccessContext& access_context, uint32_t attachment_index, SyncAccessIndex usage,
+                                           const AttachmentAccess& attachment_access, QueueId queue_id) const;
+    HazardResult DetectDrawHazard(const AccessContext& access_context, uint32_t attachment_index, SyncAccessIndex usage,
+                                  const AttachmentAccess& attachment_access, QueueId queue_id) const;
 };
 
 }  // namespace syncval

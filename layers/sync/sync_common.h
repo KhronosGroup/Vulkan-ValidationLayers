@@ -54,6 +54,16 @@ AccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
 AccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size);
 inline const SyncAccessInfo& GetAccessInfo(SyncAccessIndex access) { return GetSyncAccessInfos()[access]; }
 
+inline bool LoadOpWrites(VkAttachmentLoadOp load_op) {
+    return load_op == VK_ATTACHMENT_LOAD_OP_CLEAR || load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+}
+
+// STORE_OP_NONE behaves like DONT_CARE after a writing load.
+// Writes from other attachment operations are not accounted for here.
+inline bool StoreOpWrites(VkAttachmentStoreOp store_op, VkAttachmentLoadOp load_op) {
+    return store_op != VK_ATTACHMENT_STORE_OP_NONE || LoadOpWrites(load_op);
+}
+
 extern const AccessRange kFullRange;
 
 constexpr VkImageAspectFlags kColorAspects =

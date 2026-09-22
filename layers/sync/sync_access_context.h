@@ -168,20 +168,54 @@ struct ApplySubpassTransitionBarrierAction {
 class AttachmentViewGen {
   public:
     enum Gen {
-        kViewSubresource = 0,        // Always available
-        kRenderArea = 1,             // Always available
-        kDepthOnlyRenderArea = 2,    // Only for formats with both depth and stencil to select depth
-        kStencilOnlyRenderArea = 3,  // Only for formats with both depth and stencil to select stencil
-        kGenSize = 4
+        kViewSubresource = 0,         // Always available
+        kRenderArea = 1,              // Always available
+        kDepthOnlyRenderArea = 2,     // Render area, depth only
+        kStencilOnlyRenderArea = 3,   // Render area, stencil only
+        kDepthOnlySubresource = 4,    // Full extent, depth only
+        kStencilOnlySubresource = 5,  // Full extent, stencil only
+        kGenSize = 6
     };
-    AttachmentViewGen(const vvl::ImageView* image_view, const VkOffset3D& offset, const VkExtent3D& extent);
+    AttachmentViewGen(const vvl::ImageView& image_view, const VkOffset3D& offset, const VkExtent3D& extent, bool feedback_enabled,
+                      VkImageAspectFlags use_full_extent_aspects, VkImageAspectFlags try_full_extent_aspects);
+
     const vvl::ImageView* GetViewState() const { return view_; }
     ImageRangeGen GetRangeGen(Gen type, uint32_t view_index = vvl::kNoIndex32) const;
-    Gen GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const;
+
+    static Gen GetRenderAreaGen(VkImageAspectFlags aspect_mask) { return GetGen(aspect_mask, false); }
+    Gen GetLoadGen(VkImageAspectFlags aspect_mask, VkAttachmentLoadOp load_op) const;
+    Gen GetStoreGen(VkImageAspectFlags aspect_mask) const;
+
+    static Gen GetDrawGen(VkImageAspectFlags aspect_mask) { return GetRenderAreaGen(aspect_mask); }
+    Gen GetOptimizedDrawGen(Gen render_area_gen) const;
+    bool DrawOptimizationNeedsHazardCheck(Gen render_area_gen) const;
 
   private:
+    static Gen GetGen(VkImageAspectFlags aspect_mask, bool full_extent);
+    static VkImageAspectFlags GetDrawAspect(Gen render_area_gen);
+
     const vvl::ImageView* view_ = nullptr;
+    bool feedback_enabled_ = false;
+
     std::array<std::optional<ImageRangeGen>, Gen::kGenSize> gen_store_;
+
+    // Optimize draw access tracking by using the entire subresource to process fewer ranges.
+    // The following two masks describe:
+    //   a) Draws that can *provably* be tracked over the whole subresource
+    //   b) Draws that can be tracked over the whole subresource if validation reports no hazard for that access
+    //
+    // use_full_extent_aspects_:
+    //   Draws after LOAD_OP_CLEAR/DONT_CARE can be tracked over the entire subresource,
+    //   since the load is already tracked over that range
+    //
+    // try_full_extent_aspects_:
+    //   LOAD_OP_LOAD reads use the render area. Subsequent draws use the entire subresource only if
+    //   synchronization validation reports no hazard for that access. Otherwise, use the render area
+    //
+    // An aspect in neither mask uses the render area. When attachment feedback is enabled,
+    // the caller leaves both masks empty, so draw accesses use the render area.
+    VkImageAspectFlags use_full_extent_aspects_ = 0;
+    VkImageAspectFlags try_full_extent_aspects_ = 0;
 };
 
 class AccessContext {

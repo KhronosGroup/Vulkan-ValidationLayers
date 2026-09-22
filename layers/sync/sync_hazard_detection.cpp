@@ -330,8 +330,18 @@ HazardResult AccessContext::DetectAttachmentHazard(const AttachmentViewGen& view
                                                    SyncAccessIndex current_usage, const AttachmentAccess& attachment_access,
                                                    uint32_t view_mask, QueueId queue_id) const {
     if (view_mask == 0) {
-        ImageRangeGen range_gen = view_gen.GetRangeGen(gen_type);
-        return DetectAttachmentHazard(range_gen, current_usage, attachment_access, queue_id);
+        const bool draw_access = attachment_access.type == AttachmentAccessType::Access;
+        const AttachmentViewGen::Gen optimized_gen_type = draw_access ? view_gen.GetOptimizedDrawGen(gen_type) : gen_type;
+        ImageRangeGen range_gen = view_gen.GetRangeGen(optimized_gen_type);
+        HazardResult hazard = DetectAttachmentHazard(range_gen, current_usage, attachment_access, queue_id);
+
+        // LOAD only reads the render area. If the full-subresource write reports a hazard,
+        // validate the draw over the render area.
+        if (hazard.IsHazard() && optimized_gen_type != gen_type && view_gen.DrawOptimizationNeedsHazardCheck(gen_type)) {
+            range_gen = view_gen.GetRangeGen(gen_type);
+            hazard = DetectAttachmentHazard(range_gen, current_usage, attachment_access, queue_id);
+        }
+        return hazard;
     } else {
         uint32_t view_index = 0;
         while (view_mask) {
