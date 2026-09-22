@@ -74,6 +74,9 @@ bool RenderingAttachment::CanOptimizeDrawAccess() const {
 }
 
 ImageRangeGen RenderingAttachment::GetRenderAreaRangeGen(const VkRect2D& render_area) const {
+    if (!view) {
+        return {};
+    }
     VkImageAspectFlags override_aspect_flags = 0;
     if (type == AttachmentType::kDepth) {
         override_aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT;
