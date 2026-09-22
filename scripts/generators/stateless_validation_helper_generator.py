@@ -628,7 +628,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # NOTE: property structs are no longer checked. Previously we only checked if the corresponding extension was supported
         # by the physical device. Implementations are supposed to ignore unknown pNext values and it is low consequence to query
         # for unknown properties. https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/9302
-        property_structs = [x for x in extended_structs if x.extends == ["VkPhysicalDeviceProperties2"]]
+        property_structs = [x for x in extended_structs if x.extends == ["VkPhysicalDeviceProperties2"] and x.returnedOnly]
         other_structs = [x for x in extended_structs if x not in feature_structs and x not in property_structs and x.name not in self.structsWithManualChecks]
 
         out.append('''
@@ -1312,10 +1312,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         pNextCase += f'        // Validation code for {struct.name} structure members\n'
         pNextCase += f'        case {struct.sType}: {{ // Covers VUID-{struct.name}-sType-sType\n'
-
-        # TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9185
-        if struct.name == 'VkPhysicalDeviceLayeredApiPropertiesListKHR':
-            return ""
 
         tData = TemplateData(
             funcName = struct.name,

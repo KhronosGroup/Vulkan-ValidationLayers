@@ -1351,8 +1351,7 @@ TEST_F(NegativeOther, PhysicalDeviceLayeredApiVulkanPropertiesKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9185
-TEST_F(NegativeOther, DISABLED_PhysicalDeviceLayeredApiVulkanPropertiesPNext) {
+TEST_F(NegativeOther, PhysicalDeviceLayeredApiVulkanPropertiesPNext) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_7_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance7);
@@ -1370,6 +1369,28 @@ TEST_F(NegativeOther, DISABLED_PhysicalDeviceLayeredApiVulkanPropertiesPNext) {
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-pNext-pNext");
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-sType-sType");
     api_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+    vk::GetPhysicalDeviceProperties2(Gpu(), &phys_dev_props_2);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeOther, PhysicalDeviceLayeredApiVulkanPropertiesDuplicatePNext) {
+    TEST_DESCRIPTION("Same struct twice in a VkPhysicalDeviceLayeredApiPropertiesKHR pNext chain");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_7_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance7);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceLayeredApiVulkanPropertiesKHR api_vulkan_props_2 = vku::InitStructHelper();
+    VkPhysicalDeviceLayeredApiVulkanPropertiesKHR api_vulkan_props = vku::InitStructHelper(&api_vulkan_props_2);
+    VkPhysicalDeviceLayeredApiPropertiesKHR api_props = vku::InitStructHelper(&api_vulkan_props);
+
+    VkPhysicalDeviceLayeredApiPropertiesListKHR api_prop_lists = vku::InitStructHelper();
+    api_prop_lists.layeredApiCount = 1;
+    api_prop_lists.pLayeredApis = &api_props;
+
+    VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&api_prop_lists);
+
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-sType-unique");
     vk::GetPhysicalDeviceProperties2(Gpu(), &phys_dev_props_2);
     m_errorMonitor->VerifyFound();
 }

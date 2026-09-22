@@ -4633,6 +4633,17 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceHostImageCopyProperties structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_PROPERTIES: {  // Covers
+                                                                              // VUID-VkPhysicalDeviceHostImageCopyProperties-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceHostImageCopyProperties);
+                VkPhysicalDeviceHostImageCopyProperties* structure = (VkPhysicalDeviceHostImageCopyProperties*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::identicalMemoryTypeRequirements),
+                                       structure->identicalMemoryTypeRequirements);
+            }
+        } break;
+
         // No Validation code for VkSubresourceHostMemcpySize structure members  -- Covers
         // VUID-VkSubresourceHostMemcpySize-sType-sType
 
@@ -5411,6 +5422,9 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkDeviceFaultShaderAbortMessageInfoKHR structure members  -- Covers
         // VUID-VkDeviceFaultShaderAbortMessageInfoKHR-sType-sType
 
+        // No Validation code for VkPhysicalDeviceShaderAbortPropertiesKHR structure members  -- Covers
+        // VUID-VkPhysicalDeviceShaderAbortPropertiesKHR-sType-sType
+
         // No Validation code for VkSurfaceProtectedCapabilitiesKHR structure members  -- Covers
         // VUID-VkSurfaceProtectedCapabilitiesKHR-sType-sType
 
@@ -5934,6 +5948,34 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
 
         // No Validation code for VkVideoFormatAV1QuantizationMapPropertiesKHR structure members  -- Covers
         // VUID-VkVideoFormatAV1QuantizationMapPropertiesKHR-sType-sType
+
+        // Validation code for VkPhysicalDeviceLayeredApiPropertiesListKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_PROPERTIES_LIST_KHR: {  // Covers
+                                                                                   // VUID-VkPhysicalDeviceLayeredApiPropertiesListKHR-sType-sType
+            if (true /* exception where we do not want to check for is_const_param */) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceLayeredApiPropertiesListKHR);
+                VkPhysicalDeviceLayeredApiPropertiesListKHR* structure = (VkPhysicalDeviceLayeredApiPropertiesListKHR*)header;
+                skip |= ValidateStructTypeArray(
+                    pNext_loc.dot(Field::layeredApiCount), pNext_loc.dot(Field::pLayeredApis), structure->layeredApiCount,
+                    structure->pLayeredApis, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_PROPERTIES_KHR, false, false,
+                    "VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-sType-sType", kVUIDUndefined, kVUIDUndefined);
+
+                if (structure->pLayeredApis != nullptr) {
+                    for (uint32_t layeredApiIndex = 0; layeredApiIndex < structure->layeredApiCount; ++layeredApiIndex) {
+                        [[maybe_unused]] const Location pLayeredApis_loc = pNext_loc.dot(Field::pLayeredApis, layeredApiIndex);
+                        constexpr std::array<VkStructureType, 1> allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR = {
+                            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_VULKAN_PROPERTIES_KHR};
+
+                        skip |= ValidateStructPnext(pLayeredApis_loc, structure->pLayeredApis[layeredApiIndex].pNext,
+                                                    allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR.size(),
+                                                    allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR.data(),
+                                                    GeneratedVulkanHeaderVersion,
+                                                    "VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-pNext-pNext",
+                                                    "VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-sType-unique", false);
+                    }
+                }
+            }
+        } break;
 
         // No Validation code for VkPhysicalDeviceLayeredApiVulkanPropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDeviceLayeredApiVulkanPropertiesKHR-sType-sType
@@ -8489,6 +8531,9 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // No Validation code for VkPhysicalDeviceDescriptorBufferTensorPropertiesARM structure members  -- Covers
+        // VUID-VkPhysicalDeviceDescriptorBufferTensorPropertiesARM-sType-sType
+
         // No Validation code for VkDescriptorGetTensorInfoARM structure members  -- Covers
         // VUID-VkDescriptorGetTensorInfoARM-sType-sType
 
@@ -8745,6 +8790,18 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
 
         // No Validation code for VkExternalFormatQNX structure members  -- Covers VUID-VkExternalFormatQNX-sType-sType
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+        // Validation code for VkPhysicalDeviceTileMemoryHeapPropertiesQCOM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_MEMORY_HEAP_PROPERTIES_QCOM: {  // Covers
+                                                                                    // VUID-VkPhysicalDeviceTileMemoryHeapPropertiesQCOM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTileMemoryHeapPropertiesQCOM);
+                VkPhysicalDeviceTileMemoryHeapPropertiesQCOM* structure = (VkPhysicalDeviceTileMemoryHeapPropertiesQCOM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::queueSubmitBoundary), structure->queueSubmitBoundary);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileBufferTransfers), structure->tileBufferTransfers);
+            }
+        } break;
 
         // No Validation code for VkTileMemoryRequirementsQCOM structure members  -- Covers
         // VUID-VkTileMemoryRequirementsQCOM-sType-sType
@@ -9074,6 +9131,9 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                                        structure->tilingControl, "VUID-VkImageTilingControlCreateInfoEXT-tilingControl-parameter");
             }
         } break;
+
+        // No Validation code for VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentPropertiesVALVE structure members  -- Covers
+        // VUID-VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentPropertiesVALVE-sType-sType
 
         // No Validation code for VkBufferDeviceAddressAlignmentAllocateInfoVALVE structure members  -- Covers
         // VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-sType-sType
