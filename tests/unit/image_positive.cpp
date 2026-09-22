@@ -1441,6 +1441,43 @@ TEST_F(PositiveImage, ImageBlockMatchWindowWithClampToEdge) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveImage, ExtendedUsageUnsupportedUsageBit) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3737");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::textureCompressionBC);
+    RETURN_IF_SKIP(Init());
+
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_BC1_RGBA_UNORM_BLOCK, &format_props);
+    if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) {
+        GTEST_SKIP() << "BC1 already supports STORAGE, nothing for VK_IMAGE_CREATE_EXTENDED_USAGE_BIT to relax";
+    }
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags =
+        VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.extent = {32, 32, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    VkImageViewUsageCreateInfo view_usage_ci = vku::InitStructHelper();
+    view_usage_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper(&view_usage_ci);
+    view_ci.image = image;
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView view(*m_device, view_ci);
+}
+
 TEST_F(PositiveImage, ImageTilingControl) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_TILING_CONTROL_EXTENSION_NAME);
