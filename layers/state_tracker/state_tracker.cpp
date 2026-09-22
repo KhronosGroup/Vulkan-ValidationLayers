@@ -7382,7 +7382,7 @@ void DeviceState::PostCallRecordWriteSamplerDescriptorsEXT(VkDevice device, uint
     for (uint32_t i = 0; i < samplerCount; i++) {
         const VkHostAddressRangeEXT& host_range = pDescriptors[i];
 
-        const VkDeviceSize descriptor_size = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize;
+        const VkDeviceSize descriptor_size = phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorSize;
         const uint64_t key = descriptor_hashing->Hash(host_range.address, descriptor_size);
 
         if (const auto* debug_info = vku::FindStructInPNextChain<VkDebugUtilsObjectNameInfoEXT>(pSamplers[i].pNext)) {

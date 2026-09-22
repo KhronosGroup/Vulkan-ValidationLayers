@@ -99,7 +99,7 @@ struct DumpInfo {
 
     DumpInfo(GpuDump& dev_data, const MappingInfo& mapping_info, const vvl::CommandBuffer::DescriptorHeap& heap)
         : dev_data(dev_data),
-          heap_props(dev_data.phys_dev_ext_props.descriptor_heap_props),
+          heap_props(dev_data.phys_dev_ext_props.descriptor_heap_props_ext),
           resource_variable(*mapping_info.resource_variable),
           is_sampler(resource_variable.is_sampler),
           is_embedded_sampler(GetEmbeddedSampler(*mapping_info.mapping) != nullptr),
@@ -1237,7 +1237,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
 
                         VkDeviceAddress next_index_address = dump.sampler_range.begin + final_offset;
                         if (!IsPointerAligned(next_index_address,
-                                              dev_data.phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment)) {
+                                              dev_data.phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorAlignment)) {
                             bad_alignment_indexes.emplace_back(i);
                         }
 
@@ -1551,7 +1551,7 @@ struct UntypedContext {
           device_state(*dev_data.device_state),
           module(module),
           entrypoint(entrypoint),
-          props(dev_data.phys_dev_ext_props.descriptor_heap_props) {
+          props(dev_data.phys_dev_ext_props.descriptor_heap_props_ext) {
         if (module.static_data_.has_untyped_pointer_function_params) {
             uint32_t current_function = 0;
             uint32_t param_index = 0;

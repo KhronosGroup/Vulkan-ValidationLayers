@@ -500,7 +500,7 @@ StatelessDeviceData::StatelessDeviceData(DispatchInstance* instance, VkPhysicalD
                                              &phys_dev_ext_props.micromap_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_tensors, &phys_dev_ext_props.tensor_properties);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_heap,
-                                             &phys_dev_ext_props.descriptor_heap_props);
+                                             &phys_dev_ext_props.descriptor_heap_props_ext);
     if (IsExtEnabled(extensions.vk_arm_tensors)) {
         instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_heap,
                                                  &phys_dev_ext_props.descriptor_heap_tensor_props);

@@ -2161,7 +2161,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
             }
 
             if (cb_state.descriptor_heap.sampler_reserved.distance() <
-                phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded) {
+                phys_dev_ext_props.descriptor_heap_props_ext.minSamplerHeapReservedRangeWithEmbedded) {
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11375),
                                  cb_state.GetObjectList(bind_point), loc,
                                  "The shader %s uses %s which is an embedded sampler set with pMappings[%" PRIu32
@@ -2171,7 +2171,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
                                  entry_point.Describe().c_str(), resource_variable.DescribeDescriptor().c_str(), i,
                                  String(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source)),
                                  cb_state.descriptor_heap.sampler_reserved.distance(),
-                                 phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded,
+                                 phys_dev_ext_props.descriptor_heap_props_ext.minSamplerHeapReservedRangeWithEmbedded,
                                  module_state.DescribeInstruction(*type).c_str());
             }
         }
