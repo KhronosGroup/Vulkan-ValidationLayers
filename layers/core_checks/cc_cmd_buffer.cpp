@@ -122,7 +122,7 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer& cb_state, 
         ss << "was recorded but now has become invalid to use ";
     }
 
-    ss << "because the following objects bound to the command buffer were invalidated\n";
+    ss << "because the following objects bound to the command buffer were invalidated:\n";
     LogObjectList objlist(cb_state.Handle());
     bool print_internal_device_range = false;
     for (const auto& entry : cb_state.broken_bindings) {
@@ -130,7 +130,7 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer& cb_state, 
             print_internal_device_range = true;
             continue;
         }
-        ss << " " << FormatHandle(entry.first) << " was ";
+        ss << "- " << FormatHandle(entry.first) << " was ";
         if (entry.first.type == kVulkanObjectTypeDescriptorSet) {
             ss << "destroyed or updated without UPDATE_AFTER_BIND\n";
         } else if (entry.first.type == kVulkanObjectTypeCommandBuffer) {
@@ -141,6 +141,10 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer& cb_state, 
 
         for (const auto& obj : entry.second.object_list) {
             objlist.add(obj);
+            if (obj == entry.first || obj.type == kVulkanObjectTypeInternalDeviceRange || obj.handle == 0) {
+                continue;
+            }
+            ss << "   which was used by " << FormatHandle(obj) << "\n";
         }
     }
 
