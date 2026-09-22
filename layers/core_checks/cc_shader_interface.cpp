@@ -316,6 +316,9 @@ bool CoreChecks::ValidateShaderInputAttachmentRenderPass(const spirv::Module& mo
 
     const auto rpci = rp_state.create_info.ptr();
     const uint32_t subpass = pipeline.Subpass();
+    if (subpass >= rpci->subpassCount) {
+        return skip;  // validated elsewhere
+    }
     const auto subpass_description = rpci->pSubpasses[subpass];
     const auto input_attachments = subpass_description.pInputAttachments;
 

@@ -3279,13 +3279,26 @@ TEST_F(NegativePipeline, ShaderTileImage) {
 }
 
 TEST_F(NegativePipeline, PipelineSubpassOutOfBounds) {
-    TEST_DESCRIPTION("Create pipeline with subpass index larger than number of subpasses in render pass");
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+        layout(location=0) out vec4 color;
+        void main() { color = subpassLoad(x); }
+    )glsl";
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const vkt::DescriptorSetLayout dsl(*m_device, {binding});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
+
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.subpass = 4u;
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.gp_ci_.subpass = 256;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06046");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
