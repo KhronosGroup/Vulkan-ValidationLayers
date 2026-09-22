@@ -420,8 +420,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                 "VUID-VkExportMetalObjectsInfoEXT-pNext-06800", device, error_obj.location,
                                 "pNext chain contains a VkExportMetalTextureInfoEXT structure with image = "
                                 "%s, and plane = %s, but image was created with format %s, which has exactly 2 planes and plane "
-                                "cannot"
-                                "be VK_IMAGE_ASPECT_PLANE_2_BIT",
+                                "cannot be VK_IMAGE_ASPECT_PLANE_2_BIT",
                                 FormatHandle(metal_texture_ptr->image).c_str(), string_VkImageAspectFlags(image_plane).c_str(),
                                 string_VkFormat(image_info->GetFormat()));
                         }
@@ -459,8 +458,7 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
                                              "with imageView = "
                                              "%s, and plane = %s, but imageView was created with format %s, which has exactly 2 "
                                              "planes and plane "
-                                             "cannot"
-                                             "be VK_IMAGE_ASPECT_PLANE_2_BIT",
+                                             "cannot be VK_IMAGE_ASPECT_PLANE_2_BIT",
                                              FormatHandle(metal_texture_ptr->imageView).c_str(),
                                              string_VkImageAspectFlags(image_plane).c_str(),
                                              string_VkFormat(image_view_info->create_info.format));
@@ -598,7 +596,10 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocat
         (import_memory_metal_info->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLHEAP_BIT_EXT)) {
         skip |= LogError("VUID-VkImportMemoryMetalHandleInfoEXT-handleType-10410", device,
                          allocate_info_loc.pNext(Struct::VkImportMemoryMetalHandleInfoEXT, Field::handleType),
-                         "current value is %s", string_VkExternalMemoryHandleTypeFlagBits(import_memory_metal_info->handleType));
+                         "is %s, but must be VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT, "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT, or "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLHEAP_BIT_EXT.",
+                         string_VkExternalMemoryHandleTypeFlagBits(import_memory_metal_info->handleType));
         return skip;
     }
 
@@ -608,8 +609,10 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocat
     // operations on buffers.
     if (import_memory_metal_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT) {
         if (allocate_info.allocationSize != 0) {
-            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-10397", device, allocate_info_loc.dot(Field::allocationSize),
-                             "is %" PRId64 ", but must be 0 when importing a VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT handle.", allocate_info.allocationSize);
+            skip |=
+                LogError("VUID-VkMemoryAllocateInfo-pNext-10397", device, allocate_info_loc.dot(Field::allocationSize),
+                         "is %" PRIu64 ", but must be 0 when importing a VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT handle.",
+                         allocate_info.allocationSize);
         }
 
         if (dedicated_allocation_info == nullptr) {
@@ -622,7 +625,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocat
         // Unsure if there should be a VUID that enforces image to not be NULL when importing a MTLTEXTURE type
         if (dedicated_allocation_info->image == VK_NULL_HANDLE) {
             skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-10395", device,
-                             allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                             allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
                              "must be a valid image handle.");
             // Early out since there's no image in VkMemoryDedicatedAllocateInfoKHR.
             return skip;
@@ -642,7 +645,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocat
         if ((external_image_format_properties.externalMemoryProperties.externalMemoryFeatures &
              VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) == 0u) {
             skip |= LogError("VUID-VkImportMemoryMetalHandleInfoEXT-handleType-10408", device,
-                             allocate_info_loc.dot(Struct::VkImportMemoryMetalHandleInfoEXT, Field::handleType),
+                             allocate_info_loc.pNext(Struct::VkImportMemoryMetalHandleInfoEXT, Field::handleType),
                              "does not support importing image with format %s", string_VkFormat(image_format));
         }
     }
@@ -658,13 +661,13 @@ bool CoreChecks::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const V
     ASSERT_AND_RETURN_SKIP(memory);
     auto export_memory_allocate_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory->safe_allocate_info.pNext);
     if (export_memory_allocate_info == nullptr) {
-        skip |= LogError("VUID-VkMemoryGetMetalHandleInfoEXT-memory-10413", device,
-                         get_metal_handle_info.dot(Field::memory).dot(Field::pNext),
-                         "device memory missing VkExportMemoryAllocateInfo at creation");
+        skip |= LogError("VUID-VkMemoryGetMetalHandleInfoEXT-memory-10413", device, get_metal_handle_info.dot(Field::memory),
+                         "(%s) was not allocated with a VkExportMemoryAllocateInfo in the VkMemoryAllocateInfo pNext chain.",
+                         FormatHandle(pGetMetalHandleInfo->memory).c_str());
     } else if ((export_memory_allocate_info->handleTypes & pGetMetalHandleInfo->handleType) == 0u) {
         skip |=
             LogError("VUID-VkMemoryGetMetalHandleInfoEXT-handleType-10414", device, get_metal_handle_info.dot(Field::handleType),
-                     "device memory was created with (%s) handle types. Missing %s type",
+                     "device memory was created with handle types (%s), which does not include %s.",
                      string_VkExternalMemoryHandleTypeFlags(export_memory_allocate_info->handleTypes).c_str(),
                      string_VkExternalMemoryHandleTypeFlagBits(pGetMetalHandleInfo->handleType));
     }
@@ -674,7 +677,10 @@ bool CoreChecks::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const V
         (pGetMetalHandleInfo->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLHEAP_BIT_EXT)) {
         skip |=
             LogError("VUID-VkMemoryGetMetalHandleInfoEXT-handleType-10415", device, get_metal_handle_info.dot(Field::handleType),
-                     "current value is %s", string_VkExternalMemoryHandleTypeFlagBits(pGetMetalHandleInfo->handleType));
+                     "is %s, but must be VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT, "
+                     "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT, or "
+                     "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLHEAP_BIT_EXT.",
+                     string_VkExternalMemoryHandleTypeFlagBits(pGetMetalHandleInfo->handleType));
     }
     return skip;
 }
@@ -690,7 +696,10 @@ bool CoreChecks::PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice devic
         (handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLHEAP_BIT_EXT)) {
         skip |=
             LogError("VUID-vkGetMemoryMetalHandlePropertiesEXT-handleType-10417", device, error_obj.location.dot(Field::handleType),
-                     "current value is %s", string_VkExternalMemoryHandleTypeFlagBits(handleType));
+                     "is %s, but must be VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT, "
+                     "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT, or "
+                     "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLHEAP_BIT_EXT.",
+                     string_VkExternalMemoryHandleTypeFlagBits(handleType));
     }
 
     return skip;

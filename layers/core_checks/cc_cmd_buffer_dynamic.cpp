@@ -540,7 +540,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         LogObjectList objlist(last_bound_state.cb_state.Handle());
         skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::BIND_VERTEX_BUFFERS_3_STRIDE_13118), objlist, loc,
                          "vkCmdBindVertexBuffers3KHR() was called with at least one of VkBindVertexBuffer3InfoKHR::setStride being "
-                         "VK_TRUE, the pipeline %s was created without VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE or "
+                         "VK_TRUE, but the pipeline %s was created without VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE or "
                          "VK_DYNAMIC_STATE_VERTEX_INPUT_EXT dynamic states",
                          FormatHandle(last_bound_state.pipeline_state->Handle()).c_str());
     }
@@ -721,7 +721,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
         const uint32_t max_inherited = uint32_t(cb_sub_state.viewport.inherited_depths.size());
         if (viewport_count > max_inherited) {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::STATE_INHERITED_07850), objlist, loc,
-                             "Pipeline requires more viewports (%" PRIu32 ".) than inherited (viewportDepthCount = %" PRIu32 ".).",
+                             "Pipeline requires more viewports (%" PRIu32 ") than inherited (viewportDepthCount = %" PRIu32 ").",
                              viewport_count, max_inherited);
         }
     }
@@ -1056,7 +1056,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                     LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_MASK_07472),
                              cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                              "Currently bound pipeline was created with VkPipelineMultisampleStateCreateInfo::rasterizationSamples "
-                             "%s are greater than samples set with vkCmdSetSampleMaskEXT() were %s.%s",
+                             "(%s) which is greater than the samples set with vkCmdSetSampleMaskEXT() (%s).%s",
                              string_VkSampleCountFlagBits(pipeline_state->MultisampleState()->rasterizationSamples),
                              string_VkSampleCountFlagBits(cb_state.dynamic_state_value.samples_mask_samples),
                              cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT).c_str());
@@ -1064,8 +1064,8 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
         } else if (cb_state.dynamic_state_value.samples_mask_samples < cb_state.dynamic_state_value.rasterization_samples) {
             skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::SAMPLE_MASK_07473),
                              cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                             "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() %s are greater than samples "
-                             "set with vkCmdSetSampleMaskEXT() were %s.%s",
+                             "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() (%s) is greater than the samples "
+                             "set with vkCmdSetSampleMaskEXT() (%s).%s",
                              string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
                              string_VkSampleCountFlagBits(cb_state.dynamic_state_value.samples_mask_samples),
                              cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT).c_str());
@@ -1108,8 +1108,8 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
             if (depth_read && dyn_depth_write_enable && cb_state.dynamic_state_value.depth_write_enable) {
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DEPTH_ENABLE_08715),
                                  cb_state.GetObjectList(VK_SHADER_STAGE_FRAGMENT_BIT), loc,
-                                 "Fragment shader contains OpDepthAttachmentReadEXT, but depthWriteEnable parameter in the last "
-                                 "call to vkCmdSetDepthWriteEnable is not false.");
+                                 "Fragment shader contains OpDepthAttachmentReadEXT, but the depthWriteEnable parameter in the "
+                                 "last call to vkCmdSetDepthWriteEnable is not VK_FALSE.");
             }
 
             if (stencil_read && dyn_stencil_write_mask &&
@@ -1380,7 +1380,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
             vvl::ActionVUID vuid =
                 has_pipeline ? vvl::ActionVUID::ALPHA_TO_COVERAGE_COMPONENT_08919 : vvl::ActionVUID::ALPHA_COMPONENT_WORD_08920;
             skip |= LogError(CreateActionVuid(loc.function, vuid), objlist, loc,
-                             "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound "
+                             "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to VK_TRUE but the bound "
                              "fragment shader doesn't declare a variable that covers Location 0, Component 3 (alpha channel).");
         }
     }

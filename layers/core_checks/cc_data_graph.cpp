@@ -212,13 +212,13 @@ bool CoreChecks::ValidateOpticalFlowFlags(const VkDataGraphPipelineOpticalFlowCr
     if (optical_flow_ci.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM && !any_queue_supports_hint) {
         skip |= LogError(
             "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flags-09974", objList, optical_flow_ci_loc.dot(Field::flags),
-            "(%s) includes VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM which is not supported by the physical device.\n",
+            "(%s) includes VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_HINT_BIT_ARM which is not supported by the physical device.",
             string_VkDataGraphOpticalFlowCreateFlagsARM(optical_flow_ci.flags).c_str());
     }
     if (optical_flow_ci.flags & VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM && !any_queue_supports_cost) {
         skip |= LogError(
             "VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-flags-09975", objList, optical_flow_ci_loc.dot(Field::flags),
-            "(%s) includes VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM which is not supported by the physical device.\n",
+            "(%s) includes VK_DATA_GRAPH_OPTICAL_FLOW_CREATE_ENABLE_COST_BIT_ARM which is not supported by the physical device.",
             string_VkDataGraphOpticalFlowCreateFlagsARM(optical_flow_ci.flags).c_str());
     }
 
@@ -300,7 +300,7 @@ bool CoreChecks::ValidateOpticalFlowGridSizes(const VkDataGraphPipelineOpticalFl
     const VkDataGraphOpticalFlowGridSizeFlagsARM output_grid_size = optical_flow_ci.outputGridSize;
     if (hint_grid_size != 0 && hint_grid_size != output_grid_size) {
         skip |= LogError("VUID-VkDataGraphPipelineOpticalFlowCreateInfoARM-hintGridSize-09973", device,
-                         optical_flow_ci_loc.dot(Field::hintGridSize), "(%s) is not the same as outputGridSize (%s).\n",
+                         optical_flow_ci_loc.dot(Field::hintGridSize), "(%s) is not the same as outputGridSize (%s).",
                          string_VkDataGraphOpticalFlowGridSizeFlagsARM(hint_grid_size).c_str(),
                          string_VkDataGraphOpticalFlowGridSizeFlagsARM(output_grid_size).c_str());
     }
@@ -976,7 +976,7 @@ bool CoreChecks::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandB
             skip |= LogError(
                 "VUID-vkCmdDispatchDataGraphARM-pInfo-09964", objlist,
                 error_obj.location.dot(Field::pInfo).pNext(Struct::VkDataGraphPipelineOpticalFlowDispatchInfoARM, Field::flags),
-                "contain disallowed bits (%s).",
+                "contains disallowed bits (%s).",
                 string_VkDataGraphOpticalFlowExecuteFlagsARM(optical_flow_di->flags & mask).c_str());
         }
     }

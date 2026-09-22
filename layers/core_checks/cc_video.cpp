@@ -379,7 +379,7 @@ bool CoreChecks::ValidateVideoEncodeRateControlInfoH264(const VkVideoEncodeRateC
     if (rc_info_h264->idrPeriod != 0 && rc_info_h264->idrPeriod < rc_info_h264->gopFrameCount) {
         skip |= LogError(
             "VUID-VkVideoEncodeH264RateControlInfoKHR-idrPeriod-08284", cmdbuf, rc_info_h264_loc.dot(Field::idrPeriod),
-            "(%" PRIu32 ") is not zero and the specified IDR period smaller than the GOP size specified in %s (%" PRIu32 ").",
+            "(%" PRIu32 ") is not zero and the specified IDR period is smaller than the GOP size specified in %s (%" PRIu32 ").",
             rc_info_h264->idrPeriod, rc_info_h264_loc.dot(Field::gopFrameCount).Fields().c_str(), rc_info_h264->gopFrameCount);
     }
 
@@ -448,7 +448,7 @@ bool CoreChecks::ValidateVideoEncodeRateControlInfoH265(const VkVideoEncodeRateC
     if (rc_info_h265->idrPeriod != 0 && rc_info_h265->idrPeriod < rc_info_h265->gopFrameCount) {
         skip |= LogError(
             "VUID-VkVideoEncodeH265RateControlInfoKHR-idrPeriod-08295", cmdbuf, rc_info_h265_loc.dot(Field::idrPeriod),
-            "(%" PRIu32 ") is not zero and the specified IDR period smaller than the GOP size specified in %s (%" PRIu32 ").",
+            "(%" PRIu32 ") is not zero and the specified IDR period is smaller than the GOP size specified in %s (%" PRIu32 ").",
             rc_info_h265->idrPeriod, rc_info_h265_loc.dot(Field::gopFrameCount).Fields().c_str(), rc_info_h265->gopFrameCount);
     }
 
@@ -507,7 +507,8 @@ bool CoreChecks::ValidateVideoEncodeRateControlInfoAV1(const VkVideoEncodeRateCo
     if (rc_info_av1->keyFramePeriod != 0 && rc_info_av1->keyFramePeriod < rc_info_av1->gopFrameCount) {
         skip |= LogError(
             "VUID-VkVideoEncodeAV1RateControlInfoKHR-keyFramePeriod-10297", cmdbuf, rc_info_av1_loc.dot(Field::keyFramePeriod),
-            "(%" PRIu32 ") is not zero and the specified key frame period smaller than the GOP size specified in %s (%" PRIu32 ").",
+            "(%" PRIu32 ") is not zero and the specified key frame period is smaller than the GOP size specified in %s (%" PRIu32
+            ").",
             rc_info_av1->keyFramePeriod, rc_info_av1_loc.dot(Field::gopFrameCount).Fields().c_str(), rc_info_av1->gopFrameCount);
     }
 
@@ -1705,7 +1706,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH264(const vvl::CommandBuffer& cb_state,
                 skip |= LogError("VUID-vkCmdDecodeVideoKHR-pNext-10402", cb_state.Handle(),
                                  loc.pNext(Struct::VkVideoDecodeH264InlineSessionParametersInfoKHR, Field::pStdPPS),
                                  "seq_parameter_set_id (%" PRIu32 ") and pic_parameter_set_id (%" PRIu32
-                                 ") does not match the "
+                                 ") do not match the "
                                  "seq_parameter_set_id (%" PRIu32 ") and pic_parameter_set_id (%" PRIu32 ") specified in %s.",
                                  inline_session_params->pStdPPS->seq_parameter_set_id,
                                  inline_session_params->pStdPPS->pic_parameter_set_id, std_picture_info->seq_parameter_set_id,
@@ -1884,7 +1885,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const vvl::CommandBuffer& cb_state,
                     LogError("VUID-vkCmdDecodeVideoKHR-pNext-10405", cb_state.Handle(),
                              loc.pNext(Struct::VkVideoDecodeH265InlineSessionParametersInfoKHR, Field::pStdSPS),
                              "sps_video_parameter_set_id (%" PRIu32 ") and sps_seq_parameter_set_id (%" PRIu32
-                             ") does not match the "
+                             ") do not match the "
                              "sps_video_parameter_set_id (%" PRIu32 ") and pps_seq_parameter_set_id (%" PRIu32 ") specified in %s.",
                              inline_session_params->pStdSPS->sps_video_parameter_set_id,
                              inline_session_params->pStdSPS->sps_seq_parameter_set_id, std_picture_info->sps_video_parameter_set_id,
@@ -1901,7 +1902,7 @@ bool CoreChecks::ValidateVideoDecodeInfoH265(const vvl::CommandBuffer& cb_state,
                                  "sps_video_parameter_set_id (%" PRIu32 "), pps_seq_parameter_set_id (%" PRIu32
                                  ") and pps_pic_parameter_set_id (%" PRIu32
                                  ") "
-                                 "does not match the "
+                                 "do not match the "
                                  "sps_video_parameter_set_id (%" PRIu32 "), pps_seq_parameter_set_id (%" PRIu32
                                  ") and pps_pic_parameter_set_id (%" PRIu32
                                  ") "
@@ -2396,7 +2397,7 @@ bool CoreChecks::ValidateVideoEncodeInfoH264(const vvl::CommandBuffer& cb_state,
             different_constant_qp_per_slice) {
             const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-constantQp-08271", objlist, loc.function,
-                             "constantQp does not match across the elements of %s"
+                             "constantQp does not match across the elements of %s "
                              "but per-slice constant QP values are not supported by the video "
                              "profile (%s) %s was created with.",
                              slice_list_loc.Fields().c_str(), string_VideoProfileDesc(*vs_state.profile).c_str(),
@@ -2599,8 +2600,8 @@ bool CoreChecks::ValidateVideoEncodeH265PicType(const vvl::VideoSession& vs_stat
         pic_type == STD_VIDEO_H265_PICTURE_TYPE_B) {
         skip |= LogError("VUID-vkCmdEncodeVideoKHR-maxBPictureL0ReferenceCount-08346", vs_state.Handle(), loc,
                          "%s is STD_VIDEO_H265_PICTURE_TYPE_B but B pictures "
-                         "are not supported by the H.265 profile %s was created with.",
-                         where, FormatHandle(vs_state).c_str());
+                         "are not supported by the video profile (%s) %s was created with.",
+                         where, string_VideoProfileDesc(*vs_state.profile).c_str(), FormatHandle(vs_state).c_str());
     }
 
     return skip;
@@ -4277,7 +4278,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
                 if (memory_bind_indices.find(mem_bind_index) != memory_bind_indices.end()) {
                     skip |= LogError("VUID-vkBindVideoSessionMemoryKHR-memoryBindIndex-07196", videoSession,
                                      error_obj.location.dot(Field::pBindSessionMemoryInfos, i).dot(Field::memoryBindIndex),
-                                     "%" PRIu32 " is not unique.", mem_bind_index);
+                                     "(%" PRIu32 ") is not unique.", mem_bind_index);
                     break;
                 }
                 memory_bind_indices.emplace(mem_bind_index);
@@ -5691,7 +5692,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                          "the bound video picture resource specified in "
                                          "pDecodeInfo->pReferenceSlots[%" PRIu32
                                          "].pPictureResource is not currently "
-                                         "associated with the DPB slot index specifed in "
+                                         "associated with the DPB slot index specified in "
                                          "pDecodeInfo->pReferenceSlots[%" PRIu32 "].slotIndex (%d).",
                                          i, i, pDecodeInfo->pReferenceSlots[i].slotIndex);
                     }
@@ -6158,7 +6159,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                          "the bound video picture resource specified in "
                                          "pEncodeInfo->pReferenceSlots[%" PRIu32
                                          "].pPictureResource is not currently "
-                                         "associated with the DPB slot index specifed in "
+                                         "associated with the DPB slot index specified in "
                                          "pEncodeInfo->pReferenceSlots[%" PRIu32 "].slotIndex (%d).",
                                          i, i, pEncodeInfo->pReferenceSlots[i].slotIndex);
                     }

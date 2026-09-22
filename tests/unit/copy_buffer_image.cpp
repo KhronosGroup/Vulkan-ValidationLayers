@@ -2306,7 +2306,7 @@ TEST_F(NegativeCopyBufferImage, DepthStencilImageCopyNoGraphicsQueueFlags) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-07739");
     if (!ds_supports_copy_on_compute_queue) {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-commandBuffer-11790");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-11778");
     }
     vk::CmdCopyBufferToImage(command_buffer, buffer, ds_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_errorMonitor->VerifyFound();
@@ -3505,10 +3505,10 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-commandBuffer-10216");
     if (!ds_supports_copy_on_transfer_queue && !is_compute_queue) {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-11779");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-commandBuffer-11791");
     }
     if (!ds_supports_copy_on_compute_queue && is_compute_queue) {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-11778");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-commandBuffer-11790");
     }
     vk::CmdCopyImageToBuffer(command_buffer, src_ds_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1u, &buffer_image_copy);
     m_errorMonitor->VerifyFound();
@@ -5106,7 +5106,7 @@ TEST_F(NegativeCopyBufferImage, CopyDepthOnComputeQueue) {
     image_buffer_info.pRegions = &ds_region;
 
     cb.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage2-commandBuffer-11778");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer2-commandBuffer-11790");
     vk::CmdCopyImageToBuffer2(cb, &image_buffer_info);
     m_errorMonitor->VerifyFound();
 }
@@ -5176,7 +5176,7 @@ TEST_F(NegativeCopyBufferImage, CopyDepthToBufferOnTransferQueue) {
     image_buffer_info.pRegions = &ds_region;
 
     cb.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage2-commandBuffer-11779");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer2-commandBuffer-11791");
     vk::CmdCopyImageToBuffer2(cb, &image_buffer_info);
     m_errorMonitor->VerifyFound();
 }
@@ -5248,7 +5248,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferToDepthOnComputeQueue) {
         VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2, nullptr, buffer_256k, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region2};
 
     cb.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer2-commandBuffer-11790");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage2-commandBuffer-11778");
     vk::CmdCopyBufferToImage2(cb, &copy_buffer_to_image_info2);
     m_errorMonitor->VerifyFound();
 }
@@ -5320,7 +5320,7 @@ TEST_F(NegativeCopyBufferImage, CopyBufferToDepthOnTransferQueue) {
         VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2, nullptr, buffer_256k, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region2};
 
     cb.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer2-commandBuffer-11791");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage2-commandBuffer-11779");
     vk::CmdCopyBufferToImage2(cb, &copy_buffer_to_image_info2);
     m_errorMonitor->VerifyFound();
 }

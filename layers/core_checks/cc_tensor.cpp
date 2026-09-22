@@ -284,7 +284,7 @@ bool CoreChecks::PreCallValidateCreateTensorViewARM(VkDevice device, const VkTen
     if ((pCreateInfo->flags & VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM) != 0) {
         if (!enabled_features.descriptorBufferCaptureReplay) {
             skip |= LogError("VUID-VkTensorViewCreateInfoARM-flags-09745", device, create_info_loc.dot(Field::flags),
-                             "(%s) contains VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY BIT but the "
+                             "(%s) contains VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM but the "
                              "descriptorBufferCaptureReplay feature is not enabled",
                              string_VkTensorViewCreateFlagsARM(pCreateInfo->flags).c_str());
         }
@@ -294,7 +294,7 @@ bool CoreChecks::PreCallValidateCreateTensorViewARM(VkDevice device, const VkTen
         opaque_capture_descriptor_buffer &&
         !(pCreateInfo->flags & VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM)) {
         skip |= LogError("VUID-VkTensorViewCreateInfoARM-pNext-09746", device, create_info_loc.dot(Field::flags),
-                         "(%s) is missing VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but "
+                         "(%s) is missing VK_TENSOR_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM but "
                          "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in the pNext chain.",
                          string_VkTensorViewCreateFlagsARM(pCreateInfo->flags).c_str());
     }

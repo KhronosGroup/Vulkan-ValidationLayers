@@ -132,7 +132,7 @@ bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, co
     bool skip = false;
     uint32_t count = 1 << device_state->physical_device_count;
     if (count <= deviceMask) {
-        skip |= LogError(vuid, objlist, loc, "(0x%" PRIx32 ") is invalid, Physical device count is %" PRIu32 ".", deviceMask,
+        skip |= LogError(vuid, objlist, loc, "(0x%" PRIx32 ") is invalid, the physical device count is %" PRIu32 ".", deviceMask,
                          device_state->physical_device_count);
     }
     return skip;
@@ -543,7 +543,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
 
             if (device_queue_info.queue_count <= queueIndex) {
                 skip |= LogError(
-                    "VUID-VkDeviceQueueInfo2-queueIndex-01843", device, queue_info_loc.dot(Field::queueFamilyIndex),
+                    "VUID-VkDeviceQueueInfo2-queueIndex-01843", device, queue_info_loc.dot(Field::queueIndex),
                     "(%" PRIu32 ") is not less than the number of queues requested from [queueFamilyIndex (%" PRIu32
                     "), flags (%s)] combination when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
                     "] (requested %" PRIu32 " queues).",
@@ -723,7 +723,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
         if (src == dst) {
             const Location loc(Func::vkMergeValidationCachesEXT, Field::dstCache);
             skip |= LogError("VUID-vkMergeValidationCachesEXT-dstCache-01536", device, loc,
-                             "(0x%" PRIx64 ") must not appear in pSrcCaches array.", HandleToUint64(dstCache));
+                             "(%s) must not appear in the pSrcCaches array.", FormatHandle(dstCache).c_str());
             result = VK_ERROR_VALIDATION_FAILED_EXT;
         }
         if (!skip) {
@@ -1062,7 +1062,7 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location& loc) const {
     }
 
     if ((physical_device_state->supported_queues & flags) == 0) {
-        skip |= LogError(vuid, device, loc, "device only supports (%s) but require one of (%s).",
+        skip |= LogError(vuid, device, loc, "device only supports (%s) but requires one of (%s).",
                          string_VkQueueFlags(physical_device_state->supported_queues).c_str(), string_VkQueueFlags(flags).c_str());
     }
 
@@ -1149,7 +1149,7 @@ bool CoreChecks::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const
 
     if (pointerCount != 1) {
         skip |= LogError("VUID-VkPipelineBinaryCreateInfoKHR-pKeysAndDataInfo-09619", device, create_info_loc,
-                         "One and only one of pKeysAndDataInfo, pipeline, or pPipelineCreateInfo must be non_NULL.");
+                         "One and only one of pKeysAndDataInfo, pipeline, or pPipelineCreateInfo must be non-NULL.");
     }
 
     return skip;

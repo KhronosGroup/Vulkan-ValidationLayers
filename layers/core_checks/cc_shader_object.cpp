@@ -268,7 +268,7 @@ bool CoreChecks::ValidateCreateShadersTessellation(const vvl::TessellationExecut
     if (tesc.patch_size != spirv::kInvalidValue && tese.patch_size != spirv::kInvalidValue && tesc.patch_size != tese.patch_size) {
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08871", device, loc,
                          "The OutputVertices (patch size) specified in tessellation control shader (%" PRIu32
-                         ") does not match the spacing in "
+                         ") does not match the OutputVertices (patch size) in "
                          "tessellation evaluation shader (%" PRIu32 ").",
                          tesc.patch_size, tese.patch_size);
     }
@@ -400,7 +400,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         // Used instead of calling ValidateDeviceQueueSupport()
         const char* vuid = has_compute ? "VUID-vkCreateShadersEXT-stage-09670" : "VUID-vkCreateShadersEXT-stage-09671";
         skip |=
-            LogError(vuid, device, error_obj.location, "device only supports (%s) but require %s.",
+            LogError(vuid, device, error_obj.location, "device only supports (%s) but requires %s.",
                      string_VkQueueFlags(physical_device_state->supported_queues).c_str(), string_VkQueueFlags(queue_flag).c_str());
     }
 
@@ -631,16 +631,18 @@ bool CoreChecks::ValidateDrawShaderObjectBoundShader(const LastBound& last_bound
                      "be bound to the fragment stage)");
     }
     if (enabled_features.taskShader && !last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::TASK)) {
-        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::TASK_SHADER_08689), cb_state.Handle(), loc,
-                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                         "VK_SHADER_STAGE_TASK_BIT. (If the taskShader is enabled, the stage needs to be provided, it can be bound "
-                         "with VK_NULL_HANDLE)");
+        skip |=
+            LogError(CreateActionVuid(loc.function, vvl::ActionVUID::TASK_SHADER_08689), cb_state.Handle(), loc,
+                     "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                     "VK_SHADER_STAGE_TASK_BIT_EXT. (If the taskShader is enabled, the stage needs to be provided, it can be bound "
+                     "with VK_NULL_HANDLE)");
     }
     if (enabled_features.meshShader && !last_bound_state.IsValidShaderObjectOrNullBound(ShaderObjectStage::MESH)) {
-        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::MESH_SHADER_08690), cb_state.Handle(), loc,
-                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                         "VK_SHADER_STAGE_MESH_BIT. (If the meshShader is enabled, the stage needs to be provided, it can be bound "
-                         "with VK_NULL_HANDLE)");
+        skip |=
+            LogError(CreateActionVuid(loc.function, vvl::ActionVUID::MESH_SHADER_08690), cb_state.Handle(), loc,
+                     "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                     "VK_SHADER_STAGE_MESH_BIT_EXT. (If the meshShader is enabled, the stage needs to be provided, it can be bound "
+                     "with VK_NULL_HANDLE)");
     }
 
     return skip;
