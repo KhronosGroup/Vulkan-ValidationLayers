@@ -1355,7 +1355,7 @@
                                                 "BUTTON1": {
                                                     "type": "CANCEL",
                                                     "changes": [
-                                                        { "setting": { "key": "gpu_dump_copy_memory_indirect", "value": false }}
+                                                        { "setting": { "key": "gpu_dump_device_generated_commands", "value": false }}
                                                     ]
                                                 }
                                             }
@@ -1514,7 +1514,9 @@
                                             ]
                                         },
                                         "BUTTON1": {
-                                            "type": "CANCEL"
+                                            "type": "CANCEL",
+                                            "changes": [
+                                            ]
                                         }
                                     }
                                 }
@@ -1628,7 +1630,9 @@
                             "actions": {
                                 "default": "BUTTON0",
                                 "BUTTON0": {
-                                    "type": "OK"
+                                    "type": "OK",
+                                    "changes": [
+                                    ]
                                 },
                                 "BUTTON1": {
                                     "type": "CANCEL",
