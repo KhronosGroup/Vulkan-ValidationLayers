@@ -28,16 +28,15 @@
 
 namespace syncval {
 
-vvl::Func ErrorMessages::AddReplayInfo(const SyncEnvironment& env, const HazardResult& hazard,
-                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+vvl::Func ErrorMessages::AddReplayInfo(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                        AdditionalMessageInfo& additional_info) const {
-    if (replay_tag == kInvalidTag) {
-        return loc.function;
+    if (!reporter.IsReplay()) {
+        return reporter.loc.function;
     }
-    const ResourceUsageInfo recorded_usage_info = cb_context.GetResourceUsageInfo(ResourceUsageTagEx{replay_tag});
+    const ResourceUsageInfo recorded_usage_info = reporter.cb_context.GetResourceUsageInfo(ResourceUsageTagEx{reporter.replay_tag});
 
     additional_info.message_type_override = "SubmitTimeError";
-    additional_info.properties.Add(kPropertyCommandBufferIndex, loc.index);
+    additional_info.properties.Add(kPropertyCommandBufferIndex, reporter.loc.index);
     if (!recorded_usage_info.debug_region_name.empty()) {
         additional_info.properties.Add(kPropertyDebugRegion, recorded_usage_info.debug_region_name);
     }
@@ -48,12 +47,12 @@ vvl::Func ErrorMessages::AddReplayInfo(const SyncEnvironment& env, const HazardR
         ss << "[" << recorded_usage_info.debug_region_name << "]";
     }
     if (env.handle.type == kVulkanObjectTypeQueue) {
-        ss << " (from " << validator_.FormatHandle(cb_context.GetCBState().Handle());
+        ss << " (from " << validator_.FormatHandle(reporter.cb_context.GetCBState().Handle());
         ss << " submitted on the current ";
         ss << validator_.FormatHandle(env.handle) << ")";
     } else {  // primary command buffer executes secondary one
         assert(env.handle.type == kVulkanObjectTypeCommandBuffer);
-        ss << " (from the secondary " << validator_.FormatHandle(cb_context.GetCBState().Handle()) << ")";
+        ss << " (from the secondary " << validator_.FormatHandle(reporter.cb_context.GetCBState().Handle()) << ")";
     }
     additional_info.access_initiator = ss.str();
 
@@ -96,11 +95,10 @@ std::string ErrorMessages::Error(const SyncEnvironment& env, const HazardResult&
     return message;
 }
 
-std::string ErrorMessages::BufferError(const SyncEnvironment& env, const HazardResult& hazard,
-                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+std::string ErrorMessages::BufferError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                        const std::string& resource_description, const AccessRange range) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     std::ostringstream ss;
     ss << "\nBuffer access region: {\n";
@@ -111,12 +109,11 @@ std::string ErrorMessages::BufferError(const SyncEnvironment& env, const HazardR
     return Error(env, hazard, command, resource_description, "BufferError", additional_info);
 }
 
-std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard,
-                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                            const std::string& resource_description, uint32_t region_index,
                                            AccessRange range) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
@@ -131,12 +128,11 @@ std::string ErrorMessages::BufferCopyError(const SyncEnvironment& env, const Haz
 }
 
 std::string ErrorMessages::AccelerationStructureError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                      const Location& loc, const std::string& resource_description,
+                                                      const ErrorReporter& reporter, const std::string& resource_description,
                                                       AccessRange range, VkAccelerationStructureKHR as,
                                                       const Location& as_location) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     std::ostringstream ss;
     ss << "The buffer backs ";
@@ -155,12 +151,11 @@ std::string ErrorMessages::AccelerationStructureError(const SyncEnvironment& env
 }
 
 std::string ErrorMessages::ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                     const Location& loc, const std::string& resource_description,
+                                                     const ErrorReporter& reporter, const std::string& resource_description,
                                                      uint32_t region_index, const VkOffset3D& offset, const VkExtent3D& extent,
                                                      const VkImageSubresourceLayers& subresource) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     const char* action = nullptr;
     const char* message_type = nullptr;
@@ -188,8 +183,7 @@ std::string ErrorMessages::ImageCopyResolveBlitError(const SyncEnvironment& env,
     return Error(env, hazard, command, resource_description, message_type, additional_info);
 }
 
-std::string ErrorMessages::ImageClearError(const SyncEnvironment& env, const HazardResult& hazard,
-                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+std::string ErrorMessages::ImageClearError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                            const std::string& resource_description, uint32_t subresource_range_index,
                                            const VkImageSubresourceRange& subresource_range) const {
     std::ostringstream ss;
@@ -198,7 +192,7 @@ std::string ErrorMessages::ImageClearError(const SyncEnvironment& env, const Haz
     ss << "}\n";
 
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     additional_info.message_end_text = ss.str();
     additional_info.properties.Add(kPropertyRegionIndex, subresource_range_index);
 
@@ -232,14 +226,13 @@ static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& 
 }
 
 std::string ErrorMessages::BufferDescriptorError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                 const Location& loc, const std::string& resource_description,
+                                                 const ErrorReporter& reporter, const std::string& resource_description,
                                                  const vvl::Pipeline& pipeline, uint32_t set_number,
                                                  const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                                  uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                                  VkShaderStageFlagBits shader_stage) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
@@ -251,14 +244,13 @@ std::string ErrorMessages::BufferDescriptorError(const SyncEnvironment& env, con
 }
 
 std::string ErrorMessages::ImageDescriptorError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                const Location& loc, const std::string& resource_description,
+                                                const ErrorReporter& reporter, const std::string& resource_description,
                                                 const vvl::Pipeline& pipeline, uint32_t set_number,
                                                 const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                                 uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                                 VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
@@ -271,12 +263,11 @@ std::string ErrorMessages::ImageDescriptorError(const SyncEnvironment& env, cons
 }
 
 std::string ErrorMessages::AccelerationStructureDescriptorError(
-    const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-    const Location& loc, const std::string& resource_description, const vvl::Pipeline& pipeline, uint32_t set_number,
-    const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type, uint32_t descriptor_binding,
-    uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
+    const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter, const std::string& resource_description,
+    const vvl::Pipeline& pipeline, uint32_t set_number, const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+    uint32_t descriptor_binding, uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     std::ostringstream ss;
     PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
@@ -289,8 +280,7 @@ std::string ErrorMessages::AccelerationStructureDescriptorError(
 }
 
 std::string ErrorMessages::ClearAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                const Location& loc, const std::string& resource_description,
+                                                const ErrorReporter& reporter, const std::string& resource_description,
                                                 VkImageAspectFlags clear_aspects, uint32_t clear_rect_index,
                                                 const VkClearRect& clear_rect) const {
     std::ostringstream ss;
@@ -302,7 +292,7 @@ std::string ErrorMessages::ClearAttachmentError(const SyncEnvironment& env, cons
     ss << "}\n";
 
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     additional_info.properties.Add(kPropertyImageAspects, string_VkImageAspectFlags(clear_aspects));
     additional_info.access_action = "clears";
     additional_info.message_end_text = ss.str();
@@ -311,18 +301,17 @@ std::string ErrorMessages::ClearAttachmentError(const SyncEnvironment& env, cons
 }
 
 std::string ErrorMessages::RenderPassAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                     const Location& loc, const std::string& resource_description) const {
+                                                     const ErrorReporter& reporter, const std::string& resource_description) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     return Error(env, hazard, command, resource_description, "RenderPassAttachmentError", additional_info);
 }
 
 std::string ErrorMessages::DynamicRenderingAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                           const Location& loc, const std::string& resource_description) const {
+                                                           const ErrorReporter& reporter,
+                                                           const std::string& resource_description) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     return Error(env, hazard, command, resource_description, "DynamicRenderingAttachmentError", additional_info);
 }
 
@@ -353,46 +342,43 @@ static void CheckForLoadOpDontCareInsight(VkAttachmentLoadOp load_op, bool is_co
 }
 
 std::string ErrorMessages::BeginRenderingError(const SyncEnvironment& env, const HazardResult& hazard,
-                                               const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                               const Location& loc, const std::string& resource_description,
+                                               const ErrorReporter& reporter, const std::string& resource_description,
                                                VkAttachmentLoadOp load_op) const {
     AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyLoadOp, string_VkAttachmentLoadOp(load_op));
     additional_info.access_action = GetLoadOpActionName(load_op);
 
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     return Error(env, hazard, command, resource_description, "BeginRenderingError", additional_info);
 }
 
 std::string ErrorMessages::EndRenderingResolveError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                    const Location& loc, const std::string& resource_description,
+                                                    const ErrorReporter& reporter, const std::string& resource_description,
                                                     VkResolveModeFlagBits resolve_mode, bool resolve_write) const {
     AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyResolveMode, string_VkResolveModeFlagBits(resolve_mode));
     additional_info.access_action = resolve_write ? "writes to single sample resolve attachment" : "reads multisample attachment";
 
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     return Error(env, hazard, command, resource_description, "EndRenderingResolveError", additional_info);
 }
 
 std::string ErrorMessages::EndRenderingStoreError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                  const Location& loc, const std::string& resource_description,
+                                                  const ErrorReporter& reporter, const std::string& resource_description,
                                                   VkAttachmentStoreOp store_op) const {
     AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyStoreOp, string_VkAttachmentStoreOp(store_op));
 
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     return Error(env, hazard, command, resource_description, "EndRenderingStoreError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassLoadOpError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                 const Location& loc, const std::string& resource_description, uint32_t subpass,
-                                                 uint32_t attachment, VkAttachmentLoadOp load_op, bool is_color) const {
+                                                 const ErrorReporter& reporter, const std::string& resource_description,
+                                                 uint32_t subpass, uint32_t attachment, VkAttachmentLoadOp load_op,
+                                                 bool is_color) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     const char* load_op_str = string_VkAttachmentLoadOp(load_op);
     additional_info.properties.Add(kPropertyLoadOp, load_op_str);
@@ -402,12 +388,11 @@ std::string ErrorMessages::RenderPassLoadOpError(const SyncEnvironment& env, con
 }
 
 std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                                   const CommandBufferContext& cb_context,
-                                                                   ResourceUsageTag replay_tag, const Location& loc,
+                                                                   const ErrorReporter& reporter,
                                                                    const std::string& resource_description,
                                                                    VkAttachmentLoadOp load_op, bool is_color) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     const char* load_op_str = string_VkAttachmentLoadOp(load_op);
     additional_info.properties.Add(kPropertyLoadOp, load_op_str);
@@ -418,33 +403,30 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const SyncEnv
 }
 
 std::string ErrorMessages::RenderPassResolveError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                  const Location& loc, const std::string& resource_description) const {
+                                                  const ErrorReporter& reporter, const std::string& resource_description) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     return Error(env, hazard, command, resource_description, "RenderPassResolveError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassStoreOpError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                  const Location& loc, const std::string& resource_description,
+                                                  const ErrorReporter& reporter, const std::string& resource_description,
                                                   VkAttachmentStoreOp store_op) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     const char* store_op_str = string_VkAttachmentStoreOp(store_op);
     additional_info.properties.Add(kPropertyStoreOp, store_op_str);
     return Error(env, hazard, command, resource_description, "RenderPassStoreOpError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                           const Location& loc, const std::string& resource_description,
+                                                           const ErrorReporter& reporter, const std::string& resource_description,
                                                            VkImageLayout old_layout, VkImageLayout new_layout) const {
     const char* old_layout_str = string_VkImageLayout(old_layout);
     const char* new_layout_str = string_VkImageLayout(new_layout);
 
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
 
     additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
     additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
@@ -453,13 +435,12 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const SyncEnvironment
 }
 
 std::string ErrorMessages::RenderPassLayoutTransitionVsResolveError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                                    const CommandBufferContext& cb_context,
-                                                                    ResourceUsageTag replay_tag, const Location& loc,
+                                                                    const ErrorReporter& reporter,
                                                                     const std::string& resource_description,
                                                                     VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
                                                                     VkImageLayout new_layout, uint32_t resolve_subpass) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     additional_info.properties.Add(kPropertyOldLayout, string_VkImageLayout(old_layout));
     additional_info.properties.Add(kPropertyNewLayout, string_VkImageLayout(new_layout));
     additional_info.access_action = "performs image layout transition during " + validator_.FormatHandle(render_pass_handle);
@@ -469,12 +450,12 @@ std::string ErrorMessages::RenderPassLayoutTransitionVsResolveError(const SyncEn
 }
 
 std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                                const Location& loc, const std::string& resource_description,
+                                                                const ErrorReporter& reporter,
+                                                                const std::string& resource_description,
                                                                 VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
                                                                 VkImageLayout new_layout) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     additional_info.properties.Add(kPropertyOldLayout, string_VkImageLayout(old_layout));
     additional_info.properties.Add(kPropertyNewLayout, string_VkImageLayout(new_layout));
     additional_info.access_action = "performs final image layout transition during " + validator_.FormatHandle(render_pass_handle);
@@ -482,11 +463,11 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const SyncEnviro
 }
 
 std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
-    const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-    const Location& loc, const std::string& resource_description, VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
-    VkImageLayout new_layout, uint32_t store_resolve_subpass) const {
+    const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter, const std::string& resource_description,
+    VulkanTypedHandle render_pass_handle, VkImageLayout old_layout, VkImageLayout new_layout,
+    uint32_t store_resolve_subpass) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     additional_info.properties.Add(kPropertyOldLayout, string_VkImageLayout(old_layout));
     additional_info.properties.Add(kPropertyNewLayout, string_VkImageLayout(new_layout));
     additional_info.access_action = "performs final image layout transition during " + validator_.FormatHandle(render_pass_handle);
@@ -496,12 +477,10 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
                  additional_info);
 }
 
-std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard,
-                                             const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                             const Location& loc, const std::string& resource_description,
-                                             const SyncImageBarrier& barrier) const {
+std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                                             const std::string& resource_description, const SyncImageBarrier& barrier) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     // Keep ImageBarrierError for event waits during replay for message-type compatibility.
     if (IsValueIn(command, {vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR})) {
         additional_info.message_type_override = nullptr;
@@ -529,11 +508,10 @@ std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueB
     return Error(batch_context.GetSyncEnvironment(), hazard, command, resource_description, "PresentError", additional_info);
 }
 
-std::string ErrorMessages::VideoError(const SyncEnvironment& env, const HazardResult& hazard,
-                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+std::string ErrorMessages::VideoError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                       const std::string& resource_description) const {
     AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, cb_context, replay_tag, loc, additional_info);
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
     return Error(env, hazard, command, resource_description, "VideoError", additional_info);
 }
 

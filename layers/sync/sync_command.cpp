@@ -90,17 +90,17 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
     bool skip = false;
     const CommandData& command_data = cb_context.GetCommandData();
     CommandReplayContext replay_context(env, destination_access_context, base_tag);
+    ErrorReporter reporter{cb_context, loc};
 
-    auto replay_common = [&skip, &command_data, &env, &cb_context, base_tag, &loc](
-                             const auto& storage, AccessContext& access_context, ResourceUsageTag replay_tag) {
+    auto replay_common = [&skip, &command_data, &reporter, &env, base_tag](const auto& storage, AccessContext& access_context) {
         const auto command = storage.MakeCommand(command_data);
-        skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
-        const ResourceUsageTag tag = base_tag + replay_tag;
+        skip |= command.Validate(env, access_context, reporter);
+        const ResourceUsageTag tag = base_tag + reporter.replay_tag;
         command.Apply(env, tag, access_context);
     };
 
-    auto replay_draw = [&skip, &command_data, &replay_context, &env, &cb_context, base_tag, &loc](
-                           const auto& storage, AccessContext& access_context, ResourceUsageTag replay_tag) {
+    auto replay_draw = [&skip, &command_data, &replay_context, &reporter, &env, base_tag](const auto& storage,
+                                                                                          AccessContext& access_context) {
         RenderPassAccessContext* render_pass_context =
             replay_context.render_pass_context ? &*replay_context.render_pass_context : nullptr;
         const RenderingInstance* rendering_instance =
@@ -121,59 +121,59 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
             command.attachment_accesses.render_pass_instance_id = replay_context.rendering_instance_id;
         }
 
-        skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
-        const ResourceUsageTag tag = base_tag + replay_tag;
+        skip |= command.Validate(env, access_context, reporter);
+        const ResourceUsageTag tag = base_tag + reporter.replay_tag;
         command.Apply(env, tag, access_context);
     };
 
     for (const CommandEntry& entry : cb_context.GetCommands()) {
-        const ResourceUsageTag replay_tag = entry.tag;
+        reporter.replay_tag = entry.tag;
         const uint32_t index = entry.command_ref.index;
         AccessContext& access_context = replay_context.CurrentAccessContext();
 
         switch (entry.command_ref.type) {
             case CommandType::kBufferCopy: {
-                replay_common(command_data.buffer_copy_commands[index], access_context, replay_tag);
+                replay_common(command_data.buffer_copy_commands[index], access_context);
                 continue;
             }
             case CommandType::kBufferAccess: {
-                replay_common(command_data.buffer_access_commands[index], access_context, replay_tag);
+                replay_common(command_data.buffer_access_commands[index], access_context);
                 continue;
             }
             case CommandType::kImageCopy: {
-                replay_common(command_data.image_copy_commands[index], access_context, replay_tag);
+                replay_common(command_data.image_copy_commands[index], access_context);
                 continue;
             }
             case CommandType::kBufferImageCopy: {
-                replay_common(command_data.buffer_image_copy_commands[index], access_context, replay_tag);
+                replay_common(command_data.buffer_image_copy_commands[index], access_context);
                 continue;
             }
             case CommandType::kImageBlit: {
-                replay_common(command_data.image_blit_commands[index], access_context, replay_tag);
+                replay_common(command_data.image_blit_commands[index], access_context);
                 continue;
             }
             case CommandType::kImageResolve: {
-                replay_common(command_data.image_resolve_commands[index], access_context, replay_tag);
+                replay_common(command_data.image_resolve_commands[index], access_context);
                 continue;
             }
             case CommandType::kImageClear: {
-                replay_common(command_data.image_clear_commands[index], access_context, replay_tag);
+                replay_common(command_data.image_clear_commands[index], access_context);
                 continue;
             }
             case CommandType::kPipelineBarrier: {
-                replay_common(command_data.barrier_commands[index], access_context, replay_tag);
+                replay_common(command_data.barrier_commands[index], access_context);
                 continue;
             }
             case CommandType::kSetEvent: {
-                replay_common(command_data.set_event_commands[index], access_context, replay_tag);
+                replay_common(command_data.set_event_commands[index], access_context);
                 continue;
             }
             case CommandType::kResetEvent: {
-                replay_common(command_data.reset_event_commands[index], access_context, replay_tag);
+                replay_common(command_data.reset_event_commands[index], access_context);
                 continue;
             }
             case CommandType::kWaitEvents: {
-                replay_common(command_data.wait_events_commands[index], access_context, replay_tag);
+                replay_common(command_data.wait_events_commands[index], access_context);
                 continue;
             }
             case CommandType::kBeginRendering: {
@@ -182,8 +182,8 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 command.rendering_instance.InitViewGens(replay_context.rendering_view_gens);
                 replay_context.rendering_instance = command.rendering_instance;
                 replay_context.rendering_instance_id = command.render_pass_instance_id;
-                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
-                command.Apply(env, base_tag + replay_tag, access_context);
+                skip |= command.Validate(env, access_context, reporter);
+                command.Apply(env, base_tag + reporter.replay_tag, access_context);
                 continue;
             }
             case CommandType::kEndRendering: {
@@ -191,89 +191,89 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                     continue;
                 }
                 const EndRenderingCommand command{*replay_context.rendering_instance, replay_context.rendering_instance_id};
-                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
-                command.Apply(env, base_tag + replay_tag, access_context);
+                skip |= command.Validate(env, access_context, reporter);
+                command.Apply(env, base_tag + reporter.replay_tag, access_context);
                 replay_context.rendering_instance.reset();
                 replay_context.rendering_view_gens.clear();
                 continue;
             }
             case CommandType::kBeginRenderPass: {
                 const auto command = command_data.begin_render_pass_commands[index].MakeCommand(command_data);
-                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
+                skip |= command.Validate(env, access_context, reporter);
                 replay_context.BeginRenderPass(command);
-                const ResourceUsageTag tag = base_tag + replay_tag;
+                const ResourceUsageTag tag = base_tag + reporter.replay_tag;
                 command.Apply(env, tag, *replay_context.render_pass_context);
                 continue;
             }
             case CommandType::kNextSubpass: {
                 const NextSubpassCommand command{};
-                skip |= command.Validate(env, *replay_context.render_pass_context, cb_context, replay_tag, loc);
+                skip |= command.Validate(env, *replay_context.render_pass_context, reporter);
                 replay_context.NextSubpass();
-                const ResourceUsageTag tag = base_tag + replay_tag;
+                const ResourceUsageTag tag = base_tag + reporter.replay_tag;
                 command.Apply(env, tag, *replay_context.render_pass_context);
                 continue;
             }
             case CommandType::kEndRenderPass: {
                 const EndRenderPassCommand command{};
-                skip |= command.Validate(env, *replay_context.render_pass_context, cb_context, replay_tag, loc);
-                const ResourceUsageTag tag = base_tag + replay_tag;
+                skip |= command.Validate(env, *replay_context.render_pass_context, reporter);
+                const ResourceUsageTag tag = base_tag + reporter.replay_tag;
                 command.Apply(env, tag, *replay_context.render_pass_context, destination_access_context);
                 replay_context.EndRenderPass();
                 continue;
             }
             case CommandType::kShaderAccess: {
-                replay_common(command_data.shader_access_commands[index], access_context, replay_tag);
+                replay_common(command_data.shader_access_commands[index], access_context);
                 continue;
             }
             case CommandType::kDispatchIndirect: {
-                replay_common(command_data.dispatch_indirect_commands[index], access_context, replay_tag);
+                replay_common(command_data.dispatch_indirect_commands[index], access_context);
                 continue;
             }
             case CommandType::kTraceRays: {
-                replay_common(command_data.trace_rays_commands[index], access_context, replay_tag);
+                replay_common(command_data.trace_rays_commands[index], access_context);
                 continue;
             }
             case CommandType::kDraw: {
-                replay_draw(command_data.draw_commands[index], access_context, replay_tag);
+                replay_draw(command_data.draw_commands[index], access_context);
                 continue;
             }
             case CommandType::kDrawMulti: {
-                replay_draw(command_data.draw_multi_commands[index], access_context, replay_tag);
+                replay_draw(command_data.draw_multi_commands[index], access_context);
                 continue;
             }
             case CommandType::kDrawIndirect: {
-                replay_draw(command_data.draw_indirect_commands[index], access_context, replay_tag);
+                replay_draw(command_data.draw_indirect_commands[index], access_context);
                 continue;
             }
             case CommandType::kDrawIndirectCount: {
-                replay_draw(command_data.draw_indirect_count_commands[index], access_context, replay_tag);
+                replay_draw(command_data.draw_indirect_count_commands[index], access_context);
                 continue;
             }
             case CommandType::kDrawMeshTasks: {
-                replay_draw(command_data.draw_mesh_tasks_commands[index], access_context, replay_tag);
+                replay_draw(command_data.draw_mesh_tasks_commands[index], access_context);
                 continue;
             }
             case CommandType::kBuildAccelerationStructures: {
-                replay_common(command_data.build_acceleration_structures_commands[index], access_context, replay_tag);
+                replay_common(command_data.build_acceleration_structures_commands[index], access_context);
                 continue;
             }
             case CommandType::kAccelerationStructureCopy: {
-                replay_common(command_data.acceleration_structure_copy_commands[index], access_context, replay_tag);
+                replay_common(command_data.acceleration_structure_copy_commands[index], access_context);
                 continue;
             }
             case CommandType::kVideo: {
-                replay_common(command_data.video_commands[index], access_context, replay_tag);
+                replay_common(command_data.video_commands[index], access_context);
                 continue;
             }
             case CommandType::kClearAttachments: {
                 auto command = command_data.clear_attachments_commands[index].MakeCommand(command_data);
                 command.render_pass_instance_id += replay_context.render_pass_instance_offset;
-                skip |= command.Validate(env, access_context, cb_context, replay_tag, loc);
-                command.Apply(env, base_tag + replay_tag, access_context);
+                skip |= command.Validate(env, access_context, reporter);
+                command.Apply(env, base_tag + reporter.replay_tag, access_context);
                 continue;
             }
             case CommandType::kQueryCopy: {
-                replay_common(command_data.query_copy_commands[index], access_context, replay_tag);
+                replay_common(command_data.query_copy_commands[index], access_context);
                 continue;
             }
         }
@@ -431,11 +431,11 @@ BufferCopyCommand::Storage BufferCopyCommand::MakeStorage(CommandData& command_d
 }
 
 bool BufferCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool BufferCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                 const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
@@ -443,20 +443,20 @@ bool BufferCopyCommand::Validate(const SyncEnvironment& env, const AccessContext
         const AccessRange src_range = MakeRange(src_buffer, region.src_offset, region.size);
         auto src_hazard = access_context.DetectHazard(src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
         if (src_hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, src_buffer.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, src_buffer.Handle());
             const std::string resource_description = validator.FormatHandle(src_buffer);
-            const std::string error = validator.error_messages_.BufferCopyError(
-                env, src_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), src_range);
-            skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
+            const std::string error = validator.error_messages_.BufferCopyError(env, src_hazard, reporter, resource_description,
+                                                                                uint32_t(region_index), src_range);
+            skip |= validator.SyncError(src_hazard.Hazard(), objlist, reporter.loc, error);
         }
         const AccessRange dst_range = MakeRange(dst_buffer, region.dst_offset, region.size);
         auto dst_hazard = access_context.DetectHazard(dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
         if (dst_hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, dst_buffer.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, dst_buffer.Handle());
             const std::string resource_description = validator.FormatHandle(dst_buffer);
-            const std::string error = validator.error_messages_.BufferCopyError(
-                env, dst_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), dst_range);
-            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
+            const std::string error = validator.error_messages_.BufferCopyError(env, dst_hazard, reporter, resource_description,
+                                                                                uint32_t(region_index), dst_range);
+            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, reporter.loc, error);
         }
         if (skip) {
             break;
@@ -490,11 +490,11 @@ bool BufferAccessCommand::Validate(const CommandBufferContext& cb_context, const
     // Buffer markers can execute inside a render pass and need its current subpass context,
     // but in other cases GetCbAccessContext() is sufficient
     const AccessContext& access_context = cb_context.GetCurrentAccessContext();
-    return Validate(cb_context.GetSyncEnvironment(), access_context, cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), access_context, ErrorReporter{cb_context, loc});
 }
 
 bool BufferAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                   const ErrorReporter& reporter) const {
     bool skip = false;
     const bool is_marker = (flags & SyncFlag::kMarker) != 0;
     HazardResult hazard;
@@ -509,16 +509,15 @@ bool BufferAccessCommand::Validate(const SyncEnvironment& env, const AccessConte
 
     const SyncValidator& validator = env.validator;
     LogObjectList objlist;
-    if (replay_tag == kInvalidTag && is_marker) {
+    if (!reporter.IsReplay() && is_marker) {
         objlist.add(buffer.Handle());
     } else {
-        objlist = BaseObjectList(env, cb_context, buffer.Handle());
+        objlist = BaseObjectList(env, reporter, buffer.Handle());
     }
     const char* buffer_name_prefix = GetBufferNamePrefix(buffer_name);
     const std::string resource_description = buffer_name_prefix + validator.FormatHandle(buffer.Handle());
-    const std::string error =
-        validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
-    return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    const std::string error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, range);
+    return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
 }
 
 void BufferAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
@@ -549,18 +548,16 @@ AccessRange StridedBufferAccessCommand::GetRange(uint32_t index) const {
 }
 
 bool StridedBufferAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                          const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                          const Location& loc) const {
+                                          const ErrorReporter& reporter) const {
     for (uint32_t i = 0; i < GetRangeCount(); i++) {
         const AccessRange range = GetRange(i);
         const HazardResult hazard = access_context.DetectHazard(buffer, access_index, range);
         if (hazard.IsHazard()) {
             const SyncValidator& validator = env.validator;
-            const LogObjectList objlist = BaseObjectList(env, cb_context, buffer.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, buffer.Handle());
             const std::string resource_description = GetBufferNamePrefix(buffer_name) + validator.FormatHandle(buffer.Handle());
-            const std::string error =
-                validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
-            return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+            const std::string error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, range);
+            return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
         }
     }
     return false;
@@ -594,11 +591,11 @@ ImageCopyCommand::Storage ImageCopyCommand::MakeStorage(CommandData& command_dat
 }
 
 bool ImageCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool ImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
@@ -606,22 +603,22 @@ bool ImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext&
         auto src_hazard = access_context.DetectHazard(src_image, RangeFromLayers(region.srcSubresource), region.srcOffset,
                                                       region.extent, SYNC_COPY_TRANSFER_READ);
         if (src_hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, src_image.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, src_image.Handle());
             const std::string resource_description = validator.FormatHandle(src_image);
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
-                env, src_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), region.srcOffset,
-                region.extent, region.srcSubresource);
-            skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
+                env, src_hazard, reporter, resource_description, uint32_t(region_index), region.srcOffset, region.extent,
+                region.srcSubresource);
+            skip |= validator.SyncError(src_hazard.Hazard(), objlist, reporter.loc, error);
         }
         auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), region.dstOffset,
                                                       region.extent, SYNC_COPY_TRANSFER_WRITE);
         if (dst_hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, dst_image.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, dst_image.Handle());
             const std::string resource_description = validator.FormatHandle(dst_image);
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
-                env, dst_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), region.dstOffset,
-                region.extent, region.dstSubresource);
-            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
+                env, dst_hazard, reporter, resource_description, uint32_t(region_index), region.dstOffset, region.extent,
+                region.dstSubresource);
+            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, reporter.loc, error);
         }
         if (skip) {
             break;
@@ -692,11 +689,11 @@ small_vector<VkImageBlit, 1> ImageBlitCommand::MakeRegions(vvl::span<const VkIma
 }
 
 bool ImageBlitCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool ImageBlitCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
@@ -706,24 +703,24 @@ bool ImageBlitCommand::Validate(const SyncEnvironment& env, const AccessContext&
         const auto src_hazard = access_context.DetectHazard(src_image, RangeFromLayers(region.srcSubresource), src_offset,
                                                             src_extent, SYNC_BLIT_TRANSFER_READ);
         if (src_hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, src_image.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, src_image.Handle());
             const std::string resource_description = validator.FormatHandle(src_image);
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
-                env, src_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), src_offset, src_extent,
+                env, src_hazard, reporter, resource_description, uint32_t(region_index), src_offset, src_extent,
                 region.srcSubresource);
-            skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
+            skip |= validator.SyncError(src_hazard.Hazard(), objlist, reporter.loc, error);
         }
         const VkOffset3D dst_offset = GetBlitOffset(region.dstOffsets);
         const VkExtent3D dst_extent = GetBlitExtent(region.dstOffsets);
         const auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), dst_offset,
                                                             dst_extent, SYNC_BLIT_TRANSFER_WRITE);
         if (dst_hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, dst_image.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, dst_image.Handle());
             const std::string resource_description = validator.FormatHandle(dst_image);
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
-                env, dst_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), dst_offset, dst_extent,
+                env, dst_hazard, reporter, resource_description, uint32_t(region_index), dst_offset, dst_extent,
                 region.dstSubresource);
-            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
+            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, reporter.loc, error);
         }
         if (skip) {
             break;
@@ -774,11 +771,11 @@ small_vector<VkImageResolve, 1> ImageResolveCommand::MakeRegions(vvl::span<const
 }
 
 bool ImageResolveCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool ImageResolveCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                   const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
@@ -786,22 +783,22 @@ bool ImageResolveCommand::Validate(const SyncEnvironment& env, const AccessConte
         auto src_hazard = access_context.DetectHazard(src_image, RangeFromLayers(region.srcSubresource), region.srcOffset,
                                                       region.extent, SYNC_RESOLVE_TRANSFER_READ);
         if (src_hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, src_image.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, src_image.Handle());
             const std::string resource_description = validator.FormatHandle(src_image);
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
-                env, src_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), region.srcOffset,
-                region.extent, region.srcSubresource);
-            skip |= validator.SyncError(src_hazard.Hazard(), objlist, loc, error);
+                env, src_hazard, reporter, resource_description, uint32_t(region_index), region.srcOffset, region.extent,
+                region.srcSubresource);
+            skip |= validator.SyncError(src_hazard.Hazard(), objlist, reporter.loc, error);
         }
         auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), region.dstOffset,
                                                       region.extent, SYNC_RESOLVE_TRANSFER_WRITE);
         if (dst_hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, dst_image.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, dst_image.Handle());
             const std::string resource_description = validator.FormatHandle(dst_image);
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
-                env, dst_hazard, cb_context, replay_tag, loc, resource_description, uint32_t(region_index), region.dstOffset,
-                region.extent, region.dstSubresource);
-            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, loc, error);
+                env, dst_hazard, reporter, resource_description, uint32_t(region_index), region.dstOffset, region.extent,
+                region.dstSubresource);
+            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, reporter.loc, error);
         }
         if (skip) {
             break;
@@ -839,21 +836,21 @@ ImageClearCommand::Storage ImageClearCommand::MakeStorage(CommandData& command_d
 }
 
 bool ImageClearCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool ImageClearCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                 const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
     for (const auto [range_index, range] : vvl::enumerate(ranges)) {
         const auto hazard = access_context.DetectHazard(image, range, SYNC_CLEAR_TRANSFER_WRITE);
         if (hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, image.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, image.Handle());
             const std::string resource_description = validator.FormatHandle(image);
-            const std::string error = validator.error_messages_.ImageClearError(env, hazard, cb_context, replay_tag, loc,
-                                                                                resource_description, uint32_t(range_index), range);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+            const std::string error = validator.error_messages_.ImageClearError(env, hazard, reporter, resource_description,
+                                                                                uint32_t(range_index), range);
+            skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
         }
     }
     return skip;
@@ -904,12 +901,11 @@ small_vector<VkBufferImageCopy, 1> BufferImageCopyCommand::MakeRegions(vvl::span
 }
 
 bool BufferImageCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool BufferImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                      const Location& loc) const {
+                                      const ErrorReporter& reporter) const {
     const SyncValidator& validator = env.validator;
 
     const auto validate_buffer = [&](uint32_t region_index, const VkBufferImageCopy& region, SyncAccessIndex buffer_access) {
@@ -918,10 +914,10 @@ bool BufferImageCopyCommand::Validate(const SyncEnvironment& env, const AccessCo
         if (!hazard.IsHazard()) {
             return false;
         }
-        const LogObjectList objlist = BaseObjectList(env, cb_context, buffer.Handle());
-        const std::string error = validator.error_messages_.BufferCopyError(env, hazard, cb_context, replay_tag, loc,
-                                                                            validator.FormatHandle(buffer), region_index, range);
-        return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+        const LogObjectList objlist = BaseObjectList(env, reporter, buffer.Handle());
+        const std::string error =
+            validator.error_messages_.BufferCopyError(env, hazard, reporter, validator.FormatHandle(buffer), region_index, range);
+        return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
     };
 
     const auto validate_image = [&](uint32_t region_index, const VkBufferImageCopy& region, SyncAccessIndex image_access) {
@@ -930,11 +926,11 @@ bool BufferImageCopyCommand::Validate(const SyncEnvironment& env, const AccessCo
         if (!hazard.IsHazard()) {
             return false;
         }
-        const LogObjectList objlist = BaseObjectList(env, cb_context, image.Handle());
-        const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
-            env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(image), region_index, region.imageOffset,
-            region.imageExtent, region.imageSubresource);
-        return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+        const LogObjectList objlist = BaseObjectList(env, reporter, image.Handle());
+        const std::string error =
+            validator.error_messages_.ImageCopyResolveBlitError(env, hazard, reporter, validator.FormatHandle(image), region_index,
+                                                                region.imageOffset, region.imageExtent, region.imageSubresource);
+        return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
     };
 
     bool skip = false;
@@ -983,11 +979,11 @@ BarrierCommand::Storage BarrierCommand::MakeStorage(CommandData& command_data) c
 }
 
 bool BarrierCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                              const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                              const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
@@ -1005,11 +1001,11 @@ bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& a
             image_barrier.subresource_range, can_transition_depth_slices, AccessContext::kDetectAll, env.queue_id);
 
         if (hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, image_state.Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, image_state.Handle());
             const std::string resource_description = validator.FormatHandle(image_state.Handle());
-            const std::string error = validator.error_messages_.ImageBarrierError(env, hazard, cb_context, replay_tag, loc,
-                                                                                  resource_description, image_barrier);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+            const std::string error =
+                validator.error_messages_.ImageBarrierError(env, hazard, reporter, resource_description, image_barrier);
+            skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
         }
     }
     return skip;
@@ -1027,13 +1023,13 @@ SetEventCommand::Storage SetEventCommand::MakeStorage(CommandData& command_data)
 }
 
 bool SetEventCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool SetEventCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                               const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                               const ErrorReporter& reporter) const {
     const Location command_loc(command);
-    const Location& error_loc = (replay_tag == kInvalidTag) ? loc : command_loc;
+    const Location& error_loc = reporter.IsReplay() ? command_loc : reporter.loc;
 
     return ValidateCmdSetEvent(env, event, src_exec_scope, error_loc);
 }
@@ -1056,13 +1052,13 @@ ResetEventCommand::Storage ResetEventCommand::MakeStorage(CommandData& command_d
 }
 
 bool ResetEventCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool ResetEventCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                 const ErrorReporter& reporter) const {
     const Location command_loc(command);
-    const Location& error_loc = replay_tag == kInvalidTag ? loc : command_loc;
+    const Location& error_loc = reporter.IsReplay() ? command_loc : reporter.loc;
     return ValidateCmdResetEvent(env, event, exec_scope, error_loc);
 }
 
@@ -1091,17 +1087,17 @@ WaitEventsCommand::Storage WaitEventsCommand::MakeStorage(CommandData& command_d
 }
 
 bool WaitEventsCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool WaitEventsCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                 const ErrorReporter& reporter) const {
     const Location command_loc(command);
-    const Location& error_loc = replay_tag == kInvalidTag ? loc : command_loc;
+    const Location& error_loc = reporter.IsReplay() ? command_loc : reporter.loc;
 
     bool skip = false;
     skip = ValidateCmdWaitEvents(env, events, error_loc);
-    skip |= DetectCmdWaitEventsImageBarrierHazard(env, access_context, cb_context, events, barrier_sets, replay_tag, loc);
+    skip |= DetectCmdWaitEventsImageBarrierHazard(env, access_context, events, barrier_sets, reporter);
     return skip;
 }
 
@@ -1131,13 +1127,12 @@ BeginRenderingCommand::Storage BeginRenderingCommand::MakeStorage(CommandData& c
 }
 
 bool BeginRenderingCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool BeginRenderingCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                     const Location& loc) const {
-    return rendering_instance.ValidateBeginRendering(env, access_context, cb_context, replay_tag, loc, render_pass_instance_id);
+                                     const ErrorReporter& reporter) const {
+    return rendering_instance.ValidateBeginRendering(env, access_context, reporter, render_pass_instance_id);
 }
 
 void BeginRenderingCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
@@ -1145,12 +1140,12 @@ void BeginRenderingCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Ac
 }
 
 bool EndRenderingCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool EndRenderingCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
-    return rendering_instance.ValidateEndRendering(env, access_context, cb_context, replay_tag, loc, render_pass_instance_id);
+                                   const ErrorReporter& reporter) const {
+    return rendering_instance.ValidateEndRendering(env, access_context, reporter, render_pass_instance_id);
 }
 
 void EndRenderingCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
@@ -1175,12 +1170,11 @@ BeginRenderPassCommand::Storage BeginRenderPassCommand::MakeStorage(CommandData&
 }
 
 bool BeginRenderPassCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool BeginRenderPassCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                      const Location& loc) const {
+                                      const ErrorReporter& reporter) const {
     bool skip = false;
     const uint32_t view_mask = render_pass.create_info.pSubpasses[0].viewMask;
 
@@ -1197,13 +1191,13 @@ bool BeginRenderPassCommand::Validate(const SyncEnvironment& env, const AccessCo
         RenderPassAccessContext::CreateAttachmentViewGen(render_pass, render_area, attachment_views);
 
     skip |= RenderPassAccessContext::ValidateLayoutTransitions(env, temp_context, render_pass, render_pass_instance_id, 0,
-                                                               view_mask, view_gens, cb_context, replay_tag, loc);
+                                                               view_mask, view_gens, reporter);
     if (!skip) {
         // Simulate initial layout transitions in the temporary context before validating load operations
         RenderPassAccessContext::RecordLayoutTransitions(render_pass, 0, view_gens, kInvalidTag, temp_context);
 
         skip |= RenderPassAccessContext::ValidateLoadOperation(env, temp_context, render_pass, render_pass_instance_id, 0,
-                                                               view_mask, view_gens, cb_context, replay_tag, loc);
+                                                               view_mask, view_gens, reporter);
     }
     return skip;
 }
@@ -1219,11 +1213,11 @@ bool NextSubpassCommand::Validate(const CommandBufferContext& cb_context, const 
     if (!render_pass_context) {
         return false;
     }
-    return Validate(cb_context.GetSyncEnvironment(), *render_pass_context, cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), *render_pass_context, ErrorReporter{cb_context, loc});
 }
 bool NextSubpassCommand::Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
-                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
-    return render_pass_context.ValidateNextSubpass(env, cb_context, replay_tag, loc);
+                                  const ErrorReporter& reporter) const {
+    return render_pass_context.ValidateNextSubpass(env, reporter);
 }
 
 void NextSubpassCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context) const {
@@ -1239,13 +1233,12 @@ bool EndRenderPassCommand::Validate(const CommandBufferContext& cb_context, cons
     if (!render_pass_context) {
         return false;
     }
-    return Validate(cb_context.GetSyncEnvironment(), *render_pass_context, cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), *render_pass_context, ErrorReporter{cb_context, loc});
 }
 
 bool EndRenderPassCommand::Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
-                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                    const Location& loc) const {
-    return render_pass_context.ValidateEndRenderPass(env, cb_context, replay_tag, loc);
+                                    const ErrorReporter& reporter) const {
+    return render_pass_context.ValidateEndRenderPass(env, reporter);
 }
 
 void EndRenderPassCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context,
@@ -1293,12 +1286,11 @@ ShaderAccessCommand::Storage ShaderAccessCommand::MakeStorage(CommandData& comma
 }
 
 bool ShaderAccessCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool ShaderAccessCommand::ValidateBufferShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
-                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                     const Location& loc, const BufferAccess& buffer_access) const {
+                                                     const ErrorReporter& reporter, const BufferAccess& buffer_access) const {
     HazardResult hazard = access_context.DetectHazard(*buffer_access.buffer, buffer_access.access_index, buffer_access.range);
     if (!hazard.IsHazard()) {
         return false;
@@ -1306,7 +1298,7 @@ bool ShaderAccessCommand::ValidateBufferShaderAccess(const SyncEnvironment& env,
     const SyncValidator& validator = env.validator;
     const DescriptorInfo& info = buffer_access.info;
 
-    LogObjectList objlist = BaseObjectList(env, cb_context, info.resource_handle);
+    LogObjectList objlist = BaseObjectList(env, reporter, info.resource_handle);
     if (info.resource_handle.type == kVulkanObjectTypeAccelerationStructureKHR) {
         objlist.add(buffer_access.buffer->Handle());
     }
@@ -1317,19 +1309,18 @@ bool ShaderAccessCommand::ValidateBufferShaderAccess(const SyncEnvironment& env,
     std::string error;
     if (info.resource_handle.type == kVulkanObjectTypeAccelerationStructureKHR) {
         error = validator.error_messages_.AccelerationStructureDescriptorError(
-            env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
-            info.descriptor_type, info.binding, info.array_element, info.stage);
+            env, hazard, reporter, resource_description, *pipeline, info.set, *info.descriptor_set, info.descriptor_type,
+            info.binding, info.array_element, info.stage);
     } else {
-        error = validator.error_messages_.BufferDescriptorError(env, hazard, cb_context, replay_tag, loc, resource_description,
-                                                                *pipeline, info.set, *info.descriptor_set, info.descriptor_type,
-                                                                info.binding, info.array_element, info.stage);
+        error = validator.error_messages_.BufferDescriptorError(env, hazard, reporter, resource_description, *pipeline, info.set,
+                                                                *info.descriptor_set, info.descriptor_type, info.binding,
+                                                                info.array_element, info.stage);
     }
-    return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
 }
 
 bool ShaderAccessCommand::ValidateImageShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
-                                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                    const Location& loc, const ImageViewAccess& image_access) const {
+                                                    const ErrorReporter& reporter, const ImageViewAccess& image_access) const {
     HazardResult hazard;
     if (image_access.access_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
         const AttachmentAccess attachment_access{AttachmentAccessType::Access, SyncOrdering::kRaster, render_pass_instance_id,
@@ -1345,29 +1336,29 @@ bool ShaderAccessCommand::ValidateImageShaderAccess(const SyncEnvironment& env, 
     const SyncValidator& validator = env.validator;
     const DescriptorInfo& info = image_access.info;
 
-    LogObjectList objlist = BaseObjectList(env, cb_context, info.resource_handle);
+    LogObjectList objlist = BaseObjectList(env, reporter, info.resource_handle);
     objlist.add(pipeline->Handle());
 
     std::string resource_description = validator.FormatHandle(info.resource_handle);
-    if (replay_tag != kInvalidTag && image_access.image_view->image_state) {
+    if (reporter.IsReplay() && image_access.image_view->image_state) {
         resource_description += " (" + validator.FormatHandle(image_access.image_view->image_state->Handle()) + ")";
     }
 
     const std::string error = validator.error_messages_.ImageDescriptorError(
-        env, hazard, cb_context, replay_tag, loc, resource_description, *pipeline, info.set, *info.descriptor_set,
-        info.descriptor_type, info.binding, info.array_element, info.stage, image_access.image_layout);
+        env, hazard, reporter, resource_description, *pipeline, info.set, *info.descriptor_set, info.descriptor_type, info.binding,
+        info.array_element, info.stage, image_access.image_layout);
 
-    return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
 }
 
 bool ShaderAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                   const ErrorReporter& reporter) const {
     bool skip = false;
     for (const BufferAccess& access : buffer_accesses) {
-        skip |= ValidateBufferShaderAccess(env, access_context, cb_context, replay_tag, loc, access);
+        skip |= ValidateBufferShaderAccess(env, access_context, reporter, access);
     }
     for (const ImageViewAccess& access : image_accesses) {
-        skip |= ValidateImageShaderAccess(env, access_context, cb_context, replay_tag, loc, access);
+        skip |= ValidateImageShaderAccess(env, access_context, reporter, access);
     }
     return skip;
 }
@@ -1408,15 +1399,14 @@ DispatchIndirectCommand::Storage DispatchIndirectCommand::MakeStorage(CommandDat
 }
 
 bool DispatchIndirectCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool DispatchIndirectCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                       const Location& loc) const {
+                                       const ErrorReporter& reporter) const {
     bool skip = false;
-    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= indirect_access.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= shader_accesses.Validate(env, access_context, reporter);
+    skip |= indirect_access.Validate(env, access_context, reporter);
     return skip;
 }
 
@@ -1444,14 +1434,14 @@ TraceRaysCommand::Storage TraceRaysCommand::MakeStorage(CommandData& command_dat
 }
 
 bool TraceRaysCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool TraceRaysCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
-    bool skip = shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+                                const ErrorReporter& reporter) const {
+    bool skip = shader_accesses.Validate(env, access_context, reporter);
     for (const BufferAccessCommand& access : buffer_accesses) {
-        skip |= access.Validate(env, access_context, cb_context, replay_tag, loc);
+        skip |= access.Validate(env, access_context, reporter);
     }
     return skip;
 }
@@ -1476,18 +1466,16 @@ DrawAttachmentCommand::Storage DrawAttachmentCommand::MakeStorage(CommandData& c
 }
 
 bool DrawAttachmentCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool DrawAttachmentCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                     const Location& loc) const {
+                                     const ErrorReporter& reporter) const {
     if (render_pass_context) {
-        return render_pass_context->ValidateDrawSubpassAttachment(env, cb_context, replay_tag, loc, pipeline, depth_write,
-                                                                  stencil_write);
+        return render_pass_context->ValidateDrawSubpassAttachment(env, reporter, pipeline, depth_write, stencil_write);
     } else if (rendering_instance) {
-        return rendering_instance->ValidateDrawAttachments(env, access_context, cb_context, replay_tag, loc,
-                                                           render_pass_instance_id, pipeline, depth_write, stencil_write);
+        return rendering_instance->ValidateDrawAttachments(env, access_context, reporter, render_pass_instance_id, pipeline,
+                                                           depth_write, stencil_write);
     }
     return false;
 }
@@ -1522,25 +1510,25 @@ VertexInputCommand::Storage VertexInputCommand::MakeStorage(CommandData& command
 }
 
 bool VertexInputCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool VertexInputCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                  const ErrorReporter& reporter) const {
     bool skip = false;
     for (const Access& access : accesses) {
         const HazardResult hazard = access_context.DetectHazard(*access.buffer, access_index, access.range);
         if (hazard.IsHazard()) {
             const SyncValidator& validator = env.validator;
-            LogObjectList objlist = BaseObjectList(env, cb_context, access.buffer->Handle());
+            LogObjectList objlist = BaseObjectList(env, reporter, access.buffer->Handle());
             if (pipeline) {
                 objlist.add(pipeline->Handle());
             }
             const char* buffer_name = access_index == SYNC_INDEX_INPUT_INDEX_READ ? "index " : "vertex ";
             const std::string resource_description = buffer_name + validator.FormatHandle(*access.buffer);
             const std::string error =
-                validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, access.range);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+                validator.error_messages_.BufferError(env, hazard, reporter, resource_description, access.range);
+            skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
         }
     }
     return skip;
@@ -1586,8 +1574,7 @@ AccessRange MultiDrawVertexInputCommand::GetRange(const Binding& binding, const 
 }
 
 bool MultiDrawVertexInputCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                           const Location& loc) const {
+                                           const ErrorReporter& reporter) const {
     bool skip = false;
     for (const DrawRange& draw : draws) {
         for (const Binding& binding : bindings) {
@@ -1595,15 +1582,14 @@ bool MultiDrawVertexInputCommand::Validate(const SyncEnvironment& env, const Acc
             const HazardResult hazard = access_context.DetectHazard(*binding.buffer, access_index, range);
             if (hazard.IsHazard()) {
                 const SyncValidator& validator = env.validator;
-                LogObjectList objlist = BaseObjectList(env, cb_context, binding.buffer->Handle());
+                LogObjectList objlist = BaseObjectList(env, reporter, binding.buffer->Handle());
                 if (pipeline) {
                     objlist.add(pipeline->Handle());
                 }
                 const char* buffer_name = (access_index == SYNC_INDEX_INPUT_INDEX_READ) ? "index " : "vertex ";
                 const std::string resource_description = buffer_name + validator.FormatHandle(*binding.buffer);
-                const std::string error =
-                    validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+                const std::string error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, range);
+                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
             }
         }
     }
@@ -1643,15 +1629,14 @@ DrawCommand::Storage DrawCommand::MakeStorage(CommandData& command_data) const {
 }
 
 bool DrawCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
-bool DrawCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                           ResourceUsageTag replay_tag, const Location& loc) const {
+bool DrawCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const {
     bool skip = false;
-    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= vertex_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= shader_accesses.Validate(env, access_context, reporter);
+    skip |= vertex_accesses.Validate(env, access_context, reporter);
+    skip |= attachment_accesses.Validate(env, access_context, reporter);
     return skip;
 }
 
@@ -1675,15 +1660,15 @@ DrawMultiCommand::Storage DrawMultiCommand::MakeStorage(CommandData& command_dat
 }
 
 bool DrawMultiCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool DrawMultiCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                const ErrorReporter& reporter) const {
     bool skip = false;
-    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= vertex_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= shader_accesses.Validate(env, access_context, reporter);
+    skip |= attachment_accesses.Validate(env, access_context, reporter);
+    skip |= vertex_accesses.Validate(env, access_context, reporter);
     return skip;
 }
 
@@ -1707,15 +1692,15 @@ DrawIndirectCommand::Storage DrawIndirectCommand::MakeStorage(CommandData& comma
 }
 
 bool DrawIndirectCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool DrawIndirectCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                   const ErrorReporter& reporter) const {
     bool skip = false;
-    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= indirect_access.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= shader_accesses.Validate(env, access_context, reporter);
+    skip |= attachment_accesses.Validate(env, access_context, reporter);
+    skip |= indirect_access.Validate(env, access_context, reporter);
     // TODO: shader instrumentation support is needed to read indirect buffer content (ValidateDrawVertex)
     return skip;
 }
@@ -1741,16 +1726,15 @@ DrawIndirectCountCommand::Storage DrawIndirectCountCommand::MakeStorage(CommandD
 }
 
 bool DrawIndirectCountCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool DrawIndirectCountCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                        const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                        const Location& loc) const {
+                                        const ErrorReporter& reporter) const {
     bool skip = false;
-    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= count_access.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= shader_accesses.Validate(env, access_context, reporter);
+    skip |= attachment_accesses.Validate(env, access_context, reporter);
+    skip |= count_access.Validate(env, access_context, reporter);
     // TODO: shader instrumentation support is needed to read indirect buffer content (ValidateDrawVertex)
     return skip;
 }
@@ -1774,15 +1758,14 @@ DrawMeshTasksCommand::Storage DrawMeshTasksCommand::MakeStorage(CommandData& com
 }
 
 bool DrawMeshTasksCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool DrawMeshTasksCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                    const Location& loc) const {
+                                    const ErrorReporter& reporter) const {
     bool skip = false;
-    skip |= shader_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
-    skip |= attachment_accesses.Validate(env, access_context, cb_context, replay_tag, loc);
+    skip |= shader_accesses.Validate(env, access_context, reporter);
+    skip |= attachment_accesses.Validate(env, access_context, reporter);
     return skip;
 }
 
@@ -1821,12 +1804,11 @@ BuildAccelerationStructuresCommand::Storage BuildAccelerationStructuresCommand::
 }
 
 bool BuildAccelerationStructuresCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool BuildAccelerationStructuresCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                  const Location& loc) const {
+                                                  const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
     for (const Access& access : accesses) {
@@ -1834,7 +1816,7 @@ bool BuildAccelerationStructuresCommand::Validate(const SyncEnvironment& env, co
         if (!hazard.IsHazard()) {
             continue;
         }
-        LogObjectList objlist = BaseObjectList(env, cb_context, access.buffer->Handle());
+        LogObjectList objlist = BaseObjectList(env, reporter, access.buffer->Handle());
         std::string error;
         if (access.acceleration_structure != VK_NULL_HANDLE) {
             objlist.add(access.acceleration_structure);
@@ -1842,8 +1824,8 @@ bool BuildAccelerationStructuresCommand::Validate(const SyncEnvironment& env, co
             const auto field =
                 access.type == AccessType::kSource ? vvl::Field::srcAccelerationStructure : vvl::Field::dstAccelerationStructure;
             error = validator.error_messages_.AccelerationStructureError(
-                env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(access.buffer->Handle()), access.range,
-                access.acceleration_structure, info_loc.dot(field));
+                env, hazard, reporter, validator.FormatHandle(access.buffer->Handle()), access.range, access.acceleration_structure,
+                info_loc.dot(field));
         } else {
             const char* description = nullptr;
             switch (access.type) {
@@ -1870,10 +1852,9 @@ bool BuildAccelerationStructuresCommand::Validate(const SyncEnvironment& env, co
                     continue;
             }
             const std::string resource_description = description + validator.FormatHandle(access.buffer->Handle());
-            error =
-                validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, access.range);
+            error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, access.range);
         }
-        skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+        skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
     }
     return skip;
 }
@@ -1900,12 +1881,11 @@ AccelerationStructureCopyCommand::Storage AccelerationStructureCopyCommand::Make
 }
 
 bool AccelerationStructureCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool AccelerationStructureCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                const Location& loc) const {
+                                                const ErrorReporter& reporter) const {
     const SyncValidator& validator = env.validator;
     const Location info_loc(vvl::Func::Empty, vvl::Field::pInfo);
 
@@ -1917,12 +1897,12 @@ bool AccelerationStructureCopyCommand::Validate(const SyncEnvironment& env, cons
         if (!hazard.IsHazard()) {
             return false;
         }
-        LogObjectList objlist = BaseObjectList(env, cb_context, access.buffer->Handle());
+        LogObjectList objlist = BaseObjectList(env, reporter, access.buffer->Handle());
         objlist.add(access.acceleration_structure);
         const std::string error = validator.error_messages_.AccelerationStructureError(
-            env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(access.buffer->Handle()), access.range,
-            access.acceleration_structure, info_loc.dot(field));
-        return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+            env, hazard, reporter, validator.FormatHandle(access.buffer->Handle()), access.range, access.acceleration_structure,
+            info_loc.dot(field));
+        return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
     };
     bool skip = false;
     skip |= validate_access(src, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, vvl::Field::src);
@@ -1980,11 +1960,10 @@ static ImageRangeGen MakeVideoPictureRangeGen(const VideoCommand::PictureAccess&
 }
 
 bool VideoCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
-bool VideoCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                            ResourceUsageTag replay_tag, const Location& loc) const {
+bool VideoCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
@@ -1994,12 +1973,12 @@ bool VideoCommand::Validate(const SyncEnvironment& env, const AccessContext& acc
     const auto bitstream_hazard = access_context.DetectHazard(bitstream_buffer, bitstream_access_index, bitstream_range);
     if (bitstream_hazard.IsHazard()) {
         // TODO: Unify record-time video object lists with other commands after conversion
-        const LogObjectList objlist = replay_tag == kInvalidTag ? LogObjectList(bitstream_buffer.Handle())
-                                                                : BaseObjectList(env, cb_context, bitstream_buffer.Handle());
+        const LogObjectList objlist = reporter.IsReplay() ? BaseObjectList(env, reporter, bitstream_buffer.Handle())
+                                                          : LogObjectList(bitstream_buffer.Handle());
         const std::string resource_description = "bitstream buffer " + validator.FormatHandle(bitstream_buffer.Handle());
-        const std::string error = validator.error_messages_.BufferError(env, bitstream_hazard, cb_context, replay_tag, loc,
-                                                                        resource_description, bitstream_range);
-        skip |= validator.SyncError(bitstream_hazard.Hazard(), objlist, loc, error);
+        const std::string error =
+            validator.error_messages_.BufferError(env, bitstream_hazard, reporter, resource_description, bitstream_range);
+        skip |= validator.SyncError(bitstream_hazard.Hazard(), objlist, reporter.loc, error);
     }
     for (const PictureAccess& picture : pictures) {
         auto range_gen = MakeVideoPictureRangeGen(picture);
@@ -2044,10 +2023,10 @@ bool VideoCommand::Validate(const SyncEnvironment& env, const AccessContext& acc
             picture_info.baseArrayLayer = picture.base_array_layer;
             FormatVideoPictureResouce(validator, picture_info, ss);
         }
-        const LogObjectList objlist = (replay_tag == kInvalidTag) ? LogObjectList(picture.view->Handle())
-                                                                  : BaseObjectList(env, cb_context, picture.view->Handle());
-        const std::string error = validator.error_messages_.VideoError(env, hazard, cb_context, replay_tag, loc, ss.str());
-        skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+        const LogObjectList objlist =
+            reporter.IsReplay() ? BaseObjectList(env, reporter, picture.view->Handle()) : LogObjectList(picture.view->Handle());
+        const std::string error = validator.error_messages_.VideoError(env, hazard, reporter, ss.str());
+        skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
     }
     return skip;
 }
@@ -2112,18 +2091,16 @@ static std::optional<VkImageSubresourceRange> RestrictSubresourceRangeToClearLay
 }
 
 bool ClearAttachmentsCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool ClearAttachmentsCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                       const Location& loc) const {
+                                       const ErrorReporter& reporter) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
-    auto report_hazard = [&skip, &env, &cb_context, replay_tag, &loc, this, &validator](
-                             const HazardResult& hazard, const Attachment& attachment, bool color, uint32_t rect_index,
-                             const VkClearRect& rect) {
+    auto report_hazard = [&skip, &env, &reporter, this, &validator](const HazardResult& hazard, const Attachment& attachment,
+                                                                    bool color, uint32_t rect_index, const VkClearRect& rect) {
         std::ostringstream ss;
         ss << string_VkImageAspectFlags(attachment.original_aspects);
         if (color) {
@@ -2135,10 +2112,10 @@ bool ClearAttachmentsCommand::Validate(const SyncEnvironment& env, const AccessC
         if (subpass != vvl::kNoIndex32) {
             ss << " in subpass " << subpass;
         }
-        const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
-        const std::string error = validator.error_messages_.ClearAttachmentError(env, hazard, cb_context, replay_tag, loc, ss.str(),
+        const LogObjectList objlist = BaseObjectList(env, reporter, attachment.view->Handle());
+        const std::string error = validator.error_messages_.ClearAttachmentError(env, hazard, reporter, ss.str(),
                                                                                  attachment.original_aspects, rect_index, rect);
-        skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+        skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
     };
 
     for (const Attachment& attachment : attachments) {
@@ -2241,22 +2218,21 @@ QueryCopyCommand::Storage QueryCopyCommand::MakeStorage(CommandData& command_dat
 }
 
 bool QueryCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), cb_context, kInvalidTag, loc);
+    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
 }
 
 bool QueryCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
-                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const {
+                                const ErrorReporter& reporter) const {
     const auto hazard = access_context.DetectHazard(dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
     if (!hazard.IsHazard()) {
         return false;
     }
     const SyncValidator& validator = env.validator;
-    LogObjectList objlist = BaseObjectList(env, cb_context, VulkanTypedHandle(query_pool, kVulkanObjectTypeQueryPool));
+    LogObjectList objlist = BaseObjectList(env, reporter, VulkanTypedHandle(query_pool, kVulkanObjectTypeQueryPool));
     objlist.add(dst_buffer.Handle());
     const std::string resource_description = "dstBuffer " + validator.FormatHandle(dst_buffer.Handle());
-    const std::string error =
-        validator.error_messages_.BufferError(env, hazard, cb_context, replay_tag, loc, resource_description, range);
-    return validator.SyncError(hazard.Hazard(), objlist, loc, error);
+    const std::string error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, range);
+    return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
 }
 
 void QueryCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {

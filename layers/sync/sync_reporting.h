@@ -26,11 +26,11 @@ class Logger;
 namespace syncval {
 
 struct SyncEnvironment;
-class CommandBufferContext;
+struct ErrorReporter;
 class HazardResult;
 class SyncValidator;
 
-LogObjectList BaseObjectList(const SyncEnvironment& env, const CommandBufferContext& cb_context, const VulkanTypedHandle& resource);
+LogObjectList BaseObjectList(const SyncEnvironment& env, const ErrorReporter& reporter, const VulkanTypedHandle& resource);
 
 // Collection of named values that describe key information associated with an error message.
 // This can be useful to filter out messages or for quick inspection as a more structured (but lose)

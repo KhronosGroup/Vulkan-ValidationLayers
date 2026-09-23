@@ -324,10 +324,8 @@ bool ValidateCmdWaitEvents(const SyncEnvironment& env, vvl::span<const std::shar
 }
 
 bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const AccessContext& access_context,
-                                           const CommandBufferContext& cb_context,
                                            vvl::span<const std::shared_ptr<const vvl::Event>> events,
-                                           vvl::span<const BarrierSet> barrier_sets, ResourceUsageTag replay_tag,
-                                           const Location& loc) {
+                                           vvl::span<const BarrierSet> barrier_sets, const ErrorReporter& reporter) {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
@@ -346,12 +344,12 @@ bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const Acc
                 env.queue_id, sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::kDetectAll);
             if (hazard.IsHazard()) {
                 const std::string resource_description = validator.FormatHandle(barrier.image->Handle());
-                const std::string error = validator.error_messages_.ImageBarrierError(env, hazard, cb_context, replay_tag, loc,
-                                                                                      resource_description, barrier);
+                const std::string error =
+                    validator.error_messages_.ImageBarrierError(env, hazard, reporter, resource_description, barrier);
                 // Preserve record-time object lists until event reporting is unified.
-                const LogObjectList objlist = replay_tag == kInvalidTag ? LogObjectList(barrier.image->Handle())
-                                                                        : BaseObjectList(env, cb_context, barrier.image->Handle());
-                skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+                const LogObjectList objlist = reporter.IsReplay() ? BaseObjectList(env, reporter, barrier.image->Handle())
+                                                                  : LogObjectList(barrier.image->Handle());
+                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
                 break;
             }
         }

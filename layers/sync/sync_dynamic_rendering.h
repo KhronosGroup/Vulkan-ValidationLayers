@@ -30,7 +30,7 @@ class Pipeline;
 
 namespace syncval {
 class AccessContext;
-class CommandBufferContext;
+struct ErrorReporter;
 class HazardResult;
 class SyncValidator;
 struct SyncEnvironment;
@@ -80,20 +80,17 @@ struct RenderingInstance {
     void InitViewGens(std::vector<ImageRangeGen>& view_gen_storage);
     const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
 
-    bool ValidateBeginRendering(const SyncEnvironment& env, const AccessContext& access_context,
-                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    bool ValidateBeginRendering(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter,
                                 uint32_t render_pass_instance_id) const;
     void RecordBeginRendering(AccessContext& access_context, uint32_t render_pass_instance_id, ResourceUsageTag tag,
                               QueueId queue_id) const;
 
-    bool ValidateEndRendering(const SyncEnvironment& env, const AccessContext& access_context,
-                              const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    bool ValidateEndRendering(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter,
                               uint32_t render_pass_instance_id) const;
     void RecordEndRendering(AccessContext& access_context, uint32_t render_pass_instance_id, ResourceUsageTag tag,
                             QueueId queue_id) const;
 
-    bool ValidateDrawAttachments(const SyncEnvironment& env, const AccessContext& access_context,
-                                 const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    bool ValidateDrawAttachments(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter,
                                  uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline, bool depth_write,
                                  bool stencil_write) const;
     void RecordDrawAttachments(AccessContext& access_context, uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline,
