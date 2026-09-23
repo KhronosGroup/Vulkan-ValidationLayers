@@ -19,8 +19,75 @@
 # See docs/settings.md
 
 import common_ci
+import glob
 import json
 import os
+import sys
+
+# We store the schema in VUL, which should be in some external folder somewhere
+def FindSchema():
+    for pattern in ['*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json',
+                    '*/*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json']:
+        found = glob.glob(common_ci.RepoRelative(pattern))
+        if found:
+            return found[0]
+    return None
+
+def LeafErrors(error):
+    if not error.context:
+        return [error]
+
+    branches = {}
+    for sub_error in error.context:
+        branches.setdefault(sub_error.schema_path[0], []).append(sub_error)
+
+    def WrongBranch(error):
+        return error.validator in ['enum', 'const'] and 'type' in error.absolute_schema_path
+    def Rank(branch):
+        return (any(WrongBranch(error) for error in branch), len(branch))
+
+    leaves = []
+    for sub_error in min(branches.values(), key=Rank):
+        leaves += LeafErrors(sub_error)
+    return leaves
+
+def FormatPath(error):
+    path = ''
+    for part in error.absolute_path:
+        path += f'[{part}]' if isinstance(part, int) else f'.{part}'
+    return path if path else '<root>'
+
+def ValidateSchema(manifest, json_input):
+    try:
+        import jsonschema
+    except ImportError:
+        print('WARNING: the python "jsonschema" module is not installed, skipping validation of '
+              f'{os.path.basename(json_input)} (pip install jsonschema)')
+        return
+    schema_input = FindSchema()
+    if schema_input is None:
+        print('WARNING: layers_settings_schema.json was not found in the Vulkan-Utility-Libraries '
+              f'source, skipping validation of {os.path.basename(json_input)}')
+        return
+
+    with open(schema_input, 'r') as file:
+        schema = json.load(file)
+
+    # The layer name is still a configure_file placeholder here, but the schema requires the real prefixed form
+    manifest['layer']['name'] = 'VK_LAYER_KHRONOS_validation'
+
+    reported = []
+    for error in jsonschema.Draft7Validator(schema).iter_errors(manifest):
+        for leaf in LeafErrors(error):
+            entry = (FormatPath(leaf), leaf.message)
+            if entry not in reported:
+                reported.append(entry)
+    if not reported:
+        return
+
+    for path, message in sorted(reported):
+        print(f'{json_input}: error: {path}: {message}', file=sys.stderr)
+    sys.exit(f'{len(reported)} error(s) validating against {schema_input}')
 
 def IsDebugSetting(setting):
     if setting['key'] == 'debug_action':
@@ -155,7 +222,10 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
 if __name__ == '__main__':
     json_input = common_ci.RepoRelative('layers/VkLayer_khronos_validation.json.in')
     with open(json_input, 'r') as file:
-        json_settings = json.load(file)['layer']['features']['settings']
+        manifest = json.load(file)
+    json_settings = manifest['layer']['features']['settings']
+
+    ValidateSchema(manifest, json_input)
 
     # Build up the list all at once into a flat list
     all_settings = []
