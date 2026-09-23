@@ -109,7 +109,7 @@ TEST_F(PositiveSampler, SamplerConversionDifferentHandle) {
 
     vkt::Image mpimage(*m_device, image_ci, vkt::set_layout);
     ycbcr_info.conversion = conversions_1;
-    vkt::ImageView image_view = mpimage.CreateView(VK_IMAGE_ASPECT_PLANE_0_BIT, &ycbcr_info);
+    vkt::ImageView image_view = mpimage.CreateView(VK_IMAGE_ASPECT_COLOR_BIT, &ycbcr_info);
 
     VkDescriptorSetLayoutBinding bindings{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL,
                                           &samplers_0.handle()};

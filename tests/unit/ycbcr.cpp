@@ -1439,6 +1439,61 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat2Plane) {
     CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-01586");
 }
 
+TEST_F(NegativeYcbcr, MultiplanePlaneViewFormat) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    VkImageCreateInfo ci = vku::InitStructHelper();
+    ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    ci.extent = {128, 128, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    if (!IsImageFormatSupported(Gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM);
+    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
+    ycbcr_info.conversion = conversion;
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper(&ycbcr_info);
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+
+    {
+        vkt::Image image(*m_device, ci, vkt::set_layout);
+        ivci.image = image;
+        ivci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-01586");
+    }
+
+    {
+        ci.flags = 0;
+        vkt::Image image(*m_device, ci, vkt::set_layout);
+        ivci.pNext = nullptr;
+        ivci.image = image;
+        ivci.format = VK_FORMAT_R8G8_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-12397");
+        CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-01586");
+    }
+}
+
 TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
     TEST_DESCRIPTION("Create a VkImageView with multiple planar aspect masks");
     SetTargetApiVersion(VK_API_VERSION_1_1);

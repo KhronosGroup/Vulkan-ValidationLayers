@@ -2155,6 +2155,22 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
                              create_info_loc.dot(Field::subresourceRange).dot(Field::aspectMask), "(%s) is invalid for %s.",
                              string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
         }
+
+        if (IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
+            const VkFormat compat_format =
+                vkuFindMultiplaneCompatibleFormat(image_format, static_cast<VkImageAspectFlagBits>(aspect_mask));
+            const auto plane_class = vkuFormatCompatibilityClass(compat_format);
+            const auto view_class = vkuFormatCompatibilityClass(view_format);
+            // Need to only check if one is NONE to handle edge case both are NONE
+            if ((plane_class != view_class) || (plane_class == VKU_FORMAT_COMPATIBILITY_CLASS_NONE)) {
+                skip |= LogError("VUID-VkImageViewCreateInfo-image-01586", create_info.image, create_info_loc.dot(Field::format),
+                                 "(%s) is not compatible with %s which is the plane %" PRIu32
+                                 " compatible format for %s (the image format of %s)",
+                                 string_VkFormat(view_format), string_VkFormat(compat_format),
+                                 vkuGetPlaneIndex(static_cast<VkImageAspectFlagBits>(aspect_mask)), string_VkFormat(image_format),
+                                 FormatHandle(create_info.image).c_str());
+            }
+        }
     }
 
     if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
@@ -2169,21 +2185,6 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
                              "must have identical formats.\nIf a VK_IMAGE_ASPECT_PLANE_*_BIT aspect mask is used, it can be a "
                              "different format that matches the plane.",
                              string_VkFormat(view_format), FormatHandle(create_info.image).c_str(), string_VkFormat(image_format));
-            } else {
-                const VkFormat compat_format =
-                vkuFindMultiplaneCompatibleFormat(image_format, static_cast<VkImageAspectFlagBits>(aspect_mask));
-                const auto image_class = vkuFormatCompatibilityClass(compat_format);
-                // Need valid aspect mask otherwise will throw extra error when getting compatible format
-                const bool has_valid_aspect = IsOnlyOneValidPlaneAspect(image_format, aspect_mask);
-                if (has_valid_aspect && ((image_class != view_class) || (image_class == VKU_FORMAT_COMPATIBILITY_CLASS_NONE))) {
-                    // Need to only check if one is NONE to handle edge case both are NONE
-                    // View format must match the multiplane compatible format
-                    skip |= LogError("VUID-VkImageViewCreateInfo-image-01586", create_info.image, create_info_loc.dot(Field::format),
-                                 "(%s) is not compatible with plane %" PRIu32 " of the %s format %s, must be compatible with %s.",
-                                 string_VkFormat(view_format), vkuGetPlaneIndex(static_cast<VkImageAspectFlagBits>(aspect_mask)),
-                                 FormatHandle(create_info.image).c_str(), string_VkFormat(image_format),
-                                 string_VkFormat(compat_format));
-                                }
             }
         } else if (!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT)) {
             // Format MUST be compatible (in the same format compatibility class) as the format the image was created with
