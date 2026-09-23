@@ -1293,36 +1293,40 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
                 LogObjectList objlist(pre_raster_info.layout->Handle(), frag_shader_info.layout->Handle());
                 skip |= LogError(vuid, objlist, create_info_loc, "%s", msg.str().c_str());
                 break;
-            } else if (not_independent_sets && !pipeline.descriptor_heap_mode) {
-                // both handles are valid, but without VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, need to check everything
-                // is identically defined
+            } else if (!pipeline.descriptor_heap_mode) {
+                // both handles are valid, so everything needs to be identically defined
+                // with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT these are the non-null layouts
+                const char* vuid = not_independent_sets ? (only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613"
+                                                                     : "VUID-VkGraphicsPipelineCreateInfo-flags-06612")
+                                                        : (only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06617"
+                                                                     : "VUID-VkGraphicsPipelineCreateInfo-flags-06616");
+
                 if (pre_raster_dsl->GetCreateFlags() != fs_dsl->GetCreateFlags()) {
-                    const char* vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613"
-                                                 : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
+                    std::ostringstream ss;
+                    ss << "The two graphics pipeline libraries have differently defined VkPipelineLayout at pSetLayouts[" << i
+                       << "]:\n|Pre-Raster State| " << FormatHandle(pre_raster_info.layout->Handle()) << " at pSetLayouts[" << i
+                       << "] has flags " << string_VkDescriptorSetLayoutCreateFlags(pre_raster_dsl->GetCreateFlags())
+                       << "\n|Fragment Shader State| " << FormatHandle(frag_shader_info.layout->Handle()) << " at pSetLayouts[" << i
+                       << "] has flags " << string_VkDescriptorSetLayoutCreateFlags(fs_dsl->GetCreateFlags()) << "\n"
+                       << (not_independent_sets ? ""
+                                                : "Note: Even with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT the "
+                                                  "non-null layouts still need to be the same\n");
                     LogObjectList objlist(pre_raster_dsl->Handle(), pre_raster_info.layout->Handle(), fs_dsl->Handle(),
                                           frag_shader_info.layout->Handle());
-                    skip |= LogError(vuid, objlist, create_info_loc,
-                                     "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT was not set and the graphics pipeline "
-                                     "libraries have differently defined VkPipelineLayout:\n|Pre-Raster State| %s at "
-                                     "pSetLayouts[%" PRIu32
-                                     "] has flags %s"
-                                     "\n|Fragment Shader State| %s at pSetLayouts[%" PRIu32 "] has flags %s\n",
-                                     FormatHandle(pre_raster_info.layout->Handle()).c_str(), i,
-                                     string_VkDescriptorSetLayoutCreateFlags(pre_raster_dsl->GetCreateFlags()).c_str(),
-                                     FormatHandle(frag_shader_info.layout->Handle()).c_str(), i,
-                                     string_VkDescriptorSetLayoutCreateFlags(fs_dsl->GetCreateFlags()).c_str());
+                    skip |= LogError(vuid, objlist, create_info_loc, "%s", ss.str().c_str());
                 } else if (pre_raster_dsl->GetBindingCount() != fs_dsl->GetBindingCount()) {
-                    const char* vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613"
-                                                 : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
+                    std::ostringstream ss;
+                    ss << "The two graphics pipeline libraries have differently defined VkPipelineLayout at pSetLayouts[" << i
+                       << "]:\n|Pre-Raster State| " << FormatHandle(pre_raster_info.layout->Handle()) << " at pSetLayouts[" << i
+                       << "] has bindingCount " << pre_raster_dsl->GetBindingCount() << "\n|Fragment Shader State| "
+                       << FormatHandle(frag_shader_info.layout->Handle()) << " at pSetLayouts[" << i << "] has bindingCount "
+                       << fs_dsl->GetBindingCount() << "\n"
+                       << (not_independent_sets ? ""
+                                                : "Note: Even with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT the "
+                                                  "non-null layouts still need to be the same\n");
                     LogObjectList objlist(pre_raster_dsl->Handle(), pre_raster_info.layout->Handle(), fs_dsl->Handle(),
                                           frag_shader_info.layout->Handle());
-                    skip |= LogError(vuid, objlist, create_info_loc,
-                                     "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT was not set and the graphics pipeline "
-                                     "libraries have differently defined VkPipelineLayout:\n|Pre-Raster State| %s at "
-                                     "pSetLayouts[%" PRIu32 "] has bindingCount %" PRIu32
-                                     "\n|Fragment Shader State| %s at pSetLayouts[%" PRIu32 "] has bindingCount %" PRIu32 "\n",
-                                     FormatHandle(pre_raster_info.layout->Handle()).c_str(), i, pre_raster_dsl->GetBindingCount(),
-                                     FormatHandle(frag_shader_info.layout->Handle()).c_str(), i, fs_dsl->GetBindingCount());
+                    skip |= LogError(vuid, objlist, create_info_loc, "%s", ss.str().c_str());
                 } else {
                     const uint32_t binding_count = pre_raster_dsl->GetBindingCount();
                     const auto& pre_raster_bindings = pre_raster_dsl->GetBindings();
@@ -1331,40 +1335,29 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
                         const auto& pre_raster_binding = pre_raster_bindings[binding_index];
                         const auto& fs_binding = fs_bindings[binding_index];
                         if (!CompareDescriptorSetLayoutBinding(*pre_raster_binding.ptr(), *fs_binding.ptr())) {
-                            const char* vuid = only_libs ? "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613"
-                                                         : "VUID-VkGraphicsPipelineCreateInfo-flags-06612";
+                            std::ostringstream ss;
+                            ss << "The two graphics pipeline libraries have differently defined VkPipelineLayout at pSetLayouts["
+                               << i << "]:\n|Pre-Raster State| " << FormatHandle(pre_raster_info.layout->Handle())
+                               << " at pSetLayouts[" << i << "].pBindings[" << binding_index << "] of:\n"
+                               << "\tbinding: " << pre_raster_binding.binding << "\n"
+                               << "\tdescriptorType: " << string_VkDescriptorType(pre_raster_binding.descriptorType) << "\n"
+                               << "\tdescriptorCount: " << pre_raster_binding.descriptorCount << "\n"
+                               << "\tstageFlags: " << string_VkShaderStageFlags(pre_raster_binding.stageFlags) << "\n"
+                               << "\tpImmutableSamplers: " << static_cast<const void*>(pre_raster_binding.pImmutableSamplers)
+                               << "\n"
+                               << "|Fragment Shader State| " << FormatHandle(frag_shader_info.layout->Handle())
+                               << " at pSetLayouts[" << i << "].pBindings[" << binding_index << "] of:\n"
+                               << "\tbinding: " << fs_binding.binding << "\n"
+                               << "\tdescriptorType: " << string_VkDescriptorType(fs_binding.descriptorType) << "\n"
+                               << "\tdescriptorCount: " << fs_binding.descriptorCount << "\n"
+                               << "\tstageFlags: " << string_VkShaderStageFlags(fs_binding.stageFlags) << "\n"
+                               << "\tpImmutableSamplers: " << static_cast<const void*>(fs_binding.pImmutableSamplers) << "\n"
+                               << (not_independent_sets ? ""
+                                                        : "Note: Even with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT the "
+                                                          "non-null layouts still need to be the same\n");
                             LogObjectList objlist(pre_raster_dsl->Handle(), pre_raster_info.layout->Handle(), fs_dsl->Handle(),
                                                   frag_shader_info.layout->Handle());
-                            skip |= LogError(
-                                vuid, objlist, create_info_loc,
-                                "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT was not set and the graphics pipeline "
-                                "libraries have differently defined VkPipelineLayout:\n|Pre-Raster State| %s at "
-                                "pSetLayouts[%" PRIu32 "].pBindings[%" PRIu32
-                                "] of:\n"
-                                "\tbinding: %" PRIu32
-                                "\n"
-                                "\tdescriptorType: %s\n"
-                                "\tdescriptorCount: %" PRIu32
-                                "\n"
-                                "\tstageFlags: %s\n"
-                                "\tpImmutableSamplers: %p\n"
-                                "|Fragment Shader State| %s at pSetLayouts[%" PRIu32 "] pBindings[%" PRIu32
-                                "] of:\n"
-                                "\tbinding: %" PRIu32
-                                "\n"
-                                "\tdescriptorType: %s\n"
-                                "\tdescriptorCount: %" PRIu32
-                                "\n"
-                                "\tstageFlags: %s\n"
-                                "\tpImmutableSamplers: %p\n",
-                                FormatHandle(pre_raster_info.layout->Handle()).c_str(), i, binding_index,
-                                pre_raster_binding.binding, string_VkDescriptorType(pre_raster_binding.descriptorType),
-                                pre_raster_binding.descriptorCount,
-                                string_VkShaderStageFlags(pre_raster_binding.stageFlags).c_str(),
-                                pre_raster_binding.pImmutableSamplers, FormatHandle(frag_shader_info.layout->Handle()).c_str(), i,
-                                binding_index, fs_binding.binding, string_VkDescriptorType(fs_binding.descriptorType),
-                                fs_binding.descriptorCount, string_VkShaderStageFlags(fs_binding.stageFlags).c_str(),
-                                fs_binding.pImmutableSamplers);
+                            skip |= LogError(vuid, objlist, create_info_loc, "%s", ss.str().c_str());
                         }
                     }
                 }
