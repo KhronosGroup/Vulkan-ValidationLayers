@@ -28,7 +28,7 @@ class RenderPass;
 
 namespace syncval {
 
-class CommandBufferContext;
+struct ErrorReporter;
 
 std::unique_ptr<AccessContext[]> InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass& rp_state,
                                                      const AccessContext& external_context, QueueId queue_id);
@@ -46,17 +46,15 @@ class RenderPassAccessContext {
     static bool ValidateLayoutTransitions(const SyncEnvironment& env, const AccessContext& access_context,
                                           const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id, uint32_t subpass,
                                           uint32_t view_mask, const AttachmentViewGenVector& attachment_views,
-                                          const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc);
+                                          const ErrorReporter& reporter);
 
     static bool ValidateLoadOperation(const SyncEnvironment& env, const AccessContext& access_context,
                                       const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id, uint32_t subpass,
                                       uint32_t view_mask, const AttachmentViewGenVector& attachment_views,
-                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc);
+                                      const ErrorReporter& reporter);
 
-    bool ValidateStoreOperation(const SyncEnvironment& env, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                const Location& loc) const;
-    bool ValidateResolveOperations(const SyncEnvironment& env, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                   const Location& loc) const;
+    bool ValidateStoreOperation(const SyncEnvironment& env, const ErrorReporter& reporter) const;
+    bool ValidateResolveOperations(const SyncEnvironment& env, const ErrorReporter& reporter) const;
 
     static void UpdateAttachmentResolveAccess(const vvl::RenderPass& rp_state, const AttachmentViewGenVector& attachment_views,
                                               uint32_t render_pass_instance_id, uint32_t subpass, uint32_t view_mask,
@@ -70,20 +68,16 @@ class RenderPassAccessContext {
                                         const AttachmentViewGenVector& attachment_views, const ResourceUsageTag tag,
                                         AccessContext& access_context);
 
-    bool ValidateDrawSubpassAttachment(const SyncEnvironment& env, const CommandBufferContext& cb_context,
-                                       ResourceUsageTag replay_tag, const Location& loc, const vvl::Pipeline* pipeline,
+    bool ValidateDrawSubpassAttachment(const SyncEnvironment& env, const ErrorReporter& reporter, const vvl::Pipeline* pipeline,
                                        bool depth_write_enabled, bool stencil_write_enabled) const;
     void RecordDrawSubpassAttachment(const vvl::Pipeline* pipeline, bool depth_write_enabled, bool stencil_write_enabled,
                                      ResourceUsageTag tag, QueueId queue_id);
 
     const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
 
-    bool ValidateNextSubpass(const SyncEnvironment& env, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                             const Location& loc) const;
-    bool ValidateEndRenderPass(const SyncEnvironment& env, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                               const Location& loc) const;
-    bool ValidateFinalSubpassLayoutTransitions(const SyncEnvironment& env, const CommandBufferContext& cb_context,
-                                               ResourceUsageTag replay_tag, const Location& loc) const;
+    bool ValidateNextSubpass(const SyncEnvironment& env, const ErrorReporter& reporter) const;
+    bool ValidateEndRenderPass(const SyncEnvironment& env, const ErrorReporter& reporter) const;
+    bool ValidateFinalSubpassLayoutTransitions(const SyncEnvironment& env, const ErrorReporter& reporter) const;
 
     void RecordLayoutTransitions(ResourceUsageTag tag);
     void RecordLoadOperations(ResourceUsageTag tag, QueueId queue_id);

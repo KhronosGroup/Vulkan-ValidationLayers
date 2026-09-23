@@ -42,6 +42,7 @@ namespace syncval {
 
 class AccessContext;
 class CommandBufferContext;
+struct ErrorReporter;
 class RenderPassAccessContext;
 struct CommandData;
 struct SyncEnvironment;
@@ -113,8 +114,7 @@ struct BufferCopyCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -138,8 +138,7 @@ struct BufferAccessCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -166,8 +165,7 @@ struct StridedBufferAccessCommand {
         StridedBufferAccessCommand MakeCommand(const CommandData& command_data) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 
   private:
@@ -193,8 +191,7 @@ struct ImageCopyCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -219,8 +216,7 @@ struct BufferImageCopyCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 
     static small_vector<VkBufferImageCopy, 1> MakeRegions(vvl::span<const VkBufferImageCopy2> regions);
@@ -244,8 +240,7 @@ struct ImageBlitCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 
     static small_vector<VkImageBlit, 1> MakeRegions(vvl::span<const VkImageBlit2> regions);
@@ -269,8 +264,7 @@ struct ImageResolveCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 
     static small_vector<VkImageResolve, 1> MakeRegions(vvl::span<const VkImageResolve2> regions);
@@ -290,8 +284,7 @@ struct ImageClearCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -304,8 +297,7 @@ struct BarrierCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -322,8 +314,7 @@ struct SetEventCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
 
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
@@ -341,8 +332,7 @@ struct ResetEventCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -361,8 +351,7 @@ struct WaitEventsCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -382,8 +371,7 @@ struct BeginRenderingCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -394,8 +382,7 @@ struct EndRenderingCommand {
     struct Storage {};
     Storage MakeStorage(CommandData&) const { return {}; }
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -418,8 +405,7 @@ struct BeginRenderPassCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context) const;
 };
 
@@ -433,7 +419,7 @@ struct NextSubpassCommand {
     Storage MakeStorage(CommandData&) const { return Storage{}; }
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
     bool Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
-                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const;
+                  const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context) const;
 };
 
@@ -447,7 +433,7 @@ struct EndRenderPassCommand {
     Storage MakeStorage(CommandData&) const { return Storage{}; }
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
     bool Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
-                  const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc) const;
+                  const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, RenderPassAccessContext& rp_context,
                AccessContext& external_context) const;
 };
@@ -498,16 +484,13 @@ struct ShaderAccessCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 
   private:
-    bool ValidateBufferShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
-                                    const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    bool ValidateBufferShaderAccess(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter,
                                     const BufferAccess& buffer_access) const;
-    bool ValidateImageShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
-                                   const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    bool ValidateImageShaderAccess(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter,
                                    const ImageViewAccess& image_access) const;
 };
 
@@ -540,8 +523,7 @@ struct DispatchIndirectCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -557,8 +539,7 @@ struct TraceRaysCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -580,8 +561,7 @@ struct DrawAttachmentCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -604,8 +584,7 @@ struct VertexInputCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -637,8 +616,7 @@ struct MultiDrawVertexInputCommand {
         MultiDrawVertexInputCommand MakeCommand(const CommandData& command_data) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 
   private:
@@ -682,8 +660,7 @@ struct DrawCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -701,8 +678,7 @@ struct DrawMultiCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -720,8 +696,7 @@ struct DrawIndirectCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -741,8 +716,7 @@ struct DrawIndirectCountCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -758,8 +732,7 @@ struct DrawMeshTasksCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -782,8 +755,7 @@ struct BuildAccelerationStructuresCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -804,8 +776,7 @@ struct AccelerationStructureCopyCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -843,8 +814,7 @@ struct VideoCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -874,8 +844,7 @@ struct ClearAttachmentsCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
@@ -894,8 +863,7 @@ struct QueryCopyCommand {
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
-    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const CommandBufferContext& cb_context,
-                  ResourceUsageTag replay_tag, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 

@@ -33,7 +33,7 @@ struct Location;
 namespace syncval {
 
 class AccessContext;
-class CommandBufferContext;
+struct ErrorReporter;
 struct SyncEnvironment;
 
 struct SyncEventState {
@@ -119,10 +119,8 @@ bool ValidateCmdWaitEvents(const SyncEnvironment& env, vvl::span<const std::shar
                            const Location& loc);
 
 bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const AccessContext& access_context,
-                                           const CommandBufferContext& cb_context,
                                            vvl::span<const std::shared_ptr<const vvl::Event>> events,
-                                           vvl::span<const BarrierSet> barrier_sets, ResourceUsageTag replay_tag,
-                                           const Location& loc);
+                                           vvl::span<const BarrierSet> barrier_sets, const ErrorReporter& reporter);
 
 // Main functionality of the correspodning Record methods, which perform additional setup
 void ApplyCmdSetEvent(SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& src_exec_scope,

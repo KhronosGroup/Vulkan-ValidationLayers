@@ -359,10 +359,9 @@ static void ReportAcquireImageSynchronizationInsight(std::ostringstream& ss) {
           "example, by including them in the barrier's srcStageMask).";
 }
 
-LogObjectList BaseObjectList(const SyncEnvironment& env, const CommandBufferContext& cb_context,
-                             const VulkanTypedHandle& resource) {
+LogObjectList BaseObjectList(const SyncEnvironment& env, const ErrorReporter& reporter, const VulkanTypedHandle& resource) {
     LogObjectList objlist;
-    const VulkanTypedHandle& cb_handle = cb_context.GetCBState().Handle();
+    const VulkanTypedHandle& cb_handle = reporter.cb_context.GetCBState().Handle();
 
     // During recording, env.handle is the command buffer handle. Skip to avoid duplication.
     if (env.handle != cb_handle) {

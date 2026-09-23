@@ -170,6 +170,16 @@ struct SyncEnvironment {
     const ResourceUsageInfoProvider& usage_info_provider;
 };
 
+struct ErrorReporter {
+    const CommandBufferContext& cb_context;
+    const Location& loc;
+
+    // The tag of the replayed command in cb_context, or kInvalidTag during record-time validation
+    ResourceUsageTag replay_tag = kInvalidTag;
+
+    bool IsReplay() const { return replay_tag != kInvalidTag; }
+};
+
 class CommandBufferContext final : public ResourceUsageInfoProvider, public DebugNameProvider {
   public:
     struct AsProxyContext {};

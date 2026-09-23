@@ -244,8 +244,7 @@ const vvl::ImageView* RenderingInstance::GetClearAttachmentView(const VkClearAtt
 }
 
 bool RenderingInstance::ValidateBeginRendering(const SyncEnvironment& env, const AccessContext& access_context,
-                                               const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                               const Location& loc, uint32_t render_pass_instance_id) const {
+                                               const ErrorReporter& reporter, uint32_t render_pass_instance_id) const {
     assert(view_gens.size() == attachments.size());
     bool skip = false;
     const SyncValidator& validator = env.validator;
@@ -269,7 +268,7 @@ bool RenderingInstance::ValidateBeginRendering(const SyncEnvironment& env, const
                                       : view_gens[i];
         const HazardResult hazard = access_context.DetectAttachmentHazard(range_gen, load_index, attachment_access, env.queue_id);
         if (hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
+            const LogObjectList objlist = BaseObjectList(env, reporter, attachment.view->Handle());
 
             std::ostringstream ss;
             ss << vvl::String(vvl::Field::pRenderingInfo) << ".";
@@ -278,9 +277,9 @@ bool RenderingInstance::ValidateBeginRendering(const SyncEnvironment& env, const
             ss << ", loadOp " << string_VkAttachmentLoadOp(attachment.load_op) << ")";
             std::string resource_description = ss.str();
 
-            const std::string error = validator.error_messages_.BeginRenderingError(env, hazard, cb_context, replay_tag, loc,
-                                                                                    resource_description, attachment.load_op);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+            const std::string error =
+                validator.error_messages_.BeginRenderingError(env, hazard, reporter, resource_description, attachment.load_op);
+            skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
             if (skip) {
                 break;
             }
@@ -313,8 +312,7 @@ void RenderingInstance::RecordBeginRendering(AccessContext& access_context, uint
 }
 
 bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const AccessContext& access_context,
-                                             const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                             const Location& loc, uint32_t render_pass_instance_id) const {
+                                             const ErrorReporter& reporter, uint32_t render_pass_instance_id) const {
     bool skip = false;
     const SyncValidator& validator = env.validator;
 
@@ -343,7 +341,7 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
             ImageRangeGen view_gen = view_mask ? view_gens[i] : attachment.GetRenderAreaRangeGen(render_area);
             HazardResult hazard = access_context.DetectAttachmentHazard(view_gen, kResolveRead, resolve_read_access, env.queue_id);
             if (hazard.IsHazard()) {
-                const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
+                const LogObjectList objlist = BaseObjectList(env, reporter, attachment.view->Handle());
 
                 std::ostringstream ss;
                 attachment_description(attachment.view, ss);
@@ -351,8 +349,8 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
                 const std::string resource_description = ss.str();
 
                 const std::string error = validator.error_messages_.EndRenderingResolveError(
-                    env, hazard, cb_context, replay_tag, loc, resource_description, attachment.resolve_mode, false);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+                    env, hazard, reporter, resource_description, attachment.resolve_mode, false);
+                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
                 if (skip) {
                     break;
                 }
@@ -363,7 +361,7 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
             ImageRangeGen resolve_gen = attachment.GetResolveRangeGen(render_area);
             hazard = access_context.DetectAttachmentHazard(resolve_gen, kResolveWrite, resolve_write_access, env.queue_id);
             if (hazard.IsHazard()) {
-                const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.resolve_view->Handle());
+                const LogObjectList objlist = BaseObjectList(env, reporter, attachment.resolve_view->Handle());
 
                 std::ostringstream ss;
                 attachment_description(attachment.resolve_view, ss);
@@ -371,8 +369,8 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
                 const std::string resource_description = ss.str();
 
                 const std::string error = validator.error_messages_.EndRenderingResolveError(
-                    env, hazard, cb_context, replay_tag, loc, resource_description, attachment.resolve_mode, true);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+                    env, hazard, reporter, resource_description, attachment.resolve_mode, true);
+                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
                 if (skip) {
                     break;
                 }
@@ -386,7 +384,7 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
             ImageRangeGen store_gen = view_gens[i];
             HazardResult hazard = access_context.DetectAttachmentHazard(store_gen, store_access, attachment_access, env.queue_id);
             if (hazard.IsHazard()) {
-                const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
+                const LogObjectList objlist = BaseObjectList(env, reporter, attachment.view->Handle());
 
                 std::ostringstream ss;
                 attachment_description(attachment.view, ss);
@@ -394,8 +392,8 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
                 const std::string resource_description = ss.str();
 
                 const std::string error = validator.error_messages_.EndRenderingStoreError(
-                    env, hazard, cb_context, replay_tag, loc, resource_description, attachment.store_op);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, loc, error);
+                    env, hazard, reporter, resource_description, attachment.store_op);
+                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
                 if (skip) {
                     break;
                 }
@@ -441,8 +439,7 @@ void RenderingInstance::RecordEndRendering(AccessContext& access_context, uint32
 }
 
 bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, const AccessContext& access_context,
-                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                const Location& loc, uint32_t render_pass_instance_id,
+                                                const ErrorReporter& reporter, uint32_t render_pass_instance_id,
                                                 const vvl::Pipeline* pipeline, bool depth_write, bool stencil_write) const {
     bool skip = false;
     if (!pipeline || pipeline->RasterizationDisabled()) {
@@ -465,11 +462,11 @@ bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, cons
                                                attachment_access, env.queue_id);
 
         if (hazard.IsHazard()) {
-            const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
-            const Location attachment_loc = attachment.GetLocation(output_location, loc.function);
-            const Location location = replay_tag == kInvalidTag ? attachment_loc.dot(vvl::Field::imageView) : loc;
+            const LogObjectList objlist = BaseObjectList(env, reporter, attachment.view->Handle());
+            const Location attachment_loc = attachment.GetLocation(output_location, reporter.loc.function);
+            const Location location = reporter.IsReplay() ? reporter.loc : attachment_loc.dot(vvl::Field::imageView);
             const std::string error = validator.error_messages_.DynamicRenderingAttachmentError(
-                env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(*attachment.view));
+                env, hazard, reporter, validator.FormatHandle(*attachment.view));
             skip |= validator.SyncError(hazard.Hazard(), objlist, location, error);
         }
     }
@@ -491,11 +488,11 @@ bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, cons
                                  attachment_access, env.queue_id);
 
             if (hazard.IsHazard()) {
-                const LogObjectList objlist = BaseObjectList(env, cb_context, attachment.view->Handle());
-                const Location attachment_loc = attachment.GetLocation(uint32_t(i), loc.function);
-                const Location location = replay_tag == kInvalidTag ? attachment_loc.dot(vvl::Field::imageView) : loc;
+                const LogObjectList objlist = BaseObjectList(env, reporter, attachment.view->Handle());
+                const Location attachment_loc = attachment.GetLocation(uint32_t(i), reporter.loc.function);
+                const Location location = reporter.IsReplay() ? reporter.loc : attachment_loc.dot(vvl::Field::imageView);
                 const std::string error = validator.error_messages_.DynamicRenderingAttachmentError(
-                    env, hazard, cb_context, replay_tag, loc, validator.FormatHandle(*attachment.view));
+                    env, hazard, reporter, validator.FormatHandle(*attachment.view));
                 skip |= validator.SyncError(hazard.Hazard(), objlist, location, error);
             }
         }

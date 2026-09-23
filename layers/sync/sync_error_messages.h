@@ -32,7 +32,7 @@ class Pipeline;
 
 namespace syncval {
 
-class CommandBufferContext;
+struct ErrorReporter;
 class HazardResult;
 class QueueBatchContext;
 class SyncValidator;
@@ -47,121 +47,102 @@ class ErrorMessages {
                       const std::string& resource_description, const char* message_type,
                       const AdditionalMessageInfo& additional_info = {}) const;
 
-    std::string BufferError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                            ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
-                            const AccessRange range) const;
+    std::string BufferError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                            const std::string& resource_description, const AccessRange range) const;
 
-    std::string BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
-                                uint32_t region_index, AccessRange range) const;
+    std::string BufferCopyError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                                const std::string& resource_description, uint32_t region_index, AccessRange range) const;
 
-    std::string AccelerationStructureError(const SyncEnvironment& env, const HazardResult& hazard,
-                                           const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string AccelerationStructureError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                            const std::string& resource_description, AccessRange range,
                                            VkAccelerationStructureKHR as, const Location& as_location) const;
 
-    std::string ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard,
-                                          const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string ImageCopyResolveBlitError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                           const std::string& resource_description, uint32_t region_index, const VkOffset3D& offset,
                                           const VkExtent3D& extent, const VkImageSubresourceLayers& subresource) const;
 
-    std::string ImageClearError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
-                                uint32_t subresource_range_index, const VkImageSubresourceRange& subresource_range) const;
+    std::string ImageClearError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                                const std::string& resource_description, uint32_t subresource_range_index,
+                                const VkImageSubresourceRange& subresource_range) const;
 
-    std::string BufferDescriptorError(const SyncEnvironment& env, const HazardResult& hazard,
-                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string BufferDescriptorError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                       const std::string& resource_description, const vvl::Pipeline& pipeline, uint32_t set_number,
                                       const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                       uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                       VkShaderStageFlagBits shader_stage) const;
 
-    std::string ImageDescriptorError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                     ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
-                                     const vvl::Pipeline& pipeline, uint32_t set_number, const vvl::DescriptorSet& descriptor_set,
-                                     VkDescriptorType descriptor_type, uint32_t descriptor_binding,
-                                     uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage,
-                                     VkImageLayout image_layout) const;
+    std::string ImageDescriptorError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                                     const std::string& resource_description, const vvl::Pipeline& pipeline, uint32_t set_number,
+                                     const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+                                     uint32_t descriptor_binding, uint32_t descriptor_array_element,
+                                     VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const;
 
     std::string AccelerationStructureDescriptorError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                     const Location& loc, const std::string& resource_description,
+                                                     const ErrorReporter& reporter, const std::string& resource_description,
                                                      const vvl::Pipeline& pipeline, uint32_t set_number,
                                                      const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                                      uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                                      VkShaderStageFlagBits shader_stage) const;
 
-    std::string ClearAttachmentError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                     ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
-                                     VkImageAspectFlags clear_aspects, uint32_t clear_rect_index,
-                                     const VkClearRect& clear_rect) const;
+    std::string ClearAttachmentError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                                     const std::string& resource_description, VkImageAspectFlags clear_aspects,
+                                     uint32_t clear_rect_index, const VkClearRect& clear_rect) const;
 
-    std::string RenderPassAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
-                                          const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string RenderPassAttachmentError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                           const std::string& resource_description) const;
 
     std::string DynamicRenderingAttachmentError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                const Location& loc, const std::string& resource_description) const;
+                                                const ErrorReporter& reporter, const std::string& resource_description) const;
 
-    std::string BeginRenderingError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                    ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
-                                    VkAttachmentLoadOp load_op) const;
-    std::string EndRenderingResolveError(const SyncEnvironment& env, const HazardResult& hazard,
-                                         const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string BeginRenderingError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                                    const std::string& resource_description, VkAttachmentLoadOp load_op) const;
+    std::string EndRenderingResolveError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                          const std::string& resource_description, VkResolveModeFlagBits resolve_mode,
                                          bool resolve_write) const;
-    std::string EndRenderingStoreError(const SyncEnvironment& env, const HazardResult& hazard,
-                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string EndRenderingStoreError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                        const std::string& resource_description, VkAttachmentStoreOp store_op) const;
 
-    std::string RenderPassLoadOpError(const SyncEnvironment& env, const HazardResult& hazard,
-                                      const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string RenderPassLoadOpError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                       const std::string& resource_description, uint32_t subpass, uint32_t attachment,
                                       VkAttachmentLoadOp load_op, bool is_color) const;
     std::string RenderPassLoadOpVsLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                        const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                        const Location& loc, const std::string& resource_description,
+                                                        const ErrorReporter& reporter, const std::string& resource_description,
                                                         VkAttachmentLoadOp load_op, bool is_color) const;
-    std::string RenderPassResolveError(const SyncEnvironment& env, const HazardResult& hazard,
-                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string RenderPassResolveError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                        const std::string& resource_description) const;
-    std::string RenderPassStoreOpError(const SyncEnvironment& env, const HazardResult& hazard,
-                                       const CommandBufferContext& cb_context, ResourceUsageTag replay_tag, const Location& loc,
+    std::string RenderPassStoreOpError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
                                        const std::string& resource_description, VkAttachmentStoreOp store_op) const;
 
     std::string RenderPassLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                const Location& loc, const std::string& resource_description,
+                                                const ErrorReporter& reporter, const std::string& resource_description,
                                                 VkImageLayout old_layout, VkImageLayout new_layout) const;
     std::string RenderPassLayoutTransitionVsResolveError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                         const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                         const Location& loc, const std::string& resource_description,
+                                                         const ErrorReporter& reporter, const std::string& resource_description,
                                                          VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
                                                          VkImageLayout new_layout, uint32_t resolve_subpass) const;
     std::string RenderPassFinalLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
-                                                     const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-                                                     const Location& loc, const std::string& resource_description,
+                                                     const ErrorReporter& reporter, const std::string& resource_description,
                                                      VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
                                                      VkImageLayout new_layout) const;
-    std::string RenderPassFinalLayoutTransitionVsStoreOrResolveError(
-        const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context, ResourceUsageTag replay_tag,
-        const Location& loc, const std::string& resource_description, VulkanTypedHandle render_pass_handle,
-        VkImageLayout old_layout, VkImageLayout new_layout, uint32_t store_resolve_subpass) const;
+    std::string RenderPassFinalLayoutTransitionVsStoreOrResolveError(const SyncEnvironment& env, const HazardResult& hazard,
+                                                                     const ErrorReporter& reporter,
+                                                                     const std::string& resource_description,
+                                                                     VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
+                                                                     VkImageLayout new_layout,
+                                                                     uint32_t store_resolve_subpass) const;
 
-    std::string ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                                  ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description,
-                                  const SyncImageBarrier& barrier) const;
+    std::string ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                                  const std::string& resource_description, const SyncImageBarrier& barrier) const;
 
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,
                              const std::string& resource_description, uint32_t swapchain_index) const;
 
-    std::string VideoError(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                           ResourceUsageTag replay_tag, const Location& loc, const std::string& resource_description) const;
+    std::string VideoError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                           const std::string& resource_description) const;
 
   private:
-    vvl::Func AddReplayInfo(const SyncEnvironment& env, const HazardResult& hazard, const CommandBufferContext& cb_context,
-                            ResourceUsageTag replay_tag, const Location& loc, AdditionalMessageInfo& additional_info) const;
+    vvl::Func AddReplayInfo(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                            AdditionalMessageInfo& additional_info) const;
 
   private:
     SyncValidator& validator_;
