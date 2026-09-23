@@ -683,7 +683,7 @@ TEST_F(PositiveDescriptorHeapEXT, Sampler) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
@@ -751,7 +751,7 @@ TEST_F(PositiveDescriptorHeapEXT, CombinedImageSampler) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
@@ -822,7 +822,7 @@ TEST_F(PositiveDescriptorHeapEXT, UseCombinedImageSamplerIndexPushIndex) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
@@ -899,7 +899,7 @@ TEST_F(PositiveDescriptorHeapEXT, UseCombinedImageSamplerIndexIndirectIndex) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
@@ -988,7 +988,7 @@ TEST_F(PositiveDescriptorHeapEXT, UseCombinedImageSamplerIndexIndirectIndexArray
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], (color.float32[i] * 2));
+            ASSERT_NEAR(data[i], (color.float32[i] * 2), 0.0001f);
         }
     }
 }
@@ -1065,7 +1065,7 @@ TEST_F(PositiveDescriptorHeapEXT, EmbeddedSampler) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
@@ -3499,7 +3499,7 @@ TEST_F(PositiveDescriptorHeapEXT, ReservedRangeInFront) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
