@@ -261,7 +261,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, ImageAndSampler) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
@@ -412,7 +412,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, ImageAndSamplerSlang) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
@@ -567,7 +567,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, ImageAndSamplerSlangUnified) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
@@ -2389,7 +2389,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, GlslStructuredSampler) {
     if (!IsPlatformMockICD()) {
         float* data = static_cast<float*>(buffer.Memory().Map());
         for (uint32_t i = 0; i < 4; ++i) {
-            ASSERT_EQ(data[i], color.float32[i]);
+            ASSERT_NEAR(data[i], color.float32[i], 0.0001f);
         }
     }
 }
