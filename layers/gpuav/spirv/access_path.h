@@ -83,6 +83,8 @@ struct AccessPath {
         // TODO - Need to handle OffsetIdEXT correctly, this is a dumb hack
         uint32_t heap_offset_member_index = 0;
         uint32_t sampler_heap_offset_member_index = 0;
+        bool has_heap_offset_member_index = false;
+        bool has_sampler_heap_offset_member_index = false;
 
         VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
     } descriptor;

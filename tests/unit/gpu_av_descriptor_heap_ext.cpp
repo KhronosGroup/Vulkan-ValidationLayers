@@ -1767,7 +1767,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, UntypedPointersOffsetIdNonArray) {
        %main = OpFunction %void None %void_fn
           %5 = OpLabel
 
-%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap
+%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_0
   %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_0
    %member_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0 %int_0
                OpStore %member_0 %uint_42
@@ -3069,6 +3069,97 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceHeapDataOOB) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingUntypedPointersStoreToImplicitZero) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/spirv/SPIR-V/-/work_items/965");
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    const VkLayerSettingEXT layer_setting{OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({layer_setting}, false));
+
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 3);
+
+    vkt::Buffer buffer_0(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer buffer_1(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, heap_props.bufferDescriptorSize * 2);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, heap_props.bufferDescriptorSize * 1);
+
+    // layout(storage_buffer) SSBO {
+    //     uint data;
+    // };
+    // heap {
+    //     layout(offset = buffer_size * 2) SSBO buffer_0;
+    //     layout(offset = buffer_size) SSBO buffer_1;
+    // } heap_layout;
+    //
+    // heap_layout.buffer_0.data = 42;
+    // heap_layout.buffer_1.data = 43;
+    char const* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %heap_layout Block
+               OpMemberDecorateIdEXT %heap_layout 0 OffsetIdEXT %buf_size2
+               OpMemberDecorateIdEXT %heap_layout 1 OffsetIdEXT %buf_size
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_2 = OpConstant %int 2
+    %uint_42 = OpConstant %uint 42
+    %uint_43 = OpConstant %uint 43
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+        %SSBO = OpTypeStruct %uint
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+
+%type_buffer = OpTypeBufferEXT StorageBuffer
+   %buf_size = OpConstantSizeOfEXT %int %type_buffer
+  %buf_size2 = OpSpecConstantOp %int IMul %buf_size %int_2
+
+ %heap_layout = OpTypeStruct %type_buffer %type_buffer
+
+       %main = OpFunction %void None %void_fn
+          %5 = OpLabel
+
+          ;; The lack of the int_0 does NOT mean struct element zero, but instead the front
+          ;; of the struct, which has no SSBO to it
+%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap
+  %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_0
+   %member_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0 %int_0
+               OpStore %member_0 %uint_42
+
+%heap_index_1 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_1
+  %buf_ptr_1 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_1
+   %member_1 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_1 %int_0
+               OpStore %member_1 %uint_43
+
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-12472");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

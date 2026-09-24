@@ -559,11 +559,15 @@ uint32_t DescriptorHeapPass::CreateFunctionCallCombinedSampler(BasicBlock& block
 }
 
 // TODO - this should just be part of AccessPath
-DescriptorHeapPass::UntypedLayout DescriptorHeapPass::GetUntypedLayout(const Type& pointer_type,
-                                                                       uint32_t heap_offset_member_index) {
+DescriptorHeapPass::UntypedLayout DescriptorHeapPass::GetUntypedLayout(const Type& pointer_type, uint32_t heap_offset_member_index,
+                                                                       bool has_heap_offset_member_index) {
     DescriptorHeapPass::UntypedLayout untyped_layout;
     const Type* descriptor_array = nullptr;
-    if (pointer_type.spv_type_ == SpvType::kStruct) {
+
+    // If there is no |has_heap_offset_member_index|
+    // This means we are pointing to the start of the struct, which is heap offset zero... not memeber zero
+    // https://gitlab.khronos.org/spirv/SPIR-V/-/work_items/965
+    if (pointer_type.spv_type_ == SpvType::kStruct && has_heap_offset_member_index) {
         const Instruction* offset_decoration =
             GetMemberDecoration(pointer_type.Id(), heap_offset_member_index, spv::DecorationOffsetIdEXT);
         if (offset_decoration) {
@@ -646,12 +650,14 @@ bool DescriptorHeapPass::RequiresInstrumentation(const Function& function, const
     meta.instrument_separate_sampler = descriptor_path.HasSampler() && !has_embedded_sampler;
 
     if (meta.mapping_index_resource == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
-        meta.untyped_layout_resource = GetUntypedLayout(*meta.access_path->pointer_type, descriptor_path.heap_offset_member_index);
+        meta.untyped_layout_resource = GetUntypedLayout(*meta.access_path->pointer_type, descriptor_path.heap_offset_member_index,
+                                                        descriptor_path.has_heap_offset_member_index);
     }
     // again... because samplers
     if (meta.mapping_index_sampler == glsl::kInst_DescriptorHeap_MappingIndexUntyped) {
         meta.untyped_layout_sampler =
-            GetUntypedLayout(*descriptor_path.sampler_pointer_type, descriptor_path.sampler_heap_offset_member_index);
+            GetUntypedLayout(*descriptor_path.sampler_pointer_type, descriptor_path.sampler_heap_offset_member_index,
+                             descriptor_path.has_heap_offset_member_index);
     }
     if (meta.untyped_layout_resource.is_multidimensional_array || meta.untyped_layout_sampler.is_multidimensional_array) {
         return false;  // no support currently

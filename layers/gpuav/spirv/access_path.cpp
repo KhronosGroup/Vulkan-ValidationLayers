@@ -333,6 +333,7 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
                 const Constant* struct_member_index_constant = type_manager.FindConstantById(next_inst->Word(5));
                 assert(struct_member_index_constant);
                 descriptor.heap_offset_member_index = struct_member_index_constant->GetValueUint32();
+                descriptor.has_heap_offset_member_index = true;
             }
             if (next_inst->Length() > 6) {
                 descriptor.index_id = next_inst->Word(6);
@@ -386,6 +387,7 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
                     const Constant* struct_member_index_constant = type_manager.FindConstantById(next_inst->Word(5));
                     assert(struct_member_index_constant);
                     descriptor.sampler_heap_offset_member_index = struct_member_index_constant->GetValueUint32();
+                    descriptor.has_sampler_heap_offset_member_index = true;
                 }
             }
         }

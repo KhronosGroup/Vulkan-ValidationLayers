@@ -1112,7 +1112,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, UntypedPointersOffsetIdNonArray) {
        %main = OpFunction %void None %void_fn
           %5 = OpLabel
 
-%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap
+%heap_index_0 = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %int_0
   %buf_ptr_0 = OpBufferPointerEXT %_ptr_StorageBuffer %heap_index_0
    %member_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %buf_ptr_0 %int_0
                OpStore %member_0 %uint_42
@@ -1134,6 +1134,11 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, UntypedPointersOffsetIdNonArray) {
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t* buffer_0_data = (uint32_t*)buffer_0.Memory().Map();
+    ASSERT_TRUE(buffer_0_data[0] == 42);
+    uint32_t* buffer_1_data = (uint32_t*)buffer_1.Memory().Map();
+    ASSERT_TRUE(buffer_1_data[0] == 43);
 }
 
 TEST_F(PositiveGpuAVDescriptorHeapEXT, SecondaryInheritance) {
