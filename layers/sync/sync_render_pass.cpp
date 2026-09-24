@@ -54,7 +54,7 @@ class ValidateResolveAction {
             const std::string resource_description = ss.str();
             const std::string error =
                 validator.error_messages_.RenderPassResolveError(env_, hazard, reporter_, resource_description);
-            skip_ |= validator.SyncError(hazard.Hazard(), objlist, reporter_.loc, error);
+            skip_ |= reporter_.ReportHazard(hazard, view_gen.GetViewState()->Handle(), objlist, reporter_.loc, error);
         }
     }
     // Providing a mechanism for the constructing caller to get the result of the validation
@@ -204,15 +204,15 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncEnvironment& e
             ss << ")";
             const std::string resource_description = ss.str();
 
-            if (hazard.Tag() == kInvalidTag) {
+            if (hazard.PriorTag() == kInvalidTag) {
                 const std::string error = validator.error_messages_.RenderPassLayoutTransitionVsResolveError(
                     env, hazard, reporter, resource_description, rp_state.Handle(), transition.old_layout, transition.new_layout,
                     transition.src_subpass);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, attachment_view->Handle(), objlist, reporter.loc, error);
             } else {
                 const std::string error = validator.error_messages_.RenderPassLayoutTransitionError(
                     env, hazard, reporter, resource_description, transition.old_layout, transition.new_layout);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, attachment_view->Handle(), objlist, reporter.loc, error);
             }
         }
     }
@@ -289,14 +289,14 @@ bool RenderPassAccessContext::ValidateLoadOperation(const SyncEnvironment& env, 
                 ss << " (loadOp " << string_VkAttachmentLoadOp(load_op) << ")";
                 const std::string resource_description = ss.str();
 
-                if (hazard.Tag() == kInvalidTag) {  // Hazard vs. ILT
+                if (hazard.PriorTag() == kInvalidTag) {  // Hazard vs. ILT
                     const std::string error = validator.error_messages_.RenderPassLoadOpVsLayoutTransitionError(
                         env, hazard, reporter, resource_description, load_op, is_color);
-                    skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                    skip |= reporter.ReportHazard(hazard, view_gen.GetViewState()->Handle(), objlist, reporter.loc, error);
                 } else {
                     const std::string error = validator.error_messages_.RenderPassLoadOpError(
                         env, hazard, reporter, resource_description, subpass, i, load_op, is_color);
-                    skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                    skip |= reporter.ReportHazard(hazard, view_gen.GetViewState()->Handle(), objlist, reporter.loc, error);
                 }
             }
         }
@@ -371,7 +371,7 @@ bool RenderPassAccessContext::ValidateStoreOperation(const SyncEnvironment& env,
 
                 const std::string error =
                     validator.error_messages_.RenderPassStoreOpError(env, hazard, reporter, resource_description, store_op);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, view_gen.GetViewState()->Handle(), objlist, reporter.loc, error);
             }
         }
     }
@@ -560,7 +560,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncEnvironmen
         const std::string resource_description = ss.str();
 
         const std::string error = validator.error_messages_.RenderPassAttachmentError(env, hazard, reporter, resource_description);
-        return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+        return reporter.ReportHazard(hazard, attachment_view.Handle(), objlist, reporter.loc, error);
     };
 
     // Input attachment accesses are validated by ShaderAccessCommand
@@ -782,15 +782,15 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncEn
             ss << ")";
             const std::string resource_description = ss.str();
 
-            if (hazard.Tag() == kInvalidTag) {  // Hazard vs. store/resolve
+            if (hazard.PriorTag() == kInvalidTag) {  // Hazard vs. store/resolve
                 const std::string error = validator.error_messages_.RenderPassFinalLayoutTransitionVsStoreOrResolveError(
                     env, hazard, reporter, resource_description, rp_state_->Handle(), transition.old_layout, transition.new_layout,
                     transition.src_subpass);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, view_gen.GetViewState()->Handle(), objlist, reporter.loc, error);
             } else {
                 const std::string error = validator.error_messages_.RenderPassFinalLayoutTransitionError(
                     env, hazard, reporter, resource_description, rp_state_->Handle(), transition.old_layout, transition.new_layout);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, view_gen.GetViewState()->Handle(), objlist, reporter.loc, error);
             }
         }
     }

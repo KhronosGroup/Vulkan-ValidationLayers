@@ -110,13 +110,13 @@ class SyncEventsContext {
 };
 
 bool ValidateCmdSetEvent(const SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& src_exec_scope,
-                         const Location& loc);
+                         const ErrorReporter& reporter, const Location& loc);
 
 bool ValidateCmdResetEvent(const SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& exec_scope,
-                           const Location& loc);
+                           const ErrorReporter& reporter, const Location& loc);
 
 bool ValidateCmdWaitEvents(const SyncEnvironment& env, vvl::span<const std::shared_ptr<const vvl::Event>> events,
-                           const Location& loc);
+                           const ErrorReporter& reporter, const Location& loc);
 
 bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const AccessContext& access_context,
                                            vvl::span<const std::shared_ptr<const vvl::Event>> events,

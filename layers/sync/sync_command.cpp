@@ -86,11 +86,11 @@ struct CommandReplayContext {
 };
 
 bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_context, const CommandBufferContext& cb_context,
-                    ResourceUsageTag base_tag, const Location& loc) {
+                    ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards) {
     bool skip = false;
     const CommandData& command_data = cb_context.GetCommandData();
     CommandReplayContext replay_context(env, destination_access_context, base_tag);
-    ErrorReporter reporter{cb_context, loc};
+    ErrorReporter reporter{cb_context, loc, new_hazards, base_tag};
 
     auto replay_common = [&skip, &command_data, &reporter, &env, base_tag](const auto& storage, AccessContext& access_context) {
         const auto command = storage.MakeCommand(command_data);
@@ -419,6 +419,22 @@ BufferCopyCommand BufferCopyCommand::Storage::MakeCommand(const CommandData& com
     return {src_buffer, dst_buffer, regions, src_handle_index, dst_handle_index};
 }
 
+// Record-time validation of a command
+template <typename Command, typename Context>
+static bool ValidateRecording(const Command& command, const Context& access_context, const CommandBufferContext& cb_context,
+                              const Location& loc) {
+    const SyncEnvironment& env = cb_context.GetSyncEnvironment();
+    std::vector<ReportedHazard> new_hazards;
+
+    const bool skip = command.Validate(env, access_context, ErrorReporter{cb_context, loc, &new_hazards});
+
+    // A skipped command is not recorded, its tag goes to the next command
+    if (!skip) {
+        cb_context.RecordReportedHazards(new_hazards);
+    }
+    return skip;
+}
+
 BufferCopyCommand::Storage BufferCopyCommand::MakeStorage(CommandData& command_data) const {
     const uint32_t src_buffer_index = command_data.AddBuffer(src_buffer);
     const uint32_t dst_buffer_index = command_data.AddBuffer(dst_buffer);
@@ -431,7 +447,7 @@ BufferCopyCommand::Storage BufferCopyCommand::MakeStorage(CommandData& command_d
 }
 
 bool BufferCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool BufferCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -447,7 +463,7 @@ bool BufferCopyCommand::Validate(const SyncEnvironment& env, const AccessContext
             const std::string resource_description = validator.FormatHandle(src_buffer);
             const std::string error = validator.error_messages_.BufferCopyError(env, src_hazard, reporter, resource_description,
                                                                                 uint32_t(region_index), src_range);
-            skip |= validator.SyncError(src_hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(src_hazard, src_buffer.Handle(), objlist, reporter.loc, error);
         }
         const AccessRange dst_range = MakeRange(dst_buffer, region.dst_offset, region.size);
         auto dst_hazard = access_context.DetectHazard(dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
@@ -456,7 +472,7 @@ bool BufferCopyCommand::Validate(const SyncEnvironment& env, const AccessContext
             const std::string resource_description = validator.FormatHandle(dst_buffer);
             const std::string error = validator.error_messages_.BufferCopyError(env, dst_hazard, reporter, resource_description,
                                                                                 uint32_t(region_index), dst_range);
-            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(dst_hazard, dst_buffer.Handle(), objlist, reporter.loc, error);
         }
         if (skip) {
             break;
@@ -490,7 +506,7 @@ bool BufferAccessCommand::Validate(const CommandBufferContext& cb_context, const
     // Buffer markers can execute inside a render pass and need its current subpass context,
     // but in other cases GetCbAccessContext() is sufficient
     const AccessContext& access_context = cb_context.GetCurrentAccessContext();
-    return Validate(cb_context.GetSyncEnvironment(), access_context, ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, access_context, cb_context, loc);
 }
 
 bool BufferAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -517,7 +533,7 @@ bool BufferAccessCommand::Validate(const SyncEnvironment& env, const AccessConte
     const char* buffer_name_prefix = GetBufferNamePrefix(buffer_name);
     const std::string resource_description = buffer_name_prefix + validator.FormatHandle(buffer.Handle());
     const std::string error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, range);
-    return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+    return reporter.ReportHazard(hazard, buffer.Handle(), objlist, reporter.loc, error);
 }
 
 void BufferAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
@@ -557,7 +573,7 @@ bool StridedBufferAccessCommand::Validate(const SyncEnvironment& env, const Acce
             const LogObjectList objlist = BaseObjectList(env, reporter, buffer.Handle());
             const std::string resource_description = GetBufferNamePrefix(buffer_name) + validator.FormatHandle(buffer.Handle());
             const std::string error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, range);
-            return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+            return reporter.ReportHazard(hazard, buffer.Handle(), objlist, reporter.loc, error);
         }
     }
     return false;
@@ -591,7 +607,7 @@ ImageCopyCommand::Storage ImageCopyCommand::MakeStorage(CommandData& command_dat
 }
 
 bool ImageCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool ImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -608,7 +624,7 @@ bool ImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext&
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
                 env, src_hazard, reporter, resource_description, uint32_t(region_index), region.srcOffset, region.extent,
                 region.srcSubresource);
-            skip |= validator.SyncError(src_hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(src_hazard, src_image.Handle(), objlist, reporter.loc, error);
         }
         auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), region.dstOffset,
                                                       region.extent, SYNC_COPY_TRANSFER_WRITE);
@@ -618,7 +634,7 @@ bool ImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext&
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
                 env, dst_hazard, reporter, resource_description, uint32_t(region_index), region.dstOffset, region.extent,
                 region.dstSubresource);
-            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(dst_hazard, dst_image.Handle(), objlist, reporter.loc, error);
         }
         if (skip) {
             break;
@@ -689,7 +705,7 @@ small_vector<VkImageBlit, 1> ImageBlitCommand::MakeRegions(vvl::span<const VkIma
 }
 
 bool ImageBlitCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool ImageBlitCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -708,7 +724,7 @@ bool ImageBlitCommand::Validate(const SyncEnvironment& env, const AccessContext&
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
                 env, src_hazard, reporter, resource_description, uint32_t(region_index), src_offset, src_extent,
                 region.srcSubresource);
-            skip |= validator.SyncError(src_hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(src_hazard, src_image.Handle(), objlist, reporter.loc, error);
         }
         const VkOffset3D dst_offset = GetBlitOffset(region.dstOffsets);
         const VkExtent3D dst_extent = GetBlitExtent(region.dstOffsets);
@@ -720,7 +736,7 @@ bool ImageBlitCommand::Validate(const SyncEnvironment& env, const AccessContext&
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
                 env, dst_hazard, reporter, resource_description, uint32_t(region_index), dst_offset, dst_extent,
                 region.dstSubresource);
-            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(dst_hazard, dst_image.Handle(), objlist, reporter.loc, error);
         }
         if (skip) {
             break;
@@ -771,7 +787,7 @@ small_vector<VkImageResolve, 1> ImageResolveCommand::MakeRegions(vvl::span<const
 }
 
 bool ImageResolveCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool ImageResolveCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -788,7 +804,7 @@ bool ImageResolveCommand::Validate(const SyncEnvironment& env, const AccessConte
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
                 env, src_hazard, reporter, resource_description, uint32_t(region_index), region.srcOffset, region.extent,
                 region.srcSubresource);
-            skip |= validator.SyncError(src_hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(src_hazard, src_image.Handle(), objlist, reporter.loc, error);
         }
         auto dst_hazard = access_context.DetectHazard(dst_image, RangeFromLayers(region.dstSubresource), region.dstOffset,
                                                       region.extent, SYNC_RESOLVE_TRANSFER_WRITE);
@@ -798,7 +814,7 @@ bool ImageResolveCommand::Validate(const SyncEnvironment& env, const AccessConte
             const std::string error = validator.error_messages_.ImageCopyResolveBlitError(
                 env, dst_hazard, reporter, resource_description, uint32_t(region_index), region.dstOffset, region.extent,
                 region.dstSubresource);
-            skip |= validator.SyncError(dst_hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(dst_hazard, dst_image.Handle(), objlist, reporter.loc, error);
         }
         if (skip) {
             break;
@@ -836,7 +852,7 @@ ImageClearCommand::Storage ImageClearCommand::MakeStorage(CommandData& command_d
 }
 
 bool ImageClearCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool ImageClearCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -850,7 +866,7 @@ bool ImageClearCommand::Validate(const SyncEnvironment& env, const AccessContext
             const std::string resource_description = validator.FormatHandle(image);
             const std::string error = validator.error_messages_.ImageClearError(env, hazard, reporter, resource_description,
                                                                                 uint32_t(range_index), range);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(hazard, image.Handle(), objlist, reporter.loc, error);
         }
     }
     return skip;
@@ -901,7 +917,7 @@ small_vector<VkBufferImageCopy, 1> BufferImageCopyCommand::MakeRegions(vvl::span
 }
 
 bool BufferImageCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool BufferImageCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -917,7 +933,7 @@ bool BufferImageCopyCommand::Validate(const SyncEnvironment& env, const AccessCo
         const LogObjectList objlist = BaseObjectList(env, reporter, buffer.Handle());
         const std::string error =
             validator.error_messages_.BufferCopyError(env, hazard, reporter, validator.FormatHandle(buffer), region_index, range);
-        return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+        return reporter.ReportHazard(hazard, buffer.Handle(), objlist, reporter.loc, error);
     };
 
     const auto validate_image = [&](uint32_t region_index, const VkBufferImageCopy& region, SyncAccessIndex image_access) {
@@ -930,7 +946,7 @@ bool BufferImageCopyCommand::Validate(const SyncEnvironment& env, const AccessCo
         const std::string error =
             validator.error_messages_.ImageCopyResolveBlitError(env, hazard, reporter, validator.FormatHandle(image), region_index,
                                                                 region.imageOffset, region.imageExtent, region.imageSubresource);
-        return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+        return reporter.ReportHazard(hazard, image.Handle(), objlist, reporter.loc, error);
     };
 
     bool skip = false;
@@ -979,7 +995,7 @@ BarrierCommand::Storage BarrierCommand::MakeStorage(CommandData& command_data) c
 }
 
 bool BarrierCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1005,7 +1021,7 @@ bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& a
             const std::string resource_description = validator.FormatHandle(image_state.Handle());
             const std::string error =
                 validator.error_messages_.ImageBarrierError(env, hazard, reporter, resource_description, image_barrier);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(hazard, image_state.Handle(), objlist, reporter.loc, error);
         }
     }
     return skip;
@@ -1023,7 +1039,7 @@ SetEventCommand::Storage SetEventCommand::MakeStorage(CommandData& command_data)
 }
 
 bool SetEventCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool SetEventCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1031,7 +1047,7 @@ bool SetEventCommand::Validate(const SyncEnvironment& env, const AccessContext& 
     const Location command_loc(command);
     const Location& error_loc = reporter.IsReplay() ? command_loc : reporter.loc;
 
-    return ValidateCmdSetEvent(env, event, src_exec_scope, error_loc);
+    return ValidateCmdSetEvent(env, event, src_exec_scope, reporter, error_loc);
 }
 
 void SetEventCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
@@ -1052,14 +1068,14 @@ ResetEventCommand::Storage ResetEventCommand::MakeStorage(CommandData& command_d
 }
 
 bool ResetEventCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool ResetEventCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
                                  const ErrorReporter& reporter) const {
     const Location command_loc(command);
     const Location& error_loc = reporter.IsReplay() ? command_loc : reporter.loc;
-    return ValidateCmdResetEvent(env, event, exec_scope, error_loc);
+    return ValidateCmdResetEvent(env, event, exec_scope, reporter, error_loc);
 }
 
 void ResetEventCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
@@ -1087,7 +1103,7 @@ WaitEventsCommand::Storage WaitEventsCommand::MakeStorage(CommandData& command_d
 }
 
 bool WaitEventsCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool WaitEventsCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1096,7 +1112,7 @@ bool WaitEventsCommand::Validate(const SyncEnvironment& env, const AccessContext
     const Location& error_loc = reporter.IsReplay() ? command_loc : reporter.loc;
 
     bool skip = false;
-    skip = ValidateCmdWaitEvents(env, events, error_loc);
+    skip = ValidateCmdWaitEvents(env, events, reporter, error_loc);
     skip |= DetectCmdWaitEventsImageBarrierHazard(env, access_context, events, barrier_sets, reporter);
     return skip;
 }
@@ -1127,7 +1143,7 @@ BeginRenderingCommand::Storage BeginRenderingCommand::MakeStorage(CommandData& c
 }
 
 bool BeginRenderingCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool BeginRenderingCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1140,7 +1156,7 @@ void BeginRenderingCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Ac
 }
 
 bool EndRenderingCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool EndRenderingCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1170,7 +1186,7 @@ BeginRenderPassCommand::Storage BeginRenderPassCommand::MakeStorage(CommandData&
 }
 
 bool BeginRenderPassCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool BeginRenderPassCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1213,7 +1229,7 @@ bool NextSubpassCommand::Validate(const CommandBufferContext& cb_context, const 
     if (!render_pass_context) {
         return false;
     }
-    return Validate(cb_context.GetSyncEnvironment(), *render_pass_context, ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, *render_pass_context, cb_context, loc);
 }
 bool NextSubpassCommand::Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
                                   const ErrorReporter& reporter) const {
@@ -1233,7 +1249,7 @@ bool EndRenderPassCommand::Validate(const CommandBufferContext& cb_context, cons
     if (!render_pass_context) {
         return false;
     }
-    return Validate(cb_context.GetSyncEnvironment(), *render_pass_context, ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, *render_pass_context, cb_context, loc);
 }
 
 bool EndRenderPassCommand::Validate(const SyncEnvironment& env, const RenderPassAccessContext& render_pass_context,
@@ -1286,7 +1302,7 @@ ShaderAccessCommand::Storage ShaderAccessCommand::MakeStorage(CommandData& comma
 }
 
 bool ShaderAccessCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool ShaderAccessCommand::ValidateBufferShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1316,7 +1332,7 @@ bool ShaderAccessCommand::ValidateBufferShaderAccess(const SyncEnvironment& env,
                                                                 *info.descriptor_set, info.descriptor_type, info.binding,
                                                                 info.array_element, info.stage);
     }
-    return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+    return reporter.ReportHazard(hazard, buffer_access.info.resource_handle, objlist, reporter.loc, error);
 }
 
 bool ShaderAccessCommand::ValidateImageShaderAccess(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1348,7 +1364,7 @@ bool ShaderAccessCommand::ValidateImageShaderAccess(const SyncEnvironment& env, 
         env, hazard, reporter, resource_description, *pipeline, info.set, *info.descriptor_set, info.descriptor_type, info.binding,
         info.array_element, info.stage, image_access.image_layout);
 
-    return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+    return reporter.ReportHazard(hazard, image_access.info.resource_handle, objlist, reporter.loc, error);
 }
 
 bool ShaderAccessCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1399,7 +1415,7 @@ DispatchIndirectCommand::Storage DispatchIndirectCommand::MakeStorage(CommandDat
 }
 
 bool DispatchIndirectCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool DispatchIndirectCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1434,7 +1450,7 @@ TraceRaysCommand::Storage TraceRaysCommand::MakeStorage(CommandData& command_dat
 }
 
 bool TraceRaysCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool TraceRaysCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1466,7 +1482,7 @@ DrawAttachmentCommand::Storage DrawAttachmentCommand::MakeStorage(CommandData& c
 }
 
 bool DrawAttachmentCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool DrawAttachmentCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1510,7 +1526,7 @@ VertexInputCommand::Storage VertexInputCommand::MakeStorage(CommandData& command
 }
 
 bool VertexInputCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool VertexInputCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1528,7 +1544,7 @@ bool VertexInputCommand::Validate(const SyncEnvironment& env, const AccessContex
             const std::string resource_description = buffer_name + validator.FormatHandle(*access.buffer);
             const std::string error =
                 validator.error_messages_.BufferError(env, hazard, reporter, resource_description, access.range);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(hazard, access.buffer->Handle(), objlist, reporter.loc, error);
         }
     }
     return skip;
@@ -1589,7 +1605,7 @@ bool MultiDrawVertexInputCommand::Validate(const SyncEnvironment& env, const Acc
                 const char* buffer_name = (access_index == SYNC_INDEX_INPUT_INDEX_READ) ? "index " : "vertex ";
                 const std::string resource_description = buffer_name + validator.FormatHandle(*binding.buffer);
                 const std::string error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, range);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, binding.buffer->Handle(), objlist, reporter.loc, error);
             }
         }
     }
@@ -1629,7 +1645,7 @@ DrawCommand::Storage DrawCommand::MakeStorage(CommandData& command_data) const {
 }
 
 bool DrawCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool DrawCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const {
@@ -1660,7 +1676,7 @@ DrawMultiCommand::Storage DrawMultiCommand::MakeStorage(CommandData& command_dat
 }
 
 bool DrawMultiCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool DrawMultiCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1692,7 +1708,7 @@ DrawIndirectCommand::Storage DrawIndirectCommand::MakeStorage(CommandData& comma
 }
 
 bool DrawIndirectCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool DrawIndirectCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1726,7 +1742,7 @@ DrawIndirectCountCommand::Storage DrawIndirectCountCommand::MakeStorage(CommandD
 }
 
 bool DrawIndirectCountCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool DrawIndirectCountCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1758,7 +1774,7 @@ DrawMeshTasksCommand::Storage DrawMeshTasksCommand::MakeStorage(CommandData& com
 }
 
 bool DrawMeshTasksCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool DrawMeshTasksCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1804,7 +1820,7 @@ BuildAccelerationStructuresCommand::Storage BuildAccelerationStructuresCommand::
 }
 
 bool BuildAccelerationStructuresCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool BuildAccelerationStructuresCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1854,7 +1870,7 @@ bool BuildAccelerationStructuresCommand::Validate(const SyncEnvironment& env, co
             const std::string resource_description = description + validator.FormatHandle(access.buffer->Handle());
             error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, access.range);
         }
-        skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+        skip |= reporter.ReportHazard(hazard, access.buffer->Handle(), objlist, reporter.loc, error);
     }
     return skip;
 }
@@ -1881,7 +1897,7 @@ AccelerationStructureCopyCommand::Storage AccelerationStructureCopyCommand::Make
 }
 
 bool AccelerationStructureCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool AccelerationStructureCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -1902,7 +1918,7 @@ bool AccelerationStructureCopyCommand::Validate(const SyncEnvironment& env, cons
         const std::string error = validator.error_messages_.AccelerationStructureError(
             env, hazard, reporter, validator.FormatHandle(access.buffer->Handle()), access.range, access.acceleration_structure,
             info_loc.dot(field));
-        return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+        return reporter.ReportHazard(hazard, access.buffer->Handle(), objlist, reporter.loc, error);
     };
     bool skip = false;
     skip |= validate_access(src, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, vvl::Field::src);
@@ -1960,7 +1976,7 @@ static ImageRangeGen MakeVideoPictureRangeGen(const VideoCommand::PictureAccess&
 }
 
 bool VideoCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool VideoCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const {
@@ -1978,7 +1994,7 @@ bool VideoCommand::Validate(const SyncEnvironment& env, const AccessContext& acc
         const std::string resource_description = "bitstream buffer " + validator.FormatHandle(bitstream_buffer.Handle());
         const std::string error =
             validator.error_messages_.BufferError(env, bitstream_hazard, reporter, resource_description, bitstream_range);
-        skip |= validator.SyncError(bitstream_hazard.Hazard(), objlist, reporter.loc, error);
+        skip |= reporter.ReportHazard(bitstream_hazard, bitstream_buffer.Handle(), objlist, reporter.loc, error);
     }
     for (const PictureAccess& picture : pictures) {
         auto range_gen = MakeVideoPictureRangeGen(picture);
@@ -2026,7 +2042,7 @@ bool VideoCommand::Validate(const SyncEnvironment& env, const AccessContext& acc
         const LogObjectList objlist =
             reporter.IsReplay() ? BaseObjectList(env, reporter, picture.view->Handle()) : LogObjectList(picture.view->Handle());
         const std::string error = validator.error_messages_.VideoError(env, hazard, reporter, ss.str());
-        skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+        skip |= reporter.ReportHazard(hazard, picture.view->Handle(), objlist, reporter.loc, error);
     }
     return skip;
 }
@@ -2091,7 +2107,7 @@ static std::optional<VkImageSubresourceRange> RestrictSubresourceRangeToClearLay
 }
 
 bool ClearAttachmentsCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCurrentAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCurrentAccessContext(), cb_context, loc);
 }
 
 bool ClearAttachmentsCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -2115,7 +2131,7 @@ bool ClearAttachmentsCommand::Validate(const SyncEnvironment& env, const AccessC
         const LogObjectList objlist = BaseObjectList(env, reporter, attachment.view->Handle());
         const std::string error = validator.error_messages_.ClearAttachmentError(env, hazard, reporter, ss.str(),
                                                                                  attachment.original_aspects, rect_index, rect);
-        skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+        skip |= reporter.ReportHazard(hazard, attachment.view->Handle(), objlist, reporter.loc, error);
     };
 
     for (const Attachment& attachment : attachments) {
@@ -2218,7 +2234,7 @@ QueryCopyCommand::Storage QueryCopyCommand::MakeStorage(CommandData& command_dat
 }
 
 bool QueryCopyCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
-    return Validate(cb_context.GetSyncEnvironment(), cb_context.GetCbAccessContext(), ErrorReporter{cb_context, loc});
+    return ValidateRecording(*this, cb_context.GetCbAccessContext(), cb_context, loc);
 }
 
 bool QueryCopyCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
@@ -2232,7 +2248,7 @@ bool QueryCopyCommand::Validate(const SyncEnvironment& env, const AccessContext&
     objlist.add(dst_buffer.Handle());
     const std::string resource_description = "dstBuffer " + validator.FormatHandle(dst_buffer.Handle());
     const std::string error = validator.error_messages_.BufferError(env, hazard, reporter, resource_description, range);
-    return validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+    return reporter.ReportHazard(hazard, dst_buffer.Handle(), objlist, reporter.loc, error);
 }
 
 void QueryCopyCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {

@@ -56,7 +56,7 @@ vvl::Func ErrorMessages::AddReplayInfo(const SyncEnvironment& env, const HazardR
     }
     additional_info.access_initiator = ss.str();
 
-    const ResourceUsageTagEx prior_tag_ex = hazard.TagEx();
+    const ResourceUsageTagEx prior_tag_ex = hazard.PriorTagEx();
     if (prior_tag_ex.tag != kInvalidTag) {
         const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(prior_tag_ex);
         std::ostringstream ss2;

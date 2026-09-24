@@ -42,6 +42,7 @@ namespace syncval {
 
 class AccessContext;
 class CommandBufferContext;
+struct ReportedHazard;
 struct ErrorReporter;
 class RenderPassAccessContext;
 struct CommandData;
@@ -1061,7 +1062,8 @@ struct CommandEntry {
     uint32_t tag_count;
 };
 
+// new_hazards collects newly reported errors during vkCmdExecuteCommands validation. Null during queue submission
 bool ReplayCommands(SyncEnvironment& env, AccessContext& access_context, const CommandBufferContext& cb_context,
-                    ResourceUsageTag base_tag, const Location& loc);
+                    ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards = nullptr);
 
 }  // namespace syncval

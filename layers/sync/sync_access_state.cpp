@@ -965,8 +965,8 @@ HazardResult::HazardState::HazardState(const AccessState* access_state_, const S
     : access_state(std::make_unique<const AccessState>(*access_state_)),
       access_index(access_info_.access_index),
       prior_access_index(prior_access_index),
-      tag(tag_ex.tag),
-      handle_index(tag_ex.handle_index),
+      prior_tag(tag_ex.tag),
+      prior_handle_index(tag_ex.handle_index),
       hazard(hazard_) {
     assert(prior_access_index != SYNC_ACCESS_INDEX_NONE);
     // Touchup the hazard to reflect "present as release" semantics

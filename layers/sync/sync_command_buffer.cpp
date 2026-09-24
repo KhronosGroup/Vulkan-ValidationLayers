@@ -28,9 +28,13 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/hash_util.h"
 #include "utils/image_utils.h"
 #include "utils/text_utils.h"
 #include "utils/vk_api_utils.h"
+
+#include <algorithm>
+#include <array>
 
 using vvl::BufferDescriptor;
 using vvl::DescriptorClass;
@@ -235,6 +239,110 @@ SyncEnvironment::SyncEnvironment(const SyncValidator& validator, VkQueueFlags qu
       events_context(events_context),
       usage_info_provider(usage_info_provider) {}
 
+ReportedHazard::ReportedHazard(ResourceUsageTag tag, ResourceUsageTag prior_tag, SyncAccessIndex access,
+                               SyncAccessIndex prior_access, SyncHazard hazard, VulkanTypedHandle resource)
+    : tag(tag), prior_tag(prior_tag) {
+    const std::array values{static_cast<uint64_t>(access), static_cast<uint64_t>(prior_access), static_cast<uint64_t>(hazard),
+                            static_cast<uint64_t>(resource.type), resource.handle};
+    hash = hash_util::Hash64(values.data(), values.size() * sizeof(uint64_t));
+}
+
+bool ReportedHazard::operator==(const ReportedHazard& other) const {
+    return tag == other.tag && prior_tag == other.prior_tag && hash == other.hash;
+}
+
+bool ErrorReporter::ReportHazard(const HazardResult& hazard, VulkanTypedHandle resource, const LogObjectList& objlist,
+                                 const Location& error_loc, const std::string& error) const {
+    const HazardResult::HazardState& state = hazard.State();
+    const ReportedHazard report{CommandTag(), state.prior_tag, state.access_index, state.prior_access_index,
+                                state.hazard, resource};
+    if (IsAlreadyReported(report)) {
+        return false;
+    }
+    Collect(report);
+    return cb_context.GetSyncState().SyncError(hazard.Hazard(), objlist, error_loc, error);
+}
+
+bool ErrorReporter::ReportEventError(const SyncEventState& event_state, const char* vuid, const LogObjectList& objlist,
+                                     const Location& error_loc, const std::string& message) const {
+    const ReportedHazard report{CommandTag(), event_state.last_command_tag, SYNC_ACCESS_INDEX_NONE, SYNC_ACCESS_INDEX_NONE,
+                                NONE,         event_state.event->Handle()};
+    if (IsAlreadyReported(report)) {
+        return false;
+    }
+    Collect(report);
+    return cb_context.GetSyncState().LogError(vuid, objlist, error_loc, "%s", message.c_str());
+}
+
+ResourceUsageTag ErrorReporter::CommandTag() const {
+    if (IsReplay()) {
+        return replay_tag;
+    }
+    // During recording the validated command gets the next tag
+    const ResourceUsageTag next_tag = cb_context.GetTagCount();
+    return next_tag;
+}
+
+bool ErrorReporter::IsAlreadyReported(ReportedHazard report) const {
+    if (!IsReplay()) {
+        // It's record time, all errors are reported
+        return false;
+    }
+    // An invalid prior tag means a conflict within the same command (e.g. transition
+    // vs load op). It may have been reported during recording, so no early exit here
+    if (report.prior_tag != kInvalidTag) {
+        if (report.prior_tag < base_tag) {
+            // Prior command is not from this command buffer replay.
+            // Record time validation could not report it
+            return false;
+        }
+        report.prior_tag -= base_tag;
+    }
+    return cb_context.HasReportedHazard(report);
+}
+
+void ErrorReporter::Collect(ReportedHazard report) const {
+    if (!new_hazards) {
+        return;
+    }
+    // base_tag is nonzero here only during vkCmdExecuteCommands validation.
+    // Convert the secondary's local tag to a primary local tag.
+    // The prior tag already uses primary local tags
+    report.tag += base_tag;
+
+    new_hazards->push_back(report);
+}
+
+void CommandBufferContext::RecordReportedHazards(const std::vector<ReportedHazard>& new_hazards) const {
+    if (new_hazards.empty()) {
+        return;
+    }
+    if (!sync_state_.syncval_settings.record_time_validation) {
+        return;
+    }
+    if (!NeedsCommandStorage()) {
+        // The reports are needed only if the recorded commands are replayed
+        return;
+    }
+    std::lock_guard lock(reported_hazards_mutex_);
+    vvl::Append(reported_hazards_, new_hazards);
+}
+
+void CommandBufferContext::FinalizeReportedHazards() {
+    std::lock_guard lock(reported_hazards_mutex_);
+    // Secondary imports can leave the reports out of tag order
+    auto less = [](const ReportedHazard& a, const ReportedHazard& b) { return a.tag < b.tag; };
+    std::sort(reported_hazards_.begin(), reported_hazards_.end(), less);
+}
+
+bool CommandBufferContext::HasReportedHazard(const ReportedHazard& report) const {
+    std::lock_guard lock(reported_hazards_mutex_);
+    const auto [first, last] = std::equal_range(reported_hazards_.begin(), reported_hazards_.end(), report,
+                                                [](const auto& a, const auto& b) { return a.tag < b.tag; });
+    const bool already_reported = std::find(first, last, report) != last;
+    return already_reported;
+}
+
 CommandBufferContext::CommandBufferContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags, VulkanTypedHandle handle)
     : sync_state_(sync_validator),
       error_messages_(sync_validator.error_messages_),
@@ -292,6 +400,10 @@ void CommandBufferContext::Reset() {
     }
     commands_.clear();
     command_data_.Reset();
+    {
+        std::lock_guard lock(reported_hazards_mutex_);
+        reported_hazards_.clear();
+    }
 
     command_number_ = 0;
     reset_count_++;
@@ -794,6 +906,25 @@ bool CommandBufferContext::NeedsCommandStorage() const {
 void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContext& recorded_cb_context) {
     const ResourceUsageTag base_tag = GetTagCount();
 
+    // The errors reported while recording the secondary command buffer
+    if (NeedsCommandStorage()) {
+        std::vector<ReportedHazard> reports;
+        {
+            std::lock_guard lock(recorded_cb_context.reported_hazards_mutex_);
+            reports = recorded_cb_context.reported_hazards_;
+        }
+        if (!reports.empty()) {
+            std::lock_guard lock(reported_hazards_mutex_);
+            for (ReportedHazard report : reports) {
+                report.tag += base_tag;
+                if (report.prior_tag != kInvalidTag) {
+                    report.prior_tag += base_tag;
+                }
+                reported_hazards_.push_back(report);
+            }
+        }
+    }
+
     ImportRecordedAccessLog(recorded_cb_context);
 
     auto import_common = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag,
@@ -1135,6 +1266,8 @@ CommandBufferSubState::CommandBufferSubState(SyncValidator& dev, vvl::CommandBuf
 }
 
 void CommandBufferSubState::End() {
+    cb_context.FinalizeReportedHazards();
+
     // For threads that are dedicated to recording command buffers but do not submit themselves,
     // the end of recording is a logical point to update memory stats
     cb_context.GetSyncState().stats.UpdateMemoryStats();

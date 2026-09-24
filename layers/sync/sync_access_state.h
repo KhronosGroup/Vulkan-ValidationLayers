@@ -91,8 +91,8 @@ class HazardResult {
         std::unique_ptr<const AccessState> access_state;
         SyncAccessIndex access_index = std::numeric_limits<SyncAccessIndex>::max();
         SyncAccessIndex prior_access_index;
-        ResourceUsageTag tag = ResourceUsageTag();
-        uint32_t handle_index = vvl::kNoIndex32;
+        ResourceUsageTag prior_tag = ResourceUsageTag();
+        uint32_t prior_handle_index = vvl::kNoIndex32;
         SyncHazard hazard = NONE;
         HazardState(const AccessState* access_state, const SyncAccessInfo& usage_info, SyncHazard hazard,
                     SyncAccessIndex prior_access_index, ResourceUsageTagEx tag_ex);
@@ -105,13 +105,13 @@ class HazardResult {
 
     bool IsHazard() const { return state_.has_value() && NONE != state_->hazard; }
     bool IsWAWHazard() const;
-    ResourceUsageTag Tag() const {
+    ResourceUsageTag PriorTag() const {
         assert(state_);
-        return state_->tag;
+        return state_->prior_tag;
     }
-    ResourceUsageTagEx TagEx() const {
+    ResourceUsageTagEx PriorTagEx() const {
         assert(state_);
-        return ResourceUsageTagEx{state_->tag, state_->handle_index};
+        return ResourceUsageTagEx{state_->prior_tag, state_->prior_handle_index};
     }
     SyncHazard Hazard() const {
         assert(state_);
