@@ -3440,12 +3440,14 @@ TEST_F(PositiveDescriptorHeapEXT, ReservedRangeInFront) {
     desc_heap.CreateResourceHeap(buffer_offset + heap_props.bufferDescriptorSize, true);
     desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize, true);
 
+    const uint32_t resource_rr_offset = static_cast<uint32_t>(heap_props.minResourceHeapReservedRange);
+    const uint32_t sampler_rr_offset = static_cast<uint32_t>(heap_props.minSamplerHeapReservedRange);
+
     vkt::Buffer buffer(*m_device, sizeof(float) * 4u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
-    desc_heap.WriteImageDescriptorAtOffset(image, desc_heap.GetResourceHeapReservedRangeOffset() + image_offset);
-    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                            desc_heap.GetResourceHeapReservedRangeOffset() + buffer_offset);
+    desc_heap.WriteImageDescriptorAtOffset(image, resource_rr_offset + image_offset);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, resource_rr_offset + buffer_offset);
     desc_heap.WriteSamplerDescriptor();
 
     char const* cs_source = R"glsl(
@@ -3459,9 +3461,6 @@ TEST_F(PositiveDescriptorHeapEXT, ReservedRangeInFront) {
         }
     )glsl";
 
-    const uint32_t resource_rr_offset = static_cast<uint32_t>(heap_props.minResourceHeapReservedRange);
-    const uint32_t sampler_rr_offset = static_cast<uint32_t>(heap_props.minSamplerHeapReservedRange);
-
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -3471,7 +3470,7 @@ TEST_F(PositiveDescriptorHeapEXT, ReservedRangeInFront) {
     mappings[1] = MakeSetAndBindingMapping(1, 0);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset = {};
-    mappings[1].sourceData.constantOffset.heapOffset = sampler_rr_offset + static_cast<uint32_t>(buffer_offset);
+    mappings[1].sourceData.constantOffset.heapOffset = resource_rr_offset + static_cast<uint32_t>(buffer_offset);
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 2u;

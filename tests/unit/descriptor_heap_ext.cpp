@@ -1201,14 +1201,15 @@ TEST_F(NegativeDescriptorHeapEXT, CmdBindSamplerHeapSecondaryBuffer) {
 TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeap) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const VkDeviceSize heap_size = heap_props.bufferDescriptorSize + heap_props.minResourceHeapReservedRange;
-    vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+    const VkDeviceSize heap_size = desc_heap.resource_heap_.CreateInfo().size;
 
     {
         // reservedRangeOffset check
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = heap.AddressRange();
-        bind_info.reservedRangeOffset = heap_props.bufferDescriptorSize;
+        bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
+        bind_info.reservedRangeOffset = desc_heap.AlignResource(heap_props.bufferDescriptorSize);
         bind_info.reservedRangeSize = heap_size;
 
         m_command_buffer.Begin();
@@ -1221,7 +1222,7 @@ TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeap) {
     if (heap_props.minResourceHeapReservedRange > 0) {
         // size check
         VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-        bind_info.heapRange = heap.AddressRange();
+        bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
         bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange - 1;
 
         m_command_buffer.Begin();
@@ -1403,9 +1404,8 @@ TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeapSecondaryBuffer) {
     TEST_DESCRIPTION("Validate vkCmdBindResourceHeapEXT command written to secondary buffer");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const VkDeviceSize descriptor_size = heap_props.bufferDescriptorSize;
-    const VkDeviceSize heap_size = descriptor_size + heap_props.minResourceHeapReservedRange;
-    vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -1419,13 +1419,8 @@ TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeapSecondaryBuffer) {
 
     secondary.Begin(&cbbi);
 
-    VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = heap.AddressRange();
-    bind_info.reservedRangeOffset = descriptor_size;
-    bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-commandBuffer-11238");
-    vk::CmdBindResourceHeapEXT(secondary, &bind_info);
+    desc_heap.BindResourceHeap(secondary);
     m_errorMonitor->VerifyFound();
 
     secondary.End();
@@ -4548,20 +4543,12 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
     TEST_DESCRIPTION("Descriptor heap with VkPushDataInfoEXT but part of the range is missing");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    const VkDeviceSize resource_heap_size = heap_props.bufferDescriptorSize + heap_props.minResourceHeapReservedRange;
-
-    vkt::Buffer descriptor_heap(*m_device, resource_heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-    const auto descriptor_heap_ptr = static_cast<char*>(descriptor_heap.Memory().Map());
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
-    VkHostAddressRangeEXT descriptor_host = {descriptor_heap_ptr, static_cast<size_t>(heap_props.bufferDescriptorSize)};
-    VkDeviceAddressRangeEXT device_range = {buffer.Address(), 16};
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &device_range;
-
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &descriptor_host);
+    const VkDeviceAddressRangeKHR device_range = {buffer.Address(), 16};
+    desc_heap.WriteBufferDescriptorAtOffset(device_range, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -4581,16 +4568,11 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
     )glsl";
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange = descriptor_heap.AddressRange();
-    bind_resource_info.reservedRangeOffset = heap_props.bufferDescriptorSize;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-
     float src_data[4] = {1.0f, 2.0f, 3.0f, 4.0f};
 
     // Set from 0-7 and 12-15, unset from 8-11
     m_command_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(0, 8, src_data);
     m_command_buffer.PushData(12, 4, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -4602,7 +4584,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
 
     // Set from 4-19, unset from 0-3
     m_command_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(4, 16, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
@@ -4613,7 +4595,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
 
     // Set multiple times with overlap
     m_command_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(0, 8, src_data);
     m_command_buffer.PushData(4, 8, src_data);
     m_command_buffer.PushData(8, 8, src_data);
@@ -4624,7 +4606,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
 
     // Unset after command buffer reset
     m_command_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -4637,10 +4619,10 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
 
     // Full range set, invalidated by vkCmdPushConstants, only part of the range set again
     m_command_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(0, 16, src_data);
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0u, 16u, src_data);
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.PushData(0, 8, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
