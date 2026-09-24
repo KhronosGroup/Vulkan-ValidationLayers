@@ -68,11 +68,16 @@ void GpuAVSettings::SetBufferValidationEnabled(bool enabled) {
 
 void GpuAVSettings::SetShaderSelectionRegexes(std::vector<std::string>&& shader_selection_regexes) {
     for (std::string& r : shader_selection_regexes) {
-        this->shader_selection_regexes.emplace_back(std::move(r));
+        if (!r.empty()) {
+            this->shader_selection_regexes.emplace_back(std::move(r));
+        }
     }
 }
 
 void GpuAVSettings::LoadCDLDump(std::string&& path, std::vector<std::string>& setting_warnings) {
+    if (path.empty()) {
+        return;  // vkconfig will pass this as an empty string sometimes
+    }
     std::ifstream cdl_dump_file(path, std::ios::ate | std::ios::in);
     if (!cdl_dump_file.is_open()) {
         setting_warnings.emplace_back(std::string("Could not load CDL dump file ") + path);
