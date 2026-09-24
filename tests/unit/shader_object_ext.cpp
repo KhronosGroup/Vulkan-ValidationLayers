@@ -6643,7 +6643,7 @@ TEST_F(NegativeShaderObjectEXT, DescriptorWrongStage) {
 
     const char comp_src[] = R"glsl(
         #version 450
-        layout(local_size_x=16, local_size_x=1, local_size_x=1) in;
+        layout(local_size_x=16, local_size_y=1, local_size_z=1) in;
         layout(binding = 0) buffer Output {
             uint values[16];
         } buffer_out;
@@ -6668,7 +6668,7 @@ TEST_F(NegativeShaderObjectEXT, DescriptorWrongStageMultipleBindings) {
 
     const char comp_src[] = R"glsl(
         #version 450
-        layout(local_size_x=1, local_size_x=1, local_size_x=1) in;
+        layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
         layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
         layout(set = 0, binding = 1) buffer SSBO_1 { uint b; };
         layout(set = 0, binding = 2) buffer SSBO_2 { uint c; };
@@ -6693,7 +6693,7 @@ TEST_F(NegativeShaderObjectEXT, DescriptorWrongStageMultipleSets) {
 
     const char comp_src[] = R"glsl(
         #version 450
-        layout(local_size_x=1, local_size_x=1, local_size_x=1) in;
+        layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
         layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
         layout(set = 1, binding = 0) buffer SSBO_1 { uint b; };
         layout(set = 2, binding = 0) buffer SSBO_2 { uint c; };
