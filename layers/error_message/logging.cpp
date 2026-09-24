@@ -117,9 +117,11 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     // We have a few special VUID we never actually want to suppress.
     // If a new VUID is added here, make sure to add it in NegativeOther.VuidHashStability test as well.
     const bool skip_checking_limit =
+        // "VVL-DEBUG-PRINTF"
         // We want to print DebugPrintf message forever, otherwise user will mistake duplicate limit for things not printing
         (vuid_hash == 0x4fe1fef9) ||
-        // GPU-DUMP
+        // "GPU-DUMP"
+        // Want to always keep dumping, similar to DebugPrintf
         (vuid_hash == 0xe5c5edc1);
 
     // This lock needs to be here, duplicate_message_count_map is not safe to update on multiple threads
