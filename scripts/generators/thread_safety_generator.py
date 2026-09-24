@@ -68,6 +68,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             'vkCreateRayTracingPipelinesKHR',
             'vkQueuePresentKHR',
             'vkWaitForPresentKHR',
+            'vkWaitForPresent2KHR',
             'vkCreatePipelineBinariesKHR',
         ]
 
