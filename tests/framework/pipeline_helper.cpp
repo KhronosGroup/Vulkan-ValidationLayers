@@ -483,4 +483,30 @@ HeapComputePipelineEXT::HeapComputePipelineEXT(vkt::Device& device, const char* 
     pipe_.Init(device, pipe_ci);
 }
 
+HeapGraphicsPipelineEXT::HeapGraphicsPipelineEXT(VkLayerTest& test, const VkPipelineShaderStageCreateInfo* stages,
+                                                 uint32_t stage_count, void* pNext, VkRenderPass render_pass)
+    : pipe_(test) {
+    Init(stages, stage_count, pNext, render_pass);
+}
+
+HeapGraphicsPipelineEXT::HeapGraphicsPipelineEXT(VkLayerTest& test, const VkPipelineShaderStageCreateInfo& vert,
+                                                 const VkPipelineShaderStageCreateInfo& frag)
+    : pipe_(test) {
+    VkPipelineShaderStageCreateInfo stages[2] = {vert, frag};
+    Init(stages, 2, nullptr, VK_NULL_HANDLE);
+}
+
+void HeapGraphicsPipelineEXT::Init(const VkPipelineShaderStageCreateInfo* stages, uint32_t stage_count, void* pNext,
+                                   VkRenderPass render_pass) {
+    VkPipelineCreateFlags2CreateInfoKHR flags2_ci = vku::InitStructHelper(pNext);
+    flags2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    pipe_.gp_ci_.pNext = &flags2_ci;
+    pipe_.gp_ci_.layout = VK_NULL_HANDLE;
+    pipe_.gp_ci_.renderPass = render_pass;
+    pipe_.gp_ci_.stageCount = stage_count;
+    pipe_.gp_ci_.pStages = stages;
+    pipe_.CreateGraphicsPipeline(false);
+}
+
 }  // namespace vkt

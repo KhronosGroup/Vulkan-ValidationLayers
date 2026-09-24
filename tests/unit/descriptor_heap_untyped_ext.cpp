@@ -125,17 +125,10 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, SecondaryCmdBufferHeapMissingInheritanc
     )glsl";
     VkShaderObj vert_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stage;
     stage = vert_module.GetStageCreateInfo();
 
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 1;
-    pipe.gp_ci_.pStages = &stage;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, &stage, 1);
 
     uint32_t src_data = 4321u;
 
@@ -192,17 +185,10 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, SecondaryCmdBufferResourceHeapUnbound) 
     )glsl";
     VkShaderObj vert_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stage;
     stage = vert_module.GetStageCreateInfo();
 
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 1;
-    pipe.gp_ci_.pStages = &stage;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, &stage, 1);
 
     uint32_t src_data = 4321u;
 

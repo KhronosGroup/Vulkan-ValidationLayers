@@ -35,14 +35,9 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, DISABLED_IndexBufferOOB) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     InitRenderTarget();
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
-    pipe.gp_ci_.pStages = pipe.shader_stages_.data();
-    pipe.CreateGraphicsPipeline(false);
+    VkShaderObj vs(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, vs.GetStageCreateInfo(), fs.GetStageCreateInfo());
 
     VkDrawIndexedIndirectCommand draw_params{};
     draw_params.indexCount = 3;
