@@ -1977,13 +1977,17 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorDebugNames) {
     vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(1024);
 
+    // The UBO goes after the sampler, which can be bigger than a buffer descriptor
+    const uint32_t ubo_offset =
+        static_cast<uint32_t>(desc_heap.AlignResource(std::max(heap_props.samplerDescriptorSize, heap_props.bufferDescriptorSize)));
+
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = MakeSetAndBindingMapping(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
     mappings[1] = MakeSetAndBindingMapping(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)heap_props.bufferDescriptorSize;
+    mappings[1].sourceData.constantOffset.heapOffset = ubo_offset;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 2;
     mapping_info.pMappings = mappings;
@@ -2000,7 +2004,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorDebugNames) {
 
     debug_obj_info.pObjectName = "My UBO";
     vkt::Buffer ssbo_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vkt::device_address);
-    VkHostAddressRangeEXT descriptor_host{heap_data + heap_props.bufferDescriptorSize, heap_props.bufferDescriptorSize};
+    VkHostAddressRangeEXT descriptor_host{heap_data + ubo_offset, heap_props.bufferDescriptorSize};
     VkDeviceAddressRangeEXT device_range = ssbo_buffer.AddressRange();
     VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper(&debug_obj_info);
     descriptor_info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

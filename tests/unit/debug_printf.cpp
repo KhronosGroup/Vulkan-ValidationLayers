@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <spirv/unified1/spirv.hpp>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "layer_validation_tests.h"
@@ -19,6 +20,7 @@
 #include "descriptor_helper.h"
 #include "buffer_helper.h"
 #include "gpu_av_helper.h"
+#include "cooperative_matrix_helper.h"
 #include "utils/math_utils.h"
 
 void DebugPrintfTests::InitDebugPrintfFramework(void* p_next, bool reserve_slot) {
@@ -44,7 +46,8 @@ class NegativeDebugPrintf : public DebugPrintfTests {
   public:
     void BasicComputeTest(const char* shader, const char* message);
     void BasicFormattingTest(const char* shader, bool warning = false);
-    void CoopMat2CallbackTest(const char* shader_source, const char* message);
+    // The shaders use 16x16 float16 subgroup matrices with the given use
+    void CoopMat2CallbackTest(const char* shader_source, const char* message, uint32_t matrix_use);
 };
 
 void NegativeDebugPrintf::BasicComputeTest(const char* shader, const char* message) {
@@ -6734,7 +6737,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
     m_errorMonitor->VerifyFound();
 }
 
-void NegativeDebugPrintf::CoopMat2CallbackTest(const char* shader_source, const char* message) {
+void NegativeDebugPrintf::CoopMat2CallbackTest(const char* shader_source, const char* message, uint32_t matrix_use) {
     AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -6743,9 +6746,16 @@ void NegativeDebugPrintf::CoopMat2CallbackTest(const char* shader_source, const 
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    // Lets 16x16 work on devices that only list other fixed sizes
+    AddOptionalFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
+
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.HasSupportedMatrixUse(VK_SCOPE_SUBGROUP_KHR, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR, matrix_use)) {
+        GTEST_SKIP() << "16x16 float16 cooperative matrix not supported";
+    }
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -6783,19 +6793,23 @@ TEST_F(NegativeDebugPrintf, CoopMat2PerElementOp) {
         layout(local_size_x = 32) in;
         layout(set = 0, binding = 0) buffer BufType { float16_t x[]; } buf;
         layout(buffer_reference, std430, buffer_reference_align = 2) buffer fp16Buf { float16_t f; };
+        shared uint printed;
         float16_t myFunc(const in uint32_t row, const in uint32_t col, const in float16_t x) {
-            if (row == 0 && col == 0) {
+            // Each subgroup has its own matrix, so element (0, 0) is visited once per subgroup
+            if (row == 0 && col == 0 && atomicExchange(printed, 1u) == 0u) {
                 debugPrintfEXT("perelemop callback");
             }
             return x;
         }
         void main() {
+            if (gl_LocalInvocationIndex == 0u) printed = 0u;
+            barrier();
             coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> m = coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator>(float16_t(0));
             coopMatPerElementNV(m, m, myFunc);
         }
     )glsl";
 
-    CoopMat2CallbackTest(shader_source, "perelemop callback");
+    CoopMat2CallbackTest(shader_source, "perelemop callback", spv::CooperativeMatrixUseMatrixAccumulatorKHR);
 }
 
 TEST_F(NegativeDebugPrintf, CoopMat2Reduce) {
@@ -6828,7 +6842,7 @@ TEST_F(NegativeDebugPrintf, CoopMat2Reduce) {
         }
     )glsl";
 
-    CoopMat2CallbackTest(shader_source, "reduce callback");
+    CoopMat2CallbackTest(shader_source, "reduce callback", spv::CooperativeMatrixUseMatrixAccumulatorKHR);
 }
 
 TEST_F(NegativeDebugPrintf, CoopMat2LoadTensorDecode) {
@@ -6865,7 +6879,7 @@ TEST_F(NegativeDebugPrintf, CoopMat2LoadTensorDecode) {
         }
     )glsl";
 
-    CoopMat2CallbackTest(shader_source, "decode callback");
+    CoopMat2CallbackTest(shader_source, "decode callback", spv::CooperativeMatrixUseMatrixAKHR);
 }
 
 TEST_F(NegativeDebugPrintf, CoopMat2LoadTensorDecodeWithView) {
@@ -6904,5 +6918,5 @@ TEST_F(NegativeDebugPrintf, CoopMat2LoadTensorDecodeWithView) {
         }
     )glsl";
 
-    CoopMat2CallbackTest(shader_source, "decode with view callback");
+    CoopMat2CallbackTest(shader_source, "decode with view callback", spv::CooperativeMatrixUseMatrixAKHR);
 }

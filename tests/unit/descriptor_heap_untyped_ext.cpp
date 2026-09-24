@@ -518,11 +518,13 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, SamplerHeapBoundResourceHeapNotBound) {
 
 TEST_F(NegativeDescriptorHeapUntypedEXT, GlslStructuredBadSize) {
     RETURN_IF_SKIP(InitUntypedDescriptorHeap());
-    if (heap_props.bufferDescriptorSize <= 4) {
-        GTEST_SKIP() << "bufferDescriptorSize too small";
+    if (heap_props.bufferDescriptorAlignment <= 2) {
+        GTEST_SKIP() << "bufferDescriptorAlignment too small";
     }
-    char const* cs_source = R"glsl(
-        #version 460
+    // bufferDescriptorSize is a power of two no smaller than bufferDescriptorAlignment, so buf_b at
+    // bufferDescriptorSize + 2 does not overlap buf_a and is misaligned whenever the alignment is above 2
+    const std::string cs_source = "#version 460\n#define DESCRIPTOR_SIZE " + std::to_string(heap_props.bufferDescriptorSize + 2) +
+                                  R"glsl(
         #extension GL_EXT_descriptor_heap : require
         #extension GL_EXT_structured_descriptor_heap : require
         #extension GL_EXT_scalar_block_layout : require
@@ -533,8 +535,8 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, GlslStructuredBadSize) {
         };
 
         layout(heap_offset = 0) resourceheap BufferHeap0 {
-            layout(descriptor_size = 4) SSBO_A buf_a;
-            layout(descriptor_size = 4) SSBO_A buf_b;
+            layout(descriptor_size = DESCRIPTOR_SIZE) SSBO_A buf_a;
+            layout(descriptor_size = DESCRIPTOR_SIZE) SSBO_A buf_b;
         } bufferHeap;
 
         void main() {
@@ -542,6 +544,6 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, GlslStructuredBadSize) {
         }
     )glsl";
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478");
-    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2);
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source.c_str(), SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }

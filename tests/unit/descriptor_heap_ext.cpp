@@ -60,7 +60,8 @@ TEST_F(NegativeDescriptorHeapEXT, NotEnabled) {
         vk::WriteResourceDescriptorsEXT(device(), 1u, &desc_info, &descriptors);
         m_errorMonitor->VerifyFound();
     }
-    {
+    // imageCaptureReplayOpaqueDataSize can be 0 without descriptorHeapCaptureReplay, and a 0 size range is invalid on its own
+    if (heap_props.imageCaptureReplayOpaqueDataSize != 0) {
         std::vector<uint8_t> data(heap_props.imageCaptureReplayOpaqueDataSize);
 
         VkImageCreateInfo image_create_info = vku::InitStructHelper();
