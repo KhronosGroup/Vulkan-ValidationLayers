@@ -4457,20 +4457,6 @@ void Device::PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImag
     PostCallRecordGetImageSubresourceLayout2(device, image, pSubresource, pLayout, record_obj);
 }
 
-void Device::PreCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
-                                             const VkPresentWait2InfoKHR* pPresentWait2Info, const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
-    StartWriteObject(swapchain, record_obj.location);
-    // Host access to swapchain must be externally synchronized
-}
-
-void Device::PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
-                                              const VkPresentWait2InfoKHR* pPresentWait2Info, const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
-    FinishWriteObject(swapchain, record_obj.location);
-    // Host access to swapchain must be externally synchronized
-}
-
 void Device::PreCallRecordDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
                                                    const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);

@@ -2651,6 +2651,72 @@ TEST_F(PositiveWsi, PresentIdWait2) {
     }
 }
 
+TEST_F(PositiveWsi, PresentWait2ConcurrentAcquireAndPresent) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13167
+    TEST_DESCRIPTION("Wait for presentation while another thread acquires and presents on the same swapchain");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_PRESENT_WAIT_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentId2);
+    AddRequiredFeature(vkt::Feature::presentWait2);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    VkSurfaceCapabilitiesPresentWait2KHR wait2_capabilities = vku::InitStructHelper();
+    VkSurfaceCapabilitiesPresentId2KHR id2_capabilities = vku::InitStructHelper(&wait2_capabilities);
+    VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&id2_capabilities);
+
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+    surface_info.surface = m_surface;
+
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &capabilities2);
+    if (!id2_capabilities.presentId2Supported || !wait2_capabilities.presentWait2Supported) {
+        GTEST_SKIP() << "presentId2 and presentWait2 are not supported for the surface";
+    }
+
+    const SurfaceInformation info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, info);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR | VK_SWAPCHAIN_CREATE_PRESENT_WAIT_2_BIT_KHR;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+    vkt::Fence acquire_fence(*m_device);
+
+    uint64_t present_id_value = 0;
+    VkPresentId2KHR present_id = vku::InitStructHelper();
+    present_id.swapchainCount = 1;
+    present_id.pPresentIds = &present_id_value;
+
+    const auto present_frame = [&] {
+        const uint32_t image_index = swapchain.AcquireNextImage(acquire_fence, kWaitTimeout);
+        acquire_fence.Wait(kWaitTimeout);
+        acquire_fence.Reset();
+        SetPresentImageLayout(images[image_index]);
+        ++present_id_value;
+        m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &present_id);
+    };
+    present_frame();
+
+    std::atomic<bool> bailout{false};
+    m_errorMonitor->SetBailout(&bailout);
+
+    std::thread wait_thread([&] {
+        VkPresentWait2InfoKHR wait_info = vku::InitStructHelper();
+        wait_info.presentId = 1;
+        wait_info.timeout = 0;
+        while (!bailout.load()) {
+            vk::WaitForPresent2KHR(device(), swapchain, &wait_info);
+        }
+    });
+    for (uint32_t i = 0; i < 25 && !bailout.load(); ++i) {
+        present_frame();
+    }
+
+    bailout = true;
+    wait_thread.join();
+    m_errorMonitor->SetBailout(nullptr);
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveWsi, DestroySemaphoreUsedByOldSwapchain) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10364
     TEST_DESCRIPTION("Safely destroy semaphores used by the old swapchain");
