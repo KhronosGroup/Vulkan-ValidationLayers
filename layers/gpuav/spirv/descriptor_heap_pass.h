@@ -75,7 +75,7 @@ class DescriptorHeapPass : public Pass {
     uint32_t GetMapping(const AccessPath& access_path, bool is_sampler) const;
     uint32_t GetMinBufferAlignment(const InstructionMeta& meta) const;
 
-    UntypedLayout GetUntypedLayout(const Type& pointer_type, uint32_t heap_offset_member_index);
+    UntypedLayout GetUntypedLayout(const Type& pointer_type, uint32_t heap_offset_member_index, bool has_heap_offset_member_index);
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
