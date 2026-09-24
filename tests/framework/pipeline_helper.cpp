@@ -503,7 +503,10 @@ void HeapGraphicsPipelineEXT::Init(const VkPipelineShaderStageCreateInfo* stages
 
     pipe_.gp_ci_.pNext = &flags2_ci;
     pipe_.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe_.gp_ci_.renderPass = render_pass;
+    // Assume default render pass from InitRenderTarget()
+    if (render_pass != VK_NULL_HANDLE) {
+        pipe_.gp_ci_.renderPass = render_pass;
+    }
     pipe_.gp_ci_.stageCount = stage_count;
     pipe_.gp_ci_.pStages = stages;
     pipe_.CreateGraphicsPipeline(false);

@@ -4094,7 +4094,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedPipeline) {
 
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
         if (i != 0) {
-            m_command_buffer.PushData(0, payload.size(), payload.data());
+            m_command_buffer.PushDataEXT(0, payload.size(), payload.data());
         }
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -4573,8 +4573,8 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
     // Set from 0-7 and 12-15, unset from 8-11
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, 8, src_data);
-    m_command_buffer.PushData(12, 4, src_data);
+    m_command_buffer.PushDataEXT(0, 8, src_data);
+    m_command_buffer.PushDataEXT(12, 4, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -4585,7 +4585,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
     // Set from 4-19, unset from 0-3
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(4, 16, src_data);
+    m_command_buffer.PushDataEXT(4, 16, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -4596,9 +4596,9 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
     // Set multiple times with overlap
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, 8, src_data);
-    m_command_buffer.PushData(4, 8, src_data);
-    m_command_buffer.PushData(8, 8, src_data);
+    m_command_buffer.PushDataEXT(0, 8, src_data);
+    m_command_buffer.PushDataEXT(4, 8, src_data);
+    m_command_buffer.PushDataEXT(8, 8, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -4620,10 +4620,10 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
     // Full range set, invalidated by vkCmdPushConstants, only part of the range set again
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, 16, src_data);
+    m_command_buffer.PushDataEXT(0, 16, src_data);
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0u, 16u, src_data);
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, 8, src_data);
+    m_command_buffer.PushDataEXT(0, 8, src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -4673,7 +4673,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRangeNonDword) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t data = 0;
-    m_command_buffer.PushData(4, 4, &data);
+    m_command_buffer.PushDataEXT(4, 4, &data);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11376");

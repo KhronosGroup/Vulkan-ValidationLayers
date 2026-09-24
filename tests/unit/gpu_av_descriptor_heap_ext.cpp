@@ -906,7 +906,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBPushIndex) {
     m_command_buffer.Begin();
 
     uint32_t push_index = 512;
-    m_command_buffer.PushData(8, sizeof(uint32_t), &push_index);
+    m_command_buffer.PushDataEXT(8, sizeof(uint32_t), &push_index);
 
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -973,27 +973,27 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBIndirectIndex) {
     }
 
     VkDeviceAddress indirect_address = indirect_buffer.Address();
-    m_command_buffer.PushData(16, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(16, sizeof(VkDeviceAddress), &indirect_address);
 
     desc_heap.BindResourceHeap(m_command_buffer);
 
     // first pass good
     uint32_t a_index = 0;
     uint32_t b_index = 0;
-    m_command_buffer.PushData(0, sizeof(uint32_t), &a_index);
-    m_command_buffer.PushData(4, sizeof(uint32_t), &b_index);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &a_index);
+    m_command_buffer.PushDataEXT(4, sizeof(uint32_t), &b_index);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     // second pass
     a_index = 3;
-    m_command_buffer.PushData(0, sizeof(uint32_t), &a_index);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &a_index);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     // third pass
     a_index = 0;
-    m_command_buffer.PushData(0, sizeof(uint32_t), &a_index);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &a_index);
     b_index = 3;
-    m_command_buffer.PushData(4, sizeof(uint32_t), &b_index);
+    m_command_buffer.PushDataEXT(4, sizeof(uint32_t), &b_index);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
@@ -1834,14 +1834,14 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, BufferDescriptorAlignmentMapping) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     // bad SSBO
-    m_command_buffer.PushData(0, sizeof(uint32_t), &bad_push_data);
-    m_command_buffer.PushData(4, sizeof(uint32_t), &push_data);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &bad_push_data);
+    m_command_buffer.PushDataEXT(4, sizeof(uint32_t), &push_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     // bad UBO
-    m_command_buffer.PushData(0, sizeof(uint32_t), &push_data);
-    m_command_buffer.PushData(4, sizeof(uint32_t), &bad_push_data);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &push_data);
+    m_command_buffer.PushDataEXT(4, sizeof(uint32_t), &bad_push_data);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11297", 2);
@@ -1898,13 +1898,13 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ImageSamplerDescriptorAlignment) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     desc_heap.BindSamplerHeap(m_command_buffer);
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &bad_indirect_address);
-    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &bad_indirect_address);
+    m_command_buffer.PushDataEXT(8, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
-    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &bad_indirect_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(8, sizeof(VkDeviceAddress), &bad_indirect_address);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2263,7 +2263,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectIndexPushDataAlignment) {
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -2308,15 +2308,15 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectIndexPushDataAlignment2) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address_0);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address_0);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address_1);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address_1);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     // bad
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address_2);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address_2);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     // good again
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address_1);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address_1);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
     // VUID-vkCmdDispatch-None-11300
@@ -2348,7 +2348,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, PushDataNotSet) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    m_command_buffer.PushData(0, sizeof(uint32_t), &bad_dword);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &bad_dword);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
     // VUID-vkCmdDispatch-None-11300
@@ -2415,7 +2415,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectAddressPushDataAlignment) {
     VkDeviceAddress indirect_address = indirect_buffer.Address() + 1;
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -2461,15 +2461,15 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingAddressBufferAlignment) {
     VkDeviceAddress ubo_address = ubo_buffer.Address() + 0;
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &ssbo_address);  // bad
-    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &ubo_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &ssbo_address);  // bad
+    m_command_buffer.PushDataEXT(8, sizeof(VkDeviceAddress), &ubo_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     ssbo_address = ssbo_buffer.Address() + 0;
     ubo_address = ubo_buffer.Address() + 1;
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &ssbo_address);
-    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &ubo_address);  // bad
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &ssbo_address);
+    m_command_buffer.PushDataEXT(8, sizeof(VkDeviceAddress), &ubo_address);  // bad
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
@@ -2514,8 +2514,8 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingAddressBufferAlignmentHeap) {
     desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t bad_offset = 1;
     VkDeviceAddress ssbo_address = ssbo_buffer.Address();
-    m_command_buffer.PushData(0, sizeof(uint32_t), &bad_offset);
-    m_command_buffer.PushData(8, sizeof(VkDeviceAddress), &ssbo_address);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &bad_offset);
+    m_command_buffer.PushDataEXT(8, sizeof(VkDeviceAddress), &ssbo_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
@@ -2569,12 +2569,12 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingIndirectAddressBufferAlignment) {
     VkDeviceAddress indirect_address = indirect_buffer.Address();
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     indirect_address += (sizeof(VkDeviceAddress) * 2);
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
@@ -2608,7 +2608,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectIndexNullIndirect) {
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &null_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &null_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -2636,7 +2636,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, PushAddressNullIndirect) {
     VkDeviceAddress null_address = 0;
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &null_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &null_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -2670,11 +2670,11 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, IndirectAddressNullIndirect) {
     VkDeviceAddress indirect_address = indirect_buffer.Address();
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &null_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &null_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
@@ -2725,12 +2725,12 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, UseCombinedImageSamplerIndex) {
 
     m_command_buffer.Begin();
     VkDeviceAddress ssbo_address = buffer.Address();
-    m_command_buffer.PushData(0, sizeof(VkDeviceAddress), &ssbo_address);
+    m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &ssbo_address);
 
     uint32_t image_index = 1;
     uint32_t sampler_index = 999;  // bad
     uint32_t combined_index = (image_index & 0xfffff) | ((sampler_index & 0xfff) << 20);
-    m_command_buffer.PushData(8, sizeof(uint32_t), &combined_index);
+    m_command_buffer.PushDataEXT(8, sizeof(uint32_t), &combined_index);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -2815,7 +2815,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingBindingCountAlias) {
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address();
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(0, 8, &indirect_ubo_address);
+    m_command_buffer.PushDataEXT(0, 8, &indirect_ubo_address);
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe3);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -2909,9 +2909,9 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, PushDataPushIndex) {
 
     m_command_buffer.Begin();
     uint32_t bad_push_index = 512;
-    m_command_buffer.PushData(80, sizeof(uint32_t), &bad_push_index);
+    m_command_buffer.PushDataEXT(80, sizeof(uint32_t), &bad_push_index);
     uint32_t good_push_index = 512;
-    m_command_buffer.PushData(128, sizeof(uint32_t), &good_push_index);
+    m_command_buffer.PushDataEXT(128, sizeof(uint32_t), &good_push_index);
 
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -2938,9 +2938,9 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, PushDataPushIndex) {
     vkt::HeapComputePipelineEXT pipe2(*m_device, cs_source2, SPV_ENV_VULKAN_1_0, &mapping_info);
     m_command_buffer.Begin();
     uint32_t garbage[20];
-    m_command_buffer.PushData(0, 80, garbage);
-    m_command_buffer.PushData(80, sizeof(uint32_t), &bad_push_index);
-    m_command_buffer.PushData(128, sizeof(uint32_t), &good_push_index);
+    m_command_buffer.PushDataEXT(0, 80, garbage);
+    m_command_buffer.PushDataEXT(80, sizeof(uint32_t), &bad_push_index);
+    m_command_buffer.PushDataEXT(128, sizeof(uint32_t), &good_push_index);
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -2999,9 +2999,9 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, PushDataIndirectIndex) {
 
     m_command_buffer.Begin();
     uint32_t garbage[20];
-    m_command_buffer.PushData(0, 80, garbage);
-    m_command_buffer.PushData(80, sizeof(VkDeviceAddress), &indirect_address_good);
-    m_command_buffer.PushData(128, sizeof(VkDeviceAddress), &indirect_address_bad);
+    m_command_buffer.PushDataEXT(0, 80, garbage);
+    m_command_buffer.PushDataEXT(80, sizeof(VkDeviceAddress), &indirect_address_good);
+    m_command_buffer.PushDataEXT(128, sizeof(VkDeviceAddress), &indirect_address_bad);
 
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
@@ -3058,7 +3058,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceHeapDataOOB) {
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
     uint32_t push_offset = 0;
-    m_command_buffer.PushData(0, sizeof(uint32_t), &push_offset);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &push_offset);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -3265,7 +3265,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, HashingNoDescriptorUntypedSlang) {
 
     m_command_buffer.Begin();
     uint32_t index = 2;
-    m_command_buffer.PushData(0, sizeof(uint32_t), &index);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &index);
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
