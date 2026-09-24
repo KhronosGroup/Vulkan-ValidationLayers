@@ -865,7 +865,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructure) {
 
     VkAccelerationStructureKHR as;
     VkAccelerationStructureCreateInfo2KHR asci = vku::InitStructHelper();
-    asci.addressFlags = VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR;
+    asci.addressFlags = 0;
     asci.addressRange = micromapAddress;
     asci.type = VK_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_KHR;
 
