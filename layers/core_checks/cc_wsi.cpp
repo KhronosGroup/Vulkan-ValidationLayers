@@ -988,7 +988,8 @@ bool CoreChecks::ValidatePresentId(VkQueue queue, const VkPresentInfoKHR& presen
 
             auto swapchain_state = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
             ASSERT_AND_CONTINUE(swapchain_state);
-            if ((present_id_info.pPresentIds[i] != 0) && (present_id_info.pPresentIds[i] <= swapchain_state->max_present_id)) {
+            const uint64_t max_present_id = swapchain_state->max_present_id.load();
+            if ((present_id_info.pPresentIds[i] != 0) && (present_id_info.pPresentIds[i] <= max_present_id)) {
                 const LogObjectList objlist(queue, present_info.pSwapchains[i]);
                 skip |=
                     LogError("VUID-VkPresentIdKHR-presentIds-04999", objlist,
@@ -997,7 +998,7 @@ bool CoreChecks::ValidatePresentId(VkQueue queue, const VkPresentInfoKHR& presen
                              ") sent for this swapchain.\nEach presentIds entry must be greater than any previous presentIds entry "
                              "passed for the "
                              "associated pSwapchains entry",
-                             present_id_info.pPresentIds[i], swapchain_state->max_present_id);
+                             present_id_info.pPresentIds[i], max_present_id);
             }
         }
     }
@@ -1053,7 +1054,8 @@ bool CoreChecks::ValidatePresentId2(VkQueue queue, const VkPresentInfoKHR& prese
                              present_id2_info.pPresentIds[i], FormatHandle(surface_info.surface).c_str());
         }
 
-        if ((present_id2_info.pPresentIds[i] != 0) && (present_id2_info.pPresentIds[i] <= swapchain_state->max_present_id)) {
+        const uint64_t max_present_id = swapchain_state->max_present_id.load();
+        if ((present_id2_info.pPresentIds[i] != 0) && (present_id2_info.pPresentIds[i] <= max_present_id)) {
             const LogObjectList objlist(queue, present_info.pSwapchains[i]);
             skip |= LogError("VUID-VkPresentId2KHR-presentIds-10819", objlist,
                              present_info_loc.pNext(Struct::VkPresentId2KHR, Field::pPresentIds, i),
@@ -1061,7 +1063,7 @@ bool CoreChecks::ValidatePresentId2(VkQueue queue, const VkPresentInfoKHR& prese
                              ") sent for this swapchain.\nEach presentIds entry must be greater than any previous presentIds entry "
                              "passed for the "
                              "associated pSwapchains entry",
-                             present_id2_info.pPresentIds[i], swapchain_state->max_present_id);
+                             present_id2_info.pPresentIds[i], max_present_id);
         }
     }
 
@@ -1648,7 +1650,8 @@ bool CoreChecks::PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainK
         }
         // We cannot reasonably track all values that have been presented
         // Therefore we only validate that a presentId with equal or higher value has been submitted to vkQueuePresent
-        if (pPresentWait2Info->presentId > swapchain_state->max_present_id) {
+        const uint64_t max_present_id = swapchain_state->max_present_id.load();
+        if (pPresentWait2Info->presentId > max_present_id) {
             skip |= LogError("VUID-vkWaitForPresent2KHR-presentId-10817", swapchain,
                              error_obj.location.dot(Field::pPresentWait2Info).dot(Field::presentId),
                              "is %" PRIu64 ", but this value was never associated with the VkPresentWait2InfoKHR::presentId on %s.",
