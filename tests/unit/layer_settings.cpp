@@ -530,7 +530,8 @@ TEST_F(NegativeLayerSettings, MaxIndicesCountOverLimit) {
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     Monitor().SetDesiredWarning(
-        "VK_LAYER_GPUAV_MAX_INDICES_COUNT (gpuav_max_indices_count) is being set to 65534, the max value supported");
+        "VK_LAYER_GPUAV_MAX_INDICES_COUNT (gpuav_max_indices_count) was set to 66000 but is being set to 65534, the max value "
+        "supported currently");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
     Monitor().VerifyFound();
