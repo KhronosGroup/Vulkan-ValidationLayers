@@ -23,6 +23,7 @@
 #include "state_tracker/submission_reference.h"
 #include "containers/span.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include <atomic>
 #include <optional>
 #include <deque>
 
@@ -99,7 +100,8 @@ class Swapchain : public RefcountedStateObject, public SubStateManager<Swapchain
     bool retired = false;
     bool exclusive_full_screen_access;
     const bool shared_presentable;
-    uint64_t max_present_id = 0;
+    // Read by vkWaitForPresent2KHR while presentation updates it
+    std::atomic<uint64_t> max_present_id{0};
     const vku::safe_VkImageCreateInfo image_create_info;
 
     std::shared_ptr<vvl::Surface> surface;
