@@ -194,18 +194,11 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, PushAddress) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     VkDeviceAddress read_address = read_buffer.Address();
 
@@ -1960,14 +1953,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, ComputeAndGraphicsShareDescriptor) {
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineShaderStageCreateInfo stages[2] = {vert_module.GetStageCreateInfo(&mapping_info), frag_module.GetStageCreateInfo()};
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreatePipelineHelper graphics_pipe(*this, &pipeline_create_flags_2_create_info);
-    graphics_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    graphics_pipe.gp_ci_.stageCount = 2u;
-    graphics_pipe.gp_ci_.pStages = stages;
-    graphics_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT graphics_pipe(*this, stages, 2);
 
     vkt::HeapComputePipelineEXT compute_pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 

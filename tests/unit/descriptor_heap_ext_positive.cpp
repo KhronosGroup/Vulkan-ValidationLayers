@@ -228,17 +228,10 @@ TEST_F(PositiveDescriptorHeapEXT, GraphicsPushData) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, frag_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2] = {vert_module.GetStageCreateInfo(&mapping_info),
                                                  frag_module.GetStageCreateInfo(&mapping_info)};
 
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2;
-    pipe.gp_ci_.pStages = stages;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2);
 
     m_command_buffer.Begin();
     m_command_buffer.PushData(0, sizeof(expected_value), &expected_value);
@@ -1172,18 +1165,11 @@ TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapWithPushIndex) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -1254,18 +1240,11 @@ TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapWithIndirectIndex) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     VkDeviceAddress heap_index_address = heap_index.Address();
 
@@ -1337,18 +1316,11 @@ TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapWithIndirectIndexArray) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     VkDeviceAddress heap_index_address = heap_index.Address();
 
@@ -1430,18 +1402,11 @@ TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapData) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -1513,18 +1478,11 @@ TEST_F(PositiveDescriptorHeapEXT, MappingSourcePushData) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     uint32_t read_data[4];
     for (uint32_t i = 0; i < 4; ++i) {
@@ -1606,18 +1564,11 @@ TEST_F(PositiveDescriptorHeapEXT, MappingSourcePushAddress) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     VkDeviceAddress read_address = read_buffer.Address();
 
@@ -1703,18 +1654,11 @@ TEST_F(PositiveDescriptorHeapEXT, MappingSourceIndirectAddress) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     VkDeviceAddress indirect_address = indirect_buffer.Address();
 
@@ -2824,18 +2768,11 @@ TEST_F(PositiveDescriptorHeapEXT, MappingSourceWithoutHeap) {
     VkShaderObj vert_module = VkShaderObj(*m_device, vert_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj frag_module = VkShaderObj(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkPipelineShaderStageCreateInfo stages[2];
     stages[0] = vert_module.GetStageCreateInfo(&mapping_info);
     stages[1] = frag_module.GetStageCreateInfo();
 
-    CreatePipelineHelper descriptor_heap_pipe(*this, &pipeline_create_flags_2_create_info);
-    descriptor_heap_pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    descriptor_heap_pipe.gp_ci_.stageCount = 2u;
-    descriptor_heap_pipe.gp_ci_.pStages = stages;
-    descriptor_heap_pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT descriptor_heap_pipe(*this, stages, 2);
 
     VkDeviceAddress indirect_address = indirect_buffer.Address();
 
@@ -2916,9 +2853,6 @@ TEST_F(PositiveDescriptorHeapEXT, YcbcrImage) {
     VkShaderObj vs_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs_module = VkShaderObj(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkDescriptorSetAndBindingMappingEXT mapping;
     mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
@@ -2932,11 +2866,7 @@ TEST_F(PositiveDescriptorHeapEXT, YcbcrImage) {
     VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(&mapping_info),
                                                  fs_module.GetStageCreateInfo(&mapping_info)};
 
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2u;
-    pipe.gp_ci_.pStages = stages;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2);
 
     m_command_buffer.Begin();
 
@@ -2990,9 +2920,6 @@ TEST_F(PositiveDescriptorHeapEXT, YcbcrImageDifferentMapping) {
     VkShaderObj vs_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs_module = VkShaderObj(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkSamplerCreateInfo sampler_info_v = SafeSaneSamplerCreateInfo(&ycbcr_conversion_info_v);
     VkDescriptorSetAndBindingMappingEXT mapping_v;
     mapping_v = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
@@ -3018,11 +2945,7 @@ TEST_F(PositiveDescriptorHeapEXT, YcbcrImageDifferentMapping) {
     VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(&mapping_info_v),
                                                  fs_module.GetStageCreateInfo(&mapping_info_f)};
 
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2u;
-    pipe.gp_ci_.pStages = stages;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2);
 }
 
 TEST_F(PositiveDescriptorHeapEXT, YcbcrImageSharedMapping) {
@@ -3061,9 +2984,6 @@ TEST_F(PositiveDescriptorHeapEXT, YcbcrImageSharedMapping) {
     VkShaderObj vs_module = VkShaderObj(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs_module = VkShaderObj(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo(&ycbcr_conversion_info);
     VkDescriptorSetAndBindingMappingEXT mapping =
         MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
@@ -3078,11 +2998,7 @@ TEST_F(PositiveDescriptorHeapEXT, YcbcrImageSharedMapping) {
     VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(&mapping_info),
                                                  fs_module.GetStageCreateInfo(&mapping_info)};
 
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2u;
-    pipe.gp_ci_.pStages = stages;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2);
 
     EXPECT_EQ(ycbcr_conversion.handle(), ycbcr_conversion_info.conversion);
     EXPECT_EQ(&sampler_info, mapping.sourceData.constantOffset.pEmbeddedSampler);
@@ -3653,19 +3569,12 @@ TEST_F(PositiveDescriptorHeapEXT, ImageViewUsage) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkShaderObj vs_module = VkShaderObj(*m_device, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs_module = VkShaderObj(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(), fs_module.GetStageCreateInfo(&mapping_info)};
 
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2u;
-    pipe.gp_ci_.pStages = stages;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -3746,14 +3655,7 @@ TEST_F(PositiveDescriptorHeapEXT, InputAttachment) {
     VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo(&mapping_info)};
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2;
-    pipe.gp_ci_.pStages = stages;
-    pipe.gp_ci_.renderPass = rp;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2, nullptr, rp);
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
@@ -3837,14 +3739,7 @@ TEST_F(PositiveDescriptorHeapEXT, InputAttachmentLocalRead) {
     pipeline_rendering_info.colorAttachmentCount = 1u;
     pipeline_rendering_info.pColorAttachmentFormats = &format;
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper(&pipeline_rendering_info);
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2;
-    pipe.gp_ci_.pStages = stages;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2, &pipeline_rendering_info);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;

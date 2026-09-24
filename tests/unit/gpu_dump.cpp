@@ -959,15 +959,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapWithoutDescriptor) {
     stages[0] = vs.GetStageCreateInfo();
     stages[1] = fs.GetStageCreateInfo();
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.gp_ci_.stageCount = 2u;
-    pipe.gp_ci_.pStages = stages;
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);

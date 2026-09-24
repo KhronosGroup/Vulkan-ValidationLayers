@@ -6047,21 +6047,14 @@ TEST_F(NegativeDescriptorHeapEXT, ReadOnlyStorageBufferHlsl) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
 
-    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-
     VkShaderObj vs_module = VkShaderObj(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs_module = VkShaderObj(*m_device, fs_shader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
 
     VkPipelineShaderStageCreateInfo stages[2] = {vs_module.GetStageCreateInfo(), fs_module.GetStageCreateInfo(&mapping_info)};
 
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2;
-    pipe.gp_ci_.pStages = stages;
     // VUID-VkGraphicsPipelineCreateInfo-flags-11312
     m_errorMonitor->SetDesiredError("just use VK_SPIRV_RESOURCE_TYPE_ALL_EXT");
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6238,16 +6231,9 @@ TEST_F(NegativeDescriptorHeapEXT, InputAttachmentReadOnly) {
     VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo(&mapping_info)};
 
-    VkPipelineCreateFlags2CreateInfoKHR pipeline_create_flags_2_create_info = vku::InitStructHelper();
-    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
-    CreatePipelineHelper pipe(*this, &pipeline_create_flags_2_create_info);
-    pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = 2;
-    pipe.gp_ci_.pStages = stages;
-    pipe.gp_ci_.renderPass = rp;
     // VUID-VkGraphicsPipelineCreateInfo-flags-11312
     m_errorMonitor->SetDesiredError(
         "Note: InputAttachments actually use READ_WRITE_IMAGE_BIT not READ_ONLY_IMAGE_BIT without NonWritable");
-    pipe.CreateGraphicsPipeline(false);
+    vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2, nullptr, rp);
     m_errorMonitor->VerifyFound();
 }

@@ -241,6 +241,22 @@ class HeapComputePipelineEXT {
     vkt::Pipeline pipe_;
 };
 
+class HeapGraphicsPipelineEXT {
+  public:
+    HeapGraphicsPipelineEXT(VkLayerTest& test, const VkPipelineShaderStageCreateInfo* stages, uint32_t stage_count,
+                            void* pNext = nullptr, VkRenderPass render_pass = VK_NULL_HANDLE);
+    HeapGraphicsPipelineEXT(VkLayerTest& test, const VkPipelineShaderStageCreateInfo& vert,
+                            const VkPipelineShaderStageCreateInfo& frag);
+
+    const VkPipeline& Handle() const { return pipe_.Handle(); }
+    operator VkPipeline() const { return pipe_; }
+
+  private:
+    void Init(const VkPipelineShaderStageCreateInfo* stages, uint32_t stage_count, void* pNext, VkRenderPass render_pass);
+
+    CreatePipelineHelper pipe_;
+};
+
 }  // namespace vkt
 
 static inline VkPipelineColorBlendAttachmentState DefaultColorBlendAttachmentState() {
