@@ -1331,3 +1331,40 @@ TEST_F(NegativeGpuAVScoped, RayGenUseQueryUninitSelectShaders) {
     m_device->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersInvalidRegex) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
+
+    std::vector<VkLayerSettingEXT> layer_settings(2);
+    layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    // Unterminated bracket expression, this is not a valid ECMAScript regex
+    std::array<const char*, 1> shader_regexes = {{"shadow_pass[0"}};
+    layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
+                         shader_regexes.data()};
+
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = vku::InitStructHelper();
+    layer_settings_ci.settingCount = size32(layer_settings);
+    layer_settings_ci.pSettings = layer_settings.data();
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    validation_features.pNext = &layer_settings_ci;
+
+    m_errorMonitor->SetAllowedFailureMsg("Both GPU Assisted Validation and Normal Core Check Validation are enabled");
+    m_errorMonitor->SetDesiredWarning("\"shadow_pass[0\" is not a valid ECMAScript regular expression");
+    RETURN_IF_SKIP(InitFramework(&validation_features));
+    m_errorMonitor->VerifyFound();
+    RETURN_IF_SKIP(InitState());
+
+    VkShaderObj vs(*m_device, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_SHADER_MODULE;
+    name_info.pObjectName = "shadow_pass[0";
+    name_info.objectHandle = uint64_t(vs.handle());
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+}

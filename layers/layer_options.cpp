@@ -1118,7 +1118,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
             if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT)) {
                 std::vector<std::string> shaders_to_instrument;
                 vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT, shaders_to_instrument);
-                gpuav_settings.SetShaderSelectionRegexes(std::move(shaders_to_instrument));
+                gpuav_settings.SetShaderSelectionRegexes(std::move(shaders_to_instrument), setting_warnings);
             }
         }
 
