@@ -1606,12 +1606,6 @@
                             "key": "error",
                             "label": "Error",
                             "description": "Report errors in API usage."
-                        },
-                        {
-                            "key": "debug",
-                            "label": "Debug",
-                            "description": "For layer development. Report messages for debugging layer behavior.",
-                            "view": "DEBUG"
                         }
                     ],
                     "messages": [
