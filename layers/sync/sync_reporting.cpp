@@ -409,8 +409,8 @@ ReportProperties GetErrorMessageProperties(const SyncEnvironment& env, const Haz
 
     GetAccessProperties(env.validator, hazard, env.queue_flags, properties);
 
-    if (hazard.Tag() != kInvalidTag) {
-        ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
+    if (hazard.PriorTag() != kInvalidTag) {
+        ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.PriorTagEx());
         GetPriorUsageProperties(prior_usage_info, properties);
     }
     for (const auto& property : additional_info.properties.name_values) {
@@ -466,12 +466,12 @@ std::string FormatErrorMessage(const SyncEnvironment& env, const HazardResult& h
     } else {
         ss << "read ";
     }
-    if (hazard.Tag() == kInvalidTag) {
+    if (hazard.PriorTag() == kInvalidTag) {
         // Invalid tag for prior access means the same command performed ILT before loadOp,
         // resolve before ILT or ILT after storeOp.
         ss << "by the same command";
     } else {
-        const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.TagEx());
+        const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(hazard.PriorTagEx());
         const vvl::Func prior_command = prior_usage_info.command;
         if (prior_usage_info.sub_command_type == SubCommandType::kLoadOp) {
             if (prior_usage_info.subpass != vvl::kNoIndex32) {

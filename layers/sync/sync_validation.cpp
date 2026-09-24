@@ -2184,6 +2184,10 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     // Heavyweight, but we need a proxy copy of the active command buffer access context
     CommandBufferContext proxy_cb_context(cb_context, CommandBufferContext::AsProxyContext());
 
+    // Collect errors from secondary replay to avoid reporting them again at queue submission.
+    // The proxy uses the tags that the primary command buffer will assign
+    std::vector<ReportedHazard> new_hazards;
+
     auto& proxy_label_commands = proxy_cb_context.GetProxyLabelCommands();
     proxy_label_commands = cb_state->GetLabelCommands();
 
@@ -2209,7 +2213,11 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         proxy_cb_context.ImportRecordedAccessLog(recorded_cb_context);
 
         skip |= ReplayCommands(proxy_cb_context.GetSyncEnvironment(), proxy_cb_context.GetCbAccessContext(), recorded_cb_context,
-                               base_tag, cb_loc);
+                               base_tag, cb_loc, &new_hazards);
+    }
+    // A skipped command is not recorded, its tag goes to the next command
+    if (!skip) {
+        cb_context.RecordReportedHazards(new_hazards);
     }
     proxy_label_commands.clear();
     return skip;

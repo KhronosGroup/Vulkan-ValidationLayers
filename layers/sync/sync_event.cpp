@@ -22,6 +22,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/event_state.h"
 #include "utils/image_utils.h"
+#include "utils/text_utils.h"
 
 namespace syncval {
 
@@ -255,7 +256,7 @@ void SyncEventState::AddReferencedTags(ResourceUsageTagSet& referenced) const {
 }
 
 bool ValidateCmdSetEvent(const SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& src_exec_scope,
-                         const Location& loc) {
+                         const ErrorReporter& reporter, const Location& loc) {
     bool skip = false;
     const SyncEventState* sync_event = env.events_context.Get(event);
     if (!sync_event) {
@@ -265,31 +266,31 @@ bool ValidateCmdSetEvent(const SyncEnvironment& env, const vvl::Event& event, co
         const std::string vuid_prefix = std::string("SYNC-") + vvl::String(loc.function);
         if (IsValueIn(sync_event->last_command,
                       {vvl::Func::vkCmdResetEvent, vvl::Func::vkCmdResetEvent2, vvl::Func::vkCmdResetEvent2KHR})) {
-            skip |=
-                env.validator.LogError(vuid_prefix + "-reset-race", event.Handle(), loc,
-                                       "%s is set after %s without an intervening execution dependency. This is a race condition "
-                                       "and may result in data hazards.",
-                                       env.validator.FormatHandle(event.Handle()).c_str(), vvl::String(sync_event->last_command));
+            skip |= reporter.ReportEventError(
+                *sync_event, (vuid_prefix + "-reset-race").c_str(), event.Handle(), loc,
+                text::Format("%s is set after %s without an intervening execution dependency. This is a race condition "
+                             "and may result in data hazards.",
+                             env.validator.FormatHandle(event.Handle()).c_str(), vvl::String(sync_event->last_command)));
         } else if (IsValueIn(sync_event->last_command,
                              {vvl::Func::vkCmdSetEvent, vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR})) {
-            skip |=
-                env.validator.LogError(vuid_prefix + "-set-race", event.Handle(), loc,
-                                       "%s is set after a previous %s without an intervening execution dependency. This is a race "
-                                       "condition and may result in data hazards.",
-                                       env.validator.FormatHandle(event.Handle()).c_str(), vvl::String(sync_event->last_command));
+            skip |= reporter.ReportEventError(
+                *sync_event, (vuid_prefix + "-set-race").c_str(), event.Handle(), loc,
+                text::Format("%s is set after a previous %s without an intervening execution dependency. This is a race "
+                             "condition and may result in data hazards.",
+                             env.validator.FormatHandle(event.Handle()).c_str(), vvl::String(sync_event->last_command)));
         } else if (IsValueIn(sync_event->last_command,
                              {vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR})) {
-            skip |=
-                env.validator.LogError(vuid_prefix + "-wait", event.Handle(), loc,
-                                       "%s is set after %s without intervening vkCmdResetEvent, may result in data hazard.",
-                                       env.validator.FormatHandle(event.Handle()).c_str(), vvl::String(sync_event->last_command));
+            skip |= reporter.ReportEventError(
+                *sync_event, (vuid_prefix + "-wait").c_str(), event.Handle(), loc,
+                text::Format("%s is set after %s without intervening vkCmdResetEvent, may result in data hazard.",
+                             env.validator.FormatHandle(event.Handle()).c_str(), vvl::String(sync_event->last_command)));
         }
     }
     return skip;
 }
 
 bool ValidateCmdResetEvent(const SyncEnvironment& env, const vvl::Event& event, const SyncExecScope& exec_scope,
-                           const Location& loc) {
+                           const ErrorReporter& reporter, const Location& loc) {
     bool skip = false;
     const SyncEventState* sync_event = env.events_context.Get(event);
     if (!sync_event) {
@@ -297,16 +298,17 @@ bool ValidateCmdResetEvent(const SyncEnvironment& env, const vvl::Event& event, 
     }
     if (IsValueIn(sync_event->last_command, {vvl::Func::vkCmdSetEvent, vvl::Func::vkCmdSetEvent2, vvl::Func::vkCmdSetEvent2KHR}) &&
         !sync_event->HasBarrier(exec_scope.stage_mask, exec_scope.exec_scope)) {
-        skip |= env.validator.LogError("SYNC-vkCmdResetEvent-set-race", event.Handle(), loc,
-                                       "%s is reset after %s without an intervening execution dependency. This is a race condition "
-                                       "and may result in data hazards.",
-                                       env.validator.FormatHandle(event.Handle()).c_str(), vvl::String(sync_event->last_command));
+        skip |= reporter.ReportEventError(
+            *sync_event, "SYNC-vkCmdResetEvent-set-race", event.Handle(), loc,
+            text::Format("%s is reset after %s without an intervening execution dependency. This is a race condition "
+                         "and may result in data hazards.",
+                         env.validator.FormatHandle(event.Handle()).c_str(), vvl::String(sync_event->last_command)));
     }
     return skip;
 }
 
 bool ValidateCmdWaitEvents(const SyncEnvironment& env, vvl::span<const std::shared_ptr<const vvl::Event>> events,
-                           const Location& loc) {
+                           const ErrorReporter& reporter, const Location& loc) {
     bool skip = false;
     for (const auto& event : events) {
         const SyncEventState* sync_event = env.events_context.Get(event);
@@ -314,10 +316,11 @@ bool ValidateCmdWaitEvents(const SyncEnvironment& env, vvl::span<const std::shar
             continue;  // [core validation check]: invalid event
         }
         if (sync_event->unsynchronized_set != vvl::Func::Empty) {
-            skip |= env.validator.LogError("SYNC-vkCmdWaitEvents-unsynchronized-setops", sync_event->event->VkHandle(), loc,
-                                           "does not create an execution dependency with the previous %s for %s.",
-                                           vvl::String(sync_event->last_command),
-                                           env.validator.FormatHandle(sync_event->event->Handle()).c_str());
+            skip |= reporter.ReportEventError(*sync_event, "SYNC-vkCmdWaitEvents-unsynchronized-setops",
+                                              sync_event->event->VkHandle(), loc,
+                                              text::Format("does not create an execution dependency with the previous %s for %s.",
+                                                           vvl::String(sync_event->last_command),
+                                                           env.validator.FormatHandle(sync_event->event->Handle()).c_str()));
         }
     }
     return skip;
@@ -349,7 +352,7 @@ bool DetectCmdWaitEventsImageBarrierHazard(const SyncEnvironment& env, const Acc
                 // Preserve record-time object lists until event reporting is unified.
                 const LogObjectList objlist = reporter.IsReplay() ? BaseObjectList(env, reporter, barrier.image->Handle())
                                                                   : LogObjectList(barrier.image->Handle());
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, barrier.image->Handle(), objlist, reporter.loc, error);
                 break;
             }
         }

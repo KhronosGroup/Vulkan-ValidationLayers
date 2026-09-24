@@ -279,7 +279,7 @@ bool RenderingInstance::ValidateBeginRendering(const SyncEnvironment& env, const
 
             const std::string error =
                 validator.error_messages_.BeginRenderingError(env, hazard, reporter, resource_description, attachment.load_op);
-            skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+            skip |= reporter.ReportHazard(hazard, attachment.view->Handle(), objlist, reporter.loc, error);
             if (skip) {
                 break;
             }
@@ -350,7 +350,7 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
 
                 const std::string error = validator.error_messages_.EndRenderingResolveError(
                     env, hazard, reporter, resource_description, attachment.resolve_mode, false);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, attachment.view->Handle(), objlist, reporter.loc, error);
                 if (skip) {
                     break;
                 }
@@ -370,7 +370,7 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
 
                 const std::string error = validator.error_messages_.EndRenderingResolveError(
                     env, hazard, reporter, resource_description, attachment.resolve_mode, true);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, attachment.resolve_view->Handle(), objlist, reporter.loc, error);
                 if (skip) {
                     break;
                 }
@@ -393,7 +393,7 @@ bool RenderingInstance::ValidateEndRendering(const SyncEnvironment& env, const A
 
                 const std::string error = validator.error_messages_.EndRenderingStoreError(
                     env, hazard, reporter, resource_description, attachment.store_op);
-                skip |= validator.SyncError(hazard.Hazard(), objlist, reporter.loc, error);
+                skip |= reporter.ReportHazard(hazard, attachment.view->Handle(), objlist, reporter.loc, error);
                 if (skip) {
                     break;
                 }
@@ -467,7 +467,7 @@ bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, cons
             const Location location = reporter.IsReplay() ? reporter.loc : attachment_loc.dot(vvl::Field::imageView);
             const std::string error = validator.error_messages_.DynamicRenderingAttachmentError(
                 env, hazard, reporter, validator.FormatHandle(*attachment.view));
-            skip |= validator.SyncError(hazard.Hazard(), objlist, location, error);
+            skip |= reporter.ReportHazard(hazard, attachment.view->Handle(), objlist, location, error);
         }
     }
 
@@ -493,7 +493,7 @@ bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, cons
                 const Location location = reporter.IsReplay() ? reporter.loc : attachment_loc.dot(vvl::Field::imageView);
                 const std::string error = validator.error_messages_.DynamicRenderingAttachmentError(
                     env, hazard, reporter, validator.FormatHandle(*attachment.view));
-                skip |= validator.SyncError(hazard.Hazard(), objlist, location, error);
+                skip |= reporter.ReportHazard(hazard, attachment.view->Handle(), objlist, location, error);
             }
         }
     }

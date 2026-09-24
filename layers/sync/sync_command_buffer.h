@@ -22,6 +22,8 @@
 #include "sync/sync_render_pass.h"
 #include "state_tracker/cmd_buffer_state.h"
 
+#include <mutex>
+
 struct RecordObject;
 
 namespace syncval {
@@ -170,14 +172,50 @@ struct SyncEnvironment {
     const ResourceUsageInfoProvider& usage_info_provider;
 };
 
+// Identifies a reported error for deduplication purposes
+struct ReportedHazard {
+    ReportedHazard(ResourceUsageTag tag, ResourceUsageTag prior_tag, SyncAccessIndex access, SyncAccessIndex prior_access,
+                   SyncHazard hazard, VulkanTypedHandle resource);
+
+    // Local tags identifying the current and prior commands.
+    // prior_tag can be kInvalidTag when the prior access belongs to the same command
+    // (for example, render pass loadOp against initial layout transition)
+    ResourceUsageTag tag;
+    ResourceUsageTag prior_tag;
+
+    // Hash of the constructor arguments except the tags
+    uint64_t hash;
+
+    bool operator==(const ReportedHazard& other) const;
+};
+
+// a) Reports errors
+// b) Collects the record-time errors so that replay does not duplicate them
 struct ErrorReporter {
     const CommandBufferContext& cb_context;
     const Location& loc;
 
-    // The tag of the replayed command in cb_context, or kInvalidTag during record-time validation
+    // Collected reports during recording. Null during queue submission
+    std::vector<ReportedHazard>* new_hazards = nullptr;
+
+    // Tag offset during replay
+    const ResourceUsageTag base_tag = 0;
+
+    // Local tag during replay, kInvalidTag during record-time validation
     ResourceUsageTag replay_tag = kInvalidTag;
 
     bool IsReplay() const { return replay_tag != kInvalidTag; }
+
+    // Logs the error unless it was already reported at record time. Return skip value
+    bool ReportHazard(const HazardResult& hazard, VulkanTypedHandle resource, const LogObjectList& objlist,
+                      const Location& error_loc, const std::string& error) const;
+    bool ReportEventError(const SyncEventState& event_state, const char* vuid, const LogObjectList& objlist,
+                          const Location& error_loc, const std::string& message) const;
+
+  private:
+    ResourceUsageTag CommandTag() const;
+    bool IsAlreadyReported(ReportedHazard report) const;
+    void Collect(ReportedHazard report) const;
 };
 
 class CommandBufferContext final : public ResourceUsageInfoProvider, public DebugNameProvider {
@@ -210,6 +248,10 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     SyncEnvironment& GetSyncEnvironment() { return environment_; }
     const SyncEnvironment& GetSyncEnvironment() const { return environment_; }
+
+    void RecordReportedHazards(const std::vector<ReportedHazard>& new_hazards) const;
+    void FinalizeReportedHazards();
+    bool HasReportedHazard(const ReportedHazard& report) const;
 
     // The command buffer's own access context. Subpass contexts exist only inside a vkCmdBeginRenderPass
     // instance, so use this instead of GetCurrentAccessContext() anywhere else. Dynamic rendering has no
@@ -332,6 +374,12 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     std::vector<CommandEntry> commands_;
     CommandData command_data_;
+
+    // Reports used to suppress duplicates during replay. Mutable because reports are collected during
+    // validation and must be stored in a const CommandBufferContext. Command buffer access requires external
+    // synchronization. The mutex is still needed to prevent invalid concurrent recording from corrupting the reports.
+    mutable std::mutex reported_hazards_mutex_;
+    mutable std::vector<ReportedHazard> reported_hazards_;
 
     // Dynamic rendering state
     std::vector<RenderingAttachment> rendering_attachments_;
