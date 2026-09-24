@@ -208,7 +208,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, PushAddress) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptor_heap_pipe);
     desc_heap.BindResourceHeap(m_command_buffer);
 
-    m_command_buffer.PushData(read_offset, sizeof(read_address), &read_address);
+    m_command_buffer.PushDataEXT(read_offset, sizeof(read_address), &read_address);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_command_buffer.EndRenderPass();
@@ -357,7 +357,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitPushIndex) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t index = 3;
-    m_command_buffer.PushData(248, sizeof(uint32_t), &index);
+    m_command_buffer.PushDataEXT(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -404,7 +404,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitIndirectIndex) {
 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(248, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(248, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -454,7 +454,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitHeapData) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t index = min_alignment;
-    m_command_buffer.PushData(248, sizeof(uint32_t), &index);
+    m_command_buffer.PushDataEXT(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -502,7 +502,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitPushData) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t index = 42;
-    m_command_buffer.PushData(248, sizeof(uint32_t), &index);
+    m_command_buffer.PushDataEXT(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -537,7 +537,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitPushAddress) {
     VkDeviceAddress ssbo_address = ssbo_buffer.Address();
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(248, sizeof(VkDeviceAddress), &ssbo_address);
+    m_command_buffer.PushDataEXT(248, sizeof(VkDeviceAddress), &ssbo_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -575,7 +575,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitIndirectAddress) {
     VkDeviceAddress indirect_address = indirect_buffer.Address();
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(248, sizeof(VkDeviceAddress), &indirect_address);
+    m_command_buffer.PushDataEXT(248, sizeof(VkDeviceAddress), &indirect_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -615,7 +615,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitShader) {
     desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t value[32];
     value[30] = 42;
-    m_command_buffer.PushData(128, sizeof(value), value);
+    m_command_buffer.PushDataEXT(128, sizeof(value), value);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -658,7 +658,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitShaderAndMapping) {
     m_command_buffer.Begin();
     uint64_t value[32];
     value[16] = ssbo_address;
-    m_command_buffer.PushData(0, sizeof(value), &value);
+    m_command_buffer.PushDataEXT(0, sizeof(value), &value);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -711,12 +711,12 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DISABLED_PushDataLimitMulitipleDispatch) 
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     uint32_t index = 42;
-    m_command_buffer.PushData(248, sizeof(uint32_t), &index);
+    m_command_buffer.PushDataEXT(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe1);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     index = 88;
-    m_command_buffer.PushData(248, sizeof(uint32_t), &index);
+    m_command_buffer.PushDataEXT(248, sizeof(uint32_t), &index);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -755,7 +755,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, PushDataLimitNoShaderInstrumentation) {
     VkDeviceAddress ssbo_address = ssbo_buffer.Address();
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(248, sizeof(VkDeviceAddress), &ssbo_address);
+    m_command_buffer.PushDataEXT(248, sizeof(VkDeviceAddress), &ssbo_address);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -810,7 +810,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, SamplerHeapOffset) {
     desc_heap.BindSamplerHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-    m_command_buffer.PushData(0, sizeof(buffer_address), &buffer_address);
+    m_command_buffer.PushDataEXT(0, sizeof(buffer_address), &buffer_address);
     vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
 
     m_command_buffer.End();
@@ -2106,9 +2106,9 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, DispatchIndirect) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    m_command_buffer.PushData(0, 64, pc_data);
+    m_command_buffer.PushDataEXT(0, 64, pc_data);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
-    m_command_buffer.PushData(0, 64, pc_data);
+    m_command_buffer.PushDataEXT(0, 64, pc_data);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, sizeof(VkDrawIndirectCommand));
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);

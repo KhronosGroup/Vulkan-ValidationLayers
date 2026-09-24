@@ -1112,7 +1112,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void BeginRenderingColor(const VkImageView imageView, VkRect2D render_area);
     void EndRendering();
 
-    void PushData(uint32_t offset, size_t size, const void* address);
+    void PushDataEXT(uint32_t offset, size_t size, const void* address);
 
     void BindShadersEXT(const vkt::ShaderEXT& vert_shader, const vkt::ShaderEXT& frag_shader);
     void BindShadersEXT(const vkt::ShaderEXT& vert_shader, const vkt::ShaderEXT& geom_shader, const vkt::ShaderEXT& frag_shader);

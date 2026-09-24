@@ -2097,7 +2097,7 @@ void CommandBuffer::EndRendering() {
     }
 }
 
-void CommandBuffer::PushData(uint32_t offset, size_t size, const void* address) {
+void CommandBuffer::PushDataEXT(uint32_t offset, size_t size, const void* address) {
     VkPushDataInfoEXT push_data = vku::InitStructHelper();
     push_data.offset = offset;
     push_data.data.address = address;

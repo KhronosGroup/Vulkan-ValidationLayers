@@ -70,7 +70,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, BasicBuffer) {
     m_command_buffer.Begin();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &src_data);
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -391,8 +391,8 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, ImageAndSamplerSlang) {
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(0, 4, &buffer_index);
-    m_command_buffer.PushData(4, 4, &image_index);
+    m_command_buffer.PushDataEXT(0, 4, &buffer_index);
+    m_command_buffer.PushDataEXT(4, 4, &image_index);
 
     m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -546,8 +546,8 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, ImageAndSamplerSlangUnified) {
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
-    m_command_buffer.PushData(0, 4, &buffer_index);
-    m_command_buffer.PushData(4, 4, &image_index);
+    m_command_buffer.PushDataEXT(0, 4, &buffer_index);
+    m_command_buffer.PushDataEXT(4, 4, &image_index);
 
     m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -719,7 +719,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, SecondaryCmdBufferCompute) {
 
     secondary.Begin(&begin_info);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    secondary.PushData(0, sizeof(uint32_t), &src_data);
+    secondary.PushDataEXT(0, sizeof(uint32_t), &src_data);
     vk::CmdDispatch(secondary, 1, 1, 1);
     secondary.End();
 
@@ -801,7 +801,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, SecondaryCmdBufferGraphics) {
 
     secondary.Begin(&begin_info);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    secondary.PushData(0, sizeof(uint32_t), &src_data);
+    secondary.PushDataEXT(0, sizeof(uint32_t), &src_data);
     vk::CmdDraw(secondary, 3u, 1u, 0u, 0u);
     secondary.End();
 
@@ -868,7 +868,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, VertexStorage) {
     desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &src_data);
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -985,7 +985,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, HardcodedOffsetIntoStruct) {
     m_command_buffer.Begin();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &src_data);
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1069,7 +1069,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, SingleElementNoArray) {
     m_command_buffer.Begin();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &src_data);
     desc_heap.BindResourceHeap(m_command_buffer);
-    m_command_buffer.PushData(0, sizeof(uint32_t), &src_data);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &src_data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -1727,7 +1727,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, BufferAsFunctionParameter) {
     uint32_t pc_index = 100;
     {
         m_command_buffer.Begin();
-        m_command_buffer.PushData(0, sizeof(uint32_t), &pc_index);
+        m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &pc_index);
         desc_heap.BindResourceHeap(m_command_buffer);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1743,7 +1743,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, BufferAsFunctionParameter) {
     pc_index = 1;
     {
         m_command_buffer.Begin();
-        m_command_buffer.PushData(0, sizeof(uint32_t), &pc_index);
+        m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &pc_index);
         desc_heap.BindResourceHeap(m_command_buffer);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1759,7 +1759,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, BufferAsFunctionParameter) {
     pc_index = 2;
     {
         m_command_buffer.Begin();
-        m_command_buffer.PushData(0, sizeof(uint32_t), &pc_index);
+        m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &pc_index);
         desc_heap.BindResourceHeap(m_command_buffer);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1859,13 +1859,13 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, SlangBasicBuffer) {
 
     m_command_buffer.Begin();
     uint32_t index = 0;
-    m_command_buffer.PushData(0, sizeof(uint32_t), &index);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &index);
     desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     index = 1;
-    m_command_buffer.PushData(0, sizeof(uint32_t), &index);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &index);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -1963,8 +1963,8 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, PushDataUnused) {
     m_command_buffer.Begin();
     uint32_t a_value = 3;
     uint32_t b_value = 7;
-    m_command_buffer.PushData(0, 4, &a_value);
-    m_command_buffer.PushData(4, 4, &b_value);
+    m_command_buffer.PushDataEXT(0, 4, &a_value);
+    m_command_buffer.PushDataEXT(4, 4, &b_value);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     desc_heap.BindResourceHeap(m_command_buffer);
     // TODO - Remove this false positive

@@ -6265,7 +6265,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapPushConstantOnly) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     uint32_t data = 4;
-    m_command_buffer.PushData(0, sizeof(uint32_t), &data);
+    m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &data);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 

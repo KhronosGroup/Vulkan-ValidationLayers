@@ -2784,7 +2784,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
     desc_heap.BindResourceHeap(cb_0);
     desc_heap.BindSamplerHeap(cb_0);
     VkDeviceAddress bda_buffer_addr_0 = bda_0.Address();
-    cb_0.PushData(0, sizeof(VkDeviceAddress), &bda_buffer_addr_0);
+    cb_0.PushDataEXT(0, sizeof(VkDeviceAddress), &bda_buffer_addr_0);
     vk::CmdBindIndexBuffer(cb_0, index_buffer, 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexed(cb_0, 3, 1, 0, 0, 0);
     vk::CmdDrawIndexed(cb_0, 3, 1, 0, 0, 1);
@@ -2798,7 +2798,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
     desc_heap.BindResourceHeap(cb_1);
     desc_heap.BindSamplerHeap(cb_1);
     VkDeviceAddress bda_buffer_addr_1 = bda_1.Address();
-    cb_1.PushData(0, sizeof(VkDeviceAddress), &bda_buffer_addr_1);
+    cb_1.PushDataEXT(0, sizeof(VkDeviceAddress), &bda_buffer_addr_1);
     vk::CmdBindIndexBuffer(cb_1, index_buffer, 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexed(cb_1, 3, 1, 0, 0, 0);
     vk::CmdDrawIndexed(cb_1, 3, 1, 0, 0, 1);

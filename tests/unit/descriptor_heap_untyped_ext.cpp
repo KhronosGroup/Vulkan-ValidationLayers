@@ -152,7 +152,7 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, SecondaryCmdBufferHeapMissingInheritanc
 
     secondary.Begin(&begin_info);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    secondary.PushData(0, sizeof(uint32_t), &src_data);
+    secondary.PushDataEXT(0, sizeof(uint32_t), &src_data);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-11308");
     vk::CmdDraw(secondary, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
@@ -218,7 +218,7 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, SecondaryCmdBufferResourceHeapUnbound) 
 
     secondary.Begin(&begin_info);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    secondary.PushData(0, sizeof(uint32_t), &src_data);
+    secondary.PushDataEXT(0, sizeof(uint32_t), &src_data);
     vk::CmdDraw(secondary, 3u, 1u, 0u, 0u);
     secondary.End();
 
