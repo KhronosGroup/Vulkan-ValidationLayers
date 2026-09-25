@@ -25,6 +25,7 @@
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstErrorBuffer, scalar) buffer OutputBuffer {
     uint flags;
+    uint error_buffer_u32_count;
     uint written_count;
     // Use SpecConstantInstErrorBufferLengthId instead of data.length()
     // This allows us to use VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT for heaps

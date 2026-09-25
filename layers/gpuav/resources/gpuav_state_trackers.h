@@ -129,9 +129,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     VkDeviceSize GetCmdErrorsCountsBufferByteSize() const { return 8192 * sizeof(uint32_t); }
 
-    const VkBuffer &GetCmdErrorsCountsBuffer() const {
-        assert(cmd_errors_counts_buffer_.VkHandle() != VK_NULL_HANDLE);
-        return cmd_errors_counts_buffer_.VkHandle();
+    const vko::Buffer& GetCmdErrorsCountsBuffer() const {
+        assert(!cmd_errors_counts_buffer_.IsDestroyed());
+        return cmd_errors_counts_buffer_;
     }
 
     void Destroy() final;
