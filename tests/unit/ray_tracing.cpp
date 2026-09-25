@@ -6243,3 +6243,35 @@ TEST_F(NegativeRayTracing, GeometryMotionTrianglesDataNV) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeRayTracing, BuildGeometryInfoNullGeometryArrays) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_info = vku::InitStructHelper();
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info.geometryCount = 1;
+    build_info.pGeometries = nullptr;
+    build_info.ppGeometries = nullptr;
+
+    const uint32_t max_primitive_count = 1;
+    VkAccelerationStructureBuildSizesInfoKHR size_info = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-03788");
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info,
+                                              &max_primitive_count, &size_info);
+    m_errorMonitor->VerifyFound();
+
+    const VkAccelerationStructureBuildRangeInfoKHR range_info = {1, 0, 0, 0};
+    const VkAccelerationStructureBuildRangeInfoKHR* p_range_info = &range_info;
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-03788");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03800");
+    vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &p_range_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
