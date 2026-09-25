@@ -4334,3 +4334,15 @@ TEST_F(NegativePipeline, NullLayoutPushConstant) {
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, ComputePipelineInvalidPNext) {
+    RETURN_IF_SKIP(Init());
+
+    VkImageViewUsageCreateInfo invalid_struct = vku::InitStructHelper();
+    invalid_struct.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    CreateComputePipelineHelper pipe(*this, &invalid_struct);
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-pNext-pNext");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}

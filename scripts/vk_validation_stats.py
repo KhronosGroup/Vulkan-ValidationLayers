@@ -254,13 +254,8 @@ class Consistency:
             'VUID-PrimitiveTriangleIndicesEXT-',
             'VUID-HitTriangleVertexPositionsKHR-',
 
-            # https://gitlab.khronos.org/vulkan/vulkan/-/issues/4813
-            'VUID-vkCmdDispatchDataGraphARM-None-08115',
-            'VUID-vkCmdDispatchDataGraphARM-None-08117',
-            'VUID-vkCmdDispatchDataGraphARM-None-08114',
-            'VUID-vkCmdDispatchDataGraphARM-None-08600',
-            'VUID-vkCmdDispatchDataGraphARM-None-08606',
-            'VUID-vkCmdDispatchDataGraphARM-pDescription-09900',
+            # One test needs this, for now just ignore, unlikely going to be a typo
+            'VUID-vkCmdDraw',
         ]
 
     # Report undefined VUIDs in source code

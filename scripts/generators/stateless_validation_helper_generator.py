@@ -1128,6 +1128,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         allowedTypes = 'nullptr'
                         pNextVuid = self.GetVuid(structTypeName, "pNext-pNext")
                         sTypeVuid = self.GetVuid(structTypeName, "sType-unique")
+                        # These extend VkPipelineCreateInfoKHR (VUID-VkPipelineCreateInfoKHR-pNext-09604) so the spec does not generate
+                        # these implicit VUs, but when passed to vkCreate*Pipelines they still start their own pNext chain
+                        if 'VkPipelineCreateInfoKHR' in self.vk.structs[structTypeName].extends:
+                            pNextVuid = f'"VUID-{structTypeName}-pNext-pNext"'
+                            sTypeVuid = f'"VUID-{structTypeName}-sType-unique"'
                         # If no VUIDs we will only be potentially giving false positives
                         if pNextVuid != 'kVUIDUndefined' or sTypeVuid != 'kVUIDUndefined':
                             struct = self.vk.structs[structTypeName]
@@ -1322,6 +1327,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             selector = None
         )
         expr = self.applyStringTemplate(struct.name, tData, [])
+        # When in the pNext of VkPipelineCreateInfoKHR, the rest of the chain belongs to VkPipelineCreateInfoKHR
+        if 'VkPipelineCreateInfoKHR' in struct.extends:
+            expr = [x for x in expr if f'allowed_structs_{struct.name} =' not in x and 'ValidateStructPnext(pNext_loc, structure->pNext,' not in x]
         structValidationSource = self.scrubStringTemplate(expr)
         if structValidationSource != '':
             # Only reasonable to validate content of structs if const as otherwise the date inside has not been writen to yet

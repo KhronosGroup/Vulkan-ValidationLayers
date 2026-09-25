@@ -5329,3 +5329,33 @@ TEST_F(NegativeCommand, ArmSchedulingControlsDispatchParameters) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeCommand, BindDescriptorSets2NullDynamicOffsets) {
+    TEST_DESCRIPTION("vkCmdBindDescriptorSets2 with a dynamicOffsetCount but no pDynamicOffsets array");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 1024, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+    descriptor_set.UpdateDescriptorSets();
+
+    VkBindDescriptorSetsInfo bind_ds_info = vku::InitStructHelper();
+    bind_ds_info.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+    bind_ds_info.layout = pipeline_layout;
+    bind_ds_info.firstSet = 0;
+    bind_ds_info.descriptorSetCount = 1;
+    bind_ds_info.pDescriptorSets = &descriptor_set.set_;
+    bind_ds_info.dynamicOffsetCount = 1;
+    bind_ds_info.pDynamicOffsets = nullptr;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfo-pDynamicOffsets-parameter");
+    vk::CmdBindDescriptorSets2KHR(m_command_buffer, &bind_ds_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

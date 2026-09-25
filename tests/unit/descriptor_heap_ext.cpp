@@ -2726,8 +2726,9 @@ TEST_F(NegativeDescriptorHeapEXT, ShaderCreateInfoPushConstant) {
         const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
         const VkShaderCreateFlagsEXT flags = VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT;
         VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoFlagEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, flags);
+        VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
         vert_ci.pushConstantRangeCount = 1;
-        vert_ci.pPushConstantRanges = nullptr;
+        vert_ci.pPushConstantRanges = &push_constant_range;
 
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-11370");
         const vkt::ShaderEXT vert_shader(*m_device, vert_ci);

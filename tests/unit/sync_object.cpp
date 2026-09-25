@@ -5057,3 +5057,33 @@ TEST_F(NegativeSyncObject, RenderPassBarrier) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncObject, TimelineSemaphoreNullValueArrays) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = nullptr;
+    VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_info);
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    m_errorMonitor->SetDesiredError("VUID-VkTimelineSemaphoreSubmitInfo-pSignalSemaphoreValues-parameter");
+    vk::QueueSubmit(*m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    timeline_info.signalSemaphoreValueCount = 0;
+    timeline_info.waitSemaphoreValueCount = 1;
+    timeline_info.pWaitSemaphoreValues = nullptr;
+    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore.handle();
+    submit_info.pWaitDstStageMask = &wait_stage;
+    m_errorMonitor->SetDesiredError("VUID-VkTimelineSemaphoreSubmitInfo-pWaitSemaphoreValues-parameter");
+    vk::QueueSubmit(*m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
