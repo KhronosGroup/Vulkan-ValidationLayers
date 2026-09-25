@@ -1804,7 +1804,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultReportsKHR(VkDevice device, uint64_t timeout, uint32_t* pFaultCounts,
                                                                VkDeviceFaultInfoKHR* pFaultInfo) {
-    return timeout == 0 ? VK_SUCCESS : VK_TIMEOUT;
+    // No faults ever occur, VK_TIMEOUT is returned even if timeout is zero
+    *pFaultCounts = 0;
+    return VK_TIMEOUT;
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR

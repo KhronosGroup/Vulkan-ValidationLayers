@@ -711,23 +711,20 @@ TEST_F(PositiveOther, HeapWithoutUntypedPointers) {
     InitState();
 }
 
-TEST_F(PositiveOther, GetDeviceFaultReportsWithoutTimeout) {
+TEST_F(PositiveOther, GetDeviceFaultReports) {
     AddRequiredExtensions(VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::deviceFault);
     RETURN_IF_SKIP(Init());
+
     uint32_t fault_counts = 0;
     VkResult result = vk::GetDeviceFaultReportsKHR(device(), 0, &fault_counts, nullptr);
-    ASSERT_EQ(VK_SUCCESS, result);
-    ASSERT_EQ(fault_counts, 0);
-}
-
-TEST_F(PositiveOther, GetDeviceFaultReportsWithTimeout) {
-    AddRequiredExtensions(VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::deviceFault);
-    RETURN_IF_SKIP(Init());
-    uint32_t fault_counts = 0;
-    VkResult result = vk::GetDeviceFaultReportsKHR(device(), 1000u, &fault_counts, nullptr);
     ASSERT_EQ(VK_TIMEOUT, result);
+    ASSERT_EQ(fault_counts, 0u);
+
+    fault_counts = 0;
+    result = vk::GetDeviceFaultReportsKHR(device(), 1000u, &fault_counts, nullptr);
+    ASSERT_EQ(VK_TIMEOUT, result);
+    ASSERT_EQ(fault_counts, 0u);
 }
 
 TEST_F(PositiveOther, AppendingPipelineCreateFlags2) {
