@@ -2647,39 +2647,55 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                 const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
                                                                 const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetLogicOp(VkCommandBuffer commandBuffer, VkLogicOp logicOp, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp,
                                          const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetPatchControlPoints(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
+                                          const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
                                                     const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable,
+                                               const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable,
                                                          const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable,
                                                       const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable,
                                                  const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable,
                                               const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
+                                              const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
                                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
                                                      const ErrorObject& error_obj) const override;
 
+    bool ValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
                                        const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace,
                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace,
                                         const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology,
+                                         const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology,
                                                    const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology,
                                                 const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports,
+                                         const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                    const VkViewport* pViewports, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports,
                                                 const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors,
+                                        const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors,
                                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors,
@@ -2693,49 +2709,74 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                  const VkBindVertexBuffer3InfoKHR* pBindingInfos,
                                                  const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
                                                  const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
                                               const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
+                                        const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
                                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
                                                const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
+                                      const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
                                                 const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
                                              const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
+                                             const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
                                                        const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
                                                     const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
+                                         const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
                                                    const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
                                                 const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp,
+                                 VkStencilOp depthFailOp, VkCompareOp compareOp, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                            VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp,
                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                         VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp,
                                         const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetTessellationDomainOrigin(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin,
+                                                const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin,
                                                           const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetDepthClampEnable(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
+                                        const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
                                                  const VkDepthClampRangeEXT* pDepthClampRange,
                                                  const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetPolygonMode(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,
                                              const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetRasterizationSamples(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples,
+                                            const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples,
                                                       const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetSampleMask(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples, const VkSampleMask* pSampleMask,
+                                  const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples,
                                             const VkSampleMask* pSampleMask, const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetAlphaToCoverageEnable(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable,
+                                             const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable,
                                                        const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetAlphaToOneEnable(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable,
+                                        const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable,
                                                   const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetLogicOpEnable(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable,
                                                const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
@@ -2763,9 +2804,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer, VkProvokingVertexModeEXT provokingVertexMode,
                                                      const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetLineRasterizationMode(VkCommandBuffer commandBuffer, VkLineRasterizationModeEXT lineRasterizationMode,
+                                             const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer,
                                                        VkLineRasterizationModeEXT lineRasterizationMode,
                                                        const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetLineStippleEnable(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable,
+                                         const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable,
                                                    const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne,
@@ -2802,6 +2847,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                                      const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                   const VkBool32* pColorWriteEnables, const ErrorObject& error_obj) const override;
+    bool ValidateCmdSetVertexInput(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+                                   const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
+                                   uint32_t vertexAttributeDescriptionCount,
+                                   const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions,
+                                   const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
                                              const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
                                              uint32_t vertexAttributeDescriptionCount,
