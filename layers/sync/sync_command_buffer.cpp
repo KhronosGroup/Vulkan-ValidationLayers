@@ -927,16 +927,14 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
 
     ImportRecordedAccessLog(recorded_cb_context);
 
-    auto import_common = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag,
-                                uint32_t tag_count) {
+    auto import_common = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag) {
         const auto command = storage.MakeCommand(recorded_command_data);
         if (sync_state_.syncval_settings.record_time_validation) {
             command.Apply(environment_, tag, *current_context_);
         }
-        StoreCommand(tag, command, tag_count);
+        StoreCommand(tag, command);
     };
-    auto import_draw = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag,
-                              uint32_t tag_count) {
+    auto import_draw = [this](const auto& storage, const CommandData& recorded_command_data, ResourceUsageTag tag) {
         auto command = storage.MakeCommand(recorded_command_data, current_renderpass_context_.get(), GetRenderingInstance());
         const uint32_t subpass = current_renderpass_context_ ? current_renderpass_context_->GetCurrentSubpass() : vvl::kNoIndex32;
         command.shader_accesses.render_pass_instance_id = current_render_pass_instance_id_;
@@ -945,7 +943,7 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
         if (sync_state_.syncval_settings.record_time_validation) {
             command.Apply(environment_, tag, *current_context_);
         }
-        StoreCommand(tag, command, tag_count);
+        StoreCommand(tag, command);
     };
 
     const CommandData& command_data = recorded_cb_context.GetCommandData();
@@ -955,47 +953,47 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
 
         switch (entry.command_ref.type) {
             case CommandType::kBufferCopy: {
-                import_common(command_data.buffer_copy_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.buffer_copy_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kBufferAccess: {
-                import_common(command_data.buffer_access_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.buffer_access_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kImageCopy: {
-                import_common(command_data.image_copy_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.image_copy_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kBufferImageCopy: {
-                import_common(command_data.buffer_image_copy_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.buffer_image_copy_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kImageBlit: {
-                import_common(command_data.image_blit_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.image_blit_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kImageResolve: {
-                import_common(command_data.image_resolve_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.image_resolve_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kImageClear: {
-                import_common(command_data.image_clear_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.image_clear_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kPipelineBarrier: {
-                import_common(command_data.barrier_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.barrier_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kSetEvent: {
-                import_common(command_data.set_event_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.set_event_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kResetEvent: {
-                import_common(command_data.reset_event_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.reset_event_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kWaitEvents: {
-                import_common(command_data.wait_events_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.wait_events_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kBeginRendering: {
@@ -1006,7 +1004,7 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                 if (sync_state_.syncval_settings.record_time_validation) {
                     command.Apply(environment_, tag, *current_context_);
                 }
-                StoreCommand(tag, command, entry.tag_count);
+                StoreCommand(tag, command);
                 continue;
             }
             case CommandType::kEndRendering: {
@@ -1017,7 +1015,7 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                 if (sync_state_.syncval_settings.record_time_validation) {
                     command.Apply(environment_, tag, *current_context_);
                 }
-                StoreCommand(tag, command, entry.tag_count);
+                StoreCommand(tag, command);
                 EndRenderingInstance();
                 continue;
             }
@@ -1028,47 +1026,47 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                 continue;
             }
             case CommandType::kShaderAccess: {
-                import_common(command_data.shader_access_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.shader_access_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kDispatchIndirect: {
-                import_common(command_data.dispatch_indirect_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.dispatch_indirect_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kTraceRays: {
-                import_common(command_data.trace_rays_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.trace_rays_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kDraw: {
-                import_draw(command_data.draw_commands[index], command_data, tag, entry.tag_count);
+                import_draw(command_data.draw_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kDrawMulti: {
-                import_draw(command_data.draw_multi_commands[index], command_data, tag, entry.tag_count);
+                import_draw(command_data.draw_multi_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kDrawIndirect: {
-                import_draw(command_data.draw_indirect_commands[index], command_data, tag, entry.tag_count);
+                import_draw(command_data.draw_indirect_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kDrawIndirectCount: {
-                import_draw(command_data.draw_indirect_count_commands[index], command_data, tag, entry.tag_count);
+                import_draw(command_data.draw_indirect_count_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kDrawMeshTasks: {
-                import_draw(command_data.draw_mesh_tasks_commands[index], command_data, tag, entry.tag_count);
+                import_draw(command_data.draw_mesh_tasks_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kBuildAccelerationStructures: {
-                import_common(command_data.build_acceleration_structures_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.build_acceleration_structures_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kAccelerationStructureCopy: {
-                import_common(command_data.acceleration_structure_copy_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.acceleration_structure_copy_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kVideo: {
-                import_common(command_data.video_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.video_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kClearAttachments: {
@@ -1077,11 +1075,11 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                 if (sync_state_.syncval_settings.record_time_validation) {
                     command.Apply(environment_, tag, *current_context_);
                 }
-                StoreCommand(tag, command, entry.tag_count);
+                StoreCommand(tag, command);
                 continue;
             }
             case CommandType::kQueryCopy: {
-                import_common(command_data.query_copy_commands[index], command_data, tag, entry.tag_count);
+                import_common(command_data.query_copy_commands[index], command_data, tag);
                 continue;
             }
         }
@@ -1674,7 +1672,7 @@ void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& r
     if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context);
     }
-    cb_context.StoreCommand(tag, command, BeginRenderPassCommand::kTagCount);
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_info,
@@ -1698,7 +1696,7 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo& subpass_
     if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context);
     }
-    cb_context.StoreCommand(tag, command, NextSubpassCommand::kTagCount);
+    cb_context.StoreCommand(tag, command);
 }
 
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) {
@@ -1718,7 +1716,7 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_
     if (settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, rp_context, cb_context.GetCbAccessContext());
     }
-    cb_context.StoreCommand(tag, command, EndRenderPassCommand::kTagCount);
+    cb_context.StoreCommand(tag, command);
     cb_context.EndRenderPassContext();
 }
 

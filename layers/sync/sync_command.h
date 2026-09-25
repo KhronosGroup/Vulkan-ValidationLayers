@@ -388,9 +388,6 @@ struct EndRenderingCommand {
 };
 
 struct BeginRenderPassCommand {
-    // Initial layout transition and loadOp tags
-    static constexpr uint32_t kTagCount = 2;
-
     const vvl::RenderPass& render_pass;
     vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views;
     VkRect2D render_area{};
@@ -411,9 +408,6 @@ struct BeginRenderPassCommand {
 };
 
 struct NextSubpassCommand {
-    // Resolve, store, layout transition, load tags
-    static constexpr uint32_t kTagCount = 4;
-
     struct Storage {
         NextSubpassCommand MakeCommand(const CommandData&) const { return NextSubpassCommand{}; }
     };
@@ -425,9 +419,6 @@ struct NextSubpassCommand {
 };
 
 struct EndRenderPassCommand {
-    // Store/resolve and final layout transition tags
-    static constexpr uint32_t kTagCount = 2;
-
     struct Storage {
         EndRenderPassCommand MakeCommand(const CommandData&) const { return EndRenderPassCommand{}; }
     };
@@ -1054,12 +1045,9 @@ struct CommandData {
     }
 };
 
-// TODO: Revisit tag tracking after command conversion.
-// Once tag and tag_count can be derived, store CommandRefs directly
 struct CommandEntry {
     CommandRef command_ref;
     ResourceUsageTag tag;
-    uint32_t tag_count;
 };
 
 // new_hazards collects newly reported errors during vkCmdExecuteCommands validation. Null during queue submission
