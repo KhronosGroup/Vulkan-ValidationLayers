@@ -307,12 +307,12 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     bool NeedsCommandStorage() const;
 
     template <typename Command>
-    void StoreCommand(ResourceUsageTag tag, const Command& command, uint32_t tag_count = 1) {
+    void StoreCommand(ResourceUsageTag tag, const Command& command) {
         if (!NeedsCommandStorage()) {
             return;
         }
         const auto storage = command.MakeStorage(command_data_);
-        commands_.push_back({command_data_.Store(storage), tag, tag_count});
+        commands_.push_back({command_data_.Store(storage), tag});
     }
 
     const std::vector<HandleRecord>& GetHandleRecords() const { return handles_; }
