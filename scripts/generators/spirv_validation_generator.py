@@ -17,7 +17,7 @@
 import sys
 import os
 import json
-from vulkan_object import SpirvEnables
+from vulkan_object import EnableState
 from base_generator import BaseGenerator
 from generators.generator_utils import IsNonVulkanSprivCapability
 
@@ -94,7 +94,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
     #
     # Creates the value of the struct declared in RequiredSpirvInfo
-    def createMapValue(self, name: str, enable: SpirvEnables, isExtension: bool) -> str:
+    def createMapValue(self, name: str, enable: EnableState, isExtension: bool) -> str:
         out = []
         if enable.version is not None:
             # Version should be VK_VERSION_x_x as defined in header but need to get as VK_API_VERSION_x_x

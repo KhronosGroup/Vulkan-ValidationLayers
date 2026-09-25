@@ -8881,3 +8881,24 @@ TEST_F(NegativeShaderObjectEXT, ShaderTileImageRead) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeShaderObjectEXT, NullPushConstantRangesWithCount) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
+    VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
+    create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    create_info.codeSize = spv.size() * sizeof(uint32_t);
+    create_info.pCode = spv.data();
+    create_info.pName = "main";
+    create_info.setLayoutCount = 1;
+    create_info.pSetLayouts = nullptr;
+    create_info.pushConstantRangeCount = 1;
+    create_info.pPushConstantRanges = nullptr;
+
+    VkShaderEXT shader;
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pPushConstantRanges-parameter");
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+}

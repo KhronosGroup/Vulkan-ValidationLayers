@@ -6827,15 +6827,15 @@ TEST_F(NegativeDynamicState, Uint32Overflow) {
                                               VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD};
     const VkColorComponentFlags write_mask = VK_COLOR_COMPONENT_R_BIT;
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetColorBlendEnableEXT-limit");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetColorBlendEnableEXT-firstAttachment-12525");
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0xFFFFFFFFu, 1u, &enable);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetColorBlendEquationEXT-limit");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetColorBlendEquationEXT-firstAttachment-12526");
     vk::CmdSetColorBlendEquationEXT(m_command_buffer, 0xFFFFFFFFu, 1u, &equation);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdSetColorWriteMaskEXT-limit");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetColorWriteMaskEXT-firstAttachment-12527");
     vk::CmdSetColorWriteMaskEXT(m_command_buffer, 0xFFFFFFFFu, 1u, &write_mask);
     m_errorMonitor->VerifyFound();
 

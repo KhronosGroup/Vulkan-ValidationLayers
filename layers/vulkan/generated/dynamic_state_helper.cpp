@@ -365,249 +365,238 @@ std::string DynamicStatesCommandsToString(CBDynamicFlags const& dynamic_states) 
 
 std::string DescribeDynamicStateCommand(CBDynamicState dynamic_state) {
     std::ostringstream ss;
-    vvl::Func func = vvl::Func::Empty;
     switch (dynamic_state) {
         case CB_DYNAMIC_STATE_VIEWPORT:
-            func = vvl::Func::vkCmdSetViewport;
+            ss << String(vvl::Func::vkCmdSetViewport);
             break;
         case CB_DYNAMIC_STATE_SCISSOR:
-            func = vvl::Func::vkCmdSetScissor;
+            ss << String(vvl::Func::vkCmdSetScissor);
             break;
         case CB_DYNAMIC_STATE_LINE_WIDTH:
-            func = vvl::Func::vkCmdSetLineWidth;
+            ss << String(vvl::Func::vkCmdSetLineWidth);
             break;
         case CB_DYNAMIC_STATE_DEPTH_BIAS:
-            func = vvl::Func::vkCmdSetDepthBias;
+            ss << String(vvl::Func::vkCmdSetDepthBias) << " or " << String(vvl::Func::vkCmdSetDepthBias2EXT);
             break;
         case CB_DYNAMIC_STATE_BLEND_CONSTANTS:
-            func = vvl::Func::vkCmdSetBlendConstants;
+            ss << String(vvl::Func::vkCmdSetBlendConstants);
             break;
         case CB_DYNAMIC_STATE_DEPTH_BOUNDS:
-            func = vvl::Func::vkCmdSetDepthBounds;
+            ss << String(vvl::Func::vkCmdSetDepthBounds);
             break;
         case CB_DYNAMIC_STATE_STENCIL_COMPARE_MASK:
-            func = vvl::Func::vkCmdSetStencilCompareMask;
+            ss << String(vvl::Func::vkCmdSetStencilCompareMask);
             break;
         case CB_DYNAMIC_STATE_STENCIL_WRITE_MASK:
-            func = vvl::Func::vkCmdSetStencilWriteMask;
+            ss << String(vvl::Func::vkCmdSetStencilWriteMask);
             break;
         case CB_DYNAMIC_STATE_STENCIL_REFERENCE:
-            func = vvl::Func::vkCmdSetStencilReference;
+            ss << String(vvl::Func::vkCmdSetStencilReference);
             break;
         case CB_DYNAMIC_STATE_CULL_MODE:
-            func = vvl::Func::vkCmdSetCullMode;
+            ss << String(vvl::Func::vkCmdSetCullMode);
             break;
         case CB_DYNAMIC_STATE_FRONT_FACE:
-            func = vvl::Func::vkCmdSetFrontFace;
+            ss << String(vvl::Func::vkCmdSetFrontFace);
             break;
         case CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY:
-            func = vvl::Func::vkCmdSetPrimitiveTopology;
+            ss << String(vvl::Func::vkCmdSetPrimitiveTopology);
             break;
         case CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT:
-            func = vvl::Func::vkCmdSetViewportWithCount;
+            ss << String(vvl::Func::vkCmdSetViewportWithCount);
             break;
         case CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT:
-            func = vvl::Func::vkCmdSetScissorWithCount;
+            ss << String(vvl::Func::vkCmdSetScissorWithCount);
             break;
         case CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE:
-            func = vvl::Func::vkCmdBindVertexBuffers2;
+            ss << String(vvl::Func::vkCmdBindVertexBuffers2);
             break;
         case CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE:
-            func = vvl::Func::vkCmdSetDepthTestEnable;
+            ss << String(vvl::Func::vkCmdSetDepthTestEnable);
             break;
         case CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE:
-            func = vvl::Func::vkCmdSetDepthWriteEnable;
+            ss << String(vvl::Func::vkCmdSetDepthWriteEnable);
             break;
         case CB_DYNAMIC_STATE_DEPTH_COMPARE_OP:
-            func = vvl::Func::vkCmdSetDepthCompareOp;
+            ss << String(vvl::Func::vkCmdSetDepthCompareOp);
             break;
         case CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE:
-            func = vvl::Func::vkCmdSetDepthBoundsTestEnable;
+            ss << String(vvl::Func::vkCmdSetDepthBoundsTestEnable);
             break;
         case CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE:
-            func = vvl::Func::vkCmdSetStencilTestEnable;
+            ss << String(vvl::Func::vkCmdSetStencilTestEnable);
             break;
         case CB_DYNAMIC_STATE_STENCIL_OP:
-            func = vvl::Func::vkCmdSetStencilOp;
+            ss << String(vvl::Func::vkCmdSetStencilOp);
             break;
         case CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE:
-            func = vvl::Func::vkCmdSetRasterizerDiscardEnable;
+            ss << String(vvl::Func::vkCmdSetRasterizerDiscardEnable);
             break;
         case CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE:
-            func = vvl::Func::vkCmdSetDepthBiasEnable;
+            ss << String(vvl::Func::vkCmdSetDepthBiasEnable);
             break;
         case CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE:
-            func = vvl::Func::vkCmdSetPrimitiveRestartEnable;
-            break;
-        case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
-            func = vvl::Func::vkCmdSetViewportWScalingNV;
-            break;
-        case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT:
-            func = vvl::Func::vkCmdSetDiscardRectangleEXT;
-            break;
-        case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetDiscardRectangleEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT:
-            func = vvl::Func::vkCmdSetDiscardRectangleModeEXT;
-            break;
-        case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
-            func = vvl::Func::vkCmdSetSampleLocationsEXT;
-            break;
-        case CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
-            func = vvl::Func::vkCmdSetViewportShadingRatePaletteNV;
-            break;
-        case CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV:
-            func = vvl::Func::vkCmdSetCoarseSampleOrderNV;
-            break;
-        case CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV:
-            func = vvl::Func::vkCmdSetExclusiveScissorEnableNV;
-            break;
-        case CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
-            func = vvl::Func::vkCmdSetExclusiveScissorNV;
-            break;
-        case CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR:
-            func = vvl::Func::vkCmdSetFragmentShadingRateKHR;
+            ss << String(vvl::Func::vkCmdSetPrimitiveRestartEnable);
             break;
         case CB_DYNAMIC_STATE_LINE_STIPPLE:
-            func = vvl::Func::vkCmdSetLineStipple;
+            ss << String(vvl::Func::vkCmdSetLineStipple);
             break;
-        case CB_DYNAMIC_STATE_VERTEX_INPUT_EXT:
-            func = vvl::Func::vkCmdSetVertexInputEXT;
+        case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
+            ss << String(vvl::Func::vkCmdSetViewportWScalingNV);
             break;
-        case CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
-            func = vvl::Func::vkCmdSetPatchControlPointsEXT;
+        case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT:
+            ss << String(vvl::Func::vkCmdSetDiscardRectangleEXT);
             break;
-        case CB_DYNAMIC_STATE_LOGIC_OP_EXT:
-            func = vvl::Func::vkCmdSetLogicOpEXT;
+        case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetDiscardRectangleEnableEXT);
             break;
-        case CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetColorWriteEnableEXT;
+        case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT:
+            ss << String(vvl::Func::vkCmdSetDiscardRectangleModeEXT);
             break;
-        case CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:
-            func = vvl::Func::vkCmdSetTessellationDomainOriginEXT;
-            break;
-        case CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetDepthClampEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_POLYGON_MODE_EXT:
-            func = vvl::Func::vkCmdSetPolygonModeEXT;
-            break;
-        case CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT:
-            func = vvl::Func::vkCmdSetRasterizationSamplesEXT;
-            break;
-        case CB_DYNAMIC_STATE_SAMPLE_MASK_EXT:
-            func = vvl::Func::vkCmdSetSampleMaskEXT;
-            break;
-        case CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetAlphaToCoverageEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetAlphaToOneEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetLogicOpEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetColorBlendEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT:
-            func = vvl::Func::vkCmdSetColorBlendEquationEXT;
-            break;
-        case CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT:
-            func = vvl::Func::vkCmdSetColorWriteMaskEXT;
-            break;
-        case CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT:
-            func = vvl::Func::vkCmdSetRasterizationStreamEXT;
-            break;
-        case CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT:
-            func = vvl::Func::vkCmdSetConservativeRasterizationModeEXT;
-            break;
-        case CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT:
-            func = vvl::Func::vkCmdSetExtraPrimitiveOverestimationSizeEXT;
-            break;
-        case CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetDepthClipEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetSampleLocationsEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT:
-            func = vvl::Func::vkCmdSetColorBlendAdvancedEXT;
-            break;
-        case CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT:
-            func = vvl::Func::vkCmdSetProvokingVertexModeEXT;
-            break;
-        case CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
-            func = vvl::Func::vkCmdSetLineRasterizationModeEXT;
-            break;
-        case CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetLineStippleEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT:
-            func = vvl::Func::vkCmdSetDepthClipNegativeOneToOneEXT;
-            break;
-        case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV:
-            func = vvl::Func::vkCmdSetViewportWScalingEnableNV;
-            break;
-        case CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV:
-            func = vvl::Func::vkCmdSetViewportSwizzleNV;
-            break;
-        case CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV:
-            func = vvl::Func::vkCmdSetCoverageToColorEnableNV;
-            break;
-        case CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV:
-            func = vvl::Func::vkCmdSetCoverageToColorLocationNV;
-            break;
-        case CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV:
-            func = vvl::Func::vkCmdSetCoverageModulationModeNV;
-            break;
-        case CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV:
-            func = vvl::Func::vkCmdSetCoverageModulationTableEnableNV;
-            break;
-        case CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV:
-            func = vvl::Func::vkCmdSetCoverageModulationTableNV;
-            break;
-        case CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV:
-            func = vvl::Func::vkCmdSetShadingRateImageEnableNV;
-            break;
-        case CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV:
-            func = vvl::Func::vkCmdSetRepresentativeFragmentTestEnableNV;
-            break;
-        case CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV:
-            func = vvl::Func::vkCmdSetCoverageReductionModeNV;
-            break;
-        case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
-            func = vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT;
-            break;
-        case CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
-            func = vvl::Func::vkCmdSetDepthClampRangeEXT;
+        case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
+            ss << String(vvl::Func::vkCmdSetSampleLocationsEXT);
             break;
         case CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR:
-            func = vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR;
+            ss << String(vvl::Func::vkCmdSetRayTracingPipelineStackSizeKHR);
+            break;
+        case CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
+            ss << String(vvl::Func::vkCmdSetViewportShadingRatePaletteNV);
+            break;
+        case CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV:
+            ss << String(vvl::Func::vkCmdSetCoarseSampleOrderNV);
+            break;
+        case CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV:
+            ss << String(vvl::Func::vkCmdSetExclusiveScissorEnableNV);
+            break;
+        case CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
+            ss << String(vvl::Func::vkCmdSetExclusiveScissorNV);
+            break;
+        case CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR:
+            ss << String(vvl::Func::vkCmdSetFragmentShadingRateKHR);
+            break;
+        case CB_DYNAMIC_STATE_VERTEX_INPUT_EXT:
+            ss << String(vvl::Func::vkCmdSetVertexInputEXT);
+            break;
+        case CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
+            ss << String(vvl::Func::vkCmdSetPatchControlPointsEXT);
+            break;
+        case CB_DYNAMIC_STATE_LOGIC_OP_EXT:
+            ss << String(vvl::Func::vkCmdSetLogicOpEXT);
+            break;
+        case CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetColorWriteEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetDepthClampEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_POLYGON_MODE_EXT:
+            ss << String(vvl::Func::vkCmdSetPolygonModeEXT);
+            break;
+        case CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT:
+            ss << String(vvl::Func::vkCmdSetRasterizationSamplesEXT);
+            break;
+        case CB_DYNAMIC_STATE_SAMPLE_MASK_EXT:
+            ss << String(vvl::Func::vkCmdSetSampleMaskEXT);
+            break;
+        case CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetAlphaToCoverageEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetAlphaToOneEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetLogicOpEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetColorBlendEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT:
+            ss << String(vvl::Func::vkCmdSetColorBlendEquationEXT);
+            break;
+        case CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT:
+            ss << String(vvl::Func::vkCmdSetColorWriteMaskEXT);
+            break;
+        case CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:
+            ss << String(vvl::Func::vkCmdSetTessellationDomainOriginEXT);
+            break;
+        case CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT:
+            ss << String(vvl::Func::vkCmdSetRasterizationStreamEXT);
+            break;
+        case CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT:
+            ss << String(vvl::Func::vkCmdSetConservativeRasterizationModeEXT);
+            break;
+        case CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT:
+            ss << String(vvl::Func::vkCmdSetExtraPrimitiveOverestimationSizeEXT);
+            break;
+        case CB_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetDepthClipEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetSampleLocationsEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT:
+            ss << String(vvl::Func::vkCmdSetColorBlendAdvancedEXT);
+            break;
+        case CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT:
+            ss << String(vvl::Func::vkCmdSetProvokingVertexModeEXT);
+            break;
+        case CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
+            ss << String(vvl::Func::vkCmdSetLineRasterizationModeEXT);
+            break;
+        case CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetLineStippleEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT:
+            ss << String(vvl::Func::vkCmdSetDepthClipNegativeOneToOneEXT);
+            break;
+        case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV:
+            ss << String(vvl::Func::vkCmdSetViewportWScalingEnableNV);
+            break;
+        case CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV:
+            ss << String(vvl::Func::vkCmdSetViewportSwizzleNV);
+            break;
+        case CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV:
+            ss << String(vvl::Func::vkCmdSetCoverageToColorEnableNV);
+            break;
+        case CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV:
+            ss << String(vvl::Func::vkCmdSetCoverageToColorLocationNV);
+            break;
+        case CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV:
+            ss << String(vvl::Func::vkCmdSetCoverageModulationModeNV);
+            break;
+        case CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV:
+            ss << String(vvl::Func::vkCmdSetCoverageModulationTableEnableNV);
+            break;
+        case CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV:
+            ss << String(vvl::Func::vkCmdSetCoverageModulationTableNV);
+            break;
+        case CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV:
+            ss << String(vvl::Func::vkCmdSetShadingRateImageEnableNV);
+            break;
+        case CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV:
+            ss << String(vvl::Func::vkCmdSetRepresentativeFragmentTestEnableNV);
+            break;
+        case CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV:
+            ss << String(vvl::Func::vkCmdSetCoverageReductionModeNV);
+            break;
+        case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
+            ss << String(vvl::Func::vkCmdSetAttachmentFeedbackLoopEnableEXT);
+            break;
+        case CB_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
+            ss << String(vvl::Func::vkCmdSetDepthClampRangeEXT);
             break;
         default:
-            ss << "(Unknown Dynamic State) ";
-    }
-
-    ss << String(func);
-
-    // Currently only exception that has 2 commands that can set it
-    if (dynamic_state == CB_DYNAMIC_STATE_DEPTH_BIAS) {
-        ss << " or " << String(vvl::Func::vkCmdSetDepthBias2EXT);
+            ss << "(Unknown Dynamic State) " << String(vvl::Func::Empty);
     }
 
     return ss.str();
 }
 
-// For anything with multple uses
+// For anything with multiple uses
 static std::string_view rasterizer_discard_enable_dynamic{
     "vkCmdSetRasterizerDiscardEnable last set rasterizerDiscardEnable to VK_FALSE.\n"};
 static std::string_view rasterizer_discard_enable_static{
     "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable was VK_FALSE in the last bound graphics pipeline.\n"};
-static std::string_view stencil_test_enable_dynamic{"vkCmdSetStencilTestEnable last set stencilTestEnable to VK_TRUE.\n"};
-static std::string_view stencil_test_enable_static{
-    "VkPipelineDepthStencilStateCreateInfo::stencilTestEnable was VK_TRUE in the last bound graphics pipeline.\n"};
 
 std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const vvl::Pipeline* pipeline) {
     std::ostringstream ss;
@@ -658,9 +647,9 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_static;
             }
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
-                ss << stencil_test_enable_dynamic;
+                ss << "vkCmdSetStencilTestEnable last set stencilTestEnable to VK_TRUE.\n";
             } else {
-                ss << stencil_test_enable_static;
+                ss << "VkPipelineDepthStencilStateCreateInfo::stencilTestEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
         case CB_DYNAMIC_STATE_STENCIL_WRITE_MASK:
@@ -670,9 +659,9 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_static;
             }
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
-                ss << stencil_test_enable_dynamic;
+                ss << "vkCmdSetStencilTestEnable last set stencilTestEnable to VK_TRUE.\n";
             } else {
-                ss << stencil_test_enable_static;
+                ss << "VkPipelineDepthStencilStateCreateInfo::stencilTestEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
         case CB_DYNAMIC_STATE_STENCIL_REFERENCE:
@@ -682,9 +671,9 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_static;
             }
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
-                ss << stencil_test_enable_dynamic;
+                ss << "vkCmdSetStencilTestEnable last set stencilTestEnable to VK_TRUE.\n";
             } else {
-                ss << stencil_test_enable_static;
+                ss << "VkPipelineDepthStencilStateCreateInfo::stencilTestEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
         case CB_DYNAMIC_STATE_CULL_MODE:
@@ -753,9 +742,9 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_static;
             }
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
-                ss << stencil_test_enable_dynamic;
+                ss << "vkCmdSetStencilTestEnable last set stencilTestEnable to VK_TRUE.\n";
             } else {
-                ss << stencil_test_enable_static;
+                ss << "VkPipelineDepthStencilStateCreateInfo::stencilTestEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
         case CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE:
@@ -763,6 +752,19 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_dynamic;
             } else {
                 ss << rasterizer_discard_enable_static;
+            }
+            break;
+        case CB_DYNAMIC_STATE_LINE_STIPPLE:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
+                ss << "vkCmdSetLineStippleEnableEXT last set stippledLineEnable to VK_TRUE.\n";
+            } else {
+                ss << "VkPipelineRasterizationLineStateCreateInfo::stippledLineEnable was VK_TRUE in the last bound graphics "
+                      "pipeline.\n";
             }
             break;
         case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
@@ -846,19 +848,6 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_dynamic;
             } else {
                 ss << rasterizer_discard_enable_static;
-            }
-            break;
-        case CB_DYNAMIC_STATE_LINE_STIPPLE:
-            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
-                ss << rasterizer_discard_enable_dynamic;
-            } else {
-                ss << rasterizer_discard_enable_static;
-            }
-            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
-                ss << "vkCmdSetLineStippleEnableEXT last set stippledLineEnable to VK_TRUE.\n";
-            } else {
-                ss << "VkPipelineRasterizationLineStateCreateInfo::stippledLineEnable was VK_TRUE in the last bound graphics "
-                      "pipeline.\n";
             }
             break;
         case CB_DYNAMIC_STATE_LOGIC_OP_EXT:
@@ -1011,6 +1000,12 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_dynamic;
             } else {
                 ss << rasterizer_discard_enable_static;
+            }
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
+                ss << "vkCmdSetCoverageToColorEnableNV last set coverageToColorEnable to VK_TRUE.\n";
+            } else {
+                ss << "VkPipelineMultisampleStateCreateInfo::pNext->VkPipelineCoverageToColorStateCreateInfoNV::"
+                      "coverageToColorEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
         case CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV:

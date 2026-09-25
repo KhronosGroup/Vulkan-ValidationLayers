@@ -274,8 +274,7 @@ bool Device::manual_PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer com
     }
 
     if (static_cast<uint64_t>(firstAttachment) + attachmentCount > phys_dev_props.limits.maxColorAttachments) {
-        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
-        skip |= LogError("UNASSIGNED-vkCmdSetColorBlendEnableEXT-limit", commandBuffer,
+        skip |= LogError("VUID-vkCmdSetColorBlendEnableEXT-firstAttachment-12525", commandBuffer,
                          context.error_obj.location.dot(Field::firstAttachment),
                          "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
                          firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
@@ -295,8 +294,7 @@ bool Device::manual_PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer c
     }
 
     if (static_cast<uint64_t>(firstAttachment) + attachmentCount > phys_dev_props.limits.maxColorAttachments) {
-        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
-        skip |= LogError("UNASSIGNED-vkCmdSetColorBlendEquationEXT-limit", commandBuffer,
+        skip |= LogError("VUID-vkCmdSetColorBlendEquationEXT-firstAttachment-12526", commandBuffer,
                          context.error_obj.location.dot(Field::firstAttachment),
                          "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
                          firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
@@ -363,8 +361,7 @@ bool Device::manual_PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer comma
                          "extendedDynamicState3ColorWriteMask and shaderObject features were not enabled.");
     }
     if (static_cast<uint64_t>(firstAttachment) + attachmentCount > phys_dev_props.limits.maxColorAttachments) {
-        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
-        skip |= LogError("UNASSIGNED-vkCmdSetColorWriteMaskEXT-limit", commandBuffer,
+        skip |= LogError("VUID-vkCmdSetColorWriteMaskEXT-firstAttachment-12527", commandBuffer,
                          context.error_obj.location.dot(Field::firstAttachment),
                          "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
                          firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
@@ -384,8 +381,7 @@ bool Device::manual_PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer c
     }
 
     if (static_cast<uint64_t>(firstAttachment) + attachmentCount > phys_dev_props.limits.maxColorAttachments) {
-        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8576
-        skip |= LogError("UNASSIGNED-vkCmdSetColorBlendAdvancedEXT-limit", commandBuffer,
+        skip |= LogError("VUID-vkCmdSetColorBlendAdvancedEXT-firstAttachment-12528", commandBuffer,
                          context.error_obj.location.dot(Field::firstAttachment),
                          "(%" PRIu32 ") + attachmentCount (%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
                          firstAttachment, attachmentCount, phys_dev_props.limits.maxColorAttachments);
