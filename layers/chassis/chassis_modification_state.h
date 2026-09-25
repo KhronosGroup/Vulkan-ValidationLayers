@@ -123,7 +123,7 @@ struct CreateRayTracingPipelinesKHR {
     bool is_modified = false;
     std::vector<vku::safe_VkRayTracingPipelineCreateInfoKHR> modified_create_infos;
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos = nullptr;
-    std::vector<spirv::StatelessData> stateless_data;
+    std::vector<std::vector<spirv::StatelessData>> stateless_data;
     // 2D array for [pipelineCount][stageCount]
     std::vector<std::vector<ShaderInstrumentationMetadata>> shader_instrumentations_metadata;
 
