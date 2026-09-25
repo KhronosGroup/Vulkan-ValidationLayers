@@ -528,12 +528,33 @@ void PreCallSetupShaderInstrumentationResourcesClassic(Validator& gpuav, Command
         }
 
     } else {
-        // If no pipeline layout was bound when using shader objects that don't use any descriptor set, and no push constants, bind
-        // the instrumentation pipeline layout
-        DispatchCmdBindDescriptorSets(cb_handle, last_bound.bind_point,
-                                      gpuav.GetInstrumentationPipelineLayout(vvl::DescriptorModeClassic),
-                                      gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
-                                      static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+        // If no pipeline layout was bound when using shader objects that don't use any descriptor set, and no push constants
+        //
+        // The shaders can still have been created with VkDescriptorSetLayout of their own, and the instrumentation descriptor
+        // set is only really bound if sets 0 to |instrumentation_desc_set_bind_index_| are compatible with the layouts the
+        // shaders were created with.
+        const vvl::ShaderObject* main_bound_shader = last_bound.GetFirstShader();
+        const bool shader_has_own_layout =
+            main_bound_shader && (!main_bound_shader->set_layouts.list.empty() ||
+                                  (main_bound_shader->push_constant_ranges && !main_bound_shader->push_constant_ranges->empty()));
+        if (shader_has_own_layout) {
+            VkPipelineLayout instrumentation_pipe_layout =
+                CreateInstrumentationPipelineLayout(gpuav, loc, last_bound, gpuav.dummy_desc_layout_[vvl::DescriptorModeClassic],
+                                                    gpuav.GetInstrumentationDescriptorSetLayout(vvl::DescriptorModeClassic),
+                                                    gpuav.instrumentation_desc_set_bind_index_);
+            if (instrumentation_pipe_layout == VK_NULL_HANDLE) {
+                return;  // Could not create instrumentation pipeline layout
+            }
+            DispatchCmdBindDescriptorSets(cb_handle, last_bound.bind_point, instrumentation_pipe_layout,
+                                          gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
+                                          static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+            DispatchDestroyPipelineLayout(gpuav.device, instrumentation_pipe_layout, nullptr);
+        } else {
+            DispatchCmdBindDescriptorSets(cb_handle, last_bound.bind_point,
+                                          gpuav.GetInstrumentationPipelineLayout(vvl::DescriptorModeClassic),
+                                          gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
+                                          static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+        }
     }
 }
 
@@ -633,6 +654,22 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
                                     resource_index_offset, loc);
 }
 
+// For a ShaderObject the mode of the instrumentation resources is decided when it is created and baked into it, so it is what we
+// have to match, the command buffer state can disagree (nothing bound yet, or vkCmdPushDataEXT called with a shader created
+// without VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT).
+// (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12597)
+static vvl::DescriptorMode InstrumentedDescriptorMode(const LastBound& last_bound) {
+    if (!last_bound.pipeline_state) {
+        if (const vvl::ShaderObject* shader_object_state = last_bound.GetFirstShader()) {
+            const vvl::DescriptorMode instrumented_mode = SubState(*shader_object_state).instrumented_status.host.descriptor_mode;
+            if (instrumented_mode != vvl::DescriptorModeUnknown) {
+                return instrumented_mode;
+            }
+        }
+    }
+    return last_bound.GetActionDescriptorMode();
+}
+
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
                                                 const Location& loc) {
     if (!gpuav.gpuav_settings.IsSpirvModified()) {
@@ -651,8 +688,8 @@ void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferS
 
     InstBindingPipeLayout inst_binding_pipe_layout;
 
-    // App uses regular pipelines or graphics pipeline libraries
-    const vvl::DescriptorMode mode = last_bound.GetActionDescriptorMode();
+    const vvl::DescriptorMode mode = InstrumentedDescriptorMode(last_bound);
+
     if (mode != vvl::DescriptorMode::DescriptorModeHeap) {
         if (last_bound.pipeline_state) {
             const PipelineSubState& pipeline_sub_state = SubState(*last_bound.pipeline_state);

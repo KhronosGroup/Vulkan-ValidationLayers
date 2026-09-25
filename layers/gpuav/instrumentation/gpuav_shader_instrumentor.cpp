@@ -732,6 +732,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                 (original_create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT)
                     ? vvl::DescriptorMode::DescriptorModeHeap
                     : SelectDescriptorModeFromDSL(original_create_info.setLayoutCount, original_create_info.pSetLayouts);
+            instrumentation_data.status.host.descriptor_mode = mode;
             if (mode == vvl::DescriptorMode::DescriptorModeHeap) {
                 chassis_state.is_modified |=
                     PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data, mode);
