@@ -285,8 +285,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                     vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(pCreateInfos[i].pStages[stage].pNext)) {
                 (void)shader_ci;
                 skip |= stateless_spirv_validator.Validate(
-                    *chassis_state.stateless_data[stateless_data_i].pipeline_pnext_module,
-                    chassis_state.stateless_data[stateless_data_i],
+                    *chassis_state.stateless_data[i][stateless_data_i].pipeline_pnext_module,
+                    chassis_state.stateless_data[i][stateless_data_i],
                     create_info_loc.dot(Field::pStages, stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
                 ++stateless_data_i;
             }
