@@ -57,7 +57,11 @@ struct BindingInfo {
     bool operator<(const BindingInfo& other) const { return range.begin < other.range.begin; }
 
     void Print(std::ostringstream& ss) {
-        ss << "    - SPIR-V Binding " << std::dec << index << " [\"" << variable_name << "\"]\n";
+        ss << "    - SPIR-V Binding " << std::dec << index;
+        if (!variable_name.empty()) {
+            ss << " [\"" << variable_name << "\"]";
+        }
+        ss << "\n";
         if (!embedded) {
             ss << "      - " << string_VkDescriptorType(type) << "\n";
             ss << "      - offset: " << std::dec << offset << ", range: " << string_range_hex(range) << "\n";
@@ -320,8 +324,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             }
 
             if (set_info == nullptr) {
-                const vvl::DescriptorSetLayout* dsl = pipeline_layout.set_layouts.list[var_set].get();
-                if (var_set >= last_bound.ds_slots.size()) {
+                if (var_set >= last_bound.ds_slots.size() || var_set >= pipeline_layout.set_layouts.list.size()) {
                     ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
                        << " is not a valid bound set as vkCmdSetDescriptorBufferOffsetsEXT was either not called or invalidated "
                           "for "
@@ -329,6 +332,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                     found_warning = true;
                     continue;
                 }
+                const vvl::DescriptorSetLayout* dsl = pipeline_layout.set_layouts.list[var_set].get();
                 const auto& descriptor_buffer_binding = last_bound.ds_slots[var_set].descriptor_buffer_binding;
 
                 // Will print the invalid/unknown sets first, no need to sort these
@@ -378,9 +382,13 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                     }
                 }
 
+                // |binding_index| is only for printing, use the real index into pBindingInfos
                 VkBufferUsageFlagBits2 usage_flags = 0;
-                if (binding_usage_flags.find(binding_index) != binding_usage_flags.end()) {
-                    usage_flags = binding_usage_flags[binding_index];
+                if (!embedded) {
+                    auto usage_it = binding_usage_flags.find(descriptor_buffer_binding->index);
+                    if (usage_it != binding_usage_flags.end()) {
+                        usage_flags = usage_it->second;
+                    }
                 }
 
                 set_info = &sorted_sets.emplace_back(
@@ -390,8 +398,13 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             // Two variables might be the same set/binding if doing descriptor indexing aliasing
             bool alias_binding = false;
             for (BindingInfo& info : set_info->bindings) {
-                if (info.index == var_binding && !info.variable_name.empty() && !resource_variable.debug_name.empty()) {
-                    info.variable_name = info.variable_name + ", " + resource_variable.debug_name;
+                if (info.index == var_binding) {
+                    if (!resource_variable.debug_name.empty()) {
+                        if (!info.variable_name.empty()) {
+                            info.variable_name += ", ";
+                        }
+                        info.variable_name += resource_variable.debug_name;
+                    }
                     alias_binding = true;
                     break;
                 }

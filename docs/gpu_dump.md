@@ -80,7 +80,7 @@ vkCmdDispatch(): [Dump Descriptor] (VkCommandBuffer 0x5ae561283160, VkPipeline 0
       - specified in pMappings[0] - VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT
       - heapOffset: 0x0, heapArrayStride: 64
       - Resource Heap address: 0x300000000 + (descriptor_index * 64)
-            The final descriptor index at [8] will access [0x3000001c0, 0x300000200)
+            The final descriptor index at [7] will access [0x3000001c0, 0x300000200)
       - Descriptor size: 64 (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
       - [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element starting at index [4] will be out of bounds of the heap and invalid if accessed
 ```
