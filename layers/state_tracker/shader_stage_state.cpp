@@ -127,7 +127,7 @@ ShaderStageState::Heap ShaderStageState::GetHeapInfo(bool descriptor_heap_mode) 
 
         for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
             const auto& mapping = mapping_info->pMappings[i];
-            if (!IsResourceVaribleInMapping(mapping, resource_variable)) {
+            if (!IsResourceVariableInMapping(mapping, resource_variable)) {
                 continue;
             }
 

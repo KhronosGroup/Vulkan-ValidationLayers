@@ -30,9 +30,9 @@ GpuDump::GpuDump(vvl::DispatchDevice* dev, gpudump::Instance* instance_vo)
 
 GpuDump::~GpuDump() {}
 
-std::vector<uint8_t> GpuDump::CopyDataFromMemory(VkDeviceAddress memory_addresss, VkDeviceSize copy_size) {
+std::vector<uint8_t> GpuDump::CopyDataFromMemory(VkDeviceAddress memory_address, VkDeviceSize copy_size) {
     std::vector<uint8_t> result;
-    vvl::span<vvl::Buffer* const> buffer_list = device_state->GetBuffersByAddress(memory_addresss);
+    vvl::span<vvl::Buffer* const> buffer_list = device_state->GetBuffersByAddress(memory_address);
     if (buffer_list.empty()) {
         return result;
     }
@@ -41,11 +41,11 @@ std::vector<uint8_t> GpuDump::CopyDataFromMemory(VkDeviceAddress memory_addresss
     const vvl::DeviceMemory& memory_state = *buffer_state->MemoryState();
 
     // Prevent copying OOB of a buffer
-    if ((memory_addresss + copy_size) > buffer_state->DeviceAddressRange().end) {
+    if ((memory_address + copy_size) > buffer_state->DeviceAddressRange().end) {
         return result;
     }
 
-    VkDeviceSize offset = memory_addresss - buffer_state->DeviceAddressRange().begin;
+    VkDeviceSize offset = memory_address - buffer_state->DeviceAddressRange().begin;
     if (memory_state.mappable) {
         uint8_t* data_ptr = static_cast<uint8_t*>(memory_state.p_driver_data);
 

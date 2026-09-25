@@ -52,7 +52,7 @@
 namespace gpudump {
 
 // Only for descriptors using the mapping API
-// create a struct here so we can gather ther information and sort it
+// create a struct here so we can gather the information and sort it
 struct MappingInfo {
     const VkDescriptorSetAndBindingMappingEXT* mapping;
     uint32_t index;  // into pMappings
@@ -182,19 +182,13 @@ struct WarnInfo {
 };
 
 void WarnInfo::HeapOOB(VkDeviceSize offset, bool from_sampler) {
-    if (from_sampler) {
-        if (offset > dump.sampler_range.size()) {
-            found = true;
-            ss << new_bullet_line
-               << "[WARNING] OUT OF BOUNDS - descriptor not in sampler heap and any access to this descriptor will be invalid";
-        }
-    } else {
-        if (offset > dump.heap_range.size()) {
-            found = true;
-            ss << new_bullet_line
-               << "[WARNING] OUT OF BOUNDS - descriptor not in resource heap and any access to this descriptor will be "
-                  "invalid";
-        }
+    // |heap_range| is already the sampler heap if the variable itself is a sampler
+    const VkDeviceSize heap_size = from_sampler ? dump.sampler_range.size() : dump.heap_range.size();
+    if (offset > heap_size) {
+        found = true;
+        ss << new_bullet_line << "[WARNING] OUT OF BOUNDS - descriptor is not in the "
+           << ((from_sampler || dump.is_sampler) ? "sampler" : "resource")
+           << " heap and any access to this descriptor will be invalid";
     }
 };
 
@@ -243,7 +237,7 @@ void WarnInfo::IndirectUniformUsage(VkDeviceAddress address) {
 };
 
 void WarnInfo::ResourceBufferUsage(VkDeviceAddress address) {
-    // Core validation ensure this for the given mappings
+    // Core validation ensures this for the given mappings
     auto buffer_states = dump.dev_data.GetBuffersByAddress(address);
     // warning elsewhere if this is empty
     if (!buffer_states.empty()) {
@@ -315,7 +309,7 @@ void WarnInfo::AlignmentDescriptor(VkDeviceAddress address) {
         found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - the final address";
         if (dump.resource_variable.IsArray()) {
-            ss << ", to the first element of the array,";
+            ss << " (of the first element of the array)";
         }
         ss << " is not aligned to ";
         if (dump.alignment_name == vvl::Field::Empty) {
@@ -332,7 +326,7 @@ void WarnInfo::AlignmentSampler(VkDeviceAddress address) {
         found = true;
         ss << new_bullet_line << "[WARNING] MISALIGNED - the final address";
         if (dump.resource_variable.IsArray()) {
-            ss << ", to the first element of the array,";
+            ss << " (of the first element of the array)";
         }
         ss << " is not aligned to samplerDescriptorAlignment " << "(" << std::dec << dump.heap_props.samplerDescriptorAlignment
            << ") and any access to this descriptor will be invalid";
@@ -343,7 +337,7 @@ void WarnInfo::ArrayStride(uint32_t array_stride, bool is_sampler) {
     if (array_stride == 0) {
         found = true;
         ss << new_bullet_line << "[WARNING] ZERO ARRAY STRIDE - " << (is_sampler ? "samplerHeapArrayStride" : "heapArrayStride")
-           << " is zero, this mean every index of the descriptor array will be the same descriptor, which is likely not "
+           << " is zero, this means every index of the descriptor array will be the same descriptor, which is likely not "
               "desired.";
     }
 };
@@ -352,14 +346,15 @@ void WarnInfo::IndexOOB(uint32_t max_index) {
     if (dump.array_length > (max_index + 1)) {
         found = true;
         ss << new_bullet_line << "[WARNING] OUT OF BOUNDS - descriptor has an array length of [" << std::dec << dump.array_length
-           << "] but any element accessed starting at [" << max_index + 1 << "] will be OOB of the heap and invalid if accessed";
+           << "] but any element starting at index [" << max_index + 1
+           << "] will be out of bounds of the heap and invalid if accessed";
     }
 };
 
 void WarnInfo::IndexArray(std::vector<uint32_t>& bad_indexes) {
     if (!bad_indexes.empty()) {
         found = true;
-        ss << new_bullet_line << "[WARNING] OUT OF BOUNDS - descriptors indexes at [" << std::dec;
+        ss << new_bullet_line << "[WARNING] OUT OF BOUNDS - descriptor indexes at [" << std::dec;
         for (uint32_t i = 0; i < bad_indexes.size(); i++) {
             if (i != 0) ss << ", ";
             ss << bad_indexes[i];
@@ -371,7 +366,7 @@ void WarnInfo::IndexArray(std::vector<uint32_t>& bad_indexes) {
 void WarnInfo::AlignmentIndexArray(std::vector<uint32_t>& bad_indexes) {
     if (!bad_indexes.empty()) {
         found = true;
-        ss << new_bullet_line << "[WARNING] MISALIGNED - descriptors indexes at [" << std::dec;
+        ss << new_bullet_line << "[WARNING] MISALIGNED - descriptor indexes at [" << std::dec;
         for (uint32_t i = 0; i < bad_indexes.size(); i++) {
             if (i != 0) ss << ", ";
             ss << bad_indexes[i];
@@ -387,7 +382,7 @@ void WarnInfo::AlignmentIndexArray(std::vector<uint32_t>& bad_indexes) {
 void WarnInfo::AlignmentIndexArraySampler(std::vector<uint32_t>& bad_indexes) {
     if (!bad_indexes.empty()) {
         found = true;
-        ss << new_bullet_line << "[WARNING] MISALIGNED - descriptors indexes at [" << std::dec;
+        ss << new_bullet_line << "[WARNING] MISALIGNED - descriptor indexes at [" << std::dec;
         for (uint32_t i = 0; i < bad_indexes.size(); i++) {
             if (i != 0) ss << ", ";
             ss << bad_indexes[i];
@@ -400,7 +395,7 @@ void WarnInfo::AlignmentIndexArraySampler(std::vector<uint32_t>& bad_indexes) {
 void WarnInfo::ReservedRangeIndexArray(std::vector<uint32_t>& bad_indexes) {
     if (!bad_indexes.empty()) {
         found = true;
-        ss << new_bullet_line << "[WARNING] RESERVED RANGE - descriptors indexes at [" << std::dec;
+        ss << new_bullet_line << "[WARNING] RESERVED RANGE - descriptor indexes at [" << std::dec;
         for (uint32_t i = 0; i < bad_indexes.size(); i++) {
             if (i != 0) ss << ", ";
             ss << bad_indexes[i];
@@ -413,7 +408,7 @@ void WarnInfo::ReservedRangeFinal() {
     if (reserved_range_start != vvl::kNoIndex32) {
         // If using a runtime array, the user was likely not going to access the reserved range
         // It is still worth informing them, but not as a warning
-        // (Don't do for ReservedRangeIndexArray as the user should be activly setting those elements)
+        // (Don't do for ReservedRangeIndexArray as the user should be actively setting those elements)
         if (dump.is_runtime_array) {
             ss << new_bullet_line << "[INFO] ";
         } else {
@@ -570,7 +565,7 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
                << string_range_hex(final_index_range);
             warn.IndexOOB(max_index);
         } else if (dump.is_runtime_array) {
-            ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
+            ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap starting at index [" << std::dec
                << max_index + 1 << "]";
         }
 
@@ -637,8 +632,8 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
                    << string_range_hex(final_index_range);
                 warn.IndexOOB(max_index);
             } else if (dump.is_runtime_array) {
-                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
-                   << max_index + 1 << "]";
+                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap starting at index ["
+                   << std::dec << max_index + 1 << "]";
             }
 
             if (!dump.sampler_reserved.empty() && warn.reserved_range_start == vvl::kNoIndex32) {
@@ -713,7 +708,7 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
                << string_range_hex(final_index_range);
             warn.IndexOOB(max_index);
         } else if (dump.is_runtime_array) {
-            ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
+            ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap starting at index [" << std::dec
                << max_index + 1 << "]";
         }
 
@@ -793,8 +788,8 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
                    << string_range_hex(final_index_range);
                 warn.IndexOOB(max_index);
             } else if (dump.is_runtime_array) {
-                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
-                   << max_index + 1 << "]";
+                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap starting at index ["
+                   << std::dec << max_index + 1 << "]";
             }
 
             if (!dump.sampler_reserved.empty() && warn.reserved_range_start == vvl::kNoIndex32) {
@@ -889,8 +884,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
                    << string_range_hex(final_index_range);
                 warn.IndexOOB(max_index);
             } else if (dump.is_runtime_array) {
-                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
-                   << max_index + 1 << "]";
+                ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap starting at index ["
+                   << std::dec << max_index + 1 << "]";
             }
 
             if (!dump.heap_reserved.empty()) {
@@ -999,8 +994,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
                        << string_range_hex(final_index_range);
                     warn.IndexOOB(max_index);
                 } else if (dump.is_runtime_array) {
-                    ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap at index [" << std::dec
-                       << max_index + 1 << "]";
+                    ss << new_sub_line << "The descriptor runtime array will be out of bounds of the heap starting at index ["
+                       << std::dec << max_index + 1 << "]";
                 }
 
                 if (!dump.sampler_reserved.empty() && warn.reserved_range_start == vvl::kNoIndex32) {
@@ -1103,7 +1098,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
                 ss << new_sub_line << "Final address: 0x" << std::hex << final_address << " (indirectIndex: " << std::dec
                    << indirect_index << ")";
             } else if (!dump.is_runtime_array) {
-                // Runtime arrays are unbounded and not idea where to stop looking,
+                // Runtime arrays are unbounded and there is no idea where to stop looking,
                 // can add if people find valuable.
                 ss << new_bullet_line << "indirectIndex values from buffer: [" << std::dec;
                 std::vector<uint32_t> bad_array_indexes;
@@ -1274,7 +1269,7 @@ void CommandBufferSubState::DumpDescriptorHeapHeapData(std::ostringstream& ss, D
        << dump.heap_range.begin + map_data.heapOffset << " + 0x" << push_data;
     VkDeviceAddress final_offset = map_data.heapOffset + push_data;
     VkDeviceAddress final_address = dump.heap_range.begin + final_offset;
-    ss << new_sub_line << " Final address: 0x" << std::hex << final_address;
+    ss << new_sub_line << "Final address: 0x" << std::hex << final_address;
 
     warn.AlignmentHeapUBO(final_address);
     warn.HeapOOB(final_offset + dump.descriptor_size, false);
@@ -1304,12 +1299,12 @@ void CommandBufferSubState::DumpDescriptorHeapPushAddress(std::ostringstream& ss
 
 void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                                               const VkDescriptorMappingSourceIndirectAddressEXT& map_data) const {
-    ss << "pushOffset:" << std::dec << map_data.pushOffset << ", addressOffset: 0x" << std::hex << map_data.addressOffset;
+    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", addressOffset: 0x" << std::hex << map_data.addressOffset;
     VkDeviceSize push_indirect_address = GetPushData(ss, warn, map_data.pushOffset, 8);
 
     VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
-    ss << new_bullet_line << "Indirect Address: 0x" << std::hex << final_indirect_address << " (0x" << push_indirect_address
+    ss << new_bullet_line << "indirectAddress: 0x" << std::hex << final_indirect_address << " (0x" << push_indirect_address
        << " + 0x" << map_data.addressOffset << ")";
 
     warn.AlignmentScalarIndirect(final_indirect_address, 8);
@@ -1319,7 +1314,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream
     std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
     if (!indirect_address_data.empty()) {
         const VkDeviceAddress resource_address = *((VkDeviceAddress*)indirect_address_data.data());
-        ss << new_bullet_line << "Resource Adresss 0x" << std::hex << resource_address;
+        ss << new_bullet_line << "Resource address: 0x" << std::hex << resource_address;
 
         warn.AlignmentIndirectAddress(resource_address, true);
 
@@ -1368,7 +1363,7 @@ bool CommandBufferSubState::DumpDescriptorHeapMapping(std::ostringstream& ss, co
     ss << new_bullet_line << "specified in pMappings[" << std::dec << mapping_info.index << "] - "
        << string_VkDescriptorMappingSourceEXT(mapping.source);
     if (dump.is_alias) {
-        ss << " (firstBindng: " << mapping.firstBinding << ", bindingCount: " << mapping.bindingCount << ")";
+        ss << " (firstBinding: " << mapping.firstBinding << ", bindingCount: " << mapping.bindingCount << ")";
         if (dump.is_array) {
             ss << new_sub_line << "starting at descriptor index [" << std::dec << dump.binding_offset << "]";
         }
@@ -1517,7 +1512,7 @@ struct HeapAccess {
         }
     };
 };
-// <set> because we want
+// std::set so duplicate accesses are merged and the output is sorted by HeapAccess::compare
 using HeapAccesses = std::set<HeapAccess, HeapAccess::compare>;
 
 // Tracks all the OpFunction/OpFunctionCall/OpFunctionParameter info we need
@@ -1714,7 +1709,7 @@ void UntypedContext::AddAccess(const VkDescriptorType descriptor_type, const spi
     }
 
     // walk the Access chains, build up the indexes
-    // [0] == farest from heap
+    // [0] == farthest from heap
     // [size] == closest to the heap
     std::vector<const spirv::Instruction*> ac_indexes;
     const uint32_t untyped_ac_index_start = 5;
@@ -1767,7 +1762,7 @@ std::vector<const spirv::Instruction*> UntypedContext::FindFunctionCallers(const
         FunctionInfo::ParamInfo param_info = function_info.param_map[func_param_inst.ResultId()];
 
         auto func_it = function_info.call_map.find(param_info.function_id);
-        // There is a chance no one calls this functions, will be dead code eliminated
+        // There is a chance no one calls this function, will be dead code eliminated
         if (func_it != function_info.call_map.end()) {
             for (uint32_t function_call_id : func_it->second) {
                 const spirv::Instruction* function_call = module.FindDef(function_call_id);
@@ -1781,7 +1776,7 @@ std::vector<const spirv::Instruction*> UntypedContext::FindFunctionCallers(const
     return callers;
 }
 
-// "Friends to let friends become compiler engineers" ~Spencer
+// "Friends don't let friends become compiler engineers" ~Spencer
 void UntypedContext::FindAccess(const spirv::Instruction* next_inst, bool image_access, bool from_function_call) {
     if (image_access) {
         const spirv::Instruction* sampler_load_inst = nullptr;
@@ -1873,7 +1868,7 @@ void UntypedContext::FindAccess(const spirv::Instruction* next_inst, bool image_
 bool UntypedContext::Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state) {
     bool found_warning = false;
 
-    // We print out the variables, but the real "value" comes from scaning the accesses
+    // We print out the variables, but the real "value" comes from scanning the accesses
     // (due to how untyped pointers work)
     for (const spirv::ResourceInterfaceVariable& resource_variable : entrypoint.resource_interface_variables) {
         if (!resource_variable.IsHeap()) {
@@ -2083,7 +2078,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
     small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
     for (const ShaderStageState* stage : stages) {
         if (!stage->HasSpirv()) {
-            ss << "[No SPIR-V found for " << string_VkShaderStageFlagBits(stage->GetStage())
+            ss << "  - [No SPIR-V found for " << string_VkShaderStageFlagBits(stage->GetStage())
                << ", can't detect which descriptors are being accessed]\n";
             continue;
         }
@@ -2113,7 +2108,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
 
             for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
                 const VkDescriptorSetAndBindingMappingEXT& mapping = mapping_info->pMappings[i];
-                if (!IsResourceVaribleInMapping(mapping, resource_variable)) {
+                if (!IsResourceVariableInMapping(mapping, resource_variable)) {
                     continue;
                 }
                 mapping_info_map[var_set].emplace_back(MappingInfo{&mapping, i, &resource_variable});
