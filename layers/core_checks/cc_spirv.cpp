@@ -2406,7 +2406,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
         skip |= LogWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-heapArrayStride-zero", module_state.handle(),
                            mapping_loc.dot(Field::source),
                            "(%s) is used to map descriptor %s in %s which is a descriptor array, but heapArrayStride is zero. This "
-                           "mean every index of the descriptor array will be the same descriptor, which is likely not desired.",
+                           "means every index of the descriptor array will be the same descriptor, which is likely not desired.",
                            string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
                            entrypoint.Describe().c_str());
     }
@@ -2575,10 +2575,10 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
             const auto& source_data = mapping.sourceData.indirectIndex;
             const bool zero_heap = source_data.heapOffset == 0 && source_data.pushOffset == 0 && source_data.addressOffset == 0 &&
                                    source_data.heapArrayStride == 0 && source_data.heapIndexStride == 0;
-            const bool non_zero_heap =
-                !source_data.pEmbeddedSampler & (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
-                                                 source_data.samplerAddressOffset != 0 || source_data.samplerHeapArrayStride != 0 ||
-                                                 source_data.samplerHeapIndexStride != 0);
+            const bool non_zero_heap = !source_data.pEmbeddedSampler &&
+                                       (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
+                                        source_data.samplerAddressOffset != 0 || source_data.samplerHeapArrayStride != 0 ||
+                                        source_data.samplerHeapIndexStride != 0);
             if (zero_heap && non_zero_heap) {
                 skip |=
                     LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler", module_state.handle(),
