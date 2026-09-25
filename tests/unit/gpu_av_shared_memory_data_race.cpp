@@ -1245,6 +1245,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SharedMemoryIndexOutOfBounds) {
         "range too and the word read back was never a packed shadow word. This test is here to make sure building the error "
         "message does not crash, the reported race itself is not the point. "
         "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13134");
+    RETURN_IF_SKIP(InitSharedMemoryDataRace());
 
     // gl_NumWorkGroups keeps the index away from constant folding
     const char* shader_source = R"glsl(
@@ -1258,8 +1259,7 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, SharedMemoryIndexOutOfBounds) {
             uint x = temp[gl_LocalInvocationIndex];
         }
     )glsl";
-
-    TestHelper(shader_source, SPV_SOURCE_GLSL, 1);
+    TestHelperRegex(shader_source, "SharedMemoryDataRace", SPV_SOURCE_GLSL, "SharedMemoryDataRace");
 }
 
 // The next few tests verify the offender's SPIR-V op kind is reported correctly.
