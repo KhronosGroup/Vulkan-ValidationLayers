@@ -79,8 +79,8 @@ vvl::Field DescriptorBufferSizeField(bool robust, VkDescriptorType type) {
     return vvl::Field::Empty;
 }
 
-bool IsResourceVaribleInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
-                                const spirv::ResourceInterfaceVariable& resource_variable) {
+bool IsResourceVariableInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
+                                 const spirv::ResourceInterfaceVariable& resource_variable) {
     const uint32_t descriptor_set = resource_variable.decorations.set;
     const uint32_t descriptor_binding = resource_variable.decorations.binding;
     // bindingCount could be UINT32_MAX

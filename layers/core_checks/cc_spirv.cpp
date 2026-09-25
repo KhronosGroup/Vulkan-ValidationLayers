@@ -2671,7 +2671,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
         bool found_mapping = false;
         for (uint32_t i = 0; i < mapping_info->mappingCount; i++) {
             const VkDescriptorSetAndBindingMappingEXT& mapping = mapping_info->pMappings[i];
-            if (!IsResourceVaribleInMapping(mapping, resource_variable)) {
+            if (!IsResourceVariableInMapping(mapping, resource_variable)) {
                 continue;
             }
             used_mapping_set[i] = true;
