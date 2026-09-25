@@ -70,8 +70,8 @@ static constexpr bool IsDescriptorHeapTensor(const VkDescriptorType type) { retu
 
 vvl::Field DescriptorBufferSizeField(bool robust, VkDescriptorType type);
 
-bool IsResourceVaribleInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
-                                const spirv::ResourceInterfaceVariable& resource_variable);
+bool IsResourceVariableInMapping(const VkDescriptorSetAndBindingMappingEXT& mapping,
+                                 const spirv::ResourceInterfaceVariable& resource_variable);
 bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
                                 const spirv::ResourceInterfaceVariable& resource_variable);
 std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_type,

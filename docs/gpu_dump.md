@@ -14,21 +14,21 @@ The options for all extensions are available in **VkConfig** (and are also avail
 
 # Goals
 
-It is very valid to update the memory after recording a command buffer, this means GPU Dump will never be 100% accurate, that will require a more expensive GPU-AV to get that information.
+It is perfectly valid to update the memory after recording a command buffer, which means GPU Dump will never be 100% accurate. Getting that information requires the more expensive GPU-AV.
 
 The goal of GPU Dump was to provide a fast/lite tool that can still provide a lot of **useful** information.
 
-It can be viewed as a glorified `printf` aimmed at extension, such as `VK_EXT_descriptor_heap`, where there is a lot of information to keep track of.
+It can be viewed as a glorified `printf` aimed at extensions, such as `VK_EXT_descriptor_heap`, where there is a lot of information to keep track of.
 
 # Use GPU Dump as supplemental validation
 
-GPU Dump will **never** give an error, but it will give both `warning` and `info` level messages
+GPU Dump will **never** give an error, but it will give both `warning` and `info` level messages.
 
-By turning off `info`, but leaving on `warning` you can use GPU Dump to provide warnings where it noticed at command buffer recording time a potential issue will occur.
+By turning off `info`, but leaving on `warning`, you can use GPU Dump to provide warnings when it notices, at command buffer recording time, that a potential issue will occur.
 
 ## Wanting all the information
 
-If both both `warning` and `info` level messages are on, all the info will be printed.
+If both `warning` and `info` level messages are on, all the info will be printed.
 
 # Supported extensions
 
@@ -43,9 +43,9 @@ If both both `warning` and `info` level messages are on, all the info will be pr
 
 # Options
 
-There is currently a `VK_LAYER_GPU_DUMP_TO_STDOUT` option to allow printing directly to `stdout` incase you don't want to use the debug callback.
+There is currently a `VK_LAYER_GPU_DUMP_TO_STDOUT` option to allow printing directly to `stdout` in case you don't want to use the debug callback.
 
-We are very happy to hear from people of additional options they feel would be helpful!
+We are very happy to hear about additional options people feel would be helpful!
 
 # Example
 
@@ -57,7 +57,7 @@ export VK_LAYER_GPU_DUMP_DESCRIPTORS=1
 export VK_LAYER_GPU_DUMP_TO_STDOUT=1
 ```
 
-In this example, the dispatch shader will look this:
+In this example, the compute shader will look like this:
 
 ```glsl
 layout (set = 0, binding = 0) buffer SSBO_0 {
@@ -65,7 +65,7 @@ layout (set = 0, binding = 0) buffer SSBO_0 {
 } ssbo[8];
 ```
 
-When performing a draw with `VK_EXT_descriptor_heap`, you will see output such as:
+When performing a dispatch with `VK_EXT_descriptor_heap`, you will see output such as:
 
 ```
 Validation Warning: [ GPU-DUMP ] | MessageID = 0xe5c5edc1
@@ -82,16 +82,16 @@ vkCmdDispatch(): [Dump Descriptor] (VkCommandBuffer 0x5ae561283160, VkPipeline 0
       - Resource Heap address: 0x300000000 + (descriptor_index * 64)
             The final descriptor index at [8] will access [0x3000001c0, 0x300000200)
       - Descriptor size: 64 (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-      - [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element accessed starting at [4] will be OOB of the heap and invalid if accessed
+      - [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element starting at index [4] will be out of bounds of the heap and invalid if accessed
 ```
 
 GPU Dump prints the mapping of where the heap will be read from, but it also issues a `warning`:
 
-> [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element accessed starting at [4] will be OOB of the heap and invalid if accessed
+> [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element starting at index [4] will be out of bounds of the heap and invalid if accessed
 
 This helps catch errors where, if the user accesses `ssbo[4]`, it will actually be out of bounds of the bound descriptor heap memory.
 
-This time if we update it to be a runtime descriptor array such as
+This time, if we update it to be a runtime descriptor array, such as
 
 ```
 layout (set = 0, binding = 0) buffer SSBO_0 {
@@ -99,7 +99,7 @@ layout (set = 0, binding = 0) buffer SSBO_0 {
 } ssbo[];
 ```
 
-GPU Dump will help print the specific range that is valid for your runtime descriptor arrays.
+GPU Dump will print the first index of your runtime descriptor array that is no longer inside the heap.
 
 ```
 Validation Information: [ GPU-DUMP ] | MessageID = 0xe5c5edc1
@@ -114,6 +114,6 @@ vkCmdDispatch(): [Dump Descriptor] (VkCommandBuffer 0x5ae561283160, VkPipeline 0
       - specified in pMappings[0] - VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT
       - heapOffset: 0x0, heapArrayStride: 64
       - Resource Heap address: 0x300000000 + (descriptor_index * 64)
-            The final descriptor index at [3] is the last index in bounds of the heap buffer and will access [0x3000000c0, 0x300000100)
+            The descriptor runtime array will be out of bounds of the heap starting at index [4]
       - Descriptor size: 64 (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
 ```

@@ -97,7 +97,7 @@ struct SetInfo {
                << " bytes, range: " << string_range_hex(range);
         }
         if (binding_index != vvl::kNoIndex32) {
-            // Only print if there are multiple bindings
+            // Only print if there are multiple pBindingInfos
             ss << " (specified in pBindingInfos[" << std::dec << binding_index << "])";
         }
         ss << '\n';
@@ -252,7 +252,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
     small_vector<const ShaderStageState*, 3> stages = last_bound.GetStages();
 
     // Can be a push constant only shader, which is valid here
-    // But if there are descriptors it is only valid if they are no accessed, which is warning territory
+    // But if there are descriptors it is only valid if they are not accessed, which is warning territory
     if (!last_bound.desc_set_pipeline_layout) {
         ss << "- No VkPipelineLayout found from a previous vkCmdSetDescriptorBufferOffsetsEXT call\n";
 
@@ -264,7 +264,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             }
         }
         if (uses_descriptors) {
-            ss << "- [WARNING] no vkCmdSetDescriptorBufferOffsetsEXT was called so any accesses to the descriptors in the shader "
+            ss << "- [WARNING] vkCmdSetDescriptorBufferOffsetsEXT was not called, so any accesses to the descriptors in the shader "
                   "will be invalid.\n";
             // quickly check if they set the wrong bind point (only for the more common one)
             if (last_bound.bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS &&
@@ -322,7 +322,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
             if (set_info == nullptr) {
                 const vvl::DescriptorSetLayout* dsl = pipeline_layout.set_layouts.list[var_set].get();
                 if (var_set >= last_bound.ds_slots.size()) {
-                    ss << "  - [WARNING] SPIRV-Set " << std::dec << var_set
+                    ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
                        << " is not a valid bound set as vkCmdSetDescriptorBufferOffsetsEXT was either not called or invalidated "
                           "for "
                        << string_VkPipelineBindPoint(last_bound.bind_point) << '\n';
@@ -352,7 +352,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                     continue;
                 } else if (!descriptor_buffer_binding.has_value()) {
                     ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
-                       << " was never bound with offset. This is only valid if descriptor is not used in the shader";
+                       << " was never bound with an offset. This is only valid if descriptor is not used in the shader";
                     if (dsl->HasImmutableSamplers()) {
                         ss << " or because all bindings are using Immutable Samplers";
                     }
@@ -387,11 +387,11 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                     SetInfo{embedded, var_set, binding_index, binding_offset, usage_flags, set_range, dsl, {}});
             }
 
-            // To variables might be the same set/binding if doing descriptor indexing aliasing
+            // Two variables might be the same set/binding if doing descriptor indexing aliasing
             bool alias_binding = false;
             for (BindingInfo& info : set_info->bindings) {
                 if (info.index == var_binding && !info.variable_name.empty() && !resource_variable.debug_name.empty()) {
-                    info.variable_name = info.variable_name + ", " + resource_variable.debug_name + "";
+                    info.variable_name = info.variable_name + ", " + resource_variable.debug_name;
                     alias_binding = true;
                     break;
                 }
