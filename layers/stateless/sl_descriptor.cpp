@@ -1495,33 +1495,32 @@ bool Device::manual_PreCallValidateCmdBindSamplerHeapEXT(VkCommandBuffer command
                          pBindInfo->reservedRangeOffset, pBindInfo->reservedRangeSize, pBindInfo->heapRange.size);
     }
 
-    if (pBindInfo->reservedRangeSize < phys_dev_ext_props.descriptor_heap_props_ext.minSamplerHeapReservedRange) {
+    if (pBindInfo->reservedRangeSize < phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRange) {
         skip |= LogError("VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11224", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeSize),
                          "(%" PRIu64 ") is less than minSamplerHeapReservedRange (%" PRIu64 ").", pBindInfo->reservedRangeSize,
-                         phys_dev_ext_props.descriptor_heap_props_ext.minSamplerHeapReservedRange);
+                         phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRange);
     }
 
-    if (pBindInfo->heapRange.size > phys_dev_ext_props.descriptor_heap_props_ext.maxSamplerHeapSize) {
+    if (pBindInfo->heapRange.size > phys_dev_ext_props.descriptor_heap_props.maxSamplerHeapSize) {
         skip |= LogError("VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11225", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::heapRange).dot(Field::size),
                          "(%" PRIu64 ") is greater than maxSamplerHeapSize (%" PRIu64 ").", pBindInfo->heapRange.size,
-                         phys_dev_ext_props.descriptor_heap_props_ext.maxSamplerHeapSize);
+                         phys_dev_ext_props.descriptor_heap_props.maxSamplerHeapSize);
     }
 
-    if (!IsPointerAligned(pBindInfo->heapRange.address, phys_dev_ext_props.descriptor_heap_props_ext.samplerHeapAlignment)) {
+    if (!IsPointerAligned(pBindInfo->heapRange.address, phys_dev_ext_props.descriptor_heap_props.samplerHeapAlignment)) {
         skip |= LogError("VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11226", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::heapRange).dot(Field::address),
                          "(0x%" PRIx64 ") must be aligned with samplerHeapAlignment (%" PRIu64 ").", pBindInfo->heapRange.address,
-                         phys_dev_ext_props.descriptor_heap_props_ext.samplerHeapAlignment);
+                         phys_dev_ext_props.descriptor_heap_props.samplerHeapAlignment);
     }
 
-    if (!IsPointerAligned(pBindInfo->reservedRangeOffset,
-                          phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorAlignment)) {
+    if (!IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment)) {
         skip |= LogError("VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11434", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
                          "(0x%" PRIx64 ") must be aligned with samplerDescriptorAlignment (%" PRIu64 ").",
-                         pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorAlignment);
+                         pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment);
     }
 
     return skip;
@@ -1539,40 +1538,40 @@ bool Device::manual_PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer comman
                          pBindInfo->reservedRangeOffset, pBindInfo->reservedRangeSize, pBindInfo->heapRange.size);
     }
 
-    if (pBindInfo->reservedRangeSize < phys_dev_ext_props.descriptor_heap_props_ext.minResourceHeapReservedRange) {
+    if (pBindInfo->reservedRangeSize < phys_dev_ext_props.descriptor_heap_props.minResourceHeapReservedRange) {
         skip |= LogError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11233", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeSize),
                          "(%" PRIu64 ") is less than minResourceHeapReservedRange (%" PRIu64 ").", pBindInfo->reservedRangeSize,
-                         phys_dev_ext_props.descriptor_heap_props_ext.minResourceHeapReservedRange);
+                         phys_dev_ext_props.descriptor_heap_props.minResourceHeapReservedRange);
     }
 
-    if (pBindInfo->heapRange.size > phys_dev_ext_props.descriptor_heap_props_ext.maxResourceHeapSize) {
+    if (pBindInfo->heapRange.size > phys_dev_ext_props.descriptor_heap_props.maxResourceHeapSize) {
         skip |= LogError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11234", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::heapRange).dot(Field::size),
                          "(%" PRIu64 ") is greater than maxResourceHeapSize (%" PRIu64 ").", pBindInfo->heapRange.size,
-                         phys_dev_ext_props.descriptor_heap_props_ext.maxResourceHeapSize);
+                         phys_dev_ext_props.descriptor_heap_props.maxResourceHeapSize);
     }
 
-    if (!IsPointerAligned(pBindInfo->heapRange.address, phys_dev_ext_props.descriptor_heap_props_ext.resourceHeapAlignment)) {
+    if (!IsPointerAligned(pBindInfo->heapRange.address, phys_dev_ext_props.descriptor_heap_props.resourceHeapAlignment)) {
         skip |= LogError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11235", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::heapRange).dot(Field::address),
                          "(0x%" PRIx64 ") must be aligned with resourceHeapAlignment (%" PRIu64 ").", pBindInfo->heapRange.address,
-                         phys_dev_ext_props.descriptor_heap_props_ext.resourceHeapAlignment);
+                         phys_dev_ext_props.descriptor_heap_props.resourceHeapAlignment);
     }
 
     // While these are 2 VUs, they really should be one as you want to know both together
     const bool buffer_misaligned =
-        !IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props_ext.bufferDescriptorAlignment);
+        !IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
     const bool image_misaligned =
-        !IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorAlignment);
+        !IsPointerAligned(pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment);
     if (buffer_misaligned || image_misaligned) {
         const char* vuid =
             buffer_misaligned ? "VUID-vkCmdBindResourceHeapEXT-pBindInfo-11435" : "VUID-vkCmdBindResourceHeapEXT-pBindInfo-11436";
         skip |= LogError(vuid, commandBuffer, error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
                          "(0x%" PRIx64 ") must be aligned with both bufferDescriptorAlignment (0x%" PRIx64
                          ") and imageDescriptorAlignment (0x%" PRIx64 ").",
-                         pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props_ext.bufferDescriptorAlignment,
-                         phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorAlignment);
+                         pBindInfo->reservedRangeOffset, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment,
+                         phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment);
     }
     return skip;
 }
@@ -1816,12 +1815,12 @@ bool Device::manual_PreCallValidateWriteSamplerDescriptorsEXT(VkDevice device, u
         const Location sampler_loc = context.error_obj.location.dot(Field::pSamplers, i);
 
         const VkHostAddressRangeEXT& descriptor_range = pDescriptors[i];
-        if (static_cast<VkDeviceSize>(descriptor_range.size) < phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorSize) {
+        if (static_cast<VkDeviceSize>(descriptor_range.size) < phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize) {
             skip |= LogError("VUID-vkWriteSamplerDescriptorsEXT-size-11203", device,
                              context.error_obj.location.dot(Field::pDescriptors, i).dot(Field::size),
                              "(%" PRIu64 ") is less than samplerDescriptorSize (%" PRIu64 ").",
                              static_cast<VkDeviceSize>(descriptor_range.size),
-                             phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorSize);
+                             phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize);
         }
         if (vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(sampler_ci.pNext)) {
             skip |= LogError("VUID-vkWriteSamplerDescriptorsEXT-pSamplers-11204", device, sampler_loc.dot(Field::pNext),

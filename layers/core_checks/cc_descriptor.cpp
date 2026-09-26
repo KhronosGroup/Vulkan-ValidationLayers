@@ -5562,7 +5562,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                 DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
                                                                       &image_format_properties);
 
-                const VkDeviceSize size = phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorSize *
+                const VkDeviceSize size = phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize *
                                           static_cast<VkDeviceSize>(subsampled_image_format_info.subsampledImageDescriptorCount);
 
                 if (static_cast<VkDeviceSize>(descriptor_range.size) < size) {
@@ -5571,7 +5571,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                                      "is %" PRIu64 ", which is less than imageDescriptorSize (%" PRIu64
                                      ") * subsampledImageDescriptorCount (%" PRIu64 ").\npResources[%" PRIu32 "].type = %s",
                                      static_cast<VkDeviceSize>(descriptor_range.size),
-                                     phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorSize,
+                                     phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize,
                                      static_cast<VkDeviceSize>(subsampled_image_format_info.subsampledImageDescriptorCount), i,
                                      string_VkDescriptorType(resource.type));
                 }
@@ -5607,7 +5607,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                     DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
                                                                           &image_format_properties);
                     const VkDeviceSize size =
-                        phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorSize *
+                        phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize *
                         static_cast<VkDeviceSize>(sampler_ycbcr_image_format_info.combinedImageSamplerDescriptorCount);
                     if (static_cast<VkDeviceSize>(descriptor_range.size) < size) {
                         skip |=
@@ -5616,7 +5616,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                                      "is %" PRIu64 ", which is less than imageDescriptorSize (%" PRIu64
                                      ") * combinedImageSamplerDescriptorCount (%" PRIu64 ").\npResources[%" PRIu32 "].type = %s",
                                      static_cast<VkDeviceSize>(descriptor_range.size),
-                                     phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorSize,
+                                     phys_dev_ext_props.descriptor_heap_props.imageDescriptorSize,
                                      static_cast<VkDeviceSize>(sampler_ycbcr_image_format_info.combinedImageSamplerDescriptorCount),
                                      i, string_VkDescriptorType(resource.type));
                     }
@@ -5799,11 +5799,11 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDataEXT(VkDevice device, ui
     }
 
     for (uint32_t i = 0; i < imageCount; ++i) {
-        if (pDatas[i].size != phys_dev_ext_props.descriptor_heap_props_ext.imageCaptureReplayOpaqueDataSize) {
+        if (pDatas[i].size != phys_dev_ext_props.descriptor_heap_props.imageCaptureReplayOpaqueDataSize) {
             skip |= LogError("VUID-vkGetImageOpaqueCaptureDataEXT-size-11283", device,
                              error_obj.location.dot(Field::pDatas, i).dot(Field::size),
                              "is %zu, which is not equal to imageCaptureReplayOpaqueDataSize (%zu).", pDatas[i].size,
-                             phys_dev_ext_props.descriptor_heap_props_ext.imageCaptureReplayOpaqueDataSize);
+                             phys_dev_ext_props.descriptor_heap_props.imageCaptureReplayOpaqueDataSize);
         }
         auto image_state = Get<vvl::Image>(pImages[i]);
         ASSERT_AND_CONTINUE(image_state);
@@ -5973,11 +5973,11 @@ bool CoreChecks::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, co
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    if (pPushDataInfo->offset + pPushDataInfo->data.size > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize) {
-        skip |= LogError(
-            "VUID-VkPushDataInfoEXT-offset-11243", commandBuffer, error_obj.location.dot(Field::pPushDataInfo).dot(Field::offset),
-            "(%" PRIu32 ") + pPushDataInfo->data.size (%zu) is greater than maxPushDataSize (%" PRIu64 ").", pPushDataInfo->offset,
-            pPushDataInfo->data.size, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize);
+    if (pPushDataInfo->offset + pPushDataInfo->data.size > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize) {
+        skip |= LogError("VUID-VkPushDataInfoEXT-offset-11243", commandBuffer,
+                         error_obj.location.dot(Field::pPushDataInfo).dot(Field::offset),
+                         "(%" PRIu32 ") + pPushDataInfo->data.size (%zu) is greater than maxPushDataSize (%" PRIu64 ").",
+                         pPushDataInfo->offset, pPushDataInfo->data.size, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
     }
     if (!IsIntegerMultipleOf(pPushDataInfo->offset, 4)) {
         skip |= LogError("VUID-VkPushDataInfoEXT-offset-11418", commandBuffer,
@@ -6126,8 +6126,8 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
 
     const uint32_t max_count =
         phys_dev_props.limits.maxSamplerAllocationCount -
-        (uint32_t)SafeDivision(phys_dev_ext_props.descriptor_heap_props_ext.minSamplerHeapReservedRangeWithEmbedded,
-                               phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorSize);
+        (uint32_t)SafeDivision(phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded,
+                               phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize);
 
     if (samplers_count >= max_count) {
         const char* vuid =
@@ -6144,14 +6144,14 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
                          "\n minSamplerHeapReservedRangeWithEmbedded = %" PRIu64 "\n samplerDescriptorSize = %" PRIu64 "\n",
                          is_create_sampler ? "is creating a new sampler" : "contains embedded samplers", samplers_count, max_count,
                          phys_dev_props.limits.maxSamplerAllocationCount,
-                         phys_dev_ext_props.descriptor_heap_props_ext.minSamplerHeapReservedRangeWithEmbedded,
-                         phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorSize);
+                         phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRangeWithEmbedded,
+                         phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize);
     }
 
     if (new_sampler_count > 0) {
         const uint32_t embedded_sampler_count =
             device_state->descriptor_heap_global_embedded_sampler_count_.load() + new_sampler_count;
-        if (embedded_sampler_count > phys_dev_ext_props.descriptor_heap_props_ext.maxDescriptorHeapEmbeddedSamplers) {
+        if (embedded_sampler_count > phys_dev_ext_props.descriptor_heap_props.maxDescriptorHeapEmbeddedSamplers) {
             const char* vuid =
                 loc.function == Func::vkCreateGraphicsPipelines        ? "VUID-vkCreateGraphicsPipelines-pCreateInfos-11429"
                 : loc.function == Func::vkCreateComputePipelines       ? "VUID-vkCreateComputePipelines-pCreateInfos-11429"
@@ -6164,7 +6164,7 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
                              " embedded samplers in pipelines and shaders, and this will now exceed "
                              "maxDescriptorHeapEmbeddedSamplers (%" PRIu32 ")",
                              new_sampler_count, embedded_sampler_count,
-                             phys_dev_ext_props.descriptor_heap_props_ext.maxDescriptorHeapEmbeddedSamplers);
+                             phys_dev_ext_props.descriptor_heap_props.maxDescriptorHeapEmbeddedSamplers);
         }
     }
 

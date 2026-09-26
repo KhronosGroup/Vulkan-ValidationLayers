@@ -75,7 +75,7 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
                              string_VkBufferUsageFlags2(usage & invalid).c_str());
         }
         if ((usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 &&
-            !phys_dev_ext_props.descriptor_heap_props_ext.protectedDescriptorHeaps) {
+            !phys_dev_ext_props.descriptor_heap_props.protectedDescriptorHeaps) {
             skip |= LogError("VUID-VkBufferCreateInfo-flags-11277", device, create_info_loc.dot(Field::flags),
                              "includes VK_BUFFER_CREATE_PROTECTED_BIT, and the usage (%s) includes "
                              "VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, but protectedDescriptorHeaps is VK_FALSE.",
@@ -92,7 +92,7 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
                              string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
         }
         if ((usage & VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0 &&
-            !phys_dev_ext_props.descriptor_heap_props_ext.sparseDescriptorHeaps) {
+            !phys_dev_ext_props.descriptor_heap_props.sparseDescriptorHeaps) {
             skip |= LogError("VUID-VkBufferCreateInfo-flags-11279", device, create_info_loc.dot(Field::flags),
                              "(%s) includes sparse flags, and usage is %s, but sparseDescriptorHeaps is VK_FALSE.",
                              string_VkBufferCreateFlags(pCreateInfo->flags).c_str(), string_VkBufferUsageFlags2(usage).c_str());

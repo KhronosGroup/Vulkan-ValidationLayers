@@ -363,12 +363,12 @@ uint32_t Module::ResolveConstantSizeOf(const Instruction& inst) {
     assert(descriptor_type);
 
     if (descriptor_type->spv_type_ == SpvType::kSampler) {
-        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props_ext.samplerDescriptorSize;
+        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.samplerDescriptorSize;
     } else if (descriptor_type->spv_type_ == SpvType::kBufferEXT ||
                descriptor_type->spv_type_ == SpvType::kAccelerationStructureKHR) {
-        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props_ext.bufferDescriptorSize;
+        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.bufferDescriptorSize;
     } else if (descriptor_type->spv_type_ == SpvType::kImage) {
-        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props_ext.imageDescriptorSize;
+        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.imageDescriptorSize;
     }
     assert(false);
     return 0;

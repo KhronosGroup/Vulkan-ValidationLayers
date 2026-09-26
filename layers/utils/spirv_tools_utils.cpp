@@ -106,9 +106,9 @@ void AdjustValidatorOptions(const DeviceExtensions& device_extensions, const Dev
     if (enabled_features.descriptorHeap) {
         // Added as this change caused strange issues on Android
         assert(IsExtEnabled(device_extensions.vk_ext_descriptor_heap) &&
-               phys_dev_ext_props.descriptor_heap_props_ext.bufferDescriptorAlignment > 0);
+               phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment > 0);
 
-        const auto& heap_props = phys_dev_ext_props.descriptor_heap_props_ext;
+        const auto& heap_props = phys_dev_ext_props.descriptor_heap_props;
         ss << " --buffer-descriptor-layout " << heap_props.bufferDescriptorSize << ":" << heap_props.bufferDescriptorAlignment;
         out_options.SetBufferDescriptorLayout((uint32_t)heap_props.bufferDescriptorSize,
                                               (uint32_t)heap_props.bufferDescriptorAlignment);

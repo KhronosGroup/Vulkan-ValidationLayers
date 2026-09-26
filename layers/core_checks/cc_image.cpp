@@ -951,11 +951,11 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              "VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT.",
                              string_VkImageCreateFlags2KHR(create_flags).c_str());
         } else {
-            if (opaque_data->pData->size != phys_dev_ext_props.descriptor_heap_props_ext.imageCaptureReplayOpaqueDataSize) {
+            if (opaque_data->pData->size != phys_dev_ext_props.descriptor_heap_props.imageCaptureReplayOpaqueDataSize) {
                 skip |= LogError("VUID-VkImageCreateInfo-pData-11286", device,
                                  create_info_loc.pNext(Struct::VkOpaqueCaptureDataCreateInfoEXT, Field::pData).dot(Field::size),
                                  "is %zu, which is not equal to imageCaptureReplayOpaqueDataSize (%zu).", opaque_data->pData->size,
-                                 phys_dev_ext_props.descriptor_heap_props_ext.imageCaptureReplayOpaqueDataSize);
+                                 phys_dev_ext_props.descriptor_heap_props.imageCaptureReplayOpaqueDataSize);
             }
         }
     }
