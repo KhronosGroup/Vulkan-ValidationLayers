@@ -3316,6 +3316,100 @@ TEST_F(NegativeGraphicsLibrary, MissingFragmentOutput) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGraphicsLibrary, MissingVertexInput) {
+    TEST_DESCRIPTION("http://gitlab.freedesktop.org/mesa/mesa/-/work_items/15867");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[3] = {
+        pre_raster_lib,
+        frag_shader_lib,
+        frag_out_lib,
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
+    exe_pipe_ci.renderPass = RenderPass();
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08899");
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, MissingVertexInputFlags2) {
+    TEST_DESCRIPTION("http://gitlab.freedesktop.org/mesa/mesa/-/work_items/15867");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.CreateGraphicsPipeline();
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[3] = {
+        pre_raster_lib,
+        frag_shader_lib,
+        frag_out_lib,
+    };
+
+    VkPipelineCreateFlags2CreateInfo create_flags = vku::InitStructHelper();
+    create_flags.flags = VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT;
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper(&create_flags);
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
+    lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    lib_ci.layout = pre_raster_lib.gp_ci_.layout;
+    lib_ci.renderPass = RenderPass();
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08899");
+    vkt::Pipeline lib(*m_device, lib_ci);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGraphicsLibrary, VertexInputIgnoreStages) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
@@ -3871,14 +3965,13 @@ TEST_F(NegativeGraphicsLibrary, DescriptorFlagsMismatch2) {
     };
 
     VkPipelineCreateFlags2CreateInfoKHR create_flags = vku::InitStructHelper();
-    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;
 
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper(&create_flags);
     link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
-    lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = VK_NULL_HANDLE;
     lib_ci.renderPass = RenderPass();
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-11273", 3);

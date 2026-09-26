@@ -2533,7 +2533,7 @@ TEST_F(PositiveGraphicsLibrary, DescriptorHeapPushConstantStages) {
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo(&create_flags);
-    frag_shader_lib.gp_ci_.layout = VK_NULL_HANDLE;
+    frag_out_lib.gp_ci_.layout = VK_NULL_HANDLE;
     frag_out_lib.CreateGraphicsPipeline(false);
 
     VkPipeline libraries[3] = {
@@ -2541,8 +2541,6 @@ TEST_F(PositiveGraphicsLibrary, DescriptorHeapPushConstantStages) {
         frag_shader_lib,
         frag_out_lib,
     };
-
-    create_flags.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
 
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper(&create_flags);
     link_info.libraryCount = size32(libraries);
