@@ -68,7 +68,7 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
 
     if (stage_state.heap.descriptor_heap_mode) {
         // In DescriptorModeClassic, this is normally caught binding pipeline layouts (with ranges in them)
-        const VkDeviceSize max_size = phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize;
+        const VkDeviceSize max_size = phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
         if (push_constant_variable->size > max_size) {
             skip |= LogError("VUID-RuntimeSpirv-maxPushDataSize-12455", module_state.handle(), loc,
                              "shader %s defines a push constant statically (\"%s\") whose block size (%" PRIu32
@@ -2353,22 +2353,22 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
 
     if (base_opcode == spv::OpTypeSampledImage) {
         r_info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-12406";
-        r_info.align = phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorAlignment;
+        r_info.align = phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
         r_info.align_field = Field::imageDescriptorAlignment;
     } else if (base_opcode == spv::OpTypeImage) {
         r_info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11251";
-        r_info.align = phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorAlignment;
+        r_info.align = phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment;
         r_info.align_field = Field::imageDescriptorAlignment;
     } else if (base_opcode == spv::OpTypeStruct) {
         r_info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11252";
-        r_info.align = phys_dev_ext_props.descriptor_heap_props_ext.bufferDescriptorAlignment;
+        r_info.align = phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment;
         r_info.align_field = Field::bufferDescriptorAlignment;
     } else if (base_opcode == spv::OpTypeSampler) {
         if (has_embedded_sampler) {
             return skip;
         }
         r_info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11253";
-        r_info.align = phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorAlignment;
+        r_info.align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
         r_info.align_field = Field::samplerDescriptorAlignment;
     } else if (base_opcode == spv::OpTypeTensorARM) {
         r_info.vuid = "VUID-VkDescriptorSetAndBindingMappingEXT-source-11390";
@@ -2468,7 +2468,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
         }
 
         if (!has_embedded_sampler) {
-            const VkDeviceSize sampler_align = phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorAlignment;
+            const VkDeviceSize sampler_align = phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment;
             if (!IsIntegerMultipleOf(s_info.offset, sampler_align) || !IsIntegerMultipleOf(s_info.array_stride, sampler_align)) {
                 const Field source_field = vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source);
 
@@ -2494,7 +2494,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                      "VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT",
                                      s_info.push_offset);
                 }
-                if (s_info.push_offset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 4) {
+                if (s_info.push_offset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 4) {
                     skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12457", device,
                                      mapping_loc.dot(Field::sourceData).dot(Field::pushIndex).dot(Field::samplerPushOffset),
                                      "(%" PRIu32 ") is greater than maxPushDataSize (%" PRIu64
@@ -2502,7 +2502,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                      "VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT\nHint - samplerPushOffset points to an "
                                      "uint32_t (4 bytes) "
                                      "inside the push data, this is currently going to access OOB.",
-                                     s_info.push_offset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize);
+                                     s_info.push_offset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
                 }
             } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT ||
                        mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
@@ -2514,7 +2514,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                      "(%" PRIu32 ") is not a multiple of 8\nVkDescriptorSetAndBindingMappingEXT::source = %s",
                                      s_info.push_offset, string_VkDescriptorMappingSourceEXT(mapping.source));
                 }
-                if (s_info.push_offset > phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize - 8) {
+                if (s_info.push_offset > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - 8) {
                     skip |= LogError("VUID-VkDescriptorSetAndBindingMappingEXT-source-12459", device,
                                      mapping_loc.dot(Field::sourceData)
                                          .dot(vvl::Field_VkDescriptorMappingSourceDataEXT(mapping.source))
@@ -2523,7 +2523,7 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                      ") - 8\nVkDescriptorSetAndBindingMappingEXT::source = %s\nHint - samplerPushOffset points to "
                                      "an address (8 bytes) "
                                      "inside the push data, this is currently going to access OOB.",
-                                     s_info.push_offset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize,
+                                     s_info.push_offset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize,
                                      string_VkDescriptorMappingSourceEXT(mapping.source));
                 }
                 if (!IsIntegerMultipleOf(s_info.address_offset, 4)) {
@@ -2729,17 +2729,17 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
             if (type_struct_info && !type_struct_info->has_runtime_array) {
                 if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
                     const uint64_t struct_size = (uint64_t)type_struct_info->GetSize(module_state).size;
-                    if (struct_size > (uint64_t)(phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize -
-                                                 mapping.sourceData.pushDataOffset)) {
+                    if (struct_size >
+                        (uint64_t)(phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - mapping.sourceData.pushDataOffset)) {
                         const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11316"
                                                     : "VUID-VkShaderCreateInfoEXT-pNext-11316";
-                        skip |= LogError(
-                            vuid, module_state.handle(), mapping_loc.dot(Field::source),
-                            "(VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) is used to map descriptor %s in %s which has a "
-                            "structure size of %" PRIu64 ", which when the pushDataOffset (%" PRIu32
-                            ") is applied, will be larger than the maxPushDataSize (%" PRIu64 ").",
-                            resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_size,
-                            mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props_ext.maxPushDataSize);
+                        skip |=
+                            LogError(vuid, module_state.handle(), mapping_loc.dot(Field::source),
+                                     "(VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) is used to map descriptor %s in %s which has a "
+                                     "structure size of %" PRIu64 ", which when the pushDataOffset (%" PRIu32
+                                     ") is applied, will be larger than the maxPushDataSize (%" PRIu64 ").",
+                                     resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_size,
+                                     mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
                     }
                 } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) {
                     const uint32_t struct_size = type_struct_info ? type_struct_info->GetSize(module_state).size : 0;
@@ -2961,7 +2961,7 @@ bool CoreChecks::ValidateDescriptorHeapStructs(const spirv::Module& module_state
         return skip;
     }
 
-    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props = phys_dev_ext_props.descriptor_heap_props_ext;
+    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props = phys_dev_ext_props.descriptor_heap_props;
 
     // There are to ways to set the offset with decorations
     //  - classic Offset
@@ -2984,40 +2984,40 @@ bool CoreChecks::ValidateDescriptorHeapStructs(const spirv::Module& module_state
 
             const spv::Op opcode = (spv::Op)member.insn->Opcode();
             if (opcode == spv::OpTypeSampler) {
-                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-samplerDescriptorAlignment-11476", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeSampler with an offset of %" PRIu32
                                      " which is not aligned with samplerDescriptorAlignment (%" PRIu64 ")",
                                      entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
-                                     phys_dev_ext_props.descriptor_heap_props_ext.samplerDescriptorAlignment);
+                                     phys_dev_ext_props.descriptor_heap_props.samplerDescriptorAlignment);
                 }
             } else if (opcode == spv::OpTypeImage) {
-                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-imageDescriptorAlignment-11477", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeImage with an offset of %" PRIu32
                                      " which is not aligned with imageDescriptorAlignment (%" PRIu64 ")",
                                      entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
-                                     phys_dev_ext_props.descriptor_heap_props_ext.imageDescriptorAlignment);
+                                     phys_dev_ext_props.descriptor_heap_props.imageDescriptorAlignment);
                 }
             } else if (opcode == spv::OpTypeBufferEXT) {
-                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props_ext.bufferDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11478", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeBufferEXT with an offset of %" PRIu32
                                      " which is not aligned with bufferDescriptorAlignment (%" PRIu64 ")",
                                      entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
-                                     phys_dev_ext_props.descriptor_heap_props_ext.bufferDescriptorAlignment);
+                                     phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
                 }
             } else if (opcode == spv::OpTypeAccelerationStructureKHR) {
-                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props_ext.bufferDescriptorAlignment)) {
+                if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment)) {
                     skip |= LogError("VUID-RuntimeSpirv-bufferDescriptorAlignment-11479", module_state.handle(), loc,
                                      "shader %s has a struct (ID %" PRIu32 ") where member %" PRIu32
                                      " is an OpTypeAccelerationStructureKHR with an offset of %" PRIu32
                                      " which is not aligned with bufferDescriptorAlignment (%" PRIu64 ")",
                                      entrypoint.Describe().c_str(), type_struct->id, i, offset_value,
-                                     phys_dev_ext_props.descriptor_heap_props_ext.bufferDescriptorAlignment);
+                                     phys_dev_ext_props.descriptor_heap_props.bufferDescriptorAlignment);
                 }
             } else if (opcode == spv::OpTypeTensorARM) {
                 if (!IsIntegerMultipleOf(offset_value, phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment)) {
