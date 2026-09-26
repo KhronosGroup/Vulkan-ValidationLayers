@@ -910,7 +910,7 @@ TEST_F(NegativeGraphicsLibrary, MissingShaderStages) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-flags-06644");
         // 02096 is effectively unrelated, but gets triggered due to lack of mesh shader extension
         m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stage-02096");
-        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-06896");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08900");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
@@ -3192,6 +3192,97 @@ TEST_F(NegativeGraphicsLibrary, VertexInputWithVertexShader) {
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08897");
     pipe.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, UndefinedLibraryState) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9250");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    // No attachments, so a NULL pColorBlendState is not an error by itself
+    RenderPassSingleSubpass rp(*this);
+    rp.CreateRenderPass();
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.gp_ci_.renderPass = rp;
+    pre_raster_lib.CreateGraphicsPipeline();
+
+    VkPipeline library = pre_raster_lib;
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &library;
+
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitPreRasterLibInfo(&fs_stage.stage_ci);
+        pipe.gpl_info->flags |= VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+        pipe.gp_ci_.renderPass = rp;
+        pipe.gp_ci_.pMultisampleState = &pipe.ms_ci_;
+        pipe.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stage-02096");
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08900");
+        pipe.CreateGraphicsPipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper frag_shader_lib(*this);
+        frag_shader_lib.InitFragmentLibInfo(nullptr);
+        frag_shader_lib.gp_ci_.renderPass = rp;
+        frag_shader_lib.gp_ci_.stageCount = 0;
+        frag_shader_lib.gp_ci_.pMultisampleState = nullptr;
+        frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
+        frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08904");
+        frag_shader_lib.CreateGraphicsPipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper frag_shader_lib(*this);
+        frag_shader_lib.InitFragmentLibInfo(nullptr, &link_info);
+        frag_shader_lib.gp_ci_.renderPass = rp;
+        frag_shader_lib.gp_ci_.stageCount = 0;
+        frag_shader_lib.gp_ci_.pMultisampleState = nullptr;
+        frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
+        frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08903");
+        frag_shader_lib.CreateGraphicsPipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper frag_out_lib(*this);
+        frag_out_lib.InitFragmentOutputLibInfo();
+        frag_out_lib.gp_ci_.renderPass = rp;
+        frag_out_lib.gp_ci_.pColorBlendState = nullptr;
+        frag_out_lib.gp_ci_.pMultisampleState = nullptr;
+
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08907");
+        frag_out_lib.CreateGraphicsPipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper frag_out_lib(*this);
+        frag_out_lib.InitFragmentOutputLibInfo(&link_info);
+        frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+        frag_out_lib.gp_ci_.renderPass = rp;
+        frag_out_lib.gp_ci_.pColorBlendState = nullptr;
+        frag_out_lib.gp_ci_.pMultisampleState = nullptr;
+
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-08906");
+        frag_out_lib.CreateGraphicsPipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeGraphicsLibrary, MissingPreRasterization) {

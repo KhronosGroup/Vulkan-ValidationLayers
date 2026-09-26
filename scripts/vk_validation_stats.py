@@ -329,7 +329,6 @@ class OutputDatabase:
             "9102" : ["08727", "09595", "09596", "09597"],
             "9104" : ["06632"],
             "9176" : ["02777", "02779", "06738"],
-            "9250" : ["08899", "08900", "08903", "08904", "08906", "08907"],
             "9251" : ["04475"],
             "9447" : ["03429", "03511", "03636", "03679", "04735", "04736"],
             "10125" : ["04554", "04565", "04566", "04567", "00255", "09062", "09067", "13027", "12483", "12484", "12485", "12474", "12475", "12476", "12477"],
@@ -397,7 +396,6 @@ class OutputDatabase:
         self.issue_topic_map = {
             '5431'  : 'external',
             '11376' : 'external',
-            '9250'  : 'gpl',
             '3305'  : 'gpuav',
             '8605'  : 'gpuav',
             '9081'  : 'gpuav',
@@ -502,7 +500,6 @@ class OutputDatabase:
         total_count = 0
         vendor_count = 0
         micro_map_count = 0
-        gpl_count = 0
         rtx_count = 0
         wsi_count = 0
         gpuav_count = 0
@@ -555,8 +552,6 @@ class OutputDatabase:
                         gpuav_count += 1
                     elif self.issue_topic_map[issue_number] == 'wsi':
                         wsi_count += 1
-                    elif self.issue_topic_map[issue_number] == 'gpl':
-                        gpl_count += 1
                     elif self.issue_topic_map[issue_number] == 'sparse':
                         sparse_count += 1
                 continue
@@ -579,9 +574,6 @@ class OutputDatabase:
                 if topic == 'VK_EXT_opacity_micromap' or topic == 'VK_KHR_opacity_micromap':
                     micro_map_count += 1
                     table.append(f'<th><a href=https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12585> VK_EXT_opacity_micromap/VK_KHR_opacity_micromap</th></tr>')
-                elif topic == 'VK_EXT_graphics_pipeline_library':
-                    gpl_count += 1
-                    table.append(f'<th>VK_EXT_graphics_pipeline_library</th></tr>')
                 elif topic == 'gpuav':
                     gpuav_count += 1
                     table.append(f'<th>Requires GPU-AV</th></tr>')
@@ -613,7 +605,6 @@ class OutputDatabase:
         stats.append('<ul>')
         stats.append(f'<li><b>Vendor extensions</b>: {vendor_count} ({(vendor_count / total_count):.1%})</li>')
         stats.append(f'<li><b>VK_EXT_opacity_micromap/VK_KHR_opacity_micromap</b>: {micro_map_count} ({(micro_map_count / total_count):.1%})</li>')
-        stats.append(f'<li><b>VK_EXT_graphics_pipeline_library</b>: {gpl_count} ({(gpl_count / total_count):.1%})</li>')
         stats.append(f'<li><b>External Memory/Sync</b>: {external_count} ({(external_count / total_count):.1%})</li>')
         stats.append(f'<li><b>WSI</b>: {wsi_count} ({(wsi_count / total_count):.1%})</li>')
         stats.append(f'<li><b>Device Groups</b>: {device_group_count} ({(device_group_count / total_count):.1%})</li>')

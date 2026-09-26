@@ -1736,9 +1736,18 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterizationState(const vvl::Pipeli
     }
     const VkShaderStageFlags stages = pipeline.create_info_shaders;
     if ((stages & PreRasterState::ValidShaderStages()) == 0) {
-        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06896", device, create_info_loc,
-                         "contains pre-raster state, but stages (%s) does not contain any pre-raster shaders.",
-                         string_VkShaderStageFlags(stages).c_str());
+        if (pipeline.graphics_lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08900", device,
+                             create_info_loc.pNext(Struct::VkGraphicsPipelineLibraryCreateInfoEXT, Field::flags),
+                             "(%s) includes VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT, but stages (%s) does "
+                             "not contain any pre-rasterization shaders, so no pre-rasterization shader state is defined.",
+                             string_VkGraphicsPipelineLibraryFlagsEXT(pipeline.graphics_lib_type).c_str(),
+                             string_VkShaderStageFlags(stages).c_str());
+        } else {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06896", device, create_info_loc,
+                             "contains pre-raster state, but stages (%s) does not contain any pre-raster shaders.",
+                             string_VkShaderStageFlags(stages).c_str());
+        }
     }
 
     if (!enabled_features.geometryShader && (stages & VK_SHADER_STAGE_GEOMETRY_BIT)) {
@@ -2617,12 +2626,67 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline& p
     return skip;
 }
 
+// Many links in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9250
+// Basically there is a lot of ugly things Vulkan spec did around pipelines and null pointers because we duct tapped GPL to it
 bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const {
     bool skip = false;
 
+    const bool ms_state_dynamic =
+        IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) && pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
+        pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) && pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
+        (pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.alphaToOne);
+
+    // When the pre-rasterization state statically discards rasterization, the fragment states do not need to be defined.
+    // It may come from a linked library, so its dynamic state is read from the library that created it.
+    const bool pre_raster_needs_fragment_states =
+        !pipeline.pre_raster_state || pipeline.pre_raster_state->parent.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
+        !pipeline.RasterizationDisabled();
+    const Location gpl_flags_loc = create_info_loc.pNext(Struct::VkGraphicsPipelineLibraryCreateInfoEXT, Field::flags);
+    const VkGraphicsPipelineLibraryFlagsEXT lib_type = pipeline.graphics_lib_type;
+
+    // With fragment output state in the same library, pDepthStencilState and pMultisampleState can legally both be NULL
+    bool fragment_shader_state_undefined = false;
+    if ((lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) &&
+        !(lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) && pre_raster_needs_fragment_states) {
+        const bool has_fragment_shader = (pipeline.create_info_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) != 0;
+        const bool ds_state_dynamic =
+            IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) && pipeline.IsDepthStencilStateDynamic();
+        if (!has_fragment_shader && !pipeline.DepthStencilState() && !ds_state_dynamic &&
+            !pipeline.fragment_shader_state->ms_state && !ms_state_dynamic) {
+            fragment_shader_state_undefined = true;
+            const char* vuid = pipeline.pre_raster_state ? "VUID-VkGraphicsPipelineCreateInfo-flags-08903"
+                                                         : "VUID-VkGraphicsPipelineCreateInfo-flags-08904";
+            skip |= LogError(
+                vuid, device, gpl_flags_loc,
+                "(%s) includes VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT, but no fragment shader state is "
+                "defined (pStages has no fragment shader, and pDepthStencilState and pMultisampleState are both "
+                "NULL)%s.",
+                string_VkGraphicsPipelineLibraryFlagsEXT(lib_type).c_str(),
+                pipeline.pre_raster_state ? ", while the pre-rasterization shader state does not discard rasterization" : "");
+        }
+    }
+
+    bool fragment_output_state_undefined = false;
+    if ((lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) && pre_raster_needs_fragment_states) {
+        const bool cb_state_dynamic =
+            IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) && pipeline.IsColorBlendStateDynamic();
+        if (!pipeline.ColorBlendState() && !cb_state_dynamic && !pipeline.fragment_output_state->ms_state && !ms_state_dynamic) {
+            fragment_output_state_undefined = true;
+            const char* vuid = pipeline.pre_raster_state ? "VUID-VkGraphicsPipelineCreateInfo-flags-08906"
+                                                         : "VUID-VkGraphicsPipelineCreateInfo-flags-08907";
+            skip |= LogError(
+                vuid, device, gpl_flags_loc,
+                "(%s) includes VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT, but no fragment output "
+                "interface state is defined (pColorBlendState and pMultisampleState are both NULL)%s.",
+                string_VkGraphicsPipelineLibraryFlagsEXT(lib_type).c_str(),
+                pipeline.pre_raster_state ? ", while the pre-rasterization shader state does not discard rasterization" : "");
+        }
+    }
+
     const bool null_rp = pipeline.IsRenderPassNull();
     if (null_rp) {
-        if (!pipeline.DepthStencilState() && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
+        if (!fragment_shader_state_undefined && !pipeline.DepthStencilState() && pipeline.fragment_shader_state &&
+            !pipeline.fragment_output_state) {
             if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3)) {
                 skip |= LogError(
                     "VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device, create_info_loc.dot(Field::pDepthStencilState),
@@ -2633,7 +2697,8 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline
         }
     } else if (IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
         // if VK_KHR_dynamic_rendering is not enabled, can be null renderpass if using GPL
-        if (pipeline.OwnsLibState(pipeline.fragment_output_state) && !pipeline.MultisampleState()) {
+        if (!fragment_output_state_undefined && pipeline.OwnsLibState(pipeline.fragment_output_state) &&
+            !pipeline.MultisampleState()) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderpass-06631", device,
                              create_info_loc.dot(Field::pMultisampleState),
                              "is NULL, but pipeline is being created with fragment shader that uses samples.");
@@ -2641,29 +2706,23 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline
     }
 
     const auto& pipeline_ci = pipeline.GraphicsCreateInfo();
-    if (!pipeline_ci.pMultisampleState && pipeline.OwnsLibState(pipeline.fragment_output_state)) {
-        const bool dynamic_alpha_to_one =
-            pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) || !enabled_features.alphaToOne;
-        if (!IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ||
-            !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ||
-            !pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ||
-            !pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) || !dynamic_alpha_to_one) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026", device,
-                             create_info_loc.dot(Field::pMultisampleState),
-                             "is NULL."
-                             "\nIf the following are all set, it can be NULL"
-                             "\n - VK_EXT_extended_dynamic_state3 (%senabled)"
-                             "\n - VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT (%s)"
-                             "\n - VK_DYNAMIC_STATE_SAMPLE_MASK_EXT (%s)"
-                             "\n - VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT (%s)"
-                             "\n - VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT (%s) or enable alphaToOne feature (%s)\n",
-                             IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
-                             pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ? "set" : "not set",
-                             pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ? "set" : "not set",
-                             pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) ? "set" : "not set",
-                             pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) ? "set" : "not set",
-                             enabled_features.alphaToOne ? "VK_TRUE" : "VK_FALSE");
-        }
+    if (!fragment_output_state_undefined && !ms_state_dynamic && !pipeline_ci.pMultisampleState &&
+        pipeline.OwnsLibState(pipeline.fragment_output_state)) {
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-09026", device,
+                         create_info_loc.dot(Field::pMultisampleState),
+                         "is NULL."
+                         "\nIf the following are all set, it can be NULL"
+                         "\n - VK_EXT_extended_dynamic_state3 (%senabled)"
+                         "\n - VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT (%s)"
+                         "\n - VK_DYNAMIC_STATE_SAMPLE_MASK_EXT (%s)"
+                         "\n - VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT (%s)"
+                         "\n - VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT (%s) or enable alphaToOne feature (%s)\n",
+                         IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ? "" : "not ",
+                         pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) ? "set" : "not set",
+                         pipeline.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) ? "set" : "not set",
+                         pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) ? "set" : "not set",
+                         pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) ? "set" : "not set",
+                         enabled_features.alphaToOne ? "VK_TRUE" : "VK_FALSE");
     }
 
     if (!pipeline.RasterizationState()) {

@@ -2944,3 +2944,28 @@ TEST_F(PositiveGraphicsLibrary, DynamicRenderingLocalReadInputAttachmentIndex) {
     exe_pipe_ci.layout = pipeline_layout;
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
 }
+TEST_F(PositiveGraphicsLibrary, FragmentShaderStateNotRequiredWithDiscard) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9250");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pre_raster_lib.CreateGraphicsPipeline();
+
+    VkPipeline library = pre_raster_lib;
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = 1;
+    link_info.pLibraries = &library;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    frag_shader_lib.InitFragmentLibInfo(nullptr, &link_info);
+    frag_shader_lib.gp_ci_.stageCount = 0;
+    frag_shader_lib.gp_ci_.pMultisampleState = nullptr;
+    frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
+    frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+    frag_shader_lib.CreateGraphicsPipeline(false);
+}
