@@ -775,6 +775,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline& pipeline, 
                                  "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR to your intermediate pipeline?).");
             }
         }
+
+        if (pipeline.pre_raster_state && !pipeline.vertex_input_state && (pipeline.active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-08899", device, create_info_loc,
+                             "Attempting to link pipeline libraries with a vertex shader, but without a vertex input interface "
+                             "state (did you forget to add VK_PIPELINE_CREATE_LIBRARY_BIT_KHR to your intermediate pipeline?).");
+        }
     }
 
     if (pipeline.OwnsLibState(pipeline.fragment_shader_state) && !pipeline.OwnsLibState(pipeline.pre_raster_state) &&
