@@ -2811,3 +2811,507 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
+    TEST_DESCRIPTION("Copy of the GPU-AV BLAS validation shader (layers/gpuav/shaders/validation_cmd/blas.slang), run with valid data");
+    RETURN_IF_SKIP(CheckSlangSupport());
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
+
+    // Includes (common.h, build_acceleration_structures.h, error codes) are inlined, and error logging goes to a plain SSBO
+    const char* slang_shader = R"slang(
+        static const uint kErrorGroup_GpuPreBuildAccelerationStructures = 12;
+        static const uint kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex = 7;
+        static const uint kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X = 8;
+        static const uint kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y = 9;
+        static const uint kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z = 10;
+        static const uint kErrorSubCode_PreBuildAccelerationStructures_Transform = 11;
+        static const uint kErrorSubCode_PreBuildAccelerationStructures_VertexBufferActiveStatusUpdated = 13;
+        static const uint kErrorSubCode_PreBuildAccelerationStructures_AabbBufferActiveStatusUpdated = 14;
+
+        // [0] = error count, [1] = (group << 16) | sub_code of an error
+        RWStructuredBuffer<uint> error_buffer;
+
+        void GpuavLogError4(uint error_group, uint error_sub_code, uint dword_0, uint dword_1, uint dword_2, uint dword_3) {
+            InterlockedAdd(error_buffer[0], 1);
+            error_buffer[1] = (error_group << 16) | error_sub_code;
+        }
+
+        struct VkTransformMatrix {
+            float matrix[3][4];
+        };
+
+        static const uint kBLASValidationMode_triangles_indices = 0;
+        static const uint kBLASValidationMode_active_triangles = 1;
+        static const uint kBLASValidationMode_aabbs = 2;
+        static const uint kBLASValidationMode_transform_matrix = 3;
+
+        struct AccelerationStructureGeometryGPU {
+            uint64_t stride;
+            uint64_t index_buffer;
+            uint64_t index_buffer_copies;
+            uint64_t geometry_buffer;
+            float* geometry_x_components_copies;
+            uint64_t transform;
+            uint is_update_build;
+            uint geometry_type;
+            uint index_type;
+            uint vertex_format;
+            uint max_vertex;
+            uint is_array_of_pointers;
+
+            uint primitive_offset;
+            uint primitive_count;
+            uint first_vertex;
+            uint transform_offset;
+
+            uint geometry_i;
+            uint error_info_i;
+        };
+
+        struct AccelerationStructureGeometriesGPU {
+            uint count;
+            uint pad_;
+            AccelerationStructureGeometryGPU array[];
+        };
+
+        static const uint blas_validation_shader_wg_x = 64;
+        struct BLASValidationShaderPushData {
+            AccelerationStructureGeometriesGPU** last_build_as_geometries_gpu;
+            AccelerationStructureGeometryGPU* as_geometry_gpu;
+            uint validation_mode;
+        };
+
+        [vk::push_constant]
+        ConstantBuffer<BLASValidationShaderPushData> pc;
+
+        // From VkIndexType
+        static const uint VK_INDEX_TYPE_UINT16 = 0;
+        static const uint VK_INDEX_TYPE_UINT32 = 1;
+        static const uint VK_INDEX_TYPE_UINT8 = 1000265000;
+        static const uint VK_INDEX_TYPE_NONE_KHR = 1000165000;
+
+        // From VkFormat
+        static const uint VK_FORMAT_R32G32B32_SFLOAT = 106;
+
+        uint LoadIndex(uint64_t index_buffer, uint index_type, uint primitive_offset, uint i) {
+            if (index_type == VK_INDEX_TYPE_NONE_KHR) {
+                return i;
+            } else if (index_type == VK_INDEX_TYPE_UINT16) {
+                uint16_t* array_u16 = (uint16_t*)(index_buffer + primitive_offset);
+                return uint(array_u16[i]);
+            } else if (index_type == VK_INDEX_TYPE_UINT32) {
+                uint* array_u32 = (uint*)(index_buffer + primitive_offset);
+                return array_u32[i];
+            } else if (index_type == VK_INDEX_TYPE_UINT8) {
+                uint8_t* array_u8 = (uint8_t*)(index_buffer + primitive_offset);
+                return uint(array_u8[i]);
+            } else {
+                return 0;
+            }
+        }
+
+        void StoreIndex(uint8_t* index_buffer, uint i, uint index_type, uint primitive_offset, uint value) {
+            if (index_type == VK_INDEX_TYPE_UINT16) {
+                uint16_t* array_u16 = (uint16_t*)(index_buffer + primitive_offset);
+                array_u16[i] = uint16_t(value);
+            } else if (index_type == VK_INDEX_TYPE_UINT32) {
+                uint* array_u32 = (uint*)(index_buffer + primitive_offset);
+                array_u32[i] = value;
+            } else if (index_type == VK_INDEX_TYPE_UINT8) {
+                uint8_t* array_u8 = index_buffer + primitive_offset;
+                array_u8[i] = uint8_t(value);
+            }
+        }
+
+        float LoadVertexX(uint64_t vertices, uint64_t stride, uint index, uint format) {
+            float vertex_x = 0;
+
+            if (format == VK_FORMAT_R32G32B32_SFLOAT) {
+                float* array_f32 = (float*)(vertices + index * stride);
+                vertex_x = array_f32[0];
+            }
+
+            return vertex_x;
+        }
+
+        struct VkAabbPositionsKHR {
+            float minX;
+            float minY;
+            float minZ;
+            float maxX;
+            float maxY;
+            float maxZ;
+        };
+
+        [shader("compute")]
+        [numthreads(blas_validation_shader_wg_x, 1, 1)]
+        void main(uint3 thread_id: SV_DispatchThreadID) {
+            const uint gid = thread_id.x;
+
+            const uint error_info_i = pc.as_geometry_gpu->error_info_i;
+            const uint primitive_count = pc.as_geometry_gpu->primitive_count;
+
+            if (pc.validation_mode == kBLASValidationMode_triangles_indices) {
+                if (gid >= (3 * primitive_count)) {
+                    return;
+                }
+
+                uint64_t indices = pc.as_geometry_gpu->index_buffer;
+                if (indices == 0) {
+                    return;
+                }
+                const uint index_type = pc.as_geometry_gpu->index_type;
+                const uint primitive_offset = pc.as_geometry_gpu->primitive_offset;
+                const uint first_vertex = pc.as_geometry_gpu->first_vertex;
+                const uint max_vertex = pc.as_geometry_gpu->max_vertex;
+
+                const uint fetched_index = LoadIndex(indices, index_type, primitive_offset, gid);
+                if (max_vertex < (first_vertex + fetched_index)) {
+                    GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                                   kErrorSubCode_PreBuildAccelerationStructures_MaxFetchedIndex,
+                                   error_info_i,
+                                   gid,
+                                   fetched_index,
+                                   0);
+                }
+            } else if (pc.validation_mode == kBLASValidationMode_active_triangles) {
+                if (gid >= (3 * primitive_count)) {
+                    return;
+                }
+
+                if (pc.last_build_as_geometries_gpu == nullptr) {
+                    return;
+                }
+
+                AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
+                if (last_build == nullptr) {
+                    return;
+                }
+
+                const uint geom_i = pc.as_geometry_gpu->geometry_i;
+
+                if (geom_i >= last_build->count) {
+                    return;
+                }
+
+                if (last_build->array[geom_i].geometry_type != pc.as_geometry_gpu->geometry_type) {
+                    return;
+                }
+
+                if (pc.as_geometry_gpu->vertex_format != VK_FORMAT_R32G32B32_SFLOAT) {
+                    return;
+                }
+
+                if (pc.as_geometry_gpu->geometry_buffer == 0) {
+                    return;
+                }
+
+                uint64_t last_build_indices = last_build->array[geom_i].index_buffer_copies;
+                const uint last_build_index_type = last_build->array[geom_i].index_type;
+                float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
+
+                if (last_build_x_components == nullptr) {
+                    return;
+                }
+                if (last_build_index_type != VK_INDEX_TYPE_NONE_KHR && last_build_indices == 0) {
+                    return;
+                }
+
+                if (gid >= (3 * last_build->array[geom_i].primitive_count)) {
+                    return;
+                }
+
+                const uint fetched_index = LoadIndex(last_build_indices, last_build_index_type, 0, gid);
+
+                if (fetched_index > last_build->array[geom_i].max_vertex) {
+                    return;
+                }
+
+                if (fetched_index > pc.as_geometry_gpu->max_vertex) {
+                    return;
+                }
+
+                const uint64_t update_time_stride = pc.as_geometry_gpu->stride;
+                uint64_t update_time_vertex_buffer =
+                    pc.as_geometry_gpu->geometry_buffer + update_time_stride * pc.as_geometry_gpu->first_vertex;
+
+                if (pc.as_geometry_gpu->index_type == VK_INDEX_TYPE_NONE_KHR) {
+                    update_time_vertex_buffer = update_time_vertex_buffer + pc.as_geometry_gpu->primitive_offset;
+                }
+                const float update_time_vertex_x = LoadVertexX(
+                    update_time_vertex_buffer,
+                    update_time_stride, fetched_index,
+                    pc.as_geometry_gpu->vertex_format);
+                const bool is_update_time_vertex_nan = isnan(update_time_vertex_x);
+
+                const float build_time_vertex_x = last_build_x_components[fetched_index];
+                const bool is_build_time_vertex_nan = isnan(build_time_vertex_x);
+
+                if (is_update_time_vertex_nan != is_build_time_vertex_nan) {
+                    GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                                   kErrorSubCode_PreBuildAccelerationStructures_VertexBufferActiveStatusUpdated,
+                                   error_info_i,
+                                   gid,
+                                   fetched_index,
+                                   uint(is_build_time_vertex_nan));
+                }
+            } else if (pc.validation_mode == kBLASValidationMode_aabbs) {
+                if (gid >= primitive_count) {
+                    return;
+                }
+
+                if (pc.as_geometry_gpu->geometry_buffer == 0) {
+                    return;
+                }
+
+                const uint64_t aabb_i = gid;
+                VkAabbPositionsKHR* aabb = (VkAabbPositionsKHR*)(
+                    pc.as_geometry_gpu->geometry_buffer +
+                    uint64_t(pc.as_geometry_gpu->primitive_offset) + aabb_i * pc.as_geometry_gpu->stride);
+                if (aabb->minX > aabb->maxX) {
+                    GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                                   kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_X,
+                                   error_info_i,
+                                   gid,
+                                   asuint(aabb->minX),
+                                   asuint(aabb->maxX));
+                }
+
+                if (aabb->minY > aabb->maxY) {
+                    GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                                   kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Y,
+                                   error_info_i,
+                                   gid,
+                                   asuint(aabb->minY),
+                                   asuint(aabb->maxY));
+                }
+                if (aabb->minZ > aabb->maxZ) {
+                    GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                                   kErrorSubCode_PreBuildAccelerationStructures_MinMaxAabb_Z,
+                                   error_info_i,
+                                   gid,
+                                   asuint(aabb->minZ),
+                                   asuint(aabb->maxZ));
+                }
+
+                if (pc.as_geometry_gpu->is_update_build != 0) {
+                    if (pc.last_build_as_geometries_gpu == nullptr) {
+                        return;
+                    }
+
+                    AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
+                    if (last_build == nullptr) {
+                        return;
+                    }
+
+                    const uint geom_i = pc.as_geometry_gpu->geometry_i;
+
+                    if (geom_i >= last_build->count) {
+                        return;
+                    }
+
+                    if (last_build->array[geom_i].geometry_type != pc.as_geometry_gpu->geometry_type) {
+                        return;
+                    }
+
+                    float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
+
+                    if (last_build_x_components == nullptr) {
+                        return;
+                    }
+
+                    if (aabb_i >= last_build->array[geom_i].primitive_count) {
+                        return;
+                    }
+
+                    VkAabbPositionsKHR* update_time_aabb = aabb;
+                    const bool is_update_time_aabb_x_nan = isnan(update_time_aabb->minX);
+
+                    const float build_time_vertex_x = last_build_x_components[uint(aabb_i)];
+                    const bool is_build_time_aabb_x_nan = isnan(build_time_vertex_x);
+
+                    if (is_update_time_aabb_x_nan != is_build_time_aabb_x_nan) {
+                        GpuavLogError4(
+                            kErrorGroup_GpuPreBuildAccelerationStructures,
+                            kErrorSubCode_PreBuildAccelerationStructures_AabbBufferActiveStatusUpdated,
+                            error_info_i,
+                            gid,
+                            uint(is_build_time_aabb_x_nan),
+                            0);
+                    }
+                }
+            } else if (pc.validation_mode == kBLASValidationMode_transform_matrix) {
+                if (gid > 0) {
+                    return;
+                }
+
+                VkTransformMatrix* transform = (VkTransformMatrix*)(
+                    pc.as_geometry_gpu->transform +
+                    pc.as_geometry_gpu->transform_offset);
+                const float3x3 transform3x3 = float3x3(
+                    transform->matrix[0][0], transform->matrix[0][1], transform->matrix[0][2],
+                    transform->matrix[1][0], transform->matrix[1][1], transform->matrix[1][2],
+                    transform->matrix[2][0], transform->matrix[2][1], transform->matrix[2][2]
+                );
+                const float det = determinant(transform3x3);
+                if (abs(det) < 1e-6) {
+                    GpuavLogError4(kErrorGroup_GpuPreBuildAccelerationStructures,
+                                   kErrorSubCode_PreBuildAccelerationStructures_Transform,
+                                   error_info_i,
+                                   gid,
+                                   0,
+                                   0);
+                }
+            }
+        }
+    )slang";
+
+    // Host side mirror of the shader structs
+    struct AccelerationStructureGeometryGPU {
+        uint64_t stride;
+        uint64_t index_buffer;
+        uint64_t index_buffer_copies;
+        uint64_t geometry_buffer;
+        uint64_t geometry_x_components_copies;
+        uint64_t transform;
+        uint32_t is_update_build;
+        uint32_t geometry_type;
+        uint32_t index_type;
+        uint32_t vertex_format;
+        uint32_t max_vertex;
+        uint32_t is_array_of_pointers;
+        uint32_t primitive_offset;
+        uint32_t primitive_count;
+        uint32_t first_vertex;
+        uint32_t transform_offset;
+        uint32_t geometry_i;
+        uint32_t error_info_i;
+    };
+    struct AccelerationStructureGeometriesGPU {
+        uint32_t count;
+        uint32_t pad_;
+        AccelerationStructureGeometryGPU array[2];
+    };
+    struct BLASValidationShaderPushData {
+        VkDeviceAddress last_build_as_geometries_gpu;
+        VkDeviceAddress as_geometry_gpu;
+        uint32_t validation_mode;
+    };
+
+    // One triangle
+    vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), 0, vkt::device_address);
+    auto index_ptr = static_cast<uint32_t*>(index_buffer.Memory().Map());
+    index_ptr[0] = 0;
+    index_ptr[1] = 1;
+    index_ptr[2] = 2;
+
+    const float vertices[9] = {0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+    vkt::Buffer vertex_buffer(*m_device, sizeof(vertices), 0, vkt::device_address);
+    memcpy(vertex_buffer.Memory().Map(), vertices, sizeof(vertices));
+
+    vkt::Buffer vertex_x_copies(*m_device, 3 * sizeof(float), 0, vkt::device_address);
+    auto vertex_x_ptr = static_cast<float*>(vertex_x_copies.Memory().Map());
+    vertex_x_ptr[0] = vertices[0];
+    vertex_x_ptr[1] = vertices[3];
+    vertex_x_ptr[2] = vertices[6];
+
+    // One AABB
+    const VkAabbPositionsKHR aabb = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+    vkt::Buffer aabb_buffer(*m_device, sizeof(aabb), 0, vkt::device_address);
+    memcpy(aabb_buffer.Memory().Map(), &aabb, sizeof(aabb));
+
+    vkt::Buffer aabb_x_copies(*m_device, sizeof(float), 0, vkt::device_address);
+    *static_cast<float*>(aabb_x_copies.Memory().Map()) = aabb.minX;
+
+    // Identity transform
+    const VkTransformMatrixKHR transform = {{{1.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}}};
+    vkt::Buffer transform_buffer(*m_device, sizeof(transform), 0, vkt::device_address);
+    memcpy(transform_buffer.Memory().Map(), &transform, sizeof(transform));
+
+    AccelerationStructureGeometryGPU triangles_geometry{};
+    triangles_geometry.stride = 3 * sizeof(float);
+    triangles_geometry.index_buffer = index_buffer.Address();
+    triangles_geometry.index_buffer_copies = index_buffer.Address();
+    triangles_geometry.geometry_buffer = vertex_buffer.Address();
+    triangles_geometry.geometry_x_components_copies = vertex_x_copies.Address();
+    triangles_geometry.transform = transform_buffer.Address();
+    triangles_geometry.is_update_build = 1;
+    triangles_geometry.geometry_type = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    triangles_geometry.index_type = VK_INDEX_TYPE_UINT32;
+    triangles_geometry.vertex_format = VK_FORMAT_R32G32B32_SFLOAT;
+    triangles_geometry.max_vertex = 2;
+    triangles_geometry.primitive_count = 1;
+    triangles_geometry.geometry_i = 0;
+
+    AccelerationStructureGeometryGPU aabbs_geometry{};
+    aabbs_geometry.stride = sizeof(VkAabbPositionsKHR);
+    aabbs_geometry.geometry_buffer = aabb_buffer.Address();
+    aabbs_geometry.geometry_x_components_copies = aabb_x_copies.Address();
+    aabbs_geometry.is_update_build = 1;
+    aabbs_geometry.geometry_type = VK_GEOMETRY_TYPE_AABBS_KHR;
+    aabbs_geometry.index_type = VK_INDEX_TYPE_NONE_KHR;
+    aabbs_geometry.primitive_count = 1;
+    aabbs_geometry.geometry_i = 1;
+
+    vkt::Buffer triangles_geometry_buffer(*m_device, sizeof(triangles_geometry), 0, vkt::device_address);
+    memcpy(triangles_geometry_buffer.Memory().Map(), &triangles_geometry, sizeof(triangles_geometry));
+
+    vkt::Buffer aabbs_geometry_buffer(*m_device, sizeof(aabbs_geometry), 0, vkt::device_address);
+    memcpy(aabbs_geometry_buffer.Memory().Map(), &aabbs_geometry, sizeof(aabbs_geometry));
+
+    // Last build state matches the current one, so no error is expected
+    AccelerationStructureGeometriesGPU last_build{};
+    last_build.count = 2;
+    last_build.array[0] = triangles_geometry;
+    last_build.array[1] = aabbs_geometry;
+    vkt::Buffer last_build_buffer(*m_device, sizeof(last_build), 0, vkt::device_address);
+    memcpy(last_build_buffer.Memory().Map(), &last_build, sizeof(last_build));
+
+    vkt::Buffer last_build_ptr_buffer(*m_device, sizeof(VkDeviceAddress), 0, vkt::device_address);
+    *static_cast<VkDeviceAddress*>(last_build_ptr_buffer.Memory().Map()) = last_build_buffer.Address();
+
+    vkt::Buffer error_buffer(*m_device, 2 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    auto error_ptr = static_cast<uint32_t*>(error_buffer.Memory().Map());
+    error_ptr[0] = 0;
+    error_ptr[1] = 0;
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(BLASValidationShaderPushData)};
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
+
+    descriptor_set.WriteDescriptorBufferInfo(0, error_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+
+    const auto dispatch = [&](const vkt::Buffer& geometry, uint32_t validation_mode) {
+        BLASValidationShaderPushData push_data{};
+        push_data.last_build_as_geometries_gpu = last_build_ptr_buffer.Address();
+        push_data.as_geometry_gpu = geometry.Address();
+        push_data.validation_mode = validation_mode;
+        vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_data), &push_data);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    };
+    dispatch(triangles_geometry_buffer, 0);  // kBLASValidationMode_triangles_indices
+    dispatch(triangles_geometry_buffer, 1);  // kBLASValidationMode_active_triangles
+    dispatch(aabbs_geometry_buffer, 2);      // kBLASValidationMode_aabbs
+    dispatch(triangles_geometry_buffer, 3);  // kBLASValidationMode_transform_matrix
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    ASSERT_EQ(error_ptr[0], 0u);
+}
