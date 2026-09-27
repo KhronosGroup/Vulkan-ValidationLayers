@@ -2839,7 +2839,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         };
 
         struct BLASValidationShaderPushData {
-            AccelerationStructureGeometriesGPU** last_build_as_geometries_gpu;
+            AccelerationStructureGeometriesGPU* last_build_as_geometries_gpu;
             AccelerationStructureGeometryGPU* as_geometry_gpu;
         };
 
@@ -2850,7 +2850,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         [numthreads(64, 1, 1)]
         void main(uint3 thread_id: SV_DispatchThreadID) {
             const uint gid = thread_id.x;
-            AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
+            AccelerationStructureGeometriesGPU* last_build = pc.last_build_as_geometries_gpu;
             const uint geom_i = pc.as_geometry_gpu->geometry_i;
             if (geom_i >= last_build->count) {
                 return;
@@ -2910,8 +2910,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
 
     vkt::Buffer triangles_geometry_buffer = make_buffer(&triangles_geometry, sizeof(triangles_geometry));
     vkt::Buffer last_build_buffer = make_buffer(&last_build, sizeof(last_build));
-    const VkDeviceAddress last_build_address = last_build_buffer.Address();
-    vkt::Buffer last_build_ptr_buffer = make_buffer(&last_build_address, sizeof(last_build_address));
 
     vkt::Buffer error_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto error_ptr = static_cast<uint32_t*>(error_buffer.Memory().Map());
@@ -2934,7 +2932,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
     BLASValidationShaderPushData push_data{};
-    push_data.last_build_as_geometries_gpu = last_build_ptr_buffer.Address();
+    push_data.last_build_as_geometries_gpu = last_build_buffer.Address();
     push_data.as_geometry_gpu = triangles_geometry_buffer.Address();
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_data), &push_data);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
