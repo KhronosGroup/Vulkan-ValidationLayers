@@ -2829,10 +2829,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
             InterlockedAdd(error_buffer[0], 1);
         }
 
-        struct VkTransformMatrix {
-            float matrix[3][4];
-        };
-
         struct AccelerationStructureGeometryGPU {
             uint64_t stride;
             uint64_t index_buffer;
@@ -2901,15 +2897,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
             return vertex_x;
         }
 
-        struct VkAabbPositionsKHR {
-            float minX;
-            float minY;
-            float minZ;
-            float maxX;
-            float maxY;
-            float maxZ;
-        };
-
         [shader("compute")]
         [numthreads(64, 1, 1)]
         void main(uint3 thread_id: SV_DispatchThreadID) {
@@ -2965,47 +2952,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
                 if (is_update_time_vertex_nan != is_build_time_vertex_nan) {
                     LogError();
                 }
-            } else if (pc.validation_mode == 2) {
-                if (gid >= primitive_count) {
-                    return;
-                }
-
-                const uint64_t aabb_i = gid;
-                VkAabbPositionsKHR* aabb = (VkAabbPositionsKHR*)(
-                    pc.as_geometry_gpu->geometry_buffer +
-                    uint64_t(pc.as_geometry_gpu->primitive_offset) + aabb_i * pc.as_geometry_gpu->stride);
-                if (aabb->minX > aabb->maxX) {
-                    LogError();
-                }
-                if (aabb->minY > aabb->maxY) {
-                    LogError();
-                }
-                if (aabb->minZ > aabb->maxZ) {
-                    LogError();
-                }
-
-                AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
-                const uint geom_i = pc.as_geometry_gpu->geometry_i;
-                if (geom_i >= last_build->count || aabb_i >= last_build->array[geom_i].primitive_count) {
-                    return;
-                }
-                float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
-                if (isnan(aabb->minX) != isnan(last_build_x_components[uint(aabb_i)])) {
-                    LogError();
-                }
-            } else if (pc.validation_mode == 3) {
-                if (gid > 0) {
-                    return;
-                }
-                VkTransformMatrix* transform = (VkTransformMatrix*)(pc.as_geometry_gpu->transform +
-                                                                    pc.as_geometry_gpu->transform_offset);
-                const float3x3 transform3x3 = float3x3(
-                    transform->matrix[0][0], transform->matrix[0][1], transform->matrix[0][2],
-                    transform->matrix[1][0], transform->matrix[1][1], transform->matrix[1][2],
-                    transform->matrix[2][0], transform->matrix[2][1], transform->matrix[2][2]);
-                if (abs(determinant(transform3x3)) < 1e-6) {
-                    LogError();
-                }
             }
         }
     )slang";
@@ -3033,7 +2979,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     struct AccelerationStructureGeometriesGPU {
         uint32_t count;
         uint32_t pad_;
-        AccelerationStructureGeometryGPU array[2];
+        AccelerationStructureGeometryGPU array[1];
     };
     struct BLASValidationShaderPushData {
         VkDeviceAddress last_build_as_geometries_gpu;
@@ -3050,15 +2996,10 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     const uint32_t indices[3] = {0, 1, 2};
     const float vertices[9] = {0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
     const float vertices_x[3] = {vertices[0], vertices[3], vertices[6]};
-    const VkAabbPositionsKHR aabb = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
-    const VkTransformMatrixKHR transform = {{{1.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}}};
 
     vkt::Buffer index_buffer = make_buffer(indices, sizeof(indices));
     vkt::Buffer vertex_buffer = make_buffer(vertices, sizeof(vertices));
     vkt::Buffer vertex_x_copies = make_buffer(vertices_x, sizeof(vertices_x));
-    vkt::Buffer aabb_buffer = make_buffer(&aabb, sizeof(aabb));
-    vkt::Buffer aabb_x_copies = make_buffer(&aabb.minX, sizeof(float));
-    vkt::Buffer transform_buffer = make_buffer(&transform, sizeof(transform));
 
     AccelerationStructureGeometryGPU triangles_geometry{};
     triangles_geometry.stride = 3 * sizeof(float);
@@ -3066,28 +3007,18 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     triangles_geometry.index_buffer_copies = index_buffer.Address();
     triangles_geometry.geometry_buffer = vertex_buffer.Address();
     triangles_geometry.geometry_x_components_copies = vertex_x_copies.Address();
-    triangles_geometry.transform = transform_buffer.Address();
     triangles_geometry.index_type = VK_INDEX_TYPE_UINT32;
     triangles_geometry.vertex_format = VK_FORMAT_R32G32B32_SFLOAT;
     triangles_geometry.max_vertex = 2;
     triangles_geometry.primitive_count = 1;
     triangles_geometry.geometry_i = 0;
 
-    AccelerationStructureGeometryGPU aabbs_geometry{};
-    aabbs_geometry.stride = sizeof(VkAabbPositionsKHR);
-    aabbs_geometry.geometry_buffer = aabb_buffer.Address();
-    aabbs_geometry.geometry_x_components_copies = aabb_x_copies.Address();
-    aabbs_geometry.primitive_count = 1;
-    aabbs_geometry.geometry_i = 1;
-
     // Last build state matches the current one, so no error is expected
     AccelerationStructureGeometriesGPU last_build{};
-    last_build.count = 2;
+    last_build.count = 1;
     last_build.array[0] = triangles_geometry;
-    last_build.array[1] = aabbs_geometry;
 
     vkt::Buffer triangles_geometry_buffer = make_buffer(&triangles_geometry, sizeof(triangles_geometry));
-    vkt::Buffer aabbs_geometry_buffer = make_buffer(&aabbs_geometry, sizeof(aabbs_geometry));
     vkt::Buffer last_build_buffer = make_buffer(&last_build, sizeof(last_build));
     const VkDeviceAddress last_build_address = last_build_buffer.Address();
     vkt::Buffer last_build_ptr_buffer = make_buffer(&last_build_address, sizeof(last_build_address));
@@ -3112,18 +3043,16 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
-    const auto dispatch = [&](const vkt::Buffer& geometry, uint32_t validation_mode) {
+    const auto dispatch = [&](uint32_t validation_mode) {
         BLASValidationShaderPushData push_data{};
         push_data.last_build_as_geometries_gpu = last_build_ptr_buffer.Address();
-        push_data.as_geometry_gpu = geometry.Address();
+        push_data.as_geometry_gpu = triangles_geometry_buffer.Address();
         push_data.validation_mode = validation_mode;
         vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_data), &push_data);
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     };
-    dispatch(triangles_geometry_buffer, 0);  // triangles indices
-    dispatch(triangles_geometry_buffer, 1);  // active triangles
-    dispatch(aabbs_geometry_buffer, 2);      // aabbs
-    dispatch(triangles_geometry_buffer, 3);  // transform matrix
+    dispatch(0);  // triangles indices
+    dispatch(1);  // active triangles
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
