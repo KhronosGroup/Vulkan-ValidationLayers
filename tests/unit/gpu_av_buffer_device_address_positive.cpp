@@ -2815,11 +2815,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
 TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     TEST_DESCRIPTION("Copy of the GPU-AV BLAS validation shader (layers/gpuav/shaders/validation_cmd/blas.slang), run with valid data");
     RETURN_IF_SKIP(CheckSlangSupport());
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredFeature(vkt::Feature::shaderInt16);
-    AddRequiredFeature(vkt::Feature::shaderInt8);
-    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
-    AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
 
     const char* slang_shader = R"slang(
@@ -2865,28 +2860,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         [vk::push_constant]
         ConstantBuffer<BLASValidationShaderPushData> pc;
 
-        static const uint VK_INDEX_TYPE_UINT16 = 0;
-        static const uint VK_INDEX_TYPE_UINT32 = 1;
-        static const uint VK_INDEX_TYPE_UINT8 = 1000265000;
-        static const uint VK_INDEX_TYPE_NONE_KHR = 1000165000;
         static const uint VK_FORMAT_R32G32B32_SFLOAT = 106;
-
-        uint LoadIndex(uint64_t index_buffer, uint index_type, uint primitive_offset, uint i) {
-            if (index_type == VK_INDEX_TYPE_NONE_KHR) {
-                return i;
-            } else if (index_type == VK_INDEX_TYPE_UINT16) {
-                uint16_t* array_u16 = (uint16_t*)(index_buffer + primitive_offset);
-                return uint(array_u16[i]);
-            } else if (index_type == VK_INDEX_TYPE_UINT32) {
-                uint* array_u32 = (uint*)(index_buffer + primitive_offset);
-                return array_u32[i];
-            } else if (index_type == VK_INDEX_TYPE_UINT8) {
-                uint8_t* array_u8 = (uint8_t*)(index_buffer + primitive_offset);
-                return uint(array_u8[i]);
-            } else {
-                return 0;
-            }
-        }
 
         float LoadVertexX(uint64_t vertices, uint64_t stride, uint index, uint format) {
             float vertex_x = 0;
@@ -2911,14 +2885,13 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
                 return;
             }
 
-            uint64_t last_build_indices = last_build->array[geom_i].index_buffer_copies;
-            const uint last_build_index_type = last_build->array[geom_i].index_type;
+            uint* last_build_indices = (uint*)last_build->array[geom_i].index_buffer_copies;
             float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
             if (gid >= (3 * last_build->array[geom_i].primitive_count)) {
                 return;
             }
 
-            const uint fetched_index = LoadIndex(last_build_indices, last_build_index_type, 0, gid);
+            const uint fetched_index = last_build_indices[gid];
             if (fetched_index > last_build->array[geom_i].max_vertex) {
                 return;
             }
@@ -2989,7 +2962,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     triangles_geometry.index_buffer_copies = index_buffer.Address();
     triangles_geometry.geometry_buffer = vertex_buffer.Address();
     triangles_geometry.geometry_x_components_copies = vertex_x_copies.Address();
-    triangles_geometry.index_type = VK_INDEX_TYPE_UINT32;
     triangles_geometry.vertex_format = VK_FORMAT_R32G32B32_SFLOAT;
     triangles_geometry.max_vertex = 2;
     triangles_geometry.primitive_count = 1;
