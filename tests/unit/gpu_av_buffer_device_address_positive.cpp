@@ -2902,56 +2902,39 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         void main(uint3 thread_id: SV_DispatchThreadID) {
             const uint gid = thread_id.x;
             const uint primitive_count = pc.as_geometry_gpu->primitive_count;
+            if (gid >= (3 * primitive_count)) {
+                return;
+            }
+            AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
+            const uint geom_i = pc.as_geometry_gpu->geometry_i;
+            if (geom_i >= last_build->count) {
+                return;
+            }
 
-            if (pc.validation_mode == 0) {
-                if (gid >= (3 * primitive_count)) {
-                    return;
-                }
-                uint64_t indices = pc.as_geometry_gpu->index_buffer;
-                const uint index_type = pc.as_geometry_gpu->index_type;
-                const uint primitive_offset = pc.as_geometry_gpu->primitive_offset;
-                const uint first_vertex = pc.as_geometry_gpu->first_vertex;
-                const uint max_vertex = pc.as_geometry_gpu->max_vertex;
+            uint64_t last_build_indices = last_build->array[geom_i].index_buffer_copies;
+            const uint last_build_index_type = last_build->array[geom_i].index_type;
+            float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
+            if (gid >= (3 * last_build->array[geom_i].primitive_count)) {
+                return;
+            }
 
-                const uint fetched_index = LoadIndex(indices, index_type, primitive_offset, gid);
-                if (max_vertex < (first_vertex + fetched_index)) {
-                    LogError();
-                }
-            } else if (pc.validation_mode == 1) {
-                if (gid >= (3 * primitive_count)) {
-                    return;
-                }
-                AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
-                const uint geom_i = pc.as_geometry_gpu->geometry_i;
-                if (geom_i >= last_build->count) {
-                    return;
-                }
+            const uint fetched_index = LoadIndex(last_build_indices, last_build_index_type, 0, gid);
+            if (fetched_index > last_build->array[geom_i].max_vertex) {
+                return;
+            }
+            if (fetched_index > pc.as_geometry_gpu->max_vertex) {
+                return;
+            }
 
-                uint64_t last_build_indices = last_build->array[geom_i].index_buffer_copies;
-                const uint last_build_index_type = last_build->array[geom_i].index_type;
-                float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
-                if (gid >= (3 * last_build->array[geom_i].primitive_count)) {
-                    return;
-                }
-
-                const uint fetched_index = LoadIndex(last_build_indices, last_build_index_type, 0, gid);
-                if (fetched_index > last_build->array[geom_i].max_vertex) {
-                    return;
-                }
-                if (fetched_index > pc.as_geometry_gpu->max_vertex) {
-                    return;
-                }
-
-                const uint64_t update_time_stride = pc.as_geometry_gpu->stride;
-                const uint64_t update_time_vertex_buffer =
-                    pc.as_geometry_gpu->geometry_buffer + update_time_stride * pc.as_geometry_gpu->first_vertex;
-                const float update_time_vertex_x = LoadVertexX(update_time_vertex_buffer, update_time_stride, fetched_index,
-                                                               pc.as_geometry_gpu->vertex_format);
-                const bool is_update_time_vertex_nan = isnan(update_time_vertex_x);
-                const bool is_build_time_vertex_nan = isnan(last_build_x_components[fetched_index]);
-                if (is_update_time_vertex_nan != is_build_time_vertex_nan) {
-                    LogError();
-                }
+            const uint64_t update_time_stride = pc.as_geometry_gpu->stride;
+            const uint64_t update_time_vertex_buffer =
+                pc.as_geometry_gpu->geometry_buffer + update_time_stride * pc.as_geometry_gpu->first_vertex;
+            const float update_time_vertex_x = LoadVertexX(update_time_vertex_buffer, update_time_stride, fetched_index,
+                                                           pc.as_geometry_gpu->vertex_format);
+            const bool is_update_time_vertex_nan = isnan(update_time_vertex_x);
+            const bool is_build_time_vertex_nan = isnan(last_build_x_components[fetched_index]);
+            if (is_update_time_vertex_nan != is_build_time_vertex_nan) {
+                LogError();
             }
         }
     )slang";
@@ -3003,7 +2986,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
 
     AccelerationStructureGeometryGPU triangles_geometry{};
     triangles_geometry.stride = 3 * sizeof(float);
-    triangles_geometry.index_buffer = index_buffer.Address();
     triangles_geometry.index_buffer_copies = index_buffer.Address();
     triangles_geometry.geometry_buffer = vertex_buffer.Address();
     triangles_geometry.geometry_x_components_copies = vertex_x_copies.Address();
@@ -3043,16 +3025,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
-    const auto dispatch = [&](uint32_t validation_mode) {
-        BLASValidationShaderPushData push_data{};
-        push_data.last_build_as_geometries_gpu = last_build_ptr_buffer.Address();
-        push_data.as_geometry_gpu = triangles_geometry_buffer.Address();
-        push_data.validation_mode = validation_mode;
-        vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_data), &push_data);
-        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
-    };
-    dispatch(0);  // triangles indices
-    dispatch(1);  // active triangles
+    BLASValidationShaderPushData push_data{};
+    push_data.last_build_as_geometries_gpu = last_build_ptr_buffer.Address();
+    push_data.as_geometry_gpu = triangles_geometry_buffer.Address();
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_data), &push_data);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
