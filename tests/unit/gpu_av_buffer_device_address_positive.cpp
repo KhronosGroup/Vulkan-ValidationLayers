@@ -2813,9 +2813,13 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
-    TEST_DESCRIPTION("Copy of the GPU-AV BLAS validation shader (layers/gpuav/shaders/validation_cmd/blas.slang), run with valid data");
     RETURN_IF_SKIP(CheckSlangSupport());
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+
+    RETURN_IF_SKIP(Init());
 
     const char* slang_shader = R"slang(
         RWStructuredBuffer<uint> error_buffer;
@@ -2926,17 +2930,4 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     pipe.cs_ = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    BLASValidationShaderPushData push_data{};
-    push_data.last_build_as_geometries_gpu = last_build_buffer.Address();
-    push_data.as_geometry_gpu = triangles_geometry_buffer.Address();
-    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_data), &push_data);
-    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
-    m_command_buffer.End();
-
-    m_default_queue->SubmitAndWait(m_command_buffer);
 }
