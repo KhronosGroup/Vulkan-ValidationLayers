@@ -115,6 +115,11 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
 
     const VkAccessFlags2 all = vvl::kU64Max;  // core validation is responsible for detecting undefined flags.
     VkAccessFlags2 allowed = 0;
+    // Multisample resolve operations use the color attachment accesses even for depth/stencil attachments. The multisample
+    // attachment is only read, so it can be in a read-only layout, while the single sample attachment is also written.
+    // https://docs.vulkan.org/spec/latest/chapters/renderpass.html#renderpass-resolve-operations
+    const VkAccessFlags2 resolve_read_access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    const VkAccessFlags2 resolve_access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     // Combinations taken from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2918
     switch (layout) {
@@ -129,12 +134,12 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
                       VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
             break;
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             break;
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
             allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                       VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
             break;
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
             allowed = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
@@ -154,37 +159,39 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
             if (aspect & VK_IMAGE_ASPECT_DEPTH_BIT) {
                 allowed |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                            VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                           VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+                           VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
             }
             if (aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
-                allowed |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                allowed |=
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             }
             break;
         case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
             if (aspect & VK_IMAGE_ASPECT_DEPTH_BIT) {
-                allowed |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                allowed |=
+                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             }
             if (aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
                 allowed |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                            VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                           VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+                           VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
             }
             break;
         case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
-            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             break;
         case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
             allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                       VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
             break;
         case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
-            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             break;
         case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
             allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                       VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
             break;
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             allowed = VK_ACCESS_NONE;  // PR table says "Must be 0"
