@@ -1484,6 +1484,50 @@ TEST_F(NegativeBestPractices, ImageMemoryBarrierAccessLayoutCombinations) {
     }
 }
 
+TEST_F(NegativeBestPractices, DepthStencilReadOnlyResolveWrite) {
+    TEST_DESCRIPTION("Resolves only read from depth/stencil attachments in read-only layouts, so writes are still reported");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+    vkt::Image image(*m_device, 32u, 32u, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+    const VkImageAspectFlags depth = VK_IMAGE_ASPECT_DEPTH_BIT;
+    const VkImageAspectFlags stencil = VK_IMAGE_ASPECT_STENCIL_BIT;
+    struct TestCase {
+        VkImageLayout layout;
+        VkImageAspectFlags aspect;
+    };
+    const TestCase test_cases[] = {
+        {VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, depth | stencil},
+        {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, depth},
+        {VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, stencil},
+        {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, depth},
+        {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, stencil},
+    };
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.image = image;
+    barrier.subresourceRange = {0u, 0u, 1u, 0u, 1u};
+
+    m_command_buffer.Begin();
+    for (const auto& test_case : test_cases) {
+        barrier.oldLayout = test_case.layout;
+        barrier.newLayout = test_case.layout;
+        barrier.subresourceRange.aspectMask = test_case.aspect;
+        m_errorMonitor->SetDesiredWarning("BestPractices-ImageBarrierAccessLayout");
+        m_command_buffer.Barrier(barrier);
+        m_errorMonitor->VerifyFound();
+    }
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeBestPractices, NonSimultaneousSecondaryMarksPrimary) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
