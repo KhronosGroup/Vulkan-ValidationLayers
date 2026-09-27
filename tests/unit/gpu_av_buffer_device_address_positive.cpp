@@ -2853,25 +2853,12 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         [shader("compute")]
         [numthreads(64, 1, 1)]
         void main(uint3 thread_id: SV_DispatchThreadID) {
-            const uint gid = thread_id.x;
             AccelerationStructureGeometriesGPU* last_build = pc.last_build_as_geometries_gpu;
             const uint geom_i = pc.as_geometry_gpu->geometry_i;
             if (geom_i >= last_build->count) {
                 return;
             }
-
-            uint* last_build_indices = (uint*)last_build->array[geom_i].index_buffer_copies;
-            if (gid >= (3 * last_build->array[geom_i].primitive_count)) {
-                return;
-            }
-
-            const uint fetched_index = last_build_indices[gid];
-            if (fetched_index > last_build->array[geom_i].max_vertex) {
-                LogError();
-            }
-            if (fetched_index > pc.as_geometry_gpu->max_vertex) {
-                LogError();
-            }
+            LogError();
         }
     )slang";
 
@@ -2898,16 +2885,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         return buffer;
     };
 
-    const uint32_t indices[3] = {0, 1, 2};
-    vkt::Buffer index_buffer = make_buffer(indices, sizeof(indices));
-
     AccelerationStructureGeometryGPU triangles_geometry{};
-    triangles_geometry.index_buffer_copies = index_buffer.Address();
-    triangles_geometry.max_vertex = 2;
-    triangles_geometry.primitive_count = 1;
     triangles_geometry.geometry_i = 0;
 
-    // Last build state matches the current one, so no error is expected
     AccelerationStructureGeometriesGPU last_build{};
     last_build.count = 1;
     last_build.array[0] = triangles_geometry;
