@@ -2825,24 +2825,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         }
 
         struct AccelerationStructureGeometryGPU {
-            uint64_t stride;
-            uint64_t index_buffer;
             uint64_t index_buffer_copies;
-            uint64_t geometry_buffer;
-            float* geometry_x_components_copies;
-            uint64_t transform;
-            uint is_update_build;
-            uint geometry_type;
-            uint index_type;
-            uint vertex_format;
             uint max_vertex;
-            uint is_array_of_pointers;
-            uint primitive_offset;
             uint primitive_count;
-            uint first_vertex;
-            uint transform_offset;
             uint geometry_i;
-            uint error_info_i;
+            uint pad_;
         };
 
         struct AccelerationStructureGeometriesGPU {
@@ -2854,7 +2841,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         struct BLASValidationShaderPushData {
             AccelerationStructureGeometriesGPU** last_build_as_geometries_gpu;
             AccelerationStructureGeometryGPU* as_geometry_gpu;
-            uint validation_mode;
         };
 
         [vk::push_constant]
@@ -2864,10 +2850,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
         [numthreads(64, 1, 1)]
         void main(uint3 thread_id: SV_DispatchThreadID) {
             const uint gid = thread_id.x;
-            const uint primitive_count = pc.as_geometry_gpu->primitive_count;
-            if (gid >= (3 * primitive_count)) {
-                return;
-            }
             AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
             const uint geom_i = pc.as_geometry_gpu->geometry_i;
             if (geom_i >= last_build->count) {
@@ -2890,24 +2872,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     )slang";
 
     struct AccelerationStructureGeometryGPU {
-        uint64_t stride;
-        uint64_t index_buffer;
         uint64_t index_buffer_copies;
-        uint64_t geometry_buffer;
-        uint64_t geometry_x_components_copies;
-        uint64_t transform;
-        uint32_t is_update_build;
-        uint32_t geometry_type;
-        uint32_t index_type;
-        uint32_t vertex_format;
         uint32_t max_vertex;
-        uint32_t is_array_of_pointers;
-        uint32_t primitive_offset;
         uint32_t primitive_count;
-        uint32_t first_vertex;
-        uint32_t transform_offset;
         uint32_t geometry_i;
-        uint32_t error_info_i;
+        uint32_t pad_;
     };
     struct AccelerationStructureGeometriesGPU {
         uint32_t count;
@@ -2917,7 +2886,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     struct BLASValidationShaderPushData {
         VkDeviceAddress last_build_as_geometries_gpu;
         VkDeviceAddress as_geometry_gpu;
-        uint32_t validation_mode;
     };
 
     const auto make_buffer = [this](const void* data, size_t size) {
