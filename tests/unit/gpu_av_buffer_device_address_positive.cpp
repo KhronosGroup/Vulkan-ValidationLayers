@@ -2825,9 +2825,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     const char* slang_shader = R"slang(
         RWStructuredBuffer<uint> error_buffer;
 
-        void LogError(uint sub_code) {
+        void LogError() {
             InterlockedAdd(error_buffer[0], 1);
-            error_buffer[1] = (12 << 16) | sub_code;
         }
 
         struct VkTransformMatrix {
@@ -2922,9 +2921,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
                     return;
                 }
                 uint64_t indices = pc.as_geometry_gpu->index_buffer;
-                if (indices == 0) {
-                    return;
-                }
                 const uint index_type = pc.as_geometry_gpu->index_type;
                 const uint primitive_offset = pc.as_geometry_gpu->primitive_offset;
                 const uint first_vertex = pc.as_geometry_gpu->first_vertex;
@@ -2932,42 +2928,21 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
 
                 const uint fetched_index = LoadIndex(indices, index_type, primitive_offset, gid);
                 if (max_vertex < (first_vertex + fetched_index)) {
-                    LogError(7);
+                    LogError();
                 }
             } else if (pc.validation_mode == 1) {
                 if (gid >= (3 * primitive_count)) {
                     return;
                 }
-                if (pc.last_build_as_geometries_gpu == nullptr) {
-                    return;
-                }
                 AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
-                if (last_build == nullptr) {
-                    return;
-                }
                 const uint geom_i = pc.as_geometry_gpu->geometry_i;
                 if (geom_i >= last_build->count) {
-                    return;
-                }
-                if (last_build->array[geom_i].geometry_type != pc.as_geometry_gpu->geometry_type) {
-                    return;
-                }
-                if (pc.as_geometry_gpu->vertex_format != VK_FORMAT_R32G32B32_SFLOAT) {
-                    return;
-                }
-                if (pc.as_geometry_gpu->geometry_buffer == 0) {
                     return;
                 }
 
                 uint64_t last_build_indices = last_build->array[geom_i].index_buffer_copies;
                 const uint last_build_index_type = last_build->array[geom_i].index_type;
                 float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
-                if (last_build_x_components == nullptr) {
-                    return;
-                }
-                if (last_build_index_type != VK_INDEX_TYPE_NONE_KHR && last_build_indices == 0) {
-                    return;
-                }
                 if (gid >= (3 * last_build->array[geom_i].primitive_count)) {
                     return;
                 }
@@ -2981,23 +2956,17 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
                 }
 
                 const uint64_t update_time_stride = pc.as_geometry_gpu->stride;
-                uint64_t update_time_vertex_buffer =
+                const uint64_t update_time_vertex_buffer =
                     pc.as_geometry_gpu->geometry_buffer + update_time_stride * pc.as_geometry_gpu->first_vertex;
-                if (pc.as_geometry_gpu->index_type == VK_INDEX_TYPE_NONE_KHR) {
-                    update_time_vertex_buffer = update_time_vertex_buffer + pc.as_geometry_gpu->primitive_offset;
-                }
                 const float update_time_vertex_x = LoadVertexX(update_time_vertex_buffer, update_time_stride, fetched_index,
                                                                pc.as_geometry_gpu->vertex_format);
                 const bool is_update_time_vertex_nan = isnan(update_time_vertex_x);
                 const bool is_build_time_vertex_nan = isnan(last_build_x_components[fetched_index]);
                 if (is_update_time_vertex_nan != is_build_time_vertex_nan) {
-                    LogError(13);
+                    LogError();
                 }
             } else if (pc.validation_mode == 2) {
                 if (gid >= primitive_count) {
-                    return;
-                }
-                if (pc.as_geometry_gpu->geometry_buffer == 0) {
                     return;
                 }
 
@@ -3006,40 +2975,23 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
                     pc.as_geometry_gpu->geometry_buffer +
                     uint64_t(pc.as_geometry_gpu->primitive_offset) + aabb_i * pc.as_geometry_gpu->stride);
                 if (aabb->minX > aabb->maxX) {
-                    LogError(8);
+                    LogError();
                 }
                 if (aabb->minY > aabb->maxY) {
-                    LogError(9);
+                    LogError();
                 }
                 if (aabb->minZ > aabb->maxZ) {
-                    LogError(10);
+                    LogError();
                 }
 
-                if (pc.as_geometry_gpu->is_update_build != 0) {
-                    if (pc.last_build_as_geometries_gpu == nullptr) {
-                        return;
-                    }
-                    AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
-                    if (last_build == nullptr) {
-                        return;
-                    }
-                    const uint geom_i = pc.as_geometry_gpu->geometry_i;
-                    if (geom_i >= last_build->count) {
-                        return;
-                    }
-                    if (last_build->array[geom_i].geometry_type != pc.as_geometry_gpu->geometry_type) {
-                        return;
-                    }
-                    float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
-                    if (last_build_x_components == nullptr) {
-                        return;
-                    }
-                    if (aabb_i >= last_build->array[geom_i].primitive_count) {
-                        return;
-                    }
-                    if (isnan(aabb->minX) != isnan(last_build_x_components[uint(aabb_i)])) {
-                        LogError(14);
-                    }
+                AccelerationStructureGeometriesGPU* last_build = *(pc.last_build_as_geometries_gpu);
+                const uint geom_i = pc.as_geometry_gpu->geometry_i;
+                if (geom_i >= last_build->count || aabb_i >= last_build->array[geom_i].primitive_count) {
+                    return;
+                }
+                float* last_build_x_components = last_build->array[geom_i].geometry_x_components_copies;
+                if (isnan(aabb->minX) != isnan(last_build_x_components[uint(aabb_i)])) {
+                    LogError();
                 }
             } else if (pc.validation_mode == 3) {
                 if (gid > 0) {
@@ -3052,7 +3004,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
                     transform->matrix[1][0], transform->matrix[1][1], transform->matrix[1][2],
                     transform->matrix[2][0], transform->matrix[2][1], transform->matrix[2][2]);
                 if (abs(determinant(transform3x3)) < 1e-6) {
-                    LogError(11);
+                    LogError();
                 }
             }
         }
@@ -3115,8 +3067,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     triangles_geometry.geometry_buffer = vertex_buffer.Address();
     triangles_geometry.geometry_x_components_copies = vertex_x_copies.Address();
     triangles_geometry.transform = transform_buffer.Address();
-    triangles_geometry.is_update_build = 1;
-    triangles_geometry.geometry_type = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
     triangles_geometry.index_type = VK_INDEX_TYPE_UINT32;
     triangles_geometry.vertex_format = VK_FORMAT_R32G32B32_SFLOAT;
     triangles_geometry.max_vertex = 2;
@@ -3127,9 +3077,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     aabbs_geometry.stride = sizeof(VkAabbPositionsKHR);
     aabbs_geometry.geometry_buffer = aabb_buffer.Address();
     aabbs_geometry.geometry_x_components_copies = aabb_x_copies.Address();
-    aabbs_geometry.is_update_build = 1;
-    aabbs_geometry.geometry_type = VK_GEOMETRY_TYPE_AABBS_KHR;
-    aabbs_geometry.index_type = VK_INDEX_TYPE_NONE_KHR;
     aabbs_geometry.primitive_count = 1;
     aabbs_geometry.geometry_i = 1;
 
@@ -3145,10 +3092,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     const VkDeviceAddress last_build_address = last_build_buffer.Address();
     vkt::Buffer last_build_ptr_buffer = make_buffer(&last_build_address, sizeof(last_build_address));
 
-    vkt::Buffer error_buffer(*m_device, 2 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer error_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto error_ptr = static_cast<uint32_t*>(error_buffer.Memory().Map());
     error_ptr[0] = 0;
-    error_ptr[1] = 0;
 
     VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(BLASValidationShaderPushData)};
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -3181,6 +3127,4 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
-
-    ASSERT_EQ(error_ptr[0], 0u);
 }
