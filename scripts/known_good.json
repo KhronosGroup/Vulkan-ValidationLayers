@@ -130,14 +130,14 @@
                 "x64": "x86_64",
                 "win64": "x86_64",
                 "arm64": "aarch64",
-                "Darwin": "macos"
+                "darwin": "macos"
             },
             "optional": [
                 "tests"
             ],
             "build_platforms": [
                 "linux",
-                "macos",
+                "darwin",
                 "windows"
             ],
             "build_architectures": [

@@ -568,11 +568,23 @@ class GoodRepo(object):
                 print(f"Failed to download {self.name}: {e}")
                 return False
 
+        # Missing or outdated install: start clean, extracting over an old one would leave stale files
+        # and write through its symlinks
+        shutil.rmtree(self.install_dir, ignore_errors=True, onerror=on_rm_error)
         make_or_exist_dirs(self.install_dir)
 
         if download_path.endswith('.zip'):
             with zipfile.ZipFile(download_path, 'r') as zip_ref:
-                zip_ref.extractall(self.install_dir)
+                # Extract entries one by one instead of extractall(), which loses Unix permissions and symlinks
+                # (e.g. slangc would not be executable and the .dylib/.so symlinks would be plain text files)
+                for info in zip_ref.infolist():
+                    path = zip_ref.extract(info, self.install_dir)
+                    mode = info.external_attr >> 16
+                    if stat.S_ISLNK(mode):
+                        os.remove(path)
+                        os.symlink(zip_ref.read(info).decode(), path)
+                    elif mode:
+                        os.chmod(path, stat.S_IMODE(mode))
         elif download_path.endswith('.tar') or download_path.endswith('.tar.gz'):
             with tarfile.open(download_path) as tar_ref:
                 tar_ref.extractall(self.install_dir)
@@ -754,11 +766,27 @@ class GoodRepo(object):
             print('Download dir = {b}'.format(b=self.build_dir))
             print('Install dir = {i}\n'.format(i=self.install_dir))
 
+        if self.install_dir is None or self.release is None:
+            raise RuntimeError(
+                f'To download Repo {self.name} release artifacts both "install_dir" and "release" need to be specified'
+            )
+
+        # Skip if this release is already installed
+        release_file = os.path.join(self.install_dir, '.release')
+        if os.path.isfile(release_file):
+            with open(release_file) as f:
+                if f.read() == self.release:
+                    print(f"{self.name} ({self.release}) already installed", flush=True)
+                    return
+
         start = time.time()
 
         success = self.DownloadAndExtractArtifact()
         if not success:
             return
+
+        with open(release_file, 'w') as f:
+            f.write(self.release)
 
         total_time = time.time() - start
 
