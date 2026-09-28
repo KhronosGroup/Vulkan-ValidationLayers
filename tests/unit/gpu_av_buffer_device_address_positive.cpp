@@ -2813,7 +2813,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, HeapMultipleSubmissions) {
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
-    RETURN_IF_SKIP(CheckSlangSupport());
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
@@ -2821,46 +2820,108 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
 
     RETURN_IF_SKIP(Init());
 
-    const char* slang_shader = R"slang(
-        RWStructuredBuffer<uint> error_buffer;
-
-        void LogError() {
-            InterlockedAdd(error_buffer[0], 1);
-        }
-
-        struct AccelerationStructureGeometryGPU {
-            uint64_t index_buffer_copies;
-            uint max_vertex;
-            uint primitive_count;
-            uint geometry_i;
-            uint pad_;
-        };
-
-        struct AccelerationStructureGeometriesGPU {
-            uint count;
-            uint pad_;
-            AccelerationStructureGeometryGPU array[];
-        };
-
-        struct BLASValidationShaderPushData {
-            AccelerationStructureGeometriesGPU* last_build_as_geometries_gpu;
-            AccelerationStructureGeometryGPU* as_geometry_gpu;
-        };
-
-        [vk::push_constant]
-        ConstantBuffer<BLASValidationShaderPushData> pc;
-
-        [shader("compute")]
-        [numthreads(64, 1, 1)]
-        void main(uint3 thread_id: SV_DispatchThreadID) {
-            AccelerationStructureGeometriesGPU* last_build = pc.last_build_as_geometries_gpu;
-            const uint geom_i = pc.as_geometry_gpu->geometry_i;
-            if (geom_i >= last_build->count) {
-                return;
-            }
-            LogError();
-        }
-    )slang";
+    const char* spv_source = R"(
+               OpCapability PhysicalStorageBufferAddresses
+               OpCapability Int64
+               OpCapability Shader
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %2 "main" %13 %42
+               OpExecutionMode %2 LocalSize 64 1 1
+               OpSource Slang 1
+               OpName %7 "BLASValidationShaderPushData_std430"
+               OpMemberName %7 0 "last_build_as_geometries_gpu"
+               OpMemberName %7 1 "as_geometry_gpu"
+               OpName %13 "pc"
+               OpName %18 "last_build"
+               OpName %27 "geom_i"
+               OpName %39 "RWStructuredBuffer"
+               OpMemberName %39 0 "__member0"
+               OpName %42 "error_buffer"
+               OpName %2 "main"
+               OpName %8 "AccelerationStructureGeometriesGPU_natural"
+               OpMemberName %8 0 "count"
+               OpMemberName %8 1 "pad_"
+               OpName %10 "AccelerationStructureGeometryGPU_natural"
+               OpMemberName %10 0 "index_buffer_copies"
+               OpMemberName %10 1 "max_vertex"
+               OpMemberName %10 2 "primitive_count"
+               OpMemberName %10 3 "geometry_i"
+               OpMemberName %10 4 "pad_"
+               OpDecorate %9 ArrayStride 8
+               OpDecorate %11 ArrayStride 24
+               OpDecorate %7 Block
+               OpMemberDecorate %7 0 Offset 0
+               OpMemberDecorate %7 1 Offset 8
+               OpDecorate %25 ArrayStride 4
+               OpDecorate %37 ArrayStride 4
+               OpDecorate %40 ArrayStride 4
+               OpDecorate %39 Block
+               OpMemberDecorate %39 0 Offset 0
+               OpDecorate %42 Binding 0
+               OpDecorate %42 DescriptorSet 0
+               OpMemberDecorate %8 0 Offset 0
+               OpMemberDecorate %8 1 Offset 4
+               OpMemberDecorate %10 0 Offset 0
+               OpMemberDecorate %10 1 Offset 8
+               OpMemberDecorate %10 2 Offset 12
+               OpMemberDecorate %10 3 Offset 16
+               OpMemberDecorate %10 4 Offset 20
+          %1 = OpTypeVoid
+          %3 = OpTypeFunction %1
+               OpTypeForwardPointer %9 PhysicalStorageBuffer
+               OpTypeForwardPointer %11 PhysicalStorageBuffer
+          %7 = OpTypeStruct %9 %11
+         %12 = OpTypePointer PushConstant %7
+         %14 = OpTypeInt 32 1
+         %15 = OpConstant %14 0
+         %16 = OpTypePointer PushConstant %9
+         %19 = OpConstant %14 1
+         %20 = OpTypePointer PushConstant %11
+         %23 = OpConstant %14 3
+         %24 = OpTypeInt 32 0
+         %25 = OpTypePointer PhysicalStorageBuffer %24
+         %30 = OpTypeBool
+         %37 = OpTypePointer StorageBuffer %24
+         %40 = OpTypeRuntimeArray %24
+         %39 = OpTypeStruct %40
+         %41 = OpTypePointer StorageBuffer %39
+         %43 = OpConstant %24 1
+         %44 = OpConstant %24 0
+          %8 = OpTypeStruct %24 %24
+          %9 = OpTypePointer PhysicalStorageBuffer %8
+         %48 = OpTypeInt 64 0
+         %10 = OpTypeStruct %48 %24 %24 %24 %24
+         %11 = OpTypePointer PhysicalStorageBuffer %10
+         %13 = OpVariable %12 PushConstant
+         %42 = OpVariable %41 StorageBuffer
+          %2 = OpFunction %1 None %3
+          %4 = OpLabel
+               OpSelectionMerge %49 None
+               OpSwitch %44 %50
+         %50 = OpLabel
+         %17 = OpAccessChain %16 %13 %15
+         %18 = OpLoad %9 %17
+         %21 = OpAccessChain %20 %13 %19
+         %22 = OpLoad %11 %21
+         %26 = OpAccessChain %25 %22 %23
+         %27 = OpLoad %24 %26 Aligned 4
+         %28 = OpAccessChain %25 %18 %15
+         %29 = OpLoad %24 %28 Aligned 4
+         %31 = OpUGreaterThanEqual %30 %27 %29
+               OpSelectionMerge %6 None
+               OpBranchConditional %31 %5 %6
+          %5 = OpLabel
+               OpBranch %49
+          %6 = OpLabel
+         %56 = OpAccessChain %37 %42 %15 %15
+         %57 = OpAtomicIAdd %24 %56 %43 %44 %43
+               OpBranch %49
+         %49 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
 
     struct AccelerationStructureGeometryGPU {
         uint64_t index_buffer_copies;
@@ -2907,7 +2968,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BlasValidationShader) {
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
+    pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 }
