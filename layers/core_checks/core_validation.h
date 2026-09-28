@@ -1641,6 +1641,14 @@ class CoreChecks : public vvl::DeviceProxy {
     bool IgnoreAllocationSize(const VkMemoryAllocateInfo& allocate_info) const;
     bool HasExternalMemoryImportSupport(const vvl::Buffer& buffer, VkExternalMemoryHandleTypeFlagBits handle_type) const;
     bool HasExternalMemoryImportSupport(const vvl::Image& image, VkExternalMemoryHandleTypeFlagBits handle_type) const;
+    bool GetExternalMemoryPropertiesBuffer(const vvl::Buffer& buffer, VkExternalMemoryHandleTypeFlagBits handle_type,
+                                           VkExternalMemoryProperties& out_properties) const;
+    bool GetExternalMemoryPropertiesImage(const vvl::Image& image, VkExternalMemoryHandleTypeFlagBits handle_type,
+                                          VkExternalMemoryProperties& out_properties) const;
+    bool ValidateDedicatedAllocationExportBuffer(const vvl::Buffer& buffer, const VkMemoryAllocateInfo& allocate_info,
+                                                 const Location allocate_info_loc) const;
+    bool ValidateDedicatedAllocationExportImage(const vvl::Image& image, const VkMemoryAllocateInfo& allocate_info,
+                                                const Location allocate_info_loc) const;
     bool HasExternalMemoryImportSupport(const vvl::Tensor &tensor, VkExternalMemoryHandleTypeFlagBits handle_type) const;
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,

@@ -707,3 +707,47 @@ TEST_F(PositiveExternalMemorySync, BinarySyncDependsOnExternalTimelineSignal) {
     m_default_queue->Submit2(vkt::no_cmd, vkt::Wait(binary_semaphore));
     m_device->Wait();
 }
+
+TEST_F(PositiveExternalMemorySync, DedicatedExport) {
+    TEST_DESCRIPTION("Dedicated allocations exporting a handle type the dedicated buffer and image support.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    {
+        VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
+        const auto buffer_info = vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}, &external_buffer_info);
+        const auto exportable_types =
+            FindSupportedExternalMemoryHandleTypes(Gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+        if (exportable_types) {
+            const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
+            external_buffer_info.handleTypes = handle_type;
+            vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
+
+            VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
+            dedicated_info.buffer = buffer;
+            VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&dedicated_info);
+            export_memory_info.handleTypes = handle_type;
+            buffer.AllocateAndBindMemory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+        }
+    }
+    {
+        VkExternalMemoryImageCreateInfo external_image_info = vku::InitStructHelper();
+        auto image_info = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+        image_info.pNext = &external_image_info;
+        auto exportable_types =
+            FindSupportedExternalMemoryHandleTypes(Gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+        exportable_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+        if (exportable_types) {
+            const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
+            external_image_info.handleTypes = handle_type;
+            vkt::Image image(*m_device, image_info, vkt::no_mem);
+
+            VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
+            dedicated_info.image = image;
+            VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&dedicated_info);
+            export_memory_info.handleTypes = handle_type;
+            image.AllocateAndBindMemory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+        }
+    }
+}
