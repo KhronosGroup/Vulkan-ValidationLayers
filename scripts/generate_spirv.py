@@ -22,6 +22,7 @@
 
 import os
 import sys
+import glob
 import shutil
 import subprocess
 import struct
@@ -314,29 +315,14 @@ def main():
     if not glsl_shaders and not slang_shaders:
         sys.exit("No shader files found to compile.")
 
-    external_dir = None
-    # Sometimes external folder are put in the build directory
-    external_possible_paths = [
-        'external/Debug/64',
-        'external/Release/64',
-        'external',
-        'build-ci/external/Debug/64',
-        'build-ci/external/Release/64',
-        'build/external/Debug/64',
-        'build/external/Release/64'
-    ]
-    for path_suffix in external_possible_paths:
-        try:
-            potential_dir = common_ci.RepoRelative(path_suffix)
-            if os.path.isdir(potential_dir):
-                external_dir = potential_dir
-                break
-        except Exception:
-             continue
-
-    if not external_dir:
+    # update_deps writes a helper.cmake into each deps dir, use the most recently updated one
+    helpers = []
+    for pattern in ['external/**/helper.cmake', 'build/external/**/helper.cmake', 'build-ci/external/**/helper.cmake']:
+        helpers += glob.glob(common_ci.RepoRelative(pattern), recursive=True)
+    if not helpers:
         print("Warning: Could not automatically determine external tools directory.", file=sys.stderr)
         return
+    external_dir = os.path.dirname(max(helpers, key=os.path.getmtime))
 
     # default glslangValidator path
     glslang = common_ci.RepoRelative(os.path.join(external_dir, 'glslang/build/install/bin/glslang'))
