@@ -375,9 +375,72 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueu
 }
 
 //
-// A single barrier can be applied more efficently (immidiately) compared to multiple barrier.
-// The latter are applied in two steps (collect and then apply)
+// A single buffer or image barrier can be applied immediately to a memory range.
+// NOTE: Multiple barriers need to use the pending barriers (collect and apply)
+// to ensure independent barrier application
 //
+struct ApplySingleBufferBarrierFunctor {
+    const AccessContext& access_context;
+    const BarrierScope& barrier_scope;
+    const SyncBarrier& barrier;
+
+    using Iterator = AccessMap::iterator;
+
+    ApplySingleBufferBarrierFunctor(const AccessContext& access_context, const BarrierScope& barrier_scope,
+                                    const SyncBarrier& barrier)
+        : access_context(access_context), barrier_scope(barrier_scope), barrier(barrier) {}
+
+    Iterator Infill(AccessMap* accesses, const Iterator& pos_hint, const AccessRange& range) const {
+        // The buffer barrier does not need to fill the gaps because barrier
+        // application to a range without accesses is a no-op.
+        // Return the pos iterator unchanged to indicate that no entry was created.
+        return pos_hint;
+    }
+
+    void operator()(const Iterator& pos) const {
+        AccessState& access_state = pos->second;
+        access_context.ApplyGlobalBarriers(access_state);
+        access_state.ApplyBarrier(barrier_scope, barrier);
+    }
+};
+
+struct ApplySingleImageBarrierFunctor {
+    const AccessContext& access_context;
+    const BarrierScope& barrier_scope;
+    const SyncBarrier& barrier;
+    const ResourceUsageTag exec_tag;
+    bool layout_transition;
+    uint32_t layout_transition_handle_index;
+
+    using Iterator = AccessMap::iterator;
+
+    ApplySingleImageBarrierFunctor(const AccessContext& access_context, const BarrierScope& barrier_scope,
+                                   const SyncBarrier& barrier, bool layout_transition, uint32_t layout_transition_handle_index,
+                                   ResourceUsageTag exec_tag)
+        : access_context(access_context),
+          barrier_scope(barrier_scope),
+          barrier(barrier),
+          exec_tag(exec_tag),
+          layout_transition(layout_transition),
+          layout_transition_handle_index(layout_transition_handle_index) {}
+
+    Iterator Infill(AccessMap* accesses, const Iterator& pos_hint, const AccessRange& range) const {
+        if (!layout_transition) {
+            // Do not create a new range if this is not a layout transition
+            return pos_hint;
+        }
+        // Create a new range for layout transition write access
+        auto inserted = accesses->Insert(pos_hint, range, AccessState::DefaultAccessState());
+        return inserted;
+    }
+
+    void operator()(const Iterator& pos) const {
+        AccessState& access_state = pos->second;
+        access_context.ApplyGlobalBarriers(access_state);
+        access_state.ApplyBarrier(barrier_scope, barrier, layout_transition, layout_transition_handle_index, exec_tag);
+    }
+};
+
 static void ApplySingleBufferBarrier(QueueId queue_id, AccessContext& access_context, const SyncBufferBarrier& buffer_barrier,
                                      const SyncBarrier& exec_dep_barrier) {
     if (SimpleBinding(*buffer_barrier.buffer)) {
@@ -412,9 +475,10 @@ static void ApplySingleMemoryBarrier(QueueId queue_id, AccessContext& access_con
     access_context.RegisterGlobalBarrier(memory_barrier, queue_id);
 }
 
-// This handles all configurations where barriers cannot be applied immidiately and need to use
-// the PendingBarriers helper to ensure independent barrier application. All such configurations
-// use more than one barrier.
+//
+// Collects barrier effects in PendingBarriers, then applies them.
+// This ensures multiple barriers are applied independently of each other.
+//
 static void ApplyMultipleBarriers(const DeviceExtensions& extensions, QueueId queue_id, AccessContext& access_context,
                                   const BarrierSet& barrier_set, ResourceUsageTag tag) {
     // Apply markup action.

@@ -39,42 +39,6 @@ class SyncValidator;
 bool SimpleBinding(const vvl::Bindable& bindable);
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer& buffer);
 
-// A single buffer barrier can be applied immediately to a memory range.
-// Note that multiple barriers (of the same or different types) need to use
-// the pending barriers functionality to ensure independent barrier application
-struct ApplySingleBufferBarrierFunctor {
-    ApplySingleBufferBarrierFunctor(const AccessContext& access_context, const BarrierScope& barrier_scope,
-                                    const SyncBarrier& barrier);
-
-    using Iterator = AccessMap::iterator;
-    Iterator Infill(AccessMap* accesses, const Iterator& pos_hint, const AccessRange& range) const;
-    void operator()(const Iterator& pos) const;
-
-    const AccessContext& access_context;
-    const BarrierScope& barrier_scope;
-    const SyncBarrier& barrier;
-};
-
-// A single image barrier can be applied immediately to a memory range.
-// Note that multiple barriers (of the same or different types) need to use
-// the pending barriers functionality to ensure independent barrier application
-struct ApplySingleImageBarrierFunctor {
-    ApplySingleImageBarrierFunctor(const AccessContext& access_context, const BarrierScope& barrier_scope,
-                                   const SyncBarrier& barrier, bool layout_transition, uint32_t layout_transition_handle_index,
-                                   ResourceUsageTag exec_tag);
-
-    using Iterator = AccessMap::iterator;
-    Iterator Infill(AccessMap* accesses, const Iterator& pos_hint, const AccessRange& range) const;
-    void operator()(const Iterator& pos) const;
-
-    const AccessContext& access_context;
-    const BarrierScope& barrier_scope;
-    const SyncBarrier& barrier;
-    const ResourceUsageTag exec_tag;
-    bool layout_transition;
-    uint32_t layout_transition_handle_index;
-};
-
 // This functor changes layout of access map as part of infill_update_range traversal:
 //    * infills gaps within a specified input range (only for layout transition use case)
 //    * if existing ranges intersect begin/end of the input range then existing ranges are split
