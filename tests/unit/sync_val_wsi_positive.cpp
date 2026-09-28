@@ -1368,3 +1368,94 @@ TEST_F(PositiveSyncValWsi, WaitForFencesClearsLastSynchronizedPresents) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncValWsi, PresentAfterTimelineSemaphoreChain) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13117");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(SupportMultiSwapchain());
+    RETURN_IF_SKIP(InitSyncVal());
+
+    struct SwapchainContext {
+        SurfaceContext surface_context;
+        vkt::Surface surface;
+        vkt::Swapchain swapchain;
+        std::vector<vkt::CommandBuffer> transitions;
+        vkt::Semaphore acquire_semaphore;
+        std::vector<vkt::Semaphore> present_semaphores;
+        uint32_t image_index = 0;
+
+        void Init(PositiveSyncValWsi& test, vkt::CommandPool& command_pool) {
+            if (test.CreateSurface(surface_context, surface) != VK_SUCCESS) {
+                GTEST_SKIP() << "Failed to create surface";
+            }
+            const vkt::Device& device = *test.DeviceObj();
+            const SurfaceInformation surface_info = test.GetSwapchainInfo(surface);
+            const VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(surface, surface_info);
+            swapchain = vkt::Swapchain(device, swapchain_ci);
+            transitions = swapchain.RecordTransitionToPresentLayout(device, command_pool);
+            acquire_semaphore = vkt::Semaphore(device);
+            for (size_t i = 0; i < transitions.size(); i++) {
+                present_semaphores.emplace_back(device);
+            }
+        }
+    };
+    SwapchainContext ctx_a;
+    SwapchainContext ctx_b;
+    RETURN_IF_SKIP(ctx_a.Init(*this, m_command_pool));
+    RETURN_IF_SKIP(ctx_b.Init(*this, m_command_pool));
+
+    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    uint64_t value = 0;
+
+    auto acquire_and_submit = [&](SwapchainContext& ctx) {
+        ctx.image_index = ctx.swapchain.AcquireNextImage(ctx.acquire_semaphore, kWaitTimeout);
+
+        VkSemaphoreSubmitInfo waits[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+        waits[0].semaphore = ctx.acquire_semaphore;
+        waits[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        waits[1].semaphore = timeline;
+        waits[1].value = value;
+        waits[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        VkSemaphoreSubmitInfo signals[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+        signals[0].semaphore = ctx.present_semaphores[ctx.image_index];
+        signals[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        signals[1].semaphore = timeline;
+        signals[1].value = ++value;
+        signals[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        VkCommandBufferSubmitInfo command_buffer_info = vku::InitStructHelper();
+        command_buffer_info.commandBuffer = ctx.transitions[ctx.image_index];
+
+        VkSubmitInfo2 submit = vku::InitStructHelper();
+        submit.waitSemaphoreInfoCount = 2;
+        submit.pWaitSemaphoreInfos = waits;
+        submit.commandBufferInfoCount = 1;
+        submit.pCommandBufferInfos = &command_buffer_info;
+        submit.signalSemaphoreInfoCount = 2;
+        submit.pSignalSemaphoreInfos = signals;
+
+        vk::QueueSubmit2(*m_default_queue, 1, &submit, VK_NULL_HANDLE);
+    };
+
+    // Frame count is the number of swapchain images + 1 in order to have
+    // guarantee we reacquire a previously presented image
+    const uint32_t frame_count = std::max(size32(ctx_a.transitions), size32(ctx_b.transitions)) + 1;
+
+    for (uint32_t frame = 0; frame < frame_count; frame++) {
+        acquire_and_submit(ctx_a);
+        acquire_and_submit(ctx_b);
+
+        // An empty submission before the host wait is needed to reproduce the issue
+        const uint64_t previous = value++;
+        m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(timeline, previous), vkt::TimelineSignal(timeline, value));
+
+        timeline.Wait(value, kWaitTimeout);
+        m_default_queue->Present(ctx_a.swapchain, ctx_a.image_index, ctx_a.present_semaphores[ctx_a.image_index]);
+        m_default_queue->Present(ctx_b.swapchain, ctx_b.image_index, ctx_b.present_semaphores[ctx_b.image_index]);
+    }
+    m_default_queue->Wait();
+}
