@@ -2541,13 +2541,12 @@ TEST_F(NegativeSyncVal, DrawMultiHazard) {
     VkVertexInputBindingDescription vertex_binding = {0, 12, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription vertex_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
     pipe.vi_ci_.pVertexBindingDescriptions = &vertex_binding;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &vertex_attrib;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
@@ -2585,9 +2584,8 @@ TEST_F(NegativeSyncVal, DrawIndirectByteCountHazard) {
     vkt::Buffer source_buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer counter_buffer(*m_device, 16, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.cb_ci_.attachmentCount = 0;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
@@ -2937,12 +2935,10 @@ TEST_F(NegativeSyncVal, DrawMeshTasksHazard) {
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
     VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
     pipe.shader_stages_ = {mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
-    pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, storage_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL);
@@ -2983,10 +2979,8 @@ TEST_F(NegativeSyncVal, DrawMeshTasksAttachmentHazard) {
     vkt::ImageView image_view = image.CreateView();
 
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
-    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
-    pipeline_rendering.colorAttachmentCount = 1;
-    pipeline_rendering.pColorAttachmentFormats = &format;
-    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -3042,11 +3036,8 @@ TEST_F(NegativeSyncVal, DrawMeshTasksIndirectTestAccess) {
                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -3089,11 +3080,8 @@ TEST_F(NegativeSyncVal, DrawMeshTasksIndirectTestUpdate) {
                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -3137,11 +3125,8 @@ TEST_F(NegativeSyncVal, DrawMeshTasksIndirectCountTestCountAccess) {
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -3185,11 +3170,8 @@ TEST_F(NegativeSyncVal, DrawMeshTasksIndirectCountTestCountUpdate) {
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -7630,9 +7612,8 @@ TEST_F(NegativeSyncVal, DrawIndirectStrided) {
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     RETURN_IF_SKIP(InitSyncVal());
 
-    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering);
-    pipe.cb_ci_.attachmentCount = 0;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
     pipe.CreateGraphicsPipeline();
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.renderArea.extent = {32, 32};
@@ -7670,9 +7651,8 @@ TEST_F(NegativeSyncVal, DrawIndirectStridedUpdate) {
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     RETURN_IF_SKIP(InitSyncVal());
 
-    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering);
-    pipe.cb_ci_.attachmentCount = 0;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
     pipe.CreateGraphicsPipeline();
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.renderArea.extent = {32, 32};
@@ -7709,8 +7689,8 @@ TEST_F(NegativeSyncVal, DrawVertexInputWAR) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncVal());
 
-    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
 
     VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
@@ -7760,8 +7740,8 @@ TEST_F(NegativeSyncVal, DrawIndexInputRAW) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncVal());
 
-    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
 
     VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
@@ -7816,8 +7796,8 @@ TEST_F(NegativeSyncVal, DrawMultiVertexInputWAR) {
     AddRequiredFeature(vkt::Feature::multiDraw);
     RETURN_IF_SKIP(InitSyncVal());
 
-    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
 
     VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
@@ -7875,8 +7855,8 @@ TEST_F(NegativeSyncVal, DrawMultiIndexInputRAW) {
     AddRequiredFeature(vkt::Feature::multiDraw);
     RETURN_IF_SKIP(InitSyncVal());
 
-    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
 
     VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};

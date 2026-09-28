@@ -529,11 +529,8 @@ TEST_F(PositiveSecondaryCommandBuffer, NestedDrawWithoutInline) {
     RETURN_IF_SKIP(Init());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({color_format});
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
@@ -657,13 +654,8 @@ TEST_F(PositiveSecondaryCommandBuffer, CustomResolveDynamicRenderingInputAttachm
     input_info.pDepthInputAttachmentIndex = &zero;
     input_info.pStencilInputAttachmentIndex = nullptr;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&input_info);
-    pipeline_rendering_info.colorAttachmentCount = 0;
-    pipeline_rendering_info.pColorAttachmentFormats = nullptr;
-    pipeline_rendering_info.depthAttachmentFormat = depth_format;
-    pipeline_rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this, &input_info);
+    pipe.SetDynamicRendering({}, depth_format, VK_FORMAT_UNDEFINED);
     pipe.ds_ci_ = vku::InitStructHelper();
     pipe.CreateGraphicsPipeline();
 

@@ -119,11 +119,17 @@ class CreatePipelineHelper {
 
     void AddDynamicState(VkDynamicState dynamic_state);
 
+    void SetDynamicRendering(const std::vector<VkFormat>& color_formats, VkFormat depth_format = VK_FORMAT_UNDEFINED,
+                             VkFormat stencil_format = VK_FORMAT_UNDEFINED);
+
   private:
     void InitPipelineCache();
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     // Hold some state for making certain pipeline creations easier
     std::vector<VkDynamicState> dynamic_states_;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_ci_ = {};
+    std::vector<VkFormat> color_formats_;
 
     VkViewport viewport_ = {};
     VkRect2D scissor_ = {};

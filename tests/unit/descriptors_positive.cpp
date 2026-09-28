@@ -2569,11 +2569,8 @@ TEST_F(PositiveDescriptors, TransitionImageUnusedByShader) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     const VkFormat attachment_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &attachment_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({attachment_format});
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();

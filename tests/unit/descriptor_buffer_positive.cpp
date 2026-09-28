@@ -2207,12 +2207,8 @@ TEST_F(PositiveDescriptorBuffer, IndependentSetMixShaderObject) {
     create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
     const vkt::ShaderEXT frag_shader(*m_device, create_info);
 
-    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_B8G8R8A8_UNORM});
     pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
     pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();

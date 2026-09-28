@@ -278,13 +278,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdClearAttachments) {
     TEST_DESCRIPTION("Clear unmapped color attachment");
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -1026,13 +1021,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, RemappingAtCreatePipeline) {
     input_info.colorAttachmentCount = 0;
     input_info.pColorAttachmentInputIndices = nullptr;
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&input_info);
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this, &input_info);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531");
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09532");
@@ -1053,13 +1043,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexColorAttachmentCou
     input_info.colorAttachmentCount = static_cast<uint32_t>(input_attachment_indices.size());
     input_info.pColorAttachmentInputIndices = input_attachment_indices.data();
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&input_info);
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this, &input_info);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInputAttachmentIndexInfo-colorAttachmentCount-09525");
@@ -1091,13 +1076,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentIndicesColorAttachment
     TEST_DESCRIPTION("colorAttachmentCount must be equal to the value used to begin the current render pass instance");
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
@@ -1154,13 +1134,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexSetToUnused) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -1199,13 +1174,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexUnique) {
     TEST_DESCRIPTION("Color, depth and stencil attachment indices are set to unique values");
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachments[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
@@ -1245,13 +1215,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, MaxPerStageDescriptorInputAttachments)
         GTEST_SKIP() << "maxPerStageDescriptorInputAttachments is uint32_t max";
     }
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachments[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
@@ -1280,13 +1245,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentLocationsColorAttachme
     TEST_DESCRIPTION("colorAttachmentCount must be equal to the value used to begin the current render pass instance");
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachment[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
@@ -1322,13 +1282,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, NewFunctionsReportErrorExtensionDisabl
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -1414,13 +1369,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsValidity) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachments[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
@@ -1455,13 +1405,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsMax) {
         "colorAttachmentCount must be less than or equal to maxColorAttachments. pColorAttachmentLocations[i] must be less than.");
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -1841,12 +1786,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexArray) {
                                             {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set});
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo rendering_info = vku::InitStructHelper();
-    rendering_info.colorAttachmentCount = 1;
-    rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652");
@@ -1953,15 +1894,10 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentMissingSpecConstant) {
                                        {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1u;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652");
     pipe.CreateGraphicsPipeline();
@@ -1990,15 +1926,10 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexDynamicOOB) {
                                         {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1u;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09652");
     pipe.CreateGraphicsPipeline();

@@ -886,11 +886,8 @@ TEST_F(NegativeSecondaryCommandBuffer, NestedDrawWithoutInline) {
     RETURN_IF_SKIP(Init());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({color_format});
     pipe.CreateGraphicsPipeline();
 
     const VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper();
@@ -1047,13 +1044,8 @@ TEST_F(NegativeSecondaryCommandBuffer, MissingPipelineFormatCount) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1u;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
@@ -1373,11 +1365,8 @@ TEST_F(NegativeSecondaryCommandBuffer, CustomResolveDynamicRendering) {
     custom_resolve_info.colorAttachmentCount = 1;
     custom_resolve_info.pColorAttachmentFormats = &color_format;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&custom_resolve_info);
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this, &custom_resolve_info);
+    pipe.SetDynamicRendering({color_format});
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper(&custom_resolve_info);
@@ -1445,11 +1434,8 @@ TEST_F(NegativeSecondaryCommandBuffer, CustomResolveDraw) {
     custom_resolve_info.colorAttachmentCount = 1;
     custom_resolve_info.pColorAttachmentFormats = &color_format;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&custom_resolve_info);
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this, &custom_resolve_info);
+    pipe.SetDynamicRendering({color_format});
     pipe.CreateGraphicsPipeline();
 
     custom_resolve_info.customResolve = VK_FALSE;

@@ -664,11 +664,8 @@ TEST_F(NegativePipeline, CustomResolveSampleShadingImplicit) {
     custom_resolve_info.colorAttachmentCount = 1;
     custom_resolve_info.pColorAttachmentFormats = &color_format;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&custom_resolve_info);
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this, &custom_resolve_info);
+    pipe.SetDynamicRendering({color_format});
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
@@ -4007,12 +4004,8 @@ TEST_F(NegativePipeline, NoRasterizationStateDynamicRendering) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
 
-    VkFormat color_formats = VK_FORMAT_UNDEFINED;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_UNDEFINED});
     pipe.gp_ci_.pRasterizationState = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601");
     pipe.CreateGraphicsPipeline();
@@ -4207,12 +4200,8 @@ TEST_F(NegativePipeline, SampleLocationsDynamicRendering) {
     pipe_ds_state_ci.depthTestEnable = VK_TRUE;
     pipe_ds_state_ci.stencilTestEnable = VK_FALSE;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-    pipeline_rendering_info.depthAttachmentFormat = depth_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({color_format}, depth_format);
     pipe.ms_ci_ = pipe_ms_state_ci;
     pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
     pipe.CreateGraphicsPipeline();
