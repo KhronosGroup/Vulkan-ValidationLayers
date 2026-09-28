@@ -148,6 +148,8 @@ class Validator : public GpuShaderInstrumentor {
                                                const RecordObject& record_obj) final;
     void PreCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
                                                       const RecordObject& record_obj) final;
+    void PreCallRecordCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                   const RecordObject& record_obj) final;
     void PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
                                                         const RecordObject& record_obj) final;
     void PreCallRecordCmdDrawIndirectByteCount(VkCommandBuffer commandBuffer, const RecordObject& record_obj);
