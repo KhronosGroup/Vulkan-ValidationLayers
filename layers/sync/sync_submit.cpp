@@ -498,6 +498,7 @@ void QueueBatchContext::ResolveSubmitSemaphoreWait(const SignalInfo& signal_info
             ApplySemaphoreBarrierAction sem_op(signal_scope, wait_scope);
             access_context_.ResolveFromContext(sem_op, signal_info.batch->access_context_);
         }
+        last_synchronized_present.Merge(signal_info.batch->last_synchronized_present);
     }
 }
 
