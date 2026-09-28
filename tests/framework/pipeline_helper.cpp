@@ -11,6 +11,7 @@
  */
 
 #include "pipeline_helper.h"
+#include <cstdint>
 
 CreatePipelineHelper::CreatePipelineHelper(VkLayerTest& test, void* pNext) : layer_test_(test) {
     // default VkDevice, can be overwritten if multi-device tests
@@ -152,6 +153,28 @@ void CreatePipelineHelper::AddDynamicState(VkDynamicState dynamic_state) {
     dyn_state_ci_.dynamicStateCount = dynamic_states_.size();
     // Set here and don't have have to worry about late bind setting it
     gp_ci_.pDynamicState = &dyn_state_ci_;
+}
+
+void CreatePipelineHelper::SetDynamicRendering(const std::vector<VkFormat>& color_formats, VkFormat depth_format,
+                                               VkFormat stencil_format) {
+    const bool already_chained = IsValidVkStruct(pipeline_rendering_ci_);
+    const void* pnext = already_chained ? pipeline_rendering_ci_.pNext : gp_ci_.pNext;
+
+    color_formats_ = color_formats;
+    pipeline_rendering_ci_ = vku::InitStructHelper(const_cast<void*>(pnext));
+    pipeline_rendering_ci_.colorAttachmentCount = static_cast<uint32_t>(color_formats_.size());
+    pipeline_rendering_ci_.pColorAttachmentFormats = color_formats_.data();
+    pipeline_rendering_ci_.depthAttachmentFormat = depth_format;
+    pipeline_rendering_ci_.stencilAttachmentFormat = stencil_format;
+    pipeline_rendering_ci_.viewMask = 0;
+
+    if (!already_chained) {
+        gp_ci_.pNext = &pipeline_rendering_ci_;
+    }
+    gp_ci_.renderPass = VK_NULL_HANDLE;
+    if (color_formats_.size() <= 1) {
+        cb_ci_.attachmentCount = pipeline_rendering_ci_.colorAttachmentCount;
+    }
 }
 
 void CreatePipelineHelper::InitVertexInputLibInfo(void* p_next) {

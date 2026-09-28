@@ -89,14 +89,10 @@ TEST_F(NegativeDynamicRendering, CommandDraw) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.depthAttachmentFormat = depth_format;
-    pipeline_rendering_info.stencilAttachmentFormat = depth_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({}, depth_format, depth_format);
     pipe.ms_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
     pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
     vkt::Image image(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -1191,10 +1187,8 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3DepthStencil) {
 TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats4) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
     pipe.CreateGraphicsPipeline();
 
     vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -2533,18 +2527,12 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineWithAttachmentSampleCount
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-
     VkAttachmentSampleCountInfoNV sample_count_info_amd = vku::InitStructHelper();
     sample_count_info_amd.colorAttachmentCount = 1;
     sample_count_info_amd.depthStencilAttachmentSamples = static_cast<VkSampleCountFlagBits>(0x3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&sample_count_info_amd);
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this, &sample_count_info_amd);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593");
     pipe.CreateGraphicsPipeline();
@@ -2955,15 +2943,9 @@ TEST_F(NegativeDynamicRendering, InputAttachmentCapability) {
 
     VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -2974,14 +2956,8 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachmentFormat) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
 
-    VkFormat color_format = VK_FORMAT_MAX_ENUM;
-
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_MAX_ENUM});
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06579");
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
     pipe.CreateGraphicsPipeline();
@@ -3066,13 +3042,8 @@ TEST_F(NegativeDynamicRendering, AttachmentSampleCount) {
     samples_info.colorAttachmentCount = 1;
     samples_info.pColorAttachmentSamples = &color_attachment_samples;
 
-    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&samples_info);
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this, &samples_info);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pColorAttachmentSamples-06592");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -6171,11 +6142,8 @@ TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
 
     VkFormat format = VK_FORMAT_R32G32B32A32_UINT;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
@@ -6592,14 +6560,9 @@ TEST_F(NegativeDynamicRendering, DynamicColorBlendAttchment) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkFormat color_formats = VK_FORMAT_R8G8B8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
     vkt::Image color_image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -6718,11 +6681,8 @@ TEST_F(NegativeDynamicRendering, MismatchingDepthAttachmentFormatInSecondaryCmdB
         GTEST_SKIP() << "Could not find 2 ds attachment formats";
     }
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.depthAttachmentFormat = depth_format1;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({}, depth_format1);
     pipe.cb_ci_.attachmentCount = 0u;
     pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipe.CreateGraphicsPipeline();
@@ -7199,12 +7159,8 @@ TEST_F(NegativeDynamicRendering, PipelineLegacyDithering) {
     VkPipelineCreateFlags2CreateInfo create_flags_2 = vku::InitStructHelper();
     create_flags_2.flags = VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT;
 
-    VkFormat color_formats = VK_FORMAT_UNDEFINED;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&create_flags_2);
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this, &create_flags_2);
+    pipe.SetDynamicRendering({VK_FORMAT_UNDEFINED});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -7231,12 +7187,8 @@ TEST_F(NegativeDynamicRendering, RenderPassLegacyDithering) {
     AddRequiredFeature(vkt::Feature::legacyDithering);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkFormat color_formats = VK_FORMAT_UNDEFINED;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_UNDEFINED});
     pipe.CreateGraphicsPipeline();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -7790,11 +7742,8 @@ TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoDescriptorHeap) {
     for (int i = 0; i < 2; i++) {
         VkFormat format = VK_FORMAT_R32G32B32A32_UINT;
 
-        VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-        pipeline_rendering_info.colorAttachmentCount = 1;
-        pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-        CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+        CreatePipelineHelper pipe(*this);
+        pipe.SetDynamicRendering({format});
         pipe.CreateGraphicsPipeline();
 
         VkCommandBufferAllocateInfo cmd_buffer_allocate_info = vku::InitStructHelper();

@@ -340,15 +340,10 @@ TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
     VkShaderObj vs(*m_device, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(*m_device, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkFormat color_formats = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
-
-    CreatePipelineHelper g_pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.SetDynamicRendering({VK_FORMAT_B8G8R8A8_UNORM});
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.gp_ci_.layout = g_pipeline_layout;
-    g_pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     g_pipe.CreateGraphicsPipeline();
 
     const vkt::ShaderEXT cs_shader_object(*m_device, VK_SHADER_STAGE_COMPUTE_BIT,

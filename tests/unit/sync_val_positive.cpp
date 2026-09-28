@@ -4298,11 +4298,8 @@ TEST_F(PositiveSyncVal, StencilNotWritable) {
     depth_stencil_ci.front = stencil;
     depth_stencil_ci.back = stencil;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.stencilAttachmentFormat = depth_stencil_format;
-    pipeline_rendering_info.depthAttachmentFormat = depth_stencil_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({}, depth_stencil_format, depth_stencil_format);
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.CreateGraphicsPipeline();
 
@@ -4365,11 +4362,8 @@ TEST_F(PositiveSyncVal, StencilNotWritable2) {
     depth_stencil_ci.front = stencil;
     depth_stencil_ci.back = stencil;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.stencilAttachmentFormat = depth_stencil_format;
-    pipeline_rendering_info.depthAttachmentFormat = depth_stencil_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({}, depth_stencil_format, depth_stencil_format);
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.CreateGraphicsPipeline();
 
@@ -4428,10 +4422,8 @@ TEST_F(PositiveSyncVal, StencilNotWritable3) {
     depth_stencil_ci.front = stencil;
     depth_stencil_ci.back = stencil;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({}, VK_FORMAT_UNDEFINED, stencil_format);
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.CreateGraphicsPipeline();
 
@@ -4490,10 +4482,8 @@ TEST_F(PositiveSyncVal, StencilNotWritable4) {
     depth_stencil_ci.front = stencil;
     depth_stencil_ci.back = stencil;
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.stencilAttachmentFormat = stencil_format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({}, VK_FORMAT_UNDEFINED, stencil_format);
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.CreateGraphicsPipeline();
 
@@ -4841,11 +4831,8 @@ TEST_F(PositiveSyncVal, DrawMeshTasksIndirectTestIndirectAccess) {
                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -4894,11 +4881,8 @@ TEST_F(PositiveSyncVal, DrawMeshTasksIndirectTestIndirectUpdate) {
                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -4948,11 +4932,8 @@ TEST_F(PositiveSyncVal, DrawMeshTasksIndirectCountTestCountAccess) {
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -5003,11 +4984,8 @@ TEST_F(PositiveSyncVal, DrawMeshTasksIndirectCountTestCountUpdate) {
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
@@ -5086,11 +5064,8 @@ TEST_F(PositiveSyncVal, MeshShaderWithPreRasterizationBarrier) {
     )glsl";
     VkShaderObj mesh_shader(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
 
-    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 1;
-    pipeline_rendering_info.pColorAttachmentFormats = &format;
-
-    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({format});
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
@@ -5271,9 +5246,8 @@ TEST_F(PositiveSyncVal, DrawIndirectStridedGaps) {
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     RETURN_IF_SKIP(InitSyncVal());
 
-    VkPipelineRenderingCreateInfo pipeline_rendering = vku::InitStructHelper();
-    CreatePipelineHelper pipe(*this, &pipeline_rendering);
-    pipe.cb_ci_.attachmentCount = 0;
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
     pipe.CreateGraphicsPipeline();
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.renderArea.extent = {32, 32};
