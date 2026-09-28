@@ -531,3 +531,47 @@ TEST_F(PositiveGpuAVIndirectBuffer, DISABLED_DrawMeshTasksIndirect2EXT) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+TEST_F(PositiveGpuAVIndirectBuffer, DrawMeshTasksIndirectCount2EXTPackedCommands) {
+    TEST_DESCRIPTION("Mesh draw commands are only 12 bytes, so they must not be read as VkDrawIndirectCommand");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    // Tightly packed, so the groupCountX of the second command is where firstInstance of a VkDrawIndirectCommand would be
+    vkt::Buffer draw_buffer(*m_device, 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                            vkt::device_address);
+    auto* draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT*>(draw_buffer.Memory().Map());
+    draw_ptr[0] = {1u, 1u, 1u};
+    draw_ptr[1] = {1u, 1u, 1u};
+
+    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    *static_cast<uint32_t*>(count_buffer.Memory().Map()) = 2u;
+
+    VkShaderObj mesh_shader(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    CreatePipelineHelper mesh_pipe(*this);
+    mesh_pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
+    mesh_pipe.CreateGraphicsPipeline();
+
+    VkDrawIndirectCount2InfoKHR info = vku::InitStructHelper();
+    info.addressRange = draw_buffer.StridedAddressRange(sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    info.addressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    info.countAddressRange = count_buffer.AddressRange();
+    info.countAddressFlags = VK_ADDRESS_COMMAND_UNKNOWN_STORAGE_BUFFER_USAGE_BIT_KHR;
+    info.maxDrawCount = 2u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe);
+    vk::CmdDrawMeshTasksIndirectCount2EXT(m_command_buffer, &info);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

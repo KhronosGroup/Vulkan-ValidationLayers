@@ -407,8 +407,7 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
 
     const LastBound& last_bound = cb_state->GetLastBoundGraphics();
     const char* vuid = (record_obj.location.function == vvl::Func::vkCmdDrawIndirectCount2KHR ||
-                        record_obj.location.function == vvl::Func::vkCmdDrawIndexedIndirectCount2KHR ||
-                        record_obj.location.function == vvl::Func::vkCmdDrawMeshTasksIndirectCount2EXT)
+                        record_obj.location.function == vvl::Func::vkCmdDrawIndexedIndirectCount2KHR)
                            ? "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13116"
                            : "VUID-vkCmdDrawIndirectCount-countBuffer-02717";
     valcmd::CountBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, sizeof(VkDrawIndirectCommand),
@@ -499,10 +498,42 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount2KHR(VkCommandBuffer com
     PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
 }
 
+void Validator::PreCallRecordCmdDrawMeshTasksIndirect2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirect2InfoKHR* pInfo,
+                                                          const RecordObject& record_obj) {
+    const auto buffer_states = GetBuffersByAddressRange(
+        VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size}, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    if (buffer_states.empty()) {
+        return;
+    }
+
+    const VkBuffer buffer = buffer_states[0]->VkHandle();
+    const VkDeviceSize offset = pInfo->addressRange.address - buffer_states[0]->deviceAddress;
+    const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
+    PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, pInfo->drawCount, stride, record_obj);
+}
+
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer,
                                                                const VkDrawIndirectCount2InfoKHR* pInfo,
                                                                const RecordObject& record_obj) {
-    PreCallRecordCmdDrawIndirectCount2KHR(commandBuffer, pInfo, record_obj);
+    const auto buffer_states = GetBuffersByAddressRange(
+        VkDeviceAddressRangeKHR{pInfo->addressRange.address, pInfo->addressRange.size}, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    if (buffer_states.empty()) {
+        return;
+    }
+
+    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11879
+    const auto count_buffer_states = GetBuffersByAddressRange(pInfo->countAddressRange, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+    if (count_buffer_states.empty()) {
+        return;
+    }
+
+    const VkBuffer buffer = buffer_states[0]->VkHandle();
+    const VkDeviceSize offset = pInfo->addressRange.address - buffer_states[0]->deviceAddress;
+    const VkBuffer count_buffer = count_buffer_states[0]->VkHandle();
+    const VkDeviceSize count_buffer_offset = pInfo->countAddressRange.address - count_buffer_states[0]->deviceAddress;
+    const uint32_t stride = static_cast<uint32_t>(pInfo->addressRange.stride);
+    PreCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, count_buffer, count_buffer_offset,
+                                                  pInfo->maxDrawCount, stride, record_obj);
 }
 
 void Validator::PreCallRecordCmdDrawIndirectByteCount(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
@@ -631,9 +662,12 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer co
     valcmd::DrawMeshIndirect(*this, sub_state, record_obj.location, last_bound, buffer, offset, stride, countBuffer,
                              countBufferOffset, maxDrawCount);
 
+    const char* count_vuid = record_obj.location.function == vvl::Func::vkCmdDrawMeshTasksIndirectCount2EXT
+                                 ? "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13116"
+                                 : "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717";
     valcmd::CountBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset,
                         sizeof(VkDrawMeshTasksIndirectCommandEXT), vvl::Struct::VkDrawMeshTasksIndirectCommandEXT, stride,
-                        countBuffer, countBufferOffset, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717");
+                        countBuffer, countBufferOffset, count_vuid);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
