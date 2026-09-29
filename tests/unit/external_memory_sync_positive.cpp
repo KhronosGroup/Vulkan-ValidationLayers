@@ -241,8 +241,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     // Insert memory barrier to guarantee copy order
     VkMemoryBarrier mem_barrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT,
                                    VK_ACCESS_TRANSFER_READ_BIT};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, mem_barrier);
     vk::CmdCopyBuffer(m_command_buffer, buffer_import, buffer_output, 1, &copy_info);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);

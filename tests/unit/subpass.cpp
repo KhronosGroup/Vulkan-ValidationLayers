@@ -523,9 +523,8 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-image-04073");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
-                           &img_barrier);
+    m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1051,39 +1050,15 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
 
     RETURN_IF_SKIP(Init());
 
-    const VkAttachmentDescription inputAttachmentDescription = {0,
-                                                                m_render_target_fmt,
-                                                                VK_SAMPLE_COUNT_1_BIT,
-                                                                VK_ATTACHMENT_LOAD_OP_LOAD,
-                                                                VK_ATTACHMENT_STORE_OP_STORE,
-                                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                                VK_IMAGE_LAYOUT_GENERAL,
-                                                                VK_IMAGE_LAYOUT_GENERAL};
-
+    RenderPassSingleSubpass renderPass(*this);
+    renderPass.AddAttachmentDescription(m_render_target_fmt, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+                                        VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
     // index 0 is unused
     // index 1 is is valid (for both color and input)
-    const VkAttachmentReference inputAttachmentReferences[2] = {{VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL},
-                                                                {0, VK_IMAGE_LAYOUT_GENERAL}};
-
-    const VkSubpassDescription subpassDescription = {(VkSubpassDescriptionFlags)0,
-                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     2,
-                                                     inputAttachmentReferences,
-                                                     1,
-                                                     &inputAttachmentReferences[1],
-                                                     nullptr,
-                                                     nullptr,
-                                                     0,
-                                                     nullptr};
-
-    VkRenderPassCreateInfo renderPassInfo = vku::InitStructHelper();
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &inputAttachmentDescription;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpassDescription;
-
-    vkt::RenderPass renderPass(*m_device, renderPassInfo);
+    renderPass.AddInputAttachment(VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL);
+    renderPass.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    renderPass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    renderPass.CreateRenderPass();
 
     // There are 2 OpLoad/OpAccessChain that point the same OpVariable
     // Make sure we are not just taking the first load and checking all loads on a variable

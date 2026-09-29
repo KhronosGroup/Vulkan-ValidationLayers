@@ -1320,8 +1320,7 @@ TEST_F(PositiveDescriptorBuffer, EmbeddedSamplers) {
     VkMemoryBarrier memory_barrier_1 = vku::InitStructHelper();
     memory_barrier_1.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     memory_barrier_1.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 1u,
-                           &memory_barrier_1, 0u, nullptr, 0u, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, memory_barrier_1);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -1338,8 +1337,7 @@ TEST_F(PositiveDescriptorBuffer, EmbeddedSamplers) {
     VkMemoryBarrier memory_barrier_2 = vku::InitStructHelper();
     memory_barrier_2.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     memory_barrier_2.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 1u,
-                           &memory_barrier_2, 0u, nullptr, 0u, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, memory_barrier_2);
 
     VkBufferImageCopy region = {};
     region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
@@ -1845,10 +1843,6 @@ TEST_F(PositiveDescriptorBuffer, DeviceLocal) {
     buffer_memory_barrier.offset = 0u;
     buffer_memory_barrier.size = descriptor_buffer_size;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.bufferMemoryBarrierCount = 1u;
-    dependency_info.pBufferMemoryBarriers = &buffer_memory_barrier;
-
     VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
     buffer_binding_info.address = device_local_descriptor_buffer.Address();
     buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
@@ -1856,7 +1850,7 @@ TEST_F(PositiveDescriptorBuffer, DeviceLocal) {
     m_command_buffer.Begin();
     VkBufferCopy buffer_copy = {0, 0, descriptor_buffer_size};
     vk::CmdCopyBuffer(m_command_buffer, src_descriptor_buffer, device_local_descriptor_buffer, 1u, &buffer_copy);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info);
+    m_command_buffer.Barrier(buffer_memory_barrier);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
@@ -2020,17 +2014,13 @@ TEST_F(PositiveDescriptorBuffer, SharedSet) {
     buffer_memory_barrier.offset = ds_layout_size;
     buffer_memory_barrier.size = ds_layout_size;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.bufferMemoryBarrierCount = 1u;
-    dependency_info.pBufferMemoryBarriers = &buffer_memory_barrier;
-
     VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
     buffer_binding_info.address = descriptor_buffer.Address();
     buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 
     m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer, copy_buffer, descriptor_buffer, 1u, &buffer_copy);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info);
+    m_command_buffer.Barrier(buffer_memory_barrier);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);

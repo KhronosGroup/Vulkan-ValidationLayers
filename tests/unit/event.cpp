@@ -1986,8 +1986,7 @@ TEST_F(NegativeEvent, HostResetPendingWaitAndReset) {
     m_command_buffer.Begin();
     m_command_buffer.SetEvent(event);
     m_command_buffer.WaitEvent(event);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                           0, nullptr, 0, nullptr);
+    m_command_buffer.ExecutionBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     m_command_buffer.ResetEvent(event);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);

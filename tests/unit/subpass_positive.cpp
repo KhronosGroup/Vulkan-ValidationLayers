@@ -28,15 +28,6 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    const VkAttachmentDescription attachment = {0,
-                                                VK_FORMAT_R8G8B8A8_UNORM,
-                                                VK_SAMPLE_COUNT_1_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                                VK_IMAGE_LAYOUT_GENERAL};
     const VkSubpassDependency dependency = {0,
                                             0,
                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -44,17 +35,13 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                             VK_DEPENDENCY_BY_REGION_BIT};
-    const VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_GENERAL};
-    const VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 1, &ref, nullptr, nullptr, 0, nullptr};
 
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attachment;
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.dependencyCount = 1;
-    rpci.pDependencies = &dependency;
-    vkt::RenderPass render_pass(*m_device, rpci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.AddSubpassDependency(dependency);
+    render_pass.CreateRenderPass();
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
@@ -78,9 +65,8 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     // Test vkCmdPipelineBarrier subpass barrier
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
-                           &barrier);
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_DEPENDENCY_BY_REGION_BIT);
     vk::CmdEndRenderPass(m_command_buffer);
     m_command_buffer.End();
 
@@ -98,15 +84,6 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    const VkAttachmentDescription attachment = {0,
-                                                VK_FORMAT_R8G8B8A8_UNORM,
-                                                VK_SAMPLE_COUNT_1_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                                VK_IMAGE_LAYOUT_GENERAL};
     const VkSubpassDependency dependency = {VK_SUBPASS_EXTERNAL,
                                             0,
                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -114,17 +91,13 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                             0};
-    const VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_GENERAL};
-    const VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 1, &ref, nullptr, nullptr, 0, nullptr};
 
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attachment;
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.dependencyCount = 1;
-    rpci.pDependencies = &dependency;
-    vkt::RenderPass render_pass(*m_device, rpci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.AddSubpassDependency(dependency);
+    render_pass.CreateRenderPass();
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();

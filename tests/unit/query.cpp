@@ -15,6 +15,7 @@
 #include "utils/cast_utils.h"
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
+#include "render_pass_helper.h"
 #include <algorithm>
 #include <cstdint>
 
@@ -1672,14 +1673,6 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkAttachmentReference color_att = {};
-    color_att.layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_att;
-
     uint32_t view_masks[] = {0x3u};
     uint32_t correlation_masks[] = {0x1u};
     VkRenderPassMultiviewCreateInfo rpmv_ci = vku::InitStructHelper();
@@ -1688,13 +1681,10 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     rpmv_ci.correlationMaskCount = 1;
     rpmv_ci.pCorrelationMasks = correlation_masks;
 
-    VkRenderPassCreateInfo rp_ci = vku::InitStructHelper(&rpmv_ci);
-    rp_ci.attachmentCount = 1;
-    rp_ci.pAttachments = &attach;
-    rp_ci.subpassCount = 1;
-    rp_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, rp_ci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(attach);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.CreateRenderPass(&rpmv_ci);
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -2454,9 +2444,6 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     query_pool_create_info.queryCount = 2;
     vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
     uint32_t viewMasks[] = {0x3u};
     uint32_t correlationMasks[] = {0x1u};
     VkRenderPassMultiviewCreateInfo rpmv_ci = vku::InitStructHelper();
@@ -2465,11 +2452,8 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     rpmv_ci.correlationMaskCount = 1;
     rpmv_ci.pCorrelationMasks = correlationMasks;
 
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&rpmv_ci);
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.CreateRenderPass(&rpmv_ci);
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
     framebuffer_ci.renderPass = render_pass;

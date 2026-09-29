@@ -182,30 +182,21 @@ TEST_F(PositiveMultiview, MeshShader) {
     VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
     VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
-    VkAttachmentReference color_attachment = {0, VK_IMAGE_LAYOUT_GENERAL};
-
     VkAttachmentDescription attach_desc = {};
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_attachment;
-
     uint32_t view_masks[] = {0x3u};
     VkRenderPassMultiviewCreateInfo rp_multiview_ci = vku::InitStructHelper();
     rp_multiview_ci.subpassCount = 1;
     rp_multiview_ci.pViewMasks = view_masks;
 
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper(&rp_multiview_ci);
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    vkt::RenderPass render_pass(*m_device, rpci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(attach_desc);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.CreateRenderPass(&rp_multiview_ci);
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};

@@ -272,8 +272,8 @@ TEST_F(PositiveShaderObjectEXT, VertFragShaderDraw) {
         image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         image_memory_barrier.image = image;
         image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u,
-                               0u, nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+        m_command_buffer.Barrier(image_memory_barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT);
     }
 
     VkBufferImageCopy copy_region = {};

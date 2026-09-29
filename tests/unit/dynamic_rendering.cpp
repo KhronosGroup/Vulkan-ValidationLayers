@@ -19,6 +19,7 @@
 #include "utils/math_utils.h"
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
+#include "render_pass_helper.h"
 
 class NegativeDynamicRendering : public DynamicRenderingTest {};
 
@@ -102,11 +103,9 @@ TEST_F(NegativeDynamicRendering, CommandDraw) {
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_attachment.imageView = depth_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.pDepthAttachment = &depth_attachment;
     begin_rendering_info.pStencilAttachment = &depth_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -170,13 +169,11 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = color_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
     begin_rendering_info.pStencilAttachment = &depth_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -817,12 +814,10 @@ TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.viewMask = 2;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -905,9 +900,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = depth_stencil_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     m_command_buffer.Begin();
 
     // Mismatching color attachment count
@@ -1005,11 +998,9 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
 
     {
         // Mismatching color formats
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.colorAttachmentCount = 1;
         begin_rendering_info.pColorAttachments = &color_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08912");
@@ -1020,10 +1011,8 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
 
     {
         // Mismatching depth format
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08913");
@@ -1034,10 +1023,8 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
 
     {
         // Mismatching stencil format
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08916");
@@ -1074,9 +1061,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3Color) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = color_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     m_command_buffer.Begin();
 
     // Mismatching color formats
@@ -1153,9 +1138,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3DepthStencil) {
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = depth_stencil_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     m_command_buffer.Begin();
 
     // Mismatching depth format
@@ -1198,9 +1181,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats4) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = color_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     m_command_buffer.Begin();
 
     // Mismatching color formats
@@ -1239,9 +1220,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesColor) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = color_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     m_command_buffer.Begin();
 
     // Mismatching color samples
@@ -1294,9 +1273,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesDepthStencil) {
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = depth_stencil_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     m_command_buffer.Begin();
 
     // Mismatching depth samples
@@ -1435,9 +1412,7 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = depth_stencil_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     m_command_buffer.Begin();
 
     // Mismatching depth samples
@@ -1758,12 +1733,10 @@ TEST_F(NegativeDynamicRendering, MismatchedSamplesColorDepth) {
     depth_attachment.imageView = depth_image_view;
     depth_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-multisampledRenderToSingleSampled-06857");
@@ -1793,11 +1766,9 @@ TEST_F(NegativeDynamicRendering, MismatchedSamplesColors) {
     color_attachments[1].imageView = unsampled_image_view;
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 2;
     begin_rendering_info.pColorAttachments = color_attachments;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-multisampledRenderToSingleSampled-06857");
@@ -1828,11 +1799,9 @@ TEST_F(NegativeDynamicRendering, MismatchedSamplesColorsNV) {
     color_attachments[1].imageView = unsampled_image_view;
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 2;
     begin_rendering_info.pColorAttachments = color_attachments;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-09429");
@@ -2113,10 +2082,8 @@ TEST_F(NegativeDynamicRendering, BeginRenderingDepthAttachmentFormat) {
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
     depth_attachment.imageView = image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.pDepthAttachment = &depth_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-06547");
@@ -2298,9 +2265,8 @@ TEST_F(NegativeDynamicRendering, BarrierShaderTileFeaturesNotEnabled) {
     barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09553");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &barrier, 0, nullptr, 0,
-                           nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, barrier,
+                             VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
@@ -2341,9 +2307,8 @@ TEST_F(NegativeDynamicRendering, WithoutShaderTileImageAndBarrier) {
     memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09553");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &memory_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             memory_barrier, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
@@ -2409,9 +2374,8 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dependencyFlags-07891");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_DEVICE_GROUP_BIT, 0, nullptr, 0, nullptr, 0,
-                           nullptr);
+    m_command_buffer.ExecutionBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                      VK_DEPENDENCY_DEVICE_GROUP_BIT);
     m_errorMonitor->VerifyFound();
 
     VkBufferMemoryBarrier buf_barrier = vku::InitStructHelper();
@@ -2426,19 +2390,18 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09554");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-pBufferMemoryBarriers-02817");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-pBufferMemoryBarriers-02818");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &buf_barrier,
-                           0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             buf_barrier, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-09556");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    m_command_buffer.ExecutionBarrier(VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                      VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-09556");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    m_command_buffer.ExecutionBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                      VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     VkMemoryBarrier memory_barrier = vku::InitStructHelper();
@@ -2446,15 +2409,13 @@ TEST_F(NegativeDynamicRendering, WithShaderTileImageAndBarrier) {
     memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcAccessMask-02815");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &memory_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             memory_barrier, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstAccessMask-02816 ");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &memory_barrier, 0, nullptr,
-                           0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                             memory_barrier, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
@@ -2474,10 +2435,8 @@ TEST_F(NegativeDynamicRendering, BeginRenderingStencilAttachmentFormat) {
     stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
     stencil_attachment.imageView = image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.pStencilAttachment = &stencil_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pStencilAttachment-06548");
@@ -2808,12 +2767,8 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkSubpassDescription subpass = {};
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.CreateRenderPass();
 
     vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -3509,11 +3464,9 @@ TEST_F(NegativeDynamicRendering, ResolveModeWithNonIntegerColorFormat) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3552,11 +3505,9 @@ TEST_F(NegativeDynamicRendering, ResolveModeWithIntegerColorFormat) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3582,11 +3533,9 @@ TEST_F(NegativeDynamicRendering, ResolveModeSamples) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.resolveImageView = image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3624,11 +3573,9 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewSamples) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3671,11 +3618,9 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewFormatMatch) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3698,11 +3643,9 @@ TEST_F(NegativeDynamicRendering, AttachmentImageViewLayout) {
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3740,11 +3683,9 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewLayout) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3783,11 +3724,9 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewLayoutSeparateDepthStencil) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3819,11 +3758,9 @@ TEST_F(NegativeDynamicRendering, AttachmentImageViewShadingRateLayout) {
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3873,11 +3810,9 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewShadingRateLayout) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3904,11 +3839,9 @@ TEST_F(NegativeDynamicRendering, AttachmentImageViewFragmentDensityLayout) {
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3947,11 +3880,9 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewFragmentDensityLayout) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -3990,11 +3921,9 @@ TEST_F(NegativeDynamicRendering, ResolveImageViewReadOnlyOptimalLayout) {
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -4074,11 +4003,9 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachment) {
     color_attachment.resolveImageView = resolve_image_view;
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -4170,11 +4097,9 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachmentInheritedUsage) {
     color_attachment.resolveImageView = resolve_image_view;
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -4241,11 +4166,9 @@ TEST_F(NegativeDynamicRendering, RenderingInfoDepthAttachment) {
     stencil_attachment.imageView = stencil_image_view;
     stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.pDepthAttachment = &depth_attachment;
     begin_rendering_info.pStencilAttachment = &stencil_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -4445,9 +4368,7 @@ TEST_F(NegativeDynamicRendering, Pipeline) {
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -5421,12 +5342,10 @@ TEST_F(NegativeDynamicRendering, NullDepthStencilExecuteCommands) {
     rai.imageView = depth_stencil_view;
     rai.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo ri = vku::InitStructHelper();
+    VkRenderingInfo ri = GetSimpleRenderingInfo();
     ri.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
-    ri.layerCount = 1;
     ri.pDepthAttachment = &rai;
     ri.pStencilAttachment = &rai;
-    ri.renderArea = {{0, 0}, {1, 1}};
 
     // Record secondary cmd buffer with depth stencil format
     secondary.Begin(&cbbi);
@@ -5485,12 +5404,10 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithSecondaryContents) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
-    begin_rendering_info.layerCount = 1;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5519,11 +5436,9 @@ TEST_F(NegativeDynamicRendering, BadRenderPassContentsWhenCallingCmdExecuteComma
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5584,12 +5499,10 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithNonNullRenderPass) {
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5686,12 +5599,10 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingColorAttachmentCo
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5741,12 +5652,10 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingColorImageViewFor
     inheritance_rendering_info.pColorAttachmentFormats = bad_color_formats.data();
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5788,12 +5697,10 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithNullImageView) {
     inheritance_rendering_info.pColorAttachmentFormats = bad_color_formats.data();
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5842,12 +5749,10 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingDepthStencilImage
     inheritance_rendering_info.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
     begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -5946,12 +5851,10 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewRasteriz
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     // A pool we can reset in.
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -6056,12 +5959,10 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewAttachme
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     // A pool we can reset in.
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -6334,11 +6235,9 @@ TEST_F(NegativeDynamicRendering, EndRenderpassWithBeginRenderingRenderpassInstan
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
@@ -6367,9 +6266,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingDisabled) {
     InitRenderTarget();
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
 
     m_command_buffer.Begin();
 
@@ -6572,11 +6469,9 @@ TEST_F(NegativeDynamicRendering, DynamicColorBlendAttchment) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = color_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -7166,11 +7061,9 @@ TEST_F(NegativeDynamicRendering, PipelineLegacyDithering) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -7194,12 +7087,10 @@ TEST_F(NegativeDynamicRendering, RenderPassLegacyDithering) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -7281,13 +7172,11 @@ TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoViewMask) {
     vk::CmdDraw(secondary_cb, 4u, 1u, 0u, 0u);
     secondary_cb.End();
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.viewMask = 3u;
-    begin_rendering_info.layerCount = 1u;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -7319,11 +7208,9 @@ TEST_F(NegativeDynamicRendering, CmdBeginCustomResolve) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = color_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
     VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
 
     m_command_buffer.Begin();
@@ -7378,11 +7265,9 @@ TEST_F(NegativeDynamicRendering, CustomResolveRenderingInfo) {
     color_attachment.resolveImageView = resolve_image_view;
     color_attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
     begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
 
     m_command_buffer.Begin();
@@ -7411,12 +7296,10 @@ TEST_F(NegativeDynamicRendering, CustomResolveFeature) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-flags-11514");
@@ -7478,12 +7361,10 @@ TEST_F(NegativeDynamicRendering, CustomResolvePipelineBound) {
     color_attachment.resolveImageView = resolve_image_view;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
     VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
 
     m_command_buffer.Begin();
@@ -7564,12 +7445,10 @@ TEST_F(NegativeDynamicRendering, CustomResolveSampleShadingExplicit) {
     color_attachment.resolveImageView = resolve_image_view;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT | VK_RENDERING_FRAGMENT_REGION_BIT_EXT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -7618,12 +7497,10 @@ TEST_F(NegativeDynamicRendering, CustomResolvePipelineFormatMismatch) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = color_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
     VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
 
     m_command_buffer.Begin();
@@ -8529,9 +8406,8 @@ TEST_F(NegativeDynamicRendering, MemoryBarrierAccessMasks) {
     barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09586");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &barrier, 0, nullptr, 0,
-                           nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, barrier,
+                             VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -8583,9 +8459,7 @@ TEST_F(NegativeDynamicRendering, ImageView3D) {
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
 

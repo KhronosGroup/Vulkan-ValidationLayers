@@ -6353,14 +6353,10 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeap) {
     memory_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     memory_barrier.dstAccessMask = VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT | VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.memoryBarrierCount = 1u;
-    dependency_info.pMemoryBarriers = &memory_barrier;
-
     m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer, copy_src, descriptor_heap, 1u, &copy_region);
 
-    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info);
+    m_command_buffer.Barrier(memory_barrier);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
@@ -6463,13 +6459,9 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapGraphics) {
     memory_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     memory_barrier.dstAccessMask = VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT | VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.memoryBarrierCount = 1u;
-    dependency_info.pMemoryBarriers = &memory_barrier;
-
     m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer, copy_src, descriptor_heap, 1u, &copy_region);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info);
+    m_command_buffer.Barrier(memory_barrier);
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -6586,13 +6578,9 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapMesh) {
     memory_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     memory_barrier.dstAccessMask = VK_ACCESS_2_RESOURCE_HEAP_READ_BIT_EXT | VK_ACCESS_2_SAMPLER_HEAP_READ_BIT_EXT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.memoryBarrierCount = 1u;
-    dependency_info.pMemoryBarriers = &memory_barrier;
-
     m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer, copy_src, descriptor_heap, 1u, &copy_region);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info);
+    m_command_buffer.Barrier(memory_barrier);
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);

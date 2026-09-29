@@ -67,13 +67,11 @@ TEST_F(PositiveImageLayout, BarriersAndImageUsage) {
 
             img_barrier.oldLayout = buffer_layouts[i].old_layout;
             img_barrier.newLayout = buffer_layouts[i].new_layout;
-            vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
-                                   0, nullptr, 1, &img_barrier);
+            m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 
             img_barrier.oldLayout = buffer_layouts[i].new_layout;
             img_barrier.newLayout = buffer_layouts[i].old_layout;
-            vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
-                                   0, nullptr, 1, &img_barrier);
+            m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
         }
         m_command_buffer.End();
 
@@ -205,23 +203,19 @@ TEST_F(PositiveImageLayout, Subresource) {
     const VkImageSubresourceRange subresource_range = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
     auto barrier =
         image.LayoutTransitionBarrier(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresource_range);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &barrier);
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.subresourceRange.baseMipLevel = 1;
     barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &barrier);
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &barrier);
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.subresourceRange.baseMipLevel = 2;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &barrier);
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
@@ -285,20 +279,17 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier.newLayout = init_layout;
 
-        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                               nullptr, 1, &image_barrier);
+        cmd_buf.Barrier(image_barrier, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
         image_barrier.subresourceRange = first_range;
         image_barrier.oldLayout = init_layout;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                               nullptr, 1, &image_barrier);
+        cmd_buf.Barrier(image_barrier, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
         image_barrier.subresourceRange = view_range;
         image_barrier.oldLayout = init_layout;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                               nullptr, 1, &image_barrier);
+        cmd_buf.Barrier(image_barrier, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
@@ -446,11 +437,9 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                               nullptr, 1, &image_barrier);
+        cmd_buf.Barrier(image_barrier, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
         image_barrier.image = other_image;
-        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
-                               nullptr, 1, &image_barrier);
+        cmd_buf.Barrier(image_barrier, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT);
 
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
@@ -493,8 +482,7 @@ TEST_F(PositiveImageLayout, ArrayLayers) {
     img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     img_barrier.image = image;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -726,10 +714,6 @@ TEST_F(PositiveImageLayout, FramebufferAttachmentFrom3dImageSlice) {
     layout_transition.image = image_3d;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &layout_transition;
-
     m_command_buffer.Begin();
     // Render pass transitions slice 1 to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.
     // The original issue was that layout transition worked only for slice 0.
@@ -737,7 +721,7 @@ TEST_F(PositiveImageLayout, FramebufferAttachmentFrom3dImageSlice) {
     m_command_buffer.EndRenderPass();
 
     // In case of regression the following transition will report layout mismatch error.
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(layout_transition);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
