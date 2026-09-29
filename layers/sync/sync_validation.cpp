@@ -2317,9 +2317,9 @@ bool SyncValidator::ProcessQueuePresent(VkQueue queue, const VkPresentInfoKHR* p
     BatchContextPtr batch(std::make_shared<QueueBatchContext>(*this, queue_state));
 
     const auto wait_semaphores = vvl::make_span(pPresentInfo->pWaitSemaphores, pPresentInfo->waitSemaphoreCount);
+    const auto swapchains = vvl::make_span(pPresentInfo->pSwapchains, pPresentInfo->swapchainCount);
 
-    PresentedImages presented_images;
-    uint32_t present_tag_count = SetupPresentInfo(*pPresentInfo, batch, presented_images);
+    PresentedImages presented_images = SetupPresentInfo(*pPresentInfo, batch);
 
     SignalsUpdate signals_update(*this);
     auto resolved_batches = batch->ResolvePresentWaits(wait_semaphores, presented_images, signals_update);
@@ -2335,12 +2335,12 @@ bool SyncValidator::ProcessQueuePresent(VkQueue queue, const VkPresentInfoKHR* p
     const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
 
     // Convert present tags to global range
-    const ResourceUsageTag global_range_start = batch->SetupBatchTags(present_tag_count);
+    const ResourceUsageTag global_range_start = batch->SetupBatchTags(uint32_t(presented_images.size()));
     for (PresentedImage& presented : presented_images) {
         presented.tag += global_range_start;
     }
 
-    skip |= batch->DoQueuePresentValidate(error_obj.location, presented_images);
+    skip |= batch->DoQueuePresentValidate(error_obj.location, swapchains, presented_images);
     batch->DoPresentOperations(presented_images);
     batch->LogPresentOperations(presented_images, submit_id);
 
@@ -2351,29 +2351,34 @@ bool SyncValidator::ProcessQueuePresent(VkQueue queue, const VkPresentInfoKHR* p
         queue_state.SetLastBatch(std::move(batch));
         ApplySignalsUpdate(signals_update, queue_state.LastBatch());
         for (auto& presented : presented_images) {
-            presented.ExportToSwapchain();
+            auto swapchain = Get<vvl::Swapchain>(swapchains[presented.swapchain_index]);
+            if (!vvl::StateObject::Invalid(swapchain)) {
+                SubState(*swapchain).RecordPresentedImage(std::move(presented));
+            }
         }
     }
     return skip;
 }
 
-uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR& present_info, BatchContextPtr& batch,
-                                         PresentedImages& presented_images) {
-    const VkSwapchainKHR* swapchains = present_info.pSwapchains;
-    const uint32_t* image_indices = present_info.pImageIndices;
-    const uint32_t swapchain_count = present_info.swapchainCount;
+PresentedImages SyncValidator::SetupPresentInfo(const VkPresentInfoKHR& present_info, const BatchContextPtr& batch) {
+    PresentedImages presented_images;
+    presented_images.reserve(present_info.swapchainCount);
 
-    presented_images.reserve(swapchain_count);
-    for (uint32_t present_index = 0; present_index < swapchain_count; present_index++) {
-        // Note: Given the "EraseIf" implementation for acquire fence waits, each presentation needs a unique tag.
+    for (uint32_t i = 0; i < present_info.swapchainCount; i++) {
+        auto swapchain = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
+        if (vvl::StateObject::Invalid(swapchain)) {
+            continue;
+        }
+        // Allocate a tag per presented image because acquire wait operations identify
+        // present write by exact tag. These initial tags will be offset by the global tag
         const ResourceUsageTag tag = presented_images.size();
-        presented_images.emplace_back(*this, batch, swapchains[present_index], image_indices[present_index], present_index, tag);
-        if (presented_images.back().Invalid()) {
-            presented_images.pop_back();
+
+        PresentedImage presented(*swapchain, batch, present_info.pImageIndices[i], i, tag);
+        if (presented.image) {
+            presented_images.emplace_back(std::move(presented));
         }
     }
-    // Present is tagged for each swapchain.
-    return static_cast<uint32_t>(presented_images.size());
+    return presented_images;
 }
 
 void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
@@ -2396,32 +2401,26 @@ void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const Vk
 
 void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                                 VkFence fence, uint32_t* pImageIndex, const RecordObject& record_obj) {
-    if ((VK_SUCCESS != record_obj.result) && (VK_SUBOPTIMAL_KHR != record_obj.result)) {
+    if (record_obj.result != VK_SUCCESS && record_obj.result != VK_SUBOPTIMAL_KHR) {
         return;
     }
-
-    // Get the image out of the presented list and create apppropriate fences/semaphores.
-    auto swapchain_base = Get<vvl::Swapchain>(swapchain);
-    if (vvl::StateObject::Invalid(swapchain_base)) {
-        return;
-    }  // Invalid acquire calls to be caught in CoreCheck/Parameter validation
-
-    auto& swapchain_state = SubState(*swapchain_base);
-
-    PresentedImage presented = swapchain_state.MovePresentedImage(*pImageIndex);
-    if (presented.Invalid()) {
+    if (semaphore == VK_NULL_HANDLE && fence == VK_NULL_HANDLE) {
+        return;  // [core validation check]: both sync primitives are missing
+    }
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
+    if (vvl::StateObject::Invalid(swapchain_state)) {
         return;
     }
-
-    // No way to make access safe, so nothing to record
-    if ((semaphore == VK_NULL_HANDLE) && (fence == VK_NULL_HANDLE)) {
+    SwapchainSubState& swapchain_substate = SubState(*swapchain_state);
+    PresentedImage presented = swapchain_substate.MovePresentedImage(*pImageIndex);
+    if (!presented.image) {
         return;
     }
 
     // We create a queue-less QBC for the Semaphore and fences to wait on
-
-    // Note: this is a heavyweight way to deal with the fact that all operation logs live in the QueueBatchContext... and
-    // acquire doesn't happen on a queue, but we need a place to put the acquire operation access record.
+    // NOTE: this is a heavyweight way to deal with the fact that all operation logs live in the
+    // QueueBatchContext. Acquire doesn't happen on a queue, but we need a place to put the acquire
+    // operation access record
     auto batch = std::make_shared<QueueBatchContext>(*this);
     batch->SetupAccessContext(presented);
     const ResourceUsageTag acquire_tag = batch->SetupBatchTags(1);
@@ -2434,8 +2433,7 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
     presented.batch = std::move(batch);
 
     if (semaphore != VK_NULL_HANDLE) {
-        std::shared_ptr<const vvl::Semaphore> sem_state = Get<vvl::Semaphore>(semaphore);
-        if (sem_state) {
+        if (auto sem_state = Get<vvl::Semaphore>(semaphore)) {
             // This will ignore any duplicated signal (emplace does not update existing entry),
             // and the core validation reports and error in this case.
             binary_signals_.emplace(sem_state->VkHandle(), SignalInfo(sem_state, presented, acquire_tag));

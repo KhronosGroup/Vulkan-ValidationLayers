@@ -163,12 +163,14 @@ void SwapchainSubState::RecordPresentedImage(PresentedImage&& presented_image) {
 
 // We move from the presented images array 1) so we don't copy shared_ptr, and 2) to mark it acquired
 PresentedImage SwapchainSubState::MovePresentedImage(uint32_t image_index) {
-    if (presented.size() <= image_index) presented.resize(image_index + 1);
+    if (presented.size() <= image_index) {
+        presented.resize(image_index + 1);
+    }
     PresentedImage ret_val = std::move(presented[image_index]);
-    if (ret_val.Invalid()) {
-        // If this is the first time the image has been acquired, then it's valid to have no present record, so we create one
-        // Note: It's also possible this is an invalid acquire... but that's CoreChecks/Parameter validation's job to report
-        ret_val = PresentedImage(base.shared_from_this(), image_index);
+    if (!ret_val.image) {
+        // If this is the first time the image has been acquired then it has no present record and we create one
+        // NOTE: It's also possible this is an invalid acquire but this is reported by core checks
+        ret_val = PresentedImage(base, image_index);
     }
     return ret_val;
 }
@@ -541,14 +543,15 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolvePresentWaits(vvl::span<co
     return batches_resolved;
 }
 
-bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const PresentedImages& presented_images) {
+bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, vvl::span<const VkSwapchainKHR> swapchains,
+                                               const PresentedImages& presented_images) {
     bool skip = false;
     // Tag the presented images so record doesn't have to know the tagging scheme
     for (const PresentedImage& presented : presented_images) {
         ImageRangeGen range_gen = presented.range_gen;
         HazardResult hazard = access_context_.DetectHazard(range_gen, SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
         if (hazard.IsHazard()) {
-            const VulkanTypedHandle swapchain_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
+            const VulkanTypedHandle swapchain_handle(swapchains[presented.swapchain_index], kVulkanObjectTypeSwapchainKHR);
             const VulkanTypedHandle image_handle = vvl::StateObject::Handle(presented.image);
 
             LogObjectList objlist(queue_state_->GetQueue()->Handle(), swapchain_handle, image_handle);
@@ -560,7 +563,7 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const Presen
             const std::string resource_description = ss.str();
 
             const std::string error = sync_state_.error_messages_.PresentError(hazard, *this, vvl::Func::vkQueuePresentKHR,
-                                                                               resource_description, presented.present_index);
+                                                                               resource_description, presented.swapchain_index);
             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
             if (skip) {
                 break;
@@ -897,47 +900,28 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const Command
                                          const std::vector<std::string>& initial_label_stack)
     : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
 
-PresentedImage::PresentedImage(SyncValidator& sync_state, BatchContextPtr batch, VkSwapchainKHR swapchain, uint32_t image_index,
-                               uint32_t present_index, ResourceUsageTag tag)
-    : PresentedImageRecord{tag, image_index, present_index, sync_state.Get<vvl::Swapchain>(swapchain), {}},
-      batch(std::move(batch)) {
-    SetImage(image_index);
+PresentedImage::PresentedImage(const vvl::Swapchain& swapchain, BatchContextPtr batch, uint32_t image_index,
+                               uint32_t swapchain_index, ResourceUsageTag tag)
+    : PresentedImageRecord{tag, image_index, swapchain_index, {}}, batch(std::move(batch)) {
+    SetImage(swapchain, image_index);
 }
 
-PresentedImage::PresentedImage(std::shared_ptr<vvl::Swapchain>&& swapchain, uint32_t at_index) : PresentedImage() {
-    swapchain_state = std::move(swapchain);
+PresentedImage::PresentedImage(const vvl::Swapchain& swapchain, uint32_t at_index) : PresentedImage() {
     tag = kInvalidTag;
-    SetImage(at_index);
+    SetImage(swapchain, at_index);
 }
 
-bool PresentedImage::Invalid() const { return vvl::StateObject::Invalid(image); }
-
-// Export uses move semantics...
-void PresentedImage::ExportToSwapchain() {
-    // If the swapchain is dead just ignore the present
-    auto swap_lock = swapchain_state.lock();
-    if (vvl::StateObject::Invalid(swap_lock)) {
-        return;
-    }
-    auto& sub_state = SubState(*swap_lock);
-    sub_state.RecordPresentedImage(std::move(*this));
-}
-
-void PresentedImage::SetImage(uint32_t at_index) {
+void PresentedImage::SetImage(const vvl::Swapchain& swapchain, uint32_t at_index) {
     image_index = at_index;
-
-    auto swap_lock = swapchain_state.lock();
-    if (vvl::StateObject::Invalid(swap_lock)) {
+    if (swapchain.Destroyed()) {
         return;
     }
-
-    image = std::static_pointer_cast<const vvl::Image>(swap_lock->GetSwapChainImageShared(image_index));
-    if (Invalid()) {
-        range_gen = ImageRangeGen();
+    image = swapchain.GetSwapChainImageShared(image_index);
+    if (image) {
+        const ImageSubState& image_substate = SubState(*image);
+        range_gen = image_substate.MakeImageRangeGen(image->full_range, false);
     } else {
-        // For valid images create the type/range_gen to used to scope the semaphore operations
-        const auto& sub_state = SubState(*image);
-        range_gen = sub_state.MakeImageRangeGen(image->full_range, false);
+        range_gen = ImageRangeGen();
     }
 }
 
