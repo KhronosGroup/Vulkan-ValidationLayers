@@ -2612,19 +2612,7 @@ float4 main() : SV_Target {
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.CreateGraphicsPipeline(false);
 
-    VkPipeline libraries[4] = {
-        vertex_input_lib,
-        pre_raster_lib,
-        frag_shader_lib,
-        frag_out_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(libraries);
-    link_info.pLibraries = libraries;
-
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, {vertex_input_lib, pre_raster_lib, frag_shader_lib, frag_out_lib}, pipeline_layout);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -2973,23 +2961,9 @@ void main() {
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.CreateGraphicsPipeline(false);
 
-    VkPipeline good_libraries[4] = {vertex_input_lib, pre_raster_lib, good_frag_shader_lib, frag_out_lib};
-    VkPipelineLibraryCreateInfoKHR good_link_info = vku::InitStructHelper();
-    good_link_info.libraryCount = size32(good_libraries);
-    good_link_info.pLibraries = good_libraries;
+    vkt::Pipeline good_exe_pipe(*m_device, {vertex_input_lib, pre_raster_lib, good_frag_shader_lib, frag_out_lib}, pipeline_layout);
 
-    VkGraphicsPipelineCreateInfo good_exe_pipe_ci = vku::InitStructHelper(&good_link_info);
-    good_exe_pipe_ci.layout = pipeline_layout;
-    vkt::Pipeline good_exe_pipe(*m_device, good_exe_pipe_ci);
-
-    VkPipeline bad_libraries[4] = {vertex_input_lib, pre_raster_lib, bad_frag_shader_lib, frag_out_lib};
-    VkPipelineLibraryCreateInfoKHR bad_link_info = vku::InitStructHelper();
-    bad_link_info.libraryCount = size32(bad_libraries);
-    bad_link_info.pLibraries = bad_libraries;
-
-    VkGraphicsPipelineCreateInfo bad_exe_pipe_ci = vku::InitStructHelper(&bad_link_info);
-    bad_exe_pipe_ci.layout = pipeline_layout;
-    vkt::Pipeline bad_exe_pipe(*m_device, bad_exe_pipe_ci);
+    vkt::Pipeline bad_exe_pipe(*m_device, {vertex_input_lib, pre_raster_lib, bad_frag_shader_lib, frag_out_lib}, pipeline_layout);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);

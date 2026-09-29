@@ -1803,18 +1803,7 @@ TEST_F(PositiveGpuAV, DualShaderLibrary) {
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.CreateGraphicsPipeline(false);
 
-    VkPipeline libraries[2] = {
-        combined_lib,
-        frag_out_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(libraries);
-    link_info.pLibraries = libraries;
-
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
-    ASSERT_TRUE(exe_pipe.initialized());
+    vkt::Pipeline exe_pipe(*m_device, {combined_lib, frag_out_lib}, pipeline_layout);
 }
 
 TEST_F(PositiveGpuAV, DualShaderLibraryInline) {
@@ -1857,22 +1846,11 @@ TEST_F(PositiveGpuAV, DualShaderLibraryInline) {
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.CreateGraphicsPipeline(false);
 
-    VkPipeline libraries[2] = {
-        combined_lib,
-        frag_out_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(libraries);
-    link_info.pLibraries = libraries;
-
     // Destroy VkShaderModule as not required to have when linking
     vs.Destroy();
     fs.Destroy();
 
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
-    ASSERT_TRUE(exe_pipe.initialized());
+    vkt::Pipeline exe_pipe(*m_device, {combined_lib, frag_out_lib}, pipeline_layout);
 }
 
 TEST_F(PositiveGpuAV, FailedSampler) {
@@ -2161,17 +2139,7 @@ TEST_F(PositiveGpuAV, DualShaderLibraryDestroyLayout) {
     OneOffDescriptorSet ds_link(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout_link(*m_device, {&ds_link.layout_});
 
-    VkPipeline libraries[2] = {
-        combined_lib,
-        frag_out_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(libraries);
-    link_info.pLibraries = libraries;
-
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout_link;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, {combined_lib, frag_out_lib}, pipeline_layout_link);
 }
 
 TEST_F(PositiveGpuAV, DifferentShaderLibraryWithIntermediateLibrary) {
@@ -2203,18 +2171,8 @@ TEST_F(PositiveGpuAV, DifferentShaderLibraryWithIntermediateLibrary) {
         pre_raster_lib.CreateGraphicsPipeline();
     }
 
-    VkPipeline intermediate_libraries[2] = {
-        vertex_input_lib,
-        pre_raster_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(intermediate_libraries);
-    link_info.pLibraries = intermediate_libraries;
-
-    VkGraphicsPipelineCreateInfo intermediate_pipe_ci = vku::InitStructHelper(&link_info);
-    intermediate_pipe_ci.layout = pipeline_layout;
-    intermediate_pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    vkt::Pipeline intermediate_lib(*m_device, intermediate_pipe_ci);
+    vkt::Pipeline intermediate_lib(*m_device, {vertex_input_lib, pre_raster_lib}, pipeline_layout, VK_NULL_HANDLE,
+                                   VK_PIPELINE_CREATE_LIBRARY_BIT_KHR);
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -2229,17 +2187,7 @@ TEST_F(PositiveGpuAV, DifferentShaderLibraryWithIntermediateLibrary) {
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.CreateGraphicsPipeline(false);
 
-    VkPipeline exe_libraries[3] = {
-        intermediate_lib,
-        frag_shader_lib,
-        frag_out_lib,
-    };
-    link_info.libraryCount = size32(exe_libraries);
-    link_info.pLibraries = exe_libraries;
-
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, {intermediate_lib, frag_shader_lib, frag_out_lib}, pipeline_layout);
 }
 
 TEST_F(PositiveGpuAV, PipelineBinariesDraw) {

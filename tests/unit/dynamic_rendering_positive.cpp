@@ -2042,15 +2042,7 @@ TEST_F(PositiveDynamicRendering, LibrariesViewMask) {
     lib2.CreateGraphicsPipeline();
 
     pipeline_rendering_info.viewMask = 0;
-    VkPipelineLibraryCreateInfoKHR library_create_info = vku::InitStructHelper();
-    library_create_info.libraryCount = 2;
-    VkPipeline libraries[2] = {lib1, lib2};
-    library_create_info.pLibraries = libraries;
-
-    VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&library_create_info);
-    pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    pipe_ci.layout = lib1.gp_ci_.layout;
-    vkt::Pipeline pipe(*m_device, pipe_ci);
+    vkt::Pipeline pipe(*m_device, {lib1, lib2}, lib1.gp_ci_.layout, VK_NULL_HANDLE, VK_PIPELINE_CREATE_LIBRARY_BIT_KHR);
 }
 
 TEST_F(PositiveDynamicRendering, UnusedColorAttachmentMixedSamples) {

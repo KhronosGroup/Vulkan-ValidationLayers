@@ -2708,18 +2708,8 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DualShaderLibraryDuplicateLayoutsDyna
     frag_out_lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
     frag_out_lib.CreateGraphicsPipeline(false);
 
-    VkPipeline libraries[2] = {
-        combined_lib,
-        frag_out_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(libraries);
-    link_info.pLibraries = libraries;
-
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout_link;
-    exe_pipe_ci.flags = VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, {combined_lib, frag_out_lib}, pipeline_layout_link, VK_NULL_HANDLE,
+                           VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -2810,18 +2800,8 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DualShaderLibraryDuplicateLayoutsImmu
     ds_link.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     ds_link.UpdateDescriptorSets();
 
-    VkPipeline libraries[2] = {
-        combined_lib,
-        frag_out_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(libraries);
-    link_info.pLibraries = libraries;
-
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout_link;
-    exe_pipe_ci.flags = VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, {combined_lib, frag_out_lib}, pipeline_layout_link, VK_NULL_HANDLE,
+                           VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);

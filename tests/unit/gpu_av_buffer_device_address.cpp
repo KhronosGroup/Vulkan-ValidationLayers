@@ -2589,17 +2589,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, BothShaderInSamePipelineGPL) {
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.CreateGraphicsPipeline(false);
 
-    VkPipeline libraries[2] = {
-        combined_lib,
-        frag_out_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(libraries);
-    link_info.pLibraries = libraries;
-
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, {combined_lib, frag_out_lib}, pipeline_layout);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -2717,18 +2707,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DifferentShaderLibraryWithIntermediateL
         pre_raster_lib.CreateGraphicsPipeline();
     }
 
-    VkPipeline intermediate_libraries[2] = {
-        vertex_input_lib,
-        pre_raster_lib,
-    };
-    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size32(intermediate_libraries);
-    link_info.pLibraries = intermediate_libraries;
-
-    VkGraphicsPipelineCreateInfo intermediate_pipe_ci = vku::InitStructHelper(&link_info);
-    intermediate_pipe_ci.layout = pipeline_layout;
-    intermediate_pipe_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    vkt::Pipeline intermediate_lib(*m_device, intermediate_pipe_ci);
+    vkt::Pipeline intermediate_lib(*m_device, {vertex_input_lib, pre_raster_lib}, pipeline_layout, VK_NULL_HANDLE,
+                                   VK_PIPELINE_CREATE_LIBRARY_BIT_KHR);
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -2741,17 +2721,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DifferentShaderLibraryWithIntermediateL
     frag_out_lib.InitFragmentOutputLibInfo();
     frag_out_lib.CreateGraphicsPipeline(false);
 
-    VkPipeline exe_libraries[3] = {
-        intermediate_lib,
-        frag_shader_lib,
-        frag_out_lib,
-    };
-    link_info.libraryCount = size32(exe_libraries);
-    link_info.pLibraries = exe_libraries;
-
-    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout;
-    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    vkt::Pipeline exe_pipe(*m_device, {intermediate_lib, frag_shader_lib, frag_out_lib}, pipeline_layout);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
