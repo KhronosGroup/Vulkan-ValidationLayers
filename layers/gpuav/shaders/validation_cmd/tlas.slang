@@ -69,16 +69,20 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
             uint64_t valid_as_addr = pc.ptr_to_ptr_to_accel_structs_arrays->addresses_ptr->array[as_i];
 
             if (valid_as_addr == blas_addr) {
-                const uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays->metadata_ptr[as_i];
+                const uint as_metadata = pc.ptr_to_ptr_to_accel_structs_arrays->cpu_submit_time_state_ptr[as_i];
 
-                const uint as_type = GET_BUILD_AS_METADATA_AS_TYPE(as_metadata);
-                const uint as_buffer_status = GET_BUILD_AS_METADATA_BUFFER_STATUS(as_metadata);
-                const uint as_metadata_buffer_memory_status = GET_BUILD_AS_METADATA_BUFFER_MEMORY_STATUS(as_metadata);
+                const uint as_type = GET_BUILD_AS_CPU_SUBMIT_STATE_AS_TYPE(as_metadata);
+                const uint as_buffer_status = GET_BUILD_AS_CPU_SUBMIT_STATE_BUFFER_STATUS(as_metadata);
+                const uint as_metadata_buffer_memory_status = GET_BUILD_AS_CPU_SUBMIT_STATE_BUFFER_MEMORY_STATUS(as_metadata);
+
+                const uint32_t as_gpu_state = *pc.ptr_to_ptr_to_accel_structs_arrays->gpu_state_ptr[as_i];
+                const bool is_as_built = bool((as_gpu_state >> kAsGpuStateBuiltShift) & kAsGpuStateBuiltMask);
 
                 // Valid AS found, quick exit
-                if (as_type == BUILD_AS_METADATA_AS_TYPE_BLAS &&
-                    as_buffer_status == BUILD_AS_METADATA_VALID_BUFFER &&
-                    as_metadata_buffer_memory_status == BUILD_AS_METADATA_VALID_BUFFER_MEMORY) {
+                if (as_type == BUILD_AS_CPU_SUBMIT_STATE_AS_TYPE_BLAS &&
+                    as_buffer_status == BUILD_AS_CPU_SUBMIT_STATE_VALID_BUFFER &&
+                    as_metadata_buffer_memory_status == BUILD_AS_CPU_SUBMIT_STATE_VALID_BUFFER_MEMORY
+                    && is_as_built) {
                     error_subcode = 0;
                     break;
                 }
@@ -98,17 +102,22 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
                 // and so those 2 are equal.
                 // In this loop, TLAS will first be found, but the valid BLAS is right after
                 // hence the need to look past it.
-                if (as_type != BUILD_AS_METADATA_AS_TYPE_BLAS) {
+                if (as_type != BUILD_AS_CPU_SUBMIT_STATE_AS_TYPE_BLAS) {
                     error_subcode = kErrorSubCode_PreBuildAccelerationStructures_InvalidASType;
                     continue;
                 }
 
-                if (as_buffer_status != BUILD_AS_METADATA_VALID_BUFFER) {
+                if (!is_as_built) {
+                    error_subcode = kErrorSubCode_PreBuildAccelerationStructures_BlasNotBuilt;
+                    continue;
+                }
+
+                if (as_buffer_status != BUILD_AS_CPU_SUBMIT_STATE_VALID_BUFFER) {
                     error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASBuffer;
                     continue;
                 }
 
-                if (as_metadata_buffer_memory_status != BUILD_AS_METADATA_VALID_BUFFER_MEMORY) {
+                if (as_metadata_buffer_memory_status != BUILD_AS_CPU_SUBMIT_STATE_VALID_BUFFER_MEMORY) {
                     error_subcode = kErrorSubCode_PreBuildAccelerationStructures_DestroyedASMemory;
                     continue;
                 }
@@ -152,8 +161,8 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
 
         const uint error_dword_0 = uint(blas_addr);
         const uint error_dword_1 = uint(blas_addr >> 32u);
-        const uint error_dword_2 = as_instance_i;
-        const uint error_dword_3 = pc.blas_array_i;// #ARNO_TODO swap dwords 2 and 3
+        const uint error_dword_2 = pc.tlas_build_i;
+        const uint error_dword_3 = as_instance_i;
         const uint error_dword_4 = blas_built_in_cmd_i;
         GpuavLogError5(kErrorGroup_GpuPreBuildAccelerationStructures, error_subcode, error_dword_0, error_dword_1, error_dword_2, error_dword_3, error_dword_4);
     }

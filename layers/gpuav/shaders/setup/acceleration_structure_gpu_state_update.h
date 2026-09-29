@@ -18,34 +18,34 @@
 #define ACCELERATION_STRUCTURE_GPU_STATE_UPDATE_H
 
 #ifdef __cplusplus
-
 #include <cstdint>
+#endif
 
+#if defined(__cplusplus) || defined(__SLANG__)
 namespace gpuav {
-namespace glsl {
-using uint = uint32_t;
-#else
+namespace shader {
 
+typedef uint32_t* AsGpuStatePtr;
+#endif
+
+#if defined(__cplusplus)
+using uint = uint32_t;
+#elif !defined(__SLANG__)
 #extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference2 : require
 #extension GL_EXT_buffer_reference_uvec2 : require
 #extension GL_EXT_scalar_block_layout : require
-#endif
 
-#ifdef __cplusplus
-using GpuStatePtr = uint64_t;
-#else
-
-layout(buffer_reference, scalar) buffer GpuStatePtr { uint state; };
+layout(buffer_reference, scalar) buffer AsGpuStatePtr { uint state; };
 #endif
 
 // Bits layout for AccelerationStructureGpuStateUpdateShaderPushData::state
-// [0]   Valid state or not (1 if valid)
+// [0]   built or not (1 if built)
 // [1]   build mode (VkBuildAccelerationStructureModeKHR)
 // [2:3] AS type (VkAccelerationStructureTypeKHR)
-const uint kAsGpuStateValidShift = 0;
-const uint kAsGpuStateValidMask = 0x1;
+const uint kAsGpuStateBuiltShift = 0;
+const uint kAsGpuStateBuiltMask = 0x1;
 
 const uint kBuildModeShift = 1;
 const uint kBuildModeMask = 0x1;
@@ -54,12 +54,13 @@ const uint kAsTypeShift = 2;
 const uint kAsTypeMask = 0x3 << kAsTypeShift;
 
 struct AccelerationStructureGpuStateUpdateShaderPushData {
-    GpuStatePtr gpu_state_ptr;
+    AsGpuStatePtr dst_gpu_state_ptr;
+    AsGpuStatePtr src_gpu_state_ptr;
     uint state;
 };
 
-#ifdef __cplusplus
-}  // namespace glsl
+#if defined(__cplusplus) || defined(__SLANG__)
+}  // namespace shader
 }  // namespace gpuav
 #endif
 

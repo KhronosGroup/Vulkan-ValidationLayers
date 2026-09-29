@@ -68,9 +68,9 @@ bool inst_trace_ray_acceleration_structure(const uint inst_offset,
     // BoundDescriptorSetsSSBO is only populated for classic descriptor sets
     const uvec2 raw_gpu_state_ptr = descriptor_encodings.data[global_descriptor_index].dwords_1_2;
     if (raw_gpu_state_ptr != uvec2(0)) {
-        GpuStatePtr gpu_state_ptr = GpuStatePtr(raw_gpu_state_ptr);
+        AsGpuStatePtr gpu_state_ptr = AsGpuStatePtr(raw_gpu_state_ptr);
         const uint gpu_state = gpu_state_ptr.state;
-        if (((gpu_state & kAsGpuStateValidMask) >> kAsGpuStateValidShift) == 0) {
+        if (((gpu_state & kAsGpuStateBuiltMask) >> kAsGpuStateBuiltShift) == 0) {
             param_0 = (desc_set << kInst_DescriptorIndexing_SetShift) | global_descriptor_index;
             param_1 = gpu_state;
             error_payload = ErrorPayload(

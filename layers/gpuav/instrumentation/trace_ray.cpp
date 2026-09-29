@@ -17,6 +17,7 @@
 #include "generated/gpuav_offline_spirv.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
+#include "gpuav/instrumentation/register_validation.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "gpuav/shaders/gpuav_error_header.h"
@@ -319,18 +320,22 @@ void RegisterTraceRayValidation(Validator& gpuav, CommandBufferSubState& cb) {
 }
 
 struct AccelerationStructureGpuStateUpdateShader {
-    static size_t GetSpirvSize() { return setup_acceleration_structure_gpu_state_update_comp_size * sizeof(uint32_t); }
-    static const uint32_t* GetSpirv() { return setup_acceleration_structure_gpu_state_update_comp; }
+    static size_t GetSpirvSize() { return setup_acceleration_structure_gpu_state_update_slang_size * sizeof(uint32_t); }
+    static const uint32_t* GetSpirv() { return setup_acceleration_structure_gpu_state_update_slang; }
 
-    glsl::AccelerationStructureGpuStateUpdateShaderPushData push_constants{};
+    shader::AccelerationStructureGpuStateUpdateShaderPushData push_constants{};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() { return {}; }
 
     std::vector<VkWriteDescriptorSet> GetDescriptorWrites() const { return {}; }
 };
 
-void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState& cb, const Location& loc, uint32_t info_count,
-                                         const VkAccelerationStructureBuildGeometryInfoKHR* infos) {
+void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState& cb, const Location& loc,
+                                         vvl::span<const AccelerationStructureGpuStateUpdate> updates) {
+    if (updates.empty()) {
+        return;
+    }
+
     valpipe::ComputePipeline<AccelerationStructureGpuStateUpdateShader>& as_gpu_state_update_pipeline =
         cb.gpuav_.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<AccelerationStructureGpuStateUpdateShader>>(
             cb.gpuav_, Location(vvl::Func::Empty));
@@ -356,12 +361,10 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
 
     DispatchCmdBindPipeline(cb.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, as_gpu_state_update_pipeline.pipeline);
 
-    for (uint32_t info_i = 0; info_i < info_count; ++info_i) {
-        const VkAccelerationStructureBuildGeometryInfoKHR& info = infos[info_i];
-
-        auto dst_as_state = gpuav.Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
+    for (const AccelerationStructureGpuStateUpdate& update : updates) {
+        auto dst_as_state = gpuav.Get<vvl::AccelerationStructureKHR>(update.dst);
         if (!dst_as_state) {
-            gpuav.InternalError(info.dstAccelerationStructure, loc,
+            gpuav.InternalError(update.dst, loc,
                                 "gpuav::UpdateAccelerationStructureGpuState(): Unrecognized destination acceleration structure.");
             return;
         }
@@ -369,15 +372,26 @@ void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState
         AccelerationStructureKHRSubState& dst_as_gpuav_state = SubState(*dst_as_state);
 
         AccelerationStructureGpuStateUpdateShader shader_resources;
-        shader_resources.push_constants.gpu_state_ptr = dst_as_gpuav_state.gpu_state.offset_address;
-        shader_resources.push_constants.state = 0;
-        shader_resources.push_constants.state |= 1u << glsl::kAsGpuStateValidShift;
-        shader_resources.push_constants.state |= (uint32_t)info.mode << glsl::kBuildModeShift;
-        VkAccelerationStructureTypeKHR type = dst_as_state->GetType();
-        shader_resources.push_constants.state |= (uint32_t)type << glsl::kAsTypeShift;
-        if (!as_gpu_state_update_pipeline.BindShaderResources(gpuav, cb, shader_resources)) {
-            return;
+        shader_resources.push_constants.dst_gpu_state_ptr = (shader::AsGpuStatePtr)dst_as_gpuav_state.gpu_state.offset_address;
+
+        if (update.src != VK_NULL_HANDLE) {
+            auto src_as_state = gpuav.Get<vvl::AccelerationStructureKHR>(update.src);
+            if (!src_as_state) {
+                gpuav.InternalError(update.src, loc,
+                                    "gpuav::UpdateAccelerationStructureGpuState(): Unrecognized source acceleration structure.");
+                return;
+            }
+            AccelerationStructureKHRSubState& src_as_gpuav_state = SubState(*src_as_state);
+            shader_resources.push_constants.src_gpu_state_ptr = (shader::AsGpuStatePtr)src_as_gpuav_state.gpu_state.offset_address;
+        } else {
+            shader_resources.push_constants.src_gpu_state_ptr = nullptr;
+            shader_resources.push_constants.state = 0;
+            shader_resources.push_constants.state |= 1u << shader::kAsGpuStateBuiltShift;
+            shader_resources.push_constants.state |= (uint32_t)update.mode << shader::kBuildModeShift;
+            VkAccelerationStructureTypeKHR type = dst_as_state->GetType();
+            shader_resources.push_constants.state |= (uint32_t)type << shader::kAsTypeShift;
         }
+        ASSERT_AND_RETURN(as_gpu_state_update_pipeline.BindShaderResources(gpuav, cb, shader_resources));
 
         DispatchCmdDispatch(cb.VkHandle(), 1, 1, 1);
     }

@@ -104,9 +104,10 @@ def compile_shader(gpu_shaders_dir, filename, glslang_validator, slangc, spirv_o
         args += ["-I" + gpu_shaders_dir, "-o", tmpfile, filename]
 
     try:
-        subprocess.check_output(args, universal_newlines=True)
+        # Capture stderr as well (slangc reports its diagnostics there) so errors show up under the file name
+        subprocess.check_output(args, stderr=subprocess.STDOUT, universal_newlines=True)
     except subprocess.CalledProcessError as e:
-       print("Error compiling shader:")
+       print(f"Error compiling shader {filename}:", file=sys.stderr)
        print(e.output, file=sys.stderr)
        if os.path.exists(tmpfile):
             os.remove(tmpfile)
