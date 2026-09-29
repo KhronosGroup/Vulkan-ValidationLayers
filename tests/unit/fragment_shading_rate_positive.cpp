@@ -59,9 +59,8 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                           VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0u, 0u, nullptr, 0u, nullptr, 1u,
-                           &imageMemoryBarrier);
+    m_command_buffer.Barrier(imageMemoryBarrier, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     m_command_buffer.End();
 }
 
@@ -116,24 +115,10 @@ TEST_F(PositiveFragmentShadingRate, FragmentDensityMapOffset) {
     VkRenderPassFragmentDensityMapCreateInfoEXT fragment_density_map_ci = vku::InitStructHelper();
     fragment_density_map_ci.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
 
-    VkAttachmentDescription attachment_description = {};
-    attachment_description.format = VK_FORMAT_R8G8_UNORM;
-    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_description.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-
-    VkSubpassDescription subpass_description = {};
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&fragment_density_map_ci);
-    render_pass_ci.attachmentCount = 1u;
-    render_pass_ci.pAttachments = &attachment_description;
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass_description;
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
+                                         VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT);
+    render_pass.CreateRenderPass(&fragment_density_map_ci);
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1u, &image_view.handle());
 
@@ -186,24 +171,10 @@ TEST_F(PositiveFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     VkRenderPassFragmentDensityMapCreateInfoEXT fragment_density_map_ci = vku::InitStructHelper();
     fragment_density_map_ci.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
 
-    VkAttachmentDescription attachment_description = {};
-    attachment_description.format = VK_FORMAT_R8G8_UNORM;
-    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_description.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-
-    VkSubpassDescription subpass_description = {};
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&fragment_density_map_ci);
-    render_pass_ci.attachmentCount = 1u;
-    render_pass_ci.pAttachments = &attachment_description;
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass_description;
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
+                                         VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT);
+    render_pass.CreateRenderPass(&fragment_density_map_ci);
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1u, &image_view.handle());
 
@@ -310,24 +281,10 @@ TEST_F(PositiveFragmentShadingRate, FragmentDensityMapOffsetEmptyRenderPass) {
     fragment_density_map_ci.fragmentDensityMapAttachment.attachment = VK_ATTACHMENT_UNUSED;
     fragment_density_map_ci.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
 
-    VkAttachmentDescription attachment_description = {};
-    attachment_description.format = VK_FORMAT_R8G8_UNORM;
-    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment_description.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-
-    VkSubpassDescription subpass_description = {};
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&fragment_density_map_ci);
-    render_pass_ci.attachmentCount = 1u;
-    render_pass_ci.pAttachments = &attachment_description;
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass_description;
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(VK_FORMAT_R8G8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
+                                         VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT);
+    render_pass.CreateRenderPass(&fragment_density_map_ci);
 
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1u, &image_view.handle());
 

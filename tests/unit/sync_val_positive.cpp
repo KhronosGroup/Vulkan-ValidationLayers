@@ -145,8 +145,7 @@ TEST_F(PositiveSyncVal, BufferCopySecondary) {
     // Execution dependency
     vkt::CommandBuffer secondary_cb2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb2.Begin();
-    vk::CmdPipelineBarrier(secondary_cb2, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
-                           0, nullptr);
+    secondary_cb2.ExecutionBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
     secondary_cb2.End();
 
     // buffer_c WRITE
@@ -199,19 +198,11 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
         return attachment;
     };
     const VkAttachmentDescription attachment = attachment_without_load_store(rt_format);
-    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
 
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_ref;
-
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attachment;
-    vkt::RenderPass render_pass(*m_device, rpci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.AddAttachmentDescription(attachment);
+    render_pass.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    render_pass.CreateRenderPass();
 
     vkt::ImageView rt_view = rt.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, layers);
     VkFramebufferCreateInfo fbci = vku::InitStructHelper();
@@ -922,8 +913,7 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     region.imageExtent = {width, height, 1};
 
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
-                           1, &barrier);
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_command_buffer.End();
 }
@@ -1135,8 +1125,7 @@ TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
     barrier_a.dstAccessMask = 0;
     barrier_a.buffer = buffer;
     barrier_a.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                           &barrier_a, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier_a);
 
     // Make writes visible
     VkBufferMemoryBarrier barrier_b = vku::InitStructHelper();
@@ -1144,8 +1133,7 @@ TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
     barrier_b.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier_b.buffer = buffer;
     barrier_b.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                           &barrier_b, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier_b);
 
     // Perform one more copy. Should not generate WAW.
     vk::CmdCopyBuffer(m_command_buffer, staging_buffer, buffer, 1, &region);
@@ -1181,8 +1169,7 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
     barrier_a.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier_a.image = image;
     barrier_a.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 1, &barrier_a);
+    m_command_buffer.Barrier(barrier_a, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     // Transition to new layout. Available memory should automatically be made visible to the layout transition.
     VkImageMemoryBarrier barrier_b = vku::InitStructHelper();
@@ -1192,8 +1179,7 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
     barrier_b.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     barrier_b.image = image;
     barrier_b.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &barrier_b);
+    m_command_buffer.Barrier(barrier_b, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     m_command_buffer.End();
 }
 
@@ -2067,8 +2053,7 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
 
     m_command_buffer.Begin();
     vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 1, &barrier);
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
     vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
     m_command_buffer.End();
 }
@@ -3326,8 +3311,7 @@ TEST_F(PositiveSyncVal, BufferBarrierExecutionDependencySync1) {
 
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                           &buffer_barrier, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, buffer_barrier);
     m_command_buffer.Copy(buffer_b, buffer_a);
     m_command_buffer.End();
 }
@@ -3381,8 +3365,7 @@ TEST_F(PositiveSyncVal, ImageBarrierExecutionDependencySync1) {
 
     m_command_buffer.Begin();
     vk::CmdCopyImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 1, &image_barrier);
+    m_command_buffer.Barrier(image_barrier, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
     vk::CmdCopyImage(m_command_buffer, image_b, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();
 }
@@ -5231,8 +5214,7 @@ TEST_F(PositiveSyncVal, QSCopyImage) {
     vk::CmdCopyImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 
     // The execution dependency protects the read from image A before the following write to image A.
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.ExecutionBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     vk::CmdCopyImage(m_command_buffer, image_c, VK_IMAGE_LAYOUT_GENERAL, image_a, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();

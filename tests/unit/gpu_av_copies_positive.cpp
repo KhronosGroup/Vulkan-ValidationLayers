@@ -57,8 +57,7 @@ TEST_F(PositiveGpuAVCopies, CopyBufferToImageD32) {
     VkMemoryBarrier barrier = vku::InitStructHelper();
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
 
     VkBufferImageCopy buffer_image_copy_2 = buffer_image_copy_1;
     buffer_image_copy_2.imageOffset = {32, 32, 0};
@@ -247,21 +246,18 @@ TEST_F(PositiveGpuAVCopies, BatchSubmit) {
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
     cb_0.Begin();
-    vk::CmdPipelineBarrier(cb_0, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0, nullptr, 0,
-                           nullptr);
+    cb_0.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
     vk::CmdCopyBufferToImage2KHR(cb_0, &buffer_image_copy);
     cb_0.End();
 
     cb_1.Begin();
-    vk::CmdPipelineBarrier(cb_1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0, nullptr, 0,
-                           nullptr);
+    cb_1.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
 
     vk::CmdCopyBufferToImage2KHR(cb_1, &buffer_image_copy);
     cb_1.End();
 
     cb_2.Begin();
-    vk::CmdPipelineBarrier(cb_2, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0, nullptr, 0,
-                           nullptr);
+    cb_2.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, barrier);
     vk::CmdCopyBufferToImage2KHR(cb_2, &buffer_image_copy);
     cb_2.End();
 

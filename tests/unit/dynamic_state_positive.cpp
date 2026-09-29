@@ -208,11 +208,6 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     CreatePipelineHelper pipe(*this);
 
     // Create a render pass without any color attachments
-    VkAttachmentReference attach = {};
-    attach.attachment = 0;
-    attach.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    VkSubpassDescription subpasses = {};
-    subpasses.pDepthStencilAttachment = &attach;
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = m_depth_stencil_fmt;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -222,12 +217,10 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpasses;
-    vkt::RenderPass rp(*m_device, rpci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attach_desc);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &depth_image_view.handle(), m_width, m_height);
 
     // Enable dynamic color write enable
@@ -1701,14 +1694,8 @@ TEST_F(PositiveDynamicState, ColorBlendEnableNotSet) {
     RETURN_IF_SKIP(Init());
 
     // Subpass has zero color attachments so we can ignore setting vkCmdSetColorBlendEnableEXT
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.CreateRenderPass();
     vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
 
     CreatePipelineHelper pipe(*this);

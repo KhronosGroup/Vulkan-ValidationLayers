@@ -548,8 +548,7 @@ TEST_F(PositiveQuery, PerformanceQueries) {
 
     vk::CmdBeginQuery(cmd_buffer, query_pool, 0u, 0u);
 
-    vk::CmdPipelineBarrier(cmd_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 0u, nullptr);
+    cmd_buffer.ExecutionBarrier(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 
     vk::CmdEndQuery(cmd_buffer, query_pool, 0u);
 
@@ -672,8 +671,7 @@ TEST_F(PositiveQuery, PerformanceCountersWithoutEnumeration) {
 
     vk::CmdBeginQuery(cmd_buffer, query_pool, 0u, 0u);
 
-    vk::CmdPipelineBarrier(cmd_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 0u, nullptr);
+    cmd_buffer.ExecutionBarrier(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 
     vk::CmdEndQuery(cmd_buffer, query_pool, 0u);
 

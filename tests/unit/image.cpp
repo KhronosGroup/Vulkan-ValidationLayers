@@ -4731,8 +4731,7 @@ TEST_F(NegativeImage, Image3DWith2DArrayCompatIssue) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredWarning("WARNING-VkImageSubresourceRange-layerCount-compatibility");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 1, &image_memory_barrier);
+    m_command_buffer.Barrier(image_memory_barrier, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

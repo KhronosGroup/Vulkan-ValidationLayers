@@ -458,14 +458,6 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     InitRenderTarget();
 
     // Create a render pass with 1 subpass. This subpass uses no attachment.
-    std::array<VkAttachmentReference, 1> attachmentRefs = {};
-    attachmentRefs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
-    attachmentRefs[0].attachment = VK_ATTACHMENT_UNUSED;
-
-    VkSubpassDescription subpass = {};
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = attachmentRefs.data();
-
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = m_renderTargets[0]->Format();
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -473,14 +465,11 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vkt::RenderPass renderpass(*m_device, rpci);
-    ASSERT_TRUE(renderpass.initialized());
+    RenderPassSingleSubpass renderpass(*this);
+    renderpass.AddAttachmentDescription(attach_desc);
+    renderpass.AddColorAttachment(VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL);
+    renderpass.CreateRenderPass();
+    ASSERT_NE(renderpass.Handle(), VK_NULL_HANDLE);
 
     auto render_target_view = m_renderTargets[0]->CreateView();
 

@@ -314,14 +314,9 @@ TEST_F(NegativeBestPractices, AttachmentShouldNotBeTransient) {
     attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkSubpassDescription sd{};
-
-    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
-    rp_info.attachmentCount = 1;
-    rp_info.pAttachments = &attachment;
-    rp_info.subpassCount = 1;
-    rp_info.pSubpasses = &sd;
-    vkt::RenderPass rp(*m_device, rp_info);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachment);
+    rp.CreateRenderPass();
 
     VkImageCreateInfo image_info = vkt::Image::ImageCreateInfo2D(
         1920, 1080, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT);
@@ -929,8 +924,7 @@ TEST_F(NegativeBestPractices, TransitionFromUndefinedToReadOnly) {
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-pImageMemoryBarriers-02820");  // skip core checks
     m_errorMonitor->SetDesiredWarning("BestPractices-ImageMemoryBarrier-TransitionUndefinedToReadOnly");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -1021,22 +1015,10 @@ TEST_F(NegativeBestPractices, RenderPassClearWithoutLoadOpClear) {
     attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    VkAttachmentReference ar{};
-    ar.attachment = 0;
-    ar.layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkSubpassDescription spd{};
-    spd.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    spd.colorAttachmentCount = 1;
-    spd.pColorAttachments = &ar;
-
-    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
-    rp_info.attachmentCount = 1;
-    rp_info.pAttachments = &attachment;
-    rp_info.subpassCount = 1;
-    rp_info.pSubpasses = &spd;
-
-    vkt::RenderPass rp(*m_device, rp_info);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachment);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle(), w, h);
 
     m_command_buffer.Begin();
@@ -1246,22 +1228,10 @@ TEST_F(NegativeBestPractices, ExclusiveImageMultiQueueUsage) {
     attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    VkAttachmentReference ar{};
-    ar.attachment = 0;
-    ar.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription spd{};
-    spd.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    spd.colorAttachmentCount = 1;
-    spd.pColorAttachments = &ar;
-
-    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
-    rp_info.attachmentCount = 1;
-    rp_info.pAttachments = &attachment;
-    rp_info.subpassCount = 1;
-    rp_info.pSubpasses = &spd;
-
-    vkt::RenderPass rp(*m_device, rp_info);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attachment);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle(), w, h);
 
     vkt::CommandPool graphics_pool(*m_device, graphics_queue->family_index);
@@ -1362,8 +1332,8 @@ TEST_F(NegativeBestPractices, ExclusiveImageMultiQueueUsage) {
 
     graphics_buffer.EndRenderPass();
 
-    vk::CmdPipelineBarrier(graphics_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+    graphics_buffer.Barrier(barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                            VK_DEPENDENCY_BY_REGION_BIT);
 
     graphics_buffer.End();
     graphics_queue->Submit(graphics_buffer);
@@ -1372,8 +1342,8 @@ TEST_F(NegativeBestPractices, ExclusiveImageMultiQueueUsage) {
     // Record compute command buffer
     compute_buffer.Begin();
 
-    vk::CmdPipelineBarrier(compute_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+    compute_buffer.Barrier(barrier, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT);
 
     vk::CmdBindPipeline(compute_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
@@ -1427,32 +1397,27 @@ TEST_F(NegativeBestPractices, ImageMemoryBarrierAccessLayoutCombinations) {
     // note: the table in PR 2918 originally said that 0 was not allowed, but this was incorrect. See Issue #4735
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     img_barrier.dstAccessMask = 0;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     // Every table entry includes an implicit "can be 0"
     img_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     img_barrier.dstAccessMask = 0;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     img_barrier.dstAccessMask = 0;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     // PRESENT_SRC_KHR - Must be 0
     img_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     img_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
     m_errorMonitor->SetDesiredWarning("BestPractices-ImageBarrierAccessLayout");
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
 
     img_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     img_barrier.dstAccessMask = 0;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    m_command_buffer.Barrier(img_barrier, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     {
         VkImageMemoryBarrier2 img_barrier2 = vku::InitStructHelper();

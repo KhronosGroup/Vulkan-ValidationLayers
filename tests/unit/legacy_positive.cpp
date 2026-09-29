@@ -15,14 +15,10 @@
 #include "binding.h"
 #include "generated/vk_function_pointers.h"
 #include "layer_validation_tests.h"
+#include "render_pass_helper.h"
 
 void LegacyTest::CreateRenderPass() {
     vkt::Image image(*m_device, 8, 8, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-    VkAttachmentReference attachment_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
-    VkSubpassDescription subpass = {};
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &attachment_ref;
 
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -30,13 +26,10 @@ void LegacyTest::CreateRenderPass() {
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkRenderPassCreateInfo rp_ci = vku::InitStructHelper();
-    rp_ci.subpassCount = 1;
-    rp_ci.pSubpasses = &subpass;
-    rp_ci.attachmentCount = 1;
-    rp_ci.pAttachments = &attach_desc;
-
-    vkt::RenderPass rp(*m_device, rp_ci);
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(attach_desc);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
 }
 
 class PositiveLegacy : public LegacyTest {};

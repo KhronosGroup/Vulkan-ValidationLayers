@@ -79,11 +79,9 @@ TEST_F(PositiveDynamicRendering, Draw) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -116,11 +114,9 @@ TEST_F(PositiveDynamicRendering, DrawMultiBind) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -143,9 +139,7 @@ TEST_F(PositiveDynamicRendering, BeginQuery) {
 
     InitRenderTarget();
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
 
@@ -201,11 +195,9 @@ TEST_F(PositiveDynamicRendering, MismatchedSamplesColors) {
     color_attachments[1].imageView = unsampled_image_view;
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 2;
     begin_rendering_info.pColorAttachments = color_attachments;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -253,10 +245,8 @@ TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthSt
     stencil_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     stencil_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.pStencilAttachment = &stencil_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -388,12 +378,9 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    VkRenderingInfo begin_rendering_info = GetSimpleSuspendInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
@@ -585,13 +572,11 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = color_image_view;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
     begin_rendering_info.pStencilAttachment = &depth_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -627,11 +612,9 @@ TEST_F(PositiveDynamicRendering, DualSourceBlending) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -661,12 +644,10 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsWithNullImageView) {
     inheritance_rendering_info.pColorAttachmentFormats = bad_color_formats.data();
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -699,12 +680,9 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
+    VkRenderingInfo begin_rendering_info = GetSimpleSuspendInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     // Primary suspends render
     m_command_buffer.Begin();
@@ -741,12 +719,10 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = 0;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     // First primary with secondary that suspends render
     m_command_buffer.Begin();
@@ -808,10 +784,8 @@ TEST_F(PositiveDynamicRendering, ExecuteSecondaryAndSuspend) {
     vk::CmdDraw(secondary, 3, 1, 0, 0);
     secondary.End();
 
-    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    VkRenderingInfo rendering_info = GetSimpleRenderingInfo();
     rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR | VK_RENDERING_SUSPENDING_BIT_KHR;
-    rendering_info.renderArea = {{0, 0}, {1, 1}};
-    rendering_info.layerCount = 1;
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
@@ -883,9 +857,8 @@ TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &memory_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             memory_barrier, VK_DEPENDENCY_BY_REGION_BIT);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -954,11 +927,9 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
 
     {
         // Mismatching color formats
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.colorAttachmentCount = 1;
         begin_rendering_info.pColorAttachments = &color_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color);
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -967,10 +938,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
 
     {
         // Mismatching depth format
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth);
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -979,10 +948,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
 
     {
         // Mismatching stencil format
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil);
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -1044,11 +1011,9 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
 
     {
         // Null color image view
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.colorAttachmentCount = 1;
         begin_rendering_info.pColorAttachments = &color_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color);
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -1065,10 +1030,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
 
     {
         // Null depth image view
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth);
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -1086,10 +1049,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
 
     {
         // Null stencil image view
-        VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-        begin_rendering_info.layerCount = 1;
+        VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
         begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
-        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil);
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -1123,12 +1084,10 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsFlags) {
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     inheritance_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -1203,9 +1162,7 @@ TEST_F(PositiveDynamicRendering, PipelineUnusedAttachments) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.imageView = colorImageView;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
@@ -1235,11 +1192,9 @@ TEST_F(PositiveDynamicRendering, DynamicColorBlendEnable) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -1364,12 +1319,10 @@ TEST_F(PositiveDynamicRendering, LegacyDithering) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -1657,9 +1610,7 @@ TEST_F(PositiveDynamicRendering, ColorAttachmentOOB) {
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachments[1].imageView = image_view_2;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 2u;
     begin_rendering_info.pColorAttachments = color_attachments;
 
@@ -1718,12 +1669,10 @@ TEST_F(PositiveDynamicRendering, CustomResolvePipeline) {
     color_attachment.resolveImageView = resolve_image_view;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
     VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
 
     {
@@ -1809,12 +1758,10 @@ TEST_F(PositiveDynamicRendering, CustomResolvePipelineFormatUnused) {
     color_attachment.resolveImageView = resolve_image_view;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -1865,9 +1812,7 @@ TEST_F(PositiveDynamicRendering, DynamicRenderingUnusedAttachments) {
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachments[1].imageView = image_view_2;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.pColorAttachments = color_attachments;
 
     m_command_buffer.Begin();
@@ -2290,10 +2235,7 @@ TEST_F(PositiveDynamicRendering, RenderAreaMipLevelMultipleLevels) {
 TEST_F(PositiveDynamicRendering, ResumeAfterUnrelatedFinishedInstance) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
-    VkRenderingInfo suspend_info = vku::InitStructHelper();
-    suspend_info.flags = VK_RENDERING_SUSPENDING_BIT;
-    suspend_info.layerCount = 1;
-    suspend_info.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo suspend_info = GetSimpleSuspendInfo();
 
     VkRenderingInfo resume_info = suspend_info;
     resume_info.flags = VK_RENDERING_RESUMING_BIT;

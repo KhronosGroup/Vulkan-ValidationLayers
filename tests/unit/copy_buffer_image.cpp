@@ -379,8 +379,7 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyCompression) {
     m_command_buffer.Begin();
 
     // Just fits
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, mem_barrier);
     region.imageExtent = {128, 128, 1};
     vk::CmdCopyImageToBuffer(m_command_buffer, image_16k_4x4comp, VK_IMAGE_LAYOUT_GENERAL, buffer_16k, 1, &region);
 
@@ -409,15 +408,13 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyCompression) {
     // non-multiple extents are allowed if at the far edge of a non-block-multiple image - these should pass
     region.imageExtent.width = 66;
     region.imageOffset.x = 64;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, mem_barrier);
     vk::CmdCopyImageToBuffer(m_command_buffer, image_NPOT_4x4comp, VK_IMAGE_LAYOUT_GENERAL, buffer_16k, 1, &region);
     region.imageExtent.width = 16;
     region.imageOffset.x = 0;
     region.imageExtent.height = 2;
     region.imageOffset.y = 128;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, mem_barrier);
     vk::CmdCopyImageToBuffer(m_command_buffer, image_NPOT_4x4comp, VK_IMAGE_LAYOUT_GENERAL, buffer_16k, 1, &region);
     region.imageOffset = {0, 0, 0};
 
@@ -524,8 +521,7 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyMultiPlanar) {
 
     // Copies into a mutli-planar image aspect properly
     mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, mem_barrier);
     vk::CmdCopyBufferToImage(m_command_buffer, buffer_16k, image_multi_planar, VK_IMAGE_LAYOUT_GENERAL, 1, &mp_region);
 
     // uses plane_2 without being 3 planar format
@@ -1832,23 +1828,20 @@ TEST_F(NegativeCopyBufferImage, ImageMultiPlaneSizeExceeded) {
     // Should be able to do a 64x64 copy from plane 0 -> Plane 1
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, mem_barrier);
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
     // Should be able to do a 64x64 copy from plane 0 -> Plane 1
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, mem_barrier);
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
     // Should be able to do a 128x64 copy from plane 0 -> Plane 0
     copy_region.extent = {128, 64, 1};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
-                           nullptr, 0, nullptr);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, mem_barrier);
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
     // 128x64 copy from plane 0 -> Plane 1
@@ -2000,8 +1993,8 @@ TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch2) {
         barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
         barrier.image = image_8b_16b_420_unorm;
         barrier.subresourceRange = subresource_range;
-        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                               VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+        m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                 VK_DEPENDENCY_BY_REGION_BIT);
     }
 
     vk::CmdCopyImage(m_command_buffer, image_8b_16b_420_unorm, VK_IMAGE_LAYOUT_GENERAL, image_8b_unorm, VK_IMAGE_LAYOUT_GENERAL, 1,
@@ -2016,8 +2009,8 @@ TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch2) {
         barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
         barrier.image = image_8b_16b_420_unorm;
         barrier.subresourceRange = subresource_range;
-        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                               VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+        m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                 VK_DEPENDENCY_BY_REGION_BIT);
     }
 
     vk::CmdCopyImage(m_command_buffer, image_8b_16b_420_unorm, VK_IMAGE_LAYOUT_GENERAL, image_8b_uint, VK_IMAGE_LAYOUT_GENERAL, 1,
@@ -4256,8 +4249,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyBetween2dAnd3dCopyCommands2) {
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.image = image_3D;
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &image_barrier);
+    m_command_buffer.Barrier(image_barrier, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     copy_region.extent = {32u, 32u, 1u};
     copy_image_info.srcImage = image_3D;

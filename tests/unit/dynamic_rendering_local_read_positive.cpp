@@ -74,11 +74,9 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
     color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
 
-    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
     begin_rendering_info.colorAttachmentCount = 2;
     begin_rendering_info.pColorAttachments = &color_attachments[0];
-    begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
 
