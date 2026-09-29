@@ -447,8 +447,7 @@ TEST_F(PositiveEvent, AsymmetricWaitEvent2) {
 
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveEvent, AsymmetricEventNoMemorySubmit) {

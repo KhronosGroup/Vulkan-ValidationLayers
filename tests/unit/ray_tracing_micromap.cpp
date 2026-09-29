@@ -881,8 +881,7 @@ TEST_F(NegativeRayTracingMicromap, CmdBuildAccelerationStructureTriangleMicromap
     m_command_buffer.Begin();
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &micromap_build_info, &range_info_null);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     VkAccelerationStructureGeometryKHR geometry = vku::InitStructHelper();
     geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
@@ -1488,8 +1487,7 @@ TEST_F(NegativeRayTracingMicromap, CopyMemoryToFromAccelStructUnbound) {
         m_command_buffer.Begin();
         vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &range_info_ptr);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
 
         VkAccelerationStructureKHR as_unbound;
         VkAccelerationStructureCreateInfoKHR as_ci = vku::InitStructHelper();
@@ -1584,8 +1582,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureUpdateM
     m_command_buffer.Begin();
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &micromap_build_info, &range_info_null);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     VkAccelerationStructureTrianglesOpacityMicromapKHR triangle_mm = vku::InitStructHelper();
     triangle_mm.indexType = VK_INDEX_TYPE_NONE_KHR;
@@ -1617,8 +1614,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureUpdateM
     m_command_buffer.Begin();
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &blas_build_info, &range_info_ptr);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     {
         m_command_buffer.Begin();
@@ -1642,8 +1638,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureUpdateM
         m_command_buffer.Begin();
         vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &blas_build_info, &range_info_ptr);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
 
         m_command_buffer.Begin();
         triangle_mm.micromap = micromap_as->handle();
@@ -1662,8 +1657,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureUpdateM
         m_command_buffer.Begin();
         vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &blas_build_info, &range_info_ptr);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
 
         m_command_buffer.Begin();
         triangle_mm.micromap = micromap_as->handle();
@@ -1686,8 +1680,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelerationStructureUpdateM
         m_command_buffer.Begin();
         vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &blas_build_info, &range_info_ptr);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
 
         m_command_buffer.Begin();
         triangle_mm.micromap = unbuilt_micromap_as->handle();
@@ -1767,8 +1760,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelStructureUpdateMicromap
     m_command_buffer.Begin();
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &micromap_build_info, &range_info_null);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     VkAccelerationStructureTrianglesOpacityMicromapKHR triangle_mm = vku::InitStructHelper();
     triangle_mm.indexType = VK_INDEX_TYPE_NONE_KHR;
@@ -1799,8 +1791,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdBuildAccelStructureUpdateMicromap
     m_command_buffer.Begin();
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &blas_build_info, &range_info_ptr);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     std::vector<uint8_t> serialized_data(4096, 0);
     VkDeviceOrHostAddressKHR output_data;
@@ -2079,8 +2070,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_CmdCopyAccelStructToMemoryAlignment)
     m_command_buffer.Begin();
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &range_info_null);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     std::vector<uint8_t> serialized_data(4096, 0);
     VkDeviceOrHostAddressKHR dst_addr = {};
@@ -2147,8 +2137,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_DescriptorAccessDeserializedAS) {
     m_command_buffer.Begin();
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &blas_build_info, &range_info_ptr);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     std::vector<uint8_t> serialized_data(4096, 0);
     VkDeviceOrHostAddressKHR dst_addr = {};
@@ -2267,8 +2256,7 @@ TEST_F(NegativeRayTracingMicromap, DISABLED_TraceRaysOMMPipelineFlagMissing) {
     m_command_buffer.Begin();
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &blas_build_info, &range_info_ptr);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     const char* rgen_source = R"glsl(
         #version 460

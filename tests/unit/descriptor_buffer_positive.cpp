@@ -867,8 +867,7 @@ TEST_F(PositiveDescriptorBuffer, ShaderObject) {
                             &ds_layout.handle());
 
     m_command_buffer.Begin();
-    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    vk::CmdBindShadersEXT(m_command_buffer, 1, stages, &cs.handle());
+    m_command_buffer.BindCompShaderEXT(cs);
 
     VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
     descriptor_buffer_binding_info.address = descriptor_buffer.Address();

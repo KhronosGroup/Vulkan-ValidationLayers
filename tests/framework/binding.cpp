@@ -2256,7 +2256,6 @@ void CommandBuffer::Barrier(const VkMemoryBarrier2& barrier, VkDependencyFlags d
 
 void CommandBuffer::Barrier(const VkBufferMemoryBarrier2& buffer_barrier, VkDependencyFlags dependency_flags) {
     VkDependencyInfo dep_info = DependencyInfo(buffer_barrier, dependency_flags);
-    dep_info.dependencyFlags = dependency_flags;
     vk::CmdPipelineBarrier2(handle(), &dep_info);
 }
 

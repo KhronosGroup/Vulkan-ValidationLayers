@@ -1348,8 +1348,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
                 cmd_buf.End();
-                m_default_queue->Submit(cmd_buf);
-                m_default_queue->Wait();
+                m_default_queue->SubmitAndWait(cmd_buf);
                 cmd_buf.Begin();
             }
 
@@ -1380,8 +1379,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
                     m_errorMonitor->SetDesiredError(err);
                 }
             }
-            m_default_queue->Submit(cmd_buf);
-            m_default_queue->Wait();
+            m_default_queue->SubmitAndWait(cmd_buf);
             if (positive_test || (test_type == kInternal)) {
             } else {
                 m_errorMonitor->VerifyFound();

@@ -240,13 +240,11 @@ TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     m_command_buffer.End();
 
     // Bypass framework since it does the waits automatically
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     m_errorMonitor->VerifyFound();
 }

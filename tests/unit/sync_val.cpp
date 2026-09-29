@@ -5446,8 +5446,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
 
     cb1.Copy(buffer_c, buffer_b);
     cb1.End();
-    m_default_queue->Submit(cb1);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb1);
 }
 
 TEST_F(NegativeSyncVal, QSSubmit2) {
@@ -5633,8 +5632,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
 
     // Submit cb0 and cb1 on the same queue
     queue0->Submit(cb0);
-    queue0->Submit(cb1);
-    queue0->Wait();
+    queue0->SubmitAndWait(cb1);
 
     // Submit cb0 and cb1 on the different queues.
     // Since no semaphore is used between the queues cb1 hazards asynchronously with cb0.

@@ -2448,8 +2448,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits) {
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // Does not work correctly similar to AtomicAccessFromTwoDispatches. The initial idea that using
@@ -2864,8 +2863,7 @@ TEST_F(PositiveSyncVal, AmdBufferMarkerDuplicated2) {
     m_command_buffer.End();
     // Submit two times
     m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveSyncVal, AmdBufferMarkerDuplicated3) {
@@ -2893,8 +2891,7 @@ TEST_F(PositiveSyncVal, AmdBufferMarkerDuplicated4) {
     m_command_buffer.End();
     // Submit two times
     m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveSyncVal, VertexBufferWithEventSync) {
@@ -5143,8 +5140,7 @@ TEST_F(PositiveSyncVal, EventScopeFromPriorSubmission) {
 
     m_default_queue->Submit(write_cb);
     m_default_queue->Submit(set_cb);
-    m_default_queue->Submit(wait_cb);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(wait_cb);
 }
 
 TEST_F(PositiveSyncVal, WaitEvents2SeparateBufferBarriers) {
@@ -5260,8 +5256,7 @@ TEST_F(PositiveSyncVal, DrawIndirectStridedGaps) {
 
     m_default_queue->Submit(fill_cb);
     m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Submit(fill_cb);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(fill_cb);
 }
 
 TEST_F(PositiveSyncVal, PartialRenderAreaLoadRead) {

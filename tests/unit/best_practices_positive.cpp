@@ -333,8 +333,7 @@ TEST_F(PositiveBestPractices, ResetEventBeforeSetMultipleSubmits) {
     cb2.Begin();
     cb2.SetEvent(event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
     cb2.End();
-    m_default_queue->Submit(cb2);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb2);
 }
 
 TEST_F(PositiveBestPractices, ResetEventBeforeSetMultipleSubmits2) {

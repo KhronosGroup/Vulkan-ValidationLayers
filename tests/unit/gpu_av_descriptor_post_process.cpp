@@ -1145,8 +1145,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, NonMultisampleMismatchWithShaderObjec
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
 
-    VkShaderStageFlagBits shader_stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    vk::CmdBindShadersEXT(m_command_buffer, 1, shader_stages, &cs.handle());
+    m_command_buffer.BindCompShaderEXT(cs);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1385,8 +1384,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, MultipleCommandBuffersSameDescriptorS
     descriptor_set.WriteDescriptorImageInfo(1, good_view, sampler);
     descriptor_set.UpdateDescriptorSets();
     m_default_queue->Submit(cb_0);
-    m_default_queue->Submit(cb_1);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_1);
 }
 
 TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageBindingRuntimeArray) {
