@@ -3826,7 +3826,7 @@ TEST_F(NegativeDebugPrintf, DispatchIndirect) {
         }
     )glsl";
 
-    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                 kHostVisibleMemProps);
     auto indirect_command = static_cast<VkDispatchIndirectCommand*>(indirect_buffer.Memory().Map());
     indirect_command->x = 1;
