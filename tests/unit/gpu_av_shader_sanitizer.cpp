@@ -903,3 +903,37 @@ TEST_F(NegativeGpuAVShaderSanitizer, CoopMatLoadMisalignedStrideUint8) {
     )glsl";
     CoopMatAlignmentTest(cs_source, {15}, true);
 }
+
+TEST_F(NegativeGpuAVShaderSanitizer, CoopMatLoadMisalignedStrideUint8Pointer) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrix);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    CooperativeMatrixHelper helper(*this);
+    if (!helper.Has16x16UintProperty()) {
+        GTEST_SKIP() << "16x16 Uint Property not found";
+    }
+
+    const char* cs_source = R"glsl(
+         #version 450 core
+         #pragma use_vulkan_memory_model
+         #extension GL_KHR_memory_scope_semantics : enable
+         #extension GL_KHR_cooperative_matrix : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
+         layout(local_size_x = 64) in;
+         layout(set=0, binding=0) coherent buffer SSBO { uint8_t payload[]; };
+         layout(set=0, binding=1) buffer ParamSSBO { uint stride_val; };
+         void main() {
+            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> matC;
+            coopMatLoad(matC, payload, 0, stride_val, gl_CooperativeMatrixLayoutRowMajor);
+         }
+    )glsl";
+    // 4 bytes, but requires 16 byte alignment
+    CoopMatAlignmentTest(cs_source, {4}, true);
+}

@@ -108,9 +108,8 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
 
                 const uint32_t ptr_id = inst.Operand(0);  // works with both store and loads
 
-                // get type of pointee
-                const Type* ptr_type = type_manager_.FindTypeGlobal(function, ptr_id);
-                const Type* scalar_elem_type = type_manager_.FindChildType(*ptr_type, 0);
+                const Type* scalar_elem_type = type_manager_.FindPointeeType(function, ptr_id);
+                assert(scalar_elem_type);
 
                 // if the pointer is to a vector type, scale stride_id by the vector size
                 if (scalar_elem_type->VectorSize() > 0) {

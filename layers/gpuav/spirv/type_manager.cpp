@@ -233,6 +233,15 @@ const Type* TypeManager::FindTypeGlobal(const Function& function, uint32_t id) c
     return nullptr;
 }
 
+// Returns the type an OpTypePointer |pointer_id| points to (null if not a pointer)
+const Type* TypeManager::FindPointeeType(const Function& function, uint32_t pointer_id) const {
+    const Type* pointer_type = FindTypeGlobal(function, pointer_id);
+    if (!pointer_type || pointer_type->spv_type_ != SpvType::kPointer) {
+        return nullptr;
+    }
+    return FindChildType(*pointer_type, 0);
+}
+
 const Type& TypeManager::GetTypeVoid() {
     if (void_type) {
         return *void_type;
@@ -799,6 +808,15 @@ const CooperativeMatrixAccess TypeManager::BuildCooperativeMatrixAccess(const Fu
         info.stride_value = stride->inst_.Operand(0);
     } else {
         info.stride_value = 0;
+    }
+
+    // Stride is in units of the Pointer's pointee type, which can differ from the component type (ex. loading from a uvec4 array)
+    const uint32_t pointer_id = info.is_load ? inst.Word(3) : inst.Word(1);
+    if (const Type* pointee_type = FindPointeeType(function, pointer_id)) {
+        info.element_size = GetTypeBytesSize(*pointee_type);
+    } else {
+        module_.InternalError("BuildCooperativeMatrixAccess", "unable to find the type the Pointer operand points to");
+        info.element_size = info.component_size;
     }
 
     const uint32_t memory_layout_id = info.is_load ? inst.Word(4) : inst.Word(3);
