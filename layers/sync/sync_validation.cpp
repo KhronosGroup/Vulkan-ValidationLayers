@@ -1725,9 +1725,8 @@ void SyncValidator::PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer comman
     RecordBufferMarkerAMD(commandBuffer, dstBuffer, dstOffset, record_obj.location);
 }
 
-static VideoCommand::PictureAccess MakeVideoPictureAccess(const vvl::VideoSession& video_session,
-                                                          const vvl::VideoPictureResource& resource, VideoCommand::PictureType type,
-                                                          uint32_t reference_index = 0) {
+static VideoPictureAccess MakeVideoPictureAccess(const vvl::VideoSession& video_session, const vvl::VideoPictureResource& resource,
+                                                 VideoPictureAccess::PictureType type, uint32_t reference_index = 0) {
     const VkOffset3D effective_offset = resource.GetEffectiveImageOffset(video_session);
     const VkExtent3D effective_extent = resource.GetEffectiveImageExtent(video_session);
     return {resource.image_view_state.get(),
@@ -1741,51 +1740,51 @@ static VideoCommand::PictureAccess MakeVideoPictureAccess(const vvl::VideoSessio
             {effective_extent.width, effective_extent.height}};
 }
 
-std::vector<VideoCommand::PictureAccess> SyncValidator::CollectVideoDecodePictureAccesses(const vvl::VideoSession& video_session,
-                                                                                          const VkVideoDecodeInfoKHR& info) const {
-    using PictureType = VideoCommand::PictureType;
-    std::vector<VideoCommand::PictureAccess> pictures;
+std::vector<VideoPictureAccess> SyncValidator::CollectVideoDecodePictureAccesses(const vvl::VideoSession& video_session,
+                                                                                 const VkVideoDecodeInfoKHR& info) const {
+    using PictureType = VideoPictureAccess::PictureType;
+    std::vector<VideoPictureAccess> picture_accesses;
 
     const vvl::VideoPictureResource output(*device_state, info.dstPictureResource);
     if (output) {
-        pictures.push_back(MakeVideoPictureAccess(video_session, output, PictureType::kOutput));
+        picture_accesses.push_back(MakeVideoPictureAccess(video_session, output, PictureType::kDecodeOutput));
     }
     if (info.pSetupReferenceSlot != nullptr && info.pSetupReferenceSlot->pPictureResource != nullptr) {
         const vvl::VideoPictureResource reconstructed(*device_state, *info.pSetupReferenceSlot->pPictureResource);
         if (reconstructed && reconstructed != output) {
-            pictures.push_back(MakeVideoPictureAccess(video_session, reconstructed, PictureType::kReconstructed));
+            picture_accesses.push_back(MakeVideoPictureAccess(video_session, reconstructed, PictureType::kReconstructed));
         }
     }
     for (uint32_t i = 0; i < info.referenceSlotCount; ++i) {
         if (info.pReferenceSlots[i].pPictureResource != nullptr) {
             const vvl::VideoPictureResource reference(*device_state, *info.pReferenceSlots[i].pPictureResource);
             if (reference) {
-                pictures.push_back(MakeVideoPictureAccess(video_session, reference, PictureType::kReference, i));
+                picture_accesses.push_back(MakeVideoPictureAccess(video_session, reference, PictureType::kReference, i));
             }
         }
     }
-    return pictures;
+    return picture_accesses;
 }
 
-std::vector<VideoCommand::PictureAccess> SyncValidator::CollectVideoEncodePictureAccesses(const vvl::VideoSession& video_session,
-                                                                                          const VkVideoEncodeInfoKHR& info) const {
-    using PictureType = VideoCommand::PictureType;
-    std::vector<VideoCommand::PictureAccess> pictures;
+std::vector<VideoPictureAccess> SyncValidator::CollectVideoEncodePictureAccesses(const vvl::VideoSession& video_session,
+                                                                                 const VkVideoEncodeInfoKHR& info) const {
+    using PictureType = VideoPictureAccess::PictureType;
+    std::vector<VideoPictureAccess> picture_accesses;
 
     if (auto input = vvl::VideoPictureResource(*device_state, info.srcPictureResource)) {
-        pictures.push_back(MakeVideoPictureAccess(video_session, input, PictureType::kInput));
+        picture_accesses.push_back(MakeVideoPictureAccess(video_session, input, PictureType::kEncodeInput));
     }
     if (info.pSetupReferenceSlot != nullptr && info.pSetupReferenceSlot->pPictureResource != nullptr) {
         const vvl::VideoPictureResource reconstructed(*device_state, *info.pSetupReferenceSlot->pPictureResource);
         if (reconstructed) {
-            pictures.push_back(MakeVideoPictureAccess(video_session, reconstructed, PictureType::kReconstructed));
+            picture_accesses.push_back(MakeVideoPictureAccess(video_session, reconstructed, PictureType::kReconstructed));
         }
     }
     for (uint32_t i = 0; i < info.referenceSlotCount; ++i) {
         if (info.pReferenceSlots[i].pPictureResource) {
             const vvl::VideoPictureResource reference(*device_state, *info.pReferenceSlots[i].pPictureResource);
             if (reference) {
-                pictures.push_back(MakeVideoPictureAccess(video_session, reference, PictureType::kReference, i));
+                picture_accesses.push_back(MakeVideoPictureAccess(video_session, reference, PictureType::kReference, i));
             }
         }
     }
@@ -1793,7 +1792,7 @@ std::vector<VideoCommand::PictureAccess> SyncValidator::CollectVideoEncodePictur
         auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(info.pNext);
         if (quantization_map_info) {
             if (const auto view = Get<vvl::ImageView>(quantization_map_info->quantizationMap)) {
-                pictures.push_back({
+                picture_accesses.push_back({
                     view.get(),
                     PictureType::kQuantizationMap,
                     0,
@@ -1807,7 +1806,7 @@ std::vector<VideoCommand::PictureAccess> SyncValidator::CollectVideoEncodePictur
             }
         }
     }
-    return pictures;
+    return picture_accesses;
 }
 
 bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
@@ -1827,8 +1826,8 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         return false;
     }
     const AccessRange range = MakeRange(*buffer, pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange);
-    const auto pictures = CollectVideoDecodePictureAccesses(*video_session, *pDecodeInfo);
-    const VideoCommand command{VideoCommand::Operation::kDecode, *buffer, range, pictures};
+    const auto picture_accesses = CollectVideoDecodePictureAccesses(*video_session, *pDecodeInfo);
+    const VideoDecodeCommand command{*buffer, range, picture_accesses};
     return command.Validate(cb_context, error_obj.location);
 }
 
@@ -1849,8 +1848,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         return false;
     }
     const AccessRange range = MakeRange(*buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
-    const auto pictures = CollectVideoEncodePictureAccesses(*video_session, *pEncodeInfo);
-    const VideoCommand command{VideoCommand::Operation::kEncode, *buffer, range, pictures};
+    const auto picture_accesses = CollectVideoEncodePictureAccesses(*video_session, *pEncodeInfo);
+    const VideoEncodeCommand command{*buffer, range, picture_accesses};
     return command.Validate(cb_context, error_obj.location);
 }
 

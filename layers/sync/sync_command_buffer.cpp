@@ -1065,8 +1065,12 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
                 import_common(command_data.acceleration_structure_copy_commands[index], command_data, tag);
                 continue;
             }
-            case CommandType::kVideo: {
-                import_common(command_data.video_commands[index], command_data, tag);
+            case CommandType::kVideoDecode: {
+                import_common(command_data.video_decode_commands[index], command_data, tag);
+                continue;
+            }
+            case CommandType::kVideoEncode: {
+                import_common(command_data.video_encode_commands[index], command_data, tag);
                 continue;
             }
             case CommandType::kClearAttachments: {
@@ -1598,9 +1602,9 @@ void CommandBufferSubState::RecordDecodeVideo(vvl::VideoSession& vs_state, const
     const auto tag = cb_context.NextCommandTag(loc.function);
     const auto tag_ex = cb_context.AddCommandHandle(tag, buffer->Handle());
     const AccessRange range = MakeRange(*buffer, info.srcBufferOffset, info.srcBufferRange);
-    const auto pictures = validator.CollectVideoDecodePictureAccesses(vs_state, info);
+    const auto picture_accesses = validator.CollectVideoDecodePictureAccesses(vs_state, info);
 
-    const VideoCommand command{VideoCommand::Operation::kDecode, *buffer, range, pictures, tag_ex.handle_index};
+    const VideoDecodeCommand command{*buffer, range, picture_accesses, tag_ex.handle_index};
     if (validator.syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
@@ -1616,9 +1620,9 @@ void CommandBufferSubState::RecordEncodeVideo(vvl::VideoSession& vs_state, const
     const auto tag = cb_context.NextCommandTag(loc.function);
     const auto tag_ex = cb_context.AddCommandHandle(tag, buffer->Handle());
     const AccessRange range = MakeRange(*buffer, info.dstBufferOffset, info.dstBufferRange);
-    const auto pictures = validator.CollectVideoEncodePictureAccesses(vs_state, info);
+    const auto picture_accesses = validator.CollectVideoEncodePictureAccesses(vs_state, info);
 
-    const VideoCommand command{VideoCommand::Operation::kEncode, *buffer, range, pictures, tag_ex.handle_index};
+    const VideoEncodeCommand command{*buffer, range, picture_accesses, tag_ex.handle_index};
     if (validator.syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCbAccessContext());
     }
