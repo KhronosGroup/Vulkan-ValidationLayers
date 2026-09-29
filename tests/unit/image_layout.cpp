@@ -185,8 +185,7 @@ TEST_F(NegativeImageLayout, Compute) {
         cmd.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-        m_default_queue->Submit(cmd);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(cmd);
         m_errorMonitor->VerifyFound();
     }
 
@@ -200,8 +199,7 @@ TEST_F(NegativeImageLayout, Compute) {
         cmd.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-        m_default_queue->Submit(cmd);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(cmd);
         m_errorMonitor->VerifyFound();
     }
 }

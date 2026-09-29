@@ -85,7 +85,6 @@ void RenderPassSingleSubpass::AddSubpassSelfDependency(VkPipelineStageFlags srcS
     subpass_dependency.srcSubpass = 0;
     subpass_dependency.dstSubpass = 0;
     subpass_dependency.srcStageMask = srcStageMask;
-    subpass_dependency.srcStageMask = srcStageMask;
     subpass_dependency.dstStageMask = dstStageMask;
     subpass_dependency.srcAccessMask = srcAccessMask;
     subpass_dependency.dstAccessMask = dstAccessMask;
@@ -214,7 +213,6 @@ void RenderPass2SingleSubpass::AddSubpassSelfDependency(VkPipelineStageFlags src
     VkSubpassDependency2 subpass_dependency = vku::InitStructHelper();
     subpass_dependency.srcSubpass = 0;
     subpass_dependency.dstSubpass = 0;
-    subpass_dependency.srcStageMask = srcStageMask;
     subpass_dependency.srcStageMask = srcStageMask;
     subpass_dependency.dstStageMask = dstStageMask;
     subpass_dependency.srcAccessMask = srcAccessMask;

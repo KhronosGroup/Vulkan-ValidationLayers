@@ -383,8 +383,7 @@ TEST_F(PositiveSecondaryCommandBuffer, EventStageMask) {
                       0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer.End();
 
-    m_default_queue->Submit(commandBuffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(commandBuffer);
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {

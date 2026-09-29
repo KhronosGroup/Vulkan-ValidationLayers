@@ -83,7 +83,7 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest& test, void* pNext) : lay
     cb_ci_.attachmentCount = 1;
     cb_ci_.pAttachments = &cb_attachments_;
     for (int i = 0; i < 4; i++) {
-        cb_ci_.blendConstants[0] = 1.0F;
+        cb_ci_.blendConstants[i] = 1.0F;
     }
 
     pc_ci_ = vku::InitStructHelper();
@@ -255,7 +255,6 @@ void CreatePipelineHelper::InitShaderLibInfo(std::vector<VkPipelineShaderStageCr
 
     gp_ci_ = vku::InitStructHelper(&gpl_info);
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-    gp_ci_.pViewportState = &vp_state_ci_;
     gp_ci_.pViewportState = &vp_state_ci_;
     gp_ci_.pRasterizationState = &rs_state_ci_;
 
