@@ -14,17 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#version 450
-#extension GL_GOOGLE_include_directive : enable
-
 #include "acceleration_structure_gpu_state_update.h"
 
-layout(push_constant, scalar)
-uniform PushConstants {
-    AccelerationStructureGpuStateUpdateShaderPushData pc;
-};
+[vk::push_constant]
+ConstantBuffer<gpuav::shader::AccelerationStructureGpuStateUpdateShaderPushData> pc;
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-void main() {
-    pc.gpu_state_ptr.state = pc.state;
+[shader("compute")]
+[numthreads(1, 1, 1)]
+void main(uint3 thread_id: SV_DispatchThreadID) {
+    if (pc.src_gpu_state_ptr != nullptr) {
+        *pc.dst_gpu_state_ptr = *pc.src_gpu_state_ptr;
+    } else {
+        *pc.dst_gpu_state_ptr = pc.state;
+    }
 }

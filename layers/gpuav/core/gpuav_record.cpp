@@ -742,11 +742,54 @@ void Validator::PostCallRecordCmdBuildAccelerationStructuresKHR(
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     auto& cb_sub_state = SubState(*cb_state);
-    UpdateAccelerationStructureGpuState(*this, cb_sub_state, record_obj.location, infoCount, pInfos);
+    std::vector<AccelerationStructureGpuStateUpdate> as_gpu_state_updates(infoCount);
+    for (uint32_t info_i = 0; info_i < infoCount; ++info_i) {
+        as_gpu_state_updates[info_i].dst = pInfos[info_i].dstAccelerationStructure;
+        as_gpu_state_updates[info_i].mode = pInfos[info_i].mode;
+    }
+    UpdateAccelerationStructureGpuState(*this, cb_sub_state, record_obj.location, as_gpu_state_updates);
     for (auto& f : cb_sub_state.on_post_call_record_cmd_build_as_functions) {
         f(*this, cb_sub_state);
     }
     cb_sub_state.on_post_call_record_cmd_build_as_functions.clear();
+}
+
+void Validator::PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                                        const VkDeviceAddress* pIndirectDeviceAddresses,
+                                                                        const uint32_t* pIndirectStrides,
+                                                                        const uint32_t* const* ppMaxPrimitiveCounts,
+                                                                        const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    auto& cb_sub_state = SubState(*cb_state);
+    std::vector<AccelerationStructureGpuStateUpdate> as_gpu_state_updates(infoCount);
+    for (uint32_t info_i = 0; info_i < infoCount; ++info_i) {
+        as_gpu_state_updates[info_i].dst = pInfos[info_i].dstAccelerationStructure;
+        as_gpu_state_updates[info_i].mode = pInfos[info_i].mode;
+    }
+    UpdateAccelerationStructureGpuState(*this, cb_sub_state, record_obj.location, as_gpu_state_updates);
+}
+
+void Validator::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                              const VkCopyAccelerationStructureInfoKHR* pInfo,
+                                                              const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    AccelerationStructureGpuStateUpdate as_gpu_state_update;
+    as_gpu_state_update.dst = pInfo->dst;
+    as_gpu_state_update.src = pInfo->src;
+    UpdateAccelerationStructureGpuState(*this, SubState(*cb_state), record_obj.location, {&as_gpu_state_update, 1});
+}
+
+void Validator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                      const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
+                                                                      const RecordObject& record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    AccelerationStructureGpuStateUpdate as_gpu_state_update;
+    as_gpu_state_update.dst = pInfo->dst;
+    UpdateAccelerationStructureGpuState(*this, SubState(*cb_state), record_obj.location, {&as_gpu_state_update, 1});
 }
 
 void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,

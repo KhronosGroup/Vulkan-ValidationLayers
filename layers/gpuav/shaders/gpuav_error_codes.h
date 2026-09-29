@@ -238,6 +238,7 @@ const int kErrorSubCode_PreBuildAccelerationStructures_Transform = 11;
 const int kErrorSubCode_PreBuildAccelerationStructures_IndexBufferUpdated = 12;
 const int kErrorSubCode_PreBuildAccelerationStructures_VertexBufferActiveStatusUpdated = 13;
 const int kErrorSubCode_PreBuildAccelerationStructures_AabbBufferActiveStatusUpdated = 14;
+const int kErrorSubCode_PreBuildAccelerationStructures_BlasNotBuilt = 15;
 
 #ifdef __cplusplus
 }  // namespace glsl

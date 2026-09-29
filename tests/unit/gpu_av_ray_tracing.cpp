@@ -4442,3 +4442,31 @@ TEST_F(NegativeGpuAVRayTracing, SelectInstrumentedPipelineRegex) {
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVRayTracing, TlasBuildReferencingUnbuiltBlas) {
+    TEST_DESCRIPTION("Reference a BLAS that was created but never built in a TLAS build.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    // Create BLAS handle, but do not build it
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.SetupBuild(true);
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
+    m_command_buffer.Begin();
+    tlas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-BLAS-not-built");
+    m_device->Wait();
+    m_errorMonitor->VerifyFound();
+}
