@@ -1970,10 +1970,10 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapShaderRecordData) {
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
     VkDescriptorSetAndBindingMappingEXT mapping[2];
-    mapping[1] = MakeSetAndBindingMapping(0, 0);
+    mapping[1] = MakeSetAndBindingMappingEXT(0, 0);
     mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping[1].sourceData.constantOffset.heapOffset = 0;
-    mapping[0] = MakeSetAndBindingMapping(0, 1);
+    mapping[0] = MakeSetAndBindingMappingEXT(0, 1);
     mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT;
     mapping[0].sourceData.shaderRecordDataOffset = 32;
 
@@ -2038,10 +2038,10 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapShaderRecordAddress) {
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
     VkDescriptorSetAndBindingMappingEXT mapping[2];
-    mapping[1] = MakeSetAndBindingMapping(0, 0);
+    mapping[1] = MakeSetAndBindingMappingEXT(0, 0);
     mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping[1].sourceData.constantOffset.heapOffset = 0;
-    mapping[0] = MakeSetAndBindingMapping(0, 1);
+    mapping[0] = MakeSetAndBindingMappingEXT(0, 1);
     mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT;
     mapping[0].sourceData.shaderRecordAddressOffset = 0;
 
@@ -2113,10 +2113,10 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapShaderRecordAddressSlang) {
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
     VkDescriptorSetAndBindingMappingEXT mapping[2];
-    mapping[1] = MakeSetAndBindingMapping(0, 0);
+    mapping[1] = MakeSetAndBindingMappingEXT(0, 0);
     mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping[1].sourceData.constantOffset.heapOffset = 0;
-    mapping[0] = MakeSetAndBindingMapping(0, 1);
+    mapping[0] = MakeSetAndBindingMappingEXT(0, 1);
     mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT;
     mapping[0].sourceData.shaderRecordAddressOffset = 0;
 
@@ -2188,10 +2188,10 @@ TEST_F(NegativeRayTracingPipeline, DescriptorHeapPushAddressSlang) {
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
 
     VkDescriptorSetAndBindingMappingEXT mapping[2];
-    mapping[1] = MakeSetAndBindingMapping(0, 0);
+    mapping[1] = MakeSetAndBindingMappingEXT(0, 0);
     mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping[1].sourceData.constantOffset.heapOffset = 0;
-    mapping[0] = MakeSetAndBindingMapping(0, 1);
+    mapping[0] = MakeSetAndBindingMappingEXT(0, 1);
     mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
     mapping[0].sourceData.shaderRecordAddressOffset = 0;
 

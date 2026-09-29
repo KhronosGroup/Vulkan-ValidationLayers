@@ -1785,7 +1785,7 @@ TEST_F(PositiveShaderObjectEXT, DescriptorHeapStorageBuffer) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 0;
     mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -1838,7 +1838,7 @@ TEST_F(PositiveShaderObjectEXT, DrawWithHeap) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 0;
     mappings.sourceData.constantOffset.heapArrayStride = 0;

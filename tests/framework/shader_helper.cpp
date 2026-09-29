@@ -591,8 +591,8 @@ VkShaderObj VkShaderObj::CreateFromASM(VkRenderFramework* framework, const char*
     return {};
 }
 
-VkDescriptorSetAndBindingMappingEXT MakeSetAndBindingMapping(uint32_t set, uint32_t binding, uint32_t count,
-                                                             VkSpirvResourceTypeFlagsEXT mask) {
+VkDescriptorSetAndBindingMappingEXT MakeSetAndBindingMappingEXT(uint32_t set, uint32_t binding, uint32_t count,
+                                                                VkSpirvResourceTypeFlagsEXT mask) {
     VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
     mapping.descriptorSet = set;
     mapping.firstBinding = binding;
@@ -601,8 +601,8 @@ VkDescriptorSetAndBindingMappingEXT MakeSetAndBindingMapping(uint32_t set, uint3
     return mapping;
 }
 
-VkDescriptorSetAndBindingMappingEXT MakeZeroSetAndBindingMapping(uint32_t set, uint32_t binding,
-                                                                 VkDescriptorMappingSourceEXT source) {
+VkDescriptorSetAndBindingMappingEXT MakeZeroSetAndBindingMappingEXT(uint32_t set, uint32_t binding,
+                                                                    VkDescriptorMappingSourceEXT source) {
     VkDescriptorSetAndBindingMappingEXT mapping = vku::InitStructHelper();
     mapping.descriptorSet = set;
     mapping.firstBinding = binding;

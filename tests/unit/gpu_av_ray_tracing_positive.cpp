@@ -1993,7 +1993,7 @@ TEST_F(PositiveGpuAVRayTracing, BlasReference1DescriptorHeap) {
 
     std::array<VkDescriptorSetAndBindingMappingEXT, 2> mappings = {};
     mappings[0] = vku::InitStructHelper();
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT;
     mappings[0].sourceData.shaderRecordIndex = {};
     mappings[0].sourceData.shaderRecordIndex.heapOffset = (uint32_t)as_heap_offset;
@@ -2002,7 +2002,7 @@ TEST_F(PositiveGpuAVRayTracing, BlasReference1DescriptorHeap) {
     mappings[0].sourceData.shaderRecordIndex.heapArrayStride = 0;
 
     mappings[1] = vku::InitStructHelper();
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT;
     mappings[1].sourceData.shaderRecordIndex = {};
     mappings[1].sourceData.shaderRecordIndex.heapOffset = (uint32_t)debug_buffer_heap_offset;

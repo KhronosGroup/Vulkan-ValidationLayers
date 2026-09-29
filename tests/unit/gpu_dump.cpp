@@ -405,7 +405,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapDescriptorIndexing) {
 
     desc_heap.BindResourceHeap(m_command_buffer);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = 0;
     mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
@@ -533,7 +533,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeNonArray) {
     bind_resource_info.reservedRangeSize = (uint32_t)resource_stride;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = 0;
     mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
@@ -584,7 +584,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArray) {
     bind_resource_info.reservedRangeSize = (uint32_t)resource_stride * 2;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = 0;
     mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
@@ -646,7 +646,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeArrayIndexed) {
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address();
     m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
     mapping.sourceData.indirectIndex.heapIndexStride = 1;
     mapping.sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
@@ -708,7 +708,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeIndirectArray) {
     bind_resource_info.reservedRangeSize = (uint32_t)resource_stride * 2;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
     mapping.sourceData.indirectIndexArray.heapIndexStride = 1;
 
@@ -752,11 +752,11 @@ TEST_F(NegativeGpuDump, DescriptorHeapSampler) {
     desc_heap.BindSamplerHeap(m_command_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = 0;
     mappings[1].sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
@@ -807,7 +807,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignment) {
     uint32_t push_data_uint = 1;
     m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &push_data_uint);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 2);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0, 2);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
     mapping.sourceData.pushIndex.heapOffset = 0;
     mapping.sourceData.pushIndex.pushOffset = 0;
@@ -866,7 +866,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectArray) {
 
     desc_heap.BindResourceHeap(m_command_buffer);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
     mapping.sourceData.indirectIndexArray.heapIndexStride = 1;
 
@@ -913,7 +913,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentHeapData) {
     m_command_buffer.PushDataEXT(0, sizeof(uint32_t), &push_data_uint);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT);
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -1020,7 +1020,8 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentPushAddress) {
     VkDeviceAddress read_address = ssbo_buffer.Address() + 1;
     m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &read_address);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -1073,7 +1074,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectAddress) {
     m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_address);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT);
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -1123,7 +1124,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapAlignmentIndirectIndex) {
     VkDeviceAddress indirect_ubo_address = ubo_buffer.Address() + 1;
     m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
     mapping.sourceData.indirectIndex.heapIndexStride = 0;
     mapping.sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
@@ -1171,7 +1172,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexNoBuffer) {
     VkDeviceAddress indirect_ubo_address = 0xBEEE0000;
     m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
     mapping.sourceData.indirectIndex.heapIndexStride = 0;
     mapping.sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
@@ -1210,7 +1211,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapCombinedImageSampler) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -1250,7 +1251,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapZeroArrayStride) {
     m_command_buffer.Begin();
     desc_heap.BindResourceHeap(m_command_buffer);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -1297,7 +1298,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexBufferType) {
     VkDeviceAddress indirect_ubo_address = bad_indirect_buffer.Address();
     m_command_buffer.PushDataEXT(0, sizeof(VkDeviceAddress), &indirect_ubo_address);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
     mapping.sourceData.indirectIndex.heapIndexStride = 0;
     mapping.sourceData.indirectIndex.heapArrayStride = (uint32_t)resource_stride;
@@ -1342,10 +1343,10 @@ TEST_F(NegativeGpuDump, DescriptorHeapPushAddressBufferType) {
     desc_heap.BindResourceHeap(m_command_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
     mappings[0].sourceData.pushAddressOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
     mappings[1].sourceData.pushAddressOffset = 8;
 
@@ -1418,10 +1419,10 @@ TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointers) {
     desc_heap.BindSamplerHeap(m_command_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
 
@@ -1476,11 +1477,11 @@ TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointersStorageImage) {
     desc_heap.BindResourceHeap(m_command_buffer);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
     mappings[0].sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)resource_stride;
     mappings[1].sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
@@ -1514,7 +1515,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapBindingCount) {
     vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_size);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 5);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0, 5);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
     mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)resource_stride;
@@ -1694,7 +1695,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapPushOffsetOOB) {
     vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
     mapping.sourceData.pushAddressOffset = 8;
 
@@ -1739,7 +1740,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapNoDescriptor) {
     vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(1024);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -1777,7 +1778,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptor) {
     vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(1024);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -1817,7 +1818,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorSampler) {
     vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(1024);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -1894,10 +1895,10 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorNotSampler) {
     vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_resource_info);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = 0;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -1940,7 +1941,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapNoDescriptorCombinedSampler) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -1974,10 +1975,10 @@ TEST_F(NegativeGpuDump, DescriptorHeapWrongDescriptorDebugNames) {
         static_cast<uint32_t>(desc_heap.AlignResource(std::max(heap_props.samplerDescriptorSize, heap_props.bufferDescriptorSize)));
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = ubo_offset;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -2066,13 +2067,13 @@ TEST_F(NegativeGpuDump, DescriptorHeapHashConflict) {
     vk::WriteSamplerDescriptorsEXT(*m_device, 1u, &sampler_info, &sampler_host);
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = 0;
-    mappings[2] = MakeSetAndBindingMapping(0, 2);
+    mappings[2] = MakeSetAndBindingMappingEXT(0, 2);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset.heapOffset = 0;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -2122,7 +2123,8 @@ TEST_F(NegativeGpuDump, AccelStructPushAddressValid) {
     tlas_dbg_name.objectHandle = (uint64_t)tlas.GetDstAS()->handle();
     vk::SetDebugUtilsObjectNameEXT(device(), &tlas_dbg_name);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -2229,7 +2231,8 @@ TEST_F(NegativeGpuDump, AccelStructPushAddressInvalid) {
     tlas_dbg_name.objectHandle = (uint64_t)tlas.GetDstAS()->handle();
     vk::SetDebugUtilsObjectNameEXT(device(), &tlas_dbg_name);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -2341,7 +2344,7 @@ TEST_F(NegativeGpuDump, AccelStructHeapIndirectAddressValid) {
     vk::SetDebugUtilsObjectNameEXT(device(), &tlas_dbg_name);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT);
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -2458,7 +2461,7 @@ TEST_F(NegativeGpuDump, AccelStructHeapIndirectAddressInvalid) {
     vk::SetDebugUtilsObjectNameEXT(device(), &tlas_dbg_name);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT);
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -2575,7 +2578,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapNullDescriptor) {
     desc_heap.CreateResourceHeap(1024);
     desc_heap.WriteNullDescriptorAtOffset(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -2612,7 +2615,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapUntypedPointersImageFunctionParam) {
         GTEST_SKIP() << "issues with alignment";
     }
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 2);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0, 2);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = 0;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -2718,7 +2721,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeRuntimeArray) {
             buffers[tid].data = 0;
         }
     )glsl";
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = 0;
     mapping.sourceData.constantOffset.heapArrayStride = (uint32_t)heap_props.bufferDescriptorSize;
@@ -2787,7 +2790,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapIndirectIndexMemoryOffset) {
     *((uint32_t*)memory_data) = 3;
     *((uint32_t*)(memory_data + bind_offset)) = 1;
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
     mapping.sourceData.indirectIndex.pushOffset = 0;
     mapping.sourceData.indirectIndex.heapIndexStride = (uint32_t)stride;
@@ -2838,7 +2841,7 @@ TEST_F(NegativeGpuDump, DescriptorHeap32bitOverflow) {
     uint32_t* index_data = (uint32_t*)index_buffer.Memory().Map();
     index_data[0] = 65536;
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
     mapping.sourceData.indirectIndex.pushOffset = 0;
     mapping.sourceData.indirectIndex.heapIndexStride = stride;
