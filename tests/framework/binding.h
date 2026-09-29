@@ -579,11 +579,6 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
              &allocate_flag_info);
     }
 
-    explicit Buffer(const Device &dev, VkBufferUsageFlags usage, const void *data, size_t data_size,
-                    const vvl::span<uint32_t> &queue_families = {}) {
-        InitHostVisibleWithData(dev, usage, data, data_size, queue_families);
-    }
-
     Buffer(Buffer &&rhs) noexcept;
     Buffer &operator=(Buffer &&rhs) noexcept;
     ~Buffer() noexcept;
@@ -596,8 +591,6 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
               void *alloc_info_pnext = nullptr, const vvl::span<uint32_t> &queue_families = {}) {
         Init(dev, CreateInfo(size, usage, queue_families), mem_props, alloc_info_pnext);
     }
-    void InitHostVisibleWithData(const Device &dev, VkBufferUsageFlags usage, const void *data, size_t data_size,
-                                 const vvl::span<uint32_t> &queue_families = {});
     void InitNoMemory(const Device &dev, const VkBufferCreateInfo &info);
 
     void SetName(const char *name) { NonDispHandle<VkBuffer>::SetName(VK_OBJECT_TYPE_BUFFER, name); }

@@ -4979,7 +4979,8 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     const uint32_t zeroit_value = 0;
-    vkt::Buffer doit_buffer(*m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &zeroit_value, sizeof(uint32_t));
+    vkt::Buffer doit_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    *static_cast<uint32_t*>(doit_buffer.Memory().Map()) = zeroit_value;
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 32;
