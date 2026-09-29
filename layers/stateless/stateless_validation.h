@@ -596,6 +596,8 @@ class Device : public vvl::BaseDevice {
     bool ValidatePushConstantRange(uint32_t push_constant_range_count, const VkPushConstantRange *push_constant_ranges,
                                    const Location &loc) const;
 
+    bool ValidateDescriptorSetAndBindingMappingEXT(const VkDescriptorSetAndBindingMappingEXT& mapping,
+                                                   const Location& map_loc) const;
     bool ValidateShaderDescriptorSetAndBindingMappingInfo(const VkShaderDescriptorSetAndBindingMappingInfoEXT& create_info,
                                                           const Location& loc) const;
     bool ValidatePipelineShaderStageCreateInfoCommon(const Context &context, const VkPipelineShaderStageCreateInfo &create_info,
