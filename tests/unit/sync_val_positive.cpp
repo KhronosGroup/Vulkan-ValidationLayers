@@ -1478,7 +1478,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     // Wait on ALL_COMMANDS semaphore should protect this submission from previous accesses.
     layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
     layout_transition.srcAccessMask = 0;
-    layout_transition.dstAccessMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     layout_transition.dstAccessMask = 0;
     layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1551,7 +1551,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
     layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
     layout_transition.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    layout_transition.dstAccessMask = VK_PIPELINE_STAGE_2_NONE;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
     layout_transition.dstAccessMask = 0;
     layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;

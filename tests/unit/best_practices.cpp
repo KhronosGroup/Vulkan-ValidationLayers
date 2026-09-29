@@ -917,7 +917,7 @@ TEST_F(NegativeBestPractices, TransitionFromUndefinedToReadOnly) {
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = 0;
-    img_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     img_barrier.image = image;
