@@ -84,9 +84,9 @@ class VkShaderObj : public vkt::ShaderModule {
     spv_target_env m_spv_env;
 };
 
-VkDescriptorSetAndBindingMappingEXT MakeSetAndBindingMapping(uint32_t set, uint32_t binding, uint32_t count = 1,
-                                                             VkSpirvResourceTypeFlagsEXT mask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT);
+VkDescriptorSetAndBindingMappingEXT MakeSetAndBindingMappingEXT(uint32_t set, uint32_t binding, uint32_t count = 1,
+                                                                VkSpirvResourceTypeFlagsEXT mask = VK_SPIRV_RESOURCE_TYPE_ALL_EXT);
 
-VkDescriptorSetAndBindingMappingEXT MakeZeroSetAndBindingMapping(
+VkDescriptorSetAndBindingMappingEXT MakeZeroSetAndBindingMappingEXT(
     uint32_t set, uint32_t binding,
     VkDescriptorMappingSourceEXT source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT);

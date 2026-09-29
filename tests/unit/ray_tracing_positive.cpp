@@ -2213,7 +2213,7 @@ TEST_F(PositiveRayTracing, DescriptorHeap) {
     // Set shaders
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT);
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset = {};
 

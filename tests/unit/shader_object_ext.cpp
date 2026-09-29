@@ -7308,7 +7308,7 @@ TEST_F(NegativeShaderObjectEXT, PipelineShaderStageCreateInfoNotEnabled) {
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -7400,19 +7400,19 @@ TEST_F(NegativeShaderObjectEXT, EmbeddedSamplerReservedArea) {
     vk::WriteSamplerDescriptorsEXT(*m_device, 1, &sampler_ci, &input_descriptor);
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0u * (uint32_t)resourceStride;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = 1u * (uint32_t)resourceStride;
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
     mappings[1].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
-    mappings[2] = MakeSetAndBindingMapping(0, 2);
+    mappings[2] = MakeSetAndBindingMappingEXT(0, 2);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset.heapOffset = 2u * (uint32_t)resourceStride;
     mappings[2].sourceData.constantOffset.heapArrayStride = 0;
@@ -7498,7 +7498,7 @@ TEST_F(NegativeShaderObjectEXT, DescriptorHeapOpTypeImage) {
 
     vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 1;
     mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -7838,7 +7838,7 @@ TEST_F(NegativeShaderObjectEXT, DrawWithHeap) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 0;
     mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -8129,7 +8129,7 @@ TEST_F(NegativeShaderObjectEXT, MissingHeapBind) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 0;
     mappings.sourceData.constantOffset.heapArrayStride = 0;

@@ -5841,7 +5841,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeap) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -5933,7 +5933,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapGraphics) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -6094,7 +6094,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapGPL) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -6216,7 +6216,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapShaderObjects) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -6329,7 +6329,7 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeap) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -6429,7 +6429,7 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapGraphics) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -6547,7 +6547,7 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapMesh) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -6665,7 +6665,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;

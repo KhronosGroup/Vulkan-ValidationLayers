@@ -92,7 +92,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, Buffer) {
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -1884,7 +1884,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, PushDataUnused) {
     vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -2096,7 +2096,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, DirectAccessUintWithMapping) {
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
     desc_heap.WriteBufferDescriptorAtOffset(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, heap_props.bufferDescriptorSize * 3);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.bufferDescriptorSize * 3);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -2260,7 +2260,7 @@ TEST_F(PositiveDescriptorHeapUntypedEXT, GlslStructuredWithMapping) {
     desc_heap.WriteBufferDescriptor(ssbo_a, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     desc_heap.WriteBufferDescriptor(ssbo_b, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;

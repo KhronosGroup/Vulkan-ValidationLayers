@@ -1560,7 +1560,7 @@ TEST_F(NegativeDescriptorHeapEXT, ShaderDescriptorSetAndBindingMapping) {
 
     {
         // Same range
-        mapping[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+        mapping[0] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
         mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
         mapping[1] = mapping[0];
 
@@ -1575,9 +1575,9 @@ TEST_F(NegativeDescriptorHeapEXT, ShaderDescriptorSetAndBindingMapping) {
 
     {
         // Overlapping subrange
-        mapping[0] = MakeSetAndBindingMapping(0, 1, 10, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+        mapping[0] = MakeSetAndBindingMappingEXT(0, 1, 10, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
         mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-        mapping[1] = MakeSetAndBindingMapping(0, 2, 5, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+        mapping[1] = MakeSetAndBindingMappingEXT(0, 2, 5, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
         mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
         CreatePipelineHelper pipe(*this);
@@ -1591,9 +1591,9 @@ TEST_F(NegativeDescriptorHeapEXT, ShaderDescriptorSetAndBindingMapping) {
 
     {
         // Overlapping range
-        mapping[0] = MakeSetAndBindingMapping(1, 0, 10, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+        mapping[0] = MakeSetAndBindingMappingEXT(1, 0, 10, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
         mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-        mapping[1] = MakeSetAndBindingMapping(1, 2, 10, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+        mapping[1] = MakeSetAndBindingMappingEXT(1, 2, 10, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
         mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
         CreatePipelineHelper pipe(*this);
@@ -1607,9 +1607,9 @@ TEST_F(NegativeDescriptorHeapEXT, ShaderDescriptorSetAndBindingMapping) {
 
     {
         // Overlapping range with UINT32_MAX bindingCount
-        mapping[0] = MakeSetAndBindingMapping(2, 20, UINT32_MAX, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+        mapping[0] = MakeSetAndBindingMappingEXT(2, 20, UINT32_MAX, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
         mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-        mapping[1] = MakeSetAndBindingMapping(2, 30, 10, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+        mapping[1] = MakeSetAndBindingMappingEXT(2, 30, 10, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
         mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
         CreatePipelineHelper pipe(*this);
@@ -1623,9 +1623,9 @@ TEST_F(NegativeDescriptorHeapEXT, ShaderDescriptorSetAndBindingMapping) {
 
     {
         // No overlapping
-        mapping[0] = MakeSetAndBindingMapping(1, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+        mapping[0] = MakeSetAndBindingMappingEXT(1, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
         mapping[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-        mapping[1] = MakeSetAndBindingMapping(1, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+        mapping[1] = MakeSetAndBindingMappingEXT(1, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
         mapping[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
         CreateComputePipelineHelper pipe(*this);
@@ -1650,7 +1650,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
 
     for (auto source : {VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT,
                         VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
         mapping.source = source;
 
         CreateComputePipelineHelper pipe(*this);
@@ -1664,7 +1664,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
 
     for (auto source : {VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT}) {
         bool data = source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
         mapping.source = source;
         if (data) {
             mapping.sourceData.pushDataOffset = 3;
@@ -1684,7 +1684,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
 
     for (auto source :
          {VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
         mapping.source = source;
         mapping.sourceData.shaderRecordAddressOffset = 8;
 
@@ -1699,7 +1699,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
 
     for (auto source :
          {VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
         bool data = source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT;
         mapping.source = source;
         if (data) {
@@ -1720,7 +1720,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
 
     for (auto source : {VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT,
                         VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
         mapping.source = source;
         mapping.sourceData.shaderRecordDataOffset = 0;
 
@@ -1734,7 +1734,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
     }
 
     for (auto source : {VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
         mapping.source = source;
         mapping.sourceData.shaderRecordDataOffset = 0;
 
@@ -1751,7 +1751,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
          {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
         mapping.source = source;
 
         switch (source) {
@@ -1784,7 +1784,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
          {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
         mapping.source = source;
 
         VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
@@ -1822,7 +1822,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
          {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
         mapping.source = source;
 
         VkDebugUtilsObjectNameInfoEXT object_name_info = vku::InitStructHelper();
@@ -1869,7 +1869,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingPipeline) {
          {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
         mapping.source = source;
 
         for (const auto borderColor : {VK_BORDER_COLOR_FLOAT_CUSTOM_EXT, VK_BORDER_COLOR_INT_CUSTOM_EXT}) {
@@ -1927,7 +1927,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorSetAndBindingMappingShaderObject) {
          {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
         mapping.source = source;
 
         VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
@@ -1977,7 +1977,7 @@ TEST_F(NegativeDescriptorHeapEXT, OpaqueCaptureDescriptorDataCreateInfo) {
          {VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT,
           VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT}) {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
         mapping.source = source;
 
         VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper(&opaque_capture);
@@ -2021,7 +2021,7 @@ TEST_F(NegativeDescriptorHeapEXT, OpaqueCaptureDescriptorDataCreateInfo) {
 TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourcePushIndex) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -2053,7 +2053,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourcePushIndex) {
 
 TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourcePushDataLimit) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -2085,7 +2085,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourcePushDataLimit) {
 
 TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourcePushDataLimitSampler) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -2145,7 +2145,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectIndex) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
         mapping.sourceData.indirectIndex.pushOffset = 4;
 
@@ -2158,7 +2158,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectIndex) {
         m_errorMonitor->VerifyFound();
     }
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
         mapping.sourceData.indirectIndex.pushOffset = (uint32_t)heap_props.maxPushDataSize;
 
@@ -2171,7 +2171,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectIndex) {
         m_errorMonitor->VerifyFound();
     }
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
         mapping.sourceData.indirectIndex.addressOffset = 3;
 
@@ -2194,7 +2194,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceHeapData) {
     mapping_info.pMappings = &mapping;
 
     if (m_device->Physical().limits_.minUniformBufferOffsetAlignment > 0) {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
         mapping.sourceData.heapData.heapOffset = (uint32_t)m_device->Physical().limits_.minUniformBufferOffsetAlignment + 1;
 
@@ -2207,7 +2207,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceHeapData) {
         m_errorMonitor->VerifyFound();
     }
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
         mapping.sourceData.heapData.pushOffset = 3u;
 
@@ -2220,7 +2220,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceHeapData) {
         m_errorMonitor->VerifyFound();
     }
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
         mapping.sourceData.heapData.pushOffset = (uint32_t)heap_props.maxPushDataSize;
 
@@ -2242,7 +2242,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectAddress) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
         mapping.sourceData.indirectAddress.pushOffset = 4;
 
@@ -2255,7 +2255,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectAddress) {
         m_errorMonitor->VerifyFound();
     }
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
         mapping.sourceData.indirectAddress.pushOffset = (uint32_t)heap_props.maxPushDataSize;
 
@@ -2268,7 +2268,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectAddress) {
         m_errorMonitor->VerifyFound();
     }
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
         mapping.sourceData.indirectAddress.addressOffset = 7;
 
@@ -2286,7 +2286,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceShaderRecordIndexAlign)
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT;
     mapping.sourceData.shaderRecordIndex.shaderRecordOffset = 3;
 
@@ -2312,7 +2312,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceShaderRecordIndexSize) 
     GetPhysicalDeviceProperties2(ray_tracing_properties);
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_SHADER_RECORD_INDEX_EXT;
     mapping.sourceData.shaderRecordIndex.shaderRecordOffset = Align(ray_tracing_properties.maxShaderGroupStride, 4u);
 
@@ -2337,7 +2337,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectIndexArray) {
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
         mapping.sourceData.indirectIndexArray.pushOffset = 4;
 
@@ -2350,7 +2350,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectIndexArray) {
         m_errorMonitor->VerifyFound();
     }
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
         mapping.sourceData.indirectIndexArray.pushOffset = (uint32_t)heap_props.maxPushDataSize;
 
@@ -2363,7 +2363,7 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorMappingSourceIndirectIndexArray) {
         m_errorMonitor->VerifyFound();
     }
     {
-        mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
         mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
         mapping.sourceData.indirectIndexArray.addressOffset = 7;
 
@@ -2603,7 +2603,7 @@ TEST_F(NegativeDescriptorHeapEXT, PipelineShaderStageCreateInfoNotEnabled) {
     RETURN_IF_SKIP(Init());
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -3092,7 +3092,7 @@ TEST_F(NegativeDescriptorHeapEXT, OpTypeImage) {
         GTEST_SKIP() << "Cannot be unaligned with imageDescriptorAlignment less than 2";
     }
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 1;
     mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -3141,7 +3141,7 @@ TEST_F(NegativeDescriptorHeapEXT, MappedPushIsBlockUniform) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -3186,10 +3186,10 @@ TEST_F(NegativeDescriptorHeapEXT, MappedStructLessThanMaxPushDataSize) {
     RETURN_IF_SKIP(CheckSlangSupport());
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
     mappings[0].sourceData.pushDataOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -3261,7 +3261,7 @@ TEST_F(NegativeDescriptorHeapEXT, MaxPushDataSizeShaderObject) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
     mappings.sourceData.pushDataOffset = 128u;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -3286,7 +3286,7 @@ TEST_F(NegativeDescriptorHeapEXT, OpTypeStruct) {
         GTEST_SKIP() << "Cannot be unaligned with bufferDescriptorAlignment less than 2";
     }
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 1;
     mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -3341,15 +3341,15 @@ TEST_F(NegativeDescriptorHeapEXT, OpTypeSampler) {
     }
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0u;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
 
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
-    mappings[2] = MakeSetAndBindingMapping(0, 2);
+    mappings[2] = MakeSetAndBindingMappingEXT(0, 2);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -3451,12 +3451,12 @@ TEST_F(NegativeDescriptorHeapEXT, OpTypeSampledImageAlignedSampler) {
     }
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
 
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -3507,12 +3507,12 @@ TEST_F(NegativeDescriptorHeapEXT, OpTypeSampledImageAlignedImage) {
     }
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
 
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -3560,7 +3560,7 @@ TEST_F(NegativeDescriptorHeapEXT, NoMappingStruct) {
 TEST_F(NegativeDescriptorHeapEXT, MappingWithoutFlag) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mappings;
@@ -3602,7 +3602,7 @@ TEST_F(NegativeDescriptorHeapEXT, NoMappingShaderObject) {
         }
     )glsl";
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(1, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(1, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 0u;
     mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -3626,7 +3626,7 @@ TEST_F(NegativeDescriptorHeapEXT, NoMappingComputePipeline) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     RETURN_IF_SKIP(CheckSlangSupport());
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings.sourceData.constantOffset.heapOffset = 0;
     mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -3670,23 +3670,23 @@ TEST_F(NegativeDescriptorHeapEXT, NoMappingMultipleMappings) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[5];
-    mappings[0] = MakeSetAndBindingMapping(1, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(1, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0u;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 3);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 3);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = 0u;
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
-    mappings[2] = MakeSetAndBindingMapping(0, 0, 2);
+    mappings[2] = MakeSetAndBindingMappingEXT(0, 0, 2);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset.heapOffset = 0u;
     mappings[2].sourceData.constantOffset.heapArrayStride = 0;
-    mappings[3] = MakeSetAndBindingMapping(0, 2, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
+    mappings[3] = MakeSetAndBindingMappingEXT(0, 2, 1, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT);
     mappings[3].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[3].sourceData.constantOffset.heapOffset = 0u;
     mappings[3].sourceData.constantOffset.heapArrayStride = 0;
-    mappings[4] = MakeSetAndBindingMapping(0, 2, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+    mappings[4] = MakeSetAndBindingMappingEXT(0, 2, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     mappings[4].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[4].sourceData.constantOffset.heapOffset = 0u;
     mappings[4].sourceData.constantOffset.heapArrayStride = 0;
@@ -3712,7 +3712,7 @@ TEST_F(NegativeDescriptorHeapEXT, NoMappingMultipleMappingsAllUsed) {
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
     for (uint32_t i = 0; i < 3; i++) {
-        mappings[i] = MakeSetAndBindingMapping(0, i);
+        mappings[i] = MakeSetAndBindingMappingEXT(0, i);
         mappings[i].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
         mappings[i].sourceData.constantOffset.heapOffset = 0u;
         mappings[i].sourceData.constantOffset.heapArrayStride = 0;
@@ -3745,7 +3745,7 @@ TEST_F(NegativeDescriptorHeapEXT, NoMappingMultipleMappingsMostUsed) {
 
     VkDescriptorSetAndBindingMappingEXT mappings[9];
     for (uint32_t i = 0; i < 9; i++) {
-        mappings[i] = MakeSetAndBindingMapping(0, i);
+        mappings[i] = MakeSetAndBindingMappingEXT(0, i);
         mappings[i].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
         mappings[i].sourceData.constantOffset.heapOffset = 0u;
         mappings[i].sourceData.constantOffset.heapArrayStride = 0;
@@ -3788,7 +3788,7 @@ TEST_F(NegativeDescriptorHeapEXT, NoMappingMultipleMappingsMany) {
 
     VkDescriptorSetAndBindingMappingEXT mappings[512];
     for (uint32_t i = 0; i < 512; i++) {
-        mappings[i] = MakeSetAndBindingMapping(0, i + 1);
+        mappings[i] = MakeSetAndBindingMappingEXT(0, i + 1);
         mappings[i].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
         mappings[i].sourceData.constantOffset.heapOffset = 0u;
         mappings[i].sourceData.constantOffset.heapArrayStride = 0;
@@ -3879,19 +3879,19 @@ TEST_F(NegativeDescriptorHeapEXT, EmbeddedSamplerReservedArea) {
     vk::WriteSamplerDescriptorsEXT(*m_device, 1, &sampler_ci, &input_descriptor);
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0u * (uint32_t)resource_stride;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = 1u * (uint32_t)resource_stride;
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
     mappings[1].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
-    mappings[2] = MakeSetAndBindingMapping(0, 2);
+    mappings[2] = MakeSetAndBindingMappingEXT(0, 2);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset.heapOffset = 2u * (uint32_t)resource_stride;
     mappings[2].sourceData.constantOffset.heapArrayStride = 0;
@@ -4010,19 +4010,19 @@ TEST_F(NegativeDescriptorHeapEXT, EmbeddedSamplerArray) {
     const VkDeviceSize resource_stride = Align(heap_props.bufferDescriptorSize, heap_props.samplerDescriptorAlignment);
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0u * (uint32_t)resource_stride;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = 1u * (uint32_t)resource_stride;
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
     mappings[1].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
-    mappings[2] = MakeSetAndBindingMapping(0, 2);
+    mappings[2] = MakeSetAndBindingMappingEXT(0, 2);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset.heapOffset = 2u * (uint32_t)resource_stride;
     mappings[2].sourceData.constantOffset.heapArrayStride = 0;
@@ -4074,7 +4074,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedPipeline) {
 
         vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
 
-        VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+        VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
         mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
         mappings.sourceData.constantOffset.heapOffset = 0u * (uint32_t)resource_stride;
         mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -4144,7 +4144,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedShaderObject) {
 
         vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
 
-        VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+        VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
         mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
         mappings.sourceData.constantOffset.heapOffset = 0u * (uint32_t)resource_stride;
         mappings.sourceData.constantOffset.heapArrayStride = 0;
@@ -4552,7 +4552,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRange) {
     const VkDeviceAddressRangeKHR device_range = {buffer.Address(), 16};
     desc_heap.WriteBufferDescriptorAtOffset(device_range, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -4641,7 +4641,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataRangeNonDword) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     vkt::DescriptorHeapEXT desc_heap(*this);
     desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -4696,7 +4696,7 @@ TEST_F(NegativeDescriptorHeapEXT, MaxPushDataSizeStatic) {
         GTEST_SKIP() << "maxPushDataSize is not 256";
     }
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMappingEXT(0, 0);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -4752,14 +4752,14 @@ TEST_F(NegativeDescriptorHeapEXT, NonConstantImageMemoryAccess) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
-    mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
     mappings[0].sourceData.pushAddressOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset = {};
     mappings[1].sourceData.constantOffset.heapOffset = 1024;
-    mappings[2] = MakeSetAndBindingMapping(1, 0);
+    mappings[2] = MakeSetAndBindingMappingEXT(1, 0);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset = {};
     mappings[2].sourceData.constantOffset.heapOffset = 2048;
@@ -4791,7 +4791,8 @@ TEST_F(NegativeDescriptorHeapEXT, ArrayLengthOnMappingSourceAddress) {
     TEST_DESCRIPTION("OpArrayLength instruction on incompatible mapping source type");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeZeroSetAndBindingMapping(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
@@ -4830,7 +4831,8 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCount) {
     std::vector<VkSampler> samplers(sampler_count);
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
@@ -4883,7 +4885,8 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCountPipeline) {
     m_errorMonitor->SetDesiredError("VUID-vkCreateComputePipelines-pCreateInfos-11414");
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
@@ -4927,7 +4930,8 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCountShaderObject) {
     }
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
@@ -4958,7 +4962,7 @@ TEST_F(NegativeDescriptorHeapEXT, MaxEmbeddedSamplers) {
     const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
     VkDescriptorSetAndBindingMappingEXT mapping;
-    mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
@@ -5000,7 +5004,7 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationTotalCountShaderObject) {
     const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
     VkDescriptorSetAndBindingMappingEXT mapping;
-    mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
 
@@ -5031,10 +5035,10 @@ TEST_F(NegativeDescriptorHeapEXT, NonConstantMemoryAccess) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
     mappings[0].sourceData.pushAddressOffset = 0u;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
     mappings[1].sourceData.pushAddressOffset = 8u;
 
@@ -5194,7 +5198,7 @@ TEST_F(NegativeDescriptorHeapEXT, MappedPushIsBlockUniformArray) {
     TEST_DESCRIPTION("Validate that mapped push data is backed by block uniform");
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
     mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -5371,15 +5375,15 @@ TEST_F(NegativeDescriptorHeapEXT, SecondaryCmdBufferSamplerHeapUnbound) {
     )glsl";
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
-    mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset = {};
     mappings[0].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(image_offset);
-    mappings[1] = MakeSetAndBindingMapping(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset = {};
     mappings[1].sourceData.constantOffset.heapOffset = 0;
-    mappings[2] = MakeSetAndBindingMapping(1, 0);
+    mappings[2] = MakeSetAndBindingMappingEXT(1, 0);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[2].sourceData.constantOffset = {};
     mappings[2].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(buffer_offset);
@@ -5436,7 +5440,7 @@ TEST_F(NegativeDescriptorHeapEXT, SecondaryCmdBufferUnbind) {
             data = 42;
         }
     )glsl";
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = (uint32_t)heap_props.minResourceHeapReservedRange;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -5486,11 +5490,11 @@ TEST_F(NegativeDescriptorHeapEXT, UnboundResourceHeap) {
                                             heap_props.bufferDescriptorSize);
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(heap_props.bufferDescriptorSize);
     mappings[1].sourceData.constantOffset.heapArrayStride = 0;
@@ -5715,11 +5719,11 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorIndexingHeapData) {
     )glsl";
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 1);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_RESOURCE_HEAP_DATA_EXT;
     mappings[0].sourceData.heapData.heapOffset = 0;
     mappings[0].sourceData.heapData.pushOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -5772,10 +5776,10 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorIndexingPushData) {
         }
     )glsl";
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 1);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
     mappings[0].sourceData.pushDataOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -5828,10 +5832,10 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorIndexingPushAddress) {
         }
     )glsl";
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 1);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT;
     mappings[0].sourceData.pushAddressOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -5885,11 +5889,11 @@ TEST_F(NegativeDescriptorHeapEXT, DescriptorIndexingIndirectAddress) {
     )glsl";
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 1);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT;
     mappings[0].sourceData.indirectAddress.pushOffset = 0;
     mappings[0].sourceData.indirectAddress.addressOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -5966,10 +5970,10 @@ TEST_F(NegativeDescriptorHeapEXT, CombinedImageSamplerMissingSamplerHeap) {
         }
     )glsl";
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset = {};
-    mappings[1] = MakeSetAndBindingMapping(1, 0);
+    mappings[1] = MakeSetAndBindingMappingEXT(1, 0);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset = {};
     mappings[1].sourceData.constantOffset.heapOffset = static_cast<uint32_t>(buffer_offset);
@@ -6041,7 +6045,7 @@ TEST_F(NegativeDescriptorHeapEXT, ReadOnlyStorageBufferHlsl) {
     )asm";
 
     VkDescriptorSetAndBindingMappingEXT mapping =
-        MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -6063,11 +6067,11 @@ TEST_F(NegativeDescriptorHeapEXT, ComputeShaderRecordMapping) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
     VkDescriptorSetAndBindingMappingEXT mappings[2];
-    mappings[0] = MakeSetAndBindingMapping(0, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset.heapOffset = 0;
     mappings[0].sourceData.constantOffset.heapArrayStride = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 1);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT;
     mappings[1].sourceData.shaderRecordAddressOffset = 0;
 
@@ -6118,23 +6122,23 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerMappingWarning) {
     )glsl";
 
     VkDescriptorSetAndBindingMappingEXT mappings[5];
-    mappings[0] = MakeSetAndBindingMapping(1, 0);
+    mappings[0] = MakeSetAndBindingMappingEXT(1, 0);
     mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[0].sourceData.constantOffset = {};
     mappings[0].sourceData.constantOffset.heapOffset = 0;
-    mappings[1] = MakeSetAndBindingMapping(0, 0);
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 0);
     mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mappings[1].sourceData.constantOffset = {};
     mappings[1].sourceData.constantOffset.samplerHeapOffset = (uint32_t)heap_props.samplerDescriptorSize;
-    mappings[2] = MakeSetAndBindingMapping(0, 1);
+    mappings[2] = MakeSetAndBindingMappingEXT(0, 1);
     mappings[2].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT;
     mappings[2].sourceData.pushIndex = {};
     mappings[2].sourceData.pushIndex.samplerHeapOffset = (uint32_t)heap_props.samplerDescriptorSize;
-    mappings[3] = MakeSetAndBindingMapping(0, 2);
+    mappings[3] = MakeSetAndBindingMappingEXT(0, 2);
     mappings[3].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT;
     mappings[3].sourceData.indirectIndex = {};
     mappings[3].sourceData.indirectIndex.samplerHeapOffset = (uint32_t)heap_props.samplerDescriptorSize;
-    mappings[4] = MakeSetAndBindingMapping(0, 3);
+    mappings[4] = MakeSetAndBindingMappingEXT(0, 3);
     mappings[4].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT;
     mappings[4].sourceData.indirectIndexArray = {};
     mappings[4].sourceData.indirectIndexArray.samplerHeapOffset = (uint32_t)heap_props.samplerDescriptorSize;
@@ -6154,7 +6158,7 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerMappingWarning) {
 TEST_F(NegativeDescriptorHeapEXT, EmbeddedSamplerResourceTypeAll) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_ALL_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0, 2, VK_SPIRV_RESOURCE_TYPE_ALL_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
 
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
@@ -6211,7 +6215,8 @@ TEST_F(NegativeDescriptorHeapEXT, InputAttachmentReadOnly) {
     rp.AddInputAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
     rp.CreateRenderPass();
 
-    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMapping(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
     mapping.sourceData.constantOffset.heapOffset = 0u;
     mapping.sourceData.constantOffset.heapArrayStride = 0u;
