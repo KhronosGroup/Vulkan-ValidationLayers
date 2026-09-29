@@ -159,24 +159,21 @@ struct TimelineHostSyncPoint {
 struct PresentedImageRecord {
     ResourceUsageTag tag;  // the global tag at presentation
     uint32_t image_index;
-    uint32_t present_index;
-    std::weak_ptr<vvl::Swapchain> swapchain_state;
+    uint32_t swapchain_index;
     std::shared_ptr<const vvl::Image> image;
 };
 
 struct PresentedImage : public PresentedImageRecord {
     std::shared_ptr<QueueBatchContext> batch;
-    subresource_adapter::ImageRangeGenerator range_gen;
+    ImageRangeGen range_gen;
 
     PresentedImage() = default;
+    PresentedImage(const vvl::Swapchain& swapchain, std::shared_ptr<QueueBatchContext> batch, uint32_t image_index,
+                   uint32_t swapchain_index, ResourceUsageTag present_tag);
+    PresentedImage(const vvl::Swapchain& swapchain, uint32_t at_index);
+
+    void SetImage(const vvl::Swapchain& swapchain, uint32_t at_index);
     void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context, SyncFlags flags = 0) const;
-    PresentedImage(SyncValidator& sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
-                   uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
-    // For non-previsously presented images..
-    PresentedImage(std::shared_ptr<vvl::Swapchain>&& swapchain, uint32_t at_index);
-    bool Invalid() const;
-    void ExportToSwapchain();
-    void SetImage(uint32_t at_index);
 };
 using PresentedImages = std::vector<PresentedImage>;
 
@@ -368,7 +365,8 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
     // For Present
     std::vector<BatchContextPtr> ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores,
                                                      const PresentedImages& presented_images, SignalsUpdate& signals_update);
-    bool DoQueuePresentValidate(const Location& loc, const PresentedImages& presented_images);
+    bool DoQueuePresentValidate(const Location& loc, vvl::span<const VkSwapchainKHR> swapchains,
+                                const PresentedImages& presented_images);
     void DoPresentOperations(const PresentedImages& presented_images);
     void LogPresentOperations(const PresentedImages& presented_images, uint64_t submit_index);
 
