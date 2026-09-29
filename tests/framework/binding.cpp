@@ -1778,6 +1778,19 @@ void PipelineCache::Init(const Device& dev, const VkPipelineCacheCreateInfo& inf
 
 NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 
+Pipeline::Pipeline(const Device& dev, const std::vector<VkPipeline>& libraries, VkPipelineLayout layout, VkRenderPass render_pass,
+                   VkPipelineCreateFlags flags) {
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = static_cast<uint32_t>(libraries.size());
+    link_info.pLibraries = libraries.data();
+
+    VkGraphicsPipelineCreateInfo create_info = vku::InitStructHelper(&link_info);
+    create_info.flags = flags;
+    create_info.layout = layout;
+    create_info.renderPass = render_pass;
+    Init(dev, create_info);
+}
+
 void Pipeline::Init(const Device& dev, const VkGraphicsPipelineCreateInfo& info) {
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();

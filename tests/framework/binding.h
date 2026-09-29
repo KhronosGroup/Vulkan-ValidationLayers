@@ -872,6 +872,8 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     Pipeline(const Device &dev, const VkComputePipelineCreateInfo &info) { Init(dev, info); }
     Pipeline(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info) { Init(dev, info); }
     Pipeline(const Device &dev, const VkDataGraphPipelineCreateInfoARM &info) { Init(dev, info); }
+    Pipeline(const Device& dev, const std::vector<VkPipeline>& libraries, VkPipelineLayout layout,
+             VkRenderPass render_pass = VK_NULL_HANDLE, VkPipelineCreateFlags flags = 0);
     ~Pipeline() noexcept;
     void Destroy() noexcept;
 
