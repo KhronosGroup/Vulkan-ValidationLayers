@@ -140,6 +140,12 @@ std::string AccelerationStructureKHR::Describe(const Logger& dev_data) const {
                << ", buffer: " << dev_data.FormatHandle(*ci_1->buffer_state) << ", offset: " << ci_1->ci.offset
                << ", size: " << ci_1->ci.size << ", type: " << string_VkAccelerationStructureTypeKHR(ci_1->ci.type)
                << ", deviceAddress: 0x" << std::hex << ci_1->ci.deviceAddress;
+            const VkDeviceAddress address = GetAccelerationStructureAddress();
+            if (address != 0) {
+                ss << ", vkGetAccelerationStructureDeviceAddressKHR: 0x" << std::hex << address << std::dec;
+            } else {
+                ss << ", vkGetAccelerationStructureDeviceAddressKHR: <unknown>";
+            }
         }
     } else if (UsesCreateInfo2()) {
         const auto& ci_2 = std::get<vku::safe_VkAccelerationStructureCreateInfo2KHR>(create_info);
@@ -147,6 +153,12 @@ std::string AccelerationStructureKHR::Describe(const Logger& dev_data) const {
            << std::hex << ci_2.addressRange.address << ", addressRange.size: " << std::dec << ci_2.addressRange.size
            << ", addressFlags: " << string_VkAddressCommandFlagsKHR(ci_2.addressFlags)
            << ", type: " << string_VkAccelerationStructureTypeKHR(ci_2.type);
+        const VkDeviceAddress address = GetAccelerationStructureAddress();
+        if (address != 0) {
+            ss << ", vkGetAccelerationStructureDeviceAddressKHR: 0x" << std::hex << address << std::dec;
+        } else {
+            ss << ", vkGetAccelerationStructureDeviceAddressKHR: <unknown>";
+        }
     }
 
     return ss.str();
