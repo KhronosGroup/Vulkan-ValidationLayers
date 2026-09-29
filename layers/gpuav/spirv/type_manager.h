@@ -175,6 +175,7 @@ class TypeManager {
     const Type* FindTypeById(uint32_t id) const;
     const Type* FindFunctionType(const Instruction& inst) const;
     const Type* FindTypeGlobal(const Function& function, uint32_t id) const;
+    const Type* FindPointeeType(const Function& function, uint32_t pointer_id) const;
     // There shouldn't be a case where we need to query for a specific type, but then not add it if not found.
     const Type& GetTypeVoid();
     const Type& GetTypeBool();

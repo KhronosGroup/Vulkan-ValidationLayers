@@ -57,7 +57,7 @@ class SanitizerPass : public Pass {
 
         // Used to pass along constant values found
         uint32_t constant_value = 0;
-        uint32_t component_size = 0;
+        uint32_t element_size = 0;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);

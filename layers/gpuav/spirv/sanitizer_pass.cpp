@@ -317,11 +317,11 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
         const uint32_t element_index_id = GetCoopMatElementIndex(pointer_inst, block, inst_it);
 
         const uint32_t bool_type = type_manager_.GetTypeBool().Id();
-        const uint32_t component_size_id = type_manager_.CreateConstantUInt32(meta.component_size).Id();
+        const uint32_t element_size_id = type_manager_.CreateConstantUInt32(meta.element_size).Id();
         const uint32_t alignment_id = type_manager_.CreateConstantUInt32(meta.constant_value).Id();
         const uint32_t opcode_id = type_manager_.CreateConstantUInt32(meta.target_instruction->Opcode()).Id();
         block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, function_result, function_def, stride_uint_id, component_size_id, alignment_id,
+                                {bool_type, function_result, function_def, stride_uint_id, element_size_id, alignment_id,
                                  pointer_address_id, element_index_id, inst_position_id, opcode_id},
                                 inst_it);
     } else {
@@ -421,7 +421,7 @@ bool SanitizerPass::RequiresInstrumentation(const Function& function, const Inst
 
         meta.sub_code = glsl::kErrorSubCode_Sanitizer_CoopMatAlignment;
         meta.constant_value = required_alignment;
-        meta.component_size = cma.component_size;
+        meta.element_size = cma.element_size;
         meta.skip_safe_mode = true;
         return true;
     }

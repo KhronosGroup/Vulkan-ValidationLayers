@@ -93,10 +93,12 @@ bool inst_sanitizer_fminman(const bool is_x_invalid, const bool is_y_invalid, co
     return true;
 }
 
-bool inst_sanitizer_coop_mat_alignment(const uint stride, const uint component_size, const uint required_alignment, const uint pointer_address, const uint element_index, const uint inst_offset, const uint opcode)
+// |stride| and |element_index| are in units of the type the Pointer points to,
+// so |element_size| is the size of that pointee type (not the matrix component type)
+bool inst_sanitizer_coop_mat_alignment(const uint stride, const uint element_size, const uint required_alignment, const uint pointer_address, const uint element_index, const uint inst_offset, const uint opcode)
 {
-    uint stride_bytes = stride * component_size;
-    uint element_offset_bytes = element_index * component_size;
+    uint stride_bytes = stride * element_size;
+    uint element_offset_bytes = element_index * element_size;
     bool stride_misaligned = (stride_bytes % required_alignment) != 0u;
     bool pointer_misaligned = (pointer_address % required_alignment) != 0u || (element_offset_bytes % required_alignment) != 0u;
     if (stride_misaligned || pointer_misaligned) {

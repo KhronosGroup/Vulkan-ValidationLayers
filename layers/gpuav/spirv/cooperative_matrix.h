@@ -27,6 +27,9 @@ struct CooperativeMatrixAccess {
     // OpTypeCooperativeMatrixKHR
     const Type* type = nullptr;
     uint32_t component_size = 0;
+    // Size of the type Pointer points to.
+    // Stride and the element index are in units of this type, not the component type
+    uint32_t element_size = 0;
     uint32_t rows = 0;
     uint32_t columns = 0;
     // OpCooperativeMatrixLoadKHR/OpCooperativeMatrixStoreKHR
@@ -40,9 +43,9 @@ struct CooperativeMatrixAccess {
             // This value is dynamic and can't be calculated
             return 0;
         } else if (is_row_major) {
-            return ((rows - 1) * stride_value + columns) * component_size;
+            return (rows - 1) * stride_value * element_size + columns * component_size;
         } else {
-            return ((columns - 1) * stride_value + rows) * component_size;
+            return (columns - 1) * stride_value * element_size + rows * component_size;
         }
     }
 };

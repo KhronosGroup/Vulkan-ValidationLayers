@@ -491,50 +491,38 @@ uint32_t Pass::GetLastByte(const AccessPath& access_path, BasicBlock& block, Ins
         }
     }
 
-    // Add in offset of last byte of referenced object.
-    uint32_t accessed_type_size = 0;
+    // Offset of the last byte inside the accessed object
+    uint32_t last_byte_in_access_id = 0;
 
-    // For CooperativeMatrix the |current_type_id| will be an an Int or Float as that is the element type being accessed
+    // For CooperativeMatrix the |current_type_id| will be an Int, Float or Vector as that is the element type being accessed
     if (access_path.coop_mat.used) {
         const CooperativeMatrixAccess& coop_mat_access = access_path.coop_mat;
         // The stride here could be constant, so if it is, just use it, otherwise will need to build it via SPIR-V
         if (coop_mat_access.stride_value != 0) {
-            accessed_type_size = coop_mat_access.Size();
-        } else if (coop_mat_access.is_row_major) {
-            // equation: ((rows - 1) * stride + columns) * component_size
-            const uint32_t rows_m1_id = type_manager_.GetConstantUInt32(coop_mat_access.rows - 1).Id();
-            const uint32_t columns_id = type_manager_.GetConstantUInt32(coop_mat_access.columns).Id();
-            const uint32_t component_size_id = type_manager_.GetConstantUInt32(coop_mat_access.component_size).Id();
-
-            uint32_t x1 = module_.TakeNextId();
-            uint32_t x2 = module_.TakeNextId();
-            sum_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpIMul, {uint32_type_id, x1, rows_m1_id, coop_mat_access.stride_id}, inst_it);
-            block.CreateInstruction(spv::OpIAdd, {uint32_type_id, x2, x1, columns_id}, inst_it);
-            block.CreateInstruction(spv::OpIMul, {uint32_type_id, sum_id, x2, component_size_id}, inst_it);
+            last_byte_in_access_id = type_manager_.GetConstantUInt32(coop_mat_access.Size() - 1).Id();
         } else {
-            // equation: ((columns - 1) * stride_value + rows) * component_size;
-            const uint32_t columns_m1_id = type_manager_.GetConstantUInt32(coop_mat_access.columns - 1).Id();
-            const uint32_t row_id = type_manager_.GetConstantUInt32(coop_mat_access.rows).Id();
-            const uint32_t component_size_id = type_manager_.GetConstantUInt32(coop_mat_access.component_size).Id();
+            // equation: (outer - 1) * stride * element_size + (inner * component_size - 1)
+            // Stride is in units of the Pointer's pointee type, the contiguous row/column is in units of the component type
+            const uint32_t outer = coop_mat_access.is_row_major ? coop_mat_access.rows : coop_mat_access.columns;
+            const uint32_t inner = coop_mat_access.is_row_major ? coop_mat_access.columns : coop_mat_access.rows;
+            const uint32_t outer_bytes_id = type_manager_.GetConstantUInt32((outer - 1) * coop_mat_access.element_size).Id();
+            const uint32_t inner_last_byte_id = type_manager_.GetConstantUInt32(inner * coop_mat_access.component_size - 1).Id();
+            const uint32_t stride_32_id = ConvertTo32(coop_mat_access.stride_id, block, inst_it);
 
-            uint32_t x1 = module_.TakeNextId();
-            uint32_t x2 = module_.TakeNextId();
-            sum_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpIMul, {uint32_type_id, x1, columns_m1_id, coop_mat_access.stride_id}, inst_it);
-            block.CreateInstruction(spv::OpIAdd, {uint32_type_id, x2, x1, row_id}, inst_it);
-            block.CreateInstruction(spv::OpIMul, {uint32_type_id, sum_id, x2, component_size_id}, inst_it);
+            const uint32_t stride_bytes_id = module_.TakeNextId();
+            last_byte_in_access_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpIMul, {uint32_type_id, stride_bytes_id, stride_32_id, outer_bytes_id}, inst_it);
+            block.CreateInstruction(spv::OpIAdd, {uint32_type_id, last_byte_in_access_id, stride_bytes_id, inner_last_byte_id},
+                                    inst_it);
         }
     } else {
-        accessed_type_size = FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
+        const uint32_t accessed_type_size = FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
+        last_byte_in_access_id = type_manager_.GetConstantUInt32(accessed_type_size - 1).Id();
     }
-    const uint32_t last_byte_index = accessed_type_size - 1;
 
-    const uint32_t last_byte_index_id = type_manager_.GetConstantUInt32(last_byte_index).Id();
-
-    const uint32_t new_sum_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpIAdd, {uint32_type_id, new_sum_id, sum_id, last_byte_index_id}, inst_it);
-    return new_sum_id;
+    const uint32_t last_byte_id = module_.TakeNextId();
+    block.CreateInstruction(spv::OpIAdd, {uint32_type_id, last_byte_id, sum_id, last_byte_in_access_id}, inst_it);
+    return last_byte_id;
 }
 
 // Finds the upper bound offset into the struct an instruction would access
