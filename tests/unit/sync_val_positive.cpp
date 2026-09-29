@@ -14,6 +14,7 @@
 #include <thread>
 #include <algorithm>
 #include "sync_val_tests.h"
+#include "buffer_helper.h"
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
 #include "render_pass_helper.h"
@@ -2637,7 +2638,7 @@ TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedVertexBuffer) {
     VkDrawIndirectCommand indirect_command = {};
     indirect_command.vertexCount = 3;
     indirect_command.instanceCount = 1;
-    vkt::Buffer indirect_buffer(*m_device, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, &indirect_command, sizeof(VkDrawIndirectCommand));
+    vkt::Buffer indirect_buffer = vkt::IndirectBuffer<VkDrawIndirectCommand>(*m_device, {indirect_command});
 
     const size_t vertices_size = 3 * 3 * sizeof(float);  // 3 VK_FORMAT_R32G32B32_SFLOAT vertices
     const size_t fill_region_size = 32;
@@ -2679,8 +2680,7 @@ TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedIndexBuffer) {
     indirect_command.indexCount = 3;
     indirect_command.instanceCount = 1;
 
-    vkt::Buffer indirect_buffer(*m_device, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, &indirect_command,
-                                sizeof(VkDrawIndexedIndirectCommand));
+    vkt::Buffer indirect_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {indirect_command});
 
     const size_t vertices_size = 3 * 3 * sizeof(float);  // 3 VK_FORMAT_R32G32B32_SFLOAT vertices
     vkt::Buffer vertex_buffer(*m_device, vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -2689,7 +2689,9 @@ TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedIndexBuffer) {
     constexpr size_t fill_region_size = 12;
     constexpr VkDeviceSize buffer_size = indices_size + fill_region_size;
     uint32_t buffer_data[buffer_size / sizeof(uint32_t)] = {0, 1, 2};  // initialize index region
-    vkt::Buffer buffer(*m_device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, buffer_data, buffer_size);
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       kHostVisibleMemProps);
+    std::memcpy(buffer.Memory().Map(), buffer_data, buffer_size);
 
     const VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
     const VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
