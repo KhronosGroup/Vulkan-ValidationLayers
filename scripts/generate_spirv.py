@@ -48,6 +48,23 @@ def find_executable(path):
             return exe_path
     return None
 
+def find_tool(name, user_path, relative_path, external_dirs):
+    if user_path:
+        paths = [user_path]
+    else:
+        paths = []
+        for external_dir in external_dirs:
+            paths.append(os.path.join(external_dir, relative_path))
+
+    for path in paths:
+        tool = find_executable(path)
+        if tool:
+            return tool
+        if os.path.isfile(path):
+            # when we change how update_deps.py works things can break, so warn users if they are updating and messing this up
+            print(f"Warning: {name} at {path} is not executable (re-run update_deps.py or chmod +x it)", file=sys.stderr)
+    return None
+
 def identifierize(s):
     # translate invalid chars
     s = re.sub("[^0-9a-zA-Z_]", "_", s)
@@ -315,38 +332,36 @@ def main():
     if not glsl_shaders and not slang_shaders:
         sys.exit("No shader files found to compile.")
 
-    # update_deps writes a helper.cmake into each deps dir, use the most recently updated one
+    # update_deps writes a helper.cmake into each deps dir, search them from the most recently updated one
     helpers = []
     for pattern in ['external/**/helper.cmake', 'build/external/**/helper.cmake', 'build-ci/external/**/helper.cmake']:
         helpers += glob.glob(common_ci.RepoRelative(pattern), recursive=True)
     if not helpers:
         print("Warning: Could not automatically determine external tools directory.", file=sys.stderr)
         return
-    external_dir = os.path.dirname(max(helpers, key=os.path.getmtime))
+    helpers.sort(key=os.path.getmtime, reverse=True)
+    external_dirs = []
+    for helper in helpers:
+        external_dirs.append(os.path.dirname(helper))
 
-    # default glslangValidator path
-    glslang = common_ci.RepoRelative(os.path.join(external_dir, 'glslang/build/install/bin/glslang'))
-    if args.glslang:
-        glslang = args.glslang
-
-    glslang = find_executable(glslang)
+    glslang = find_tool('glslang', args.glslang, 'glslang/build/install/bin/glslang', external_dirs)
     if not glslang:
         print("Cannot find glslang")
         return
 
-    # default spirv-opt path
-    spirv_opt = common_ci.RepoRelative(os.path.join(external_dir, 'SPIRV-Tools/build/install/bin/spirv-opt'))
-    if args.spirv_opt:
-        spirv_opt = args.spirv_opt
-
-    spirv_opt = find_executable(spirv_opt)
+    spirv_opt = find_tool('spirv-opt', args.spirv_opt, 'SPIRV-Tools/build/install/bin/spirv-opt', external_dirs)
     if not spirv_opt:
         print("Cannot find spirv-opt")
         return
 
-    # default slangc path. slangc is downloaded (not built) by update_deps and may validly be absent.
-    slangc = args.slang if args.slang else common_ci.RepoRelative(os.path.join(external_dir, 'slang/install/bin/slangc'))
-    slangc = find_executable(slangc)
+    # slangc is downloaded (not built) by update_deps and is optional currently (due to not having full cross platform support)
+    # It is not tied to a build config, so it can be in a different external folder than glslang
+    slangc = find_tool('slangc', args.slang, 'slang/install/bin/slangc', external_dirs)
+
+    print(f"Using glslang: {glslang}")
+    print(f"Using spirv-opt: {spirv_opt}")
+    if slangc:
+        print(f"Using slangc: {slangc}")
 
     # compile GLSL shaders
     glsl_data, failed = compile_shaders(glsl_shaders, gpu_shaders_dir, glslang, None, spirv_opt, args.targetenv, args.single_thread)
