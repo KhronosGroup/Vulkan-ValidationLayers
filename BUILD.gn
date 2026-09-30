@@ -491,6 +491,7 @@ vvl_sources = [
   "layers/vulkan/generated/dispatch_functions.h",
   "layers/vulkan/generated/dispatch_object.cpp",
   "layers/vulkan/generated/dispatch_object_device_methods.h",
+  "layers/vulkan/generated/dispatch_object_init.cpp",
   "layers/vulkan/generated/dispatch_object_instance_methods.h",
   "layers/vulkan/generated/dispatch_vector.cpp",
   "layers/vulkan/generated/dispatch_vector.h",
