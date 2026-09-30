@@ -318,7 +318,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
             // Check if we transitioned swapchain image outside of acquire-present interval
             const bool has_layout_transition = cb_layout_state.current_layout != kInvalidLayout;
             if (has_layout_transition) {
-                if (image_state->IsSwapchainImage()) {
+                if (image_state->IsSwapchainImage() && image_state->bind_swapchain &&
+                    image_state->swapchain_image_index < image_state->bind_swapchain->images.size()) {
                     const auto& swapchain_image = image_state->bind_swapchain->images[image_state->swapchain_image_index];
                     const bool has_wait = swapchain_image.acquire_semaphore_status == vvl::AcquireSyncStatus::WasWaitedOn ||
                                           swapchain_image.acquire_fence_status == vvl::AcquireSyncStatus::WasWaitedOn;

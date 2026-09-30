@@ -68,8 +68,11 @@ enum class AcquireSyncStatus { NotSpecified, Signaled, WasWaitedOn };
 struct SwapchainImage {
     vvl::Image* image_state = nullptr;
 
-    // Acquire state
+    // True from acquire until presentation (or release).
+    // In shared present mode, stays true after presentation until explicitly released
     bool acquired = false;
+    // First acquire guarantees memory backing for deferred swapchain images
+    bool ever_acquired = false;
     std::shared_ptr<vvl::Semaphore> acquire_semaphore;
     std::shared_ptr<vvl::Fence> acquire_fence;
     AcquireSyncStatus acquire_semaphore_status = AcquireSyncStatus::NotSpecified;

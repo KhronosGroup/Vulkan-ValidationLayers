@@ -212,6 +212,7 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
                              const std::shared_ptr<vvl::Fence>& fence_state) {
     acquired_images++;
     images[image_index].acquired = true;
+    images[image_index].ever_acquired = true;
     images[image_index].acquire_semaphore = semaphore_state;
     images[image_index].acquire_fence = fence_state;
 

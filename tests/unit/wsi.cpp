@@ -2706,6 +2706,49 @@ TEST_F(NegativeWsi, SwapchainMaintenance1DeferredNoAcquire) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeWsi, SwapchainMaintenance1DeferredImageViewNoAcquire) {
+    TEST_DESCRIPTION("Create an image view of a deferred-allocation swapchain image before its index is first acquired");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(SupportDeferredSwapchainAllocation());
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR;
+    m_swapchain.Init(*m_device, swapchain_ci);
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    if (swapchain_images.size() < 2) {
+        GTEST_SKIP() << "Swapchain with at least 2 images is required";
+        return;
+    }
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = swapchain_ci.imageFormat;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    // No image has been acquired yet, so none of them are guaranteed to be backed by memory
+    image_view_ci.image = swapchain_images[0];
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01020");
+    vkt::ImageView image_view(*m_device, image_view_ci);
+    m_errorMonitor->VerifyFound();
+
+    // Acquiring one index does not back the other images
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+
+    image_view_ci.image = swapchain_images[(image_index + 1) % swapchain_images.size()];
+    m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01020");
+    vkt::ImageView image_view2(*m_device, image_view_ci);
+    m_errorMonitor->VerifyFound();
+    fence.Wait(kWaitTimeout);
+}
+
 TEST_F(NegativeWsi, SwapchainMaintenance1MissingPNext) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
