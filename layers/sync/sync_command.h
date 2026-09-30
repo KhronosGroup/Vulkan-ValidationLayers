@@ -86,7 +86,8 @@ enum class CommandType : uint32_t {
     kDrawMeshTasks,
     kBuildAccelerationStructures,
     kAccelerationStructureCopy,
-    kVideo,
+    kVideoDecode,
+    kVideoEncode,
     kClearAttachments,
     kQueryCopy,
 };
@@ -772,37 +773,72 @@ struct AccelerationStructureCopyCommand {
     void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
 };
 
-struct VideoCommand {
-    enum class Operation : uint8_t { kDecode, kEncode };
-    enum class PictureType : uint8_t { kOutput, kInput, kReconstructed, kReference, kQuantizationMap };
+// Access to a video picture specified by VkVideoPictureResourceInfoKHR
+struct VideoPictureAccess {
+    const vvl::ImageView* view = nullptr;
+    // Original picture parameters
+    VkOffset2D coded_offset{};
+    VkExtent2D coded_extent{};
+    uint32_t base_array_layer = 0;
+    // Calculated image region
+    VkImageSubresourceRange subresource_range{};
+    VkOffset3D effective_offset{};
+    VkExtent3D effective_extent{};
+};
 
-    struct PictureAccess {
-        const vvl::ImageView* view;
-        PictureType type;
-        uint32_t reference_index;
-        // Original VideoPictureResource fields
-        VkOffset2D coded_offset;
-        VkExtent2D coded_extent;
-        uint32_t base_array_layer;
-        // Resolved during collection
-        VkImageSubresourceRange subresource_range;
-        VkOffset2D effective_offset;
-        VkExtent2D effective_extent;
-    };
-    Operation operation;
+struct VideoReferencePictureAccess {
+    VideoPictureAccess picture;
+    uint32_t reference_index;  // Index in pReferenceSlots, not the DPB slot index
+};
+
+struct VideoQuantizationMapAccess {
+    const vvl::ImageView* view = nullptr;
+    VkExtent2D extent{};
+};
+
+struct VideoDecodeCommand {
     const vvl::Buffer& bitstream_buffer;
     AccessRange bitstream_range;
-    vvl::span<const PictureAccess> pictures;
+    VideoPictureAccess output_picture;
+    VideoPictureAccess reconstructed_picture;  // Null view without pSetupReferenceSlot or when it is the same as the output picture
+    vvl::span<const VideoReferencePictureAccess> reference_pictures;
     uint32_t bitstream_handle_index = vvl::kNoIndex32;
 
     struct Storage {
         AccessRange bitstream_range;
         const vvl::Buffer* bitstream_buffer;
-        uint32_t first_picture;
-        uint32_t picture_count;
+        VideoPictureAccess output_picture;
+        VideoPictureAccess reconstructed_picture;
+        uint32_t first_reference_picture;
+        uint32_t reference_picture_count;
         uint32_t bitstream_handle_index;
-        Operation operation;
-        VideoCommand MakeCommand(const CommandData& command_data) const;
+        VideoDecodeCommand MakeCommand(const CommandData& command_data) const;
+    };
+    Storage MakeStorage(CommandData& command_data) const;
+    bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
+    bool Validate(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter) const;
+    void Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const;
+};
+
+struct VideoEncodeCommand {
+    const vvl::Buffer& bitstream_buffer;
+    AccessRange bitstream_range;
+    VideoPictureAccess input_picture;
+    VideoPictureAccess reconstructed_picture;  // Null view without pSetupReferenceSlot
+    vvl::span<const VideoReferencePictureAccess> reference_pictures;
+    VideoQuantizationMapAccess quantization_map;
+    uint32_t bitstream_handle_index = vvl::kNoIndex32;
+
+    struct Storage {
+        AccessRange bitstream_range;
+        const vvl::Buffer* bitstream_buffer;
+        VideoPictureAccess input_picture;
+        VideoPictureAccess reconstructed_picture;
+        uint32_t first_reference_picture;
+        uint32_t reference_picture_count;
+        VideoQuantizationMapAccess quantization_map;
+        uint32_t bitstream_handle_index;
+        VideoEncodeCommand MakeCommand(const CommandData& command_data) const;
     };
     Storage MakeStorage(CommandData& command_data) const;
     bool Validate(const CommandBufferContext& cb_context, const Location& loc) const;
@@ -893,7 +929,8 @@ struct CommandData {
     std::vector<DrawMeshTasksCommand::Storage> draw_mesh_tasks_commands;
     std::vector<BuildAccelerationStructuresCommand::Storage> build_acceleration_structures_commands;
     std::vector<AccelerationStructureCopyCommand::Storage> acceleration_structure_copy_commands;
-    std::vector<VideoCommand::Storage> video_commands;
+    std::vector<VideoDecodeCommand::Storage> video_decode_commands;
+    std::vector<VideoEncodeCommand::Storage> video_encode_commands;
     std::vector<ClearAttachmentsCommand::Storage> clear_attachments_commands;
     std::vector<QueryCopyCommand::Storage> query_copy_commands;
 
@@ -935,7 +972,7 @@ struct CommandData {
     std::vector<MultiDrawVertexInputCommand::Binding> multi_draw_vertex_bindings;
     std::vector<MultiDrawVertexInputCommand::DrawRange> multi_draw_ranges;
     std::vector<BuildAccelerationStructuresCommand::Access> acceleration_structure_build_accesses;
-    std::vector<VideoCommand::PictureAccess> video_picture_accesses;
+    std::vector<VideoReferencePictureAccess> video_reference_picture_accesses;
     std::vector<ClearAttachmentsCommand::Attachment> clear_attachments;
     std::vector<VkClearRect> clear_rects;
 
@@ -1028,7 +1065,12 @@ struct CommandData {
     CommandRef Store(const AccelerationStructureCopyCommand::Storage& storage) {
         return Store(CommandType::kAccelerationStructureCopy, acceleration_structure_copy_commands, storage);
     }
-    CommandRef Store(const VideoCommand::Storage& storage) { return Store(CommandType::kVideo, video_commands, storage); }
+    CommandRef Store(const VideoDecodeCommand::Storage& storage) {
+        return Store(CommandType::kVideoDecode, video_decode_commands, storage);
+    }
+    CommandRef Store(const VideoEncodeCommand::Storage& storage) {
+        return Store(CommandType::kVideoEncode, video_encode_commands, storage);
+    }
     CommandRef Store(const ClearAttachmentsCommand::Storage& storage) {
         return Store(CommandType::kClearAttachments, clear_attachments_commands, storage);
     }

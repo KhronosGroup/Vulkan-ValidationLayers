@@ -657,7 +657,7 @@ std::string FormatSyncAccesses(const SyncValidator& validator, const SyncAccessF
     return out.str();
 }
 
-void FormatVideoPictureResouce(const Logger& logger, const VkVideoPictureResourceInfoKHR& video_picture, std::ostringstream& ss) {
+void FormatVideoPictureResource(const Logger& logger, const VkVideoPictureResourceInfoKHR& video_picture, std::ostringstream& ss) {
     ss << "{";
     ss << logger.FormatHandle(video_picture.imageViewBinding);
     ss << ", codedOffset (" << string_VkOffset2D(video_picture.codedOffset) << ")";
