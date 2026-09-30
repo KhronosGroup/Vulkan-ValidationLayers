@@ -393,6 +393,9 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
 
                 if not stage_order['ordered']:
                     later_stages[stage] = set(['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'])
+                    # A "before" stage was inserted just ahead of its anchor, so everything ordered after it is logically later
+                    if stage_order['before'] is not None:
+                        later_stages[stage].update([s['stage'] for s in stages[i+1:] if s['ordered']])
                 else:
                     later_stages[stage].update([s['stage'] for s in stages[i+1:] if s['ordered']])
         later_stages = { key:SortSetBasedOnOrder(values, self.logicallyOrderedStages) for key, values in later_stages.items() }
