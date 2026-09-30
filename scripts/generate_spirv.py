@@ -194,6 +194,19 @@ def compile_shaders(shaders, gpu_shaders_dir, glslang, slangc, spirv_opt, target
     return data, failed
 
 
+# Only write to the file if different, to prevent causing things to recompile again
+# (ccache was hiding this latency, but MSVC wasn't)
+# Always write LF line endings, .gitattributes checks out generated files with eol=lf
+def write_if_changed(path, content):
+    data = content.encode('utf-8')
+    if os.path.exists(path) and os.path.getsize(path) == len(data):
+        with open(path, "rb") as f:
+            if f.read() == data:
+                return
+    with open(path, "wb") as f:
+        f.write(data)
+
+
 def write_source(shader_data_list, output_basename, out_file_dir, file_header):
     source_content = []
     source_content.append(file_header)
@@ -215,8 +228,7 @@ def write_source(shader_data_list, output_basename, out_file_dir, file_header):
                 source_content.append(f'[[maybe_unused]] const uint32_t {data.name}_function_{index}_offset = {offset};')
         source_content.append("")
 
-    with open(os.path.join(out_file_dir, output_basename + '.cpp'), "w") as f:
-        f.write("\n".join(source_content))
+    write_if_changed(os.path.join(out_file_dir, output_basename + '.cpp'), "\n".join(source_content))
 
 # glsl_data goes to the _glsl.cpp, slang_data to the _slang.cpp; the header declares both.
 # When slang was not compiled, slang_data carries names only (words=None) and the _slang.cpp is left untouched.
@@ -271,22 +283,8 @@ def write_aggregate_files(glsl_data, slang_data, slang_found, apiname, outdir):
 
     os.makedirs(out_file_dir, exist_ok=True)
 
-    out_file_header = os.path.join(out_file_dir, 'gpuav_offline_spirv.h')
-
     # For the header file, unless you add a new function/file the header is the same
-    # To prevent causing things to recompile again, only write to file if different
-    # (ccache was hiding this latency, but MSVC wasn't)
-    new_content = "\n".join(header_content)
-    if os.path.exists(out_file_header):
-        with open(out_file_header, "r+") as f:
-            existing_content = f.read()
-            if new_content != existing_content:
-                f.seek(0)
-                f.write(new_content)
-                f.truncate()
-    else:
-        with open(out_file_header, "w") as f:
-            f.write(new_content)
+    write_if_changed(os.path.join(out_file_dir, 'gpuav_offline_spirv.h'), "\n".join(header_content))
 
     write_source(sorted(glsl_data, key=lambda x: x.name), 'gpuav_offline_spirv_glsl', out_file_dir, file_header)
     if slang_found:
