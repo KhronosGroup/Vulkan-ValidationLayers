@@ -26,7 +26,7 @@
 #include "containers/span.h"
 #include "containers/limits.h"
 #include "generated/vk_function_pointers.h"
-#include "state_tracker/wsi_state.h"
+#include "state_tracker/surface_type.h"
 #include "utils/cast_utils.h"
 #include "test_common.h"
 

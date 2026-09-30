@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include "sync_val_tests.h"
 #include "pipeline_helper.h"
 #include "ray_tracing_objects.h"

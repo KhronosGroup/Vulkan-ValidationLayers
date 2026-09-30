@@ -452,6 +452,7 @@ target_sources(vvl PRIVATE
     state_tracker/submit_time_tracker.h
     state_tracker/subresource_adapter.cpp
     state_tracker/subresource_adapter.h
+    state_tracker/surface_type.h
     state_tracker/vertex_index_buffer_state.cpp
     state_tracker/vertex_index_buffer_state.h
     state_tracker/video_session_state.cpp

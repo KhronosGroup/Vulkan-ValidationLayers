@@ -21,6 +21,7 @@
 
 #include "state_tracker/state_object.h"
 #include "state_tracker/submission_reference.h"
+#include "state_tracker/surface_type.h"
 #include "containers/span.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <atomic>
@@ -197,24 +198,6 @@ class SwapchainSubState {
 
     Swapchain &base;
 };
-
-enum class SurfaceType {
-    Unknown,
-
-    Android,
-    DisplayPlane,
-    Headless,
-    ImagePipe_FUSCHIA,
-    IOS_MVK,
-    MacOS_MVK,
-    Metal,
-    Screen_QNX,
-    Wayland,
-    Win32,
-    Xcb,
-    Xlib,
-};
-
 
 // Parent -> child relationships in the object usage tree:
 //    vvl::Surface -> nothing

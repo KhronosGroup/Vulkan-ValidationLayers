@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <algorithm>
 #include <thread>
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"

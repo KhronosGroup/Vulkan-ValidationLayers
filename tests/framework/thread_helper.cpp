@@ -12,6 +12,8 @@
 
 #include "thread_helper.h"
 
+#include <chrono>
+
 bool ThreadTimeoutHelper::WaitForThreads(int timeout_in_seconds) {
     std::unique_lock lock(mutex_);
     return cv_.wait_for(lock, std::chrono::seconds{timeout_in_seconds}, [this] {

@@ -11,6 +11,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "render_pass_helper.h"
+#include <chrono>
 #include <thread>
 
 std::optional<VkPhysicalDeviceGroupProperties> WsiTest::FindPhysicalDeviceGroup() {

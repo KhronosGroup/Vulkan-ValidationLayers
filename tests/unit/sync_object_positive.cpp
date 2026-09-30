@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <chrono>
 #include <thread>
 #include "layer_validation_tests.h"
 #include "external_memory_sync.h"

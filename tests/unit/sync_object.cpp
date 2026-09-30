@@ -13,6 +13,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <chrono>
 #include <thread>
 #include "utils/cast_utils.h"
 #include "external_memory_sync.h"

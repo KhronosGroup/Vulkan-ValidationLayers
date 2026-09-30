@@ -19,6 +19,8 @@
 
 #include "binding.h"
 
+#include <algorithm>
+
 #include "shader_helper.h"
 #include "sync_helper.h"
 #include "shader_object_helper.h"

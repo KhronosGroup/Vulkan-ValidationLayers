@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <algorithm>
 #include <vulkan/vulkan_core.h>
 #include "utils/cast_utils.h"
 #include "layer_validation_tests.h"

@@ -15,6 +15,7 @@
 #include "data_graph_objects.h"
 #include "generated/pnext_chain_extraction.h"
 #include "layers/utils/vk_struct_compare.h"
+#include <algorithm>
 #include <vector>
 
 class NegativeDataGraph : public DataGraphTest {};
