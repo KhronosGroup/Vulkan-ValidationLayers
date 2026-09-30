@@ -199,7 +199,7 @@ namespace vvl {
         out.append('''
 const char* String(Func func) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Func::Empty
+    {"INVALID_EMPTY", 14}, // Func::Empty
 ''')
         # Need to be alpha-sort also to match array indexing
         for command in sorted(self.vk.commands.values()):
@@ -210,7 +210,7 @@ const char* String(Func func) {
 
 const char* String(Struct structure) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Struct::Empty
+    {"INVALID_EMPTY", 14}, // Struct::Empty
 ''')
         # Need to be alpha-sort also to match array indexing
         for struct in sorted(self.vk.structs.values()):
@@ -231,7 +231,7 @@ const char* String(Field field) {
 
 const char* String(Enum value) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Enum::Empty
+    {"INVALID_EMPTY", 14}, // Enum::Empty
 ''')
         # Need to be alpha-sort also to match array indexing
         for enum in sorted(self.vk.enums.values()):
@@ -242,7 +242,7 @@ const char* String(Enum value) {
 
 const char* String(FlagBitmask value) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // FlagBitmask::Empty
+    {"INVALID_EMPTY", 14}, // FlagBitmask::Empty
 ''')
         # Need to be alpha-sort also to match array indexing
         for bitmask in sorted(self.vk.bitmasks.values()):
@@ -253,7 +253,7 @@ const char* String(FlagBitmask value) {
 
 const char* String(Extension extension) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Extension::Empty
+    {"INVALID_EMPTY", 14}, // Extension::Empty
 ''')
         for extension in sorted(self.vk.extensions.values(), key=lambda x: x.name):
             out.append(f'    {{"{extension.name}", {len(extension.name) + 1}}},\n')
