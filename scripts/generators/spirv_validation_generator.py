@@ -43,14 +43,10 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
                         self.provisionalList.append(enum['enumerant'])
                 break
 
-        # Cases where alias are not 1:1 between extensions and want to skip the alias
-        self.capabilitySkipList = [
-            'CooperativeMatrixReductionsNV',
-            'CooperativeMatrixPerElementOperationsNV',
-        ]
-
+        # Must match the identical_but_different_features renames in device_features_generator.py
         self.featureNameSuffix = {
-            'VK_NV_cooperative_matrix2' : 'NV'
+            'VK_NV_cooperative_matrix2' : 'NV',
+            'VK_EXT_buffer_device_address' : 'EXT',
         }
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
@@ -79,7 +75,13 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             "VkPhysicalDeviceVulkanMemoryModelFeatures",
             # 1.3
             "VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures",
+            "VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT",
             "VkPhysicalDeviceShaderIntegerDotProductFeatures",
+            "VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR",
+            # 1.4
+            "VkPhysicalDeviceShaderSubgroupRotateFeatures",
+            "VkPhysicalDeviceShaderExpectAssumeFeatures",
+            "VkPhysicalDeviceShaderFloatControls2Features",
         ]
 
         # Properties are harder to handle genearted without generating a template for every property struct type
@@ -229,9 +231,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('    static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirv_capabilities = {')
         for spirv in [x for x in self.vk.spirv if x.capability]:
             for enable in [x for x in spirv.enable if x.struct is None or x.struct not in self.promotedFeatures]:
-                if spirv.name in self.capabilitySkipList:
-                    continue
-                elif spirv.name not in self.capabilityList:
+                if spirv.name not in self.capabilityList:
                     out.append('\n        // Not found in current SPIR-V Headers\n        // ')
                 elif spirv.name in self.provisionalList:
                     out.append('\n#ifdef VK_ENABLE_BETA_EXTENSIONS\n        ')
