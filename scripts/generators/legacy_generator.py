@@ -259,8 +259,9 @@ class LegacyGenerator(BaseGenerator):
             # For things mark as legacy in Vulkan 1.0
             if command.legacy.version is None and len(command.legacy.extensions) == 0:
                 out.append(f'''
+                           {reportedMember} = true;
                            LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
-                            "{command.name} is a legacy command.\\nSee more information about this superseding in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
+                            "{command.name} is a legacy command.\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     ''')
 
             out.append('''
