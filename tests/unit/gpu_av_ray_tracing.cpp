@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <vulkan/utility/vk_format_utils.h>

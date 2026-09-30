@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <algorithm>
 #include <cmath>
 #include "layer_validation_tests.h"
 #include "ray_tracing_objects.h"

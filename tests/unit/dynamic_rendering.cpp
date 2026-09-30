@@ -14,6 +14,7 @@
  *
  */
 
+#include <algorithm>
 #include <vulkan/vulkan_core.h>
 #include "utils/cast_utils.h"
 #include "utils/math_utils.h"

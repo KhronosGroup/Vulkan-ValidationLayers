@@ -13,6 +13,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <chrono>
 #include <thread>
 #include "layer_validation_tests.h"
 #include "descriptor_helper.h"

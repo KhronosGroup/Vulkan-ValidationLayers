@@ -10,6 +10,7 @@
  *
  */
 
+#include <algorithm>
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 
