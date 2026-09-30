@@ -322,21 +322,22 @@ TEST_F(NegativeGpuAVCopyMemoryIndirect, GpuUpdate) {
 TEST_F(NegativeGpuAVCopyMemoryIndirect, NullAddress) {
     RETURN_IF_SKIP(InitGpuAVCopyMemoryIndirect());
 
-    vkt::Buffer src_payload(*m_device, 16, 0, vkt::device_address);
-    vkt::Buffer dst_payload(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer src_buffer(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer dst_buffer(*m_device, 16, 0, vkt::device_address);
 
-    vkt::Buffer indirect_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer indirect_buffer(*m_device, 2 * sizeof(VkCopyMemoryIndirectCommandKHR), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                vkt::device_address);
     auto* indirect_buffer_ptr = (VkCopyMemoryIndirectCommandKHR*)indirect_buffer.Memory().Map();
     indirect_buffer_ptr[0].srcAddress = 0;
-    indirect_buffer_ptr[0].dstAddress = dst_payload.Address();
+    indirect_buffer_ptr[0].dstAddress = dst_buffer.Address();
     indirect_buffer_ptr[0].size = 8;
-    indirect_buffer_ptr[0].srcAddress = src_payload.Address();
-    indirect_buffer_ptr[0].dstAddress = 0;
-    indirect_buffer_ptr[0].size = 8;
+    indirect_buffer_ptr[1].srcAddress = src_buffer.Address();
+    indirect_buffer_ptr[1].dstAddress = 0;
+    indirect_buffer_ptr[1].size = 8;
 
     VkStridedDeviceAddressRangeKHR address_range = {};
     address_range.address = indirect_buffer.Address();
-    address_range.size = 64;
+    address_range.size = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
     address_range.stride = sizeof(VkCopyMemoryIndirectCommandKHR);
 
     VkCopyMemoryIndirectInfoKHR copy_info = vku::InitStructHelper();

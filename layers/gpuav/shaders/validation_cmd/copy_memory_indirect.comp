@@ -22,7 +22,7 @@
 
 // Same as VkCopyMemoryIndirectCommandKHR
 // (Use camelCase to match Vulkan API)
-layout(buffer_reference, scalar) buffer CopyMemoryIndirectCommand {
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer CopyMemoryIndirectCommand {
     uint64_t srcAddress;
     uint64_t dstAddress;
     uint64_t size;
@@ -30,7 +30,7 @@ layout(buffer_reference, scalar) buffer CopyMemoryIndirectCommand {
 
 // Same as VkCopyMemoryToImageIndirectCommandKHR
 // (Use camelCase to match Vulkan API)
-layout(buffer_reference, scalar) buffer CopyMemoryToImageIndirectCommand {
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer CopyMemoryToImageIndirectCommand {
     uint64_t srcAddress;
     uint bufferRowLength;
     uint bufferImageHeight;
@@ -76,17 +76,15 @@ bool ValidDeviceAddress(uint64_t address) {
 void MakeSafeBuffer(uint64_t command_address) {
     if (api.safe_mode != 0) {
         CopyMemoryIndirectCommand command = CopyMemoryIndirectCommand(command_address);
-        // range_address is a "safe" address as we know it is valid
-        command.srcAddress = api.range_address;
-        command.dstAddress = api.range_address;
+        command.srcAddress = 0;
+        command.dstAddress = 0;
         command.size = 0;
     }
 }
 void MakeSafeImage(uint64_t command_address) {
     if (api.safe_mode != 0) {
         CopyMemoryToImageIndirectCommand command = CopyMemoryToImageIndirectCommand(command_address);
-        // range_address is a "safe" address as we know it is valid
-        command.srcAddress = api.range_address;
+        command.srcAddress = 0;
         command.bufferRowLength = 0;
         command.bufferImageHeight = 0;
         command.imageOffset_x = 0;
@@ -113,7 +111,7 @@ void main() {
             GpuavLogError4(kErrorGroup_GpuCopyMemoryIndirect, kErrorSubCode_PreCopyMemoryToImageIndirect_SrcAddressInvalid,
                             uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
             MakeSafeImage(command_address);
-        } else if ((command.srcAddress & 3ul) != 0) {
+        } else if ((command.srcAddress % 4) != 0) {
             GpuavLogError4(kErrorGroup_GpuCopyMemoryIndirect, kErrorSubCode_PreCopyMemoryToImageIndirect_SrcAddressAligned,
                             uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
             MakeSafeImage(command_address);
@@ -136,15 +134,15 @@ void main() {
             GpuavLogError4(kErrorGroup_GpuCopyMemoryIndirect, kErrorSubCode_PreCopyMemoryIndirect_DstAddressInvalid,
                             uint(command.dstAddress), uint(command.dstAddress >> 32), tid, 0);
             MakeSafeBuffer(command_address);
-        } else if ((command.srcAddress & 3ul) != 0) {
+        } else if ((command.srcAddress % 4) != 0) {
             GpuavLogError4(kErrorGroup_GpuCopyMemoryIndirect, kErrorSubCode_PreCopyMemoryIndirect_SrcAddressAligned,
                             uint(command.srcAddress), uint(command.srcAddress >> 32), tid, 0);
             MakeSafeBuffer(command_address);
-        } else if ((command.dstAddress & 3ul) != 0) {
+        } else if ((command.dstAddress % 4) != 0) {
             GpuavLogError4(kErrorGroup_GpuCopyMemoryIndirect, kErrorSubCode_PreCopyMemoryIndirect_DstAddressAligned,
                             uint(command.dstAddress), uint(command.dstAddress >> 32), tid, 0);
             MakeSafeBuffer(command_address);
-        } else if ((command.size & 3ul) != 0) {
+        } else if ((command.size % 4) != 0) {
             GpuavLogError4(kErrorGroup_GpuCopyMemoryIndirect, kErrorSubCode_PreCopyMemoryIndirect_SizeAligned,
                             uint(command.size), uint(command.size >> 32), tid, 0);
             MakeSafeBuffer(command_address);
