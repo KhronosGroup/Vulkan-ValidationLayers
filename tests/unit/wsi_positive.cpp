@@ -1720,6 +1720,61 @@ TEST_F(PositiveWsi, ReleaseAndAcquireSwapchainImages) {
     vk::DeviceWaitIdle(device());
 }
 
+TEST_F(PositiveWsi, SwapchainMaintenance1DeferredImageViewAfterAcquire) {
+    TEST_DESCRIPTION("Deferred-allocation swapchain images stay backed by memory once their index has been acquired");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(SupportDeferredSwapchainAllocation());
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR;
+    m_swapchain.Init(*m_device, swapchain_ci);
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+
+    // Test that image view can be created after image is acquired
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = swapchain_images[image_index];
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = swapchain_ci.imageFormat;
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView image_view(*m_device, image_view_ci);
+
+    // Unacquire the image and verify that an image view can still be created
+    VkReleaseSwapchainImagesInfoKHR release_info = vku::InitStructHelper();
+    release_info.swapchain = m_swapchain;
+    release_info.imageIndexCount = 1;
+    release_info.pImageIndices = &image_index;
+    vk::ReleaseSwapchainImagesKHR(device(), &release_info);
+    vkt::ImageView image_view2(*m_device, image_view_ci);
+
+    // Binding another image to this swapchain image's memory is valid after release
+    VkImageSwapchainCreateInfoKHR image_swapchain_ci = vku::InitStructHelper();
+    image_swapchain_ci.swapchain = m_swapchain;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(swapchain_ci.imageExtent.width, swapchain_ci.imageExtent.height, 1, 1,
+                                                  swapchain_ci.imageFormat, swapchain_ci.imageUsage);
+    image_ci.pNext = &image_swapchain_ci;
+    vkt::Image image_from_swapchain(*m_device, image_ci, vkt::no_mem);
+
+    VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
+    bind_swapchain_info.swapchain = m_swapchain;
+    bind_swapchain_info.imageIndex = image_index;
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
+    bind_info.image = image_from_swapchain;
+    vk::BindImageMemory2(device(), 1, &bind_info);
+
+    image_view_ci.image = image_from_swapchain;
+    vkt::ImageView image_view3(*m_device, image_view_ci);
+    fence.Wait(kWaitTimeout);
+}
+
 TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8753
     TEST_DESCRIPTION("Present swapchains with a single QueuePresent command. One of the swapchains is out of date.");

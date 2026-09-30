@@ -89,6 +89,17 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList& objlist, cons
                          "swapchain",
                          FormatHandle(image_state).c_str(), FormatHandle(image_state.create_from_swapchain).c_str(),
                          FormatHandle(image_state.bind_swapchain->Handle()).c_str());
+        } else if ((image_state.bind_swapchain->create_info.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR) &&
+                   image_state.swapchain_image_index < image_state.bind_swapchain->images.size() &&
+                   !image_state.bind_swapchain->images[image_state.swapchain_image_index].ever_acquired) {
+            result |= LogError(vuid, objlist, loc,
+                               "(%s) is image index %" PRIu32
+                               " of %s, which was created with VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_KHR, but that "
+                               "index has not yet been returned by vkAcquireNextImageKHR or vkAcquireNextImage2KHR. The "
+                               "implementation may defer allocating the memory of each swapchain image until its index is first "
+                               "acquired, so the image is not guaranteed to be backed by memory yet.",
+                               FormatHandle(image_state).c_str(), image_state.swapchain_image_index,
+                               FormatHandle(image_state.bind_swapchain->Handle()).c_str());
         }
     } else if (image_state.IsExternalBuffer()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
@@ -2476,12 +2487,12 @@ bool CoreChecks::ValidateBindImageMemorySwapchainInfo(const VkBindImageMemoryInf
                                  "imageIndex (%" PRIu32 ") is out of bounds of %s images (size: %zu)", swapchain_info->imageIndex,
                                  FormatHandle(swapchain_info->swapchain).c_str(), swapchain_state->images.size());
             } else if (swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT) {
-                if (swapchain_state->images[swapchain_info->imageIndex].acquired == false) {
+                if (!swapchain_state->images[swapchain_info->imageIndex].ever_acquired) {
                     const LogObjectList objlist(bind_info.image, swapchain_info->swapchain);
                     skip |= LogError("VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756", objlist,
                                      loc.pNext(Struct::VkBindImageMemorySwapchainInfoKHR, Field::swapchain),
                                      "was created with VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT but "
-                                     "imageIndex (%" PRIu32 ") has not been acquired",
+                                     "imageIndex (%" PRIu32 ") has never been acquired",
                                      swapchain_info->imageIndex);
                 }
             }
