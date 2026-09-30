@@ -305,8 +305,9 @@ bool Instance::PreCallValidateEnumerateDeviceLayerProperties(VkPhysicalDevice ph
                                                              VkLayerProperties* pProperties, const ErrorObject& error_obj) const {
     if (reported_EnumerateDeviceLayerProperties) return false;
 
+    reported_EnumerateDeviceLayerProperties = true;
     LogWarning("WARNING-legacy-devicelayers", physicalDevice, error_obj.location,
-               "vkEnumerateDeviceLayerProperties is a legacy command.\nSee more information about this superseding in the "
+               "vkEnumerateDeviceLayerProperties is a legacy command.\nSee more information about this legacy in the "
                "specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#legacy-devicelayers");
 
     return false;
