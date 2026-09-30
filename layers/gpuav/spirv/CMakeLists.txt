@@ -99,6 +99,23 @@ elseif(MSVC)
     )
 endif()
 
+# Found to significantly cut VVL build time
+#
+# Note: If using ccache, see the CCACHE_SLOPPINESS note in tests/CMakeLists.txt
+target_precompile_headers(gpu_av_spirv PRIVATE
+    <algorithm>
+    <functional>
+    <list>
+    <memory>
+    <mutex>
+    <string>
+    <vector>
+    <vulkan/vulkan.h>
+    <spirv/unified1/spirv.hpp>
+    # Included by almost all TUs in library
+    module.h
+)
+
 # Auto generate Shaders' SPIR-V code upon GLSL changes
 set(GPUAV_SHADERS_DIR "${VVL_SOURCE_DIR}/layers/gpuav/shaders")
 file(GLOB_RECURSE GPUAV_SHADERS CONFIGURE_DEPENDS

@@ -182,6 +182,22 @@ if (DEBUG_CAPTURE_KEYBOARD)
     endif()
 endif()
 
+# Found to significantly cut VVL build time
+#
+# Note: If using ccache, see the CCACHE_SLOPPINESS note in tests/CMakeLists.txt
+target_precompile_headers(VkLayer_utils PRIVATE
+    <algorithm>
+    <functional>
+    <memory>
+    <mutex>
+    <sstream>
+    <string>
+    <unordered_map>
+    <vector>
+    <vulkan/vulkan.h>
+    containers/custom_containers.h
+)
+
 add_subdirectory(gpuav/spirv)
 
 if(IOS)
@@ -652,6 +668,47 @@ if (VVL_ENABLE_TRACY)
 endif()
 
 target_include_directories(vvl SYSTEM PRIVATE external)
+
+# Found to significantly cut VVL build time
+#
+# Note: If using ccache, see the CCACHE_SLOPPINESS note in tests/CMakeLists.txt
+target_precompile_headers(vvl PRIVATE
+    # List stable headers
+    <algorithm>
+    <array>
+    <atomic>
+    <cassert>
+    <cstdint>
+    <cstdio>
+    <cstring>
+    <deque>
+    <functional>
+    <future>
+    <list>
+    <map>
+    <memory>
+    <mutex>
+    <optional>
+    <set>
+    <shared_mutex>
+    <sstream>
+    <string>
+    <string_view>
+    <unordered_map>
+    <utility>
+    <variant>
+    <vector>
+    <vulkan/vulkan.h>
+    <vulkan/vk_layer.h>
+    <vulkan/vk_enum_string_helper.h>
+    <vulkan/utility/vk_struct_helper.hpp>
+    <vulkan/utility/vk_safe_struct.hpp>
+    <spirv/unified1/spirv.hpp>
+    containers/custom_containers.h
+    # Included by almost all files and costly to parse
+    state_tracker/state_tracker.h
+    state_tracker/cmd_buffer_state.h
+)
 
 if (ANDROID)
     # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
