@@ -586,13 +586,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                "VkIndirectExecutionSetCreateInfoEXT",
                "VkShaderInstrumentationCreateInfoARM"]
         for struct_name in hack:
-            self.vk.structs[struct_name].extendedBy.extend(['VkDebugUtilsObjectNameInfoEXT', 'VkDebugUtilsObjectTagInfoEXT'])
-
-        # Remove when https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8410 lands
-        self.vk.structs['VkPipelineShaderStageCreateInfo'].extendedBy.extend(['VkValidationFeaturesEXT'])
-        self.vk.structs['VkGraphicsPipelineCreateInfo'].extendedBy.extend(['VkValidationFeaturesEXT'])
-        self.vk.structs['VkComputePipelineCreateInfo'].extendedBy.extend(['VkValidationFeaturesEXT'])
-        self.vk.structs['VkRayTracingPipelineCreateInfoKHR'].extendedBy.extend(['VkValidationFeaturesEXT'])
+            extendedBy = self.vk.structs[struct_name].extendedBy
+            extendedBy.extend([x for x in ['VkDebugUtilsObjectNameInfoEXT', 'VkDebugUtilsObjectTagInfoEXT'] if x not in extendedBy])
 
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
