@@ -108,19 +108,18 @@ file(GLOB_RECURSE GPUAV_SHADERS CONFIGURE_DEPENDS
     "${GPUAV_SHADERS_DIR}/*.h"
 )
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-# Slang compiler still being optional, do not list its output here
+set(GPUAV_SHADERS_STAMP "${CMAKE_CURRENT_BINARY_DIR}/gpuav_offline_spirv.stamp")
 add_custom_command(
-    OUTPUT
+    OUTPUT "${GPUAV_SHADERS_STAMP}"
+    BYPRODUCTS
       "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h"
       "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp"
+      "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_slang.cpp"
     COMMAND Python3::Interpreter "scripts/generate_spirv.py"
+    COMMAND ${CMAKE_COMMAND} -E touch "${GPUAV_SHADERS_STAMP}"
     DEPENDS ${GPUAV_SHADERS}
     WORKING_DIRECTORY ${VVL_SOURCE_DIR}
     VERBATIM
 )
-add_custom_target(vvl_gpu_av_shaders_spirv
-    DEPENDS
-    "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h"
-    "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp"
-)
+add_custom_target(vvl_gpu_av_shaders_spirv DEPENDS "${GPUAV_SHADERS_STAMP}")
 add_dependencies(gpu_av_spirv vvl_gpu_av_shaders_spirv)
