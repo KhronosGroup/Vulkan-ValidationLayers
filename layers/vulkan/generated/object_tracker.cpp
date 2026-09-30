@@ -2045,7 +2045,7 @@ bool Device::PreCallValidateGetImageMemoryRequirements2(VkDevice device, const V
     if (pInfo) {
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |= ValidateObject(pInfo->image, kVulkanObjectTypeImage, false, "VUID-VkImageMemoryRequirementsInfo2-image-parameter",
-                               "UNASSIGNED-VkSemaphoreSignalInfo-image-parent", pInfo_loc.dot(Field::image));
+                               "UNASSIGNED-VkImageMemoryRequirementsInfo2-image-parent", pInfo_loc.dot(Field::image));
     }
 
     return skip;
@@ -2060,7 +2060,7 @@ bool Device::PreCallValidateGetBufferMemoryRequirements2(VkDevice device, const 
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |=
             ValidateObject(pInfo->buffer, kVulkanObjectTypeBuffer, false, "VUID-VkBufferMemoryRequirementsInfo2-buffer-parameter",
-                           "UNASSIGNED-VkSemaphoreSignalInfo-buffer-parent", pInfo_loc.dot(Field::buffer));
+                           "UNASSIGNED-VkBufferMemoryRequirementsInfo2-buffer-parent", pInfo_loc.dot(Field::buffer));
     }
 
     return skip;
@@ -2076,7 +2076,7 @@ bool Device::PreCallValidateGetImageSparseMemoryRequirements2(VkDevice device, c
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |=
             ValidateObject(pInfo->image, kVulkanObjectTypeImage, false, "VUID-VkImageSparseMemoryRequirementsInfo2-image-parameter",
-                           "UNASSIGNED-VkSemaphoreSignalInfo-image-parent", pInfo_loc.dot(Field::image));
+                           "UNASSIGNED-VkImageSparseMemoryRequirementsInfo2-image-parent", pInfo_loc.dot(Field::image));
     }
 
     return skip;
