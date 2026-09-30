@@ -292,6 +292,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/feature_not_present.cpp
     ${API_TYPE}/generated/dispatch_vector.cpp
     ${API_TYPE}/generated/dispatch_object.cpp
+    ${API_TYPE}/generated/dispatch_object_init.cpp
     ${API_TYPE}/generated/validation_object_device_methods.h
     ${API_TYPE}/generated/validation_object_instance_methods.h
     ${API_TYPE}/generated/validation_object.cpp

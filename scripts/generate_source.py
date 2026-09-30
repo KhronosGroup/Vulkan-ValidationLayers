@@ -245,6 +245,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : DispatchObjectGenerator,
             'genCombined': True,
         },
+        'dispatch_object_init.cpp' : {
+            'generator' : DispatchObjectGenerator,
+            'genCombined': True,
+        },
         'dispatch_vector.h' : {
             'generator' : DispatchVectorGenerator,
             'genCombined': True,
