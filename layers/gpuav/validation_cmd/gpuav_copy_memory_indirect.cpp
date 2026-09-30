@@ -148,18 +148,11 @@ void CopyMemoryIndirect(Validator& gpuav, const Location& loc, CommandBufferSubS
         // If in safe mode, invalid copies specified in the indirect buffer will be set to "safe" values by the validation shader,
         // so accesses to it need to be synchronised.
         if (gpuav.gpuav_settings.safe_mode) {
-            // TODO - Would be better to use a VkBufferMemoryBarrier, but that would involve having to figure out what the indirect
-            // VkBuffer handle is
-            VkMemoryBarrier2 memory_barrier = vku::InitStructHelper();
-            memory_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-            memory_barrier.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
-            memory_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_INDIRECT_BIT_KHR;
-            memory_barrier.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
-            VkDependencyInfo dep_info = vku::InitStructHelper();
-            dep_info.dependencyFlags = 0;
-            dep_info.memoryBarrierCount = 1;
-            dep_info.pMemoryBarriers = &memory_barrier;
-            DispatchCmdPipelineBarrier2(cb_state.VkHandle(), &dep_info);
+            VkMemoryBarrier memory_barrier = vku::InitStructHelper();
+            memory_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            memory_barrier.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+            DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                       VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
         }
     }
 
