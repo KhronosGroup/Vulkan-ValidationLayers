@@ -1,7 +1,7 @@
 # ~~~
-# Copyright (c) 2014-2025 Valve Corporation
-# Copyright (c) 2014-2025 LunarG, Inc.
-# Copyright (C) 2025 Arm Limited.
+# Copyright (c) 2014-2026 Valve Corporation
+# Copyright (c) 2014-2026 LunarG, Inc.
+# Copyright (C) 2026 Arm Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,9 +57,10 @@ if(SLANG_INSTALL_DIR)
 endif()
 
 include(GoogleTest)
-# If cross-compiling, discovery will use an executable with the wrong architecture and stop execution here.
+# Discover the tests when running ctest (PRE_TEST), not after every link (POST_BUILD), to keep incremental builds fast.
+# If cross-compiling, discovery will use an executable with the wrong architecture and fail.
 # Set env. variable VVL_SKIP_GTEST_DISCOVERY to skip discovery.
 if(NOT VVL_SKIP_GTEST_DISCOVERY)
-    gtest_discover_tests(vk_layer_validation_stress DISCOVERY_TIMEOUT 100)
+    gtest_discover_tests(vk_layer_validation_stress DISCOVERY_TIMEOUT 100 DISCOVERY_MODE PRE_TEST)
 endif()
 
