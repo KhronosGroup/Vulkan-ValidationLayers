@@ -737,11 +737,11 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         if commandName.startswith('vkSignalSemaphore') and memberName == 'semaphore':
             return '"UNASSIGNED-VkSemaphoreSignalInfo-semaphore-parent"'
         if commandName.startswith('vkGetImageMemoryRequirements2') and memberName == 'image':
-            return '"UNASSIGNED-VkSemaphoreSignalInfo-image-parent"'
+            return '"UNASSIGNED-VkImageMemoryRequirementsInfo2-image-parent"'
         if commandName.startswith('vkGetBufferMemoryRequirements2') and memberName == 'buffer':
-            return '"UNASSIGNED-VkSemaphoreSignalInfo-buffer-parent"'
+            return '"UNASSIGNED-VkBufferMemoryRequirementsInfo2-buffer-parent"'
         if commandName.startswith('vkGetImageSparseMemoryRequirements2') and memberName == 'image':
-            return '"UNASSIGNED-VkSemaphoreSignalInfo-image-parent"'
+            return '"UNASSIGNED-VkImageSparseMemoryRequirementsInfo2-image-parent"'
         if commandName.startswith('vkQueueSubmit2') and memberName == 'commandBuffer':
             return '"UNASSIGNED-VkCommandBufferSubmitInfo-commandBuffer-parent"'
         if commandName.startswith('vkBindImageMemory2') and memberName == 'swapchain':
