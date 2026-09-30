@@ -263,24 +263,45 @@ const vvl::unordered_map<std::string_view, vuid_info>& GetVuidMap();
  ****************************************************************************/
 
 #include "vk_validation_error_messages.h"
-#include <array>
+#include <cstdint>
+#include <iterator>
 
 // clang-format off
 ''')
 
     vuid_list = list(val_json.all_vuids)
     vuid_list.sort()
+    pages = sorted({val_json.vuid_db[vuid][0]['page'] for vuid in vuid_list})
+    page_index = {page: index for index, page in enumerate(pages)}
 
-    out.append(f'''
-const vvl::unordered_map<std::string_view, vuid_info> &GetVuidMap() {{
-    static const std::array<std::pair<std::string_view, vuid_info>, {len(vuid_list)}> vuid_array = {{{{
+    # The table is plain C data on purpose. It used to be a std::array<std::pair<std::string_view, vuid_info>>, whose
+    # ~27k initializers (constructor overload resolution and constant evaluation for every element) took the compiler
+    # ~18 seconds, making this the slowest file of the project.
+    out.append('''
+namespace {
+
+// Spec page each VUID is documented on
+constexpr std::string_view kVuidPages[] = {
+''')
+    for page in pages:
+        out.append(f'    "{page}",\n')
+    out.append('''};
+
+struct VuidEntry {
+    const char* vuid;
+    const char* spec_text;
+    uint16_t vuid_length;
+    uint16_t spec_text_length;
+    uint8_t page;  // index into kVuidPages
+};
+
+const VuidEntry kVuidEntries[] = {
 ''')
     for vuid in vuid_list:
         db_entry = val_json.vuid_db[vuid][0]
         html_page = db_entry['page']
 
-        # Escape quotes and backslashes when generating C strings for source code
-        db_text = db_entry['text'].replace('\\', '\\\\').replace('"', '\\"').strip()
+        db_text = db_entry['text'].strip()
         html_remove_tags = re.compile(r'<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
         db_text = re.sub(html_remove_tags, '', db_text)
         # In future we could use the `/n` to add new lines to a pretty print in the console
@@ -295,13 +316,27 @@ const vvl::unordered_map<std::string_view, vuid_info> &GetVuidMap() {{
         if (len(db_text) > 800):
             print(f'Warning: {vuid} has a large message ({len(db_text)})')
 
-        out.append(f'        {{ {{"{vuid}", {len(vuid)}}}, {{ {{"{db_text}", {len(db_text)}}}, {{ "{html_page}", {len(html_page)}}} }} }},\n')
+        # Escape quotes and backslashes when generating C strings for source code (after measuring the real length)
+        escaped_text = db_text.replace('\\', '\\\\').replace('"', '\\"')
+        out.append(f'    {{"{vuid}", "{escaped_text}", {len(vuid)}, {len(db_text)}, {page_index[html_page]}}},\n')
         # For multiply-defined VUIDs, include versions with extension appended
         if len(val_json.vuid_db[vuid]) > 1:
             print(f'Warning: Found a duplicate VUID: {vuid}')
 
-    out.append('''    }};
-    static const vvl::unordered_map<std::string_view, vuid_info> vuid_map(std::begin(vuid_array), std::end(vuid_array));
+    out.append('''};
+
+}  // namespace
+
+const vvl::unordered_map<std::string_view, vuid_info>& GetVuidMap() {
+    static const vvl::unordered_map<std::string_view, vuid_info> vuid_map = [] {
+        vvl::unordered_map<std::string_view, vuid_info> map;
+        map.reserve(std::size(kVuidEntries));
+        for (const VuidEntry& entry : kVuidEntries) {
+            map.emplace(std::string_view(entry.vuid, entry.vuid_length),
+                        vuid_info{std::string_view(entry.spec_text, entry.spec_text_length), kVuidPages[entry.page]});
+        }
+        return map;
+    }();
     return vuid_map;
 }
 ''')
