@@ -428,10 +428,16 @@ class SyncValidator : public vvl::DeviceProxy {
     void PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkBuffer dstBuffer,
                                                 VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
 
-    std::vector<VideoCommand::PictureAccess> CollectVideoDecodePictureAccesses(const vvl::VideoSession& video_session,
-                                                                               const VkVideoDecodeInfoKHR& info) const;
-    std::vector<VideoCommand::PictureAccess> CollectVideoEncodePictureAccesses(const vvl::VideoSession& video_session,
-                                                                               const VkVideoEncodeInfoKHR& info) const;
+    std::vector<VideoReferencePictureAccess> CollectVideoReferencePictureAccesses(
+        const vvl::VideoSession& video_session, vvl::span<const VkVideoReferenceSlotInfoKHR> reference_slots) const;
+    VideoDecodeCommand MakeVideoDecodeCommand(const vvl::VideoSession& video_session, const vvl::Buffer& bitstream_buffer,
+                                              const VkVideoDecodeInfoKHR& info,
+                                              vvl::span<const VideoReferencePictureAccess> reference_pictures,
+                                              uint32_t bitstream_handle_index = vvl::kNoIndex32) const;
+    VideoEncodeCommand MakeVideoEncodeCommand(const vvl::VideoSession& video_session, const vvl::Buffer& bitstream_buffer,
+                                              const VkVideoEncodeInfoKHR& info,
+                                              vvl::span<const VideoReferencePictureAccess> reference_pictures,
+                                              uint32_t bitstream_handle_index = vvl::kNoIndex32) const;
     bool PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,

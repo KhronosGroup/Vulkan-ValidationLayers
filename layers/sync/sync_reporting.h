@@ -81,7 +81,7 @@ std::string FormatErrorMessage(const SyncEnvironment& env, const HazardResult& h
 std::string FormatSyncAccesses(const SyncValidator& validator, const SyncAccessFlags& sync_accesses,
                                VkQueueFlags allowed_queue_flags, bool format_as_extra_property);
 
-void FormatVideoPictureResouce(const Logger& logger, const VkVideoPictureResourceInfoKHR& video_picture, std::ostringstream& ss);
+void FormatVideoPictureResource(const Logger& logger, const VkVideoPictureResourceInfoKHR& video_picture, std::ostringstream& ss);
 void FormatVideoQuantizationMap(const Logger& logger, const VkVideoEncodeQuantizationMapInfoKHR& quantization_map,
                                 std::ostringstream& ss);
 
