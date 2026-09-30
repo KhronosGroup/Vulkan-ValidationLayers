@@ -31,7 +31,7 @@ namespace vvl {
 
 const char* String(Func func) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Func::Empty
+    {"INVALID_EMPTY", 14}, // Func::Empty
     {"vkAcquireDrmDisplayEXT", 23},
     {"vkAcquireFullScreenExclusiveModeEXT", 36},
     {"vkAcquireNextImage2KHR", 23},
@@ -880,7 +880,7 @@ const char* String(Func func) {
 
 const char* String(Struct structure) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Struct::Empty
+    {"INVALID_EMPTY", 14}, // Struct::Empty
     {"VkAabbPositionsKHR", 19},
     {"VkAccelerationStructureBuildGeometryInfoKHR", 44},
     {"VkAccelerationStructureBuildRangeInfoKHR", 41},
@@ -5743,7 +5743,7 @@ const char* String(Field field) {
 
 const char* String(Enum value) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Enum::Empty
+    {"INVALID_EMPTY", 14}, // Enum::Empty
     {"VkAccelerationStructureBuildTypeKHR", 36},
     {"VkAccelerationStructureCompatibilityKHR", 40},
     {"VkAccelerationStructureMemoryRequirementsTypeNV", 48},
@@ -5913,7 +5913,7 @@ const char* String(Enum value) {
 
 const char* String(FlagBitmask value) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // FlagBitmask::Empty
+    {"INVALID_EMPTY", 14}, // FlagBitmask::Empty
     {"VkAccelerationStructureCreateFlagBitsKHR", 41},
     {"VkAccessFlagBits", 17},
     {"VkAccessFlagBits2", 18},
@@ -6099,7 +6099,7 @@ const char* String(FlagBitmask value) {
 
 const char* String(Extension extension) {
     static const std::string_view table[] = {
-    {"INVALID_EMPTY", 15}, // Extension::Empty
+    {"INVALID_EMPTY", 14}, // Extension::Empty
     {"VK_AMDX_dense_geometry_format", 30},
     {"VK_AMDX_shader_enqueue", 23},
     {"VK_AMD_anti_lag", 16},
