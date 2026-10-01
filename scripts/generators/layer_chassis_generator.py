@@ -25,7 +25,7 @@
 import os
 from vulkan_object import Command
 from base_generator import BaseGenerator
-from generators.generator_utils import PlatformGuardHelper
+from generators.generator_utils import PlatformGuardHelper, getDebugUtilsExtendedStructs
 
 # This class is a container for any source code, data, or other behavior that is necessary to
 # customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
@@ -126,6 +126,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 return'kFuncTypeDev'
 
     def generate(self):
+        for struct_name in getDebugUtilsExtendedStructs():
+            extendedBy = self.vk.structs[struct_name].extendedBy
+            extendedBy.extend([x for x in ['VkDebugUtilsObjectNameInfoEXT', 'VkDebugUtilsObjectTagInfoEXT'] if x not in extendedBy])
+
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
 
@@ -239,9 +243,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
         out.append('// Extension exposed by the validation layer\n')
 
         instance_exts = APISpecific.getInstanceExtensionList(self.targetApiName)
-        out.append(f'static constexpr std::array<VkExtensionProperties, {len(instance_exts)}> kInstanceExtensions = {{\n')
+        # Remove after merging https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8336 (add it to getInstanceExtensionList)
+        out.append(f'static constexpr std::array<VkExtensionProperties, {len(instance_exts) + 1}> kInstanceExtensions = {{\n')
         for ext in [x.upper() for x in instance_exts]:
             out.append(f'    VkExtensionProperties{{{ext}_EXTENSION_NAME, {ext}_SPEC_VERSION}},\n')
+        out.append('    VkExtensionProperties{"VK_EXT_debug_utils_create_info", 1},\n')
         out.append('};\n')
 
         device_exts = APISpecific.getDeviceExtensionList(self.targetApiName)
@@ -435,6 +441,44 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 out.append('record_obj.result = result;\n')
             elif command.returnType == 'VkDeviceAddress':
                 out.append('record_obj.device_address = result;\n')
+
+            # Add a SetUtilsObjectName call for commands that can have a debug utils info struct in its pNext chain
+            debug_utils_structs = {'VkDebugUtilsObjectNameInfoEXT', 'VkDebugUtilsObjectTagInfoEXT'}
+            last_param = command.params[-1]
+            if command.returnType == 'VkResult':
+                for param in command.params[:-1]:
+                    if not (param.pointer and param.type in self.vk.structs and
+                            any(s in self.vk.structs[param.type].extendedBy for s in debug_utils_structs)):
+                        continue
+                    if last_param.type in ('VkPipeline', 'VkShaderEXT'):
+                        # Every non-null element is a valid handle, even if the call failed
+                        out.append(f'''for (uint32_t i = 0; i < {last_param.length}; ++i) {{
+                            {dispatch}->debug_report->SetUtilsObjectName({param.name}[i].pNext, HandleToUint64({last_param.name}[i]));
+                        }}\n''')
+                    elif last_param.type == 'VkPipelineBinaryHandlesInfoKHR':
+                        out.append(f'''if ({last_param.name}->pPipelineBinaries) {{
+                            for (uint32_t i = 0; i < {last_param.name}->pipelineBinaryCount; ++i) {{
+                                {dispatch}->debug_report->SetUtilsObjectName({param.name}->pNext, HandleToUint64({last_param.name}->pPipelineBinaries[i]));
+                            }}
+                        }}\n''')
+                    elif last_param.type not in self.vk.handles:
+                        continue
+                    elif last_param.length is None:
+                        out.append(f'''if (result == VK_SUCCESS) {{
+                            {dispatch}->debug_report->SetUtilsObjectName({param.name}->pNext, HandleToUint64(*{last_param.name}));
+                        }}\n''')
+                    elif param.length == last_param.length:
+                        out.append(f'''if (result == VK_SUCCESS) {{
+                            for (uint32_t i = 0; i < {last_param.length}; ++i) {{
+                                {dispatch}->debug_report->SetUtilsObjectName({param.name}[i].pNext, HandleToUint64({last_param.name}[i]));
+                            }}
+                        }}\n''')
+                    else:
+                        out.append(f'''if (result == VK_SUCCESS) {{
+                            for (uint32_t i = 0; i < {last_param.length}; ++i) {{
+                                {dispatch}->debug_report->SetUtilsObjectName({param.name}->pNext, HandleToUint64({last_param.name}[i]));
+                            }}
+                        }}\n''')
 
             # Generate post-call object processing source code
             out.append(f'{{\nVVL_ZoneScopedN("PostCallRecord_{command.name}");\n')

@@ -14033,10 +14033,14 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
                                    "VUID-vkCreateRenderPass2-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 5> allowed_structs_VkRenderPassCreateInfo2 = {
-            VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT,
+        constexpr std::array<VkStructureType, 7> allowed_structs_VkRenderPassCreateInfo2 = {
+            VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT,
+            VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT,
-            VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM, VK_STRUCTURE_TYPE_TILE_MEMORY_SIZE_INFO_QCOM};
+            VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM,
+            VK_STRUCTURE_TYPE_TILE_MEMORY_SIZE_INFO_QCOM,
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
 
         skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkRenderPassCreateInfo2.size(),
                                             allowed_structs_VkRenderPassCreateInfo2.data(), GeneratedVulkanHeaderVersion,
@@ -20759,8 +20763,13 @@ bool Device::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkP
                                        "VUID-VkPipelineBinaryCreateInfoKHR-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkPipelineBinaryCreateInfoKHR-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array<VkStructureType, 2> allowed_structs_VkPipelineBinaryCreateInfoKHR = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+
+        skip |=
+            context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkPipelineBinaryCreateInfoKHR.size(),
+                                        allowed_structs_VkPipelineBinaryCreateInfoKHR.data(), GeneratedVulkanHeaderVersion,
+                                        "VUID-VkPipelineBinaryCreateInfoKHR-pNext-pNext", kVUIDUndefined, true);
 
         if (pCreateInfo->pKeysAndDataInfo != nullptr) {
             [[maybe_unused]] const Location pKeysAndDataInfo_loc = pCreateInfo_loc.dot(Field::pKeysAndDataInfo);
@@ -22090,8 +22099,13 @@ bool Device::PreCallValidateRegisterDeviceEventEXT(VkDevice device, const VkDevi
                                        "VUID-VkDeviceEventInfoEXT-sType-sType");
     if (pDeviceEventInfo != nullptr) {
         [[maybe_unused]] const Location pDeviceEventInfo_loc = loc.dot(Field::pDeviceEventInfo);
-        skip |= context.ValidateStructPnext(pDeviceEventInfo_loc, pDeviceEventInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkDeviceEventInfoEXT-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array<VkStructureType, 2> allowed_structs_VkDeviceEventInfoEXT = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+
+        skip |=
+            context.ValidateStructPnext(pDeviceEventInfo_loc, pDeviceEventInfo->pNext, allowed_structs_VkDeviceEventInfoEXT.size(),
+                                        allowed_structs_VkDeviceEventInfoEXT.data(), GeneratedVulkanHeaderVersion,
+                                        "VUID-VkDeviceEventInfoEXT-pNext-pNext", kVUIDUndefined, true);
 
         skip |= context.ValidateRangedEnum(pDeviceEventInfo_loc.dot(Field::deviceEvent), vvl::Enum::VkDeviceEventTypeEXT,
                                            pDeviceEventInfo->deviceEvent, "VUID-VkDeviceEventInfoEXT-deviceEvent-parameter");
@@ -22119,9 +22133,13 @@ bool Device::PreCallValidateRegisterDisplayEventEXT(VkDevice device, VkDisplayKH
         "VUID-vkRegisterDisplayEventEXT-pDisplayEventInfo-parameter", "VUID-VkDisplayEventInfoEXT-sType-sType");
     if (pDisplayEventInfo != nullptr) {
         [[maybe_unused]] const Location pDisplayEventInfo_loc = loc.dot(Field::pDisplayEventInfo);
-        skip |=
-            context.ValidateStructPnext(pDisplayEventInfo_loc, pDisplayEventInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                        "VUID-VkDisplayEventInfoEXT-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array<VkStructureType, 2> allowed_structs_VkDisplayEventInfoEXT = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+
+        skip |= context.ValidateStructPnext(pDisplayEventInfo_loc, pDisplayEventInfo->pNext,
+                                            allowed_structs_VkDisplayEventInfoEXT.size(),
+                                            allowed_structs_VkDisplayEventInfoEXT.data(), GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDisplayEventInfoEXT-pNext-pNext", kVUIDUndefined, true);
 
         skip |= context.ValidateRangedEnum(pDisplayEventInfo_loc.dot(Field::displayEvent), vvl::Enum::VkDisplayEventTypeEXT,
                                            pDisplayEventInfo->displayEvent, "VUID-VkDisplayEventInfoEXT-displayEvent-parameter");
@@ -23570,8 +23588,13 @@ bool Device::PreCallValidateCreateValidationCacheEXT(VkDevice device, const VkVa
                                        "VUID-VkValidationCacheCreateInfoEXT-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkValidationCacheCreateInfoEXT-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array<VkStructureType, 2> allowed_structs_VkValidationCacheCreateInfoEXT = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+
+        skip |=
+            context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkValidationCacheCreateInfoEXT.size(),
+                                        allowed_structs_VkValidationCacheCreateInfoEXT.data(), GeneratedVulkanHeaderVersion,
+                                        "VUID-VkValidationCacheCreateInfoEXT-pNext-pNext", kVUIDUndefined, true);
 
         skip |= context.ValidateReservedFlags(pCreateInfo_loc.dot(Field::flags), pCreateInfo->flags,
                                               "VUID-VkValidationCacheCreateInfoEXT-flags-zerobitmask");
@@ -25269,8 +25292,13 @@ bool Device::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device, cons
         "VUID-vkCreateIndirectCommandsLayoutNV-pCreateInfo-parameter", "VUID-VkIndirectCommandsLayoutCreateInfoNV-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkIndirectCommandsLayoutCreateInfoNV-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array<VkStructureType, 2> allowed_structs_VkIndirectCommandsLayoutCreateInfoNV = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+
+        skip |= context.ValidateStructPnext(
+            pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkIndirectCommandsLayoutCreateInfoNV.size(),
+            allowed_structs_VkIndirectCommandsLayoutCreateInfoNV.data(), GeneratedVulkanHeaderVersion,
+            "VUID-VkIndirectCommandsLayoutCreateInfoNV-pNext-pNext", kVUIDUndefined, true);
 
         skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkIndirectCommandsLayoutUsageFlagBitsNV,
                                       AllVkIndirectCommandsLayoutUsageFlagBitsNV, pCreateInfo->flags, kOptionalFlags,
@@ -25487,7 +25515,11 @@ bool Device::PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModu
                                    "VUID-vkCreateCudaModuleNV-pCreateInfo-parameter", "VUID-VkCudaModuleCreateInfoNV-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+        constexpr std::array<VkStructureType, 2> allowed_structs_VkCudaModuleCreateInfoNV = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkCudaModuleCreateInfoNV.size(),
+                                            allowed_structs_VkCudaModuleCreateInfoNV.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkCudaModuleCreateInfoNV-pNext-pNext", kVUIDUndefined, true);
 
         skip |= context.ValidateArray(
@@ -25534,7 +25566,11 @@ bool Device::PreCallValidateCreateCudaFunctionNV(VkDevice device, const VkCudaFu
                                        "VUID-VkCudaFunctionCreateInfoNV-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+        constexpr std::array<VkStructureType, 2> allowed_structs_VkCudaFunctionCreateInfoNV = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkCudaFunctionCreateInfoNV.size(),
+                                            allowed_structs_VkCudaFunctionCreateInfoNV.data(), GeneratedVulkanHeaderVersion,
                                             "VUID-VkCudaFunctionCreateInfoNV-pNext-pNext", kVUIDUndefined, true);
 
         skip |= context.ValidateRequiredHandle(pCreateInfo_loc.dot(Field::module), pCreateInfo->module);
@@ -26290,8 +26326,13 @@ bool Device::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice device, const
         "VUID-vkCreateBufferCollectionFUCHSIA-pCreateInfo-parameter", "VUID-VkBufferCollectionCreateInfoFUCHSIA-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkBufferCollectionCreateInfoFUCHSIA-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array<VkStructureType, 2> allowed_structs_VkBufferCollectionCreateInfoFUCHSIA = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT};
+
+        skip |= context.ValidateStructPnext(
+            pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkBufferCollectionCreateInfoFUCHSIA.size(),
+            allowed_structs_VkBufferCollectionCreateInfoFUCHSIA.data(), GeneratedVulkanHeaderVersion,
+            "VUID-VkBufferCollectionCreateInfoFUCHSIA-pNext-pNext", kVUIDUndefined, true);
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);

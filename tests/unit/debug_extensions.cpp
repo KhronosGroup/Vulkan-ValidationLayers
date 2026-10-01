@@ -13,6 +13,7 @@
  */
 
 #include "layer_validation_tests.h"
+#include "pipeline_helper.h"
 
 class NegativeDebugExtensions : public VkLayerTest {};
 
@@ -693,4 +694,127 @@ TEST_F(NegativeDebugExtensions, DebugUtilsRecording) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdInsertDebugUtilsLabelEXT-commandBuffer-recording");
     vk::CmdInsertDebugUtilsLabelEXT(m_command_buffer, &label);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugExtensions, VkDebugUtilsObjectNameInfoExtendsCreateInfo) {
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+    name_info.pObjectName = "my buffer";
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&name_info);
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_ci.size = 256;
+    // Buffer is not bound to memory
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkBufferViewCreateInfo-buffer-00935", "my buffer");
+    vkt::BufferView buffer_view(*m_device, buffer, VK_FORMAT_R8_UNORM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugExtensions, VkDebugUtilsObjectNameInfoExtendsCreateInfoRename) {
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+    name_info.pObjectName = "foo";
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&name_info);
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_ci.size = 256;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkDebugUtilsObjectNameInfoEXT rename_info = vku::InitStructHelper();
+    rename_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    rename_info.objectHandle = (uint64_t)buffer.handle();
+    rename_info.pObjectName = "bar";
+    vk::SetDebugUtilsObjectNameEXT(device(), &rename_info);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkBufferViewCreateInfo-buffer-00935", "VkBuffer 0x[0-9a-fA-F]+\\[bar\\]");
+    vkt::BufferView buffer_view(*m_device, buffer, VK_FORMAT_R8_UNORM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugExtensions, VkDebugUtilsObjectNameInfoExtendsCreateInfoNullName) {
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+    name_info.pObjectName = nullptr;
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&name_info);
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_ci.size = 256;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkBufferViewCreateInfo-buffer-00935", "VkBuffer 0x[0-9a-fA-F]+[^0-9a-fA-F\\[]");
+    vkt::BufferView buffer_view(*m_device, buffer, VK_FORMAT_R8_UNORM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugExtensions, VkDebugUtilsObjectNameInfoExtendsCreateInfoEmptyName) {
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+    name_info.pObjectName = "";
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&name_info);
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_ci.size = 256;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkBufferViewCreateInfo-buffer-00935", "VkBuffer 0x[0-9a-fA-F]+[^0-9a-fA-F\\[]");
+    vkt::BufferView buffer_view(*m_device, buffer, VK_FORMAT_R8_UNORM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugExtensions, VkDebugUtilsObjectNameInfoExtendsCreateInfoArray) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDebugUtilsObjectNameInfoEXT name_infos[2];
+    name_infos[0] = vku::InitStructHelper();
+    name_infos[0].objectType = VK_OBJECT_TYPE_PIPELINE;
+    name_infos[0].pObjectName = "foo";
+    name_infos[1] = vku::InitStructHelper();
+    name_infos[1].objectType = VK_OBJECT_TYPE_UNKNOWN;
+    name_infos[1].pObjectName = "bar";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.LateBindPipelineInfo();
+    VkComputePipelineCreateInfo create_infos[2] = {pipe.cp_ci_, pipe.cp_ci_};
+    create_infos[0].pNext = &name_infos[0];
+    create_infos[1].pNext = &name_infos[1];
+    VkPipeline pipelines[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+    ASSERT_EQ(VK_SUCCESS, vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 2, create_infos, nullptr, pipelines));
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBindPipeline-pipelineBindPoint-00779", "VkPipeline 0x[0-9a-fA-F]+\\[bar\\]");
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[1]);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBindPipeline-pipelineBindPoint-00779", "VkPipeline 0x[0-9a-fA-F]+\\[foo\\]");
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[0]);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    vk::DestroyPipeline(device(), pipelines[0], nullptr);
+    vk::DestroyPipeline(device(), pipelines[1], nullptr);
+}
+
+TEST_F(NegativeDebugExtensions, VkDebugUtilsObjectNameInfoExtendsAllocateInfo) {
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+    name_info.pObjectName = "foo";
+    VkCommandBufferAllocateInfo alloc_info = vku::InitStructHelper(&name_info);
+    alloc_info.commandPool = m_command_pool;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandBufferCount = 2;
+    VkCommandBuffer command_buffers[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+    vk::AllocateCommandBuffers(device(), &alloc_info, command_buffers);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkEndCommandBuffer-commandBuffer-00059", "VkCommandBuffer 0x[0-9a-fA-F]+\\[foo\\]");
+    vk::EndCommandBuffer(command_buffers[1]);
+    m_errorMonitor->VerifyFound();
+
+    vk::FreeCommandBuffers(device(), m_command_pool, 2, command_buffers);
 }
