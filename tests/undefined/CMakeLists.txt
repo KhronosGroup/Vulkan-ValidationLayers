@@ -21,17 +21,27 @@ if (ANDROID)
 else()
     add_executable(vk_layer_validation_undefined)
 endif()
-target_sources(vk_layer_validation_undefined PRIVATE
+
+# To compile sources while VVL builds, add them to an object library
+# to be linked into the final exe
+add_library(vk_layer_validation_undefined_objects OBJECT)
+target_sources(vk_layer_validation_undefined_objects PRIVATE
     core_undefined.cpp
 )
 
-get_target_property(TEST_SOURCES vk_layer_validation_undefined SOURCES)
+get_target_property(TEST_SOURCES vk_layer_validation_undefined_objects SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
 
 add_dependencies(vk_layer_validation_undefined vvl)
 
-target_link_libraries(vk_layer_validation_undefined PRIVATE
+# 2 target_link_libraries calls:
+# First so that the object library get vk_test_framework include dirs and definitions
+# Second to actually link objects library and vk_test_framework into exe
+target_link_libraries(vk_layer_validation_undefined_objects PRIVATE
     vk_test_framework
+)
+target_link_libraries(vk_layer_validation_undefined PRIVATE
+    vk_layer_validation_undefined_objects
 )
 
 # Want next to other executable in build folder

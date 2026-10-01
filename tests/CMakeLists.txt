@@ -28,7 +28,11 @@ if (ANDROID)
 else()
     add_executable(vk_layer_validation_tests)
 endif()
-target_sources(vk_layer_validation_tests PRIVATE
+
+# To compile sources while VVL builds, add them to an object library
+# to be linked into the final exe
+add_library(vk_layer_validation_tests_objects OBJECT)
+target_sources(vk_layer_validation_tests_objects PRIVATE
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
     unit/android_external_resolve.cpp
@@ -304,7 +308,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     vvl_utils/pnext_chain_extraction.cpp
 )
 
-target_include_directories(vk_layer_validation_tests PRIVATE
+target_include_directories(vk_layer_validation_tests_objects PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
@@ -319,15 +323,21 @@ target_include_directories(vk_layer_validation_tests PRIVATE
 #       export CCACHE_SLOPPINESS="pch_defines,time_macros"
 # - |pch_defines| covers the one call that generates the .pch
 # - |time_macros| covers the calls that consume the .pch
-target_precompile_headers(vk_layer_validation_tests PRIVATE framework/test_common.h)
+target_precompile_headers(vk_layer_validation_tests_objects PRIVATE framework/test_common.h)
 
-get_target_property(TEST_SOURCES vk_layer_validation_tests SOURCES)
+get_target_property(TEST_SOURCES vk_layer_validation_tests_objects SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
 
 add_dependencies(vk_layer_validation_tests vvl)
 
-target_link_libraries(vk_layer_validation_tests PRIVATE
+# 2 target_link_libraries calls:
+# First so that the object library get vk_test_framework include dirs and definitions
+# Second to actually link objects library and vk_test_framework into exe
+target_link_libraries(vk_layer_validation_tests_objects PRIVATE
     vk_test_framework
+)
+target_link_libraries(vk_layer_validation_tests PRIVATE
+    vk_layer_validation_tests_objects
 )
 
 # More details in tests/android/mock/README.md
