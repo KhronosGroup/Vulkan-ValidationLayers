@@ -10,6 +10,8 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
+#include <exception>
+
 #include "layer_validation_tests.h"
 #include "utils/convert_utils.h"
 
