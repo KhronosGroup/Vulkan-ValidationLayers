@@ -513,6 +513,75 @@ TEST_F(PositiveShaderCooperativeMatrix, Int8) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(PositiveShaderCooperativeMatrix, SignedComponentsFloat) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13284");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    CooperativeMatrixHelper helper(*this);
+
+    const VkCooperativeMatrixPropertiesKHR* float16_prop = nullptr;
+    for (const auto& prop : helper.coop_matrix_props) {
+        if (prop.scope == VK_SCOPE_SUBGROUP_KHR && prop.AType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+            prop.BType == VK_COMPONENT_TYPE_FLOAT16_KHR && prop.CType == VK_COMPONENT_TYPE_FLOAT16_KHR &&
+            prop.ResultType == VK_COMPONENT_TYPE_FLOAT16_KHR && !prop.saturatingAccumulation) {
+            float16_prop = &prop;
+            break;
+        }
+    }
+    if (!float16_prop) {
+        GTEST_SKIP() << "desired VkCooperativeMatrixPropertiesKHR not found";
+    }
+
+    std::ostringstream spv_source;
+    spv_source << R"asm(
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability VulkanMemoryModel
+               OpCapability CooperativeMatrixKHR
+               OpExtension "SPV_KHR_cooperative_matrix"
+               OpExtension "SPV_KHR_vulkan_memory_model"
+               OpMemoryModel Logical Vulkan
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 64 1 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %half = OpTypeFloat 16
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+     %uint_3 = OpConstant %uint 3
+     %uint_m = OpConstant %uint )asm"
+               << float16_prop->MSize << R"asm(
+     %uint_n = OpConstant %uint )asm"
+               << float16_prop->NSize << R"asm(
+     %uint_k = OpConstant %uint )asm"
+               << float16_prop->KSize << R"asm(
+      %mat_a = OpTypeCooperativeMatrixKHR %half %uint_3 %uint_m %uint_k %uint_0
+      %mat_b = OpTypeCooperativeMatrixKHR %half %uint_3 %uint_k %uint_n %uint_1
+      %mat_c = OpTypeCooperativeMatrixKHR %half %uint_3 %uint_m %uint_n %uint_2
+%_ptr_Function_mat_a = OpTypePointer Function %mat_a
+%_ptr_Function_mat_b = OpTypePointer Function %mat_b
+%_ptr_Function_mat_c = OpTypePointer Function %mat_c
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+          %a = OpVariable %_ptr_Function_mat_a Function
+          %b = OpVariable %_ptr_Function_mat_b Function
+          %c = OpVariable %_ptr_Function_mat_c Function
+     %load_a = OpLoad %mat_a %a
+     %load_b = OpLoad %mat_b %b
+     %load_c = OpLoad %mat_c %c
+     %result = OpCooperativeMatrixMulAddKHR %mat_c %load_a %load_b %load_c MatrixASignedComponentsKHR|MatrixBSignedComponentsKHR|MatrixCSignedComponentsKHR|MatrixResultSignedComponentsKHR
+               OpReturn
+               OpFunctionEnd
+    )asm";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(PositiveShaderCooperativeMatrix, WorkgroupScopeLocalSizeIdSpecConstant) {
     TEST_DESCRIPTION(
         "Pre-specialization skips the unknown LocalSizeId; specialization matches a flexible-dimensions property. "

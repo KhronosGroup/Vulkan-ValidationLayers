@@ -113,6 +113,28 @@ static bool IsSignedIntEnum(const VkComponentTypeKHR component_type) {
     }
 }
 
+static bool IsUnsignedIntEnum(const VkComponentTypeKHR component_type) {
+    switch (component_type) {
+        case VK_COMPONENT_TYPE_UINT8_KHR:
+        case VK_COMPONENT_TYPE_UINT16_KHR:
+        case VK_COMPONENT_TYPE_UINT32_KHR:
+        case VK_COMPONENT_TYPE_UINT64_KHR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+// The Matrix*SignedComponents operands are only meaningful for integer components (float components ignore them)
+static bool SignedComponentsMatch(const VkComponentTypeKHR component_type, bool signed_components) {
+    if (IsSignedIntEnum(component_type)) {
+        return signed_components;
+    } else if (IsUnsignedIntEnum(component_type)) {
+        return !signed_components;
+    }
+    return true;
+}
+
 // Validate SPV_KHR_cooperative_matrix (and SPV_NV_cooperative_matrix) behavior that can't be statically validated in SPIRV-Tools
 // (e.g. due to specialization constant usage).
 bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
@@ -578,14 +600,14 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                               (flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask));
                 if (a.all_constant && b.all_constant && c.all_constant && r.all_constant) {
                     const auto signed_components_match = [flags](const auto& property) {
-                        return IsSignedIntEnum(property.AType) ==
-                                   !!(flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask) &&
-                               IsSignedIntEnum(property.BType) ==
-                                   !!(flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask) &&
-                               IsSignedIntEnum(property.CType) ==
-                                   !!(flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask) &&
-                               IsSignedIntEnum(property.ResultType) ==
-                                   !!(flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask);
+                        return SignedComponentsMatch(property.AType,
+                                                     flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask) &&
+                               SignedComponentsMatch(property.BType,
+                                                     flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask) &&
+                               SignedComponentsMatch(property.CType,
+                                                     flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask) &&
+                               SignedComponentsMatch(property.ResultType,
+                                                     flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask);
                     };
                     // Validate that the type parameters are all supported for the same
                     // cooperative matrix property.
