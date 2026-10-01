@@ -246,8 +246,9 @@ void VkRenderFramework::InitFramework(void* instance_pnext) {
         ici.pNext = instance_pnext;
     }
 
-    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance_));
+    const VkResult create_instance_result = vk::CreateInstance(&ici, nullptr, &instance_);
     if (instance_pnext) reinterpret_cast<VkBaseOutStructure*>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
+    ASSERT_EQ(VK_SUCCESS, create_instance_result) << string_VkResult(create_instance_result);
 
     for (const char* instance_ext_name : m_instance_extension_names) {
         vk::InitInstanceExtension(instance_, instance_ext_name);
