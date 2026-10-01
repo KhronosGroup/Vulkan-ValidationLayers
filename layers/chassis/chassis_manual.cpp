@@ -43,6 +43,10 @@ namespace vulkan_layer_chassis {
 static void InstanceExtensionWhitelist(vvl::DispatchInstance* layer_data, const VkInstanceCreateInfo* pCreateInfo,
                                        VkInstance instance, const Location& loc) {
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        // Remove after merging https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8336
+        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], "VK_EXT_debug_utils_create_info") == 0) {
+            continue;
+        }
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         if (extension == vvl::Extension::Empty) {
             layer_data->LogWarning("WARNING-CreateInstance-extension-not-found", layer_data->instance,
@@ -259,6 +263,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
 
     OutputLayerStatusInfo(instance_dispatch.get(), loc);
     InstanceExtensionWhitelist(instance_dispatch.get(), pCreateInfo, *pInstance, loc);
+    instance_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pInstance));
     instance_dispatch->FindSupportedExtensions();
 
     // save a raw pointer since the unique_ptr will be invalidate by the move() below
@@ -421,7 +426,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     InitTracyVk(instance_dispatch->instance, gpu, *pDevice, fpGetInstanceProcAddr, fpGetDeviceProcAddr,
                 device_dispatch->device_dispatch_table);
 #endif
-
+    device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pDevice));
     vvl::SetDispatchDevice(*pDevice, std::move(device_dispatch));
     for (auto& vo : instance_dispatch->object_dispatch) {
         if (!vo) {
@@ -568,7 +573,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
         }
     }
     record_obj.result = result;
-
+    // Every non-null element is a valid handle, even if the call failed (vkspec.html#pipelines-multiple)
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateGraphicsPipelines");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -635,7 +643,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
         }
     }
     record_obj.result = result;
-
+    // Every non-null element is a valid handle, even if the call failed (vkspec.html#pipelines-multiple)
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateComputePipelines");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -683,7 +694,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
     result =
         device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     record_obj.result = result;
-
+    // Every non-null element is a valid handle, even if the call failed (vkspec.html#pipelines-multiple)
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+    }
     for (auto& vo : device_dispatch->object_dispatch) {
         if (!vo) {
             continue;
@@ -750,7 +764,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
         }
     }
     record_obj.result = result;
-
+    // TODO - Handle labeling pipelines with VK_OPERATION_DEFERRED_KHR
+    if (result != VK_OPERATION_DEFERRED_KHR) {
+        // Every non-null element is a valid handle, even if the call failed (vkspec.html#pipelines-multiple)
+        for (uint32_t i = 0; i < createInfoCount; ++i) {
+            device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+        }
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateRayTracingPipelinesKHR");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -807,7 +827,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelinesARM(VkDevice device, VkDe
                                                               chassis_state.pCreateInfos, pAllocator, pPipelines);
     }
     record_obj.result = result;
-
+    // Every non-null element is a valid handle, even if the call failed (vkspec.html#pipelines-multiple)
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pPipelines[i]));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -861,7 +884,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
         result = device_dispatch->CreatePipelineLayout(device, &chassis_state.modified_create_info, pAllocator, pPipelineLayout);
     }
     record_obj.result = result;
-
+    if (result == VK_SUCCESS) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pPipelineLayout));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreatePipelineLayout");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreatePipelineLayout]) {
@@ -968,6 +993,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
         result = device_dispatch->CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
     }
     record_obj.result = result;
+    if (result == VK_SUCCESS) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pShaderModule));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateShaderModule");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -1032,7 +1060,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
         }
     }
     record_obj.result = result;
-
+    // Every non-null element is a valid handle, even if the call failed (vkspec.html#shaders-objects-creation)
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfos[i].pNext, HandleToUint64(pShaders[i]));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateShadersEXT");
         for (auto& vo : device_dispatch->object_dispatch) {
@@ -1090,6 +1121,11 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
         result = device_dispatch->AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
     }
     record_obj.result = result;
+    if (result == VK_SUCCESS) {
+        for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; ++i) {
+            device_dispatch->debug_report->SetUtilsObjectName(pAllocateInfo->pNext, HandleToUint64(pDescriptorSets[i]));
+        }
+    }
 
     {
         VVL_ZoneScopedN("PostCallRecord_AllocateDescriptorSets");
@@ -1146,7 +1182,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
         result = device_dispatch->CreateBuffer(device, chassis_state.create_info_copy, pAllocator, pBuffer);
     }
     record_obj.result = result;
-
+    if (result == VK_SUCCESS) {
+        device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pBuffer));
+    }
     {
         VVL_ZoneScopedN("PostCallRecord_CreateBuffer");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateBuffer]) {
@@ -1458,7 +1496,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(VkDevice device, const V
     auto device_dispatch = vvl::GetDispatchDevice(device);
     if (auto core_checks = static_cast<CoreChecks*>(device_dispatch->GetValidationObject(LayerObjectTypeCoreValidation))) {
         auto lock = core_checks->WriteLock();
-        return core_checks->CoreLayerCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
+        const VkResult result = core_checks->CoreLayerCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
+        if (result == VK_SUCCESS) {
+            device_dispatch->debug_report->SetUtilsObjectName(pCreateInfo->pNext, HandleToUint64(*pValidationCache));
+        }
+        return result;
     }
     return VK_SUCCESS;
 }

@@ -22,7 +22,7 @@
 
 import os
 import re
-from generators.generator_utils import buildListVUID, PlatformGuardHelper
+from generators.generator_utils import buildListVUID, PlatformGuardHelper, getDebugUtilsExtendedStructs
 from vulkan_object import Member, Struct, Command
 from base_generator import BaseGenerator
 from dataclasses import dataclass
@@ -512,80 +512,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             self.stype_version_dict[alias].add(extension_name)
                             self.stype_version_dict[alias].add(extension_name)
 
-        # HACK: force VkDebugUtilsObjectNameInfoEXT to extends some structs
-        # Remove after merging https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8336
-        hack = ["VkResourceDescriptorInfoEXT",
-               "VkDescriptorGetInfoEXT",
-               "VkInstanceCreateInfo",
-               "VkDeviceCreateInfo",
-               "VkSemaphoreCreateInfo",
-               "VkFenceCreateInfo",
-               "VkCommandBufferAllocateInfo",
-               "VkMemoryAllocateInfo",
-               "VkBufferCreateInfo",
-               "VkImageCreateInfo",
-               "VkEventCreateInfo",
-               "VkQueryPoolCreateInfo",
-               "VkBufferViewCreateInfo",
-               "VkImageViewCreateInfo",
-               "VkShaderModuleCreateInfo",
-               "VkPipelineShaderStageCreateInfo",
-               "VkPipelineCacheCreateInfo",
-               "VkPipelineLayoutCreateInfo",
-               "VkRenderPassCreateInfo",
-               "VkGraphicsPipelineCreateInfo",
-               "VkComputePipelineCreateInfo",
-               "VkRayTracingPipelineCreateInfoKHR",
-               "VkRayTracingPipelineCreateInfoNV",
-               "VkExecutionGraphPipelineCreateInfoAMDX",
-               "VkDataGraphPipelineCreateInfoARM",
-               "VkDescriptorSetLayoutCreateInfo",
-               "VkSamplerCreateInfo",
-               "VkDescriptorPoolCreateInfo",
-               "VkDescriptorSetAllocateInfo",
-               "VkFramebufferCreateInfo",
-               "VkCommandPoolCreateInfo",
-               "VkDescriptorUpdateTemplateCreateInfo",
-               "VkSamplerYcbcrConversionCreateInfo",
-               "VkPrivateDataSlotCreateInfo",
-               "VkDisplaySurfaceCreateInfoKHR",
-               "VkXlibSurfaceCreateInfoKHR",
-               "VkXcbSurfaceCreateInfoKHR",
-               "VkWaylandSurfaceCreateInfoKHR",
-               "VkAndroidSurfaceCreateInfoKHR",
-               "VkWin32SurfaceCreateInfoKHR",
-               "VkStreamDescriptorSurfaceCreateInfoGGP",
-               "VkViSurfaceCreateInfoNN",
-               "VkIOSSurfaceCreateInfoMVK",
-               "VkMacOSSurfaceCreateInfoMVK",
-               "VkImagePipeSurfaceCreateInfoFUCHSIA",
-               "VkMetalSurfaceCreateInfoEXT",
-               "VkHeadlessSurfaceCreateInfoEXT",
-               "VkDirectFBSurfaceCreateInfoEXT",
-               "VkScreenSurfaceCreateInfoQNX",
-               "VkSurfaceCreateInfoOHOS",
-               "VkUbmSurfaceCreateInfoSEC",
-               "VkSwapchainCreateInfoKHR",
-               "VkDisplayModeCreateInfoKHR",
-               "VkVideoSessionCreateInfoKHR",
-               "VkVideoSessionParametersCreateInfoKHR",
-               "VkCuFunctionCreateInfoNVX",
-               "VkCuModuleCreateInfoNVX",
-               "VkGpaSessionCreateInfoAMD",
-               "VkAccelerationStructureCreateInfoKHR",
-               "VkAccelerationStructureCreateInfo2KHR",
-               "VkAccelerationStructureCreateInfoNV",
-               "VkMicromapCreateInfoEXT",
-               "VkTensorCreateInfoARM",
-               "VkTensorViewCreateInfoARM",
-               "VkOpticalFlowSessionCreateInfoNV",
-               "VkShaderCreateInfoEXT",
-               "VkDataGraphPipelineSessionCreateInfoARM",
-               "VkExternalComputeQueueCreateInfoNV",
-               "VkIndirectCommandsLayoutCreateInfoEXT",
-               "VkIndirectExecutionSetCreateInfoEXT",
-               "VkShaderInstrumentationCreateInfoARM"]
-        for struct_name in hack:
+        for struct_name in getDebugUtilsExtendedStructs():
             extendedBy = self.vk.structs[struct_name].extendedBy
             extendedBy.extend([x for x in ['VkDebugUtilsObjectNameInfoEXT', 'VkDebugUtilsObjectTagInfoEXT'] if x not in extendedBy])
 

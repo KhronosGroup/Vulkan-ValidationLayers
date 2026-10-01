@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2023-2025 Valve Corporation
-# Copyright (c) 2023-2025 LunarG, Inc.
+# Copyright (c) 2023-2026 Valve Corporation
+# Copyright (c) 2023-2026 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,6 +56,95 @@ def getVUID(valid_vuids: set, vuid: str, quotes: bool = True) -> str:
         print(f'Warning: Could not find {vuid} in validusage.json')
         vuid = vuid.replace('VUID-', 'UNASSIGNED-')
     return vuid if not quotes else f'"{vuid}"'
+
+# Remove after merging https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8336
+hack_debug_utils_extended_structs = [
+    "VkResourceDescriptorInfoEXT",
+    "VkDescriptorGetInfoEXT",
+    "VkInstanceCreateInfo",
+    "VkDeviceCreateInfo",
+    "VkSemaphoreCreateInfo",
+    "VkFenceCreateInfo",
+    "VkCommandBufferAllocateInfo",
+    "VkMemoryAllocateInfo",
+    "VkBufferCreateInfo",
+    "VkImageCreateInfo",
+    "VkEventCreateInfo",
+    "VkQueryPoolCreateInfo",
+    "VkBufferViewCreateInfo",
+    "VkImageViewCreateInfo",
+    "VkShaderModuleCreateInfo",
+    "VkPipelineShaderStageCreateInfo",
+    "VkPipelineCacheCreateInfo",
+    "VkPipelineLayoutCreateInfo",
+    "VkRenderPassCreateInfo",
+    "VkGraphicsPipelineCreateInfo",
+    "VkComputePipelineCreateInfo",
+    "VkRayTracingPipelineCreateInfoKHR",
+    "VkRayTracingPipelineCreateInfoNV",
+    "VkExecutionGraphPipelineCreateInfoAMDX",
+    "VkDataGraphPipelineCreateInfoARM",
+    "VkDescriptorSetLayoutCreateInfo",
+    "VkSamplerCreateInfo",
+    "VkDescriptorPoolCreateInfo",
+    "VkDescriptorSetAllocateInfo",
+    "VkFramebufferCreateInfo",
+    "VkCommandPoolCreateInfo",
+    "VkDescriptorUpdateTemplateCreateInfo",
+    "VkSamplerYcbcrConversionCreateInfo",
+    "VkPrivateDataSlotCreateInfo",
+    "VkDisplaySurfaceCreateInfoKHR",
+    "VkXlibSurfaceCreateInfoKHR",
+    "VkXcbSurfaceCreateInfoKHR",
+    "VkWaylandSurfaceCreateInfoKHR",
+    "VkAndroidSurfaceCreateInfoKHR",
+    "VkWin32SurfaceCreateInfoKHR",
+    "VkStreamDescriptorSurfaceCreateInfoGGP",
+    "VkViSurfaceCreateInfoNN",
+    "VkIOSSurfaceCreateInfoMVK",
+    "VkMacOSSurfaceCreateInfoMVK",
+    "VkImagePipeSurfaceCreateInfoFUCHSIA",
+    "VkMetalSurfaceCreateInfoEXT",
+    "VkHeadlessSurfaceCreateInfoEXT",
+    "VkDirectFBSurfaceCreateInfoEXT",
+    "VkScreenSurfaceCreateInfoQNX",
+    "VkSurfaceCreateInfoOHOS",
+    "VkUbmSurfaceCreateInfoSEC",
+    "VkSwapchainCreateInfoKHR",
+    "VkDisplayModeCreateInfoKHR",
+    "VkVideoSessionCreateInfoKHR",
+    "VkVideoSessionParametersCreateInfoKHR",
+    "VkCuFunctionCreateInfoNVX",
+    "VkCuModuleCreateInfoNVX",
+    "VkGpaSessionCreateInfoAMD",
+    "VkAccelerationStructureCreateInfoKHR",
+    "VkAccelerationStructureCreateInfo2KHR",
+    "VkAccelerationStructureCreateInfoNV",
+    "VkMicromapCreateInfoEXT",
+    "VkTensorCreateInfoARM",
+    "VkTensorViewCreateInfoARM",
+    "VkOpticalFlowSessionCreateInfoNV",
+    "VkShaderCreateInfoEXT",
+    "VkDataGraphPipelineSessionCreateInfoARM",
+    "VkExternalComputeQueueCreateInfoNV",
+    "VkIndirectCommandsLayoutCreateInfoEXT",
+    "VkIndirectExecutionSetCreateInfoEXT",
+    "VkShaderInstrumentationCreateInfoARM",
+    "VkRenderPassCreateInfo2",
+    "VkIndirectCommandsLayoutCreateInfoNV",
+    "VkCudaModuleCreateInfoNV",
+    "VkCudaFunctionCreateInfoNV",
+    "VkBufferCollectionCreateInfoFUCHSIA",
+    "VkValidationCacheCreateInfoEXT",
+    "VkPipelineBinaryCreateInfoKHR",
+    "VkDebugReportCallbackCreateInfoEXT",
+    "VkDebugUtilsMessengerCreateInfoEXT",
+    "VkDeviceEventInfoEXT",
+    "VkDisplayEventInfoEXT",
+]
+
+def getDebugUtilsExtendedStructs() -> list[str]:
+    return hack_debug_utils_extended_structs
 
 # There is no way to find this information in the XML
 def createObject(command_name: str):

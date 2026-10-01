@@ -44,7 +44,9 @@ TEST_F(PositiveInstance, TwoInstances) {
 TEST_F(PositiveInstance, ValidationInstanceExtensions) {
     std::string layer_name = "VK_LAYER_KHRONOS_validation";
     std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
-                                           VK_EXT_LAYER_SETTINGS_EXTENSION_NAME, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME};
+                                           VK_EXT_LAYER_SETTINGS_EXTENSION_NAME, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME,
+                                           // TODO - Use VK_EXT_DEBUG_UTILS_CREATE_INFO_EXTENSION_NAME once in the headers
+                                           "VK_EXT_debug_utils_create_info"};
     uint32_t property_count;
     vk::EnumerateInstanceExtensionProperties(layer_name.c_str(), &property_count, NULL);
     std::vector<VkExtensionProperties> properties(property_count);

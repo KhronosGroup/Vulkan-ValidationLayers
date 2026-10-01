@@ -26,6 +26,10 @@
                 "spec_version": "1"
             },
             {
+                "name": "VK_EXT_debug_utils_create_info",
+                "spec_version": "1"
+            },
+            {
                 "name": "VK_EXT_layer_settings",
                 "spec_version": "2"
             },
