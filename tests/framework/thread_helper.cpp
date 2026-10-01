@@ -68,8 +68,6 @@ void UpdateDescriptor(ThreadTestData* data) {
     }
 }
 
-#endif  // GTEST_IS_THREADSAFE
-
 void ReleaseNullFence(ThreadTestData* data) {
     for (int i = 0; i < 40000; i++) {
         vk::DestroyFence(data->device, VK_NULL_HANDLE, NULL);
@@ -78,3 +76,5 @@ void ReleaseNullFence(ThreadTestData* data) {
         }
     }
 }
+
+#endif  // GTEST_IS_THREADSAFE

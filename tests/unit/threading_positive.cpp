@@ -19,9 +19,9 @@
 #include "descriptor_helper.h"
 #include "thread_helper.h"
 
-#if GTEST_IS_THREADSAFE
 class PositiveThreading : public VkLayerTest {};
 
+#if GTEST_IS_THREADSAFE
 TEST_F(PositiveThreading, DisplayObjects) {
     TEST_DESCRIPTION("Create and use VkDisplayKHR objects with GetPhysicalDeviceDisplayPropertiesKHR in thread-safety.");
 

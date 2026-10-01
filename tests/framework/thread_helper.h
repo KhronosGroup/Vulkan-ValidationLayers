@@ -73,6 +73,5 @@ struct ThreadTestData {
 
 void AddToCommandBuffer(ThreadTestData *);
 void UpdateDescriptor(ThreadTestData *);
-#endif  // GTEST_IS_THREADSAFE
-
 void ReleaseNullFence(ThreadTestData *);
+#endif  // GTEST_IS_THREADSAFE
