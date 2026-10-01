@@ -219,7 +219,11 @@ class ViewportInheritanceTestData {
             return false;
         }
 
-        vk::GetPhysicalDeviceFeatures2(gpu, &features2);
+        if (vk::GetPhysicalDeviceFeatures2KHR) {
+            vk::GetPhysicalDeviceFeatures2KHR(gpu, &features2);
+        } else {
+            vk::GetPhysicalDeviceFeatures2(gpu, &features2);
+        }
 
         if (extended_dynamic_state_multi_viewport) {
             if (!features2.features.multiViewport) {
