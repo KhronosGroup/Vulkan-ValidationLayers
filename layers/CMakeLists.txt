@@ -191,6 +191,50 @@ else()
 endif()
 
 target_sources(vvl PRIVATE
+    # Slowest files to compile come first,
+    # having them near the end could introduce needless waits
+    ${API_TYPE}/generated/dispatch_vector.cpp
+    ${API_TYPE}/generated/dispatch_object_init.cpp
+    ${API_TYPE}/generated/thread_safety.cpp
+    state_tracker/state_tracker.cpp
+    thread_tracker/thread_safety_validation.cpp
+    sync/sync_access_context.cpp
+    sync/sync_access_context.h
+    sync/sync_access_flags.h
+    sync/sync_access_map.cpp
+    sync/sync_access_map.h
+    sync/sync_access_state.cpp
+    sync/sync_access_state.h
+    sync/sync_barrier.cpp
+    sync/sync_barrier.h
+    sync/sync_command.cpp
+    sync/sync_command.h
+    sync/sync_command_buffer.cpp
+    sync/sync_command_buffer.h
+    sync/sync_common.cpp
+    sync/sync_common.h
+    sync/sync_dynamic_rendering.cpp
+    sync/sync_dynamic_rendering.h
+    sync/sync_error_messages.cpp
+    sync/sync_error_messages.h
+    sync/sync_event.cpp
+    sync/sync_event.h
+    sync/sync_hazard_detection.cpp
+    sync/sync_image.cpp
+    sync/sync_image.h
+    sync/sync_render_pass.cpp
+    sync/sync_render_pass.h
+    sync/sync_reporting.cpp
+    sync/sync_reporting.h
+    sync/sync_settings.h
+    sync/sync_stats.cpp
+    sync/sync_stats.h
+    sync/sync_submit.cpp
+    sync/sync_submit.h
+    sync/sync_validation.cpp
+    sync/sync_validation.h
+    # Heavy files section end
+    # Alphabetic sorting from here
     best_practices/bp_buffer.cpp
     best_practices/bp_cmd_buffer.cpp
     best_practices/bp_cmd_buffer_nv.cpp
@@ -290,9 +334,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/dynamic_state_helper.h
     ${API_TYPE}/generated/enum_flag_bits.h
     ${API_TYPE}/generated/feature_not_present.cpp
-    ${API_TYPE}/generated/dispatch_vector.cpp
     ${API_TYPE}/generated/dispatch_object.cpp
-    ${API_TYPE}/generated/dispatch_object_init.cpp
     ${API_TYPE}/generated/validation_object_device_methods.h
     ${API_TYPE}/generated/validation_object_instance_methods.h
     ${API_TYPE}/generated/validation_object.cpp
@@ -306,7 +348,6 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/stateless_instance_methods.h
     ${API_TYPE}/generated/stateless_validation_helper.cpp
     ${API_TYPE}/generated/sync_validation_types.cpp
-    ${API_TYPE}/generated/thread_safety.cpp
     ${API_TYPE}/generated/thread_safety_device_defs.h
     ${API_TYPE}/generated/thread_safety_instance_defs.h
     ${API_TYPE}/generated/gpuav_offline_spirv.h
@@ -446,7 +487,6 @@ target_sources(vvl PRIVATE
     state_tracker/shader_object_state.h
     state_tracker/shader_stage_state.cpp
     state_tracker/shader_stage_state.h
-    state_tracker/state_tracker.cpp
     state_tracker/state_tracker.h
     state_tracker/submission_reference.h
     state_tracker/submit_time_tracker.cpp
@@ -489,42 +529,6 @@ target_sources(vvl PRIVATE
     stateless/sl_vuid_maps.h
     stateless/sl_wsi.cpp
     stateless/stateless_validation.h
-    sync/sync_access_context.cpp
-    sync/sync_access_context.h
-    sync/sync_access_flags.h
-    sync/sync_access_map.cpp
-    sync/sync_access_map.h
-    sync/sync_access_state.cpp
-    sync/sync_access_state.h
-    sync/sync_barrier.cpp
-    sync/sync_barrier.h
-    sync/sync_command.cpp
-    sync/sync_command.h
-    sync/sync_command_buffer.cpp
-    sync/sync_command_buffer.h
-    sync/sync_common.cpp
-    sync/sync_common.h
-    sync/sync_dynamic_rendering.cpp
-    sync/sync_dynamic_rendering.h
-    sync/sync_error_messages.cpp
-    sync/sync_error_messages.h
-    sync/sync_event.cpp
-    sync/sync_event.h
-    sync/sync_hazard_detection.cpp
-    sync/sync_image.cpp
-    sync/sync_image.h
-    sync/sync_render_pass.cpp
-    sync/sync_render_pass.h
-    sync/sync_reporting.cpp
-    sync/sync_reporting.h
-    sync/sync_settings.h
-    sync/sync_stats.cpp
-    sync/sync_stats.h
-    sync/sync_submit.cpp
-    sync/sync_submit.h
-    sync/sync_validation.cpp
-    sync/sync_validation.h
-    thread_tracker/thread_safety_validation.cpp
     thread_tracker/thread_safety_validation.h
     utils/descriptor_utils.cpp
     utils/descriptor_utils.h
