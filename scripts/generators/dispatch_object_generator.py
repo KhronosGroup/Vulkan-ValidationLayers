@@ -327,7 +327,7 @@ class DispatchObjectGenerator(BaseGenerator):
     def generateInstanceMethods(self):
         out = []
         out.append('''
-            // This file contains methods for class DispatchInstance  and it is designed to ONLY be
+            // This file contains methods for class DispatchInstance and it is designed to ONLY be
             // included into dispatch_object.h.
 
             #pragma once
@@ -338,7 +338,7 @@ class DispatchObjectGenerator(BaseGenerator):
     def generateFunctions(self):
         out = []
         out.append('''
-            // This file contains contains convience functions for non-chassis code that needs to
+            // This file contains convenience functions for non-chassis code that needs to
             // make vulkan calls.
 
             #pragma once

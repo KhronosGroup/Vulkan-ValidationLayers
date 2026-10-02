@@ -22,7 +22,7 @@
 
 // NOLINTBEGIN
 
-// This file contains contains convience functions for non-chassis code that needs to
+// This file contains convenience functions for non-chassis code that needs to
 // make vulkan calls.
 
 #pragma once

@@ -415,7 +415,7 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
         BaseGenerator.genSyncPipeline(self, sync)
         name = sync.elem.get('name').replace(' ', '_')
 
-        # special case for trasfer stage: expand it to primitive transfer operations
+        # special case for transfer stage: expand it to primitive transfer operations
         if name == 'transfer':
             transferExpansion = [
                 ('transfer copy', 'VK_PIPELINE_STAGE_2_COPY_BIT'),

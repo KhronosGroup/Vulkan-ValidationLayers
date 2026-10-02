@@ -29,7 +29,7 @@
 #ifdef _WIN32
 /* Windows-specific common code: */
 // WinBase.h defines CreateSemaphore and synchapi.h defines CreateEvent
-//  undefine them to avoid conflicts with VkLayerDispatchTable struct members.
+//  undefine them to avoid conflicts with the vk:: function pointers below.
 #ifdef CreateSemaphore
 #undef CreateSemaphore
 #endif

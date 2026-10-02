@@ -48,7 +48,7 @@ struct FeaturePointer {
     FeaturePointer(bool DeviceFeatures::* ptr) : IsEnabled([=](const DeviceFeatures& features) { return features.*ptr; }) {}
 };
 
-// Each instance of the struct will only have a singel field non-null
+// Each instance of the struct will only have a single field non-null
 struct RequiredSpirvInfo {
     uint32_t version;
     FeaturePointer feature;
