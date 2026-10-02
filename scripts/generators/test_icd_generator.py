@@ -131,7 +131,6 @@ class TestIcdGenerator(BaseGenerator):
             'vkQueueSubmit',
             'vkGetDeviceFaultReportsKHR',
             'vkGetMemoryWin32HandlePropertiesKHR',
-            'vkRegisterDisplayEventEXT',
             'vkCreatePipelineBinariesKHR',
             'vkGetPipelineBinaryDataKHR',
             'vkGetPartitionedAccelerationStructuresBuildSizesNV',

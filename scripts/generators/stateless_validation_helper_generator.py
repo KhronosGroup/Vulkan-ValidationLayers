@@ -170,7 +170,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdWriteAccelerationStructuresPropertiesKHR',
             'vkWriteAccelerationStructuresPropertiesKHR',
             'vkGetRayTracingCaptureReplayShaderGroupHandlesKHR',
-            'vkCmdBuildAccelerationStructureIndirectKHR',
             'vkGetDeviceAccelerationStructureCompatibilityKHR',
             'vkCmdSetViewportWithCount',
             'vkCmdSetScissorWithCount',
@@ -289,7 +288,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBindTransformFeedbackBuffers2EXT',
             'vkCmdBindIndexBuffer3KHR',
             'vkCreateAccelerationStructure2KHR',
-            'vkCmdBeginTransformFeedback2EXT',
             'vkCmdBeginPerTileExecutionQCOM',
             'vkCmdDispatchTileQCOM',
             'vkQueueSetPerfHintQCOM',
@@ -379,8 +377,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # Map of structs type names to generated validation code for that struct type
         self.validatedStructs = dict()
 
-        self.stype_version_dict = dict()
-
         # Todo: move to vulkan object
         self.extended_structs = set()
 
@@ -467,50 +463,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         for struct in [x for x in self.vk.structs.values() if x.name in structMemberBlacklist]:
             for member in [x for x in struct.members if x.name in structMemberBlacklist[struct.name]]:
                 member.noAutoValidity = True
-
-        # TODO - We should not need this with VulkanObject, but the following are casuing issues
-        # being "promoted"
-        #  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT
-        #  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT
-        #  VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV
-        #  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT
-        #  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT
-        #  VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV
-        #  VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX
-        #  VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR
-        #  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT
-        #  VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT
-        root = self.registry.reg
-
-        extToPromotedExtDict = dict()
-        for extensions in root.findall('extensions'):
-            for extension in extensions.findall('extension'):
-                extension_name = extension.get('name')
-                if extension_name not in extToPromotedExtDict.keys():
-                    extToPromotedExtDict[extension_name] = set()
-                promotedTo = extension.get('promotedto')
-                if promotedTo is not None:
-                    extToPromotedExtDict[extension_name] = promotedTo
-                else:
-                    extToPromotedExtDict[extension_name] = None
-
-        for extensions in root.findall('extensions'):
-            for extension in extensions.findall('extension'):
-                extension_name = extension.get('name')
-                promoted_ext = extToPromotedExtDict[extension_name]
-                while promoted_ext is not None and 'VK_VERSION' not in promoted_ext:
-                    promoted_ext = extToPromotedExtDict[promoted_ext]
-                # TODO Issue 5103 - this is being used to remove false positive currently
-                promoted_to_core = promoted_ext is not None and 'VK_VERSION' in promoted_ext
-
-                for entry in extension.iterfind('require/enum[@extends="VkStructureType"]'):
-                    if (entry.get('comment') is None or 'typo' not in entry.get('comment')):
-                        alias = entry.get('alias')
-                        if (alias is not None and promoted_to_core):
-                            if (alias not in self.stype_version_dict.keys()):
-                                self.stype_version_dict[alias] = set()
-                            self.stype_version_dict[alias].add(extension_name)
-                            self.stype_version_dict[alias].add(extension_name)
 
         # HACK: force VkDebugUtilsObjectNameInfoEXT to extends some structs
         # Remove after merging https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8336
@@ -879,9 +831,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             # hardcoded only instance for now
                             if 'samples' in member.length: # "(samples + 31) / 32"
                                 count_loc = f'{errorLoc}.dot(Field::samples)'
-                            elif 'rasterizationSamples' in member.length: # "(rasterizationSamples + 31) / 32"
-                                count_loc = f'{errorLoc}.dot(Field::rasterizationSamples)'
-                                member.length = 'rasterizationSamples'
                         elif ' / ' in member.length:
                             count_loc = f'{errorLoc}.dot(Field::{member.length.split(" / ")[0]})'
                         checkExpr.append(f'skip |= {context}ValidateArray({count_loc}, {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
@@ -1295,14 +1244,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         return lines
 
-    # Joins strings in English fashion
-    # TODO: move to some utility library
-    def englishJoin(self, strings, conjunction: str):
-        stringsList = list(strings)
-        if len(stringsList) <= 1:
-            return stringsList[0]
-        else: # len > 1
-            return f'{", ".join(stringsList[:-1])}, {conjunction} {stringsList[-1]}'
 
 
     # This logic was broken into its own function because we need to fill multiple functions with these structs
