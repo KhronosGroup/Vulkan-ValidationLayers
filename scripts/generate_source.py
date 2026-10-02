@@ -448,8 +448,6 @@ def main(argv):
         'gpuav_offline_spirv.h',
         'gpuav_offline_spirv_glsl.cpp',
         'gpuav_offline_spirv_slang.cpp',
-        'feature_requirements_helper.h', # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8969
-        'feature_requirements_helper.cpp',
         'feature_not_present.cpp', # this single function really fails with various clang-format versions
     ]
 
