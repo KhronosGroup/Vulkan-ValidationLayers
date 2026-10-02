@@ -978,6 +978,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                     "VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrixRobustBufferAccess"};
         }
 
+        case Feature::cooperativeMatrixArmLayouts: {
+            auto vk_struct = const_cast<VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->cooperativeMatrixArmLayouts,
+                    "VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM::cooperativeMatrixArmLayouts"};
+        }
+
         case Feature::cooperativeMatrixGetCoordinate: {
             auto vk_struct = const_cast<VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT>(*inout_pnext_chain));

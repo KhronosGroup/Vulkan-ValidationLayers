@@ -1522,6 +1522,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCooperativeMatrixFeaturesKHR", 45},
     {"VkPhysicalDeviceCooperativeMatrixFeaturesNV", 44},
     {"VkPhysicalDeviceCooperativeMatrixInfo2EXT", 42},
+    {"VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM", 52},
     {"VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT", 57},
     {"VkPhysicalDeviceCooperativeMatrixPropertiesKHR", 47},
     {"VkPhysicalDeviceCooperativeMatrixPropertiesNV", 46},
@@ -2615,6 +2616,7 @@ const char* String(Field field) {
     {"context", 8},
     {"conversion", 11},
     {"cooperativeMatrix", 18},
+    {"cooperativeMatrixArmLayouts", 28},
     {"cooperativeMatrixBlockLoads", 28},
     {"cooperativeMatrixConversion", 28},
     {"cooperativeMatrixConversions", 29},
@@ -6128,6 +6130,7 @@ const char* String(Extension extension) {
     {"VK_AMD_texture_gather_bias_lod", 31},
     {"VK_ANDROID_external_format_resolve", 35},
     {"VK_ANDROID_external_memory_android_hardware_buffer", 51},
+    {"VK_ARM_cooperative_matrix_layouts", 34},
     {"VK_ARM_data_graph", 18},
     {"VK_ARM_data_graph_instruction_set_tosa", 39},
     {"VK_ARM_data_graph_neural_accelerator_statistics", 48},
@@ -9676,6 +9679,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT;
     case VK_STRUCTURE_TYPE_UBM_SURFACE_CREATE_INFO_SEC:
        return Struct::VkUbmSurfaceCreateInfoSEC;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_LAYOUTS_FEATURES_ARM:
+       return Struct::VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MIXED_FLOAT_DOT_PRODUCT_FEATURES_VALVE:

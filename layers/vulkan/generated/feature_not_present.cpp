@@ -599,6 +599,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_LAYOUTS_FEATURES_ARM: {
+                VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM*>(current);
+                if (enabling->cooperativeMatrixArmLayouts && !supported.cooperativeMatrixArmLayouts) {
+                    ss << "VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM::cooperativeMatrixArmLayouts is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_MAINTENANCE_1_FEATURES_EXT: {
                 VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;
