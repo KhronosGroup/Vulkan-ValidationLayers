@@ -1103,7 +1103,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryInheritance) {
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)resource_heap_.CreateInfo().size;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -1150,7 +1150,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryBind) {
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)resource_heap_.CreateInfo().size;
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
