@@ -68,6 +68,9 @@ stateRequiredDescription = {
     'discardRectangleEnable': (
         'vkCmdSetDiscardRectangleEnableEXT last set discardRectangleEnable to VK_TRUE.',
         'VkGraphicsPipelineCreateInfo::pNext->VkPipelineDiscardRectangleStateCreateInfoEXT::discardRectangleCount was greater than zero in the last bound graphics pipeline.'),
+    'exclusiveScissorEnable': (
+        'vkCmdSetExclusiveScissorEnableNV last set an element of pExclusiveScissorEnables to VK_TRUE.',
+        'VkPipelineViewportStateCreateInfo::pNext->VkPipelineViewportExclusiveScissorStateCreateInfoNV::exclusiveScissorCount was greater than zero in the last bound graphics pipeline.'),
 }
 
 #
@@ -349,8 +352,9 @@ class DynamicStateOutputGenerator(BaseGenerator):
                 } else {
                     ss << rasterizer_discard_enable_static;
                 }''')
-            if state.stateRequired in stateRequiredDescription:
+            if state.stateRequired is not None:
                 # stateRequired is the logical name of another <dynamicstate>
+                assert state.stateRequired in stateRequiredDescription, f'{state.name} depends on {state.stateRequired}, add a message for it to stateRequiredDescription'
                 requiredEnums = {command.pipelineEnum for command in self.vk.dynamicStates[state.stateRequired].commands}
                 assert len(requiredEnums) == 1, f'{state.name} depends on {state.stateRequired} which has multiple VkDynamicState {requiredEnums}'
                 dynamicMessage, staticMessage = stateRequiredDescription[state.stateRequired]
@@ -360,8 +364,6 @@ class DynamicStateOutputGenerator(BaseGenerator):
                 }} else {{
                     ss << "{staticMessage}\\n";
                 }}''')
-            elif state.stateRequired is not None:
-                assert state.stateRequired in self.vk.dynamicStates, f'{state.name} depends on unknown dynamic state {state.stateRequired}'
 
             out.append('    break;')
         out.append('''

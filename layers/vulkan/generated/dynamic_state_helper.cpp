@@ -842,6 +842,12 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
             }
             break;
         case CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV)) {
+                ss << "vkCmdSetExclusiveScissorEnableNV last set an element of pExclusiveScissorEnables to VK_TRUE.\n";
+            } else {
+                ss << "VkPipelineViewportStateCreateInfo::pNext->VkPipelineViewportExclusiveScissorStateCreateInfoNV::"
+                      "exclusiveScissorCount was greater than zero in the last bound graphics pipeline.\n";
+            }
             break;
         case CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR:
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
