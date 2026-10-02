@@ -436,53 +436,26 @@ AccessMap::iterator AccessContext::DoUpdateAccessState(AccessMap::iterator pos, 
     };
 
     AccessMap::index_type current_begin = range.begin;
-    while (pos != end && current_begin < range.end) {
-        if (current_begin < pos->first.begin) {  // infill the gap
-            // Infill the gap with an empty access state or, if the previous contexts
-            // exists (subpass case), derive the infill state from them
-            const AccessRange gap_range(current_begin, std::min(range.end, pos->first.begin));
-            AccessMap::iterator infilled_it = ResolveGapRecursePrev(gap_range, pos);
-
-            // Update
-            AccessState& new_access_state = infilled_it->second;
-            ApplyGlobalBarriers(new_access_state);
-            new_access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
-            track_updated_range(infilled_it);
-
-            // Advance current location.
-            // Do not advance pos, as it's the next map entry to visit
-            current_begin = pos->first.begin;
-        } else {  // update existing entry
-            assert(current_begin == pos->first.begin);
-
-            // Split the current map entry if it goes beyond range.end.
-            // This ensures the update is restricted to the given range.
-            if (pos->first.end > range.end) {
-                pos = access_state_map_.Split(pos, range.end);
-            }
-
-            // Update
-            AccessState& access_state = pos->second;
-            ApplyGlobalBarriers(access_state);
-            access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
-            track_updated_range(pos);
-
-            // Advance both current location and map entry
-            current_begin = pos->first.end;
-            ++pos;
+    while (current_begin < range.end) {
+        if (pos == end || current_begin < pos->first.begin) {
+            const AccessRange gap_range(current_begin, pos == end ? range.end : std::min(range.end, pos->first.begin));
+            // Resolving previous contexts can import multiple entries into this gap
+            pos = ResolveGapRecursePrev(gap_range, pos);
         }
-    }
+        assert(pos != end && current_begin == pos->first.begin);
 
-    // Fill to the end if needed
-    if (current_begin < range.end) {
-        const AccessRange gap_range(current_begin, range.end);
-        AccessMap::iterator infilled_it = ResolveGapRecursePrev(gap_range, pos);
+        // Restrict the update to the given range
+        if (pos->first.end > range.end) {
+            pos = access_state_map_.Split(pos, range.end);
+        }
 
-        // Update
-        AccessState& new_access_state = infilled_it->second;
-        ApplyGlobalBarriers(new_access_state);
-        new_access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
-        track_updated_range(infilled_it);
+        AccessState& access_state = pos->second;
+        ApplyGlobalBarriers(access_state);
+        access_state.Update(access_info, attachment_access, tag_ex, flags, queue_id);
+        track_updated_range(pos);
+
+        current_begin = pos->first.end;
+        ++pos;
     }
     finish_merge();
     return pos;

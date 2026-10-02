@@ -1336,3 +1336,45 @@ TEST_F(NegativeSyncValRenderPass, StoreHazardOutsideRenderAreaAfterDraw) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.Reset();
 }
+
+TEST_F(NegativeSyncValRenderPass, VertexReadAcrossMultipleRanges) {
+    TEST_DESCRIPTION("Vertex read spans several memory ranges");
+    RETURN_IF_SKIP(InitSyncVal());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 48, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // Each vertex is 16 bytes
+    VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetVertexInput(binding, attribute);
+    pipe.CreateGraphicsPipeline();
+
+    VkMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
+    const VkDeviceSize offset = 0;
+    m_command_buffer.Begin();
+
+    // These initial fills are correctly synchronized with the draw and create two access ranges.
+    // Due to a bug, the draw's vertex read was recorded only in the first range.
+    // The second range retained its transfer write synchronized by the barrier, so the
+    // final fill did not generate the expected WAR hazard with the previous vertex read
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 16, 0);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 16, 32, 0);
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, barrier);
+
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer.handle(), &offset);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);  // accesses 3 * 16 = 48 bytes of vertex data
+    m_command_buffer.EndRenderPass();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdFillBuffer(m_command_buffer, buffer, 16, 32, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

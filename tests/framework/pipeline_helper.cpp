@@ -179,12 +179,10 @@ void CreatePipelineHelper::SetDynamicRendering(const std::vector<VkFormat>& colo
 
 void CreatePipelineHelper::SetVertexInput(const VkVertexInputBindingDescription& binding,
                                           const VkVertexInputAttributeDescription& attribute) {
-    vertex_binding_description_ = binding;
-    vertex_attribute_description_ = attribute;
     vi_ci_.vertexBindingDescriptionCount = 1;
-    vi_ci_.pVertexBindingDescriptions = &vertex_binding_description_;
+    vi_ci_.pVertexBindingDescriptions = &binding;
     vi_ci_.vertexAttributeDescriptionCount = 1;
-    vi_ci_.pVertexAttributeDescriptions = &vertex_attribute_description_;
+    vi_ci_.pVertexAttributeDescriptions = &attribute;
 }
 
 void CreatePipelineHelper::InitVertexInputLibInfo(void* p_next) {
