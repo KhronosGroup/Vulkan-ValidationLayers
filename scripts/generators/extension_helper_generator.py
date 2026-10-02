@@ -352,7 +352,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                     return;
                 }
 
-                const auto promotion_info_map = GetInstancePromotionInfoMap();
+                const auto& promotion_info_map = GetInstancePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
                     auto info = GetInstanceVersionMap(version_it.second.first);
                     if (api_version >= version_it.first) {
@@ -386,7 +386,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                     return;
                 }
 
-                const auto promotion_info_map = GetDevicePromotionInfoMap();
+                const auto& promotion_info_map = GetDevicePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
                     auto info = GetDeviceVersionMap(version_it.second.first);
                     if (api_version >= version_it.first) {
@@ -444,7 +444,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                     return;
                 }
 
-                const auto promotion_info_map = GetDevicePromotionInfoMap();
+                const auto& promotion_info_map = GetDevicePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
                     auto info = GetDeviceVersionMap(version_it.second.first);
                     if (api_version >= version_it.first) {
