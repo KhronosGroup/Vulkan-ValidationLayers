@@ -197,6 +197,8 @@ class BestPractices : public vvl::DeviceProxy {
                                  const RecordObject& record_obj) override;
     bool ValidateMultisampledBlendingArm(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
 
+    bool ValidateSampleShadingFragmentShadingRate(const VkGraphicsPipelineCreateInfo& create_info, const vvl::Pipeline& pipeline,
+                                                  const Location& create_info_loc) const;
     bool ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreateInfo& create_info, const vvl::Pipeline& pipeline,
                                         const Location create_info_loc) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,

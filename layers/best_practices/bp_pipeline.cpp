@@ -19,6 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
+#include "error_message/error_strings.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "utils/math_utils.h"
@@ -92,6 +93,46 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
 
     // AMD best practice
     pipeline_cache_ = pipelineCache;
+}
+
+// If sample shading is enabled, the implementation sets the final shading rate to {1,1}
+// https://docs.vulkan.org/spec/latest/chapters/primsrast.html#primsrast-fragment-shading-rate-combining
+bool BestPractices::ValidateSampleShadingFragmentShadingRate(const VkGraphicsPipelineCreateInfo& create_info,
+                                                             const vvl::Pipeline& pipeline, const Location& create_info_loc) const {
+    bool skip = false;
+    const auto* fsr_state = vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(create_info.pNext);
+    if (!fsr_state || !pipeline.fragment_shader_state || pipeline.IsDynamic(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
+        return skip;
+    }
+
+    const bool uses_shading_rate = fsr_state->fragmentSize.width != 1 || fsr_state->fragmentSize.height != 1 ||
+                                   fsr_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR ||
+                                   fsr_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+    if (!uses_shading_rate) {
+        return skip;
+    }
+
+    const auto* ms_state = pipeline.MultisampleState();
+    const auto& entry_point = pipeline.fragment_shader_state->fragment_entry_point;
+    const char* sample_shading_reason = nullptr;
+    if (ms_state && ms_state->sampleShadingEnable) {
+        sample_shading_reason = "pMultisampleState->sampleShadingEnable is VK_TRUE";
+    } else if (entry_point && entry_point->HasBuiltIn(spv::BuiltInSampleId)) {
+        sample_shading_reason = "the fragment shader uses the SampleId built-in";
+    } else if (entry_point && entry_point->HasBuiltIn(spv::BuiltInSamplePosition)) {
+        sample_shading_reason = "the fragment shader uses the SamplePosition built-in";
+    }
+
+    if (sample_shading_reason) {
+        skip |= LogWarning("BestPractices-vkCreateGraphicsPipelines-SampleShadingFragmentShadingRate", device,
+                           create_info_loc.pNext(Struct::VkPipelineFragmentShadingRateStateCreateInfoKHR),
+                           "has fragmentSize (%s) and combinerOps (%s, %s), but %s. Sample shading is enabled, so the "
+                           "implementation will set the fragment shading rate to {1,1} and the requested shading rate is ignored.",
+                           string_VkExtent2D(fsr_state->fragmentSize).c_str(),
+                           string_VkFragmentShadingRateCombinerOpKHR(fsr_state->combinerOps[0]),
+                           string_VkFragmentShadingRateCombinerOpKHR(fsr_state->combinerOps[1]), sample_shading_reason);
+    }
+    return skip;
 }
 
 bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreateInfo& create_info, const vvl::Pipeline& pipeline,
@@ -171,6 +212,8 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
                                           VendorSpecificTag(kBPVendorAMD));
         }
     }
+
+    skip |= ValidateSampleShadingFragmentShadingRate(create_info, pipeline, create_info_loc);
 
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
         auto& stage_state = pipeline.stage_states[i];

@@ -1490,6 +1490,61 @@ TEST_F(NegativeBestPractices, DepthStencilReadOnlyResolveWrite) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeBestPractices, SampleShadingIgnoresShadingRate) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9762");
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = vku::InitStructHelper();
+    fsr_ci.fragmentSize = {2, 2};
+    fsr_ci.combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+    fsr_ci.combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+
+    // Sample shading enabled in the pipeline
+    {
+        CreatePipelineHelper pipe(*this, &fsr_ci);
+        pipe.ms_ci_.sampleShadingEnable = VK_TRUE;
+        pipe.ms_ci_.minSampleShading = 1.0f;
+        m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateGraphicsPipelines-SampleShadingFragmentShadingRate");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Sample shading enabled by the fragment shader
+    {
+        const char* fs_source = R"glsl(
+            #version 450
+            layout(location = 0) out vec4 color;
+            void main() {
+                color = vec4(float(gl_SampleID));
+            }
+        )glsl";
+        VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+        CreatePipelineHelper pipe(*this, &fsr_ci);
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateGraphicsPipelines-SampleShadingFragmentShadingRate");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Attachment shading rate with sample shading
+    {
+        fsr_ci.fragmentSize = {1, 1};
+        fsr_ci.combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
+        CreatePipelineHelper pipe(*this, &fsr_ci);
+        pipe.ms_ci_.sampleShadingEnable = VK_TRUE;
+        pipe.ms_ci_.minSampleShading = 1.0f;
+        m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateGraphicsPipelines-SampleShadingFragmentShadingRate");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeBestPractices, NonSimultaneousSecondaryMarksPrimary) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
