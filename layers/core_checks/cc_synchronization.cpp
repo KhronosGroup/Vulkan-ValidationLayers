@@ -1299,13 +1299,8 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location& outer_loc, const vvl
         skip |= state.ValidateAccess(barrier_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
         skip |= ValidateRenderPassInstanceNoLayoutChange(LogObjectList(cb_state.Handle(), rp_state->Handle(), img_barrier.image),
                                                          barrier_loc, img_barrier.oldLayout, img_barrier.newLayout);
-        if (img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) {
-            const LogObjectList objlist(cb_state.Handle(), state.rp_handle);
-            skip |= LogError("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182", objlist,
-                             barrier_loc.dot(Field::srcQueueFamilyIndex),
-                             "is %" PRIu32 " and dstQueueFamilyIndex is %" PRIu32 " but they must be equal.",
-                             img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
-        }
+        skip |= ValidateRenderPassBarrierQueueFamilies(LogObjectList(cb_state.Handle(), state.rp_handle), barrier_loc,
+                                                       img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
         // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
         if (cb_state.active_framebuffer) {
             skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, *cb_state.active_framebuffer, state.active_subpass,
@@ -1367,13 +1362,8 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location& outer_loc, const vvl
         skip |= ValidateRenderPassInstanceNoLayoutChange(LogObjectList(cb_state.Handle(), rp_state->Handle(), img_barrier.image),
                                                          barrier_loc, img_barrier.oldLayout, img_barrier.newLayout);
 
-        if (img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) {
-            const LogObjectList objlist(cb_state.Handle(), state.rp_handle);
-            skip |= LogError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182", objlist,
-                             barrier_loc.dot(Field::srcQueueFamilyIndex),
-                             "is %" PRIu32 " and dstQueueFamilyIndex is %" PRIu32 " but they must be equal.",
-                             img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
-        }
+        skip |= ValidateRenderPassBarrierQueueFamilies(LogObjectList(cb_state.Handle(), state.rp_handle), barrier_loc,
+                                                       img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
         // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
         if (cb_state.active_framebuffer) {
             skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, *cb_state.active_framebuffer, state.active_subpass,
@@ -1748,8 +1738,8 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
     }
     if (cb_state->active_render_pass && cb_state->active_render_pass->UsesDynamicRendering()) {
         skip |= ValidateDynamicRenderingBarriers(objlist, error_obj.location, *cb_state, dependencyFlags, memoryBarrierCount,
-                                                 pMemoryBarriers, bufferMemoryBarrierCount, imageMemoryBarrierCount,
-                                                 pImageMemoryBarriers, srcStageMask, dstStageMask);
+                                                 pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                                 imageMemoryBarrierCount, pImageMemoryBarriers, srcStageMask, dstStageMask);
     }
     skip |= ValidateBarriers(error_obj.location, *cb_state, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                              bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -2935,12 +2925,27 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList& objlist, 
         skip |= ValidateDynamicRenderingAccess(objlist, loc.dot(Field::srcAccessMask), mem_barrier.srcAccessMask);
         skip |= ValidateDynamicRenderingAccess(objlist, loc.dot(Field::dstAccessMask), mem_barrier.dstAccessMask);
     }
+    for (const auto [i, buffer_barrier] : vvl::enumerate(dep_info.pBufferMemoryBarriers, dep_info.bufferMemoryBarrierCount)) {
+        const Location barrier_loc = outer_loc.dot(Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
+        skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, buffer_barrier.srcQueueFamilyIndex,
+                                                       buffer_barrier.dstQueueFamilyIndex);
+    }
     for (const auto [i, image_barrier] : vvl::enumerate(dep_info.pImageMemoryBarriers, dep_info.imageMemoryBarrierCount)) {
         const Location barrier_loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
         LogObjectList layout_check_objlist(objlist);
         layout_check_objlist.add(image_barrier.image);
         skip |= ValidateRenderPassInstanceNoLayoutChange(layout_check_objlist, barrier_loc, image_barrier.oldLayout,
                                                          image_barrier.newLayout);
+        skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, image_barrier.srcQueueFamilyIndex,
+                                                       image_barrier.dstQueueFamilyIndex);
+    }
+    if (const auto* memory_range_barriers_info = vku::FindStructInPNextChain<VkMemoryRangeBarriersInfoKHR>(dep_info.pNext)) {
+        for (const auto [i, memory_range_barrier] : vvl::enumerate(memory_range_barriers_info->pMemoryRangeBarriers,
+                                                                   memory_range_barriers_info->memoryRangeBarrierCount)) {
+            const Location barrier_loc = outer_loc.dot(Struct::VkMemoryRangeBarrierKHR, Field::pMemoryRangeBarriers, i);
+            skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, memory_range_barrier.srcQueueFamilyIndex,
+                                                           memory_range_barrier.dstQueueFamilyIndex);
+        }
     }
     return skip;
 }
@@ -2948,9 +2953,9 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList& objlist, 
 bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList& objlist, const Location& outer_loc,
                                                   const vvl::CommandBuffer& cb_state, VkDependencyFlags dependency_flags,
                                                   uint32_t memory_barrier_count, const VkMemoryBarrier* memory_barriers,
-                                                  uint32_t buffer_barrier_count, uint32_t image_barrier_count,
-                                                  const VkImageMemoryBarrier* image_barriers, VkPipelineStageFlags src_stage_mask,
-                                                  VkPipelineStageFlags dst_stage_mask) const {
+                                                  uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers,
+                                                  uint32_t image_barrier_count, const VkImageMemoryBarrier* image_barriers,
+                                                  VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) const {
     bool skip = false;
     skip |= ValidateDynamicRenderingBarriersCommon(objlist, outer_loc, dependency_flags, buffer_barrier_count, image_barrier_count);
     skip |= ValidateDynamicRenderingPipelineStage(objlist, outer_loc.dot(Field::srcStageMask), src_stage_mask, dependency_flags);
@@ -2961,17 +2966,40 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList& objlist, 
         skip |= ValidateDynamicRenderingAccess(objlist, barrier_loc.dot(Field::srcAccessMask), memory_barrier.srcAccessMask);
         skip |= ValidateDynamicRenderingAccess(objlist, barrier_loc.dot(Field::dstAccessMask), memory_barrier.dstAccessMask);
     }
+    for (const auto [i, buffer_barrier] : vvl::enumerate(buffer_barriers, buffer_barrier_count)) {
+        const Location barrier_loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
+        skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, buffer_barrier.srcQueueFamilyIndex,
+                                                       buffer_barrier.dstQueueFamilyIndex);
+    }
     for (const auto [i, image_barrier] : vvl::enumerate(image_barriers, image_barrier_count)) {
         const Location barrier_loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
         LogObjectList layout_check_objlist(objlist);
         layout_check_objlist.add(image_barrier.image);
         skip |= ValidateRenderPassInstanceNoLayoutChange(layout_check_objlist, barrier_loc, image_barrier.oldLayout,
                                                          image_barrier.newLayout);
+        skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, image_barrier.srcQueueFamilyIndex,
+                                                       image_barrier.dstQueueFamilyIndex);
 
         const Location image_loc = barrier_loc.dot(Field::image);
         skip |= ValidateDynamicRenderingImageBarrierLayoutMismatch(cb_state, image_barrier, image_loc);
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidateRenderPassBarrierQueueFamilies(const LogObjectList& objlist, const Location& barrier_loc,
+                                                        uint32_t src_queue_family, uint32_t dst_queue_family) const {
+    bool skip = false;
+    if (src_queue_family != dst_queue_family) {
+        const bool is_sync2 =
+            barrier_loc.function == Func::vkCmdPipelineBarrier2 || barrier_loc.function == Func::vkCmdPipelineBarrier2KHR;
+        const char* vuid = is_sync2 ? "VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182"
+                                    : "VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182";
+        skip |=
+            LogError(vuid, objlist, barrier_loc.dot(Field::srcQueueFamilyIndex),
+                     "is %" PRIu32 " and dstQueueFamilyIndex is %" PRIu32 " but they must be equal inside a render pass instance.",
+                     src_queue_family, dst_queue_family);
+    }
     return skip;
 }
 
