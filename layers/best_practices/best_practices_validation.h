@@ -245,7 +245,7 @@ class BestPractices : public vvl::DeviceProxy {
     bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                        const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const override;
     bool ValidateAccessLayoutCombination(const Location& loc, VkImage image, VkAccessFlags2 access, VkImageLayout layout,
-                                         VkImageAspectFlags aspect) const;
+                                         VkImageAspectFlags aspect, bool is_src) const;
     bool ValidateImageMemoryBarrier(const Location& loc, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout,
                                     VkImageLayout newLayout, VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
                                     VkImageAspectFlags aspectMask, uint32_t srcQueueFamilyIndex,
