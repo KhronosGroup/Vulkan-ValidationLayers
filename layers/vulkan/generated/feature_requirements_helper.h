@@ -132,6 +132,8 @@ enum class Feature {
     cooperativeMatrix,
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     cooperativeMatrixRobustBufferAccess,
+    // VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM
+    cooperativeMatrixArmLayouts,
     // VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
     cooperativeMatrixGetCoordinate,
     // VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT

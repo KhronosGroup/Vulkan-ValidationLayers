@@ -134,6 +134,8 @@ struct DeviceFeatures {
     bool cooperativeMatrix;
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     bool cooperativeMatrixRobustBufferAccess;
+    // VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM
+    bool cooperativeMatrixArmLayouts;
     // VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT
     bool cooperativeMatrixConversions;
     // VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT

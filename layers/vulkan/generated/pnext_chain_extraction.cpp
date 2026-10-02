@@ -4113,6 +4113,11 @@ void PnextChainFree(void* chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceShaderSubgroupPartitionedFeaturesEXT*>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_LAYOUTS_FEATURES_ARM:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM*>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;

@@ -579,6 +579,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_compute_occupancy_priority{kNotSupported};
     ExtEnabled vk_ext_cooperative_matrix_maintenance1{kNotSupported};
     ExtEnabled vk_ext_shader_subgroup_partitioned{kNotSupported};
+    ExtEnabled vk_arm_cooperative_matrix_layouts{kNotSupported};
     ExtEnabled vk_ext_shader_ocp_microscaling_types{kNotSupported};
     ExtEnabled vk_valve_shader_mixed_float_dot_product{kNotSupported};
     ExtEnabled vk_sec_throttle_hint{kNotSupported};
@@ -1095,6 +1096,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_compute_occupancy_priority:
         case vvl::Extension::_VK_EXT_cooperative_matrix_maintenance1:
         case vvl::Extension::_VK_EXT_shader_subgroup_partitioned:
+        case vvl::Extension::_VK_ARM_cooperative_matrix_layouts:
         case vvl::Extension::_VK_EXT_shader_ocp_microscaling_types:
         case vvl::Extension::_VK_VALVE_shader_mixed_float_dot_product:
         case vvl::Extension::_VK_SEC_throttle_hint:

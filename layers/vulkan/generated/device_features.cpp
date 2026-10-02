@@ -2074,6 +2074,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->shaderSubgroupPartitioned |= enabled->shaderSubgroupPartitioned == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_LAYOUTS_FEATURES_ARM: {
+                const VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM*>(pNext);
+                features->cooperativeMatrixArmLayouts |= enabled->cooperativeMatrixArmLayouts == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OCP_MICROSCALING_TYPES_FEATURES_EXT: {
                 const VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderOCPMicroscalingTypesFeaturesEXT*>(pNext);
