@@ -108,18 +108,21 @@ static bool IterateLayoutMapRanges(
 }
 
 bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout layout,
-                         VkImageLayout expected_layout, VkImageAspectFlags aspect_mask, uint32_t label_command_i) {
+                         VkImageLayout expected_layout, VkImageAspectFlags aspect_mask, uint32_t label_command_i,
+                         vvl::Func command) {
     assert(layout != kInvalidLayout);
     ImageLayoutState entry{};
     entry.current_layout = layout;
     entry.first_layout = (expected_layout != kInvalidLayout) ? expected_layout : layout;
     entry.aspect_mask = aspect_mask;
     entry.label_command_i = label_command_i;
+    entry.first_layout_command = command;
     return UpdateLayoutMap(image_layout_map, std::move(range_gen), entry);
 }
 
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout expected_layout,
-                      VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid, uint32_t label_command_i) {
+                      VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid, uint32_t label_command_i,
+                      vvl::Func command) {
     assert(expected_layout != kInvalidLayout);
     ImageLayoutState entry{};
     entry.current_layout = kInvalidLayout;
@@ -127,6 +130,7 @@ void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenera
     entry.aspect_mask = aspect_mask;
     entry.submit_time_layout_mismatch_vuid = submit_time_layout_mismatch_vuid;
     entry.label_command_i = label_command_i;
+    entry.first_layout_command = command;
     UpdateLayoutMap(image_layout_map, std::move(range_gen), entry);
 }
 

@@ -351,6 +351,7 @@ void CommandBuffer::ResetCBState() {
     per_tile_execution_model_enabled = false;
     last_suspend_state = SuspendState::Empty;
     first_action_or_sync_command = Func::Empty;
+    current_command = Func::Empty;
     first_rendering_info = {};
     first_rendering_info_loc.reset();
     last_rendering_info = {};
@@ -556,6 +557,7 @@ std::shared_ptr<CommandBufferImageLayoutMap> CommandBuffer::GetOrCreateImageLayo
 
 void CommandBuffer::RecordCommand(const Location& loc) {
     command_count++;
+    current_command = loc.function;
 
     if (first_action_or_sync_command == Func::Empty) {
         const CommandValidationInfo& info = GetCommandValidationInfo(loc.function);
@@ -917,12 +919,13 @@ void CommandBuffer::RecordNextSubpass(const VkSubpassBeginInfo& subpass_begin_in
 }
 
 void CommandBuffer::RecordEndRenderPass(const VkSubpassEndInfo* subpass_end_info, const Location& loc) {
+    RecordCommand(loc);
+
     // Call first so SubState can use render pass object before we destroy it
     for (auto& item : sub_states_) {
         item.second->RecordEndRenderPass(subpass_end_info, loc);
     }
 
-    RecordCommand(loc);
     active_render_pass = nullptr;
     attachment_source = AttachmentSource::Empty;
     active_attachments.clear();
@@ -1956,7 +1959,7 @@ void CommandBuffer::SetImageLayout(const vvl::Image& image_state, const VkImageS
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
             if (UpdateCurrentLayout(*image_layout_map, std::move(range_gen), layout, expected_layout,
-                                    normalized_subresource_range.aspectMask, GetLastLabelCommandIndex())) {
+                                    normalized_subresource_range.aspectMask, GetLastLabelCommandIndex(), current_command)) {
                 image_layout_change_count++;  // Change the version of this data to force revalidation
             }
         }
@@ -1968,7 +1971,7 @@ void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView& view_state, 
     if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
         RangeGenerator range_gen(view_state.range_generator);
         TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, view_state.normalized_subresource_range.aspectMask,
-                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex());
+                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex(), current_command);
     }
 }
 
@@ -1982,7 +1985,7 @@ void CommandBuffer::TrackDepthAttachmentFirstLayout(const vvl::ImageView& view_s
         RangeGenerator range_gen(view_state.image_state->subresource_encoder, image_layout_range);
 
         TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, VK_IMAGE_ASPECT_DEPTH_BIT,
-                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex());
+                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex(), current_command);
     }
 }
 
@@ -1996,7 +1999,7 @@ void CommandBuffer::TrackStencilAttachmentFirstLayout(const vvl::ImageView& view
         RangeGenerator range_gen(view_state.image_state->subresource_encoder, image_layout_range);
 
         TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, VK_IMAGE_ASPECT_STENCIL_BIT,
-                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex());
+                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex(), current_command);
     }
 }
 
@@ -2012,7 +2015,7 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image& image_state, const V
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
             TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, normalized_subresource_range.aspectMask, nullptr,
-                             GetLastLabelCommandIndex());
+                             GetLastLabelCommandIndex(), current_command);
         }
     }
 }

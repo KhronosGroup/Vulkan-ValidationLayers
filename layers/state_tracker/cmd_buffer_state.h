@@ -434,6 +434,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // Used by submit time validation to check for invalid commands when render pass instance is suspended.
     vvl::Func first_action_or_sync_command;
 
+    // Used to report which command set an image's first layout
+    vvl::Func current_command;
+
     // Rendering info from the first/last vkCmdBeginRendering.
     std::optional<vku::safe_VkRenderingInfo> first_rendering_info;
     std::unique_ptr<LocationCapture> first_rendering_info_loc;
