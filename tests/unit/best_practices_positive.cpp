@@ -725,3 +725,66 @@ TEST_F(PositiveBestPractices, DepthStencilResolveAccessMask) {
 
     m_command_buffer.End();
 }
+
+TEST_F(PositiveBestPractices, ReadOnlyLayoutInputAttachmentAccess) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8521");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+    vkt::Image ds_image(*m_device, 32u, 32u, ds_format,
+                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::Image color_image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM,
+                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    const VkImageAspectFlags depth = VK_IMAGE_ASPECT_DEPTH_BIT;
+    const VkImageAspectFlags stencil = VK_IMAGE_ASPECT_STENCIL_BIT;
+    const VkImageAspectFlags color = VK_IMAGE_ASPECT_COLOR_BIT;
+    const VkAccessFlags2 input = VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT;
+    const VkPipelineStageFlags2 fragment = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    const VkPipelineStageFlags2 color_output = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    const VkPipelineStageFlags2 fragment_tests =
+        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+    struct TestCase {
+        VkImage image;
+        VkImageLayout layout;
+        VkImageAspectFlags aspect;
+        VkPipelineStageFlags2 stage;
+        VkAccessFlags2 access;
+    };
+    const TestCase test_cases[] = {
+        {ds_image, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, depth | stencil, fragment, input},
+        {ds_image, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, depth, fragment, input},
+        {ds_image, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, stencil, fragment, input},
+        {ds_image, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, depth, fragment, input},
+        {ds_image, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, stencil, fragment, input},
+        {ds_image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, depth | stencil, fragment | fragment_tests,
+         input | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT},
+        {ds_image, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, depth | stencil, fragment_tests,
+         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT},
+        {color_image, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, color, fragment | color_output,
+         input | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT},
+        {color_image, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, color, color_output,
+         VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT},
+    };
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+    m_command_buffer.Begin();
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.subresourceRange = {0u, 0u, 1u, 0u, 1u};
+    for (const auto& test_case : test_cases) {
+        barrier.image = test_case.image;
+        barrier.srcStageMask = test_case.stage;
+        barrier.srcAccessMask = test_case.access;
+        barrier.dstStageMask = test_case.stage;
+        barrier.dstAccessMask = test_case.access;
+        barrier.oldLayout = test_case.layout;
+        barrier.newLayout = test_case.layout;
+        barrier.subresourceRange.aspectMask = test_case.aspect;
+        m_command_buffer.Barrier(barrier);
+    }
+    m_command_buffer.End();
+}
