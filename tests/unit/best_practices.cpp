@@ -1545,6 +1545,39 @@ TEST_F(NegativeBestPractices, SampleShadingIgnoresShadingRate) {
     }
 }
 
+TEST_F(NegativeBestPractices, ReadOnlyAndAttachmentLayoutAccess) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8521");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+
+    m_command_buffer.Begin();
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+    m_errorMonitor->SetDesiredWarning("BestPractices-ImageBarrierAccessLayout");
+    m_command_buffer.Barrier(barrier);
+    m_errorMonitor->VerifyFound();
+
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    m_errorMonitor->SetDesiredWarning("BestPractices-ImageBarrierAccessLayout");
+    m_command_buffer.Barrier(barrier);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeBestPractices, NonSimultaneousSecondaryMarksPrimary) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());

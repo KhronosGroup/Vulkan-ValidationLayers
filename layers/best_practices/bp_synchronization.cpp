@@ -120,6 +120,15 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
     // https://docs.vulkan.org/spec/latest/chapters/renderpass.html#renderpass-resolve-operations
     const VkAccessFlags2 resolve_read_access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
     const VkAccessFlags2 resolve_access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    const VkAccessFlags2 color_attachment_access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                                   VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
+    const VkAccessFlags2 depth_stencil_attachment_access =
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    const VkAccessFlags2 shader_read_only_access = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+                                                   VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
+                                                   VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+    const VkAccessFlags2 depth_stencil_read_only_access =
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | shader_read_only_access | resolve_read_access;
 
     // Combinations taken from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2918
     switch (layout) {
@@ -137,14 +146,10 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
             allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             break;
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-            allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                      VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
+            allowed = depth_stencil_read_only_access;
             break;
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            allowed = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                      VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;
+            allowed = shader_read_only_access | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
             break;
         case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
             allowed = VK_ACCESS_TRANSFER_READ_BIT;
@@ -157,9 +162,7 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
             break;
         case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
             if (aspect & VK_IMAGE_ASPECT_DEPTH_BIT) {
-                allowed |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                           VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                           VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
+                allowed |= depth_stencil_read_only_access;
             }
             if (aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
                 allowed |=
@@ -172,26 +175,20 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             }
             if (aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
-                allowed |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                           VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                           VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
+                allowed |= depth_stencil_read_only_access;
             }
             break;
         case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
             allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             break;
         case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
-            allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                      VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
+            allowed = depth_stencil_read_only_access;
             break;
         case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
             allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | resolve_access;
             break;
         case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
-            allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                      VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                      VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR | resolve_read_access;
+            allowed = depth_stencil_read_only_access;
             break;
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             allowed = VK_ACCESS_NONE;  // PR table says "Must be 0"
@@ -206,6 +203,21 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
             break;
         case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
             allowed = VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
+            break;
+        case VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL:
+            allowed = color_attachment_access | depth_stencil_attachment_access;
+            break;
+        case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL:
+            allowed = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT |
+                      depth_stencil_read_only_access;
+            break;
+        case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
+            allowed = color_attachment_access | depth_stencil_attachment_access | shader_read_only_access;
+            break;
+        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ:
+            allowed = color_attachment_access | depth_stencil_attachment_access | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
+                      VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
+                      VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
             break;
         default:
             // If a new layout is added, will need to manually add it
