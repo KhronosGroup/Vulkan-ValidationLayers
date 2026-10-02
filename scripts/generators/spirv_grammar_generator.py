@@ -157,7 +157,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 if re.search(r'OpImageSample.*', opname) is not None:
                     self.imageSampleOps.append(opname)
                 if re.search(r'OpType.*', opname) is not None:
-                    # Currently this is for GPU-AV which doesn't supporrt provisional extensions
+                    # Currently this is for GPU-AV which doesn't support provisional extensions
                     if opname not in self.provisionalList:
                         self.typeOps.append(opname)
                 if 'operands' in instruction:
@@ -700,7 +700,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         for info in self.opcodes.values():
             opname = info['opname']
             if opname in self.provisionalList:
-                continue # Currently this is for GPU-AV which doesn't supporrt provisional extensions
+                continue # Currently this is for GPU-AV which doesn't support provisional extensions
             kinds = ", ".join([f"OperandKind::{f}" for f in info['operands']])
             out.append(f'        {{spv::{opname}, {{{{{kinds}}}}}}},\n')
         out.append('''    }; // clang-format on

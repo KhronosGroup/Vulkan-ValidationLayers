@@ -88,7 +88,7 @@ static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax]
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeIndirectExecutionSetEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeIndirectCommandsLayoutEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeShaderInstrumentationARM
-    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeBufferDeviceAddress
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeInternalDeviceRange
 };
 
 // Array of object name strings for OBJECT_TYPE enum conversion

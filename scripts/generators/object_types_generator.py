@@ -286,7 +286,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
             static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax] = {
                 VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n''')
         out.extend([f'    {self.debugReportObject[handle.name]},   // kVulkanObjectType{handle.name[2:]}\n' for handle in self.vk.handles.values()])
-        out.append('    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeBufferDeviceAddress\n')
+        out.append('    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeInternalDeviceRange\n')
         out.append('};\n')
 
         out.append('''
