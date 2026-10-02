@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <sstream>
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
@@ -26,6 +27,7 @@
 #include "core_checks/cc_state_tracker.h"
 #include "core_checks/cc_sync_vuid_maps.h"
 #include "core_checks/cc_vuid_maps.h"
+#include "containers/container_utils.h"
 #include "core_checks/core_validation.h"
 #include "error_message/error_strings.h"
 #include "generated/error_location_helper.h"
@@ -233,6 +235,22 @@ struct GlobalLayoutUpdater {
     }
 };
 
+static std::string DescribeFirstLayoutCommand(vvl::Func command) {
+    if (command == vvl::Func::Empty) {
+        return {};
+    }
+    std::ostringstream ss;
+    ss << "\nThe expected layout comes from ";
+    const bool is_barrier =
+        IsValueIn(command, {vvl::Func::vkCmdPipelineBarrier, vvl::Func::vkCmdPipelineBarrier2, vvl::Func::vkCmdPipelineBarrier2KHR,
+                            vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR});
+    if (is_barrier) {
+        ss << "the oldLayout of an image memory barrier in ";
+    }
+    ss << vvl::String(command) << ", the first command recorded in the command buffer to use this subresource.";
+    return ss.str();
+}
+
 // This validates that the first layout specified in the command buffer for the image
 // is the same as this image's global (actual/current) layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBufferSubmitInfo& cb_info,
@@ -301,16 +319,18 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                     const std::string debug_region = vvl::CommandBuffer::GetDebugRegionName(
                         cb_info.cb->GetLabelCommands(), cb_layout_state.label_command_i, cb_info.initial_label_stack);
                     const Location loc_with_region(loc, debug_region);
+                    const std::string expected_by = DescribeFirstLayoutCommand(cb_layout_state.first_layout_command);
                     // We can report all the errors for the intersected range directly
                     for (auto index : vvl::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         const LogObjectList objlist(cb_info.cb->Handle(), image_state->Handle());
                         skip |= LogError(
                             vuid, objlist, loc_with_region,
-                            "command buffer %s expects %s (subresource: %s) to be in layout %s--instead, current layout is %s.",
+                            "command buffer %s expects %s (subresource: %s) to be in layout %s--instead, current layout is "
+                            "%s.%s",
                             FormatHandle(*cb_info.cb).c_str(), FormatHandle(*image_state).c_str(),
                             string_VkImageSubresource(subresource).c_str(), string_VkImageLayout(first_layout),
-                            string_VkImageLayout(image_layout));
+                            string_VkImageLayout(image_layout), expected_by.c_str());
                     }
                 }
             }
@@ -1057,7 +1077,7 @@ bool CoreChecks::ValidateImageBarrierLayouts(const vvl::CommandBuffer& cb_state,
 
             UpdateCurrentLayout(*local_layout_map, RangeGenerator(image_state.subresource_encoder, normalized_isr),
                                 image_barrier.newLayout, kInvalidLayout, normalized_isr.aspectMask,
-                                cb_state.GetLastLabelCommandIndex());
+                                cb_state.GetLastLabelCommandIndex(), image_loc.function);
         }
     }
     return skip;
