@@ -433,7 +433,8 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        const size_t count = Count<vvl::Semaphore>();
+        // This is called before the new semaphore is tracked, so include it in the count
+        const size_t count = Count<vvl::Semaphore>() + 1;
         if (count > kMaxRecommendedSemaphoreObjectsSizeAMD) {
             skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfSemaphores", device, error_obj.location,
                                           "%s %s High number of vkSemaphore objects created. "
@@ -453,7 +454,8 @@ bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCre
                                                const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        const size_t count = Count<vvl::Fence>();
+        // This is called before the new fence is tracked, so include it in the count
+        const size_t count = Count<vvl::Fence>() + 1;
         if (count > kMaxRecommendedFenceObjectsSizeAMD) {
             skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfFences", device, error_obj.location,
                                           "%s %s High number of VkFence objects created. "
