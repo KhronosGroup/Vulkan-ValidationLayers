@@ -75,15 +75,10 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     // Fill with bad data as should be ignored with dynamic state
     VkVertexInputBindingDescription input_binding = {5, 7, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription input_attrib = {5, 7, VK_FORMAT_UNDEFINED, 9};
-    VkPipelineVertexInputStateCreateInfo vi_ci = vku::InitStructHelper();
-    vi_ci.pVertexBindingDescriptions = &input_binding;
-    vi_ci.vertexBindingDescriptionCount = 1;
-    vi_ci.pVertexAttributeDescriptions = &input_attrib;
-    vi_ci.vertexAttributeDescriptionCount = 1;
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    pipe.gp_ci_.pVertexInputState = &vi_ci;  // ignored
+    pipe.SetVertexInput(input_binding, input_attrib);
     pipe.CreateGraphicsPipeline();
 
     VkVertexInputBindingDescription2EXT binding = vku::InitStructHelper();

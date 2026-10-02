@@ -470,10 +470,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-        pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-        pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-        pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+        pipe.SetVertexInput(input_binding, input_attribs);
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses
@@ -545,10 +542,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-        pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-        pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-        pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+        pipe.SetVertexInput(input_binding, input_attribs);
         pipe.CreateGraphicsPipeline();
 
         // Pipelines for all other subpasses

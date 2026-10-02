@@ -2522,10 +2522,7 @@ TEST_F(NegativeSyncVal, DrawMultiHazard) {
 
     CreatePipelineHelper pipe(*this);
     pipe.SetDynamicRendering({});
-    pipe.vi_ci_.pVertexBindingDescriptions = &vertex_binding;
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &vertex_attrib;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.SetVertexInput(vertex_binding, vertex_attrib);
     pipe.CreateGraphicsPipeline();
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
@@ -2595,10 +2592,7 @@ TEST_F(NegativeSyncVal, VertexBufferHazard) {
     VkVertexInputAttributeDescription vertex_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
 
     CreatePipelineHelper gfx_pipe(*this);
-    gfx_pipe.vi_ci_.pVertexBindingDescriptions = &vertex_binding;
-    gfx_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    gfx_pipe.vi_ci_.pVertexAttributeDescriptions = &vertex_attrib;
-    gfx_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    gfx_pipe.SetVertexInput(vertex_binding, vertex_attrib);
     gfx_pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -2794,10 +2788,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
     VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.vi_ci_.pVertexBindingDescriptions = &VertexInputBindingDescription;
-    g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
-    g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    g_pipe.SetVertexInput(VertexInputBindingDescription, VertexInputAttributeDescription);
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
@@ -5312,10 +5303,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     VkShaderObj fs(*m_device, csSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.vi_ci_.pVertexBindingDescriptions = &VertexInputBindingDescription;
-    g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
-    g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    g_pipe.SetVertexInput(VertexInputBindingDescription, VertexInputAttributeDescription);
     g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     g_pipe.CreateGraphicsPipeline();
@@ -7657,10 +7645,7 @@ TEST_F(NegativeSyncVal, DrawVertexInputWAR) {
 
     VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.SetVertexInput(binding, attribute);
     pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
 
@@ -7708,10 +7693,7 @@ TEST_F(NegativeSyncVal, DrawIndexInputRAW) {
 
     VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.SetVertexInput(binding, attribute);
     pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
 
@@ -7764,10 +7746,7 @@ TEST_F(NegativeSyncVal, DrawMultiVertexInputWAR) {
 
     VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.SetVertexInput(binding, attribute);
     pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
 
@@ -7823,10 +7802,7 @@ TEST_F(NegativeSyncVal, DrawMultiIndexInputRAW) {
 
     VkVertexInputBindingDescription binding{0, 16, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.SetVertexInput(binding, attribute);
     pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
 

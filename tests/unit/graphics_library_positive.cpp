@@ -367,10 +367,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInputAttributeDescriptionOffset) {
 
     // override vertex input
     frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
-    frag_shader_lib.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
-    frag_shader_lib.vi_ci_.vertexBindingDescriptionCount = 1;
-    frag_shader_lib.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
-    frag_shader_lib.vi_ci_.vertexAttributeDescriptionCount = 1;
+    frag_shader_lib.SetVertexInput(vertex_input_binding_description, vertex_input_attribute_description);
     frag_shader_lib.gp_ci_.pVertexInputState = &frag_shader_lib.vi_ci_;
 
     // VUID-VkVertexInputAttributeDescription-offset-00622 shouldn't be trigged
@@ -403,10 +400,7 @@ TEST_F(PositiveGraphicsLibrary, VertexAttributeDivisorInstanceRateZero) {
 
     // override vertex input
     frag_shader_lib.vi_ci_.pNext = &divisor_state_create_info;
-    frag_shader_lib.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
-    frag_shader_lib.vi_ci_.vertexBindingDescriptionCount = 1;
-    frag_shader_lib.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
-    frag_shader_lib.vi_ci_.vertexAttributeDescriptionCount = 1;
+    frag_shader_lib.SetVertexInput(vertex_input_binding_description, vertex_input_attribute_description);
     frag_shader_lib.gp_ci_.pVertexInputState = &frag_shader_lib.vi_ci_;
 
     // VUID-VkVertexInputBindingDivisorDescription-vertexAttributeInstanceRateZeroDivisor-02228 shouldn't be trigged

@@ -37,12 +37,7 @@ TEST_F(NegativeVertexInput, AttributeFormat) {
 
     input_attribs.location = 0;
 
-    auto set_info = [&](CreatePipelineHelper& helper) {
-        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
-        helper.vi_ci_.vertexBindingDescriptionCount = 1;
-        helper.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
-        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
-    };
+    auto set_info = [&](CreatePipelineHelper& helper) { helper.SetVertexInput(input_binding, input_attribs); };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkVertexInputAttributeDescription-format-00623");
 }
 
@@ -457,10 +452,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
     vertex_input_attribute_description.format = VK_FORMAT_R8_UNORM;
     vertex_input_attribute_description.offset = maxVertexInputAttributeOffset + 1;
     const auto set_attribute = [&](CreatePipelineHelper& helper) {
-        helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
-        helper.vi_ci_.vertexBindingDescriptionCount = 1;
-        helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
-        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+        helper.SetVertexInput(vertex_input_binding_description, vertex_input_attribute_description);
     };
     CreatePipelineHelper::OneshotTest(*this, set_attribute, kErrorBit, "VUID-VkVertexInputAttributeDescription-offset-00622");
 }
@@ -830,15 +822,9 @@ TEST_F(NegativeVertexInput, LegacyVertexAttributesAlignment) {
 
     VkVertexInputAttributeDescription input_attrib{0, 0, VK_FORMAT_R64_SFLOAT, 0};
 
-    VkPipelineVertexInputStateCreateInfo vi_state = vku::InitStructHelper();
-    vi_state.vertexBindingDescriptionCount = 1;
-    vi_state.pVertexBindingDescriptions = &input_binding;
-    vi_state.vertexAttributeDescriptionCount = 1;
-    vi_state.pVertexAttributeDescriptions = &input_attrib;
-
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[0] = vs.GetStageCreateInfo();
-    pipe.vi_ci_ = vi_state;
+    pipe.SetVertexInput(input_binding, input_attrib);
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer vbo(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -976,10 +962,7 @@ TEST_F(NegativeVertexInput, AttributeAlignmentPackedFormat) {
     VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_A2B10G10R10_UNORM_PACK32, 0};
 
     CreatePipelineHelper pipe(*this);
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.SetVertexInput(input_binding, input_attrib);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
@@ -1017,10 +1000,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
     VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription input_attribs = {0, 0, VK_FORMAT_R16_UNORM, 0};
 
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.SetVertexInput(input_binding, input_attribs);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
@@ -1058,10 +1038,7 @@ TEST_F(NegativeVertexInput, VertexStride) {
     VkVertexInputBindingDescription input_binding = {0, 3, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription input_attribs = {0, 0, VK_FORMAT_R16_UNORM, 0};
 
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.SetVertexInput(input_binding, input_attribs);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
@@ -1151,10 +1128,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStride) {
     VkVertexInputBindingDescription bindings = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attributes = {0, 0, VK_FORMAT_R16_UNORM, 0};
 
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
+    pipe.SetVertexInput(bindings, attributes);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
@@ -1296,12 +1270,7 @@ TEST_F(NegativeVertexInput, AttributeNotConsumed) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    const auto set_info = [&](CreatePipelineHelper& helper) {
-        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
-        helper.vi_ci_.vertexBindingDescriptionCount = 1;
-        helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
-        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
-    };
+    const auto set_info = [&](CreatePipelineHelper& helper) { helper.SetVertexInput(input_binding, input_attrib); };
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
 }
 
@@ -1319,12 +1288,7 @@ TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    const auto set_info = [&](CreatePipelineHelper& helper) {
-        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
-        helper.vi_ci_.vertexBindingDescriptionCount = 1;
-        helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
-        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
-    };
+    const auto set_info = [&](CreatePipelineHelper& helper) { helper.SetVertexInput(input_binding, input_attrib); };
 
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "WARNING-Shader-OutputNotConsumed");
 }
@@ -1442,10 +1406,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
 
     const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
-        helper.vi_ci_.vertexBindingDescriptionCount = 1;
-        helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
-        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+        helper.SetVertexInput(input_binding, input_attrib);
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
 }
@@ -1719,10 +1680,7 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
     VkVertexInputBindingDescription input_binding = {0, 8, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription input_attribs = {0, 0, format, 0};
 
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.SetVertexInput(input_binding, input_attribs);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929");
@@ -1754,10 +1712,7 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
     VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription input_attribs = {0, 0, format, 0};
 
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.SetVertexInput(input_binding, input_attribs);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930");
@@ -1789,10 +1744,7 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
     VkVertexInputBindingDescription input_binding = {0, 8, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription input_attribs = {0, 0, format, 0};
 
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.SetVertexInput(input_binding, input_attribs);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198");
@@ -2004,10 +1956,7 @@ TEST_F(NegativeVertexInput, NoBoundVertexBuffer) {
     // binding at index 1
     VkVertexInputBindingDescription bindings = {1, 4, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription attributes = {0, 1, VK_FORMAT_R8G8B8A8_UNORM, 0};
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
+    pipe.SetVertexInput(bindings, attributes);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
