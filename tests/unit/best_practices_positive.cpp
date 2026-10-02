@@ -14,6 +14,7 @@
 #include <vulkan/vulkan_core.h>
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
+#include "render_pass_helper.h"
 #include "descriptor_helper.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_checks_to_enable) {
@@ -723,5 +724,32 @@ TEST_F(PositiveBestPractices, DepthStencilResolveAccessMask) {
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier1);
 
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveBestPractices, FramebufferWithDestroyedImageView) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11637");
+    const VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT,
+                                                      VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT};
+    features_.disabledValidationFeatureCount = size32(disables);
+    features_.pDisabledValidationFeatures = disables;
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    const VkImageView destroyed_view = image_view;
+    image_view.Destroy();
+
+    vkt::Framebuffer fb(*m_device, rp, 1, &destroyed_view, 32, 32);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
+    m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }

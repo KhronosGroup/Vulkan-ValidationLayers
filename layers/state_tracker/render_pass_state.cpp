@@ -479,13 +479,20 @@ Framebuffer::Framebuffer(VkFramebuffer handle, const VkFramebufferCreateInfo* pC
 void Framebuffer::LinkChildNodes() {
     // Connect child node(s), which cannot safely be done in the constructor.
     for (auto& a : attachments_view_state) {
-        a->AddParent(this);
+        // Need to handle if CoreChecks is turned off
+        // We do NOT want this to be the normal, people should run core checks and make sure it is clean before using things like
+        // Best Practices. For this, will have an exception because FrameBuffers are now legacy and was hit in the real world
+        if (a) {
+            a->AddParent(this);
+        }
     }
 }
 
 void Framebuffer::Destroy() {
     for (auto& view : attachments_view_state) {
-        view->RemoveParent(this);
+        if (view) {
+            view->RemoveParent(this);
+        }
     }
     attachments_view_state.clear();
     StateObject::Destroy();

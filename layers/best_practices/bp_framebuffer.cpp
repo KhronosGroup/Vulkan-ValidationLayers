@@ -37,7 +37,9 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         }
 
         auto view_state = Get<vvl::ImageView>(attachments[i]);
-        ASSERT_AND_CONTINUE(view_state);
+        if (!view_state) {
+            continue;  // caught in CoreChecks
+        }
 
         const bool image_is_transient = (view_state->image_state->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
 
