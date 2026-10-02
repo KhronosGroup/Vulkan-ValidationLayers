@@ -24,9 +24,6 @@ class LegacyGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
-        self.all_device_extensions = set()
-        self.all_instance_extensions = set()
-
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -50,11 +47,6 @@ class LegacyGenerator(BaseGenerator):
             * limitations under the License.
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
-
-        for extensions in [x.legacy.extensions for x in self.vk.commands.values() if x.legacy and x.legacy.extensions and x.instance]:
-            self.all_instance_extensions.update(extensions)
-        for extensions in [x.legacy.extensions for x in self.vk.commands.values() if x.legacy and x.legacy.extensions and x.device]:
-            self.all_device_extensions.update(extensions)
 
         if self.filename == 'legacy.h':
             self.generateHeader()

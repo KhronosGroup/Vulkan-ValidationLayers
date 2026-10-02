@@ -63,11 +63,8 @@ class BestPracticesOutputGenerator(BaseGenerator):
             'vkBindImageMemory2',
             # AMD tracked
             'vkCreateComputePipelines',
-            'vkCmdPipelineBarrier',
             'vkQueueSubmit',
         ]
-
-        self.extension_info = dict()
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
