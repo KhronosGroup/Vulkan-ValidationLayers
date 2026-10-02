@@ -468,12 +468,9 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     // Verify each vkCmdSet command
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     VkVertexInputBindingDescription inputBinding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
-    pipe.vi_ci_.pVertexBindingDescriptions = &inputBinding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.SetVertexInput(inputBinding, attribute);
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe.CreateGraphicsPipeline();
 

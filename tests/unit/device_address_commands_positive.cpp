@@ -120,19 +120,13 @@ TEST_F(PositiveDeviceAddressCommands, VertexBindingDifferentFunctions) {
     VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
 
     CreatePipelineHelper pipe(*this);
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.SetVertexInput(input_binding, attribute);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
     CreatePipelineHelper dynamic_pipe(*this);
     dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
-    dynamic_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    dynamic_pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    dynamic_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    dynamic_pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    dynamic_pipe.SetVertexInput(input_binding, attribute);
     dynamic_pipe.shader_stages_ = {vs.GetStageCreateInfo(), dynamic_pipe.fs_->GetStageCreateInfo()};
     dynamic_pipe.CreateGraphicsPipeline();
 
@@ -203,12 +197,9 @@ TEST_F(PositiveDeviceAddressCommands, BindVertexBuffers3Stride) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
-    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     VkVertexInputBindingDescription input_binding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
-    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
-    pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
+    pipe.SetVertexInput(input_binding, attribute);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 

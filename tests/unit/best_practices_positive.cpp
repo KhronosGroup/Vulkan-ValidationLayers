@@ -263,10 +263,7 @@ TEST_F(PositiveBestPractices, VertexBufferNotForAllDraws) {
     input_attrib.location = 4;
 
     CreatePipelineHelper pipe0(*this);
-    pipe0.vi_ci_.pVertexBindingDescriptions = &input_binding;
-    pipe0.vi_ci_.vertexBindingDescriptionCount = 1;
-    pipe0.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
-    pipe0.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe0.SetVertexInput(input_binding, input_attrib);
     pipe0.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe1(*this);

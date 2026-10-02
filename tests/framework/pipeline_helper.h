@@ -118,15 +118,18 @@ class CreatePipelineHelper {
     }
 
     void AddDynamicState(VkDynamicState dynamic_state);
-
     void SetDynamicRendering(const std::vector<VkFormat>& color_formats, VkFormat depth_format = VK_FORMAT_UNDEFINED,
                              VkFormat stencil_format = VK_FORMAT_UNDEFINED);
+    void SetVertexInput(const VkVertexInputBindingDescription& binding, const VkVertexInputAttributeDescription& attribute);
 
   private:
     void InitPipelineCache();
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     // Hold some state for making certain pipeline creations easier
     std::vector<VkDynamicState> dynamic_states_;
+
+    VkVertexInputBindingDescription vertex_binding_description_ = {};
+    VkVertexInputAttributeDescription vertex_attribute_description_ = {};
 
     VkPipelineRenderingCreateInfo pipeline_rendering_ci_ = {};
     std::vector<VkFormat> color_formats_;
