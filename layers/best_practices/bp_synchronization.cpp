@@ -110,7 +110,7 @@ bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
 }
 
 bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage image, VkAccessFlags2 access, VkImageLayout layout,
-                                                    VkImageAspectFlags aspect) const {
+                                                    VkImageAspectFlags aspect, bool is_src) const {
     bool skip = false;
 
     const VkAccessFlags2 all = vvl::kU64Max;  // core validation is responsible for detecting undefined flags.
@@ -212,11 +212,19 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
             return false;
     }
 
-    if ((allowed | access) != allowed) {
-        skip |= LogWarning("BestPractices-ImageBarrierAccessLayout", image, loc,
-                           "image is %s and accessMask is %s, but for layout %s expected accessMask are %s.",
-                           FormatHandle(image).c_str(), string_VkAccessFlags2(access).c_str(), string_VkImageLayout(layout),
-                           string_VkAccessFlags2(allowed).c_str());
+    const VkAccessFlags2 unexpected = access & ~allowed;
+    if (unexpected != 0) {
+        const Location access_loc = loc.dot(is_src ? Field::srcAccessMask : Field::dstAccessMask);
+        const Location layout_loc = loc.dot(is_src ? Field::oldLayout : Field::newLayout);
+        skip |= LogWarning("BestPractices-ImageBarrierAccessLayout", image, access_loc,
+                           "(%s) contains %s, which is not an access expected for an image in %s (%s) (aspectMask is %s).\n"
+                           "The accesses expected for %s are %s.\n"
+                           "Either remove the unexpected access from %s, or check that %s is the layout %s is in when the "
+                           "access happens.",
+                           string_VkAccessFlags2(access).c_str(), string_VkAccessFlags2(unexpected).c_str(),
+                           layout_loc.Fields().c_str(), string_VkImageLayout(layout), string_VkImageAspectFlags(aspect).c_str(),
+                           string_VkImageLayout(layout), allowed == 0 ? "none (0)" : string_VkAccessFlags2(allowed).c_str(),
+                           access_loc.Fields().c_str(), string_VkImageLayout(layout), FormatHandle(image).c_str());
     }
 
     return skip;
@@ -274,8 +282,8 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkCommandBuf
         }
     }
 
-    skip |= ValidateAccessLayoutCombination(loc, image, srcAccessMask, oldLayout, aspectMask);
-    skip |= ValidateAccessLayoutCombination(loc, image, dstAccessMask, newLayout, aspectMask);
+    skip |= ValidateAccessLayoutCombination(loc, image, srcAccessMask, oldLayout, aspectMask, true);
+    skip |= ValidateAccessLayoutCombination(loc, image, dstAccessMask, newLayout, aspectMask, false);
 
     return skip;
 }
