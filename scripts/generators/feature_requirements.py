@@ -89,7 +89,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
     def getFeaturesAndOrigins(self) -> dict:
         # Get all Vulkan Physical Device Features
         featureMap = dict()
-        feature_structs = self.vk.structs['VkPhysicalDeviceFeatures2'].extendedBy
+        feature_structs = self.vk.structs['VkPhysicalDeviceFeatures2'].extendedBy + ['VkPhysicalDeviceFeatures']
         feature_structs.append('VkPhysicalDeviceFeatures')
         for extending_struct_name in feature_structs:
             extending_struct = self.vk.structs[extending_struct_name]
