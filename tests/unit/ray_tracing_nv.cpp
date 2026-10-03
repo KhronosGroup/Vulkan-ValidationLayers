@@ -1816,10 +1816,14 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
 
-    vkt::DeviceMemory host_memory;
-    host_memory.Init(*m_device,
-                     vkt::DeviceMemory::GetResourceAllocInfo(*m_device, dst_as_without_mem.MemoryRequirements().memoryRequirements,
-                                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    VkMemoryAllocateInfo host_alloc_info = vku::InitStructHelper();
+    host_alloc_info.allocationSize = dst_as_without_mem.MemoryRequirements().memoryRequirements.size;
+    if (!m_device->Physical().SetMemoryType(dst_as_without_mem.MemoryRequirements().memoryRequirements.memoryTypeBits,
+                                            &host_alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+        GTEST_SKIP() << "No non-device-local memory type available for acceleration structure";
+    }
+    vkt::DeviceMemory host_memory(*m_device, host_alloc_info);
 
     VkBindAccelerationStructureMemoryInfoNV bind_info = vku::InitStructHelper();
     bind_info.accelerationStructure = dst_as_without_mem;
