@@ -4685,8 +4685,7 @@ TEST_F(NegativeRayTracing, BuildPartitionedAccelerationStrutureInfoBadMemory) {
     m_command_buffer.End();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11279
-TEST_F(NegativeRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructures) {
+TEST_F(NegativeRayTracing, CmdBuildPartitionedAccelerationStructures) {
     TEST_DESCRIPTION("Validate vkCmdBuildPartitionedAccelerationStructuresNV need partitionedAccelerationStructure feature");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -4739,7 +4738,6 @@ TEST_F(NegativeRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructures) {
     command_info.srcInfos = 0;
     command_info.srcInfosCount = count_buffer_address;
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcAccelerationStructureData-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkBuildPartitionedAccelerationStructureInfoNV-srcInfos-parameter");
     vk::CmdBuildPartitionedAccelerationStructuresNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
@@ -5038,8 +5036,7 @@ TEST_F(NegativeRayTracing, GetClusterAccelerationStructureBuildSizes) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11279
-TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
+TEST_F(NegativeRayTracing, ClusterAccelerationStructureCommandsInfo) {
     TEST_DESCRIPTION("Validate ClusterAccelerationStructureCommandsInfo all valid usages");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -5076,7 +5073,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     VkAccelerationStructureBuildSizesInfoKHR clas_size_info = vku::InitStructHelper();
     vk::GetClusterAccelerationStructureBuildSizesNV(*m_device, &input_info, &clas_size_info);
 
-    vkt::Buffer scratch_buffer(*m_device, clas_size_info.buildScratchSize,
+    vkt::Buffer scratch_buffer(*m_device, std::max(clas_size_info.buildScratchSize, clas_size_info.accelerationStructureSize),
                                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
                                vkt::device_address);
@@ -5122,7 +5119,7 @@ TEST_F(NegativeRayTracing, DISABLED_ClusterAccelerationStructureCommandsInfo) {
     m_command_buffer.Begin();
 
     command_info.dstImplicitData = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-dstImplicitData-parameter");
+    m_errorMonitor->SetDesiredError("VUID-VkClusterAccelerationStructureCommandsInfoNV-opMode-12309");
     vk::CmdBuildClusterAccelerationStructureIndirectNV(m_command_buffer, &command_info);
     m_errorMonitor->VerifyFound();
     command_info.dstImplicitData = implicit_build_buffer.Address();
