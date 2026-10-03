@@ -218,7 +218,7 @@ bool CoreChecks::ValidateInterfaceFragmentOutput(const vvl::Pipeline& pipeline, 
         // use to know which index into the input array might be touched) So this code is really a "try again" fallback such that
         // the "normal sane" case will just skip this, but in the case someone is uing GPL in this way, we will still validate their
         // input attachments
-        if (entrypoint.has_input_attachment &&
+        if (rp_state->UsesDynamicRendering() && entrypoint.has_input_attachment &&
             (!pipeline.OwnsLibState(pipeline.fragment_output_state) || !pipeline.OwnsLibState(pipeline.fragment_shader_state))) {
             for (const auto& variable : entrypoint.resource_interface_variables) {
                 if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
