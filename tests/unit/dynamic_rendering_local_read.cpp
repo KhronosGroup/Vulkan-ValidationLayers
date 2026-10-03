@@ -568,6 +568,99 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierRequireFeature) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDynamicRenderingLocalRead, BarrierQueueFamilyOwnership) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9103");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+    InitDynamicRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
+    buffer_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    buffer_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    buffer_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    buffer_barrier.buffer = buffer;
+    buffer_barrier.offset = 0;
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    VkBufferMemoryBarrier2 buffer_barrier2 = vku::InitStructHelper();
+    buffer_barrier2.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    buffer_barrier2.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+    buffer_barrier2.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    buffer_barrier2.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    buffer_barrier2.srcQueueFamilyIndex = m_default_queue->family_index;
+    buffer_barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    buffer_barrier2.buffer = buffer;
+    buffer_barrier2.offset = 0;
+    buffer_barrier2.size = VK_WHOLE_SIZE;
+
+    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
+    image_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    auto image_barrier2 = ConvertVkImageMemoryBarrierToV2(image_barrier, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                                          VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT);
+
+    VkMemoryRangeBarrierKHR memory_range_barrier = vku::InitStructHelper();
+    memory_range_barrier.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    memory_range_barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+    memory_range_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    memory_range_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    memory_range_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    memory_range_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    memory_range_barrier.addressRange = buffer.AddressRange();
+    memory_range_barrier.addressFlags = VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR | VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR;
+
+    VkMemoryRangeBarriersInfoKHR memory_range_barriers_info = vku::InitStructHelper();
+    memory_range_barriers_info.memoryRangeBarrierCount = 1;
+    memory_range_barriers_info.pMemoryRangeBarriers = &memory_range_barrier;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper(&memory_range_barriers_info);
+    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182");
+    m_command_buffer.Barrier(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, buffer_barrier,
+                             VK_DEPENDENCY_BY_REGION_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182");
+    m_command_buffer.Barrier(buffer_barrier2, VK_DEPENDENCY_BY_REGION_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182");
+    m_command_buffer.Barrier(image_barrier, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             VK_DEPENDENCY_BY_REGION_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182");
+    m_command_buffer.Barrier(*image_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182");
+    m_command_buffer.Barrier(dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicRenderingLocalRead, LayoutTransition) {
     TEST_DESCRIPTION("Image barrier must not perform layout transition inside render pass instance");
     SetTargetApiVersion(VK_API_VERSION_1_3);

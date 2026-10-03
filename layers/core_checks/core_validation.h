@@ -395,9 +395,12 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDynamicRenderingBarriers(const LogObjectList& objlist, const Location& outer_loc,
                                           const vvl::CommandBuffer& cb_state, VkDependencyFlags dependency_flags,
                                           uint32_t memory_barrier_count, const VkMemoryBarrier* memory_barriers,
-                                          uint32_t buffer_barrier_count, uint32_t image_barrier_count,
-                                          const VkImageMemoryBarrier* image_barriers, VkPipelineStageFlags src_stage_mask,
-                                          VkPipelineStageFlags dst_stage_mask) const;
+                                          uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers,
+                                          uint32_t image_barrier_count, const VkImageMemoryBarrier* image_barriers,
+                                          VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) const;
+
+    bool ValidateRenderPassBarrierQueueFamilies(const LogObjectList& objlist, const Location& barrier_loc,
+                                                uint32_t src_queue_family, uint32_t dst_queue_family) const;
 
     bool ValidateDynamicRenderingBarriersCommon(const LogObjectList& objlist, const Location& outer_loc,
                                                 VkDependencyFlags dependency_flags, uint32_t buffer_barrier_count,
