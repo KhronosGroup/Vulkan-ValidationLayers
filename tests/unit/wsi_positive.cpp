@@ -1892,6 +1892,52 @@ TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
     cleanup_resources();
 }
 
+TEST_F(PositiveWsi, PresentErrorReleasesImage) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4064");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(SupportSurfaceResize());
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    if (!m_swapchain.TryTransitionToPresentLayout(*m_device, *m_default_queue, m_command_pool)) {
+        GTEST_SKIP() << "Failed to pre-transition swapchain images";
+    }
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &surface_caps);
+    const uint32_t image_count = static_cast<uint32_t>(m_swapchain.GetImages().size());
+    // Maximum number of images that can be acquired with UINT64_MAX timeout
+    const uint32_t max_acquired = image_count - surface_caps.minImageCount + 1;
+
+    vkt::Fence fence(*m_device);
+    std::vector<uint32_t> image_indices;
+    for (uint32_t i = 0; i < max_acquired; i++) {
+        image_indices.emplace_back(m_swapchain.AcquireNextImage(fence, vvl::kU64Max));
+        fence.Wait(kWaitTimeout);
+        fence.Reset();
+    }
+
+    // This potentially generates VK_ERROR_OUT_OF_DATE_KHR in QueuePresent
+    m_surface_context.Resize(m_width / 2, m_height / 2);
+
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain.handle();
+    present.pImageIndices = &image_indices[0];
+    const VkResult present_result = vk::QueuePresentKHR(*m_default_queue, &present);
+    if (present_result != VK_ERROR_OUT_OF_DATE_KHR) {
+        m_default_queue->Wait();
+        GTEST_SKIP() << "Cannot generate VK_ERROR_OUT_OF_DATE_KHR state required for this test";
+    }
+
+    VkResult acquire_result{};
+    m_swapchain.AcquireNextImage(fence, vvl::kU64Max, &acquire_result);
+    if (acquire_result == VK_SUCCESS || acquire_result == VK_SUBOPTIMAL_KHR) {
+        fence.Wait(kWaitTimeout);
+    }
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveWsi, MixKHRAndKHR2SurfaceCapsQueries) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8772
     TEST_DESCRIPTION("Mixing KHR and KHR2 surface queries should not break VVL surface caps caching");
