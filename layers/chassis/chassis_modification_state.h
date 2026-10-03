@@ -55,6 +55,9 @@ struct ShaderObjectInstrumentationData {
 
     gpuav::spirv::InstrumentationStatus status;
 
+    // The mode the instrumentation descriptor set layout was built with
+    vvl::DescriptorMode descriptor_mode = vvl::DescriptorModeClassic;
+
     std::vector<VkDescriptorSetLayout> new_layouts;
 };
 
