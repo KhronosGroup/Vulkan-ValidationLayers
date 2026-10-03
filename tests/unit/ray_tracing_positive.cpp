@@ -1655,8 +1655,7 @@ TEST_F(PositiveRayTracing, ZeroPrimitiveCountWithIndexTypeNone) {
     m_device->Wait();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10621
-TEST_F(PositiveRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructuresNV) {
+TEST_F(PositiveRayTracing, CmdBuildPartitionedAccelerationStructuresNV) {
     TEST_DESCRIPTION("Test vkCmdBuildPartitionedAccelerationStructuresNV can build a partitioned TLAS");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1733,7 +1732,7 @@ TEST_F(PositiveRayTracing, DISABLED_CmdBuildPartitionedAccelerationStructuresNV)
     ptlas_op.opType = VK_PARTITIONED_ACCELERATION_STRUCTURE_OP_TYPE_WRITE_PARTITION_TRANSLATION_NV;
     ptlas_op.argCount = partition_count;
     ptlas_op.argData.startAddress = write_partition_buffer_address;
-    ptlas_op.argData.strideInBytes = sizeof(VkPartitionedAccelerationStructureWriteInstanceDataNV);
+    ptlas_op.argData.strideInBytes = sizeof(VkPartitionedAccelerationStructureWritePartitionTranslationDataNV);
     ptlas_ops.push_back(ptlas_op);
 
     vkt::Buffer src_info_buffer(*m_device, partition_count * sizeof(VkBuildPartitionedAccelerationStructureIndirectCommandNV),
