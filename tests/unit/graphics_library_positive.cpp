@@ -15,6 +15,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
+#include "render_pass_helper.h"
 #include "test_framework.h"
 
 void GraphicsLibraryTest::InitBasicGraphicsLibrary() {
@@ -2618,4 +2619,55 @@ TEST_F(PositiveGraphicsLibrary, FragmentShaderStateNotRequiredWithDiscard) {
     frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
     frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
     frag_shader_lib.CreateGraphicsPipeline(false);
+}
+
+TEST_F(PositiveGraphicsLibrary, InputAttachmentRenderPass) {
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddInputAttachment(1, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+
+    char const* fs_source = R"glsl(
+        #version 450
+        layout(input_attachment_index = 0, set = 0, binding = 0) uniform subpassInput inColor;
+        layout(location = 0) out vec4 outColor;
+        void main() {
+            outColor = subpassLoad(inColor);
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.CreateGraphicsPipeline();
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pr_lib(*this);
+    pr_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pr_lib.gp_ci_.renderPass = rp;
+    pr_lib.gp_ci_.layout = pipeline_layout;
+    pr_lib.CreateGraphicsPipeline();
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper fs_lib(*this);
+    fs_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    fs_lib.gp_ci_.renderPass = rp;
+    fs_lib.gp_ci_.layout = pipeline_layout;
+    fs_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo();
+    fo_lib.gp_ci_.renderPass = rp;
+    fo_lib.CreateGraphicsPipeline();
+
+    vkt::Pipeline exe_pipe(*m_device, {vi_lib, pr_lib, fs_lib, fo_lib}, pipeline_layout);
 }
