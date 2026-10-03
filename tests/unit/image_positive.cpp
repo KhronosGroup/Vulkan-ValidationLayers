@@ -285,11 +285,15 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
 
     // Since usage is inherited from the image, we need to restrict the usage to a subset
     // Compressed images do not support storage, but we want to sample from the compressed
-    VkImageViewUsageCreateInfo ivu_ci = vku::InitStructHelper();
-    ivu_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    iv_ci.pNext = &ivu_ci;
-    vkt::ImageView view2(*m_device, iv_ci);
-    ASSERT_TRUE(view2 != VK_NULL_HANDLE);
+    if (FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                   VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+        VkImageViewUsageCreateInfo ivu_ci = vku::InitStructHelper();
+        ivu_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        iv_ci.pNext = &ivu_ci;
+        iv_ci.format = VK_FORMAT_BC3_UNORM_BLOCK;
+        vkt::ImageView view2(*m_device, iv_ci);
+        ASSERT_TRUE(view2 != VK_NULL_HANDLE);
+    }
 }
 
 TEST_F(PositiveImage, ImageCompressionControl) {
