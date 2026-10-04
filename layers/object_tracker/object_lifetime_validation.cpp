@@ -322,6 +322,7 @@ void Tracker::RecordDestroyObject(VulkanTypedHandle object, const Location& loc)
 
 void Tracker::DestroyObjectSilently(VulkanTypedHandle object, const Location& loc) {
     assert(object.handle);
+    debug_report->EraseObjectName(object.handle);
     auto item = object_map[object.type].pop(object.handle);
     if (item == object_map[object.type].end()) {
         // We've already checked that the object exists. If we couldn't find and atomically remove it
