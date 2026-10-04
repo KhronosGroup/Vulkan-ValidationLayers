@@ -201,7 +201,11 @@ void ApplicationAtExit() {
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                               VkInstance* pInstance) {
-    atexit(ApplicationAtExit);
+    // Only register once for the entire process.
+    // If called every instance, any app (likley test suite) that keeps calling vkCreateInstance many times in a single process is
+    // just adding this to the C library's exit table and never gets removed until the process ends
+    static const bool at_exit_registered = (atexit(ApplicationAtExit), true);
+    (void)at_exit_registered;
 
     VVL_ZoneScoped;
     VkLayerInstanceCreateInfo* chain_info = GetChainInfo(pCreateInfo, VK_LAYER_LINK_INFO);
