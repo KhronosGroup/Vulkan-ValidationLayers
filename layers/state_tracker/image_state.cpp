@@ -161,8 +161,9 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
         bool is_resident = (create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0;
-        tracker_.emplace<BindableSparseMemoryTracker>(requirements.data(), is_resident);
-        SetMemoryTracker(&std::get<BindableSparseMemoryTracker>(tracker_));
+        auto& sparse_tracker = tracker_.emplace<std::unique_ptr<BindableSparseMemoryTracker>>(
+            std::make_unique<BindableSparseMemoryTracker>(requirements.data(), is_resident));
+        SetMemoryTracker(sparse_tracker.get());
     } else if (create_flags & VK_IMAGE_CREATE_DISJOINT_BIT) {
         tracker_.emplace<BindableMultiplanarMemoryTracker>(requirements.data(), vkuFormatPlaneCount(pCreateInfo->format));
         SetMemoryTracker(&std::get<BindableMultiplanarMemoryTracker>(tracker_));
