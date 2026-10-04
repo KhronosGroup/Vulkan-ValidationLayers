@@ -381,8 +381,12 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState& device_sta
     // info, but this information is lost and we have changed to a sorted list based on bindings.
     if (const auto* mutable_descriptor_type_create_info =
             vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(p_create_info->pNext)) {
-        mutable_bindings_.resize(mutable_descriptor_type_create_info->mutableDescriptorTypeListCount);
-        for (uint32_t i = 0; i < mutable_descriptor_type_create_info->mutableDescriptorTypeListCount; ++i) {
+        // pMutableDescriptorTypeLists[i] belongs to pBindings[i]
+        // but you can pass more lists than there are bindings
+        mutable_bindings_.resize(binding_count_);
+        const uint32_t mutable_list_count =
+            std::min(mutable_descriptor_type_create_info->mutableDescriptorTypeListCount, p_create_info->bindingCount);
+        for (uint32_t i = 0; i < mutable_list_count; ++i) {
             const auto& list = mutable_descriptor_type_create_info->pMutableDescriptorTypeLists[i];
             const uint32_t mutable_index = binding_to_index_map_[p_create_info->pBindings[i].binding];
             mutable_bindings_[mutable_index].original_index = i;
