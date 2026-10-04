@@ -3179,29 +3179,41 @@ TEST_F(NegativeGraphicsLibrary, MissingVertexInputFlags2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGraphicsLibrary, VertexInputIgnoreStages) {
-    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
-    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
-    CreatePipelineHelper pipe(*this);
-    pipe.InitVertexInputLibInfo();
-    pipe.gp_ci_.stageCount = 1;
-    pipe.gp_ci_.pStages = nullptr;
-    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
-    pipe.CreateGraphicsPipeline(false);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGraphicsLibrary, FragmentOutputIgnoreStages) {
+TEST_F(NegativeGraphicsLibrary, IgnoreStages) {
     TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/3804");
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
-    CreatePipelineHelper pipe(*this);
-    pipe.InitFragmentOutputLibInfo();
-    pipe.gp_ci_.stageCount = 1;
-    pipe.gp_ci_.pStages = nullptr;
-    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
-    pipe.CreateGraphicsPipeline(false);
-    m_errorMonitor->VerifyFound();
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitVertexInputLibInfo();
+        pipe.gp_ci_.stageCount = 1;
+        pipe.gp_ci_.pStages = nullptr;
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
+        pipe.CreateGraphicsPipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitFragmentOutputLibInfo();
+        pipe.gp_ci_.stageCount = 1;
+        pipe.gp_ci_.pStages = nullptr;
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
+        pipe.CreateGraphicsPipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitPreRasterLibInfo(nullptr);
+        pipe.gp_ci_.stageCount = 1;
+        pipe.gp_ci_.pStages = nullptr;
+
+        m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06640");
+        pipe.CreateGraphicsPipeline(false);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeGraphicsLibrary, LinkedPipelineIgnoreStages) {
