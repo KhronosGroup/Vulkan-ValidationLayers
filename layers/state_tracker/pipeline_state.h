@@ -99,7 +99,6 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
     const bool descriptor_heap_mode;
 
     vvl::span<const vku::safe_VkPipelineShaderStageCreateInfo> shader_stages_ci;
-    VkPipelineShaderStageCreateInfo data_graph_shader_stage_ci;
     const vku::safe_VkPipelineLibraryCreateInfoKHR *ray_tracing_library_ci = nullptr;
     // If using a shader module identifier, the module itself is not validated, but the shader stage is still known
     const bool uses_shader_module_id;
