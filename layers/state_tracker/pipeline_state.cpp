@@ -244,11 +244,11 @@ std::vector<ShaderStageState> Pipeline::GetDataGraphStageStates(const DeviceStat
         // The existence of dg_shader_ci is guaranteed if we have a module. Having dg_shader_ci == NULL is a very contrived
         // situation, see test NegativeDataGraph.DataGraphWrongCreateInfoStructs
         assert(dg_shader_ci);
-        pipe_state.data_graph_shader_stage_ci = vku::InitStructHelper();
-        pipe_state.data_graph_shader_stage_ci.module = module_state->VkHandle();
-        pipe_state.data_graph_shader_stage_ci.pName = dg_shader_ci->pName;
-        pipe_state.data_graph_shader_stage_ci.stage = VK_SHADER_STAGE_ALL;
-        vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci(&pipe_state.data_graph_shader_stage_ci);
+        VkPipelineShaderStageCreateInfo data_graph_shader_stage_ci = vku::InitStructHelper();
+        data_graph_shader_stage_ci.module = module_state->VkHandle();
+        data_graph_shader_stage_ci.pName = dg_shader_ci->pName;
+        data_graph_shader_stage_ci.stage = VK_SHADER_STAGE_ALL;
+        vku::safe_VkPipelineShaderStageCreateInfo safe_stage_ci(&data_graph_shader_stage_ci);
         stage_states.emplace_back(&safe_stage_ci, nullptr, descriptor_set_layouts, module_state, module_state->spirv,
                                   pipeline_layout, pipe_state.descriptor_heap_mode);
     }
