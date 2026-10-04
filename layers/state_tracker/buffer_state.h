@@ -83,7 +83,9 @@ class Buffer : public Bindable, public SubStateManager<BufferSubState> {
     std::vector<uint64_t> descriptor_hashes;
 
   private:
-    std::variant<std::monostate, BindableLinearMemoryTracker, BindableSparseMemoryTracker> tracker_;
+    // The sparse tracker is 128 bytes vs the linear 40 bytes
+    // Assume sparse buffers are more rare and trade 88 bytes for a small indirection if using sparse
+    std::variant<std::monostate, BindableLinearMemoryTracker, std::unique_ptr<BindableSparseMemoryTracker>> tracker_;
 };
 
 class BufferSubState {

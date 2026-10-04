@@ -73,9 +73,10 @@ Buffer::Buffer(DeviceState& dev_data, VkBuffer handle, const VkBufferCreateInfo*
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
-        tracker_.emplace<BindableSparseMemoryTracker>(&requirements,
-                                                      (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0);
-        SetMemoryTracker(&std::get<BindableSparseMemoryTracker>(tracker_));
+        auto& sparse_tracker =
+            tracker_.emplace<std::unique_ptr<BindableSparseMemoryTracker>>(std::make_unique<BindableSparseMemoryTracker>(
+                &requirements, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0));
+        SetMemoryTracker(sparse_tracker.get());
     } else {
         tracker_.emplace<BindableLinearMemoryTracker>(&requirements);
         SetMemoryTracker(&std::get<BindableLinearMemoryTracker>(tracker_));

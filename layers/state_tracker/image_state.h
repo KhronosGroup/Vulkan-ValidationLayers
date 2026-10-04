@@ -276,7 +276,9 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     // layouts map can address each slice.
     VkImageSubresourceRange GetSubresourceEncoderRange(const DeviceState &device_state, const VkImageSubresourceRange &full_range);
 
-    std::variant<std::monostate, BindableNoMemoryTracker, BindableLinearMemoryTracker, BindableSparseMemoryTracker,
+    // The sparse tracker is 128 bytes vs the linear 40 bytes
+    // Assume sparse images are more rare and trade 88 bytes for a small indirection if using sparse
+    std::variant<std::monostate, BindableNoMemoryTracker, BindableLinearMemoryTracker, std::unique_ptr<BindableSparseMemoryTracker>,
                  BindableMultiplanarMemoryTracker>
         tracker_;
 };
