@@ -280,6 +280,10 @@ class Instance : public vvl::BaseInstance {
                                                               VkDisplayProperties2KHR *pProperties,
                                                               const RecordObject &record_obj) override;
 
+    void PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                           uint32_t *pDisplayCount, VkDisplayKHR *pDisplays,
+                                                           const RecordObject &record_obj) override;
+
     void PreCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                       const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
                                                       VkDisplayPlaneCapabilities2KHR *pCapabilities,

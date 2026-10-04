@@ -144,13 +144,6 @@ void PostCallRecordGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physic
                                                          uint32_t* pRectCount, VkRect2D* pRects,
                                                          const RecordObject& record_obj) override;
 
-void PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex, uint32_t* pDisplayCount,
-                                                      VkDisplayKHR* pDisplays, const RecordObject& record_obj) override;
-
-void PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                       uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
-                                                       const RecordObject& record_obj) override;
-
 void PreCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t* pPropertyCount,
                                               VkDisplayModePropertiesKHR* pProperties, const RecordObject& record_obj) override;
 
