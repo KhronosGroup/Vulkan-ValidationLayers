@@ -1371,6 +1371,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
     if (enabled_features.descriptorHeap) {
         skip |= ValidateShaderDescriptorSetAndBindingMappingInfo(module_state, entrypoint, pipeline, stage_state, loc);
         skip |= ValidateDescriptorHeapStructs(module_state, entrypoint, loc);
+        skip |= ValidateDescriptorHeapDirectAccess(module_state, entrypoint, loc);
     }
 
     if (pipeline) {
@@ -2952,6 +2953,70 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
 }
 
 // Done here instead of stateless because we need deal with spec constants
+// details: https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8600
+bool CoreChecks::ValidateDescriptorHeapDirectAccess(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                    const Location& loc) const {
+    bool skip = false;
+    // TODO - we can skip this whole check with future KHR heaps
+    if (!module_state.static_data_.has_descriptor_heap || !module_state.HasCapability(spv::CapabilityUntypedPointersKHR)) {
+        return skip;
+    }
+
+    // TODO - OpCopyMemory/OpCopyMemorySized can also read straight out of the heap, but they are not in |memory_accesses|
+    for (const spirv::Instruction* memory_access : entrypoint.accessible.memory_accesses) {
+        if (memory_access->Opcode() != spv::OpLoad) {
+            continue;
+        }
+        const spirv::Instruction& insn = *memory_access;
+        const uint32_t pointer_id = insn.Word(3);
+        const spirv::Instruction* read_type = module_state.FindDef(insn.TypeId());
+
+        // Walk back to the heap variable.
+        // Anything that is not an untyped access chain (OpBufferPointerEXT, function parameter, etc)
+        // is a different base and not a read of the heap itself
+        const spirv::Instruction* base_inst = module_state.FindDef(pointer_id);
+        while (base_inst && base_inst->IsUntypedAccessChain()) {
+            base_inst = module_state.FindDef(base_inst->Word(4));
+        }
+        if (!base_inst || base_inst->Opcode() != spv::OpUntypedVariableKHR) {
+            continue;
+        }
+        const spv::BuiltIn built_in = module_state.GetDecorationSet(base_inst->ResultId()).built_in;
+        if (built_in != spv::BuiltInResourceHeapEXT && built_in != spv::BuiltInSamplerHeapEXT) {
+            continue;
+        }
+
+        const spirv::Instruction* element_type = read_type;
+        if (element_type->IsArray()) {
+            element_type = module_state.FindDef(element_type->Word(2));
+        }
+        const uint32_t type_opcode = element_type->Opcode();
+        const bool is_sampler_heap = built_in == spv::BuiltInSamplerHeapEXT;
+        const bool is_descriptor_type =
+            is_sampler_heap ? type_opcode == spv::OpTypeSampler
+                            : (type_opcode == spv::OpTypeImage || type_opcode == spv::OpTypeAccelerationStructureKHR ||
+                               type_opcode == spv::OpTypeTensorARM);
+
+        if (!is_descriptor_type) {
+            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8631
+            const char* vuid = is_sampler_heap ? "UNASSIGNED-RuntimeSpirv-SamplerHeapEXT-DirectAccess"
+                                               : "UNASSIGNED-RuntimeSpirv-ResourceHeapEXT-DirectAccess";
+            skip |= LogError(
+                vuid, module_state.handle(), loc,
+                "shader %s reads the variable (ID %" PRIu32
+                ") decorated with %s as a non-descriptor type.\n%s\n%s\nA descriptor heap only holds descriptors and the data can "
+                "not be read out as plain "
+                "data directly.\nNote: "
+                "This was never tested and does not work in all VK_EXT_descriptor_heap drivers and was banned, but will "
+                "be valid with a future VK_KHR_descriptor_heap",
+                entrypoint.Describe().c_str(), base_inst->ResultId(), is_sampler_heap ? "SamplerHeapEXT" : "ResourceHeapEXT",
+                read_type->Describe().c_str(), insn.Describe().c_str());
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateDescriptorHeapStructs(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                                const Location& loc) const {
     bool skip = false;
