@@ -974,6 +974,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                           const Location& loc) const;
     bool ValidateDescriptorHeapStructs(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                        const Location& loc) const;
+    bool ValidateDescriptorHeapDirectAccess(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                            const Location& loc) const;
     bool ValidateSubpassCustomeResolve(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                        VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateCustomResolveCreateInfoEXT(const VkCustomResolveCreateInfoEXT& create_info, const Location& loc) const;
