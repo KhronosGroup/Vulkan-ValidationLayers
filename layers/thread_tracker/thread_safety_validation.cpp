@@ -674,12 +674,6 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysi
     }
 }
 
-void Instance::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
-                                                                const RecordObject& record_obj) {
-    // Nothing to do for this pre-call function
-}
-
 void Instance::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                  uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
                                                                  const RecordObject& record_obj) {

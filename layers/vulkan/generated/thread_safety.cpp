@@ -2951,12 +2951,6 @@ void Device::PreCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t sw
                                                     const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
                                                     const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
-
-    if (pSwapchains) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
-            StartReadObject(pSwapchains[index], record_obj.location);
-        }
-    }
 }
 
 void Device::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
