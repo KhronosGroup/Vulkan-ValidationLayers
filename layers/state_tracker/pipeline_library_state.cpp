@@ -31,8 +31,9 @@ bool PipelineLibraryState::IsIndependentSets() const {
 
 VertexInputState::VertexInputState(const vvl::Pipeline& p, const vku::safe_VkGraphicsPipelineCreateInfo& create_info)
     : PipelineLibraryState(p) {
-    for (uint32_t i = 0; i < create_info.stageCount; i++) {
-        if (create_info.pStages && create_info.pStages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+    const uint32_t stage_count = create_info.pStages ? create_info.stageCount : 0;
+    for (uint32_t i = 0; i < stage_count; i++) {
+        if (create_info.pStages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             return;  // if mesh shaders are used, all vertex input state is ignored
         }
     }
@@ -78,7 +79,8 @@ PreRasterState::PreRasterState(const vvl::Pipeline& p, const vvl::DeviceState& s
       subpass(create_info.subpass) {
     VkShaderStageFlags all_stages = 0;
 
-    for (uint32_t i = 0; i < create_info.stageCount; ++i) {
+    const uint32_t stage_count = create_info.pStages ? create_info.stageCount : 0;
+    for (uint32_t i = 0; i < stage_count; i++) {
         const auto& stage_ci = create_info.pStages[i];
         const VkShaderStageFlagBits stage = stage_ci.stage;
         if ((stage & ValidShaderStages()) == 0) {
@@ -202,7 +204,8 @@ template <typename CreateInfo>
 void SetFragmentShaderInfoPrivate(const vvl::Pipeline& pipeline_state, FragmentShaderState& fs_state,
                                   const vvl::DeviceState& state_data, const CreateInfo& create_info,
                                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
-    for (uint32_t i = 0; i < create_info.stageCount; ++i) {
+    const uint32_t stage_count = create_info.pStages ? create_info.stageCount : 0;
+    for (uint32_t i = 0; i < stage_count; i++) {
         if (create_info.pStages[i].stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
             continue;
         }
