@@ -322,7 +322,7 @@ static uint32_t GetCreateInfoShaders(const Pipeline& pipe_state) {
 
 static uint32_t GetLinkingShaders(const VkPipelineLibraryCreateInfoKHR* link_info, const DeviceState& state_data) {
     uint32_t result = 0;
-    if (link_info) {
+    if (link_info && link_info->pLibraries) {
         for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
             const auto& state = state_data.Get<vvl::Pipeline>(link_info->pLibraries[i]);
             if (state) {
@@ -673,7 +673,7 @@ static bool UsesPipelineVertexRobustness(const void* pNext, const Pipeline& pipe
 
 static bool IgnoreColorAttachments(const DeviceState& state_data, Pipeline& pipe_state) {
     // If the libraries used to create this pipeline are ignoring color attachments, this pipeline should as well
-    if (pipe_state.library_create_info) {
+    if (pipe_state.library_create_info && pipe_state.library_create_info->pLibraries) {
         for (uint32_t i = 0; i < pipe_state.library_create_info->libraryCount; i++) {
             const auto lib = state_data.Get<vvl::Pipeline>(pipe_state.library_create_info->pLibraries[i]);
             if (lib && lib->ignore_color_attachments) {
@@ -965,7 +965,8 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkGraphicsPipelineCreate
 
         // TODO Could store the graphics_lib_type in the library state rather than searching for it again here.
         //      Or, could store a pointer back to the owning Pipeline.
-        for (uint32_t i = 0; i < library_create_info->libraryCount; ++i) {
+        const uint32_t library_count = library_create_info->pLibraries ? library_create_info->libraryCount : 0;
+        for (uint32_t i = 0; i < library_count; ++i) {
             const auto& state = state_data.Get<vvl::Pipeline>(library_create_info->pLibraries[i]);
             if (state) {
                 graphics_lib_type |= state->graphics_lib_type;
