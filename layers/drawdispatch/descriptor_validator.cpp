@@ -875,7 +875,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
         }
 
         if (IsExtEnabled(dev_proxy.extensions.vk_ext_filter_cubic)) {
-            if (is_minmax && !image_view_state.filter_cubic_props.filterCubicMinmax) {
+            if (is_minmax && !image_view_state.filter_cubic_minmax) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state.Handle(),
                                             image_view_state.Handle());
                 skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::FILTER_CUBIC_02695), objlist, loc.Get(),
@@ -885,7 +885,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
                                  FormatHandle(sampler_state.Handle()).c_str(),
                                  string_VkSamplerReductionMode(sampler_reduction->reductionMode),
                                  FormatHandle(image_view_state.Handle()).c_str(), DescribeInstruction().c_str());
-            } else if (!image_view_state.filter_cubic_props.filterCubic) {
+            } else if (!image_view_state.filter_cubic) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle(), sampler_state.Handle(),
                                             image_view_state.Handle());
                 skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::FILTER_CUBIC_02694), objlist, loc.Get(),

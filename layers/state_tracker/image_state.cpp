@@ -607,7 +607,8 @@ ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl:
       range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions)),
       samples(image_state->GetSamples()),
       sampler_conversion(GetSamplerConversion(create_info)),
-      filter_cubic_props(cubic_props),
+      filter_cubic(cubic_props.filterCubic == VK_TRUE),
+      filter_cubic_minmax(cubic_props.filterCubicMinmax == VK_TRUE),
       min_lod(GetImageViewMinLod(create_info)),
       format_features(ff),
       inherited_usage(image_state->GetInheritedUsage(create_info)) {

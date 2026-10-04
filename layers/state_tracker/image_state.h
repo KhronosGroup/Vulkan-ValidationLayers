@@ -311,12 +311,13 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
     const bool is_depth_sliced;
+    const bool filter_cubic;
+    const bool filter_cubic_minmax;
     const VkImageSubresourceRange normalized_subresource_range;
     const subresource_adapter::RangeGenerator range_generator;
     const VkSampleCountFlagBits samples;
     // VK_NULL_HANDLE if it doesn't have one chained in the pNext at creation time
     const VkSamplerYcbcrConversion sampler_conversion;
-    const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
     const float min_lod;
     const VkFormatFeatureFlags2 format_features;
     const VkImageUsageFlags2KHR inherited_usage;  // from spec #resources-image-inherited-usage
