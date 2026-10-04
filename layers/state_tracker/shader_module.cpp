@@ -964,7 +964,11 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     {
         std::vector<uint32_t>::const_iterator it = module_state.words_.cbegin();
         it += 5;  // skip first 5 word of header
-        instructions.reserve(module_state.words_.size() * 4);
+        // We can never have more instructions than word, so this should be less... but how much less?
+        // Using a _LARGE_ shader database, found the average dwords-per-instruction
+        // is around 4.5 where 95% of shaders had over 4.0
+        // The absolute the lowest of any of the shaders the average was 3 (dwords-per-instruction)
+        instructions.reserve(module_state.words_.size() / 3);
         while (it != module_state.words_.cend()) {
             auto new_insn = instructions.emplace_back(it);
             const uint32_t opcode = new_insn.Opcode();
