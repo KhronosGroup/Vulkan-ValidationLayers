@@ -19,6 +19,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cstdarg>
 #include <mutex>
 #include <string>
@@ -242,6 +243,8 @@ class DebugReport {
     bool LogMessage(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
                     const std::string &main_message);
 
+    void EraseObjectName(uint64_t object_handle);
+
     void BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info);
     void EndQueueDebugUtilsLabel(VkQueue queue);
     void InsertQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info);
@@ -269,6 +272,9 @@ class DebugReport {
     vvl::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debug_utils_cmd_buffer_labels;
     vvl::unordered_map<uint64_t, std::string> debug_object_name_map;
     vvl::unordered_map<uint64_t, std::string> debug_utils_object_name_map;
+    // Destroying an object is a very common thing and not all app will even name anything.
+    // This lets EraseObjectName() return without taking |debug_output_mutex| when there is nothing to erase
+    std::atomic<bool> has_object_names{false};
 };
 
 class Logger {

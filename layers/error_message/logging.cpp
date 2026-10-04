@@ -498,6 +498,7 @@ void DebugReport::SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT* pNameI
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     if (pNameInfo->pObjectName) {
         debug_utils_object_name_map[pNameInfo->objectHandle] = pNameInfo->pObjectName;
+        has_object_names.store(true);
     } else {
         debug_utils_object_name_map.erase(pNameInfo->objectHandle);
     }
@@ -507,8 +508,18 @@ void DebugReport::SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT* pNam
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     if (pNameInfo->pObjectName) {
         debug_object_name_map[pNameInfo->object] = pNameInfo->pObjectName;
+        has_object_names.store(true);
     } else {
         debug_object_name_map.erase(pNameInfo->object);
+    }
+}
+
+void DebugReport::EraseObjectName(uint64_t object_handle) {
+    // Skip using the |debug_output_mutex| lock for a fast return if there is no name
+    if (has_object_names.load()) {
+        std::unique_lock<std::mutex> lock(debug_output_mutex);
+        debug_utils_object_name_map.erase(object_handle);
+        debug_object_name_map.erase(object_handle);
     }
 }
 
