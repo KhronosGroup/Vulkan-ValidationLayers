@@ -705,7 +705,6 @@ struct Module {
         vvl::unordered_map<uint32_t, const Instruction *> definitions;
 
         vvl::unordered_map<uint32_t, DecorationSet> decorations;
-        DecorationSet empty_decoration;  // all zero values, allows use to return a reference and not a copy each time
 
         // Some cases we can give better hints knowing the source shader language
         spv::SourceLanguage source_language{spv::SourceLanguageUnknown};
@@ -713,7 +712,6 @@ struct Module {
         // Execution Modes are tied to a Function <id>, multiple EntryPoints can point to the same Function <id>
         // Keep a mapping so each EntryPoint can grab a reference to it
         vvl::unordered_map<uint32_t, ExecutionModeSet> execution_modes;
-        ExecutionModeSet empty_execution_mode;  // all zero values, allows use to return a reference and not a copy each time
 
         // [OpSpecConstant Result ID -> OpDecorate SpecID value] mapping
         vvl::unordered_map<uint32_t, uint32_t> id_to_spec_id;
@@ -822,14 +820,17 @@ struct Module {
 
     const DecorationSet &GetDecorationSet(uint32_t id) const {
         // return the actual decorations for this id, or a default empty set.
+        // all zero values, allows use to return a reference and not a copy each time
+        static const DecorationSet kEmptyDecoration;
         const auto it = static_data_.decorations.find(id);
-        return (it != static_data_.decorations.end()) ? it->second : static_data_.empty_decoration;
+        return (it != static_data_.decorations.end()) ? it->second : kEmptyDecoration;
     }
 
     const ExecutionModeSet &GetExecutionModeSet(uint32_t function_id) const {
-        // return the actual execution modes for this id, or a default empty set.
+        // all zero values, allows use to return a reference and not a copy each time
+        static const ExecutionModeSet kEmptyExecutionMode;
         const auto it = static_data_.execution_modes.find(function_id);
-        return (it != static_data_.execution_modes.end()) ? it->second : static_data_.empty_execution_mode;
+        return (it != static_data_.execution_modes.end()) ? it->second : kEmptyExecutionMode;
     }
 
     std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(const Instruction *insn) const;
