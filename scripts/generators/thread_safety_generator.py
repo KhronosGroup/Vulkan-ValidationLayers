@@ -54,6 +54,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             'vkGetDeviceQueue',
             'vkGetDeviceQueue2',
             'vkCreateDescriptorSetLayout',
+            'vkDestroyDescriptorSetLayout',
             'vkUpdateDescriptorSets',
             'vkUpdateDescriptorSetWithTemplate',
             'vkUpdateDescriptorSetWithTemplateKHR',
