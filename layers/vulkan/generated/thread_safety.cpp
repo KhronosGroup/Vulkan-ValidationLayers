@@ -1094,21 +1094,6 @@ void Device::PostCallRecordDestroySampler(VkDevice device, VkSampler sampler, co
     // Host access to sampler must be externally synchronized
 }
 
-void Device::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                                     const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
-    StartWriteObject(descriptorSetLayout, record_obj.location);
-    // Host access to descriptorSetLayout must be externally synchronized
-}
-
-void Device::PostCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                                      const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
-    FinishWriteObject(descriptorSetLayout, record_obj.location);
-    DestroyObject(descriptorSetLayout);
-    // Host access to descriptorSetLayout must be externally synchronized
-}
-
 void Device::PreCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                                const RecordObject& record_obj) {

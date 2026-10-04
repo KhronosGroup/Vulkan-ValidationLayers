@@ -158,6 +158,22 @@ void Device::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDe
     }
 }
 
+void Device::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
+                                                     const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(descriptorSetLayout, record_obj.location);
+    // Host access to descriptorSetLayout must be externally synchronized
+}
+
+void Device::PostCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
+                                                      const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(descriptorSetLayout, record_obj.location);
+    DestroyObject(descriptorSetLayout);
+    dsl_read_only_map.erase(descriptorSetLayout);
+    // Host access to descriptorSetLayout must be externally synchronized
+}
+
 void Device::PreCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                  VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
