@@ -187,14 +187,22 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                     continue;
                 }
 
-                const vvl::Pipeline* pipeline_state = nullptr;
-                const vvl::ShaderObject* shader_object_state = nullptr;
+                std::shared_ptr<const vvl::Pipeline> pipeline_state;
+                std::shared_ptr<const vvl::ShaderObject> shader_object_state;
 
+                // The app can destroy the pipeline or shader object once it sees the batch that used it complete, before
+                // we get here... so there is nothing left to validate the accesses against.
                 if (it->second.pipeline != VK_NULL_HANDLE) {
                     // We use pipeline over vkShaderModule as likely they will have been destroyed by now
-                    pipeline_state = gpuav.Get<vvl::Pipeline>(it->second.pipeline).get();
+                    pipeline_state = gpuav.Get<vvl::Pipeline>(it->second.pipeline);
+                    if (!pipeline_state) {
+                        continue;
+                    }
                 } else if (it->second.shader_object != VK_NULL_HANDLE) {
-                    shader_object_state = gpuav.Get<vvl::ShaderObject>(it->second.shader_object).get();
+                    shader_object_state = gpuav.Get<vvl::ShaderObject>(it->second.shader_object);
+                    if (!shader_object_state) {
+                        continue;
+                    }
                     ASSERT_AND_CONTINUE(shader_object_state->stage.entrypoint);
                 } else {
                     assert(false);

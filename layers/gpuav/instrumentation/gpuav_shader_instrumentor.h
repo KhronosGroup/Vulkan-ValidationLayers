@@ -46,6 +46,7 @@ struct Module;
 
 namespace gpuav {
 class Validator;
+class QueueSubState;
 namespace spirv {
 struct InstrumentationStatus;
 }
@@ -232,6 +233,13 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
     VkDescriptorSetLayout dummy_desc_layout_[vvl::DescriptorModeCount];
     vvl::concurrent_unordered_map<uint32_t, InstrumentedShader> instrumented_shaders_map_;
+    void EraseInstrumentedShaders(const std::vector<uint32_t>& unique_shader_ids);
+
+    // The errors of a vkQueueSubmit are read when its last batch retires, but the app may see an earlier batch complete
+    // and can then destroy what it used. A queue with these batches holds on to the |instrumented_shaders_map_| entries
+    // of everything destroyed until it has parsed the errors
+    std::mutex held_shader_ids_mutex_;
+    vvl::unordered_map<const QueueSubState*, std::vector<uint32_t>> held_shader_ids_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
     spirv::DeviceSettings instrumentation_device_settings_;
 

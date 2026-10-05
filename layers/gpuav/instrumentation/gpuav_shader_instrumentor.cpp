@@ -829,7 +829,7 @@ void GpuShaderInstrumentor::PreCallRecordDestroyShaderEXT(VkDevice device, VkSha
                                                           const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     if (auto shader_object_state = Get<vvl::ShaderObject>(shader)) {
         auto& sub_state = SubState(*shader_object_state);
-        instrumented_shaders_map_.pop(sub_state.unique_shader_id);
+        EraseInstrumentedShaders({sub_state.unique_shader_id});
 
         if (sub_state.original_handle != VK_NULL_HANDLE) {
             DispatchDestroyShaderEXT(device, sub_state.original_handle, nullptr);
@@ -1164,8 +1164,26 @@ void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipe
         for (auto shader_module_handle : pipeline_sub_state.shader_modules) {
             DispatchDestroyShaderModule(device, shader_module_handle, pAllocator);
         }
+        // "A pipeline library is considered in-use, as long as one of the linking pipelines is in-use"
+        // and the app must keep it alive while the pipelines linked with it are used
+        // (the instrumented library GPU-AV created for a GPL library is destroyed right below for the same reason)
+        EraseInstrumentedShaders(pipeline_sub_state.instrumented_shader_ids);
         if (pipeline_sub_state.instrumented_pipeline_lib != VK_NULL_HANDLE) {
             DispatchDestroyPipeline(device, pipeline_sub_state.instrumented_pipeline_lib, pAllocator);
+        }
+    }
+}
+
+// Called when the pipeline or shader object that owns the shaders is destroyed
+void GpuShaderInstrumentor::EraseInstrumentedShaders(const std::vector<uint32_t>& unique_shader_ids) {
+    std::lock_guard<std::mutex> lock(held_shader_ids_mutex_);
+    if (held_shader_ids_.empty()) {
+        for (const uint32_t unique_shader_id : unique_shader_ids) {
+            instrumented_shaders_map_.erase(unique_shader_id);
+        }
+    } else {
+        for (auto& held : held_shader_ids_) {
+            vvl::Append(held.second, unique_shader_ids);
         }
     }
 }
@@ -1586,6 +1604,7 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
         instrumented_shaders_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, pipeline_state.VkHandle(),
                                                    shader_module_handle, VK_NULL_HANDLE, std::move(code),
                                                    std::move(instrumentation_metadata.status.device));
+        SubState(pipeline_state).instrumented_shader_ids.push_back(instrumentation_metadata.unique_shader_id);
     }
 }
 
@@ -1639,6 +1658,8 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
         // |new_lib_ci| points at it instead of holding a copy.
         // moving a std::vector<uint32_t> (when this one reallocates) keeps its data pointer
         std::vector<std::vector<uint32_t>> inlined_instrumented_spirv;
+        // The VkShaderModules created for |new_lib_ci|
+        std::vector<VkShaderModule> new_lib_shader_modules;
         vku::safe_VkGraphicsPipelineCreateInfo new_lib_ci(modified_lib->GraphicsCreateInfo());
         // If the application supplied pipeline might be interested in failing to be created
         // if the driver does not find it in its cache, GPU-AV needs to succeed in the instrumented pipeline library
@@ -1744,7 +1765,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                         new_lib_ci.pStages[stage_state_i] = *modified_stage_state.pipeline_create_info;
                         new_lib_ci.pStages[stage_state_i].module = new_shader_module;
 
-                        modified_lib_sub_state.shader_modules.emplace_back(new_shader_module);
+                        new_lib_shader_modules.emplace_back(new_shader_module);
                     } else {
                         InternalError(device, loc, "Unable to replace non-instrumented shader with instrumented one.");
                         return VK_NULL_HANDLE;
@@ -1791,11 +1812,14 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                 instrumented_shaders_map_.insert_or_assign(unique_shader_id, modified_library_ci->pLibraries[modified_lib_i],
                                                            instrumented_shader_module, VK_NULL_HANDLE,
                                                            std::move(original_spirv_copy), std::move(stage_status.device));
+                // Owned by the library, every pipeline linked with it re-uses the instrumented library
+                modified_lib_sub_state.instrumented_shader_ids.push_back(unique_shader_id);
             }
         }
 
         // Create instrumented pipeline library if we have instrumented one of its shaders
         if (is_library_instrumented) {
+            vvl::Append(modified_lib_sub_state.shader_modules, new_lib_shader_modules);
             VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
 
             // The library could have destroyed its pipelineLayout, but will have a valid, compatible, version when linking
@@ -1817,6 +1841,13 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             modified_lib_sub_state.instrumented_pipeline_lib = instrumented_pipeline_lib;
 
             const_cast<VkPipeline*>(modified_library_ci->pLibraries)[modified_lib_i] = instrumented_pipeline_lib;
+        } else {
+            // |new_lib_ci| is not used, so neither are the copies of the shaders that had nothing to instrument.
+            // The library is instrumented again at the next link,
+            // keeping them would add more for every pipeline linked with it.
+            for (const VkShaderModule shader_module : new_lib_shader_modules) {
+                DispatchDestroyShaderModule(device, shader_module, pAllocator);
+            }
         }
     }
     return true;

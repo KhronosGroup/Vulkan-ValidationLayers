@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2025 The Khronos Group Inc.
- * Copyright (c) 2023-2025 Valve Corporation
- * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2026 The Khronos Group Inc.
+ * Copyright (c) 2023-2026 Valve Corporation
+ * Copyright (c) 2023-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,4 +37,34 @@ bool CanEnableGpuAV(Test &test) {
         return false;
     }
     return true;
+}
+
+// GPU-AV reads the errors of a vkQueueSubmit when its last batch retires.
+// This submits |command_buffer| in a first batch that signals |timeline| to 1
+// then an empty last batch that waits for the host to signal 2
+// Once 1 is reached the command buffer has completed,
+// but its errors are only read after 2 is signaled and the last batch retires
+inline void SubmitWithLastBatchWaitingOnHost(const vkt::Queue& queue, VkCommandBuffer command_buffer,
+                                             const vkt::Semaphore& timeline) {
+    const uint64_t signal_value = 1;
+    const uint64_t wait_value = 2;
+    VkTimelineSemaphoreSubmitInfo signal_timeline_info = vku::InitStructHelper();
+    signal_timeline_info.signalSemaphoreValueCount = 1;
+    signal_timeline_info.pSignalSemaphoreValues = &signal_value;
+    VkTimelineSemaphoreSubmitInfo wait_timeline_info = vku::InitStructHelper();
+    wait_timeline_info.waitSemaphoreValueCount = 1;
+    wait_timeline_info.pWaitSemaphoreValues = &wait_value;
+
+    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    VkSubmitInfo submits[2];
+    submits[0] = vku::InitStructHelper(&signal_timeline_info);
+    submits[0].commandBufferCount = 1;
+    submits[0].pCommandBuffers = &command_buffer;
+    submits[0].signalSemaphoreCount = 1;
+    submits[0].pSignalSemaphores = &timeline.handle();
+    submits[1] = vku::InitStructHelper(&wait_timeline_info);
+    submits[1].waitSemaphoreCount = 1;
+    submits[1].pWaitSemaphores = &timeline.handle();
+    submits[1].pWaitDstStageMask = &wait_stage;
+    vk::QueueSubmit(queue, 2, submits, VK_NULL_HANDLE);
 }
