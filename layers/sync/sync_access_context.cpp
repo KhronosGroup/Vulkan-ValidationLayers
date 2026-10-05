@@ -308,17 +308,26 @@ void AccessContext::ResolveAccessRangeRecursePrev(const AccessRange& range, cons
         const AccessEntry& src_entry = pos->second;
 
         if (src_entry.HasAbsentOutsideSpans() && !subpass_barriers_.empty()) {
-            // Absent spans are resolved from the previous contexts, so resolve the entry span by span
-            src_entry.VisitSpans(src_range, [&](const AccessRange& span, const AccessState* state) {
-                if (state) {
-                    AccessEntry src(*state);
-                    transform(src.access_state);
-                    resolve_context.ResolveAccessState(span, src);
-                } else {
-                    ResolveGapsRecursePrev(span, resolve_context, infill, barrier_action);
-                }
-                return false;
-            });
+            AccessEntry src(src_entry);
+            src.VisitStates(transform);
+
+            // Import previous contexts over src_range, then overwrite with the source segments
+            AccessContext combined_context;
+            ResolveSubpassDependencies(src_range, combined_context, false, &barrier_action);
+            combined_context.ResolveAccessState(src_range, src, true);
+
+            for (auto& [bounds, entry] : combined_context.access_state_map_) {
+                entry.VisitStates(
+                    [&](AccessState& state) { state.next_global_barrier_index = resolve_context.GetGlobalBarrierCount(); });
+                resolve_context.ResolveAccessState(bounds, entry);
+            }
+            if (infill) {
+                // Spans with neither source nor previous state
+                AccessState access_state = AccessState::DefaultAccessState();
+                access_state.next_global_barrier_index = resolve_context.GetGlobalBarrierCount();
+                barrier_action(&access_state);
+                resolve_context.access_state_map_.InfillGaps(src_range, access_state);
+            }
         } else {
             AccessEntry src(src_entry);
             src.TryCollapseStridedAccess(src_range);
@@ -326,7 +335,7 @@ void AccessContext::ResolveAccessRangeRecursePrev(const AccessRange& range, cons
             resolve_context.ResolveAccessState(src_range, src);
             if (infill && src.HasAbsentOutsideSpans()) {
                 // No previous contexts here, so this takes the infill path
-                ResolveGapsRecursePrev(src_range, resolve_context, infill, barrier_action);
+                ResolveGapsRecursePrev(src_range, resolve_context, true, barrier_action);
             }
         }
         begin = src_range.end;
@@ -334,8 +343,8 @@ void AccessContext::ResolveAccessRangeRecursePrev(const AccessRange& range, cons
     }
 }
 
-void AccessContext::ResolveAccessState(const AccessRange& range, const AccessEntry& src_entry) {
-    const AccessStateFunction apply_barriers = [this](AccessState* state) { ApplyGlobalBarriers(*state); };
+void AccessContext::ResolveAccessState(const AccessRange& range, const AccessEntry& src_entry, bool replace) {
+    const AccessStateFunction apply_global_barriers = [this](AccessState* state) { ApplyGlobalBarriers(*state); };
     auto pos = access_state_map_.LowerBound(range.begin);
     ResourceAddress begin = range.begin;
     while (begin < range.end) {
@@ -379,7 +388,7 @@ void AccessContext::ResolveAccessState(const AccessRange& range, const AccessEnt
                 access_state_map_.ConvertToRegularEntries(current_range);
                 src.VisitSpans(current_range, [&](const AccessRange& span, const AccessState* state) {
                     if (state) {
-                        ResolveAccessState(span, AccessEntry(*state));
+                        ResolveAccessState(span, AccessEntry(*state), replace);
                     }
                     return false;
                 });
@@ -388,7 +397,7 @@ void AccessContext::ResolveAccessState(const AccessRange& range, const AccessEnt
                 continue;
             }
 
-            dst.Resolve(src, apply_barriers);
+            dst.Resolve(src, apply_global_barriers, replace);
             dst.TryCollapseStridedAccess(current_range);
         }
         begin = end;
