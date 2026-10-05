@@ -1246,22 +1246,27 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
         bool external_format_resolve = false;
 
+        // "colorAttachment is only meaningful if VK_IMAGE_ASPECT_COLOR_BIT is set in aspectMask", so it can be garbage otherwise
+        const bool clears_color = (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
+
         const bool is_dynamic_rendering = rp_state->UsesDynamicRendering();
         if (is_dynamic_rendering) {
-            const uint32_t color_index = clear_desc.colorAttachment;
-
-            if ((clear_desc.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0 && cb_state.rendering_attachments.set_color_locations &&
-                color_index < cb_state.rendering_attachments.color_locations.size() &&
-                cb_state.rendering_attachments.color_locations[color_index] == VK_ATTACHMENT_UNUSED) {
-                const LogObjectList objlist(commandBuffer, rp_state->VkHandle());
-                skip |= LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
+            if (clears_color) {
+                const uint32_t color_index = clear_desc.colorAttachment;
+                if (cb_state.rendering_attachments.set_color_locations &&
+                    color_index < cb_state.rendering_attachments.color_locations.size() &&
+                    cb_state.rendering_attachments.color_locations[color_index] == VK_ATTACHMENT_UNUSED) {
+                    const LogObjectList objlist(commandBuffer, rp_state->VkHandle());
+                    skip |=
+                        LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
                                  "cannot be cleared because VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32
                                  "] is VK_ATTACHMENT_UNUSED.",
                                  color_index);
-            }
+                }
 
-            color_view_state =
-                cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicRenderingColorAttachmentIndex(color_index));
+                color_view_state =
+                    cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicRenderingColorAttachmentIndex(color_index));
+            }
             color_attachment_count = cb_state.GetDynamicRenderingColorAttachmentCount();
 
             depth_view_state = cb_state.GetActiveAttachmentImageViewState(
@@ -1276,20 +1281,23 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             const auto* framebuffer = cb_state.active_framebuffer.get();
 
             if (subpass_desc) {
-                if (framebuffer && (clear_desc.colorAttachment != VK_ATTACHMENT_UNUSED) &&
+                if (clears_color && framebuffer && (clear_desc.colorAttachment != VK_ATTACHMENT_UNUSED) &&
                     (clear_desc.colorAttachment < subpass_desc->colorAttachmentCount)) {
                     if (subpass_desc->pColorAttachments[clear_desc.colorAttachment].attachment <
                         framebuffer->create_info.attachmentCount) {
                         color_view_state = cb_state.GetActiveAttachmentImageViewState(
                             subpass_desc->pColorAttachments[clear_desc.colorAttachment].attachment);
+                    }
+                }
 
-                        if (subpass_desc->pResolveAttachments) {
-                            const uint32_t resolve_attachment =
-                                subpass_desc->pResolveAttachments[clear_desc.colorAttachment].attachment;
-                            if (resolve_attachment != VK_ATTACHMENT_UNUSED) {
-                                external_format_resolve =
-                                    GetExternalFormat(renderpass_create_info->pAttachments[resolve_attachment].pNext) != 0;
-                            }
+                // Whether the subpass does an external format resolve does not depend on colorAttachment
+                if (subpass_desc->pResolveAttachments) {
+                    for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
+                        const uint32_t resolve_attachment = subpass_desc->pResolveAttachments[i].attachment;
+                        if (resolve_attachment != VK_ATTACHMENT_UNUSED &&
+                            GetExternalFormat(renderpass_create_info->pAttachments[resolve_attachment].pNext) != 0) {
+                            external_format_resolve = true;
+                            break;
                         }
                     }
                 }
