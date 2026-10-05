@@ -2932,6 +2932,56 @@ TEST_F(NegativeExternalMemorySync, ZeroInitializeFeature) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeExternalMemorySync, D3D11ImageBarrierExternalQueueFamilyLayout) {
+    TEST_DESCRIPTION("Ownership transfer to/from VK_QUEUE_FAMILY_EXTERNAL of a D3D11 texture");
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5431
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    VkExternalMemoryImageCreateInfo external_image_info = vku::InitStructHelper();
+    external_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.pNext = &external_image_info;
+
+    const auto compatible_types = GetCompatibleHandleTypes(Gpu(), image_ci, VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT);
+    if ((compatible_types & external_image_info.handleTypes) == 0) {
+        GTEST_SKIP() << "Image does not support VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT";
+    }
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
+    dedicated_info.image = image;
+    image.AllocateAndBindMemory(*m_device, 0, &dedicated_info);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+
+    // Releasing to VK_QUEUE_FAMILY_EXTERNAL with a newLayout other than GENERAL
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-dstQueueFamilyIndex-12331");
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_errorMonitor->VerifyFound();
+
+    // Acquiring from VK_QUEUE_FAMILY_EXTERNAL with an oldLayout other than GENERAL or UNDEFINED
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-12332");
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeExternalMemorySync, ImageFormatPropertiesMissingExternalInfo) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9002");
     SetTargetApiVersion(VK_API_VERSION_1_1);
