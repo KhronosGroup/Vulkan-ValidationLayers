@@ -1164,6 +1164,12 @@ void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipe
         for (auto shader_module_handle : pipeline_sub_state.shader_modules) {
             DispatchDestroyShaderModule(device, shader_module_handle, pAllocator);
         }
+        // Pipelines linked from a library can still report errors from its shaders after the library is destroyed
+        if ((pipeline_state->create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) == 0) {
+            for (const uint32_t unique_shader_id : pipeline_sub_state.instrumented_shader_ids) {
+                instrumented_shaders_map_.pop(unique_shader_id);
+            }
+        }
         if (pipeline_sub_state.instrumented_pipeline_lib != VK_NULL_HANDLE) {
             DispatchDestroyPipeline(device, pipeline_sub_state.instrumented_pipeline_lib, pAllocator);
         }
@@ -1591,6 +1597,7 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
         instrumented_shaders_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, pipeline_state.VkHandle(),
                                                    shader_module_handle, VK_NULL_HANDLE, std::move(code),
                                                    std::move(instrumentation_metadata.status.device));
+        SubState(pipeline_state).instrumented_shader_ids.push_back(instrumentation_metadata.unique_shader_id);
     }
 }
 

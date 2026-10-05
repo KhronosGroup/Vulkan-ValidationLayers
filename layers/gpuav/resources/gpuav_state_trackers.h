@@ -500,6 +500,8 @@ class PipelineSubState : public vvl::PipelineSubState {
     gpuav::spirv::InstrumentationStatus status;
     // When we instrument GPL at link time, we need to hold the libraries created by GPU-AV so they can be re-used
     VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
+    // Ids in GpuShaderInstrumentor::instrumented_shaders_map_ to remove when the pipeline is destroyed
+    std::vector<uint32_t> instrumented_shader_ids;
 
     // Multiple threads can record multiple commands using the same pipeline,
     // so layout recreation and deferred pipeline destruction have to be thread safe
