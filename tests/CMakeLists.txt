@@ -23,16 +23,49 @@ endif()
 
 add_subdirectory(framework)
 
+# Compiles the sources in <target>_objects which, unlike <target>, does not depend on vvl,
+# so that VS can build them in parallel with vvl.
+# <target> still lists them, uncompiled, for VS Solution Explorer.
+function(vvl_add_test_sources target)
+    set(OBJECTS_TARGET ${target}_objects)
+    set(OBJECTS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    list(TRANSFORM ARGN PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/" OUTPUT_VARIABLE OBJECTS_SOURCES)
+    # Source file properties are per directory, so add the object library from its own (generated) one
+    file(CONFIGURE OUTPUT objects/CMakeLists.txt @ONLY CONTENT [[
+        add_library(${OBJECTS_TARGET} OBJECT ${OBJECTS_SOURCES})
+        target_link_libraries(${OBJECTS_TARGET} PRIVATE vk_test_framework)
+        source_group(TREE "${OBJECTS_SOURCE_DIR}" FILES ${OBJECTS_SOURCES})
+        set_target_properties(${OBJECTS_TARGET} PROPERTIES FOLDER "TestObjects")
+    ]])
+    add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/objects ${CMAKE_CURRENT_BINARY_DIR}/objects)
+
+    target_sources(${target} PRIVATE ${OBJECTS_SOURCES})
+    set_source_files_properties(${OBJECTS_SOURCES} PROPERTIES HEADER_FILE_ONLY TRUE)
+    source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${OBJECTS_SOURCES})
+
+    if(CMAKE_GENERATOR MATCHES "Visual Studio")
+        # Give the objects to the linker at build time, so Solution Explorer does not list them
+        file(GENERATE OUTPUT ${target}_objects_$<CONFIG>.targets CONTENT
+            "<Project><Target Name='LinkTestObjects' AfterTargets='ComputeLinkInputsFromProject'>
+                <ItemGroup><Link Include='$<TARGET_OBJECTS:${OBJECTS_TARGET}>'/></ItemGroup>
+            </Target></Project>")
+        set_target_properties(${target} PROPERTIES
+            VS_GLOBAL_ForceImportAfterCppTargets ${CMAKE_CURRENT_BINARY_DIR}/${target}_objects_$(Configuration).targets)
+        add_dependencies(${target} ${OBJECTS_TARGET})
+        target_link_libraries(${target} PRIVATE vk_test_framework)
+        target_include_directories(${target} PRIVATE $<TARGET_PROPERTY:${OBJECTS_TARGET},INCLUDE_DIRECTORIES>)
+    else()
+        target_link_libraries(${target} PRIVATE ${OBJECTS_TARGET})
+    endif()
+endfunction()
+
 if (ANDROID)
     add_library(vk_layer_validation_tests MODULE)
 else()
     add_executable(vk_layer_validation_tests)
 endif()
 
-# To compile sources while VVL builds, add them to an object library
-# to be linked into the final exe
-add_library(vk_layer_validation_tests_objects OBJECT)
-target_sources(vk_layer_validation_tests_objects PRIVATE
+set(TEST_SOURCES
     unit/android_hardware_buffer.cpp
     unit/android_hardware_buffer_positive.cpp
     unit/android_external_resolve.cpp
@@ -307,6 +340,7 @@ target_sources(vk_layer_validation_tests_objects PRIVATE
     vvl_utils/small_vector.cpp
     vvl_utils/pnext_chain_extraction.cpp
 )
+vvl_add_test_sources(vk_layer_validation_tests ${TEST_SOURCES})
 
 target_include_directories(vk_layer_validation_tests_objects PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/..
@@ -320,7 +354,7 @@ target_include_directories(vk_layer_validation_tests_objects PRIVATE
 # - |time_macros| covers the calls that consume the .pch
 #
 # Use CMAKE_DISABLE_PRECOMPILE_HEADERS to turn off
-target_precompile_headers(vk_layer_validation_tests PRIVATE
+target_precompile_headers(vk_layer_validation_tests_objects PRIVATE
     # Included a lot, costly
 	<algorithm>
     # Those files end up being included by every TU,
@@ -332,20 +366,7 @@ target_precompile_headers(vk_layer_validation_tests PRIVATE
     framework/test_common.h
 )
 
-get_target_property(TEST_SOURCES vk_layer_validation_tests_objects SOURCES)
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
-
 add_dependencies(vk_layer_validation_tests vvl)
-
-# 2 target_link_libraries calls:
-# First so that the object library get vk_test_framework include dirs and definitions
-# Second to actually link objects library and vk_test_framework into exe
-target_link_libraries(vk_layer_validation_tests_objects PRIVATE
-    vk_test_framework
-)
-target_link_libraries(vk_layer_validation_tests PRIVATE
-    vk_layer_validation_tests_objects
-)
 
 # More details in tests/android/mock/README.md
 option(VVL_MOCK_ANDROID "Enable building for Android on desktop for testing with MockICD setup")

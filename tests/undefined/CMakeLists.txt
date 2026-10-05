@@ -22,27 +22,12 @@ else()
     add_executable(vk_layer_validation_undefined)
 endif()
 
-# To compile sources while VVL builds, add them to an object library
-# to be linked into the final exe
-add_library(vk_layer_validation_undefined_objects OBJECT)
-target_sources(vk_layer_validation_undefined_objects PRIVATE
+set(TEST_SOURCES
     core_undefined.cpp
 )
-
-get_target_property(TEST_SOURCES vk_layer_validation_undefined_objects SOURCES)
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
+vvl_add_test_sources(vk_layer_validation_undefined ${TEST_SOURCES})
 
 add_dependencies(vk_layer_validation_undefined vvl)
-
-# 2 target_link_libraries calls:
-# First so that the object library get vk_test_framework include dirs and definitions
-# Second to actually link objects library and vk_test_framework into exe
-target_link_libraries(vk_layer_validation_undefined_objects PRIVATE
-    vk_test_framework
-)
-target_link_libraries(vk_layer_validation_undefined PRIVATE
-    vk_layer_validation_undefined_objects
-)
 
 # Want next to other executable in build folder
 set_target_properties(vk_layer_validation_undefined
