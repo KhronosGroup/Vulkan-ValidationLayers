@@ -47,11 +47,11 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
         if (pCreateInfo->samples > VK_SAMPLE_COUNT_1_BIT && !(pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
             skip |= LogPerformanceWarning(
                 "BestPractices-vkCreateImage-non-transient-ms-image", device, error_obj.location,
-                "%s %s Trying to create a multisampled image, but pCreateInfo->usage did not have "
+                "%s Trying to create a multisampled image, but pCreateInfo->usage did not have "
                 "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. Multisampled images may be resolved on-chip, "
                 "and do not need to be backed by physical storage. "
                 "TRANSIENT_ATTACHMENT allows tiled GPUs to not back the multisampled image with physical memory.",
-                VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG));
+                VendorSpecificTag(kBPVendorArm | kBPVendorIMG).c_str());
         }
     }
 
@@ -189,21 +189,21 @@ void BestPractices::ValidateImageInQueueArmImg(const Location& loc, vvl::Image& 
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
         !image_state.IsSwapchainImage()) {
         LogPerformanceWarning("BestPractices-RenderPass-redundant-store", device, loc,
-                              "%s %s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
+                              "%s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
                               ") of image was cleared as part of LOAD_OP_CLEAR, but last time "
                               "image was used, it was written to with STORE_OP_STORE. "
                               "Storing to the image is probably redundant in this case, and wastes bandwidth on tile-based "
                               "architectures.",
-                              VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
+                              VendorSpecificTag(kBPVendorArm | kBPVendorIMG).c_str(), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED) {
         LogPerformanceWarning(
             "BestPractices-RenderPass-redundant-clear", device, loc,
-            "%s %s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
+            "%s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
             ") of image was cleared as part of LOAD_OP_CLEAR, but last time "
             "image was used, it was written to with vkCmdClear*Image(). "
             "Clearing the image with vkCmdClear*Image() is probably redundant in this case, and wastes bandwidth on "
             "tile-based architectures.",
-            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level);
+            VendorSpecificTag(kBPVendorArm | kBPVendorIMG).c_str(), array_layer, mip_level);
     } else if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE &&
                (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::CLEARED ||
                 last_usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE || last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE)) {
@@ -249,11 +249,10 @@ void BestPractices::ValidateImageInQueueArmImg(const Location& loc, vvl::Image& 
         }
 
         LogPerformanceWarning(vuid, device, loc,
-                              "%s %s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
+                              "%s Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
                               ") of image was loaded to tile as part of LOAD_OP_LOAD, but last "
                               "time image was used, it was written to with %s. %s",
-                              VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), array_layer, mip_level, last_cmd,
-                              suggestion);
+                              VendorSpecificTag(kBPVendorArm | kBPVendorIMG).c_str(), array_layer, mip_level, last_cmd, suggestion);
     }
 }
 

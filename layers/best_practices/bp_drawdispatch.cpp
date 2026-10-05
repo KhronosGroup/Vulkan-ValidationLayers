@@ -125,11 +125,11 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
         (sub_state.small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1) &&
         (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
         skip |= LogPerformanceWarning("BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls", device, error_obj.location,
-                                      "%s %s: The command buffer contains many small indexed drawcalls "
+                                      "%s: The command buffer contains many small indexed drawcalls "
                                       "(at least %" PRIu32 " drawcalls with less than %" PRIu32
                                       " indices each). This may cause pipeline bubbles. "
                                       "You can try batching drawcalls or instancing when applicable.",
-                                      VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), kMaxSmallIndexedDrawcalls,
+                                      VendorSpecificTag(kBPVendorArm | kBPVendorIMG).c_str(), kMaxSmallIndexedDrawcalls,
                                       kSmallIndexedDrawcallIndices);
     }
 

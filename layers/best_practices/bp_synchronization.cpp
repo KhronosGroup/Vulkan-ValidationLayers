@@ -367,9 +367,9 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
 
             if (old_is_read_layout && new_is_read_layout) {
                 skip |= LogPerformanceWarning("BestPractices-PipelineBarrier-readToReadBarrier", commandBuffer, error_obj.location,
-                                              "%s %s Don't issue read-to-read barriers. "
+                                              "%s Don't issue read-to-read barriers. "
                                               "Get the resource in the right state the first time you use it.",
-                                              VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
+                                              VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str());
             }
 
             // general with no storage
@@ -449,11 +449,11 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
         const size_t count = Count<vvl::Semaphore>() + 1;
         if (count > kMaxRecommendedSemaphoreObjectsSizeAMD) {
             skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfSemaphores", device, error_obj.location,
-                                          "%s %s High number of vkSemaphore objects created. "
+                                          "%s High number of vkSemaphore objects created. "
                                           "%zu created, but recommended max is %" PRIu32
                                           ".\nMinimize the amount of queue synchronization that is used. "
                                           "Each semaphore has a CPU and GPU overhead cost with it.",
-                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), count,
+                                          VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str(), count,
                                           kMaxRecommendedSemaphoreObjectsSizeAMD);
         }
     }
@@ -470,11 +470,11 @@ bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCre
         const size_t count = Count<vvl::Fence>() + 1;
         if (count > kMaxRecommendedFenceObjectsSizeAMD) {
             skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfFences", device, error_obj.location,
-                                          "%s %s High number of VkFence objects created. "
+                                          "%s High number of VkFence objects created. "
                                           "%zu created, but recommended max is %" PRIu32
                                           ".\nMinimize the amount of CPU-GPU synchronization that is used. "
                                           "Each fence has a CPU and GPU overhead cost with it.",
-                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), count,
+                                          VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str(), count,
                                           kMaxRecommendedFenceObjectsSizeAMD);
         }
     }

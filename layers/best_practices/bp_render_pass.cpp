@@ -155,13 +155,13 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
         if (attachment_needs_readback && (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
             const LogObjectList objlist(commandBuffer, pRenderPassBegin->renderPass);
             skip |= LogPerformanceWarning("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback", objlist, loc,
-                                          "%s %s: Attachment %" PRIu32
+                                          "%s: Attachment %" PRIu32
                                           " in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
                                           "Submitting this renderpass will cause the driver to inject a readback of the attachment "
                                           "which will copy in total %" PRIu32
                                           " pixels (renderArea = "
                                           "{ %s }) to the tile buffer.",
-                                          VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), att,
+                                          VendorSpecificTag(kBPVendorArm | kBPVendorIMG).c_str(), att,
                                           pRenderPassBegin->renderArea.extent.width * pRenderPassBegin->renderArea.extent.height,
                                           string_VkRect2D(pRenderPassBegin->renderArea).c_str());
         }
@@ -344,11 +344,11 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
     if (uses_depth) {
         skip |= LogPerformanceWarning(
             "BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage", commandBuffer, loc,
-            "%s %s: Depth pre-passes may be in use. In general, this is not recommended in tile-based deferred "
+            "%s: Depth pre-passes may be in use. In general, this is not recommended in tile-based deferred "
             "rendering architectures; such as those in Arm Mali or PowerVR GPUs. Since they can remove geometry "
             "hidden by other opaque geometry. Mali has Forward Pixel Killing (FPK), PowerVR has Hidden Surface "
             "Remover (HSR) in which case, using depth pre-passes for hidden surface removal may worsen performance.",
-            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG));
+            VendorSpecificTag(kBPVendorArm | kBPVendorIMG).c_str());
     }
 
     vvl::RenderPass* rp_state = cmd->active_render_pass.get();
@@ -403,12 +403,12 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
             if (untouched_aspects) {
                 skip |= LogPerformanceWarning(
                     "BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile", commandBuffer, loc,
-                    "%s %s: Render pass was ended, but attachment %" PRIu32
+                    "%s: Render pass was ended, but attachment %" PRIu32
                     " (format: %s, untouched aspects %s) "
                     "was never accessed by a pipeline or clear command. "
                     "On tile-based architectures, LOAD_OP_LOAD and STORE_OP_STORE consume bandwidth and should not be part of the "
                     "render pass if the attachments are not intended to be accessed.",
-                    VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), i, string_VkFormat(attachment.format),
+                    VendorSpecificTag(kBPVendorArm | kBPVendorIMG).c_str(), i, string_VkFormat(attachment.format),
                     string_VkImageAspectFlags(untouched_aspects).c_str());
             }
         }
