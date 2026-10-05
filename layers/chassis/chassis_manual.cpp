@@ -137,10 +137,12 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char* funcName) {
     auto layer_data = vvl::GetDispatchDevice(device);
-    if (!ApiParentExtensionEnabled(funcName, &layer_data->extensions)) {
+    // Both maps are keyed by std::string, build it once instead of once per lookup
+    const std::string name(funcName);
+    if (!ApiParentExtensionEnabled(name, &layer_data->extensions)) {
         return nullptr;
     }
-    const auto& item = GetNameToFuncPtrMap().find(funcName);
+    const auto& item = GetNameToFuncPtrMap().find(name);
     if (item != GetNameToFuncPtrMap().end()) {
         if (item->second.function_type != kFuncTypeDev) {
             Location loc(vvl::Func::vkGetDeviceProcAddr);

@@ -37,7 +37,7 @@ struct DeviceExtensions;
 //   o  Determine if the API has an associated extension
 //   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
 //   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
-bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info);
+bool ApiParentExtensionEnabled(const std::string& api_name, const DeviceExtensions* device_extension_info);
 void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* table, PFN_vkGetDeviceProcAddr gpa);
 void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDispatchTable* table, PFN_vkGetInstanceProcAddr gpa);
 // NOLINTEND

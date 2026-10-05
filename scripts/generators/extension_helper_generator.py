@@ -354,11 +354,11 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
                 const auto& promotion_info_map = GetInstancePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
-                    auto info = GetInstanceVersionMap(version_it.second.first);
+                    const auto& version_info = GetInstanceVersionMap(version_it.second.first);
                     if (api_version >= version_it.first) {
-                        if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                        if (version_info.state) this->*(version_info.state) = kEnabledByCreateinfo;
                         for (const auto& extension : version_it.second.second) {
-                            info = GetInfo(extension);
+                            const auto& info = GetInfo(extension);
                             assert(info.state);
                             if (info.state) this->*(info.state) = kEnabledByApiLevel;
                         }
@@ -370,7 +370,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                         if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
                         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-                        auto info = GetInfo(extension);
+                        const auto& info = GetInfo(extension);
                         if (info.state) this->*(info.state) = kEnabledByCreateinfo;
                     }
                 }
@@ -388,11 +388,11 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
                 const auto& promotion_info_map = GetDevicePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
-                    auto info = GetDeviceVersionMap(version_it.second.first);
+                    const auto& version_info = GetDeviceVersionMap(version_it.second.first);
                     if (api_version >= version_it.first) {
-                        if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                        if (version_info.state) this->*(version_info.state) = kEnabledByCreateinfo;
                         for (const auto& extension : version_it.second.second) {
-                            info = GetInfo(extension);
+                            const auto& info = GetInfo(extension);
                             assert(info.state);
                             if (info.state) this->*(info.state) = kEnabledByApiLevel;
                         }
@@ -404,7 +404,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                         if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
                         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-                        auto info = GetInfo(extension);
+                        const auto& info = GetInfo(extension);
                         if (info.state) this->*(info.state) = kEnabledByCreateinfo;
                     }
                 }
@@ -419,11 +419,11 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                         vvl::Extension::_VK_EXT_extended_dynamic_state3,
                         vvl::Extension::_VK_EXT_vertex_input_dynamic_state,
                     };
-                    auto info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
-                    if (info.state) {
-                        if (IsExtEnabled(this->*(info.state))) {
+                    const auto& shader_object_info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
+                    if (shader_object_info.state) {
+                        if (IsExtEnabled(this->*(shader_object_info.state))) {
                             for (auto interaction_ext : shader_object_interactions) {
-                                info = GetInfo(interaction_ext);
+                                const auto& info = GetInfo(interaction_ext);
                                 assert(info.state);
                                 if (this->*(info.state) != kEnabledByCreateinfo) {
                                     this->*(info.state) = kEnabledByInteraction;
@@ -446,11 +446,11 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
                 const auto& promotion_info_map = GetDevicePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
-                    auto info = GetDeviceVersionMap(version_it.second.first);
+                    const auto& version_info = GetDeviceVersionMap(version_it.second.first);
                     if (api_version >= version_it.first) {
-                        if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+                        if (version_info.state) this->*(version_info.state) = kEnabledByCreateinfo;
                         for (const auto& extension : version_it.second.second) {
-                            info = GetInfo(extension);
+                            const auto& info = GetInfo(extension);
                             assert(info.state);
                             if (info.state) this->*(info.state) = kEnabledByApiLevel;
                         }
@@ -458,7 +458,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 }
                 for (const auto &prop : props) {
                     vvl::Extension extension = GetExtension(prop.extensionName);
-                    auto info = GetInfo(extension);
+                    const auto& info = GetInfo(extension);
                     if (info.state) this->*(info.state) = kEnabledByCreateinfo;
                 }
 
@@ -472,11 +472,11 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                         vvl::Extension::_VK_EXT_extended_dynamic_state3,
                         vvl::Extension::_VK_EXT_vertex_input_dynamic_state,
                     };
-                    auto info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
-                    if (info.state) {
-                        if (IsExtEnabled(this->*(info.state))) {
+                    const auto& shader_object_info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
+                    if (shader_object_info.state) {
+                        if (IsExtEnabled(this->*(shader_object_info.state))) {
                             for (auto interaction_ext : shader_object_interactions) {
-                                info = GetInfo(interaction_ext);
+                                const auto& info = GetInfo(interaction_ext);
                                 assert(info.state);
                                 if (this->*(info.state) != kEnabledByCreateinfo) {
                                     this->*(info.state) = kEnabledByInteraction;

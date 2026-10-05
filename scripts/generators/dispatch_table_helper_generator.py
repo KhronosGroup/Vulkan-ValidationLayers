@@ -79,7 +79,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             //   o  Determine if the API has an associated extension
             //   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
             //   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
-            bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info);''')
+            bool ApiParentExtensionEnabled(const std::string& api_name, const DeviceExtensions* device_extension_info);''')
 
         out.append('void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* table, PFN_vkGetDeviceProcAddr gpa);')
 
@@ -134,10 +134,10 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             //   o  Determine if the API has an associated extension
             //   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
             //   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
-            bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions* device_extension_info) {
+            bool ApiParentExtensionEnabled(const std::string& api_name, const DeviceExtensions* device_extension_info) {
                 auto promoted_api = GetApiPromotedMap().find(api_name);
                 if (promoted_api != GetApiPromotedMap().end()) {
-                    auto info = GetDeviceVersionMap(promoted_api->second.c_str());
+                    const auto& info = GetDeviceVersionMap(promoted_api->second.c_str());
                     assert(info.state);
                     return (device_extension_info->*(info.state) == kEnabledByCreateinfo);
                 }
@@ -147,7 +147,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
                 if (has_ext != GetApiExtensionMap().end()) {
                     // Was the extension for this API enabled in the CreateDevice call?
                     for (const auto& extension : has_ext->second) {
-                        auto info = device_extension_info->GetInfo(extension);
+                        const auto& info = device_extension_info->GetInfo(extension);
                         if (info.state) {
                             if (device_extension_info->*(info.state) == kEnabledByCreateinfo ||
                                 device_extension_info->*(info.state) == kEnabledByInteraction) {
@@ -159,7 +159,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
                     // Was the extension for this API enabled in the CreateInstance call?
                     auto instance_extension_info = static_cast<const InstanceExtensions*>(device_extension_info);
                     for (const auto& extension : has_ext->second) {
-                        auto info = instance_extension_info->GetInfo(extension);
+                        const auto& info = instance_extension_info->GetInfo(extension);
                         if (info.state) {
                             if (instance_extension_info->*(info.state) == kEnabledByCreateinfo ||
                                 instance_extension_info->*(info.state) == kEnabledByInteraction) {
