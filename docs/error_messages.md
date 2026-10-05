@@ -49,7 +49,7 @@ const char*                           pMessageIdName;  // VUID
 int32_t                               messageIdNumber; // Hash of the VUID
 const char*                           pMessage;        // The "main message" (includes the spec text on separate line)
 
-// Debug Objects that Validaiton will print for you in a default callback
+// Debug Objects that Validation will print for you in a default callback
 uint32_t                              queueLabelCount;
 const VkDebugUtilsLabelEXT*           pQueueLabels;
 uint32_t                              cmdBufLabelCount;
