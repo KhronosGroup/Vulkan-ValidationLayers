@@ -1832,6 +1832,9 @@ static bool GpuValidateShader(const std::vector<uint32_t>& input, spv_target_env
     spvValidatorOptionsSetScalarBlockLayout(options, true);
     spv_result_t result = spvValidateWithOptions(ctx, options, &binary, &diag);
     if (result != SPV_SUCCESS && diag) error = diag->error;
+    spvDiagnosticDestroy(diag);
+    spvValidatorOptionsDestroy(options);
+    spvContextDestroy(ctx);
     return (result == SPV_SUCCESS);
 }
 
