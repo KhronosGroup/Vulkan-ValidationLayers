@@ -19,64 +19,58 @@
 #include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 #include "state_tracker/buffer_state.h"
+#include <type_traits>
 
 namespace syncval {
 
 // Execute Action for each map entry in the generated ranges until it returns true
 //
-// Action is const w.r.t. map
-// Action is allowed (assumed) to modify pos
-// Action must not advance pos for ranges strictly < pos->first
-// Action must handle range strictly less than pos->first correctly
-// Action must handle pos == end correctly
-// Action is assumed to only require invocation once per map entry
-// Note: If Action invocations are heavyweight and inter-entry (gap) calls are not needed
-//       add a template or function parameter to skip them. TBD.
+// Action is const w.r.t. map and may modify pos.
+// Action must retain an entry extending beyond range and must handle pos == end
+// and ranges before pos->first.
+// Regular entries are checked once across generated ranges.
+// Strided entries are also checked once when their strided range matches the generator's.
+// In that case, Action must depend only on access state
 template <typename Action>
 bool ForEachEntryInRangesUntil(const AccessMap& map, ImageRangeGen& range_gen, Action& action) {
     using RangeType = ImageRangeGen::RangeType;
     using IndexType = RangeType::index_type;
     auto pos = map.LowerBound((*range_gen).begin);
     const auto end = map.end();
+    const auto strided_range = range_gen.GetStridedRange();
     IndexType skip_limit = 0;
-    for (; range_gen->non_empty() && pos != end; ++range_gen) {
+    for (; range_gen->non_empty(); ++range_gen) {
         RangeType range = *range_gen;
-        // See if a prev pos has covered this range
         if (range.end <= skip_limit) {
-            // Since the map is const, we needn't call action on the same pos again
             continue;
         }
-
-        //  If the current range was *partially* covered be a previous pos, trim, such that Action is only
-        //  called once for a given range (and pos)
         if (range.begin < skip_limit) {
             range.begin = skip_limit;
         }
 
-        // Now advance pos as needed to match range
-        if (pos->first.strictly_less(range)) {
+        // Advance pos to the first entry that can intersect range
+        if (pos != end && pos->first.strictly_less(range)) {
             ++pos;
-            if (pos == end) break;
-            if (pos->first.strictly_less(range)) {
+            if (pos != end && pos->first.strictly_less(range)) {
                 pos = map.LowerBound(range.begin);
-                if (pos == end) break;
             }
             assert(pos == map.LowerBound(range.begin));
         }
 
-        // If the range intersects pos->first, consider Action performed for that map entry, and
-        // make sure not to call Action for this pos for any subsequent ranges
-        skip_limit = range.end > pos->first.begin ? pos->first.end : 0U;
+        if (action(range, end, pos)) {
+            return true;
+        }
 
-        // Action is allowed to alter pos but shouldn't do so if range is strictly < pos->first
-        if (action(range, end, pos)) return true;
+        // The retained entry may cover later generated ranges too
+        skip_limit = 0;
+        if (pos != end && range.end > pos->first.begin) {
+            const bool visit_once =
+                !pos->second.strided_access || (strided_range && pos->second.IsStridedRangeCompatible(*strided_range));
+            if (visit_once) {
+                skip_limit = pos->first.end;
+            }
+        }
     }
-
-    // Action needs to handle the "at end " condition (and can be useful for recursive actions)
-    for (; range_gen->non_empty(); ++range_gen) {
-        if (action(*range_gen, end, pos)) return true;
-    }
-
     return false;
 }
 
@@ -248,7 +242,7 @@ class EventBarrierHazardDetector {
     ResourceAddress ScopeBegin() const { return scope_pos_->first.begin; }
     ResourceAddress ScopeEnd() const { return scope_pos_->first.end; }
     const AccessRange& ScopeRange() const { return scope_pos_->first; }
-    const AccessState& ScopeState() const { return scope_pos_->second; }
+    const AccessState& ScopeState() const { return scope_pos_->second.access_state; }
 
     bool AdvanceScope(const AccessRange& range) {
         // Note: non_empty is (valid && !empty), so don't change !non_empty to empty...
@@ -445,7 +439,7 @@ HazardResult AccessContext::DetectHazardRange(Detector& detector, const AccessRa
             }
         }
     }
-    const bool detect_prev = (options & DetectOptions::kDetectPrevious) != 0;
+    const bool detect_prev = (options & DetectOptions::kDetectPrevious) != 0 && !subpass_barriers_.empty();
     auto pos = access_state_map_.LowerBound(range.begin);
     hazard = DetectHazardOneRange(detector, detect_prev, pos, access_state_map_.end(), range);
     return hazard;
@@ -466,7 +460,7 @@ HazardResult AccessContext::DetectHazardGeneratedRangeGen(Detector& detector, Im
         }
     }
 
-    const bool detect_prev = (options & DetectOptions::kDetectPrevious) != 0;
+    const bool detect_prev = (options & DetectOptions::kDetectPrevious) != 0 && !subpass_barriers_.empty();
     using ConstIterator = AccessMap::const_iterator;
     auto do_detect_hazard_range = [this, &detector, &hazard, detect_prev](const ImageRangeGen::RangeType& range,
                                                                           const ConstIterator& end, ConstIterator& pos) {
@@ -482,9 +476,21 @@ HazardResult AccessContext::DetectAsyncHazard(const Detector& detector, const Ac
                                               QueueId async_queue_id) const {
     assert(range.non_empty());
     HazardResult hazard;
+
+    auto detect_span = [&](const AccessRange&, const AccessState* state) {
+        if (!state) {
+            return false;
+        }
+        hazard = detector.DetectAsync(*state, async_tag, async_queue_id);
+        // TODO: Continue checking later overlapping access states when no hazard is found
+        return true;
+    };
     auto pos = access_state_map_.LowerBound(range.begin);
-    if (pos != access_state_map_.end() && pos->first.begin < range.end) {
-        hazard = detector.DetectAsync(pos->second, async_tag, async_queue_id);
+    while (pos != access_state_map_.end() && pos->first.begin < range.end) {
+        if (pos->second.VisitSpans(pos->first & range, detect_span)) {
+            break;
+        }
+        ++pos;
     }
     return hazard;
 }
@@ -495,11 +501,19 @@ HazardResult AccessContext::DetectAsyncHazard(const Detector& detector, ImageRan
     using ConstIterator = AccessMap::const_iterator;
     HazardResult hazard;
 
-    auto do_async_hazard_check = [&detector, async_tag, async_queue_id, &hazard](const ImageRangeGen::RangeType& range,
-                                                                                 const ConstIterator& end, ConstIterator& pos) {
+    auto detect_span = [&](const AccessRange&, const AccessState* state) {
+        hazard = detector.DetectAsync(*state, async_tag, async_queue_id);
+        return hazard.IsHazard();
+    };
+    auto do_async_hazard_check = [&](const ImageRangeGen::RangeType& range, const ConstIterator& end, ConstIterator& pos) {
         while (pos != end && pos->first.begin < range.end) {
-            hazard = detector.DetectAsync(pos->second, async_tag, async_queue_id);
-            if (hazard.IsHazard()) return true;
+            if (pos->second.VisitStates(pos->first & range, detect_span)) {
+                return true;
+            }
+            // Retain an entry that extends beyond range for later generated ranges
+            if (pos->first.end > range.end) {
+                break;
+            }
             ++pos;
         }
         return false;
@@ -513,24 +527,48 @@ HazardResult AccessContext::DetectHazardOneRange(Detector& detector, bool detect
                                                  const AccessMap::const_iterator& the_end, const AccessRange& range) const {
     HazardResult hazard;
     AccessRange gap = {range.begin, range.begin};
+    constexpr bool event_barrier = std::is_same_v<Detector, EventBarrierHazardDetector>;
 
+    auto detect_span = [&](const AccessRange& span, const AccessState* state) {
+        if (state) {
+            hazard = detector.Detect(span, *state);
+        } else if (detect_prev) {
+            hazard = DetectPreviousHazard(detector, span);
+        }
+        return hazard.IsHazard();
+    };
     while (pos != the_end && pos->first.begin < range.end) {
-        // Cover any leading gap, or gap between entries
         if (detect_prev) {
-            // TODO: After profiling we may want to change the descent logic such that we don't recur per gap...
-            // Cover any leading gap, or gap between entries
             gap.end = pos->first.begin;  // We know this begin is < range.end
             if (gap.non_empty()) {
-                // Recur on all gaps
                 hazard = DetectPreviousHazard(detector, gap);
                 if (hazard.IsHazard()) return hazard;
             }
             // Set up for the next gap.  If pos..end is >= range.end, loop will exit, and trailing gap will be empty
             gap.begin = pos->first.end;
         }
+        const auto& entry = pos->second;
 
-        hazard = detector.Detect(pos->first, pos->second);
-        if (hazard.IsHazard()) return hazard;
+        // Event barrier checks need every span to look up the event scope by address.
+        // Also visit every span when resolving absent outside access state from previous contexts.
+        // Otherwise, detection depends only on access state, so checking each state once is enough
+        const bool all_spans = event_barrier || (detect_prev && entry.HasAbsentOutsideSpans());
+
+        if (!entry.strided_access) {
+            hazard = detector.Detect(pos->first, entry.access_state);
+        } else if (all_spans) {
+            entry.VisitSpans(pos->first & range, detect_span);
+        } else {
+            entry.VisitStates(pos->first & range, detect_span);
+        }
+
+        if (hazard.IsHazard()) {
+            return hazard;
+        }
+        // Retain an entry that extends beyond range for later generated ranges
+        if (pos->first.end > range.end) {
+            break;
+        }
         ++pos;
     }
 
@@ -541,7 +579,6 @@ HazardResult AccessContext::DetectHazardOneRange(Detector& detector, bool detect
             hazard = DetectPreviousHazard(detector, gap);
         }
     }
-
     return hazard;
 }
 

@@ -19,6 +19,63 @@
 
 namespace syncval {
 
+AccessEntry::AccessEntry(const AccessEntry& other) : access_state(other.access_state) {
+    if (other.strided_access) {
+        strided_access = std::make_unique<StridedAccess>(*other.strided_access);
+    }
+}
+
+void AccessEntry::Assign(const AccessState& access) {
+    access_state.Assign(access);
+    strided_access.reset();
+}
+
+void AccessEntry::Resolve(const AccessEntry& other, const AccessStateFunction& apply_barriers) {
+    // If both entries are strided, their base, width, stride and count must match
+    assert(IsStridedRangeCompatible(other));
+
+    if (!strided_access && !other.strided_access) {
+        apply_barriers(&access_state);
+        access_state.Resolve(other.access_state);
+        return;
+    }
+
+    // Keep access_state as the outside state and copy it for the inside
+    if (!strided_access) {
+        strided_access = std::make_unique<StridedAccess>(other.strided_access->range, access_state, true);
+    }
+
+    // Inside access
+    apply_barriers(&strided_access->access_state);
+    strided_access->access_state.Resolve(other.GetInsideAccessState());
+
+    // Outside access
+    const bool other_has_outside = !other.strided_access || other.strided_access->has_outside_state;
+    if (other_has_outside) {
+        if (strided_access->has_outside_state) {
+            apply_barriers(&access_state);
+            access_state.Resolve(other.access_state);
+        } else {
+            access_state.Assign(other.access_state);
+        }
+        strided_access->has_outside_state = true;
+    }
+}
+
+void AccessEntry::TryCollapseStridedAccess(const AccessRange& range) {
+    if (strided_access) {
+        if (strided_access->range.Covers(range)) {
+            Assign(strided_access->access_state);
+        } else if (strided_access->has_outside_state && !strided_access->range.Intersects(range)) {
+            strided_access.reset();
+        }
+    }
+}
+
+bool AccessEntry::CanMerge(const AccessEntry& other) const {
+    return !strided_access && !other.strided_access && access_state == other.access_state;
+}
+
 void AccessMap::Assign(const AccessMap& other) {
     auto temp_copy(other.impl_map_);
     impl_map_.swap(temp_copy);
@@ -60,7 +117,7 @@ AccessMap::iterator AccessMap::Merge(iterator first, iterator last) {
     return impl_map_.insert(last, std::move(node));
 }
 
-AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange& range, const AccessState& access_state) {
+AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange& range, const AccessEntry& entry) {
     assert(range.non_empty());
     bool hint_open;
     const_iterator impl_next = hint;
@@ -80,15 +137,15 @@ AccessMap::iterator AccessMap::Insert(const_iterator hint, const AccessRange& ra
 
     if (!hint_open) {
         // Hint was unhelpful, fall back to the non-hinted version
-        auto plain_insert = Insert(range, access_state);
+        auto plain_insert = Insert(range, entry);
         return plain_insert.first;
     }
 
-    auto impl_insert = impl_map_.insert(impl_next, {range, access_state});
+    auto impl_insert = impl_map_.insert(impl_next, {range, entry});
     return iterator(impl_insert);
 }
 
-std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange& range, const AccessState& access_state) {
+std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange& range, const AccessEntry& entry) {
     assert(range.non_empty());
 
     // Look for range conflicts (and an insertion point, which makes the lower_bound *not* wasted work)
@@ -96,7 +153,7 @@ std::pair<AccessMap::iterator, bool> AccessMap::Insert(const AccessRange& range,
     auto lower = LowerBound(range.begin);
     if (lower == end() || !lower->first.intersects(range)) {
         // range is not even partially overlapped, and lower is strictly > than key
-        return {impl_map_.emplace_hint(lower, range, access_state), true};
+        return {impl_map_.emplace_hint(lower, range, entry), true};
     }
     // We don't replace
     return {lower, false};
@@ -118,7 +175,17 @@ void AccessMap::InfillGaps(const AccessRange& range, const AccessState& access_s
             Insert(pos, {begin, gap_end}, access_state);
             begin = gap_end;
         } else {
-            begin = std::min(range.end, pos->first.end);
+            const AccessRange part(begin, std::min(range.end, pos->first.end));
+            if (pos->second.HasAbsentOutsideSpans()) {
+                pos = syncval::Split(pos, *this, part);
+                AccessEntry& entry = pos->second;
+                if (entry.strided_access) {
+                    entry.access_state.Assign(access_state);
+                    entry.strided_access->has_outside_state = true;
+                    entry.TryCollapseStridedAccess(part);
+                }
+            }
+            begin = part.end;
             ++pos;
         }
     }
@@ -139,7 +206,7 @@ AccessMap::iterator AccessMap::Split(const iterator split_it, const index_type& 
     }
 
     // Save the contents and erase
-    auto value = split_it->second;
+    auto value = std::move(split_it->second);
     auto next_it = impl_map_.erase(split_it);
 
     AccessRange upper_range(index, range.end);
@@ -149,29 +216,50 @@ AccessMap::iterator AccessMap::Split(const iterator split_it, const index_type& 
     // NOTE: we insert from upper to lower because that's what emplace_hint can do in constant time
     assert(impl_map_.find(upper_range) == impl_map_.end());
     next_it = impl_map_.emplace_hint(next_it, std::make_pair(upper_range, value));
+    next_it->second.TryCollapseStridedAccess(upper_range);
 
     // Move value to the lower range (we can move since the upper range already got a copy of value)
     assert(impl_map_.find(lower_range) == impl_map_.end());
     next_it = impl_map_.emplace_hint(next_it, std::make_pair(lower_range, std::move(value)));
+    next_it->second.TryCollapseStridedAccess(lower_range);
 
     // Iterator to the beginning of the lower range
     return next_it;
 }
 
-AccessMap::iterator Split(AccessMap::iterator in, AccessMap& map, const AccessRange& range) {
-    assert(in != map.end());  // Not designed for use with invalid iterators...
-    const AccessRange in_range = in->first;
-    const AccessRange split_range = in_range & range;
+void AccessMap::ConvertToRegularEntries(AccessRange range) {
+    auto pos = LowerBound(range.begin);
+    while (pos != end() && pos->first.begin < range.end) {
+        if (!pos->second.strided_access) {
+            ++pos;
+            continue;
+        }
+        pos = syncval::Split(pos, *this, range);
+        const AccessRange bounds = pos->first;
+        AccessEntry entry(std::move(pos->second));
+        pos = Erase(pos);
+        entry.VisitSpans(bounds, [&](const AccessRange& span, const AccessState* state) {
+            if (state) {
+                Insert(pos, span, *state);
+            }
+            return false;
+        });
+    }
+}
+
+AccessMap::iterator Split(AccessMap::iterator pos, AccessMap& map, const AccessRange& range) {
+    assert(pos != map.end());
+    const AccessRange map_range = pos->first;
+    const AccessRange split_range = map_range & range;
 
     if (split_range.empty()) {
         return map.end();
     }
-    auto pos = in;
-    if (split_range.begin != in_range.begin) {
+    if (split_range.begin != map_range.begin) {
         pos = map.Split(pos, split_range.begin);
         ++pos;
     }
-    if (split_range.end != in_range.end) {
+    if (split_range.end != map_range.end) {
         pos = map.Split(pos, split_range.end);
     }
     return pos;
@@ -185,7 +273,7 @@ void Consolidate(AccessMap& map) {
 
     // To be included in a merge range there must be no gap in the AccessRange space, and the mapped_type values must match
     auto can_merge = [](const It& last, const It& cur) {
-        return cur->first.begin == last->first.end && cur->second == last->second;
+        return cur->first.begin == last->first.end && cur->second.CanMerge(last->second);
     };
 
     while (current != map_end) {

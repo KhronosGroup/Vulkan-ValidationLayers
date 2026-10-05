@@ -83,6 +83,9 @@ struct AccessContextStats {
     uint32_t access_states = 0;
     uint32_t read_states = 0;
     uint32_t write_states = 0;
+    uint32_t map_entries = 0;
+    uint32_t strided_entries = 0;
+    uint64_t strided_allocation_size = 0;
 
     uint32_t access_states_with_multiple_reads = 0;
     uint32_t access_states_with_dynamic_allocations = 0;
