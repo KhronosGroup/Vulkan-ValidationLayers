@@ -92,6 +92,16 @@ void DescriptorHeapEXT::CreateSamplerHeap(VkDeviceSize app_size, bool reserved_r
     }
 }
 
+VkDeviceSize DescriptorHeapEXT::GetResourceHeapSize() const {
+    assert(resource_heap_.handle() != VK_NULL_HANDLE);
+    return resource_heap_.CreateInfo().size;
+}
+
+VkDeviceAddressRangeKHR DescriptorHeapEXT::GetResourceHeapAddressRange() const {
+    assert(resource_heap_.handle() != VK_NULL_HANDLE);
+    return resource_heap_.AddressRange();
+}
+
 VkDeviceSize DescriptorHeapEXT::WriteBufferDescriptor(const vkt::Buffer& buffer, VkDescriptorType desc_type) {
     const VkDeviceAddressRangeKHR addr_range = buffer.AddressRange();
     return WriteBufferDescriptor(addr_range, desc_type);
