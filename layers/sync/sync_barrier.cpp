@@ -380,6 +380,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueu
 // to ensure independent barrier application
 //
 struct ApplySingleBufferBarrierFunctor {
+    const bool layout_transition = false;
     const AccessContext& access_context;
     const BarrierScope& barrier_scope;
     const SyncBarrier& barrier;
@@ -480,10 +481,9 @@ static void ApplySingleMemoryBarrier(QueueId queue_id, AccessContext& access_con
 static void ApplyMultipleBarriers(const DeviceFeatures& features, QueueId queue_id, AccessContext& access_context,
                                   const BarrierSet& barrier_set, ResourceUsageTag tag) {
     // Apply markup action.
-    // The markup action does not change any access state but it can trim the access map according to the
-    // provided range and creates infill ranges if necessary (for layout transitions). The purpose of all
-    // this is to ensure that after markup action the topology of access map ranges is finalized so we can
-    // safely cache pointers to specific access states with a goal to apply pending barriers in the end.
+    // Markup splits entries at barrier boundaries and fills map gaps and absent outside spans for
+    // layout transitions. This finalizes the map structure before collecting access state pointers
+    // for pending barriers.
     //
     // NOTE: it is enough to apply markup action to buffer and image barriers. The global barriers
     // do not use infill operations (no layout transitions) and also do not split access map ranges

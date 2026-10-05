@@ -406,12 +406,9 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
 
     assert(barrier_sets.size() == 1 || (barrier_sets.size() == events.size()));
 
-    // Apply markup action.
-    // The markup action does not change any access state but it can trim the access map according to the
-    // provided range and creates infill ranges if necessary (for layout transitions). The purpose of all
-    // this is to ensure that after markup action the topology of access map ranges is finalized for the
-    // duration of barrier application (so we can cache pointers to specific access states with a goal
-    // to apply pending barriers in the end).
+    // Markup splits entries at barrier boundaries and fills map gaps and absent outside spans for
+    // layout transitions. This finalizes the map structure before collecting access state pointers
+    // for pending barriers.
     //
     // NOTE: event's global barriers can split() access map because EventSimpleRangeGenerator filters kFullRange.
     // That's why, in contrast to ApplyBarrier, we need apply markup action also to global barriers.

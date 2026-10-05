@@ -20,6 +20,7 @@
 
 #include "containers/small_vector.h"
 #include "state_tracker/subresource_encoding.h"
+#include <optional>
 #include <vector>
 
 namespace vvl {
@@ -88,6 +89,33 @@ class ImageRangeEncoder : public vvl::SubresourceEncoder {
     bool is_compressed_;
 };
 
+// Sequence of equally sized segments separated by gaps
+struct StridedRange {
+    using IndexType = ImageRangeEncoder::IndexType;
+    using IndexRange = ImageRangeEncoder::IndexRange;
+
+    IndexType base = 0;    // start address of the first segment
+    IndexType width = 0;   // byte size of each segment
+    IndexType stride = 0;  // byte distance between consecutive segment starts, greater than width
+    uint32_t count = 0;    // number of segments
+
+    bool operator==(const StridedRange& other) const {
+        return base == other.base && width == other.width && stride == other.stride && count == other.count;
+    }
+
+    IndexRange Bounds() const {
+        assert(count > 0);
+        return IndexRange(base, base + (count - 1) * stride + width);
+    }
+
+    // Return the part of range up to the next segment boundary and set inside accordingly.
+    // The input range may extend beyond Bounds()
+    IndexRange NextSpan(IndexRange range, bool& inside) const;
+
+    bool Intersects(IndexRange range) const;
+    bool Covers(IndexRange range) const;
+};
+
 class ImageRangeGenerator {
   public:
     using IndexType = ImageRangeEncoder::IndexType;
@@ -106,6 +134,8 @@ class ImageRangeGenerator {
     const IndexRange* operator->() const { return &pos_; }
     ImageRangeGenerator& operator++();
     ImageRangeGenerator& operator=(const ImageRangeGenerator&) = default;
+    // Return a strided representation of this generator's ranges, when supported
+    std::optional<StridedRange> GetStridedRange() const;
 
   private:
     bool Convert2DCompatibleTo3D();

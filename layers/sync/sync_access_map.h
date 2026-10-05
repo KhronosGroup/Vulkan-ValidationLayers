@@ -22,12 +22,14 @@
 
 #include "sync/sync_common.h"
 #include "sync/sync_access_state.h"
+#include "sync/sync_image_encoding.h"
 #include "containers/range.h"
 #include "containers/container_utils.h"
 
 #include <algorithm>
 #include <cassert>
 #include <map>
+#include <memory>
 #include <utility>
 
 namespace syncval {
@@ -48,9 +50,126 @@ struct AccessMapCompare {
     bool operator()(const AccessRange& a, const AccessRange& b) const { return a.end <= b.begin && a.begin < b.begin; }
 };
 
+// An AccessMap value describing accesses for the key's range.
+// In the common case, one access state covers the whole range.
+// Strided encoding represents accesses to multiple subranges
+struct AccessEntry {
+    struct StridedAccess {
+        StridedRange range;
+        AccessState access_state;  // State inside the strided segments
+        bool has_outside_state;
+
+        StridedAccess(const StridedRange& range, const AccessState& access_state, bool has_outside_state)
+            : range(range), access_state(access_state), has_outside_state(has_outside_state) {}
+    };
+
+    AccessState access_state;  // State for the whole key, or outside the strided segments
+    std::unique_ptr<StridedAccess> strided_access;
+
+    AccessEntry(const AccessState& access_state) : access_state(access_state) {}
+    AccessEntry(const AccessEntry& other);
+    AccessEntry(AccessEntry&& other) = default;
+
+    void Assign(const AccessState& access);
+
+    // Resolve other into this entry.
+    // Apply pending barriers to this entry before merging
+    void Resolve(const AccessEntry& other, const AccessStateFunction& apply_barriers);
+
+    // Replace the strided access with a regular access if one of its states covers range.
+    // The entry must only be used within range afterwards
+    void TryCollapseStridedAccess(const AccessRange& range);
+
+    // Check whether this entry and the adjacent |other| entry can share one access state
+    bool CanMerge(const AccessEntry& other) const;
+
+    AccessState& GetInsideAccessState() { return strided_access ? strided_access->access_state : access_state; }
+    const AccessState& GetInsideAccessState() const { return strided_access ? strided_access->access_state : access_state; }
+    bool HasAbsentOutsideSpans() const { return strided_access && !strided_access->has_outside_state; }
+
+    bool IsStridedRangeCompatible(const StridedRange& range) const { return !strided_access || strided_access->range == range; }
+    bool IsStridedRangeCompatible(const AccessEntry& other) const {
+        return !other.strided_access || IsStridedRangeCompatible(other.strided_access->range);
+    }
+
+    // Visit each stored access state once. An absent outside state is skipped
+    template <typename Action>
+    void VisitStates(const Action& action) {
+        if (!strided_access || strided_access->has_outside_state) {
+            action(access_state);
+        }
+        if (strided_access) {
+            action(strided_access->access_state);
+        }
+    }
+    template <typename Action>
+    void VisitStates(const Action& action) const {
+        if (!strided_access || strided_access->has_outside_state) {
+            action(access_state);
+        }
+        if (strided_access) {
+            action(std::as_const(strided_access->access_state));
+        }
+    }
+
+    // Visit each access state within range once, in address order. The action receives
+    // the state's first span and a non-null state pointer. An absent outside state is skipped.
+    // |range| must be contained within the entry's key range
+    template <typename Action>
+    bool VisitStates(AccessRange range, const Action& action) const {
+        if (!strided_access) {
+            return action(range, &access_state);
+        }
+        if (range.empty()) {
+            return false;
+        }
+        const AccessState* outside_state = strided_access->has_outside_state ? &access_state : nullptr;
+        const AccessState* state;
+        bool inside;
+
+        // Spans alternate between inside and outside, so at most two spans need to be checked
+        const AccessRange first = strided_access->range.NextSpan(range, inside);
+        state = inside ? &strided_access->access_state : outside_state;
+        if (state && action(first, state)) {
+            return true;
+        }
+        const AccessRange second = strided_access->range.NextSpan({first.end, range.end}, inside);
+        state = inside ? &strided_access->access_state : outside_state;
+        if (state && second.non_empty() && action(second, state)) {
+            return true;
+        }
+        return false;
+    }
+
+    // Visit inside and outside spans of the strided range in address order,
+    // or |range| for a regular entry. An absent outside state is reported as null.
+    // |range| must be contained within the entry's key range
+    template <typename Action>
+    bool VisitSpans(AccessRange range, const Action& action) const {
+        if (!strided_access) {
+            return action(range, &access_state);
+        }
+        while (range.non_empty()) {
+            bool inside;
+            const AccessRange span = strided_access->range.NextSpan(range, inside);
+            const AccessState* span_access = nullptr;
+            if (inside) {
+                span_access = &strided_access->access_state;
+            } else if (strided_access->has_outside_state) {
+                span_access = &access_state;
+            }
+            if (action(span, span_access)) {
+                return true;
+            }
+            range.begin = span.end;
+        }
+        return false;
+    }
+};
+
 // Implements an ordered map of non-overlapping, non-empty ranges
 class AccessMap {
-    using ImplMap = std::map<AccessRange, AccessState, AccessMapCompare>;
+    using ImplMap = std::map<AccessRange, AccessEntry, AccessMapCompare>;
 
   public:
     using index_type = ResourceAddress;
@@ -79,23 +198,24 @@ class AccessMap {
     // Merge at least two entries in [first, last), retaining the last entry's state.
     // The caller must ensure the entries are adjacent and their states can be merged.
     iterator Merge(iterator first, iterator last);
-    iterator Insert(const_iterator hint, const AccessRange& range, const AccessState& access_state);
+    iterator Insert(const_iterator hint, const AccessRange& range, const AccessEntry& entry);
     iterator InfillGap(const_iterator range_lower_bound, const AccessRange& range, const AccessState& access_state);
     void InfillGaps(const AccessRange& range, const AccessState& access_state);
     iterator Split(const iterator split_it, const index_type& index);
+    void ConvertToRegularEntries(AccessRange range);
 
     AccessMap() : impl_map_(AccessMapCompare()) {}
 
   private:
     // No replacement insert
-    std::pair<iterator, bool> Insert(const AccessRange& range, const AccessState& access_state);
+    std::pair<iterator, bool> Insert(const AccessRange& range, const AccessEntry& entry);
 
   private:
     ImplMap impl_map_;
 };
 
 // Split a range into pieces bound by the intersection of the iterator's range and the supplied range
-AccessMap::iterator Split(AccessMap::iterator in, AccessMap& map, const AccessRange& range);
+AccessMap::iterator Split(AccessMap::iterator pos, AccessMap& map, const AccessRange& range);
 
 // Combines directly adjacent ranges with equal AccessState
 void Consolidate(AccessMap& map);

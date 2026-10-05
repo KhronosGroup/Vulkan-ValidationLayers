@@ -725,6 +725,7 @@ void AccessState::Assign(const AccessState& other) {
 AccessState::AccessState(AccessState&& other) { Assign(std::move(other)); }
 
 void AccessState::Assign(AccessState&& other) {
+    ClearReadStates();
     CopySimpleMembers(other);
 
     last_read_count = other.last_read_count;
