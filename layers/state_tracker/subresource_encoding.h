@@ -20,22 +20,14 @@
  */
 #pragma once
 
+#include <cassert>
 #include <cstddef>
-#include <variant>
-#include <vector>
 #include "containers/range.h"
-#include "containers/small_vector.h"
 #include "vulkan/vulkan.h"
 
 namespace vvl {
-class Image;
-}  // namespace vvl
 
-namespace subresource_adapter {
-
-class RangeEncoder;
-using IndexType = uint64_t;  // TODO: just update to 32 bit, but before collect memory usage stats, perf stats
-using IndexRange = vvl::range<IndexType>;
+class SubresourceEncoder;
 
 // Interface for aspect specific traits objects (now isolated in the cpp file)
 class AspectParameters {
@@ -52,7 +44,7 @@ struct Subresource : public VkImageSubresource {
     Subresource() : VkImageSubresource({0, 0, 0}), aspect_index(0) {}
 
     Subresource(const Subresource& from) = default;
-    Subresource(const RangeEncoder& encoder, const VkImageSubresource& subres);
+    Subresource(const SubresourceEncoder& encoder, const VkImageSubresource& subres);
     Subresource(VkImageAspectFlags aspect_mask_, uint32_t mip_level_, uint32_t array_layer_, uint32_t aspect_index_)
         : VkImageSubresource({aspect_mask_, mip_level_, array_layer_}), aspect_index(aspect_index_) {}
     Subresource(VkImageAspectFlagBits aspect_, uint32_t mip_level_, uint32_t array_layer_, uint32_t aspect_index_)
@@ -66,12 +58,15 @@ struct Subresource : public VkImageSubresource {
 //    mip_level_index
 //    array_layer_index
 // into continuous index ranges
-class RangeEncoder {
+class SubresourceEncoder {
   public:
+    using IndexType = uint64_t;  // TODO: just update to 32 bit, but before collect memory usage stats, perf stats
+    using IndexRange = vvl::range<IndexType>;
+
     static constexpr uint32_t kMaxSupportedAspect = 4;
 
     // The default constructor for default iterators
-    RangeEncoder()
+    SubresourceEncoder()
         : limits_(),
           full_range_(),
           mip_size_(0),
@@ -84,9 +79,9 @@ class RangeEncoder {
           aspect_base_{0, 0, 0} {}
 
     // Create the encoder suitable to the full range (aspect mask *must* be canonical)
-    explicit RangeEncoder(const VkImageSubresourceRange& full_range)
-        : RangeEncoder(full_range, AspectParameters::Get(full_range.aspectMask)) {}
-    RangeEncoder(const RangeEncoder& from) = default;
+    explicit SubresourceEncoder(const VkImageSubresourceRange& full_range)
+        : SubresourceEncoder(full_range, AspectParameters::Get(full_range.aspectMask)) {}
+    SubresourceEncoder(const SubresourceEncoder& from) = default;
 
     inline bool InRange(const VkImageSubresourceRange& range) const {
         return (range.baseMipLevel < limits_.mipLevel) && ((range.baseMipLevel + range.levelCount) <= limits_.mipLevel) &&
@@ -152,7 +147,7 @@ class RangeEncoder {
     inline VkImageSubresource IndexToVkSubresource(const IndexType& index) const { return MakeVkSubresource(Decode(index)); }
 
   protected:
-    RangeEncoder(const VkImageSubresourceRange& full_range, const AspectParameters* param);
+    SubresourceEncoder(const VkImageSubresourceRange& full_range, const AspectParameters* param);
 
     void PopulateFunctionPointers();
 
@@ -235,20 +230,20 @@ class RangeEncoder {
     const size_t mip_size_;
     const size_t aspect_size_;
     const VkImageAspectFlagBits* const aspect_bits_;
-    IndexType (RangeEncoder::*encode_function_)(const Subresource&) const;
-    Subresource (RangeEncoder::*decode_function_)(const IndexType&) const;
-    uint32_t (RangeEncoder::*lower_bound_function_)(VkImageAspectFlags aspect_mask) const;
-    uint32_t (RangeEncoder::*lower_bound_with_start_function_)(VkImageAspectFlags aspect_mask, uint32_t start) const;
+    IndexType (SubresourceEncoder::*encode_function_)(const Subresource&) const;
+    Subresource (SubresourceEncoder::*decode_function_)(const IndexType&) const;
+    uint32_t (SubresourceEncoder::*lower_bound_function_)(VkImageAspectFlags aspect_mask) const;
+    uint32_t (SubresourceEncoder::*lower_bound_with_start_function_)(VkImageAspectFlags aspect_mask, uint32_t start) const;
     IndexType aspect_base_[kMaxSupportedAspect];
 };
 
 class SubresourceGenerator : public Subresource {
   public:
-    SubresourceGenerator() : Subresource(), encoder_(nullptr), limits_(){};
-    SubresourceGenerator(const RangeEncoder& encoder, const VkImageSubresourceRange& range)
+    SubresourceGenerator() : Subresource(), encoder_(nullptr), limits_() {};
+    SubresourceGenerator(const SubresourceEncoder& encoder, const VkImageSubresourceRange& range)
         : Subresource(encoder.BeginSubresource(range)), encoder_(&encoder), limits_(range) {}
 
-    explicit SubresourceGenerator(const RangeEncoder& encoder)
+    explicit SubresourceGenerator(const SubresourceEncoder& encoder)
         : Subresource(encoder.Begin()), encoder_(&encoder), limits_(encoder.FullRange()) {}
 
     const VkImageSubresourceRange& Limits() const { return limits_; }
@@ -276,7 +271,7 @@ class SubresourceGenerator : public Subresource {
     }
 
     // Next and and ++ functions are for iteration from a base with the bounds, this may be additionally
-    // controlled/updated by an owning generator (like RangeGenerator using Seek functions)
+    // controlled/updated by an owning generator (like SubresourceRangeGenerator using Seek functions)
     inline void NextAspect() { SeekAspect(encoder_->LowerBoundFromMask(limits_.aspectMask, aspect_index + 1)); }
 
     void NextMip() {
@@ -296,7 +291,7 @@ class SubresourceGenerator : public Subresource {
     }
 
     // General purpose and slow, when we have no other information to update the generator
-    void Seek(IndexType index) {
+    void Seek(SubresourceEncoder::IndexType index) {
         // skip forward past discontinuities
         *static_cast<Subresource*>(this) = encoder_->Decode(index);
     }
@@ -305,23 +300,26 @@ class SubresourceGenerator : public Subresource {
     const VkImageSubresource* operator->() const { return this; }
 
   private:
-    const RangeEncoder* encoder_;
+    const SubresourceEncoder* encoder_;
     const VkImageSubresourceRange limits_;
 };
 
 // Like an iterator for ranges...
-class RangeGenerator {
+class SubresourceRangeGenerator {
   public:
-    RangeGenerator() : encoder_(nullptr), isr_pos_(), pos_(), aspect_base_() {}
-    bool operator!=(const RangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
-    explicit RangeGenerator(const RangeEncoder& encoder) : RangeGenerator(encoder, encoder.FullRange()) {}
-    RangeGenerator(const RangeEncoder& encoder, const VkImageSubresourceRange& subres_range);
+    using IndexRange = SubresourceEncoder::IndexRange;
+
+    SubresourceRangeGenerator() : encoder_(nullptr), isr_pos_(), pos_(), aspect_base_() {}
+    bool operator!=(const SubresourceRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
+    explicit SubresourceRangeGenerator(const SubresourceEncoder& encoder)
+        : SubresourceRangeGenerator(encoder, encoder.FullRange()) {}
+    SubresourceRangeGenerator(const SubresourceEncoder& encoder, const VkImageSubresourceRange& subres_range);
     const IndexRange& operator*() const { return pos_; }
     const IndexRange* operator->() const { return &pos_; }
-    RangeGenerator& operator++();
+    SubresourceRangeGenerator& operator++();
 
   private:
-    const RangeEncoder* encoder_;
+    const SubresourceEncoder* encoder_;
     SubresourceGenerator isr_pos_;
     IndexRange pos_;
     IndexRange aspect_base_;
@@ -331,150 +329,4 @@ class RangeGenerator {
     uint32_t aspect_index_ = 0;
 };
 
-class ImageRangeEncoder : public RangeEncoder {
-  public:
-    struct SubresInfo {
-        VkSubresourceLayout layout;
-        VkExtent3D extent;
-        SubresInfo(const VkSubresourceLayout& layout_, const VkExtent3D& extent_, const VkExtent3D& texel_extent,
-                   double texel_size);
-        SubresInfo(const SubresInfo&);
-        SubresInfo() = default;
-        VkDeviceSize y_step_pitch;
-        VkDeviceSize z_step_pitch;
-        VkDeviceSize layer_span;
-    };
-
-    // The default constructor for default iterators
-    ImageRangeEncoder() {}
-
-    ImageRangeEncoder(const vvl::Image& image, const AspectParameters* param);
-    explicit ImageRangeEncoder(const vvl::Image& image);
-    ImageRangeEncoder(const ImageRangeEncoder& from) = default;
-
-    inline IndexType Encode2D(const VkSubresourceLayout& layout, uint32_t layer, uint32_t aspect_index,
-                              const VkOffset3D& offset) const;
-    inline IndexType Encode3D(const VkSubresourceLayout& layout, uint32_t aspect_index, const VkOffset3D& offset) const;
-    void Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const;
-
-    inline uint32_t GetSubresourceIndex(uint32_t aspect_index, uint32_t mip_level) const {
-        return mip_level + (aspect_index ? (aspect_index * limits_.mipLevel) : 0U);
-    }
-    inline const SubresInfo& GetSubresourceInfo(uint32_t index) const { return subres_info_[index]; }
-
-    inline IndexType GetAspectSize(uint32_t aspect_index) const { return aspect_sizes_[aspect_index]; }
-    inline VkExtent2D GetAspectExtentDivisors(uint32_t aspect_index) const { return aspect_extent_divisors_[aspect_index]; }
-    inline const double& TexelSize(int aspect_index) const { return texel_sizes_[aspect_index]; }
-    inline bool IsLinearImage() const { return linear_image_; }
-    inline IndexType TotalSize() const { return total_size_; }
-    inline bool Is3D() const { return is_3_d_; }
-    inline bool IsInterleaveY() const { return y_interleave_; }
-    inline bool IsCompressed() const { return is_compressed_; }
-    const VkExtent3D& TexelBlockExtent() const { return texel_block_extent_; }
-
-    using SubresInfoVector = std::vector<SubresInfo>;
-
-  private:
-    std::vector<double> texel_sizes_;
-    SubresInfoVector subres_info_;
-    small_vector<IndexType, 4, uint32_t> aspect_sizes_;
-    small_vector<VkExtent2D, 4, uint32_t> aspect_extent_divisors_;
-    IndexType total_size_;
-    VkExtent3D texel_block_extent_;
-    bool is_3_d_;
-    bool linear_image_;
-    bool y_interleave_;
-    bool is_compressed_;
-};
-
-class ImageRangeGenerator {
-  public:
-    using RangeType = IndexRange;
-    ImageRangeGenerator(const ImageRangeGenerator&) = default;
-    ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_(), base_address_(), pos_() {}
-    ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
-                        const VkExtent3D& extent, VkDeviceSize base_address, bool is_depth_sliced);
-    ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, VkDeviceSize base_address,
-                        bool is_depth_sliced);
-    ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, VkDeviceSize base_address,
-                        bool is_depth_sliced, uint32_t view_mask);
-
-    const IndexRange& operator*() const { return pos_; }
-    const IndexRange* operator->() const { return &pos_; }
-    ImageRangeGenerator& operator++();
-    ImageRangeGenerator& operator=(const ImageRangeGenerator&) = default;
-
-  private:
-    bool Convert2DCompatibleTo3D();
-    void SetUpSubresInfo();
-    void SetUpIncrementerDefaults();
-    void SetUpSubresIncrementer();
-    void SetUpIncrementer(bool all_width, bool all_height, bool all_depth);
-
-    using SetInitialPosFn = void (ImageRangeGenerator::*)(uint32_t, uint32_t);
-    void SetInitialPos(uint32_t layer, uint32_t aspect_index) { (this->*(set_initial_pos_fn_))(layer, aspect_index); }
-
-    void SetInitialPosFullOffset(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosFullWidth(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosFullHeight(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosSomeDepth(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosFullDepth(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosAllLayers(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosOneAspect(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosAllSubres(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosSomeLayers(uint32_t layer, uint32_t aspect_index);
-    void SetInitialPosMultiviewLayers(uint32_t layer, uint32_t aspect_index);
-
-    VkOffset3D GetOffset(uint32_t aspect_index) const;
-    VkExtent3D GetExtent(uint32_t aspect_index) const;
-
-  private:
-    const ImageRangeEncoder* encoder_;
-    VkImageSubresourceRange subres_range_;
-    VkOffset3D offset_;
-    VkExtent3D extent_;
-    VkDeviceSize base_address_;
-    uint32_t view_mask_ = 0;
-
-    uint32_t mip_index_ = 0U;
-    uint32_t incr_mip_ = 0U;
-    uint32_t aspect_index_ = 0U;
-    uint32_t subres_index_ = 0U;
-    const ImageRangeEncoder::SubresInfo* subres_info_ = nullptr;
-
-    SetInitialPosFn set_initial_pos_fn_ = nullptr;
-
-    IndexRange pos_;
-
-    struct IncrementerState {
-        // These should be invariant across subresources (mip/aspect)
-        uint32_t y_step = 0U;
-        uint32_t layer_z_step = 0U;
-
-        // These vary per mip at least...
-        uint32_t y_count = 0U;
-        uint32_t layer_z_count = 0U;
-        uint32_t y_index = 0U;
-        uint32_t layer_z_index = 0U;
-        IndexRange y_base = {0U, 0U};
-        IndexRange layer_z_base = {0U, 0U};
-        IndexType incr_y = 0U;
-        IndexType incr_layer_z = 0U;
-
-        uint32_t view_mask_ = 0;
-
-        void Set(uint32_t y_count_, uint32_t layer_z_count_, IndexType base, IndexType span, IndexType y_step, IndexType z_step);
-
-        // When multiview is disabled returns:
-        //      layer_z_index + incr_state_.layer_z_step
-        // When multiview is enabled returns:
-        //      the next value after layer_z_index that corresponds to the next set bit in view mask.
-        //      When all view bits are iterated or layer_z_count is reach then returns layer_z_count.
-        uint32_t GetNextLayerZIndex() const;
-    };
-    IncrementerState incr_state_;
-    bool single_full_size_range_ = true;
-    bool is_depth_sliced_ = false;
-};
-
-}  // namespace subresource_adapter
+}  // namespace vvl

@@ -42,8 +42,8 @@
 
 bool IsValidAspectMaskForFormat(VkImageAspectFlags aspect_mask, VkFormat format);
 
-using LayoutRange = subresource_adapter::IndexRange;
-using RangeGenerator = subresource_adapter::RangeGenerator;
+using LayoutRange = vvl::SubresourceEncoder::IndexRange;
+using RangeGenerator = vvl::SubresourceRangeGenerator;
 
 // Utility type for checking Image layouts
 struct LayoutUseCheckAndMessage {
@@ -90,7 +90,7 @@ bool CoreChecks::ValidateDescriptorImageLayout(const LogObjectList& objlist, con
                                                                                            const ImageLayoutState& state) {
             bool local_skip = false;
             if (!layout_check.Check(state)) {
-                const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
+                const vvl::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                 local_skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::IMAGE_LAYOUT_00344), objlist, loc,
                                        "Cannot use %s (layer %" PRIu32 ", mip %" PRIu32
                                        ") with specific layout %s (specified by %s) that doesn't match the "
@@ -137,7 +137,7 @@ bool CoreChecks::ValidateSubresourceImageLayout(const vvl::CommandBuffer& cb_sta
         [this, &cb_state, &image_state, &layout_check, vuid, loc](const LayoutRange& range, const ImageLayoutState& state) {
             bool local_skip = false;
             if (!layout_check.Check(state)) {
-                const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
+                const vvl::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                 const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
                 local_skip |= LogError(vuid, objlist, loc,
                                        "Cannot use %s (layer %" PRIu32 ", mip %" PRIu32
@@ -177,7 +177,7 @@ bool CoreChecks::ValidateVideoImageLayout(const vvl::CommandBuffer& cb_state, co
             const LayoutRange& range, const ImageLayoutState& state) {
             bool local_skip = false;
             if (!layout_check.Check(state) && (!enabled_features.unifiedImageLayoutsVideo || !layout_check_general.Check(state))) {
-                const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
+                const vvl::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                 std::string expected_layout = string_VkImageLayout(layout_check.expected_layout);
                 if (enabled_features.unifiedImageLayoutsVideo) {
                     expected_layout += " or VK_IMAGE_LAYOUT_GENERAL";
@@ -869,7 +869,7 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const core::RenderingA
             [this, &vvl_attachment, &image_state, &layout_check, vuid](const LayoutRange& range, const ImageLayoutState& state) {
                 bool local_skip = false;
                 if (!layout_check.Check(state)) {
-                    const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
+                    const vvl::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                     local_skip |=
                         LogError(vuid, vvl_attachment.GetObjectList(), vvl_attachment.Loc(),
                                  "(%s, layer %" PRIu32 ", mip %" PRIu32 ") is expected to have layout %s but %s layout is %s.",
@@ -1060,7 +1060,7 @@ bool CoreChecks::ValidateImageBarrierLayouts(const vvl::CommandBuffer& cb_state,
                     bool subres_skip = false;
                     if (!layout_check.Check(state)) {
                         const auto& vuid = GetImageBarrierVUID(image_loc, vvl::ImageError::kConflictingLayout);
-                        const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
+                        const vvl::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                         const VkImageSubresource vk_subresource = image_state.subresource_encoder.MakeVkSubresource(subresource);
                         const LogObjectList objlist(cb_state.Handle(), image_barrier.image);
                         subres_skip = LogError(

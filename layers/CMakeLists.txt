@@ -238,6 +238,8 @@ target_sources(vvl PRIVATE
     sync/sync_hazard_detection.cpp
     sync/sync_image.cpp
     sync/sync_image.h
+    sync/sync_image_encoding.cpp
+    sync/sync_image_encoding.h
     sync/sync_render_pass.cpp
     sync/sync_render_pass.h
     sync/sync_reporting.cpp
@@ -504,8 +506,8 @@ target_sources(vvl PRIVATE
     state_tracker/submission_reference.h
     state_tracker/submit_time_tracker.cpp
     state_tracker/submit_time_tracker.h
-    state_tracker/subresource_adapter.cpp
-    state_tracker/subresource_adapter.h
+    state_tracker/subresource_encoding.cpp
+    state_tracker/subresource_encoding.h
     state_tracker/surface_type.h
     state_tracker/vertex_index_buffer_state.cpp
     state_tracker/vertex_index_buffer_state.h

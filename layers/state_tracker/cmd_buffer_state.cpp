@@ -50,7 +50,7 @@ bool HasActionOrSyncCommandBeforeBeginRendering(vvl::Func first_action_or_sync_c
            !IsValueIn(first_action_or_sync_command, {vvl::Func::vkCmdBeginRendering, vvl::Func::vkCmdBeginRenderingKHR});
 }
 
-using RangeGenerator = subresource_adapter::RangeGenerator;
+using RangeGenerator = vvl::SubresourceRangeGenerator;
 
 // Dynamic Rendering we know it is depth only, but for VkRenderPass, we need to check incase it is a stencil only attachment
 bool AttachmentInfo::IsDepth() const {

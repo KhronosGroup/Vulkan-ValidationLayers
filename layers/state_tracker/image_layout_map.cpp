@@ -21,8 +21,8 @@
 #include "state_tracker/image_layout_map.h"
 #include "utils/image_layout_utils.h"
 
-using IndexRange = subresource_adapter::IndexRange;
-using RangeGenerator = subresource_adapter::RangeGenerator;
+using IndexRange = vvl::SubresourceEncoder::IndexRange;
+using RangeGenerator = vvl::SubresourceRangeGenerator;
 
 template <typename LayoutsMap>
 static bool UpdateLayoutMapRange(LayoutsMap& layout_map, const IndexRange& range, const ImageLayoutState& new_entry) {

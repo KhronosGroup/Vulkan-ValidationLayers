@@ -43,7 +43,7 @@ class ImageSubState : public vvl::ImageSubState {
 
   protected:
     VkDeviceSize opaque_base_address_ = 0U;
-    const subresource_adapter::ImageRangeEncoder fragment_encoder;
+    const ImageRangeEncoder fragment_encoder;
 };
 
 static inline ImageSubState& SubState(vvl::Image& img) {
