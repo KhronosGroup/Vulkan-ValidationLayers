@@ -61,7 +61,7 @@ struct ApplyMarkupFunctor {
         auto inserted = accesses->Insert(pos_hint, range, AccessState::DefaultAccessState());
         return inserted;
     }
-    void operator()(const Iterator& pos) const {}
+    void operator()(AccessState& access) const {}
     const bool layout_transition;
 };
 
@@ -82,7 +82,7 @@ struct CollectBarriersFunctor {
         assert(!layout_transition);  // MarkupFunctor infills gaps for layout transtion, so we should never get here in that case
         return pos_hint;
     }
-    void operator()(const Iterator& pos) const;
+    void operator()(AccessState& access_state) const;
 
     const AccessContext& access_context;
     const BarrierScope barrier_scope;
@@ -433,10 +433,10 @@ struct ActionToOpsAdapter {
         // where as Action::Infill assumes the caller will apply the action() logic to the infill_range
         for (; infill != pos; ++infill) {
             assert(infill != accesses.end());
-            action(infill);
+            action(infill->second);
         }
     }
-    void update(const AccessMap::iterator& pos) const { action(pos); }
+    void update(const AccessMap::iterator& pos) const { action(pos->second); }
     const Action& action;
 };
 

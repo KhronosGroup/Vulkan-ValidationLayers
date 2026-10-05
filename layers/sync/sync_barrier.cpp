@@ -397,8 +397,7 @@ struct ApplySingleBufferBarrierFunctor {
         return pos_hint;
     }
 
-    void operator()(const Iterator& pos) const {
-        AccessState& access_state = pos->second;
+    void operator()(AccessState& access_state) const {
         access_context.ApplyGlobalBarriers(access_state);
         access_state.ApplyBarrier(barrier_scope, barrier);
     }
@@ -434,8 +433,7 @@ struct ApplySingleImageBarrierFunctor {
         return inserted;
     }
 
-    void operator()(const Iterator& pos) const {
-        AccessState& access_state = pos->second;
+    void operator()(AccessState& access_state) const {
         access_context.ApplyGlobalBarriers(access_state);
         access_state.ApplyBarrier(barrier_scope, barrier, layout_transition, layout_transition_handle_index, exec_tag);
     }
