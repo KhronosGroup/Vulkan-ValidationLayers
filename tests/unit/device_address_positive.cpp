@@ -40,8 +40,8 @@ TEST_F(PositiveDeviceAddress, DestroyOneOutOfMultipleBuffers) {
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&memory_allocate_flags);
     memory_ai.allocationSize = memory_requirements.size;
 
-    bool pass =
-        m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &memory_ai,
+                                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory(*m_device, memory_ai);
 
@@ -59,6 +59,14 @@ TEST_F(PositiveDeviceAddress, DestroyOneOutOfMultipleBuffers) {
     copy_address_range.address = indirect_buffer1.Address();
     copy_address_range.stride = copy_size;
     copy_address_range.size = copy_size;
+
+    vkt::Buffer src_buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    vkt::Buffer dst_buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    auto* copy_command = static_cast<VkCopyMemoryIndirectCommandKHR*>(memory.Map());
+    copy_command->srcAddress = src_buffer.Address();
+    copy_command->dstAddress = dst_buffer.Address();
+    copy_command->size = 16;
+    memory.Unmap();
 
     VkCopyMemoryIndirectInfoKHR indirect_info = vku::InitStructHelper();
     indirect_info.copyCount = 1u;
@@ -93,8 +101,8 @@ TEST_F(PositiveDeviceAddress, DestroyOneBufferBeforeCopy) {
     VkMemoryAllocateInfo memory_ai = vku::InitStructHelper(&memory_allocate_flags);
     memory_ai.allocationSize = memory_requirements.size;
 
-    bool pass =
-        m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &memory_ai, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->Physical().SetMemoryType(memory_requirements.memoryTypeBits, &memory_ai,
+                                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory(*m_device, memory_ai);
 
@@ -112,6 +120,14 @@ TEST_F(PositiveDeviceAddress, DestroyOneBufferBeforeCopy) {
     copy_address_range.address = indirect_buffer1.Address();
     copy_address_range.stride = copy_size;
     copy_address_range.size = copy_size;
+
+    vkt::Buffer src_buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    vkt::Buffer dst_buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    auto* copy_command = static_cast<VkCopyMemoryIndirectCommandKHR*>(memory.Map());
+    copy_command->srcAddress = src_buffer.Address();
+    copy_command->dstAddress = dst_buffer.Address();
+    copy_command->size = 16;
+    memory.Unmap();
 
     VkCopyMemoryIndirectInfoKHR indirect_info = vku::InitStructHelper();
     indirect_info.copyCount = 1u;
