@@ -595,6 +595,7 @@ void CommandBufferSubState::Reset(const Location&) { ResetCBState(); }
 void CommandBufferSubState::ResetCBState() {
     num_submits = 0;
     small_indexed_draw_call_count = 0;
+    bound_graphics_pipelines.clear();
     queue_submit_functions.clear();
     queue_submit_functions_after_render_pass.clear();
     ClearPushConstants();
@@ -789,8 +790,9 @@ void CommandBufferSubState::RecordSetDepthTestEnable(VkBool32 depth_test_enable)
 
 void CommandBufferSubState::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) {
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-        // AMD best practice
-        validator.PipelineUsedInFrame(pipeline.VkHandle());
+        if (validator.VendorCheckEnabled(kBPVendorAMD) || validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
+            bound_graphics_pipelines.insert(pipeline.VkHandle());
+        }
 
         render_pass_state.nextDrawTouchesAttachments = GetAttachmentAccess(pipeline);
         render_pass_state.drawTouchAttachments = true;
