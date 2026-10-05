@@ -253,9 +253,9 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         auto prev_pipeline = pipeline_cache_.load();
         if (pipelineCache && prev_pipeline && pipelineCache != prev_pipeline) {
             skip |= LogPerformanceWarning("BestPractices-vkCreatePipelines-multiple-pipelines-caches", device, error_obj.location,
-                                          "%s %s A second pipeline cache is in use. "
+                                          "%s A second pipeline cache is in use. "
                                           "Consider using only one pipeline cache to improve cache hit rate.",
-                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
+                                          VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str());
         }
     }
     if (VendorCheckEnabled(kBPVendorAMD)) {
@@ -524,9 +524,9 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
             if (IsPipelineUsedInFrame(pipeline)) {
                 skip |= LogPerformanceWarning(
                     "BestPractices-Pipeline-SortAndBind", commandBuffer, error_obj.location,
-                    "%s %s Pipeline %s was bound twice in the frame. "
+                    "%s Pipeline %s was bound twice in the frame. "
                     "Keep pipeline state changes to a minimum, for example, by sorting draw calls by pipeline.",
-                    VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(pipeline).c_str());
+                    VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str(), FormatHandle(pipeline).c_str());
             }
         }
         if (VendorCheckEnabled(kBPVendorNVIDIA)) {

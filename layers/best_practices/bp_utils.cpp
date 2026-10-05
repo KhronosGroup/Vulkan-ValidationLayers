@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -43,31 +43,33 @@ bool IsVendorCheckEnabled(const ValidationEnabled& enabled, BPVendorFlags vendor
     return false;
 }
 
-const char* VendorSpecificTag(BPVendorFlags vendors) {
-    // Cache built vendor tags in a map
-    static vvl::unordered_map<BPVendorFlags, std::string> tag_map;
-
-    auto res = tag_map.find(vendors);
-    if (res == tag_map.end()) {
-        // Build the vendor tag string
-        std::ostringstream vendor_tag;
-
-        vendor_tag << "[";
-        bool first_vendor = true;
-        for (const auto& vendor : GetVendorInfo()) {
-            if (vendors & vendor.first) {
-                if (!first_vendor) {
-                    vendor_tag << ", ";
-                }
-                vendor_tag << vendor.second.name;
-                first_vendor = false;
-            }
-        }
-        vendor_tag << "]";
-
-        tag_map[vendors] = vendor_tag.str();
-        res = tag_map.find(vendors);
+const char* VendorSpecificTag(BPVendorFlagBits vendor) {
+    switch (vendor) {
+        case kBPVendorArm:
+            return "[Arm]";
+        case kBPVendorAMD:
+            return "[AMD]";
+        case kBPVendorIMG:
+            return "[IMG]";
+        case kBPVendorNVIDIA:
+            return "[NVIDIA]";
     }
+    assert(false);
+    return "[Unknown vendor]";
+}
 
-    return res->second.c_str();
+std::string VendorSpecificTag(BPVendorFlags vendors) {
+    std::string tag = "[";
+    bool first_vendor = true;
+    for (const auto& vendor : GetVendorInfo()) {
+        if (vendors & vendor.first) {
+            if (!first_vendor) {
+                tag += ", ";
+            }
+            tag += vendor.second.name;
+            first_vendor = false;
+        }
+    }
+    tag += "]";
+    return tag;
 }

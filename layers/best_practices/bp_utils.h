@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2025-2026 The Khronos Group Inc.
+ * Copyright (c) 2025-2026 Valve Corporation
+ * Copyright (c) 2025-2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,16 @@
 
 #pragma once
 
+#include <string>
+
 #include "best_practices/bp_constants.h"
 #include "state_tracker/image_state.h"
 #include "utils/image_utils.h"
 #include "layer_options.h"
 
 bool IsVendorCheckEnabled(const ValidationEnabled& enabled, BPVendorFlags vendors);
-const char* VendorSpecificTag(BPVendorFlags vendors);
+const char* VendorSpecificTag(BPVendorFlagBits vendor);
+std::string VendorSpecificTag(BPVendorFlags vendors);
 
 template <typename Func>
 static inline void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {

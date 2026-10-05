@@ -130,11 +130,11 @@ bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDe
             pCreateInfo->pEnabledFeatures->robustBufferAccess) {
             skip |= LogPerformanceWarning(
                 "BestPractices-vkCreateDevice-RobustBufferAccess", instance, error_obj.location,
-                "%s %s %s: called with enabled robustBufferAccess. Use robustBufferAccess as a debugging tool during "
+                "%s: called with enabled robustBufferAccess. Use robustBufferAccess as a debugging tool during "
                 "development. Enabling it causes loss in performance for accesses to uniform buffers and shader storage "
                 "buffers. Disable robustBufferAccess in release builds. Only leave it enabled if the application use-case "
                 "requires the additional level of reliability due to the use of unverified user-supplied draw parameters.",
-                VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorIMG));
+                VendorSpecificTag(kBPVendorArm | kBPVendorAMD | kBPVendorIMG).c_str());
         }
     }
 
