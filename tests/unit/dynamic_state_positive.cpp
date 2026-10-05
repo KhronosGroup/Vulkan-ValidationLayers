@@ -1298,6 +1298,12 @@ TEST_F(PositiveDynamicState, DynamicBlendMix) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendAdvanced);
     RETURN_IF_SKIP(Init());
 
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_advanced_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(blend_advanced_props);
+    if (blend_advanced_props.advancedBlendMaxColorAttachments < 2) {
+        GTEST_SKIP() << "advancedBlendMaxColorAttachments is less than 2";
+    }
+
     vkt::Image image_0(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::Image image_1(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view_0 = image_0.CreateView();
