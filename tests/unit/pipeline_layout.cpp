@@ -270,59 +270,73 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptorsIndexing) {
     const uint32_t max_samplers = limits.maxDescriptorSetUpdateAfterBindSamplers;
     const uint32_t max_input_attachments = limits.maxDescriptorSetUpdateAfterBindInputAttachments;
 
+    // The update-after-bind limits only apply if the matching update-after-bind feature is supported
+    VkPhysicalDeviceDescriptorIndexingFeatures features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features);
+
     std::vector<const char*> vuids;
     std::vector<ExcessDescriptorData> data;
 
     // Too many sampler type descriptors
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLER, mps_samplers);
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mps_combined);
-    vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
-    if ((max_samplers - mps_combined) < mps_samplers) {
-        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
+    if (features.descriptorBindingSampledImageUpdateAfterBind) {
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLER, mps_samplers);
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mps_combined);
+        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
+        if ((max_samplers - mps_combined) < mps_samplers) {
+            vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
+        }
+        test_excess_descriptors(this, data, vuids, true);
+        vuids.clear();
+        data.clear();
     }
-    test_excess_descriptors(this, data, vuids, true);
-    vuids.clear();
-    data.clear();
 
     // Too many uniform buffer type descriptors
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, mps_ubos);
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, max_dyn_ubos);
-    vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03023");
-    test_excess_descriptors(this, data, vuids, true);
-    vuids.clear();
-    data.clear();
+    if (features.descriptorBindingUniformBufferUpdateAfterBind) {
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, mps_ubos);
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, max_dyn_ubos);
+        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03023");
+        test_excess_descriptors(this, data, vuids, true);
+        vuids.clear();
+        data.clear();
+    }
 
     // Too many storage buffer type descriptors
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, mps_ssbos);
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, max_dyn_ssbos);
-    vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
-    test_excess_descriptors(this, data, vuids, true);
-    vuids.clear();
-    data.clear();
+    if (features.descriptorBindingStorageBufferUpdateAfterBind) {
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, mps_ssbos);
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, max_dyn_ssbos);
+        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
+        test_excess_descriptors(this, data, vuids, true);
+        vuids.clear();
+        data.clear();
+    }
 
     // Too many sampled image type descriptors
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, mps_sampled_images);
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, mps_sampled_images);
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mps_combined);
-    vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
-    if ((max_sampled_images - mps_sampled_images < mps_sampled_images) ||
-        (max_sampled_images - mps_sampled_images - mps_sampled_images) < mps_sampled_images) {
-        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
+    if (features.descriptorBindingSampledImageUpdateAfterBind) {
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, mps_sampled_images);
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, mps_sampled_images);
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mps_combined);
+        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
+        if ((max_sampled_images - mps_sampled_images < mps_sampled_images) ||
+            (max_sampled_images - mps_sampled_images - mps_sampled_images) < mps_sampled_images) {
+            vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
+        }
+        test_excess_descriptors(this, data, vuids, true);
+        vuids.clear();
+        data.clear();
     }
-    test_excess_descriptors(this, data, vuids, true);
-    vuids.clear();
-    data.clear();
 
     // Too many storage image type descriptors
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, mps_storage_images);
-    data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, mps_storage_images);
-    vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03026");
-    if (max_storage_images - mps_storage_images < mps_storage_images) {
-        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03042");
+    if (features.descriptorBindingStorageImageUpdateAfterBind) {
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, mps_storage_images);
+        data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, mps_storage_images);
+        vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-descriptorType-03026");
+        if (max_storage_images - mps_storage_images < mps_storage_images) {
+            vuids.emplace_back("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03042");
+        }
+        test_excess_descriptors(this, data, vuids, true);
+        vuids.clear();
+        data.clear();
     }
-    test_excess_descriptors(this, data, vuids, true);
-    vuids.clear();
-    data.clear();
 
     // Too many input attachment type descriptors
     data.emplace_back(VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, mps_input_attachments);
@@ -361,9 +375,16 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     uint32_t sum_input_attachments = m_device->Physical().limits_.maxDescriptorSetInputAttachments;
 
     VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties = vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features = vku::InitStructHelper();
     if (descriptor_indexing) {
         GetPhysicalDeviceProperties2(descriptor_indexing_properties);
+        GetPhysicalDeviceFeatures2(descriptor_indexing_features);
     }
+    // The update-after-bind limits only apply if the matching update-after-bind feature is supported
+    const bool sampled_image_uab = descriptor_indexing_features.descriptorBindingSampledImageUpdateAfterBind;
+    const bool uniform_buffer_uab = descriptor_indexing_features.descriptorBindingUniformBufferUpdateAfterBind;
+    const bool storage_buffer_uab = descriptor_indexing_features.descriptorBindingStorageBufferUpdateAfterBind;
+    const bool storage_image_uab = descriptor_indexing_features.descriptorBindingStorageImageUpdateAfterBind;
 
     // Devices that report UINT32_MAX for any of these limits can't run this test
     if (vvl::kU32Max == std::max({sum_dyn_uniform_buffers, sum_uniform_buffers, sum_dyn_storage_buffers, sum_storage_buffers,
@@ -412,7 +433,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
         m_errorMonitor->SetDesiredError(
             "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");  // Expect max per-stage sampled image count exceeds limits
     }
-    if (descriptor_indexing) {
+    if (sampled_image_uab) {
         if ((sum_samplers + 1) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
         }
@@ -451,7 +472,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     if (dslb.descriptorCount > max_uniform_buffers) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");  // expect max-per-stage too
     }
-    if (descriptor_indexing) {
+    if (uniform_buffer_uab) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03037");
         }
@@ -483,7 +504,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     if (dslb.descriptorCount > max_uniform_buffers) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");  // expect max-per-stage too
     }
-    if (descriptor_indexing) {
+    if (uniform_buffer_uab) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038");
         }
@@ -515,7 +536,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     if (dslb.descriptorCount > max_storage_buffers) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");  // expect max-per-stage too
     }
-    if (descriptor_indexing) {
+    if (storage_buffer_uab) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03039");
         }
@@ -547,7 +568,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     if (dslb.descriptorCount > max_storage_buffers) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");  // expect max-per-stage too
     }
-    if (descriptor_indexing) {
+    if (storage_buffer_uab) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040");
         }
@@ -592,7 +613,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
         m_errorMonitor->SetDesiredError(
             "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");  // Expect max-per-stage sampled images to exceed limits
     }
-    if (descriptor_indexing) {
+    if (sampled_image_uab) {
         if (max_samplers > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
         }
@@ -637,7 +658,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     if (dslb.descriptorCount > max_storage_images) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03020");  // expect max-per-stage too
     }
-    if (descriptor_indexing) {
+    if (storage_image_uab) {
         if ((sum_storage_images + 1) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageImages) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03042");
         }
