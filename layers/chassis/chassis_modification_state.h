@@ -92,6 +92,10 @@ struct ShaderInstrumentationMetadata {
 
     // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
     bool passed_in_shader_stage_ci = false;
+    // Need to hold this in memory between the PreCallRecord and the Dispatch
+    // when passed_in_shader_stage_ci the modified VkShaderModuleCreateInfo::pCode points at
+    // it instead of holding a copy
+    std::vector<uint32_t> instrumented_spirv;
 };
 
 struct CreateGraphicsPipelines {
