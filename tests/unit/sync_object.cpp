@@ -3902,6 +3902,47 @@ TEST_F(NegativeSyncObject, TimelineHostSignalAndInUseTracking) {
     vk::DestroySemaphore(*m_device, handle, nullptr);
 }
 
+TEST_F(NegativeSyncObject, TimelineRepeatedHostSignalsAndInUseTracking) {
+    TEST_DESCRIPTION("Test semaphore in-use tracking with multiple host signals");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore blocking_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    VkSemaphoreSubmitInfo wait_infos[2];
+    wait_infos[0] = vku::InitStructHelper();
+    wait_infos[0].semaphore = semaphore;
+    wait_infos[0].value = 1;
+    wait_infos[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    wait_infos[1] = vku::InitStructHelper();
+    wait_infos[1].semaphore = blocking_semaphore;
+    wait_infos[1].value = 1;
+    wait_infos[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSubmitInfo2 submit_info = vku::InitStructHelper();
+    submit_info.waitSemaphoreInfoCount = 2;
+    submit_info.pWaitSemaphoreInfos = wait_infos;
+    vk::QueueSubmit2(*m_default_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    // Check for a regression when signal handing incorrectly removes a timepoint.
+    // The second signal can then discard information about the waiting queue
+    semaphore.Signal(1);
+    semaphore.Signal(2);
+
+    // Check the presense of the queue in the message. If we lost semaphore timepoint information
+    // due to incorrect cleanup we can get error message without queue information
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkDestroySemaphore-semaphore-05149", "in use by VkQueue");
+    vk::DestroySemaphore(*m_device, semaphore, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    blocking_semaphore.Signal(1);
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncObject, TimelineSubmitSignalAndInUseTracking) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8370");
     SetTargetApiVersion(VK_API_VERSION_1_2);
