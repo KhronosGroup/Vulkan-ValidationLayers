@@ -525,7 +525,7 @@ static VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocat
         }
         command_pool_buffer_map.erase(cp);
     }
-    command_pool_map[device].clear();
+    command_pool_map.erase(device);
 
     queue_map.erase(device);
     buffer_map.erase(device);

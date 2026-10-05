@@ -842,7 +842,7 @@ TEST_F(NegativeTensor, BindTensorImportMemoryHandleType) {
     vk::BindTensorMemoryARM(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
-    ::operator delete(host_memory, std::align_val_t(alloc_size));
+    ::operator delete(host_memory, std::align_val_t(alignment));
 }
 
 TEST_F(NegativeTensor, BindTensorCaptureNoDeviceMemFlag) {

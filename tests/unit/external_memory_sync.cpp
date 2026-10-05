@@ -2481,22 +2481,22 @@ TEST_F(NegativeExternalMemorySync, GetMemoryHostAlignment) {
     GetPhysicalDeviceProperties2(memory_host_props);
 
     VkDeviceSize alloc_size = memory_host_props.minImportedHostPointerAlignment;
-    VkDeviceSize bad_alloc_size = alloc_size / 4;
-    void* host_memory = ::operator new((size_t)bad_alloc_size, std::align_val_t(alloc_size));
+    if (alloc_size < 4) {
+        GTEST_SKIP() << "minImportedHostPointerAlignment too small to create misaligned memory";
+    }
+    // An allocation with the required alignment, offset by a quarter of it, is always misaligned
+    void* host_memory = ::operator new((size_t)alloc_size * 2, std::align_val_t(alloc_size));
     if (!host_memory) {
         GTEST_SKIP() << "Can't allocate host memory";
     }
-    const VkDeviceSize host_pointer = reinterpret_cast<VkDeviceSize>(host_memory);
-    if (host_pointer % alloc_size == 0) {
-        ::operator delete(host_memory, std::align_val_t(bad_alloc_size));
-        GTEST_SKIP() << "Can't create misaligned memory";  // when using ASAN
-    }
+    void* misaligned_host_pointer = static_cast<uint8_t*>(host_memory) + alloc_size / 4;
+
     VkMemoryHostPointerPropertiesEXT host_pointer_props = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-vkGetMemoryHostPointerPropertiesEXT-pHostPointer-01753");
-    vk::GetMemoryHostPointerPropertiesEXT(*m_device, VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT, host_memory,
-                                          &host_pointer_props);
+    vk::GetMemoryHostPointerPropertiesEXT(*m_device, VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT,
+                                          misaligned_host_pointer, &host_pointer_props);
     m_errorMonitor->VerifyFound();
-    ::operator delete(host_memory, std::align_val_t(bad_alloc_size));
+    ::operator delete(host_memory, std::align_val_t(alloc_size));
 }
 
 TEST_F(NegativeExternalMemorySync, ImportMemoryHostDedicated) {

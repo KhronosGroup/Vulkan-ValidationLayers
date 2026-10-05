@@ -2427,8 +2427,9 @@ void Pipeline::BuildSbt() {
 
     void* const sbt_buffer_base_ptr = sbt_buffer_.Memory().Map();
     void* sbt_buffer_ptr = sbt_buffer_base_ptr;
-    (void)sbt_buffer_base_ptr;
     size_t sbt_buffer_space_left = static_cast<size_t>(sbt_buffer_info.size);
+    // Shader records are set later with Update*ShaderRecord(), so zero everything (including alignment padding) up front
+    std::memset(sbt_buffer_base_ptr, 0, sbt_buffer_space_left);
     std::vector<uint8_t> rt_shader_group_handles = GetRayTracingShaderGroupHandles();
     uint8_t* const rt_shader_group_handles_ptr = rt_shader_group_handles.data();
 
@@ -2465,7 +2466,8 @@ void Pipeline::BuildSbt() {
             }
             uint8_t* ray_gen_handle =
                 rt_shader_group_handles_ptr + rt_pipeline_props.shaderGroupHandleSize * ray_gen_group_handle_indices[ray_gen_i];
-            std::memcpy(sbt_buffer_ptr, ray_gen_handle, sbt_shader_size);
+            // Only the handle comes from the handle array, the shader record is set later with Update*ShaderRecord()
+            std::memcpy(sbt_buffer_ptr, ray_gen_handle, rt_pipeline_props.shaderGroupHandleSize);
             sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + sbt_shader_size;
             sbt_buffer_space_left -= sbt_shader_size;
         }
@@ -2527,7 +2529,8 @@ void Pipeline::BuildSbt() {
 
             uint8_t* miss_handle =
                 rt_shader_group_handles_ptr + rt_pipeline_props.shaderGroupHandleSize * miss_group_handle_indices[miss_i];
-            std::memcpy(sbt_buffer_ptr, miss_handle, sbt_shader_size);
+            // Only the handle comes from the handle array, the shader record is set later with Update*ShaderRecord()
+            std::memcpy(sbt_buffer_ptr, miss_handle, rt_pipeline_props.shaderGroupHandleSize);
             sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + sbt_shader_size;
             sbt_buffer_space_left -= sbt_shader_size;
         }
@@ -2588,7 +2591,8 @@ void Pipeline::BuildSbt() {
 
             uint8_t* hit_handle =
                 rt_shader_group_handles_ptr + rt_pipeline_props.shaderGroupHandleSize * hit_group_handle_indices[hit_i];
-            std::memcpy(sbt_buffer_ptr, hit_handle, sbt_shader_size);
+            // Only the handle comes from the handle array, the shader record is set later with Update*ShaderRecord()
+            std::memcpy(sbt_buffer_ptr, hit_handle, rt_pipeline_props.shaderGroupHandleSize);
             sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + sbt_shader_size;
             sbt_buffer_space_left -= sbt_shader_size;
         }
@@ -2649,7 +2653,8 @@ void Pipeline::BuildSbt() {
 
             uint8_t* callable_handle =
                 rt_shader_group_handles_ptr + rt_pipeline_props.shaderGroupHandleSize * callable_group_handle_indices[callable_i];
-            std::memcpy(sbt_buffer_ptr, callable_handle, sbt_shader_size);
+            // Only the handle comes from the handle array, the shader record is left zeroed
+            std::memcpy(sbt_buffer_ptr, callable_handle, rt_pipeline_props.shaderGroupHandleSize);
             sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + sbt_shader_size;
             sbt_buffer_space_left -= sbt_shader_size;
         }

@@ -1490,7 +1490,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
         {4, 0, sizeof(VkBool32)}   // OpTypeBool
     };
 
-    std::array<int32_t, 4> data;  // enough garbage data to grab from
+    std::array<int32_t, 4> data{};  // enough data to grab from, the values do not matter
     VkSpecializationInfo specialization_info = {
         5,
         entries,
@@ -1566,7 +1566,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatchInt8) {
         {1, 0, 4},  // OpTypeInt 32
     };
 
-    std::array<int32_t, 2> data;  // enough garbage data to grab from
+    std::array<int32_t, 2> data{};  // enough data to grab from, the values do not matter
     VkSpecializationInfo specialization_info = {
         2,
         entries,
@@ -1650,7 +1650,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatchFloat64) {
         {2, 0, 4},  // OpTypeFloat 32
     };
 
-    std::array<int32_t, 4> data;  // enough garbage data to grab from
+    std::array<int32_t, 4> data{};  // enough data to grab from, the values do not matter
     VkSpecializationInfo specialization_info = {
         3,
         entries,
