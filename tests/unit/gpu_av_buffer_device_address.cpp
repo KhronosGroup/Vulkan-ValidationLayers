@@ -2511,7 +2511,7 @@ static const char* gpl_vs_source = R"glsl(
         uint x;
     };
     layout(set = 0, binding = 0) uniform UBO {
-        BDA bda; // has garbage
+        BDA bda; // bad pointer
     };
     vec2 vertices[3];
     void main(){
@@ -2532,7 +2532,7 @@ static const char* gpl_fs_source = R"glsl(
         uint x;
     };
     layout(set = 0, binding = 0) uniform UBO {
-        BDA bda; // has garbage
+        BDA bda; // bad pointer
     };
     layout(location = 0) out vec4 uFragColor;
     void main() {
@@ -2558,7 +2558,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, BothShaderInSamePipelineGPL) {
                                                  });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    vkt::Buffer uniform_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer uniform_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto uniform_buffer_ptr = (VkDeviceAddress*)uniform_buffer.Memory().Map();
+    uniform_buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
     descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
 
@@ -2621,7 +2623,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, BothShaderInSamePipelineFinalLinkGPL) {
                                                  });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    vkt::Buffer uniform_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer uniform_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto uniform_buffer_ptr = (VkDeviceAddress*)uniform_buffer.Memory().Map();
+    uniform_buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
     descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
 
@@ -2692,7 +2696,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DifferentShaderLibraryWithIntermediateL
                                                  });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    vkt::Buffer uniform_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer uniform_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto uniform_buffer_ptr = (VkDeviceAddress*)uniform_buffer.Memory().Map();
+    uniform_buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
     descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
 
