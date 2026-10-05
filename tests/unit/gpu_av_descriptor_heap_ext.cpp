@@ -1098,12 +1098,12 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBRebindHeap) {
 TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryInheritance) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     vkt::DescriptorHeapEXT desc_heap(*this);
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    const VkDeviceSize resource_stride = desc_heap.heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)desc_heap.GetResourceHeapSize();
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -1120,7 +1120,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryInheritance) {
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
     resource_bind_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
-    resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    resource_bind_info.reservedRangeSize = desc_heap.heap_props.minResourceHeapReservedRange;
     VkCommandBufferInheritanceDescriptorHeapInfoEXT inh_desc_heap_info = vku::InitStructHelper();
     inh_desc_heap_info.pResourceHeapBindInfo = &resource_bind_info;
     VkCommandBufferInheritanceInfo inh = vku::InitStructHelper(&inh_desc_heap_info);
@@ -1134,7 +1134,11 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryInheritance) {
     secondary.End();
 
     m_command_buffer.Begin();
-    desc_heap.BindResourceHeap(m_command_buffer);
+    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
+    bind_resource_info.heapRange = desc_heap.GetResourceHeapAddressRange();
+    bind_resource_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
+    bind_resource_info.reservedRangeSize = desc_heap.heap_props.minResourceHeapReservedRange;
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
     m_command_buffer.End();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
@@ -1145,12 +1149,12 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryInheritance) {
 TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryBind) {
     RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
     vkt::DescriptorHeapEXT desc_heap(*this);
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
+    const VkDeviceSize resource_stride = desc_heap.heap_props.bufferDescriptorSize;
     desc_heap.CreateResourceHeap(resource_stride, true);
 
     VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
     mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(heap_props.minResourceHeapReservedRange + resource_stride);
+    mapping.sourceData.constantOffset.heapOffset = (uint32_t)(desc_heap.GetResourceHeapSize() + resource_stride);
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
     mapping_info.mappingCount = 1;
     mapping_info.pMappings = &mapping;
@@ -1167,7 +1171,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, ResourceOOBSecondaryBind) {
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
     resource_bind_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
-    resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    resource_bind_info.reservedRangeSize = desc_heap.heap_props.minResourceHeapReservedRange;
 
     // No VkCommandBufferInheritanceDescriptorHeapInfoEXT
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -2033,6 +2037,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, StorageImageDescriptorAlignmentUntypedPoi
     const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
     // spirv-val can detect this, but still want to test at GPU-AV time
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
 
     m_command_buffer.Begin();
@@ -2108,6 +2113,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, StorageImageAtomicDescriptorAlignmentUnty
     const VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
     // spirv-val can detect this, but still want to test at GPU-AV time
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-08737");
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM, &specialization_info);
 
     m_command_buffer.Begin();

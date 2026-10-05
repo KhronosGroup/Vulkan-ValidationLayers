@@ -39,6 +39,9 @@ class DescriptorHeapEXT {
     void CreateResourceHeap(VkDeviceSize app_size, bool reserved_range_in_front = false);
     void CreateSamplerHeap(VkDeviceSize app_size, bool reserved_range_in_front = false, bool use_embedded_samplers = false);
 
+    VkDeviceSize GetResourceHeapSize() const;
+    VkDeviceAddressRangeKHR GetResourceHeapAddressRange() const;
+
     // Writes a descriptor at the internally maintained heap write offset.
     // Heap write offset is first aligned according to descriptor type,
     // then descriptor is written, finally heap write offset is incremented by descriptor size.
