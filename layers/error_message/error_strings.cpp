@@ -239,7 +239,7 @@ std::string string_VkDependencyInfo(const Logger& logger, VkDependencyInfo set_d
 
     const std::string set_str = set.str();
     if (set_str.empty()) {
-        return "unable to find which field of the VkDependencyInfo differs (this is a Validaiton bug, please report!)";
+        return "unable to find which field of the VkDependencyInfo differs (this is a Validation bug, please report!)";
     }
     return "event was set with " + set_str + " and is being waited on with " + wait.str();
 }
