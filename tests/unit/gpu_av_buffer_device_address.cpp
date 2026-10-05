@@ -469,6 +469,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ArrayOfStruct) {
     memcpy(buffer_ptr, &index, sizeof(uint32_t));
     memcpy(buffer_ptr + (1 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (2 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
+    const VkDeviceAddress bad_ptr = 0xffffffffffffff00;
+    memcpy(buffer_ptr + ((1 + index) * sizeof(VkDeviceAddress)), &bad_ptr, sizeof(VkDeviceAddress));
 
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
