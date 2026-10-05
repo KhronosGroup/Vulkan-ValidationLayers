@@ -14,6 +14,7 @@
 
 #include "layer_validation_tests.h"
 #include "utils/convert_utils.h"
+#include <cmath>
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include "wayland-client.h"
