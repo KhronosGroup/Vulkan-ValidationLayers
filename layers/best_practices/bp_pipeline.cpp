@@ -321,11 +321,29 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
     return skip;
 }
 
+// Best Practices does not apply specialization constants, so return zero if the local size depends on them
+static spirv::LocalSize FindStaticLocalSize(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint) {
+    if (module_state.static_data_.has_built_in_workgroup_size) {
+        if (module_state.FindDef(module_state.static_data_.built_in_workgroup_size_id)->IsSpecConstant()) {
+            return {};
+        }
+    } else if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::local_size_id_bit)) {
+        const spirv::LocalSize& ids = entrypoint.execution_mode.local_size;
+        for (uint32_t id : {ids.x, ids.y, ids.z}) {
+            const spirv::Instruction* def = module_state.GetAnyConstantDef(id);
+            if (!def || def->IsSpecConstant()) {
+                return {};
+            }
+        }
+    }
+    return module_state.FindLocalSize(entrypoint);
+}
+
 bool BestPractices::ValidateComputeShaderArm(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                              const Location& loc) const {
     bool skip = false;
 
-    spirv::LocalSize local_size = module_state.FindLocalSize(entrypoint);
+    spirv::LocalSize local_size = FindStaticLocalSize(module_state, entrypoint);
     if (local_size.x == 0) {
         return false;
     }
@@ -381,7 +399,7 @@ bool BestPractices::ValidateComputeShaderAmd(const spirv::Module& module_state, 
                                              const Location& loc) const {
     bool skip = false;
 
-    spirv::LocalSize local_size = module_state.FindLocalSize(entrypoint);
+    spirv::LocalSize local_size = FindStaticLocalSize(module_state, entrypoint);
     if (local_size.x == 0) {
         return false;
     }
@@ -581,7 +599,7 @@ bool BestPractices::ValidateShaderStage(const ShaderStageState& stage_state, con
     }
 
     if (entrypoint.stage == VK_SHADER_STAGE_TASK_BIT_EXT || entrypoint.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
-        spirv::LocalSize local_size = module_state.FindLocalSize(entrypoint);
+        spirv::LocalSize local_size = FindStaticLocalSize(module_state, entrypoint);
         if (local_size.x == 0) {
             return skip;
         }

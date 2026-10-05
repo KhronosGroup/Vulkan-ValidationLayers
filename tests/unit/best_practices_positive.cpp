@@ -788,3 +788,29 @@ TEST_F(PositiveBestPractices, ReadOnlyLayoutInputAttachmentAccess) {
     }
     m_command_buffer.End();
 }
+
+TEST_F(PositiveBestPractices, ComputeWorkgroupSizeSpecConstant) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10057");
+    const VkLayerSettingEXT settings[2] = {
+        {OBJECT_LAYER_NAME, "validate_best_practices_amd", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue},
+        {OBJECT_LAYER_NAME, "validate_best_practices_arm", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2,
+                                                               settings};
+    features_.pNext = &layer_settings_create_info;
+    RETURN_IF_SKIP(InitBestPractices());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x_id = 0, local_size_y_id = 1) in;
+        void main() {}
+    )glsl";
+
+    const uint32_t data[2] = {8, 8};
+    const VkSpecializationMapEntry entries[2] = {{0, 0, sizeof(uint32_t)}, {1, sizeof(uint32_t), sizeof(uint32_t)}};
+    const VkSpecializationInfo spec_info = {2, entries, sizeof(data), data};
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kPerformanceWarningBit);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &spec_info);
+    pipe.CreateComputePipeline();
+}
