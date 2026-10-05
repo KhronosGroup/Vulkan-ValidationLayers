@@ -136,6 +136,7 @@ static void ProcessConfigFile(const VkPhysicalDeviceLimits& device_limits, TBuil
     out_resources.maxTaskWorkGroupSizeY_EXT = 1;
     out_resources.maxTaskWorkGroupSizeZ_EXT = 1;
     out_resources.maxMeshViewCountEXT = 4;
+    out_resources.maxDualSourceDrawBuffersEXT = device_limits.maxFragmentDualSrcAttachments;
 
     out_resources.limits.nonInductiveForLoops = 1;
     out_resources.limits.whileLoops = 1;
@@ -261,7 +262,7 @@ struct GlslangTargetEnv {
 //
 bool GLSLtoSPV(const VkPhysicalDeviceLimits& device_limits, const VkShaderStageFlagBits shader_type, const char* p_shader,
                std::vector<uint32_t>& spirv, const spv_target_env spv_env) {
-    TBuiltInResource resources;
+    TBuiltInResource resources = {};
     ProcessConfigFile(device_limits, resources);
 
     EShMessages messages = static_cast<EShMessages>(EShMsgDefault | EShMsgSpvRules | EShMsgVulkanRules);
