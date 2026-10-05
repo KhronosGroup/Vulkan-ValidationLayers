@@ -520,18 +520,18 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
     bool skip = false;
 
     if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+        auto& sub_state = bp_state::SubState(*cb_state);
         if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-            if (IsPipelineUsedInFrame(pipeline)) {
+            if (sub_state.bound_graphics_pipelines.count(pipeline) != 0) {
                 skip |= LogPerformanceWarning(
                     "BestPractices-Pipeline-SortAndBind", commandBuffer, error_obj.location,
-                    "%s Pipeline %s was bound twice in the frame. "
+                    "%s Pipeline %s was bound twice in the command buffer. "
                     "Keep pipeline state changes to a minimum, for example, by sorting draw calls by pipeline.",
                     VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str(), FormatHandle(pipeline).c_str());
             }
         }
         if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-            auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-            auto& sub_state = bp_state::SubState(*cb_state);
             const auto& tgm = sub_state.nv.tess_geometry_mesh;
             if (tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA && !tgm.threshold_signaled) {
                 LogPerformanceWarning("BestPractices-NVIDIA-BindPipeline-SwitchTessGeometryMesh", commandBuffer, error_obj.location,

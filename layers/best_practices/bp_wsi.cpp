@@ -180,7 +180,6 @@ void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkP
     // end-of-frame cleanup
     num_queue_submissions_ = 0;
     num_barriers_objects_ = 0;
-    ClearPipelinesUsedInFrame();
 }
 
 bool bp_state::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,

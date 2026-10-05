@@ -788,3 +788,23 @@ TEST_F(PositiveBestPractices, ReadOnlyLayoutInputAttachmentAccess) {
     }
     m_command_buffer.End();
 }
+
+TEST_F(PositiveBestPractices, BindPipelineInDifferentCommandBuffers) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11477");
+    RETURN_IF_SKIP(InitBestPractices("validate_best_practices_amd"));
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kPerformanceWarningBit);
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_command_buffer.End();
+
+    cb2.Begin();
+    vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    cb2.End();
+}

@@ -584,3 +584,22 @@ TEST_F(NegativeBestPracticesAMD, ComputeWorkgroupSizeMaintenance5) {
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeBestPracticesAMD, SortAndBind) {
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe0(*this);
+    pipe0.CreateGraphicsPipeline();
+    CreatePipelineHelper pipe1(*this);
+    pipe1.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Pipeline-SortAndBind");
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

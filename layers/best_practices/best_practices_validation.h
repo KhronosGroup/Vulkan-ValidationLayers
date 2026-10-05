@@ -566,10 +566,6 @@ class BestPractices : public vvl::DeviceProxy {
     void RecordClearColor(VkFormat format, const VkClearColorValue& clear_value);
     bool ClearAttachmentsIsFullClear(const bp_state::CommandBufferSubState& cb_state, uint32_t rectCount,
                                      const VkClearRect* pRects) const;
-    void PipelineUsedInFrame(VkPipeline pipeline) {
-        WriteLockGuard guard(pipeline_lock_);
-        pipelines_used_in_frame_.insert(pipeline);
-    }
 
 // Include code-generated functions
 #include "generated/best_practices_device_methods.h"
@@ -610,16 +606,6 @@ class BestPractices : public vvl::DeviceProxy {
     bool ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat format, const VkClearColorValue& clear_value,
                             const Location& loc) const;
 
-    void ClearPipelinesUsedInFrame() {
-        WriteLockGuard guard(pipeline_lock_);
-        pipelines_used_in_frame_.clear();
-    }
-
-    bool IsPipelineUsedInFrame(VkPipeline pipeline) const {
-        ReadLockGuard guard(pipeline_lock_);
-        return pipelines_used_in_frame_.count(pipeline) != 0;
-    }
-
     // AMD tracked
     std::atomic<uint32_t> num_barriers_objects_{0};
     std::atomic<uint32_t> num_pso_{0};
@@ -639,9 +625,6 @@ class BestPractices : public vvl::DeviceProxy {
     // Can't get vvl::unordered_set to work with std::array
     std::set<std::array<uint32_t, 4>> clear_colors_;
     mutable std::shared_mutex clear_colors_lock_;
-
-    vvl::unordered_set<VkPipeline> pipelines_used_in_frame_;
-    mutable std::shared_mutex pipeline_lock_;
 };
 
 static inline bool RenderPassUsesAttachmentOnTile(const vku::safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {

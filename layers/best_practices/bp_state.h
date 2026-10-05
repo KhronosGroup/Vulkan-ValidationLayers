@@ -154,6 +154,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     CommandBufferStateNV nv;
     uint64_t num_submits = 0;
     uint32_t small_indexed_draw_call_count = 0;
+    vvl::unordered_set<VkPipeline> bound_graphics_pipelines;
 
     std::vector<PushConstantData> push_constant_data_chunks;
 
