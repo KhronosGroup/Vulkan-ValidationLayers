@@ -34,7 +34,7 @@
 #include "state_tracker/vertex_index_buffer_state.h"
 #include "state_tracker/event_state.h"
 #include "state_tracker/submit_time_tracker.h"
-#include "state_tracker/subresource_adapter.h"
+#include "state_tracker/subresource_encoding.h"
 
 #include "containers/custom_containers.h"
 
@@ -1197,7 +1197,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateDescriptorImageLayout(const LogObjectList& objlist, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
                                        VkImageLayout explicit_layout, const CommandBufferImageLayoutMap& cb_layout_map,
-                                       subresource_adapter::RangeGenerator&& range_gen, const Location& loc,
+                                       vvl::SubresourceRangeGenerator&& range_gen, const Location& loc,
                                        std::function<std::string()> describe_descriptor_callback) const override;
 
     // NOTE: depth_offset/depth_extent parameters are used to support per-slice image layout transitions in 3d image

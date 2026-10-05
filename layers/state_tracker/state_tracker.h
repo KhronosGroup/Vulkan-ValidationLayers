@@ -88,6 +88,7 @@ class VideoSession;
 class VideoSessionParameters;
 class DataGraphPipelineSession;
 class SubmitTimeTracker;
+class SubresourceRangeGenerator;
 struct CommandBufferSubmitInfo;
 struct DescriptorHashing;
 }  // namespace vvl
@@ -99,10 +100,6 @@ struct CreateShaderModule;
 namespace spirv {
 struct StatelessData;
 }  // namespace spirv
-
-namespace subresource_adapter {
-class RangeGenerator;
-}  // namespace subresource_adapter
 
 class CommandBufferImageLayoutMap;
 
@@ -2391,7 +2388,7 @@ class DeviceProxy : public vvl::BaseDevice {
     virtual bool ValidateDescriptorImageLayout(const LogObjectList& objlist, const vvl::Image& image_state,
                                                VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
                                                const CommandBufferImageLayoutMap& cb_layout_map,
-                                               subresource_adapter::RangeGenerator&& range_gen, const Location& loc,
+                                               vvl::SubresourceRangeGenerator&& range_gen, const Location& loc,
                                                std::function<std::string()> describe_descriptor_callback) const {
         return false;
     }

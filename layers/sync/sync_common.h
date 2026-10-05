@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "state_tracker/subresource_adapter.h"
+#include "sync/sync_image_encoding.h"
 #include "containers/range.h"
 #include "generated/sync_validation_types.h"
 #include "containers/limits.h"
@@ -27,7 +27,7 @@ class Buffer;
 
 namespace syncval {
 
-using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
+using ImageRangeGen = ImageRangeGenerator;
 
 // The resource tag index is relative to the command buffer or queue in which it's found
 using QueueId = uint32_t;

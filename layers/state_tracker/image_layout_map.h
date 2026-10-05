@@ -26,7 +26,7 @@
 #include "containers/custom_containers.h"
 #include "containers/limits.h"
 #include "containers/small_range_map.h"
-#include "state_tracker/subresource_adapter.h"
+#include "state_tracker/subresource_encoding.h"
 #include "generated/error_location_helper.h"
 
 constexpr VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
@@ -75,24 +75,24 @@ using ImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandB
 
 // Update image layout state during command buffer recording phase.
 // The VkImageLayout parameters must be unnormalized values (as defined by the API) so they can be used in the error messages.
-bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
+bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, vvl::SubresourceRangeGenerator&& range_gen,
                          VkImageLayout layout, VkImageLayout expected_layout, VkImageAspectFlags aspect_mask,
                          uint32_t label_command_i, vvl::Func command);
 
 // Track image layout at the beginning of the command buffer.
 // Typically called by the APIs that specify the expected layout but do not perform a layout transition.
 // The VkImageLayout parameter must be unnormalized value (as defined by the API) so it can be used in the error messages.
-void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
+void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, vvl::SubresourceRangeGenerator&& range_gen,
                       VkImageLayout expected_layout, VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid,
                       uint32_t label_command_i, vvl::Func command);
 
-// Iterate over layout map subresource ranges that intersect with the ranges defined by RangeGenerator.
+// Iterate over layout map subresource ranges that intersect with the ranges defined by SubresourceRangeGenerator.
 // Runs the callback on each matching layout map range.
 // Returns skip status (check todo in the implementation)
 bool ForEachMatchingLayoutMapRange(
-    const CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& gen,
-    std::function<bool(const subresource_adapter::IndexRange& range, const ImageLayoutState& entry)>&& func);
+    const CommandBufferImageLayoutMap& image_layout_map, vvl::SubresourceRangeGenerator&& gen,
+    std::function<bool(const vvl::SubresourceEncoder::IndexRange& range, const ImageLayoutState& entry)>&& func);
 
 bool ForEachMatchingLayoutMapRange(
-    const ImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& gen,
-    std::function<bool(const subresource_adapter::IndexRange& range, VkImageLayout image_layout)>&& func);
+    const ImageLayoutMap& image_layout_map, vvl::SubresourceRangeGenerator&& gen,
+    std::function<bool(const vvl::SubresourceEncoder::IndexRange& range, VkImageLayout image_layout)>&& func);

@@ -118,7 +118,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     const bool metal_io_surface_export;
 #endif  // VK_USE_PLATFORM_METAL
 
-    const subresource_adapter::RangeEncoder subresource_encoder;  // Subresource resolution encoder
+    const SubresourceEncoder subresource_encoder;                 // Subresource resolution encoder
     const VkDevice store_device_as_workaround;                    // TODO REMOVE WHEN encoder can be const
 
     // Tracks current layouts of image subresources. Can be used by multiple threads, so should be locked when in use.
@@ -316,7 +316,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     const bool filter_cubic;
     const bool filter_cubic_minmax;
     const VkImageSubresourceRange normalized_subresource_range;
-    const subresource_adapter::RangeGenerator range_generator;
+    const SubresourceRangeGenerator range_generator;
     const VkSampleCountFlagBits samples;
     // VK_NULL_HANDLE if it doesn't have one chained in the pNext at creation time
     const VkSamplerYcbcrConversion sampler_conversion;
@@ -354,7 +354,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
                                                                       const VkImageViewCreateInfo &image_view_ci);
 
     // The range that defines indexing space of all possible image layouts for this image view.
-    // It is used by the RangeGenerator and the image layout maps.
+    // It is used by the SubresourceRangeGenerator and the image layout maps.
     // In the general case, it is different than the number of subresources (described by
     // normalized_subresource_range), so when dealing with image layouts this function should
     // always be used instead

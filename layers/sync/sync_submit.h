@@ -38,7 +38,7 @@ using CommandBufferConstPtr = std::shared_ptr<const vvl::CommandBuffer>;
 
 struct AcquiredImage {
     std::shared_ptr<const vvl::Image> image;
-    subresource_adapter::ImageRangeGenerator generator;
+    ImageRangeGenerator generator;
 
     // Tag of the image acquire operation
     ResourceUsageTag acquire_tag;

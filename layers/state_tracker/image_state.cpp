@@ -33,7 +33,7 @@
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
 
-using RangeGenerator = subresource_adapter::RangeGenerator;
+using RangeGenerator = vvl::SubresourceRangeGenerator;
 
 static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkImageCreateInfo* pCreateInfo) {
     const auto* external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);

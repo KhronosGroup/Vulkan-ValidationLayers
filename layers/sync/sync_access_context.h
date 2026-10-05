@@ -195,15 +195,13 @@ class AccessContext {
     void ResolveFromContext(ResolveOp&& resolve_op, const AccessContext& from_context);
 
     template <typename ResolveOp>
-    void ResolveFromContext(ResolveOp&& resolve_op, const AccessContext& from_context,
-                            subresource_adapter::ImageRangeGenerator range_gen);
+    void ResolveFromContext(ResolveOp&& resolve_op, const AccessContext& from_context, ImageRangeGenerator range_gen);
 
     void ResolveFromContextRecursePrev(const AccessContext& from);
 
     // Resolves this subpass context from the subpass context defined by the layout transition dependency
     void ResolveFromSubpassContext(const ApplySubpassTransitionBarrierAction& subpass_transition_action,
-                                   const AccessContext& from_context,
-                                   subresource_adapter::ImageRangeGenerator attachment_range_gen);
+                                   const AccessContext& from_context, ImageRangeGenerator attachment_range_gen);
 
     // Import accesses from all subpass dependencies (including src external dependency)
     void ResolveAllSubpassDependencies();
@@ -478,8 +476,7 @@ void AccessContext::ResolveFromContext(ResolveOp&& resolve_op, const AccessConte
 }
 
 template <typename ResolveOp>
-void AccessContext::ResolveFromContext(ResolveOp&& resolve_op, const AccessContext& from_context,
-                                       subresource_adapter::ImageRangeGenerator range_gen) {
+void AccessContext::ResolveFromContext(ResolveOp&& resolve_op, const AccessContext& from_context, ImageRangeGenerator range_gen) {
     for (; range_gen->non_empty(); ++range_gen) {
         from_context.ResolveAccessRange(*range_gen, resolve_op, *this);
     }

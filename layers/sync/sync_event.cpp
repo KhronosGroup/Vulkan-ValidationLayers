@@ -178,7 +178,7 @@ class FilteredGeneratorGenerator {
     AccessRange current_;
 };
 
-using EventImageRangeGenerator = FilteredGeneratorGenerator<subresource_adapter::ImageRangeGenerator>;
+using EventImageRangeGenerator = FilteredGeneratorGenerator<ImageRangeGenerator>;
 
 // Need to restrict to only valid exec and access scope for this event
 static SyncBarrier RestrictToEvent(const SyncBarrier& barrier, const SyncEventState& sync_event) {

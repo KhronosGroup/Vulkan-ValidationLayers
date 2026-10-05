@@ -209,8 +209,7 @@ void AccessContext::ResolveFromContextRecursePrev(const AccessContext& from) {
 }
 
 void AccessContext::ResolveFromSubpassContext(const ApplySubpassTransitionBarrierAction& subpass_transition_action,
-                                              const AccessContext& from_context,
-                                              subresource_adapter::ImageRangeGenerator attachment_range_gen) {
+                                              const AccessContext& from_context, ImageRangeGenerator attachment_range_gen) {
     for (; attachment_range_gen->non_empty(); ++attachment_range_gen) {
         from_context.ResolveAccessRangeRecursePrev(*attachment_range_gen, subpass_transition_action, *this, true);
     }
