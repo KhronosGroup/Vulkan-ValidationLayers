@@ -343,8 +343,10 @@ class AccessContext {
     void ResolveAccessRangeRecursePrev(const AccessRange& range, const AccessStateFunction& barrier_action,
                                        AccessContext& resolve_context, bool infill) const;
 
-    // Resolve src_entry into this context over range
-    void ResolveAccessState(const AccessRange& range, const AccessEntry& src_entry);
+    // Resolve src_entry into this context over range.
+    // A strided source can have gaps with no access state. Keep destination state in those gaps.
+    // With replace, source access state replaces destination state
+    void ResolveAccessState(const AccessRange& range, const AccessEntry& src_entry, bool replace = false);
 
     // Resolve the empty entries over the given range by importing previous contexts.
     // An optional infill operation is applied if the previous contexts do not have requested ranges.

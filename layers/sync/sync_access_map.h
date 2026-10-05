@@ -73,8 +73,9 @@ struct AccessEntry {
     void Assign(const AccessState& access);
 
     // Resolve other into this entry.
-    // Apply pending barriers to this entry before merging
-    void Resolve(const AccessEntry& other, const AccessStateFunction& apply_barriers);
+    // Apply global barriers to this entry before merging.
+    // If both entries are strided, their strided ranges must match
+    void Resolve(const AccessEntry& other, const AccessStateFunction& apply_global_barriers, bool replace = false);
 
     // Replace the strided access with a regular access if one of its states covers range.
     // The entry must only be used within range afterwards

@@ -30,30 +30,37 @@ void AccessEntry::Assign(const AccessState& access) {
     strided_access.reset();
 }
 
-void AccessEntry::Resolve(const AccessEntry& other, const AccessStateFunction& apply_barriers) {
-    // If both entries are strided, their base, width, stride and count must match
+void AccessEntry::Resolve(const AccessEntry& other, const AccessStateFunction& apply_global_barriers, bool replace) {
     assert(IsStridedRangeCompatible(other));
 
+    if (replace && !other.strided_access) {
+        Assign(other.access_state);
+        return;
+    }
     if (!strided_access && !other.strided_access) {
-        apply_barriers(&access_state);
+        apply_global_barriers(&access_state);
         access_state.Resolve(other.access_state);
         return;
     }
 
-    // Keep access_state as the outside state and copy it for the inside
+    // Make the regular entry strided, using its state inside and outside
     if (!strided_access) {
         strided_access = std::make_unique<StridedAccess>(other.strided_access->range, access_state, true);
     }
 
     // Inside access
-    apply_barriers(&strided_access->access_state);
-    strided_access->access_state.Resolve(other.GetInsideAccessState());
+    if (replace) {
+        strided_access->access_state.Assign(other.GetInsideAccessState());
+    } else {
+        apply_global_barriers(&strided_access->access_state);
+        strided_access->access_state.Resolve(other.GetInsideAccessState());
+    }
 
     // Outside access
     const bool other_has_outside = !other.strided_access || other.strided_access->has_outside_state;
     if (other_has_outside) {
-        if (strided_access->has_outside_state) {
-            apply_barriers(&access_state);
+        if (strided_access->has_outside_state && !replace) {
+            apply_global_barriers(&access_state);
             access_state.Resolve(other.access_state);
         } else {
             access_state.Assign(other.access_state);

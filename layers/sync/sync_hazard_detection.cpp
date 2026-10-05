@@ -549,13 +549,27 @@ HazardResult AccessContext::DetectHazardOneRange(Detector& detector, bool detect
         }
         const auto& entry = pos->second;
 
-        // Event barrier checks need every span to look up the event scope by address.
-        // Also visit every span when resolving absent outside access state from previous contexts.
-        // Otherwise, detection depends only on access state, so checking each state once is enough
-        const bool all_spans = event_barrier || (detect_prev && entry.HasAbsentOutsideSpans());
+        // Absent outside spans take their state from the previous contexts
+        const bool gaps_from_previous = detect_prev && entry.HasAbsentOutsideSpans();
+
+        // When the range covers the entry, resolve it once instead of one descent per gap
+        const bool resolve_entry = !event_barrier && gaps_from_previous && range.includes(pos->first);
+
+        // Event barriers check every span.
+        // Gaps from the previous contexts are resolved one span at a time
+        const bool all_spans = event_barrier || gaps_from_previous;
 
         if (!entry.strided_access) {
             hazard = detector.Detect(pos->first, entry.access_state);
+        } else if (resolve_entry) {
+            // Import previous contexts over the entry's range, then overwrite with the entry's segments
+            AccessContext combined_context;
+            ResolveSubpassDependencies(pos->first, combined_context, false);
+            combined_context.ResolveAccessState(pos->first, entry, true);
+
+            const AccessMap& combined_map = combined_context.access_state_map_;
+            auto combined_pos = combined_map.begin();
+            hazard = DetectHazardOneRange(detector, false, combined_pos, combined_map.end(), pos->first);
         } else if (all_spans) {
             entry.VisitSpans(pos->first & range, detect_span);
         } else {
