@@ -1488,7 +1488,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 continue;
             }
         }
-        std::vector<uint32_t> instrumented_spirv;
+        std::vector<uint32_t>& instrumented_spirv = instrumentation_metadata.instrumented_spirv;
         const uint32_t unique_shader_id = unique_shader_module_id_++;
 
         interface.unique_shader_id = unique_shader_id;
@@ -1533,12 +1533,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
             } else if (modified_shader_module_ci) {
                 // The user is inlining the Shader Module into the pipeline, so just need to update the spirv
                 instrumentation_metadata.passed_in_shader_stage_ci = true;
-                // TODO - This makes a copy, but could save on Chassis stack instead (then remove function from VUL).
-                // The core issue is we always use std::vector<uint32_t> but Safe Struct manages its own version of the pCode
-                // memory. It would be much harder to change everything from std::vector and instead to adjust Safe Struct to not
-                // double-free the memory on us. If making any changes, we have to consider a case where the user inlines the
-                // fragment shader, but use a normal VkShaderModule in the vertex shader.
-                modified_shader_module_ci->SetCode(instrumented_spirv);
+                modified_shader_module_ci->SetCodeNoCopy(instrumented_spirv.data(), instrumented_spirv.size() * sizeof(uint32_t));
             } else {
                 assert(false);
                 return false;
@@ -1640,6 +1635,10 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             continue;
         }
 
+        // Instrumented SPIR-V of the stages that inline their VkShaderModuleCreateInfo
+        // |new_lib_ci| points at it instead of holding a copy.
+        // moving a std::vector<uint32_t> (when this one reallocates) keeps its data pointer
+        std::vector<std::vector<uint32_t>> inlined_instrumented_spirv;
         vku::safe_VkGraphicsPipelineCreateInfo new_lib_ci(modified_lib->GraphicsCreateInfo());
         // If the application supplied pipeline might be interested in failing to be created
         // if the driver does not find it in its cache, GPU-AV needs to succeed in the instrumented pipeline library
@@ -1755,13 +1754,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                     // If inlining and not instrumented, leave it alone
                     if (stage_status.host.is_instrumented) {
                         // The user is inlining the Shader Module into the pipeline, so just need to update the spirv
-
-                        // TODO - This makes a copy, but could save on Chassis stack instead (then remove function from VUL).
-                        // The core issue is we always use std::vector<uint32_t> but Safe Struct manages its own version of the
-                        // pCode memory. It would be much harder to change everything from std::vector and instead to adjust Safe
-                        // Struct to not double-free the memory on us. If making any changes, we have to consider a case where the
-                        // user inlines the fragment shader, but use a normal VkShaderModule in the vertex shader.
-                        modified_shader_module_ci->SetCode(instrumented_spirv);
+                        const std::vector<uint32_t>& lib_spirv =
+                            inlined_instrumented_spirv.emplace_back(std::move(instrumented_spirv));
+                        modified_shader_module_ci->SetCodeNoCopy(lib_spirv.data(), lib_spirv.size() * sizeof(uint32_t));
                         return kPipelineStageInfoHandle;
                     }
                     return VK_NULL_HANDLE;
