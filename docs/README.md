@@ -6,6 +6,7 @@ This directory contains more detailed information about how each part of the Val
     - [Core Validation Checks](./core_checks.md)
     - [Error Message Overview](./error_messages.md)
     - [Best Practices Validation](./best_practices.md)
+        - [Best Practices Checks](./best_practices_checks.md)
     - [Error Object (information used to print better error messages)](./error_object.md)
     - [Shader Debug Printf](./debug_printf.md)
     - [Legacy Detection](./legacy_detection.md)

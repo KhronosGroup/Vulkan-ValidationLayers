@@ -30,6 +30,7 @@ import common_ci
 import pickle
 from xml.etree import ElementTree
 from generate_spec_error_message import GenerateSpecErrorMessage
+from generate_best_practices_doc import VerifyBestPracticesDoc
 
 def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFile: str, targetFilter: str, caching: bool):
     clang_binary = 'clang-format'
@@ -555,6 +556,9 @@ def main(argv):
                                                        fromfile='temp/' + filename,
                                                        tofile=  'repo/' + filename)))
                 return 4
+
+        if not VerifyBestPracticesDoc():
+            return 5
 
         # return code for test scripts
         print('SUCCESS: Repo files match generator output')

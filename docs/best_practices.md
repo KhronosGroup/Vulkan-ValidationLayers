@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2022 LunarG, Inc. -->
+<!-- Copyright 2015-2026 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -13,8 +13,7 @@ by the Vulkan specification but that may lead to application problems.
 
 Best Practices will ideally be run periodically along with normal validation checks so that issues may be addressed in early stages of development.
 
-The specific areas covered by this layer are currently tracked in the
-[Best Practices Project](https://github.com/KhronosGroup/Vulkan-ValidationLayers/projects/1).
+The list of all the checks is in [Best Practices Checks](best_practices_checks.md).
 Requests for additional checks can be requested by creating a Github issue.
 
 ## Configuring Best Practices Validation
