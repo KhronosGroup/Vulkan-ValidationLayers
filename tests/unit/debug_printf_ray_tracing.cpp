@@ -1762,3 +1762,54 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     ASSERT_EQ(debug_buffer_ptr[4], (1 * ray_gen_1_rays_count + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[5], (1 * ray_gen_1_rays_count + 2) * frames_count);
 }
+
+TEST_F(NegativeDebugPrintfRayTracing, LibraryDestroyLinkedPipeline) {
+    TEST_DESCRIPTION("libraries are instrumented when created, destroying a linked pipeline must not affect the next link");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("raygen from the library");
+        }
+    )glsl";
+
+    vkt::rt::Pipeline pipeline_lib(*this, m_device);
+    pipeline_lib.InitLibraryInfo(sizeof(float), false);
+    pipeline_lib.SetGlslRayGenShader(ray_gen);
+    pipeline_lib.BuildPipeline();
+
+    auto trace_rays = [&](vkt::rt::Pipeline& pipeline) {
+        m_command_buffer.Begin();
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+        vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+        vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                            &trace_rays_sbt.callable_sbt, 1, 1, 1);
+        m_command_buffer.End();
+        m_errorMonitor->SetDesiredInfo("raygen from the library");
+        m_default_queue->SubmitAndWait(m_command_buffer);
+        m_errorMonitor->VerifyFound();
+    };
+
+    {
+        vkt::rt::Pipeline pipeline(*this, m_device);
+        pipeline.InitLibraryInfo(sizeof(float), true);
+        pipeline.AddLibrary(pipeline_lib);
+        pipeline.Build();
+        trace_rays(pipeline);
+    }
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.InitLibraryInfo(sizeof(float), true);
+    pipeline.AddLibrary(pipeline_lib);
+    pipeline.Build();
+    trace_rays(pipeline);
+}

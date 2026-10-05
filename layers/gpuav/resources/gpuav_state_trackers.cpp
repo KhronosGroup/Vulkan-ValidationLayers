@@ -18,6 +18,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <mutex>
+#include "containers/container_utils.h"
 #include "generated/dispatch_functions.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
@@ -616,7 +617,31 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
                 }
             }
         }
+
+        // The errors of the earlier batches are read now.
+        // Erase what this queue held on to unless another queue still holds it
+        {
+            std::lock_guard<std::mutex> lock(gpuav_.held_shader_ids_mutex_);
+            if (auto held = gpuav_.held_shader_ids_.find(this); held != gpuav_.held_shader_ids_.end()) {
+                const std::vector<uint32_t> held_ids = std::move(held->second);
+                gpuav_.held_shader_ids_.erase(held);
+                for (const uint32_t unique_shader_id : held_ids) {
+                    bool held_by_other_queue = false;
+                    for (const auto& other : gpuav_.held_shader_ids_) {
+                        held_by_other_queue |= vvl::Contains(other.second, unique_shader_id);
+                    }
+                    if (!held_by_other_queue) {
+                        gpuav_.instrumented_shaders_map_.erase(unique_shader_id);
+                    }
+                }
+            }
+        }
+
         retiring_.clear();
+    } else {
+        // The app can already see this batch completed, but its command buffers are only processed with the last batch
+        std::lock_guard<std::mutex> lock(gpuav_.held_shader_ids_mutex_);
+        gpuav_.held_shader_ids_.try_emplace(this);
     }
 }
 

@@ -65,9 +65,11 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                         if (is_struct) {
                             // Added because glslang currently has no way to separate out the struct (Slang does as of 2025.6.2)
                             ss << " This " << (is_write ? "write" : "read") << " corresponds to a full OpTypeStruct load";
-                            const uint32_t instruction_position_offset =
-                                error_record[kHeader_StageInstructionIdOffset] & kInstructionId_Mask;
-                            ::spirv::FindOpStructFromBDA(ss, instrumented_shader->original_spirv, instruction_position_offset);
+                            if (instrumented_shader) {
+                                const uint32_t instruction_position_offset =
+                                    error_record[kHeader_StageInstructionIdOffset] & kInstructionId_Mask;
+                                ::spirv::FindOpStructFromBDA(ss, instrumented_shader->original_spirv, instruction_position_offset);
+                            }
                             ss << ". While not all members of the struct might be accessed, "
                                   "it is up "
                                   "to the source language or tooling to detect that and reflect it in the SPIR-V.";
