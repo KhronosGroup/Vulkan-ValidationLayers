@@ -461,7 +461,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceCustomStride) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13040
-// This will fail self-validaiton with VU 13122
+// This will fail self-validation with VU 13122
 TEST_F(PositiveGpuAVIndirectBuffer, DISABLED_DispatchIndirect2) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
@@ -491,7 +491,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, DISABLED_DispatchIndirect2) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13040
-// This will fail self-validaiton with VU 13122
+// This will fail self-validation with VU 13122
 TEST_F(PositiveGpuAVIndirectBuffer, DISABLED_DrawMeshTasksIndirect2EXT) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
