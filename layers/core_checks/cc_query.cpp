@@ -576,14 +576,6 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const Qu
                              FormatHandle(query_obj.pool).c_str(), string_VkQueryType(query_pool_ci.queryType));
             break;
         }
-        case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV: {
-            const char* vuid =
-                is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-04729" : "VUID-vkCmdBeginQuery-queryType-04729";
-            const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
-            skip |= LogError(vuid, objlist, loc.dot(Field::queryPool), "(%s) was created with queryType %s.",
-                             FormatHandle(query_obj.pool).c_str(), string_VkQueryType(query_pool_ci.queryType));
-            break;
-        }
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR: {
             const char* vuid =

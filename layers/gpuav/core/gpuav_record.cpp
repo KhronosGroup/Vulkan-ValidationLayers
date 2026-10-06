@@ -792,20 +792,6 @@ void Validator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkCommandB
     UpdateAccelerationStructureGpuState(*this, SubState(*cb_state), record_obj.location, {&as_gpu_state_update, 1});
 }
 
-void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                                            VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                                            VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                                            VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                                            VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                            VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                            uint32_t width, uint32_t height, uint32_t depth, const RecordObject& record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-
-    auto& sub_state = SubState(*cb_state);
-    const LastBound& last_bound = cb_state->GetLastBoundRayTracing();
-    PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
-}
-
 void Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                              const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                              const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,

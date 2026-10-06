@@ -1526,30 +1526,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  FormatHandle(mem_binding->Handle()).c_str(), DescribeInstruction().c_str());
             }
         }
-    } else if (descriptor.IsPartitionedNV()) {
-        return skip;  // no supported
-    } else {
-        auto acc = descriptor.GetAccelerationStructureNV();
-        auto acc_node = descriptor.GetAccelerationStructureStateNV();
-        if (!acc_node || acc_node->Destroyed()) {
-            // the AccelerationStructure could be null via nullDescriptor and accessing it is legal
-            if (acc != VK_NULL_HANDLE || !dev_proxy.enabled_features.nullDescriptor) {
-                const LogObjectList objlist(this->objlist, descriptor_set.Handle());
-                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
-                                 "the %s is using acceleration structure %s that is invalid or has been destroyed.%s",
-                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
-                                 DescribeInstruction().c_str());
-            }
-        } else {
-            for (const auto& mem_binding : acc_node->GetInvalidMemory()) {
-                const LogObjectList objlist(this->objlist, descriptor_set.Handle());
-                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
-                                 "the %s is using acceleration structure %s that references invalid memory %s.%s",
-                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
-                                 FormatHandle(mem_binding->Handle()).c_str(), DescribeInstruction().c_str());
-            }
-        }
     }
+    // Partitioned (VkDeviceAddress) and VK_NV_ray_tracing acceleration structures are not validated
     return skip;
 }
 

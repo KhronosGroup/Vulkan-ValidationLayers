@@ -2765,7 +2765,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                           {VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT,
                            VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT})) {
                 if (!resource_variable.is_uniform_buffer && !resource_variable.is_storage_buffer &&
-                    !resource_variable.is_acceleration_structure && !resource_variable.is_acceleration_structure_nv) {
+                    !resource_variable.is_acceleration_structure) {
                     const char* vuid =
                         pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11318" : "VUID-VkShaderCreateInfoEXT-pNext-11318";
 

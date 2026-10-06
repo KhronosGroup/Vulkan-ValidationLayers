@@ -308,11 +308,7 @@ void CachedDescriptorSize::Init(const vvl::DeviceState& device_state) {
         } else {
             heap_size_[1] = 0;
         }
-        if (IsExtEnabled(device_state.extensions.vk_nv_ray_tracing)) {
-            heap_size_[8] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
-        } else {
-            heap_size_[8] = 0;
-        }
+        heap_size_[8] = 0;  // VK_NV_ray_tracing is not validated
         if (IsExtEnabled(device_state.extensions.vk_nv_partitioned_acceleration_structure)) {
             heap_size_[9] =
                 DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);

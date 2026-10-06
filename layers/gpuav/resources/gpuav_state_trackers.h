@@ -358,22 +358,6 @@ static inline const SamplerSubState &SubState(const vvl::Sampler &obj) {
     return *static_cast<const SamplerSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
 }
 
-class AccelerationStructureNVSubState : public vvl::AccelerationStructureNVSubState {
-  public:
-    AccelerationStructureNVSubState(vvl::AccelerationStructureNV& obj, DescriptorIdPool& id_pool);
-    void Destroy() override;
-    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
-
-    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
-    std::optional<DescriptorIdTracker> id_tracker;
-};
-static inline AccelerationStructureNVSubState &SubState(vvl::AccelerationStructureNV &obj) {
-    return *static_cast<AccelerationStructureNVSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
-}
-static inline const AccelerationStructureNVSubState &SubState(const vvl::AccelerationStructureNV &obj) {
-    return *static_cast<const AccelerationStructureNVSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
-}
-
 class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSubState {
   public:
     AccelerationStructureKHRSubState(Validator& validator, vvl::AccelerationStructureKHR& obj, DescriptorIdPool& id_pool);

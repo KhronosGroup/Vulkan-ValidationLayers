@@ -43,7 +43,6 @@ class DispatchVectorGenerator(BaseGenerator):
         'vkCreateShadersEXT',
         'vkCreateGraphicsPipelines',
         'vkCreateComputePipelines',
-        'vkCreateRayTracingPipelinesNV',
         'vkCreateRayTracingPipelinesKHR',
         'vkCreateDataGraphPipelinesARM',
     )

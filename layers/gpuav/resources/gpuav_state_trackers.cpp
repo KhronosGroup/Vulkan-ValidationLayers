@@ -655,15 +655,6 @@ void SamplerSubState::Destroy() { id_tracker.reset(); }
 
 void SamplerSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
-AccelerationStructureNVSubState::AccelerationStructureNVSubState(vvl::AccelerationStructureNV& obj, DescriptorIdPool& id_pool)
-    : vvl::AccelerationStructureNVSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()) {}
-
-void AccelerationStructureNVSubState::Destroy() { id_tracker.reset(); }
-
-void AccelerationStructureNVSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) {
-    id_tracker.reset();
-}
-
 AccelerationStructureKHRSubState::AccelerationStructureKHRSubState(Validator& validator, vvl::AccelerationStructureKHR& obj,
                                                                    DescriptorIdPool& id_pool)
     : vvl::AccelerationStructureKHRSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()), validator(validator) {

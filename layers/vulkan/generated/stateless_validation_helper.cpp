@@ -23817,9 +23817,6 @@ bool Device::PreCallValidateCreateAccelerationStructureNV(VkDevice device, const
     }
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pAccelerationStructure), pAccelerationStructure,
                                             "VUID-vkCreateAccelerationStructureNV-pAccelerationStructure-parameter");
-    if (!skip)
-        skip |=
-            manual_PreCallValidateCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure, context);
     return skip;
 }
 
@@ -23986,9 +23983,6 @@ bool Device::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer comm
     skip |= context.ValidateBool32(loc.dot(Field::update), update);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dst), dst);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::scratch), scratch);
-    if (!skip)
-        skip |= manual_PreCallValidateCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update,
-                                                                      dst, src, scratch, scratchOffset, context);
     return skip;
 }
 
@@ -24134,9 +24128,6 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
     skip |= context.ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pPipelines), createInfoCount, &pPipelines, true,
                                   true, "VUID-vkCreateRayTracingPipelinesNV-createInfoCount-arraylength",
                                   "VUID-vkCreateRayTracingPipelinesNV-pPipelines-parameter");
-    if (!skip)
-        skip |= manual_PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                  pPipelines, context);
     return skip;
 }
 
@@ -24176,8 +24167,6 @@ bool Device::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, Vk
     skip |= context.ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
                                   "VUID-vkGetAccelerationStructureHandleNV-dataSize-arraylength",
                                   "VUID-vkGetAccelerationStructureHandleNV-pData-parameter");
-    if (!skip)
-        skip |= manual_PreCallValidateGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData, context);
     return skip;
 }
 
@@ -24196,9 +24185,6 @@ bool Device::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCommand
     skip |= context.ValidateRangedEnum(loc.dot(Field::queryType), vvl::Enum::VkQueryType, queryType,
                                        "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryType-parameter");
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
-    if (!skip)
-        skip |= manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
-            commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery, context);
     return skip;
 }
 

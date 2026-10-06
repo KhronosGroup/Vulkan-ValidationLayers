@@ -215,8 +215,7 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
         return {};
     }
 
-    const VkPipelineStageFlags2 disabled_stages =
-        sync_utils::DisabledPipelineStages(validator.enabled_features, validator.extensions);
+    const VkPipelineStageFlags2 disabled_stages = sync_utils::DisabledPipelineStages(validator.enabled_features);
     const VkPipelineStageFlags2 all_transfer_expand_bits = kAllTransferExpandBits & ~disabled_stages;
 
     const VkAccessFlags2 disabled_accesses = sync_utils::DisabledAccesses(validator.extensions);

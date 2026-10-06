@@ -1137,13 +1137,13 @@ struct RenderPassDepState {
     const vku::safe_VkSubpassDependency2* dependencies;
 
     RenderPassDepState(const CoreChecks& c, const std::string& v, uint32_t subpass, const VkRenderPass handle,
-                       const DeviceFeatures& features, const DeviceExtensions& device_extensions,
-                       const std::vector<uint32_t>& self_deps, const vku::safe_VkSubpassDependency2* deps)
+                       const DeviceFeatures& features, const std::vector<uint32_t>& self_deps,
+                       const vku::safe_VkSubpassDependency2* deps)
         : core(c),
           vuid(v),
           active_subpass(subpass),
           rp_handle(handle),
-          disabled_features(sync_utils::DisabledPipelineStages(features, device_extensions)),
+          disabled_features(sync_utils::DisabledPipelineStages(features)),
           self_dependencies(self_deps),
           dependencies(deps) {}
 
@@ -1267,7 +1267,7 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location& outer_loc, const vvl
     const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
     ASSERT_AND_RETURN_SKIP(rp_state);
     RenderPassDepState state(*this, "VUID-vkCmdPipelineBarrier-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
-                             enabled_features, extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
+                             enabled_features, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
                              rp_state->create_info.pDependencies);
     if (state.self_dependencies.empty()) {
         const LogObjectList objlist(cb_state.Handle(), state.rp_handle);
@@ -1327,7 +1327,7 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location& outer_loc, const vvl
         return skip;
     }
     RenderPassDepState state(*this, "VUID-vkCmdPipelineBarrier2-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
-                             enabled_features, extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
+                             enabled_features, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
                              rp_state->create_info.pDependencies);
 
     if (state.self_dependencies.empty()) {
@@ -1437,7 +1437,7 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList& objlis
         skip |= LogError(vuid, objlist, stage_mask_loc, "must not be 0 unless synchronization2 is enabled.");
     }
 
-    auto disabled_stages = sync_utils::DisabledPipelineStages(enabled_features, extensions);
+    auto disabled_stages = sync_utils::DisabledPipelineStages(enabled_features);
     auto bad_bits = stage_mask & disabled_stages;
     if (bad_bits == 0) {
         return skip;

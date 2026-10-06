@@ -66,10 +66,6 @@ void Validator::Created(vvl::Sampler& obj) {
     DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
     obj.SetSubState(container_type, std::make_unique<SamplerSubState>(obj, desc_id_pool));
 }
-void Validator::Created(vvl::AccelerationStructureNV& obj) {
-    DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
-    obj.SetSubState(container_type, std::make_unique<AccelerationStructureNVSubState>(obj, desc_id_pool));
-}
 void Validator::Created(vvl::AccelerationStructureKHR& obj) {
     DescriptorIdPool& desc_id_pool = shared_resources_cache.Get<DescriptorIdPool>();
     obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(*this, obj, desc_id_pool));

@@ -826,8 +826,6 @@ bool Device::ValidateCreatePipelinesFlagsCommon(VkPipelineCreateFlags2 flags, co
         skip |= ValidateCreateComputePipelinesFlags(flags, flags_loc);
     } else if (flags_loc.function == Func::vkCreateRayTracingPipelinesKHR) {
         skip |= ValidateCreateRayTracingPipelinesFlagsKHR(flags, flags_loc);
-    } else if (flags_loc.function == Func::vkCreateRayTracingPipelinesNV) {
-        skip |= ValidateCreateRayTracingPipelinesFlagsNV(flags, flags_loc);
     } else if (flags_loc.function == Func::vkCreateDataGraphPipelinesARM) {
         skip |= ValidateCreateDataGraphPipelinesFlags(flags, flags_loc);
     }

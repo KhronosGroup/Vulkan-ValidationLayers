@@ -274,7 +274,7 @@ using GlobalQFOTransferBarrierMap =
     vvl::concurrent_unordered_map<typename TransferBarrier::HandleType, QFOTransferBarrierSet<TransferBarrier>>;
 
 namespace sync_utils {
-VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions);
+VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features);
 VkAccessFlags2 DisabledAccesses(const DeviceExtensions& device_extensions);
 
 std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask, bool sync1 = false);

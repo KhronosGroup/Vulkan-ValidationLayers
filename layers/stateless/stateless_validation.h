@@ -515,13 +515,6 @@ class Device : public vvl::BaseDevice {
 
     bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV &order, const Location &order_loc) const;
 
-    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
-                                     const Location &loc) const;
-    bool ValidateGeometryAABBNV(const VkGeometryAABBNV &geometry, VkAccelerationStructureNV object_handle,
-                                const Location &loc) const;
-    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const Location &loc) const;
-    bool ValidateAccelerationStructureInfoNV(const Context &context, const VkAccelerationStructureInfoNV &info,
-                                             VkAccelerationStructureNV object_handle, const Location &loc) const;
     bool ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
     bool ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info,
                                      const Location &loc) const;
@@ -803,11 +796,6 @@ class Device : public vvl::BaseDevice {
                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
                                               const Context &context) const;
 
-    bool manual_PreCallValidateCreateAccelerationStructureNV(VkDevice device,
-                                                             const VkAccelerationStructureCreateInfoNV *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator,
-                                                             VkAccelerationStructureNV *pAccelerationStructure,
-                                                             const Context &context) const;
     bool ValidateCreateAccelerationStructure(const VkAccelerationStructureCreateFlagsKHR create_flags,
                                              const void* create_info_pNext, const Location& create_info_loc) const;
     bool manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
@@ -821,28 +809,9 @@ class Device : public vvl::BaseDevice {
                                                                VkAccelerationStructureKHR* pAccelerationStructure,
                                                                const Context& context) const;
     bool manual_PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               const Context &context) const;
-    bool manual_PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
-                                                               const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
-                                                               VkDeviceSize instanceOffset, VkBool32 update,
-                                                               VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                               VkBuffer scratch, VkDeviceSize scratchOffset,
-                                                               const Context &context) const;
-    bool manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                                size_t dataSize, void *pData, const Context &context) const;
-
-    bool manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCommandBuffer commandBuffer,
-                                                                          uint32_t accelerationStructureCount,
-                                                                          const VkAccelerationStructureNV *pAccelerationStructures,
-                                                                          VkQueryType queryType, VkQueryPool queryPool,
-                                                                          uint32_t firstQuery, const Context &context) const;
-    bool ValidateCreateRayTracingPipelinesFlagsNV(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const;
-    bool ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const;
-    bool manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                           const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                           const Context &context) const;
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               const Context& context) const;
+    bool ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFlags2 flags, const Location& flags_loc) const;
     bool manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                             const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,

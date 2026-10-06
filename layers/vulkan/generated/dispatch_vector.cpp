@@ -1436,6 +1436,9 @@ void DispatchDevice::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdTraceRaysNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdTraceRaysNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdTraceRaysNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateRayTracingPipelinesNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateRayTracingPipelinesNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateRayTracingPipelinesNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetRayTracingShaderGroupHandlesKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetRayTracingShaderGroupHandlesKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetRayTracingShaderGroupHandlesKHR);

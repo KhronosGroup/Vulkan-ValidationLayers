@@ -81,7 +81,6 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceCooperativeMatrixPropertiesKHR cooperative_matrix_props_khr;
     VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperative_matrix_props2_nv;
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
-    VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props_nv;
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props_khr;
     VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
     VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;

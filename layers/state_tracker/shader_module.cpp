@@ -1603,7 +1603,7 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
         case spv::OpTypeImage:
             ss << "image(dim=" << insn->Word(3) << ", sampled=" << insn->Word(7) << ")";
             break;
-        case spv::OpTypeAccelerationStructureNV:
+        case spv::OpTypeAccelerationStructureKHR:
             ss << "accelerationStruture";
             break;
         default:
@@ -2610,7 +2610,7 @@ VkDescriptorType ResourceInterfaceVariable::GetPotentialDescriptorType() const {
         return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     } else if (is_combined_image_sampler) {
         return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    } else if (is_acceleration_structure || is_acceleration_structure_nv) {
+    } else if (is_acceleration_structure) {
         return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     }
     return VK_DESCRIPTOR_TYPE_MAX_ENUM;
@@ -2655,9 +2655,6 @@ vvl::unordered_set<VkDescriptorType> ResourceInterfaceVariable::GetAllDescriptor
         types.insert(VK_DESCRIPTOR_TYPE_TENSOR_ARM);
     } else if (is_acceleration_structure) {
         types.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
-        types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
-    } else if (is_acceleration_structure_nv) {
-        types.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
         types.insert(VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV);
     }
 
@@ -2819,14 +2816,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
     } else if (base_type_opcode == spv::OpTypeSampler) {
         is_sampler = true;
     } else if (base_type_opcode == spv::OpTypeAccelerationStructureKHR) {
-        // The SPIR-V OpType* are alias, but the Descriptor Types are different
-
-        // Only KHR or NV base acceleration structure is selected
-        if (module_state.HasCapability(spv::CapabilityRayTracingNV)) {
-            is_acceleration_structure_nv = true;
-        } else {
-            is_acceleration_structure = true;
-        }
+        is_acceleration_structure = true;
     }
 
     for (const Instruction* pointer : entrypoint.accessible.access_chains) {

@@ -79,7 +79,6 @@ static inline bool IsCommandDispatch(Func command) {
 
 static inline bool IsCommandTraceRays(Func command) {
     return
-        command == Func::vkCmdTraceRaysNV ||
         command == Func::vkCmdTraceRaysKHR ||
         command == Func::vkCmdTraceRaysIndirectKHR ||
         command == Func::vkCmdTraceRaysIndirect2KHR;

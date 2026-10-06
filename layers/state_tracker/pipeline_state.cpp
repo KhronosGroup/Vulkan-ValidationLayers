@@ -1029,33 +1029,6 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkRayTracingPipelineCrea
     assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
 }
 
-Pipeline::Pipeline(const DeviceState& state_data, const VkRayTracingPipelineCreateInfoNV* pCreateInfo,
-                   std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::PipelineLayout>&& layout)
-    : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
-      create_info(pCreateInfo),
-      pipeline_cache(std::move(pipe_cache)),
-      pipeline_type(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV),
-      create_flags(GetPipelineCreateFlags(RayTracingCreateInfo().pNext, RayTracingCreateInfo().flags)),
-      descriptor_buffer_mode((create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
-      descriptor_heap_mode((create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT) != 0),
-      shader_stages_ci(RayTracingCreateInfo().pStages, RayTracingCreateInfo().stageCount),
-      ray_tracing_library_ci(RayTracingCreateInfo().pLibraryInfo),
-      uses_shader_module_id(UsesShaderModuleId(*this)),
-      stage_states(GetStageStates(state_data, *this, RayTracingCreateInfo().layout, nullptr)),
-      create_info_shaders(GetCreateInfoShaders(*this)),
-      active_shaders(create_info_shaders),  // RTX has no linking shaders
-      active_slots(GetActiveSlots(stage_states)),
-      max_active_slot(GetMaxActiveSlot(active_slots)),
-      dynamic_state(GetRayTracingDynamicState(*this)),
-      ignored_dynamic_state(0),  // RTX has no ignored dynamic state
-      uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
-      uses_pipeline_vertex_robustness(false),
-      ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
-      descriptor_heap_embedded_samplers_count(CountDescriptorHeapEmbeddedSamplers(*this)),
-      merged_graphics_layout(std::move(layout)) {
-    assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
-}
-
 Pipeline::Pipeline(const DeviceState& state_data, const VkDataGraphPipelineCreateInfoARM* pCreateInfo,
                    std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::PipelineLayout>&& layout,
                    spirv::StatelessData* stateless_data)

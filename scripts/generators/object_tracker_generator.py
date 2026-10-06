@@ -153,7 +153,6 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'vkCreateDescriptorSetLayout',
             'vkCreatePipelineLayout',
             'vkCreateComputePipelines',
-            'vkCreateRayTracingPipelinesNV',
             'vkCreateDataGraphPipelinesARM',
         ]
 

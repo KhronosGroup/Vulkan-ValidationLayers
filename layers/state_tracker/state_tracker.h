@@ -75,7 +75,6 @@ class CommandPool;
 class CommandBuffer;
 class Pipeline;
 class DeviceMemory;
-class AccelerationStructureNV;
 class AccelerationStructureKHR;
 class IndirectExecutionSet;
 class IndirectCommandsLayout;
@@ -165,7 +164,6 @@ struct TraitsBase {
     }
 
 VALSTATETRACK_STATE_OBJECT(VkQueue, vvl::Queue)
-VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, vvl::AccelerationStructureNV)
 VALSTATETRACK_STATE_OBJECT(VkRenderPass, vvl::RenderPass)
 VALSTATETRACK_STATE_OBJECT(VkDescriptorSetLayout, vvl::DescriptorSetLayout)
 VALSTATETRACK_STATE_OBJECT(VkSampler, vvl::Sampler)
@@ -709,11 +707,6 @@ class DeviceState : public vvl::BaseDevice {
     VkDeviceSize AllocFakeMemory(VkDeviceSize size) { return fake_memory.Alloc(size); }
     void FreeFakeMemory(VkDeviceSize address) { fake_memory.Free(address); }
 
-    void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
-                                                                    const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                                    VkMemoryRequirements2* pMemoryRequirements,
-                                                                    const RecordObject& record_obj) override;
-
     void PostCallRecordGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                             uint32_t* pMemoryRequirementsCount,
                                                             VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
@@ -771,9 +764,6 @@ class DeviceState : public vvl::BaseDevice {
                                       const RecordObject& record_obj) override;
 
     // Create/Destroy/Bind
-    void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
-                                                         const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
-                                                         const RecordObject& record_obj) override;
     void PostCallRecordBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                  uint32_t bindSessionMemoryInfoCount,
                                                  const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
@@ -795,16 +785,6 @@ class DeviceState : public vvl::BaseDevice {
 
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;
-
-    virtual std::shared_ptr<vvl::AccelerationStructureNV> CreateAccelerationStructureState(
-        VkAccelerationStructureNV handle, const VkAccelerationStructureCreateInfoNV* create_info);
-    void PostCallRecordCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator,
-                                                     VkAccelerationStructureNV* pAccelerationStructure,
-                                                     const RecordObject& record_obj) override;
-    void PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                     const VkAllocationCallbacks* pAllocator,
-                                                     const RecordObject& record_obj) override;
 
     void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
@@ -1021,17 +1001,6 @@ class DeviceState : public vvl::BaseDevice {
     void PostCallRecordResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                       const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::Pipeline> CreateRayTracingPipelineStateNV(const VkRayTracingPipelineCreateInfoNV* create_info,
-                                                                         std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-                                                                         std::shared_ptr<const vvl::PipelineLayout>&& layout) const;
-    bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    const ErrorObject& error_obj, PipelineStates& pipeline_states) const override;
-    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                   const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                   const RecordObject& record_obj, PipelineStates& pipeline_states) override;
     virtual std::shared_ptr<vvl::Pipeline> CreateRayTracingPipelineStateKHR(const VkRayTracingPipelineCreateInfoKHR* create_info,
                                                                          std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                          std::shared_ptr<const vvl::PipelineLayout>&& layout,
@@ -1358,11 +1327,6 @@ class DeviceState : public vvl::BaseDevice {
                                         const RecordObject& record_obj) override;
     void PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                      const RecordObject& record_obj) override;
-    void PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
-                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
-                                                       VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                       VkBuffer scratch, VkDeviceSize scratchOffset,
-                                                       const RecordObject& record_obj) override;
     void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                           const VkClearColorValue* pColor, uint32_t rangeCount,
                                           const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
@@ -1376,9 +1340,6 @@ class DeviceState : public vvl::BaseDevice {
     void PostCallRecordCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
                                                 const VkVideoCodingControlInfoKHR* pCodingControlInfo,
                                                 const RecordObject& record_obj) override;
-    void PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
-                                                      VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode,
-                                                      const RecordObject& record_obj) override;
     void PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                      const VkBufferCopy* pRegions, const RecordObject& record_obj) override;
     void PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
@@ -1494,13 +1455,6 @@ class DeviceState : public vvl::BaseDevice {
     void PostCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffer commandBuffer, const VkDrawIndirectCount2InfoKHR* pInfo,
                                                          const RecordObject& record_obj) override;
 
-    void PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                                      VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                                      VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                                      VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                                      VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                      VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                      uint32_t width, uint32_t height, uint32_t depth, const RecordObject& record_obj) override;
     void PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                        const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                        const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
@@ -2211,7 +2165,6 @@ class DeviceState : public vvl::BaseDevice {
     VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, vvl::SamplerYcbcrConversion, sampler_ycbcr_conversion_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionKHR, vvl::VideoSession, video_session_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkVideoSessionParametersKHR, vvl::VideoSessionParameters, video_session_parameters_map_)
-    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, vvl::AccelerationStructureNV, acceleration_structure_nv_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, vvl::AccelerationStructureKHR, acceleration_structure_khr_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkIndirectExecutionSetEXT, vvl::IndirectExecutionSet, indirect_execution_set_ext_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkIndirectCommandsLayoutEXT, vvl::IndirectCommandsLayout, indirect_commands_layout_ext_map_)
@@ -2324,7 +2277,6 @@ class DeviceProxy : public vvl::BaseDevice {
     virtual void Created(vvl::CommandBuffer& state) {}
     virtual void Created(vvl::Queue& state) {}
     virtual void Created(vvl::AccelerationStructureKHR& state) {}
-    virtual void Created(vvl::AccelerationStructureNV& state) {}
     virtual void Created(vvl::Buffer& state) {}
     virtual void Created(vvl::BufferView& state) {}
     virtual void Created(vvl::Image& state) {}
