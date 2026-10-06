@@ -1857,8 +1857,10 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         return;
     }
 
+    const std::string dump_file_prefix =
+        "dump_" + std::to_string(interface.unique_shader_id) + "_" + std::string(interface.entry_point_name);
     if (gpuav_settings.debug_dump_instrumented_shaders) {
-        const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(interface.unique_shader_id) + "_before.spv");
+        const auto non_instrumented_spirv_file = fs::absolute(dump_file_prefix + "_before.spv");
         DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
     }
 
@@ -1980,13 +1982,11 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         is_instrumented_spirv_valid = GpuValidateShader(out_instrumented_spirv, target_env, spirv_val_error);
         if (!is_instrumented_spirv_valid) {
             if (!gpuav_settings.debug_dump_instrumented_shaders) {
-                const auto non_instrumented_spirv_file =
-                    fs::absolute("dump_" + std::to_string(interface.unique_shader_id) + "_before.spv");
+                const auto non_instrumented_spirv_file = fs::absolute(dump_file_prefix + "_before.spv");
                 DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
             }
 
-            const auto instrumented_spirv_file =
-                fs::absolute("dump_" + std::to_string(interface.unique_shader_id) + "_after_invalid.spv");
+            const auto instrumented_spirv_file = fs::absolute(dump_file_prefix + "_after_invalid.spv");
             DumpSpirvToFile(instrumented_spirv_file.string(), out_instrumented_spirv.data(), out_instrumented_spirv.size());
 
             std::ostringstream strm;
@@ -1999,7 +1999,7 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         }
     }
     if (is_instrumented_spirv_valid && gpuav_settings.debug_dump_instrumented_shaders) {
-        const auto instrumented_spirv_file = fs::absolute("dump_" + std::to_string(interface.unique_shader_id) + "_after.spv");
+        const auto instrumented_spirv_file = fs::absolute(dump_file_prefix + "_after.spv");
         DumpSpirvToFile(instrumented_spirv_file.string(), out_instrumented_spirv.data(), out_instrumented_spirv.size());
     }
 
