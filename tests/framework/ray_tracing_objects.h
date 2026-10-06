@@ -468,6 +468,8 @@ class Pipeline {
     void AddSpirvClosestHitShader(const char* spirv, const char* entry_point);
     void AddSlangClosestHitShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext = nullptr,
                                   const void* pipeline_shader_stage_create_info_pNext = nullptr);
+    void AddSlangCallableShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext = nullptr,
+                                const void* pipeline_shader_stage_create_info_pNext = nullptr);
     void AddLibrary(const Pipeline& library);
     void AddDynamicState(VkDynamicState dynamic_state);
     // Will be the same size for *all* shaders
@@ -514,6 +516,7 @@ class Pipeline {
     uint32_t GetRayGenShaderGroupsCount() const;
     uint32_t GetMissShaderGroupsCount() const;
     uint32_t GetHitShaderGroupsCount() const;
+    uint32_t GetCallableShaderGroupsCount() const;
 
   private:
     VkLayerTest& test_;
@@ -535,6 +538,7 @@ class Pipeline {
         std::unique_ptr<VkShaderObj> intersection;
     };
     std::vector<HitShader> hit_shaders_{};
+    std::vector<std::unique_ptr<VkShaderObj>> callable_shaders_{};
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shader_group_cis_{};
     vkt::Pipeline rt_pipeline_{};
     VkDeferredOperationKHR deferred_op_ = VK_NULL_HANDLE;

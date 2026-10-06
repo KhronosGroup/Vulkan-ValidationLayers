@@ -2178,6 +2178,13 @@ void Pipeline::AddSlangClosestHitShader(const char* slang, const char* entry_poi
                   nullptr});
 }
 
+void Pipeline::AddSlangCallableShader(const char* slang, const char* entry_point, const void* shader_module_create_info_pnext,
+                                      const void* pipeline_shader_stage_create_info_pNext) {
+    callable_shaders_.emplace_back(std::make_unique<VkShaderObj>(
+        *device_, slang, VK_SHADER_STAGE_CALLABLE_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG, nullptr, entry_point,
+        shader_module_create_info_pnext, pipeline_shader_stage_create_info_pNext));
+}
+
 void Pipeline::AddLibrary(const Pipeline& library) {
     libraries_.emplace_back(&library);
     library_handles_.emplace_back(library.rt_pipeline_);
@@ -2230,12 +2237,12 @@ void Pipeline::BuildPipeline() {
     // ----
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_stage_cis;
     assert(shader_group_cis_.empty());  // For now this list is expected to be empty at this point
-    for (const auto& ray_gen_shader : ray_gen_shaders_) {
+    for (const auto& ray_gen : ray_gen_shaders_) {
         VkPipelineShaderStageCreateInfo raygen_stage_ci = vku::InitStructHelper();
         raygen_stage_ci.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        raygen_stage_ci.module = ray_gen_shader->handle();
-        raygen_stage_ci.pName = ray_gen_shader->GetStageCreateInfo().pName;
-        raygen_stage_ci.pNext = ray_gen_shader->GetStageCreateInfo().pNext;
+        raygen_stage_ci.module = ray_gen->handle();
+        raygen_stage_ci.pName = ray_gen->GetStageCreateInfo().pName;
+        raygen_stage_ci.pNext = ray_gen->GetStageCreateInfo().pNext;
         pipeline_stage_cis.emplace_back(raygen_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR raygen_group_ci = vku::InitStructHelper();
@@ -2246,12 +2253,12 @@ void Pipeline::BuildPipeline() {
         raygen_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
         shader_group_cis_.emplace_back(raygen_group_ci);
     }
-    for (const auto& miss_shader : miss_shaders_) {
+    for (const auto& miss : miss_shaders_) {
         VkPipelineShaderStageCreateInfo miss_stage_ci = vku::InitStructHelper();
         miss_stage_ci.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
-        miss_stage_ci.module = miss_shader->handle();
-        miss_stage_ci.pName = miss_shader->GetStageCreateInfo().pName;
-        miss_stage_ci.pNext = miss_shader->GetStageCreateInfo().pNext;
+        miss_stage_ci.module = miss->handle();
+        miss_stage_ci.pName = miss->GetStageCreateInfo().pName;
+        miss_stage_ci.pNext = miss->GetStageCreateInfo().pNext;
         pipeline_stage_cis.emplace_back(miss_stage_ci);
 
         VkRayTracingShaderGroupCreateInfoKHR miss_group_ci = vku::InitStructHelper();
@@ -2293,6 +2300,22 @@ void Pipeline::BuildPipeline() {
         }
 
         shader_group_cis_.emplace_back(hit_group_ci);
+    }
+    for (const auto& callable : callable_shaders_) {
+        VkPipelineShaderStageCreateInfo callable_stage_ci = vku::InitStructHelper();
+        callable_stage_ci.stage = VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+        callable_stage_ci.module = callable->handle();
+        callable_stage_ci.pName = callable->GetStageCreateInfo().pName;
+        callable_stage_ci.pNext = callable->GetStageCreateInfo().pNext;
+        pipeline_stage_cis.emplace_back(callable_stage_ci);
+
+        VkRayTracingShaderGroupCreateInfoKHR callable_group_ci = vku::InitStructHelper();
+        callable_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        callable_group_ci.generalShader = pipeline_stage_cis.size() - 1;
+        callable_group_ci.closestHitShader = VK_SHADER_UNUSED_KHR;
+        callable_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
+        callable_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
+        shader_group_cis_.emplace_back(callable_group_ci);
     }
     // Dynamic states
     VkPipelineDynamicStateCreateInfo dynamic_state_ci = vku::InitStructHelper();
@@ -2338,6 +2361,7 @@ void Pipeline::BuildSbt() {
     std::vector<uint32_t> ray_gen_group_handle_indices;
     std::vector<uint32_t> miss_group_handle_indices;
     std::vector<uint32_t> hit_group_handle_indices;
+    std::vector<uint32_t> callable_group_handle_indices;
 
     uint32_t shader_i = 0;
     for (uint32_t ray_gen_i = 0; ray_gen_i < size32(ray_gen_shaders_); ++ray_gen_i) {
@@ -2349,6 +2373,9 @@ void Pipeline::BuildSbt() {
     for (uint32_t hit_i = 0; hit_i < (size32(hit_shaders_)); ++hit_i) {
         hit_group_handle_indices.emplace_back(shader_i++);
     }
+    for (uint32_t callable_i = 0; callable_i < (size32(callable_shaders_)); ++callable_i) {
+        callable_group_handle_indices.emplace_back(shader_i++);
+    }
 
     for (const Pipeline* lib : libraries_) {
         for (uint32_t ray_gen_i = 0; ray_gen_i < size32(lib->ray_gen_shaders_); ++ray_gen_i) {
@@ -2359,6 +2386,9 @@ void Pipeline::BuildSbt() {
         }
         for (uint32_t hit_i = 0; hit_i < (size32(lib->hit_shaders_)); ++hit_i) {
             hit_group_handle_indices.emplace_back(shader_i++);
+        }
+        for (uint32_t callable_i = 0; callable_i < (size32(lib->callable_shaders_)); ++callable_i) {
+            callable_group_handle_indices.emplace_back(shader_i++);
         }
     }
 
@@ -2376,11 +2406,14 @@ void Pipeline::BuildSbt() {
     // and within miss/closes hit entries alignment is shaderGroupHandleAlignment
     const VkDeviceSize miss_shaders_sbt_entry_byte_size = GetMissShaderGroupsCount() * sbt_shader_size_aligned;
     const VkDeviceSize hit_shaders_sbt_entry_byte_size = GetHitShaderGroupsCount() * sbt_shader_size_aligned;
+    const VkDeviceSize callable_shaders_sbt_entry_byte_size = GetCallableShaderGroupsCount() * sbt_shader_size_aligned;
     VkDeviceSize sbt_buffer_size = ray_gen_shaders_sbt_entry_byte_size;
     sbt_buffer_size = Align<VkDeviceSize>(sbt_buffer_size, rt_pipeline_props.shaderGroupBaseAlignment);
     sbt_buffer_size += miss_shaders_sbt_entry_byte_size;
     sbt_buffer_size = Align<VkDeviceSize>(sbt_buffer_size, rt_pipeline_props.shaderGroupBaseAlignment);
     sbt_buffer_size += hit_shaders_sbt_entry_byte_size;
+    sbt_buffer_size = Align<VkDeviceSize>(sbt_buffer_size, rt_pipeline_props.shaderGroupBaseAlignment);
+    sbt_buffer_size += callable_shaders_sbt_entry_byte_size;
 
     // Allocate buffer to store SBT, and fill it with sbt_host_storage
     VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
@@ -2596,6 +2629,67 @@ void Pipeline::BuildSbt() {
 #endif
     }
 
+    // Fill Callable shader groups
+    // ---
+    if (GetCallableShaderGroupsCount() > 0) {
+        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, sbt_shader_size, sbt_buffer_ptr, sbt_buffer_space_left)) {
+            assert(false);
+            return;
+        }
+
+        void* callable_sbt = nullptr;
+        for (size_t callable_i = 0; callable_i < callable_group_handle_indices.size(); ++callable_i) {
+            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, sbt_shader_size, sbt_buffer_ptr, sbt_buffer_space_left)) {
+                assert(false);
+                return;
+            }
+            if (!callable_sbt) {
+                callable_sbt = sbt_buffer_ptr;
+            }
+
+            uint8_t* callable_handle =
+                rt_shader_group_handles_ptr + rt_pipeline_props.shaderGroupHandleSize * callable_group_handle_indices[callable_i];
+            std::memcpy(sbt_buffer_ptr, callable_handle, sbt_shader_size);
+            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + sbt_shader_size;
+            sbt_buffer_space_left -= sbt_shader_size;
+        }
+        (void)callable_sbt;
+
+#ifdef VVL_DEBUG_LOG_SBT
+        {
+            std::cout << "Callable shader groups SBT entry: offset = " << ((uint64_t)callable_sbt - (uint64_t)sbt_buffer_base_ptr)
+                      << " | size = " << callable_shaders_sbt_entry_byte_size << '\n';
+            const uint32_t break_every = sbt_shader_size_aligned;
+            const auto original_fmt_flags = std::cout.flags();
+            std::cout << "Callable shader group handles:\n";
+            size_t line_i = 0;
+            for (size_t byte_i = 0; byte_i < callable_group_handle_indices.size() * sbt_shader_size_aligned; ++byte_i) {
+                if (byte_i > 0 && (byte_i % break_every == 0)) {
+                    std::cout << std::endl;
+                }
+                if (byte_i % break_every == 0) {
+                    std::cout << std::setw(4) << (break_every * line_i + ((uint64_t)callable_sbt - (uint64_t)sbt_buffer_base_ptr))
+                              << ": ";
+                    ++line_i;
+                }
+
+                uint32_t byte = ((uint8_t*)callable_sbt)[byte_i];
+                std::cout << std::hex;
+                if (byte == 0)
+                    std::cout << "-- ";
+                else {
+                    std::cout << std::setw(2);
+                    std::cout << byte;
+                    std::cout << " ";
+                }
+                std::cout << std::dec;
+            }
+            std::cout.flags(original_fmt_flags);
+            std::cout << std::endl;
+        }
+#endif
+    }
+
     sbt_buffer_.Memory().Unmap();
 }
 
@@ -2721,11 +2815,25 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
 #endif
     }
 
+    VkStridedDeviceAddressRegionKHR callable_sbt{};
+    if (GetCallableShaderGroupsCount() > 0) {
+        sbt_address = Align<VkDeviceAddress>(sbt_address, rt_pipeline_props.shaderGroupBaseAlignment);
+        callable_sbt.deviceAddress = sbt_address;
+        callable_sbt.stride = sbt_shader_size_aligned;
+        callable_sbt.size = GetCallableShaderGroupsCount() * sbt_shader_size_aligned;
+        sbt_address += callable_sbt.size;
+#ifdef VVL_DEBUG_LOG_SBT
+        std::cout << "Callable groups SBT entry: @ = " << callable_sbt.deviceAddress
+                  << " (offset from base = " << callable_sbt.deviceAddress - sbt_base_address
+                  << ") | stride = " << callable_sbt.stride << " | size = " << callable_sbt.size << '\n';
+#endif
+    }
+
     TraceRaysSbt out{};
     out.ray_gen_sbt = ray_gen_sbt;
     out.miss_sbt = miss_sbt;
     out.hit_sbt = hit_sbt;
-    out.callable_sbt = {};
+    out.callable_sbt = callable_sbt;
     return out;
 }
 
@@ -2764,7 +2872,8 @@ uint32_t Pipeline::GetShaderGroupsCount() {
     const uint32_t ray_gen_count = GetRayGenShaderGroupsCount();
     const uint32_t miss_count = GetMissShaderGroupsCount();
     const uint32_t hit_count = GetHitShaderGroupsCount();
-    return ray_gen_count + miss_count + hit_count;
+    const uint32_t callable_count = GetCallableShaderGroupsCount();
+    return ray_gen_count + miss_count + hit_count + callable_count;
 }
 
 std::vector<uint8_t> Pipeline::GetRayTracingShaderGroupHandles() {
@@ -2789,6 +2898,7 @@ std::vector<uint8_t> Pipeline::GetRayTracingShaderGroupHandles() {
     std::vector<uint32_t> ray_gen_handle_indices;
     std::vector<uint32_t> miss_handle_indices;
     std::vector<uint32_t> hit_handle_indices;
+    std::vector<uint32_t> callable_handle_indices;
     {
         uint32_t shader_i = 0;
         for (uint32_t ray_gen_i = 0; ray_gen_i < size32(ray_gen_shaders_); ++ray_gen_i) {
@@ -2800,6 +2910,9 @@ std::vector<uint8_t> Pipeline::GetRayTracingShaderGroupHandles() {
         for (uint32_t hit = 0; hit < size32(hit_shaders_); ++hit) {
             hit_handle_indices.emplace_back(shader_i++);
         }
+        for (uint32_t callable_i = 0; callable_i < (size32(callable_shaders_)); ++callable_i) {
+            callable_handle_indices.emplace_back(shader_i++);
+        }
 
         for (const Pipeline* lib : libraries_) {
             for (uint32_t ray_gen_i = 0; ray_gen_i < size32(lib->ray_gen_shaders_); ++ray_gen_i) {
@@ -2810,6 +2923,9 @@ std::vector<uint8_t> Pipeline::GetRayTracingShaderGroupHandles() {
             }
             for (uint32_t hit_i = 0; hit_i < size32(lib->hit_shaders_); ++hit_i) {
                 hit_handle_indices.emplace_back(shader_i++);
+            }
+            for (uint32_t callable_i = 0; callable_i < (size32(lib->callable_shaders_)); ++callable_i) {
+                callable_handle_indices.emplace_back(shader_i++);
             }
         }
     }
@@ -2826,11 +2942,16 @@ std::vector<uint8_t> Pipeline::GetRayTracingShaderGroupHandles() {
     for (uint32_t i : hit_handle_indices) {
         std::cout << i << ' ';
     }
+    std::cout << "\nCallable shader group indices in SBT:\n    ";
+    for (uint32_t i : callable_handle_indices) {
+        std::cout << i << ' ';
+    }
 
-    std::array<std::pair<const std::vector<uint32_t>&, const char*>, 3> shader_groups = {
+    std::array<std::pair<const std::vector<uint32_t>&, const char*>, 4> shader_groups = {
         {{ray_gen_handle_indices, "Ray Gen shader handles"},
          {miss_handle_indices, "Miss shader handles"},
-         {hit_handle_indices, "Hit shader group handles"}}};
+         {hit_handle_indices, "Hit shader group handles"},
+         {callable_handle_indices, "Callable shader group handles"}}};
 
     std::cout << "\nSBT entries obtained from driver:\n";
     const auto original_fmt_flags = std::cout.flags();
@@ -2905,6 +3026,15 @@ uint32_t Pipeline::GetHitShaderGroupsCount() const {
     count += size32(hit_shaders_);
     for (const Pipeline* lib : libraries_) {
         count += lib->GetHitShaderGroupsCount();
+    }
+    return count;
+}
+
+uint32_t Pipeline::GetCallableShaderGroupsCount() const {
+    uint32_t count = 0;
+    count += size32(callable_shaders_);
+    for (const Pipeline* lib : libraries_) {
+        count += lib->GetCallableShaderGroupsCount();
     }
     return count;
 }
