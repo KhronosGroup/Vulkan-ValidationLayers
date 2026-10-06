@@ -49,7 +49,6 @@
 namespace chassis {
 struct CreateGraphicsPipelines;
 struct CreateComputePipelines;
-struct CreateRayTracingPipelinesNV;
 struct CreateRayTracingPipelinesKHR;
 struct CreateDataGraphPipelinesARM;
 struct CreateShaderModule;
@@ -316,30 +315,6 @@ class BaseDevice : public Logger {
                                                       chassis::CreateComputePipelines& chassis_state) {
         PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                              record_obj);
-    }
-
-    // Allow additional state parameter for CreateRayTracingPipelinesNV
-    virtual bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
-                                                            uint32_t createInfoCount,
-                                                            const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                            const ErrorObject& error_obj, PipelineStates& pipeline_states) const {
-        return PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                          pPipelines, error_obj);
-    }
-    virtual void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                          const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                          const RecordObject& record_obj, PipelineStates& pipeline_states) {
-        PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                 record_obj);
-    }
-    virtual void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                           const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                           const RecordObject& record_obj, PipelineStates& pipeline_states) {
-        PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                  record_obj);
     }
 
     // Allow additional state parameter for CreateRayTracingPipelinesKHR

@@ -226,13 +226,10 @@ set(TEST_SOURCES
     unit/push_descriptor_positive.cpp
     unit/query_positive.cpp
     unit/ray_tracing.cpp
-    unit/ray_tracing_nv.cpp
     unit/ray_tracing_micromap.cpp
     unit/ray_tracing_micromap_positive.cpp
     unit/ray_tracing_pipeline.cpp
     unit/ray_tracing_pipeline_positive.cpp
-    unit/ray_tracing_pipeline_nv.cpp
-    unit/ray_tracing_pipeline_positive_nv.cpp
     unit/ray_tracing_positive.cpp
     unit/render_pass_positive.cpp
     unit/render_pass.cpp

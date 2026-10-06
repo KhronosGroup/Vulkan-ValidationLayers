@@ -836,7 +836,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateWriteUpdateTexelBuffer(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescriptorSet& update, const Location& write_loc) const;
-    bool ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateTensor(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, const VkWriteDescriptorSet& update,
                                    const Location& write_loc) const;
@@ -1552,24 +1551,12 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj,
                                                vvl::AllocateDescriptorSetsData& ads_state) const override;
-    bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    const ErrorObject& error_obj, PipelineStates& pipeline_states) const override;
     bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                      VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                      const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                      chassis::CreateRayTracingPipelinesKHR& chassis_state) const override;
-    bool PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                                       VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                                       VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                                       VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                                       VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                       VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                       uint32_t width, uint32_t height, uint32_t depth,
-                                       const ErrorObject& error_obj) const override;
     bool ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& cb_state, const Location& table_loc,
                                               const char* vuid_binding_table_flag,
                                               const VkStridedDeviceAddressRegionKHR& binding_table) const;
@@ -1857,9 +1844,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                            uint32_t viewportCount,
                                                            const VkShadingRatePaletteNV* pShadingRatePalettes,
                                                            const ErrorObject& error_obj) const override;
-    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV& triangles, const Location& loc) const;
-    bool ValidateGeometryAABBNV(const VkGeometryAABBNV& geometry, const Location& loc) const;
-    bool ValidateGeometryNV(const VkGeometryNV& geometry, const Location& loc) const;
     bool PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
                                                                     const VkClusterAccelerationStructureInputInfoNV* pInfo,
                                                                     VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
@@ -1871,10 +1855,6 @@ class CoreChecks : public vvl::DeviceProxy {
         const VkClusterAccelerationStructureTriangleClusterInputNV& input, const Location& input_loc) const;
     bool ValidateClusterAccelerationStructureCommandsInfoNV(const VkClusterAccelerationStructureCommandsInfoNV& command_infos,
                                                             const LogObjectList& objlist, const Location& command_infos_loc) const;
-    bool PreCallValidateCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
-                                                      const VkAllocationCallbacks* pAllocator,
-                                                      VkAccelerationStructureNV* pAccelerationStructure,
-                                                      const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkAccelerationStructureKHR* pAccelerationStructure,
@@ -1888,11 +1868,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                               const uint32_t* pMaxPrimitiveCounts,
                                                               VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
                                                               const ErrorObject& error_obj) const override;
-    bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
-                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
-                                                          const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                         size_t dataSize, void* pData, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevice device,
                                                                  const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
                                                                  const ErrorObject& error_obj) const override;
@@ -1928,17 +1903,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                        uint32_t infoCount,
                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                        const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
-                                                       const ErrorObject& error_obj) const override;
-    bool PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
-                                                        VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
-                                                        VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                        VkBuffer scratch, VkDeviceSize scratchOffset,
-                                                        const ErrorObject& error_obj) const override;
-    bool PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
-                                                       VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode,
-                                                       const ErrorObject& error_obj) const override;
-    bool PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                       const VkAllocationCallbacks* pAllocator,
                                                        const ErrorObject& error_obj) const override;
     bool PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                         const VkAllocationCallbacks* pAllocator,
@@ -2586,13 +2550,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                                     VkQueryType queryType, VkQueryPool queryPool,
                                                                     uint32_t firstQuery,
                                                                     const ErrorObject& error_obj) const override;
-
-    bool PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCommandBuffer commandBuffer,
-                                                                   uint32_t accelerationStructureCount,
-                                                                   const VkAccelerationStructureNV* pAccelerationStructures,
-                                                                   VkQueryType queryType, VkQueryPool queryPool,
-                                                                   uint32_t firstQuery,
-                                                                   const ErrorObject& error_obj) const override;
 
     bool ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffer, const VkStridedDeviceAddressRangeKHR& strided_range,
                                            const Location& strided_range_loc) const;

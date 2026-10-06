@@ -21,11 +21,10 @@
 namespace vvl {
 
 const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinaryInfoError error) {
-    static const std::map<PipelineBinaryInfoError, std::array<Entry, 5>> errors{
+    static const std::map<PipelineBinaryInfoError, std::array<Entry, 4>> errors{
         {PipelineBinaryInfoError::PNext_09616,
          {{
              {Key(Func::vkCreateGraphicsPipelines), "VUID-vkCreateGraphicsPipelines-pNext-09616"},
-             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-vkCreateRayTracingPipelinesNV-pNext-09616"},
              {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-vkCreateRayTracingPipelinesKHR-pNext-09616"},
              {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-vkCreateExecutionGraphPipelinesAMDX-pNext-09616"},
              {Key(Func::vkCreateComputePipelines), "VUID-vkCreateComputePipelines-pNext-09616"},
@@ -33,7 +32,6 @@ const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinary
         {PipelineBinaryInfoError::BinaryCount_09620,
          {{
              {Key(Func::vkCreateGraphicsPipelines), "VUID-vkCreateGraphicsPipelines-binaryCount-09620"},
-             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-vkCreateRayTracingPipelinesNV-binaryCount-09620"},
              {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-vkCreateRayTracingPipelinesKHR-binaryCount-09620"},
              {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-vkCreateExecutionGraphPipelinesAMDX-binaryCount-09620"},
              {Key(Func::vkCreateComputePipelines), "VUID-vkCreateComputePipelines-binaryCount-09620"},
@@ -41,7 +39,6 @@ const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinary
         {PipelineBinaryInfoError::BinaryCount_09621,
          {{
              {Key(Func::vkCreateGraphicsPipelines), "VUID-vkCreateGraphicsPipelines-binaryCount-09621"},
-             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-vkCreateRayTracingPipelinesNV-binaryCount-09621"},
              {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-vkCreateRayTracingPipelinesKHR-binaryCount-09621"},
              {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-vkCreateExecutionGraphPipelinesAMDX-binaryCount-09621"},
              {Key(Func::vkCreateComputePipelines), "VUID-vkCreateComputePipelines-binaryCount-09621"},
@@ -49,7 +46,6 @@ const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinary
         {PipelineBinaryInfoError::BinaryCount_09622,
          {{
              {Key(Func::vkCreateGraphicsPipelines), "VUID-vkCreateGraphicsPipelines-binaryCount-09622"},
-             {Key(Func::vkCreateRayTracingPipelinesNV), "VUID-vkCreateRayTracingPipelinesNV-binaryCount-09622"},
              {Key(Func::vkCreateRayTracingPipelinesKHR), "VUID-vkCreateRayTracingPipelinesKHR-binaryCount-09622"},
              {Key(Func::vkCreateExecutionGraphPipelinesAMDX), "VUID-vkCreateExecutionGraphPipelinesAMDX-binaryCount-09622"},
              {Key(Func::vkCreateComputePipelines), "VUID-vkCreateComputePipelines-binaryCount-09622"},
@@ -73,7 +69,6 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878" :
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02878" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02878" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02878" :
                 loc.function == Func::vkCreateDataGraphPipelinesARM   ? "VUID-VkDataGraphPipelineCreateInfoARM-pipelineCreationCacheControl-09871" :
                 kVUIDUndefined;
         case PipelineCreateFlagError::Shader64BitIndexing_11798:
@@ -81,7 +76,6 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-VkGraphicsPipelineCreateInfo-flags-11798" :
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-flags-11798" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11798" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-flags-11798" :
                 // TODO - Missing vkCreateDataGraphPipelinesARM
                 kVUIDUndefined;
         case PipelineCreateFlagError::ProtectedAccess_07368:
@@ -89,7 +83,6 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368" :
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-pipelineProtectedAccess-07368" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineProtectedAccess-07368" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-pipelineProtectedAccess-07368" :
                 loc.function == Func::vkCreateDataGraphPipelinesARM   ? "VUID-VkDataGraphPipelineCreateInfoARM-pipelineProtectedAccess-09772" :
                 kVUIDUndefined;
         case PipelineCreateFlagError::ProtectedAccess_07369:
@@ -97,7 +90,6 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-VkGraphicsPipelineCreateInfo-flags-07369" :
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-flags-07369" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-flags-07369" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-flags-07369" :
                 loc.function == Func::vkCreateDataGraphPipelinesARM   ? "VUID-VkDataGraphPipelineCreateInfoARM-flags-09773" :
                 kVUIDUndefined;
         case PipelineCreateFlagError::PNext_09617:
@@ -105,21 +97,18 @@ const char *GetPipelineCreateFlagVUID(const Location &loc, PipelineCreateFlagErr
                 loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-vkCreateGraphicsPipelines-pNext-09617" :
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-vkCreateComputePipelines-pNext-09617" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-vkCreateRayTracingPipelinesKHR-pNext-09617" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-vkCreateRayTracingPipelinesNV-pNext-09617" :
                 kVUIDUndefined;
         case PipelineCreateFlagError::Flags_11311:
             return
                 loc.function == Func::vkCreateGraphicsPipelines       ? "VUID-VkGraphicsPipelineCreateInfo-flags-11311" :
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-flags-11311" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11311" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-flags-11311" :
                 kVUIDUndefined;
         case PipelineCreateFlagError::Flags_11367:
             return
                 // vkCreateGraphicsPipelines not used
                 loc.function == Func::vkCreateComputePipelines        ? "VUID-VkComputePipelineCreateInfo-None-11367" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-None-11369" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-None-11368" :
                 kVUIDUndefined;
     }
     return "UNASSIGNED-CoreChecks-unhandled-pipeline-create-flags";

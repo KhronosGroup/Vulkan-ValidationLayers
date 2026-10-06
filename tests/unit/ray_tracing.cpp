@@ -275,8 +275,7 @@ TEST_F(NegativeRayTracing, DescriptorBindingUpdateAfterBindWithAccelerationStruc
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_ALL, nullptr};
 
@@ -510,67 +509,41 @@ TEST_F(NegativeRayTracing, BeginQueryQueryPoolType) {
     TEST_DESCRIPTION("Test CmdBeginQuery with invalid queryPool queryType");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddOptionalExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    AddOptionalExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
-    const bool khr_acceleration_structure = IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    const bool nv_ray_tracing = IsExtensionsEnabled(VK_NV_RAY_TRACING_EXTENSION_NAME);
     const bool ext_transform_feedback = IsExtensionsEnabled(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     const bool rt_maintenance_1 = IsExtensionsEnabled(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
 
-    if (!khr_acceleration_structure && !nv_ray_tracing) {
-        GTEST_SKIP() << "Extensions " << VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME << " and " << VK_NV_RAY_TRACING_EXTENSION_NAME
-                     << " are not supported.";
-    }
-    RETURN_IF_SKIP(InitState());
-
-    if (khr_acceleration_structure) {
-        auto cmd_begin_query = [this, ext_transform_feedback](VkQueryType query_type, auto vuid_begin_query,
-                                                              auto vuid_begin_query_indexed) {
-            vkt::QueryPool query_pool(*m_device, query_type, 1);
-
-            m_command_buffer.Begin();
-            m_errorMonitor->SetDesiredError(vuid_begin_query);
-            vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
-            m_errorMonitor->VerifyFound();
-
-            if (ext_transform_feedback) {
-                m_errorMonitor->SetDesiredError(vuid_begin_query_indexed);
-                vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
-                m_errorMonitor->VerifyFound();
-            }
-            m_command_buffer.End();
-        };
-
-        cmd_begin_query(VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "VUID-vkCmdBeginQuery-queryType-04728",
-                        "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728");
-        cmd_begin_query(VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, "VUID-vkCmdBeginQuery-queryType-04728",
-                        "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728");
-
-        if (rt_maintenance_1) {
-            cmd_begin_query(VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, "VUID-vkCmdBeginQuery-queryType-06741",
-                            "VUID-vkCmdBeginQueryIndexedEXT-queryType-06741");
-            cmd_begin_query(VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR,
-                            "VUID-vkCmdBeginQuery-queryType-06741", "VUID-vkCmdBeginQueryIndexedEXT-queryType-06741");
-        }
-    }
-    if (nv_ray_tracing) {
-        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV, 1);
+    auto cmd_begin_query = [this, ext_transform_feedback](VkQueryType query_type, auto vuid_begin_query,
+                                                          auto vuid_begin_query_indexed) {
+        vkt::QueryPool query_pool(*m_device, query_type, 1);
 
         m_command_buffer.Begin();
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-04729");
+        m_errorMonitor->SetDesiredError(vuid_begin_query);
         vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
         m_errorMonitor->VerifyFound();
 
         if (ext_transform_feedback) {
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-04729");
+            m_errorMonitor->SetDesiredError(vuid_begin_query_indexed);
             vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
         m_command_buffer.End();
+    };
+
+    cmd_begin_query(VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, "VUID-vkCmdBeginQuery-queryType-04728",
+                    "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728");
+    cmd_begin_query(VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, "VUID-vkCmdBeginQuery-queryType-04728",
+                    "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728");
+
+    if (rt_maintenance_1) {
+        cmd_begin_query(VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, "VUID-vkCmdBeginQuery-queryType-06741",
+                        "VUID-vkCmdBeginQueryIndexedEXT-queryType-06741");
+        cmd_begin_query(VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR,
+                        "VUID-vkCmdBeginQuery-queryType-06741", "VUID-vkCmdBeginQueryIndexedEXT-queryType-06741");
     }
 }
 
@@ -6271,4 +6244,34 @@ TEST_F(NegativeRayTracing, BuildGeometryInfoNullGeometryArrays) {
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &p_range_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeRayTracing, WriteResourcePartitionedAccelerationStructure) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+
+    const VkDeviceSize descriptor_size =
+        vk::GetPhysicalDeviceDescriptorSizeEXT(gpu_, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+    std::vector<uint8_t> data(static_cast<size_t>(descriptor_size));
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
+    VkDeviceAddressRangeEXT device_address_range = buffer.AddressRange();
+
+    VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
+    resource_info.type = VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV;
+    resource_info.data.pAddressRange = &device_address_range;
+
+    VkHostAddressRangeEXT descriptor = {data.data(), static_cast<size_t>(descriptor_size)};
+    // May not be aligned as required, but that is not focus of test
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkResourceDescriptorInfoEXT-type-11454");
+    m_errorMonitor->SetDesiredError("VUID-VkResourceDescriptorInfoEXT-type-11483");
+    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &descriptor);
+    m_errorMonitor->VerifyFound();
 }

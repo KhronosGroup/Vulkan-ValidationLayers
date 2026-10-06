@@ -100,8 +100,6 @@ void DeviceState::RemoveSubState(LayerObjectTypeId id) {
     ForEachShared<vvl::DescriptorSet>([id](std::shared_ptr<vvl::DescriptorSet> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::BufferView>([id](std::shared_ptr<vvl::BufferView> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::Buffer>([id](std::shared_ptr<vvl::Buffer> state) { state->RemoveSubState(id); });
-    ForEachShared<vvl::AccelerationStructureNV>(
-        [id](std::shared_ptr<vvl::AccelerationStructureNV> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::AccelerationStructureKHR>(
         [id](std::shared_ptr<vvl::AccelerationStructureKHR> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::ShaderObject>([id](std::shared_ptr<vvl::ShaderObject> state) { state->RemoveSubState(id); });
@@ -1526,7 +1524,6 @@ void DeviceState::DestroyObjectMaps() {
     buffer_map_.clear();
     sampler_map_.clear();
     sampler_ycbcr_conversion_map_.clear();
-    acceleration_structure_nv_map_.clear();
     acceleration_structure_khr_map_.clear();
     mem_obj_map_.clear();
 
@@ -2567,48 +2564,6 @@ void DeviceState::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
 }
 
 // TODO - Add tests and pass down StatelessData
-std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineStateNV(const VkRayTracingPipelineCreateInfoNV* create_info,
-                                                                       std::shared_ptr<const PipelineCache> pipeline_cache,
-                                                                       std::shared_ptr<const PipelineLayout>&& layout) const {
-    return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout));
-}
-
-// PreCallValidate used here to have a single global spot to build the vvl::Pipeline object so we can use it right away
-bool DeviceState::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                             const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                             const ErrorObject& error_obj, PipelineStates& pipeline_states) const {
-    pipeline_states.reserve(count);
-    auto pipeline_cache = Get<PipelineCache>(pipelineCache);
-    for (uint32_t i = 0; i < count; i++) {
-        // Create and initialize internal tracking data structure
-        pipeline_states.push_back(
-            CreateRayTracingPipelineStateNV(&pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout)));
-    }
-    return false;
-}
-
-void DeviceState::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                            const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                            const RecordObject& record_obj, PipelineStates& pipeline_states) {
-    for (uint32_t i = 0; i < count; i++) {
-        const VkPipeline pipeline_handle = pPipelines[i];
-        if (pipeline_handle == VK_NULL_HANDLE) {
-            continue;  // vkspec.html#pipelines-multiple
-        }
-
-        if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
-            descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
-        }
-
-        pipeline_states[i]->SetHandle(pipeline_handle);
-        Add(std::move(pipeline_states[i]));
-    }
-    pipeline_states.clear();
-}
-
-// TODO - Add tests and pass down StatelessData
 std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineStateKHR(const VkRayTracingPipelineCreateInfoKHR* create_info,
                                                                         std::shared_ptr<const PipelineCache> pipeline_cache,
                                                                         std::shared_ptr<const PipelineLayout>&& layout,
@@ -3067,22 +3022,6 @@ void DeviceState::PostCallRecordCmdSetViewportShadingRatePaletteNV(VkCommandBuff
     cb_state->dynamic_state_value.shading_rate_palette_count = viewportCount;
 }
 
-std::shared_ptr<AccelerationStructureNV> DeviceState::CreateAccelerationStructureState(
-    VkAccelerationStructureNV handle, const VkAccelerationStructureCreateInfoNV* create_info) {
-    return std::make_shared<AccelerationStructureNV>(device, handle, create_info);
-}
-
-void DeviceState::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
-                                                              const VkAccelerationStructureCreateInfoNV* pCreateInfo,
-                                                              const VkAllocationCallbacks* pAllocator,
-                                                              VkAccelerationStructureNV* pAccelerationStructure,
-                                                              const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    Add(CreateAccelerationStructureState(*pAccelerationStructure, pCreateInfo));
-}
-
 void DeviceState::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
                                                                const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator,
@@ -3154,113 +3093,6 @@ void DeviceState::PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(VkComm
     }
 }
 
-void DeviceState::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
-    VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements,
-    const RecordObject& record_obj) {
-    if (auto as_state = Get<AccelerationStructureNV>(pInfo->accelerationStructure)) {
-        if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV) {
-            as_state->memory_requirements_checked = true;
-        } else if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV) {
-            as_state->build_scratch_memory_requirements_checked = true;
-        } else if (pInfo->type == VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV) {
-            as_state->update_scratch_memory_requirements_checked = true;
-        }
-    }
-}
-
-void DeviceState::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
-                                                                  const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
-                                                                  const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        return;
-    }
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
-        const VkBindAccelerationStructureMemoryInfoNV& info = pBindInfos[i];
-
-        if (auto as_state = Get<AccelerationStructureNV>(info.accelerationStructure)) {
-            // Track objects tied to memory
-            if (auto memory_state = Get<DeviceMemory>(info.memory)) {
-                as_state->BindMemory(as_state.get(), memory_state, info.memoryOffset, 0u, as_state->memory_requirements.size);
-            }
-
-            // GPU validation of top level acceleration structure building needs acceleration structure handles.
-            // XXX TODO: Query device address for KHR extension
-            if (enabled[gpu_validation]) {
-                DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
-            }
-        }
-    }
-}
-
-void DeviceState::PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
-                                                                const VkAccelerationStructureInfoNV* pInfo, VkBuffer instanceData,
-                                                                VkDeviceSize instanceOffset, VkBool32 update,
-                                                                VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                                VkBuffer scratch, VkDeviceSize scratchOffset,
-                                                                const RecordObject& record_obj) {
-    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    if (!cb_state) {
-        return;
-    }
-    cb_state->RecordCommand(record_obj.location);
-
-    auto dst_as_state = Get<AccelerationStructureNV>(dst);
-    if (dst_as_state) {
-        dst_as_state->Build(pInfo);
-        if (!disabled[command_buffer_state]) {
-            cb_state->AddChild(dst_as_state);
-        }
-    }
-    if (!disabled[command_buffer_state]) {
-        if (auto src_as_state = Get<AccelerationStructureNV>(src)) {
-            cb_state->AddChild(src_as_state);
-        }
-        if (auto instance_buffer = Get<Buffer>(instanceData)) {
-            cb_state->AddChild(instance_buffer);
-        }
-        if (auto scratch_buffer = Get<Buffer>(scratch)) {
-            cb_state->AddChild(scratch_buffer);
-        }
-
-        for (uint32_t i = 0; i < pInfo->geometryCount; i++) {
-            const auto& geom = pInfo->pGeometries[i];
-
-            if (auto vertex_buffer = Get<Buffer>(geom.geometry.triangles.vertexData)) {
-                cb_state->AddChild(vertex_buffer);
-            }
-            if (auto index_buffer = Get<Buffer>(geom.geometry.triangles.indexData)) {
-                cb_state->AddChild(index_buffer);
-            }
-            if (auto transform_buffer = Get<Buffer>(geom.geometry.triangles.transformData)) {
-                cb_state->AddChild(transform_buffer);
-            }
-            if (auto aabb_buffer = Get<Buffer>(geom.geometry.aabbs.aabbData)) {
-                cb_state->AddChild(aabb_buffer);
-            }
-        }
-    }
-}
-
-void DeviceState::PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
-                                                               VkAccelerationStructureNV src,
-                                                               VkCopyAccelerationStructureModeNV mode,
-                                                               const RecordObject& record_obj) {
-    if (disabled[command_buffer_state]) {
-        return;
-    }
-
-    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    auto src_as_state = Get<AccelerationStructureNV>(src);
-    auto dst_as_state = Get<AccelerationStructureNV>(dst);
-    ASSERT_AND_RETURN(src_as_state && dst_as_state);
-    cb_state->AddChild(src_as_state);
-    cb_state->AddChild(dst_as_state);
-
-    cb_state->RecordCommand(record_obj.location);
-    dst_as_state->built = true;
-    dst_as_state->build_info = src_as_state->build_info;
-}
-
 void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                                const VkAllocationCallbacks* pAllocator,
                                                                const RecordObject& record_obj) {
@@ -3292,12 +3124,6 @@ void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, 
         }
     }
     Destroy<AccelerationStructureKHR>(accelerationStructure);
-}
-
-void DeviceState::PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                              const VkAllocationCallbacks* pAllocator,
-                                                              const RecordObject& record_obj) {
-    Destroy<AccelerationStructureNV>(accelerationStructure);
 }
 
 void DeviceState::PostCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
@@ -5992,17 +5818,6 @@ void DeviceState::PostCallRecordCmdDrawMeshTasksIndirectCount2EXT(VkCommandBuffe
     cb_state->RecordDraw(record_obj.location);
     TrackDeviceAddressRange(*cb_state, pInfo->addressRange.address, pInfo->addressRange.size,
                             VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT);
-}
-
-void DeviceState::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                                               VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                                               VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                                               VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                                               VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                               VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                               uint32_t width, uint32_t height, uint32_t depth, const RecordObject& record_obj) {
-    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordTraceRay(record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,

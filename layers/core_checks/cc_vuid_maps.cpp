@@ -932,7 +932,6 @@ const char* GetSpirvInterfaceVariableVUID(const Location& loc, SpirvInterfaceVar
                 loc.function == Func::vkCreateGraphicsPipelines  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07988" :
                 loc.function == Func::vkCreateComputePipelines   ? "VUID-VkComputePipelineCreateInfo-layout-07988" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR  ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV   ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988" :
                 loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10383" :
                 kVUIDUndefined;
         case SpirvInterfaceVariableError::Mutable_07990:
@@ -940,7 +939,6 @@ const char* GetSpirvInterfaceVariableVUID(const Location& loc, SpirvInterfaceVar
                 loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-layout-07990" :
                 loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-layout-07990" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990" :
                 loc.function == Func::vkCreateDataGraphPipelinesARM  ? "VUID-VkDataGraphPipelineCreateInfoARM-layout-09769" :
                 loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10384" :
                 kVUIDUndefined;
@@ -949,7 +947,6 @@ const char* GetSpirvInterfaceVariableVUID(const Location& loc, SpirvInterfaceVar
                 loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991" :
                 loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-layout-07991" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991" :
                 loc.function == Func::vkCreateDataGraphPipelinesARM  ? "VUID-VkDataGraphPipelineCreateInfoARM-layout-09934" :
                 loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10385" :
                 kVUIDUndefined;
@@ -958,7 +955,6 @@ const char* GetSpirvInterfaceVariableVUID(const Location& loc, SpirvInterfaceVar
                 loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-None-10391" :
                 loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-None-10391" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-None-10391" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-None-10391" :
                 loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10386" :
                 kVUIDUndefined;
         case SpirvInterfaceVariableError::DescriptorHeapMapping_11312:
@@ -966,7 +962,6 @@ const char* GetSpirvInterfaceVariableVUID(const Location& loc, SpirvInterfaceVar
                 loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-flags-11312" :
                 loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-flags-11312" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-flags-11312" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-flags-11312" :
                 loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-flags-11292" :
                 kVUIDUndefined;
         case SpirvInterfaceVariableError::PushConstantStage_07987:
@@ -974,7 +969,6 @@ const char* GetSpirvInterfaceVariableVUID(const Location& loc, SpirvInterfaceVar
                 loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-layout-07987" :
                 loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-layout-07987" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07987" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-07987" :
                 loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10064" :
                 kVUIDUndefined;
         case SpirvInterfaceVariableError::PushConstantRange_10069:
@@ -982,7 +976,6 @@ const char* GetSpirvInterfaceVariableVUID(const Location& loc, SpirvInterfaceVar
                 loc.function == Func::vkCreateGraphicsPipelines ? "VUID-VkGraphicsPipelineCreateInfo-layout-10069" :
                 loc.function == Func::vkCreateComputePipelines  ? "VUID-VkComputePipelineCreateInfo-layout-10069" :
                 loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-10069" :
-                loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-VkRayTracingPipelineCreateInfoNV-layout-10069" :
                 loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-codeType-10065" :
                 kVUIDUndefined;
     }

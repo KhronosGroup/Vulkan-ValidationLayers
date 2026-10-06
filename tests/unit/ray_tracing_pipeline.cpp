@@ -1032,14 +1032,12 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     }
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484");
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
-    // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
     vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe, 2, rt_pipe.GetShaderGroupsCount(),
                                                         (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1),
                                                         &fake_buffer);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051");
-    // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
     uint32_t invalid_firstgroup = rt_pipe.GetShaderGroupsCount() + 1;
     vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(
         *m_device, rt_pipe, invalid_firstgroup, 0, (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &fake_buffer);
@@ -1113,12 +1111,12 @@ TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
     VkShaderObj rgen_shader(*m_device, kMinimalShaderGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
-    stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+    stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
     stage_create_info.module = rgen_shader;
     stage_create_info.pName = "main";
 
     VkRayTracingShaderGroupCreateInfoKHR shader_group = vku::InitStructHelper();
-    shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+    shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
     shader_group.generalShader = 0;
     shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
     shader_group.anyHitShader = VK_SHADER_UNUSED_KHR;

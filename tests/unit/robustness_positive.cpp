@@ -16,33 +16,6 @@
 
 class PositiveRobustness : public VkLayerTest {};
 
-TEST_F(PositiveRobustness, WriteDescriptorSetAccelerationStructureNVNullDescriptor) {
-    TEST_DESCRIPTION("Validate using NV acceleration structure descriptor writing with null descriptor.");
-
-    AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::nullDescriptor);
-    RETURN_IF_SKIP(Init());
-
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_MISS_BIT_NV, nullptr},
-                                     });
-
-    VkAccelerationStructureNV top_level_as = VK_NULL_HANDLE;
-
-    VkWriteDescriptorSetAccelerationStructureNV acc = vku::InitStructHelper();
-    acc.accelerationStructureCount = 1;
-    acc.pAccelerationStructures = &top_level_as;
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&acc);
-    descriptor_write.dstSet = ds.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-}
-
 TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
     TEST_DESCRIPTION("Test nullDescriptor works wih CmdBindVertexBuffers variants");
 

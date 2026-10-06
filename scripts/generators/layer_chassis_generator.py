@@ -85,7 +85,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
         # Note: If added, may need to add to skip_intercept_id_functions list as well (in dispatch_vector_generator.py)
         'vkCreateGraphicsPipelines',
         'vkCreateComputePipelines',
-        'vkCreateRayTracingPipelinesNV',
         'vkCreateRayTracingPipelinesKHR',
         'vkCreateDataGraphPipelinesARM',
         'vkCreatePipelineLayout',

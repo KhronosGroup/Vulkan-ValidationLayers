@@ -884,8 +884,6 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle
         } else if (typed_handle.type == kVulkanObjectTypeImage) {
             vuid = loc.function == Func::vkBindImageMemory ? "VUID-vkBindImageMemory-memoryOffset-01046"
                                                            : "VUID-VkBindImageMemoryInfo-memoryOffset-01046";
-        } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
-            vuid = "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03621";
         } else if (typed_handle.type == kVulkanObjectTypeTensorARM) {
             vuid = "VUID-VkBindTensorMemoryInfoARM-memoryOffset-09713";
         } else if (typed_handle.type == kVulkanObjectTypeDataGraphPipelineSessionARM) {

@@ -586,8 +586,7 @@ bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLa
                     "but descriptorBindingInlineUniformBlockUpdateAfterBind was not enabled.",
                     i);
             }
-            if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
-                 binding_info.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) &&
+            if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR &&
                 !enabled_features.descriptorBindingAccelerationStructureUpdateAfterBind) {
                 skip |= LogError(
                     "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingAccelerationStructureUpdateAfterBind-03570",
@@ -1566,7 +1565,6 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState& device
     auto const& create_info = template_state.create_info;
     inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
     inline_infos_khr.resize(create_info.descriptorUpdateEntryCount);
-    inline_infos_nv.resize(create_info.descriptorUpdateEntryCount);
     inline_infos_ptlas.resize(create_info.descriptorUpdateEntryCount);
     desc_writes.reserve(create_info.descriptorUpdateEntryCount);  // emplaced, so reserved without initialization
     VkDescriptorSetLayout effective_dsl = create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET
@@ -1580,6 +1578,9 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState& device
     // Create a WriteDescriptorSet struct for each template update entry
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
         const auto& descriptor_update_entry = create_info.pDescriptorUpdateEntries[i];
+        if (descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
+            continue;  // VK_NV_ray_tracing is not validated
+        }
         uint32_t binding_count = ds_layout_state->GetDescriptorCountFromBinding(descriptor_update_entry.dstBinding);
         uint32_t binding_being_updated = descriptor_update_entry.dstBinding;
         uint32_t dst_array_element = descriptor_update_entry.dstArrayElement;
@@ -1654,17 +1655,6 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState& device
                     write_entry.descriptorCount = inline_info_khr->accelerationStructureCount;
                     break;
                 }
-                case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
-                    VkWriteDescriptorSetAccelerationStructureNV* inline_info_nv = &inline_infos_nv[i];
-                    inline_info_nv->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
-                    inline_info_nv->pNext = nullptr;
-                    inline_info_nv->accelerationStructureCount = descriptor_update_entry.descriptorCount;
-                    inline_info_nv->pAccelerationStructures = reinterpret_cast<VkAccelerationStructureNV*>(update_entry);
-                    write_entry.pNext = inline_info_nv;
-                    // descriptorCount must match the accelerationStructureCount
-                    write_entry.descriptorCount = inline_info_nv->accelerationStructureCount;
-                    break;
-                }
                 case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV: {
                     VkWriteDescriptorSetPartitionedAccelerationStructureNV* inline_info_ptlas = &inline_infos_ptlas[i];
                     inline_info_ptlas->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV;
@@ -1685,7 +1675,6 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState& device
             // If acceleration structure, we only create a single VkWriteDescriptorSet and map the actually AS into
             // VkWriteDescriptorSetAccelerationStructureKHR
             if (descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
-                descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV ||
                 descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV) {
                 break;
             }
@@ -1978,7 +1967,7 @@ bool CoreChecks::ValidateWriteUpdateDescriptorType(const VkWriteDescriptorSet& u
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         skip |= ValidateWriteUpdateAccelerationStructureKHR(update, write_loc);
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
-        skip |= ValidateWriteUpdateAccelerationStructureNV(update, write_loc);
+        // VK_NV_ray_tracing is not validated
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_TENSOR_ARM) {
         skip |= ValidateWriteUpdateTensor(update, write_loc);
     } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -2147,46 +2136,6 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescri
                 LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579", as_state->Handle(),
                          write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, j),
                          "was created with %s.", string_VkAccelerationStructureTypeKHR(as_state->GetType()));
-        }
-    }
-
-    return skip;
-}
-
-bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescriptorSet& update, const Location& write_loc) const {
-    bool skip = false;
-
-    const auto* write_as = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
-    if (!write_as || (write_as->accelerationStructureCount != update.descriptorCount)) {
-        if (!write_as) {
-            skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-03817", device, write_loc.dot(Field::descriptorType),
-                             "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, but the pNext chain doesn't include "
-                             "VkWriteDescriptorSetAccelerationStructureNV.\n%s",
-                             PrintPNextChain(Struct::VkWriteDescriptorSet, update.pNext).c_str());
-        } else {
-            skip |=
-                LogError("VUID-VkWriteDescriptorSet-descriptorType-03817", device,
-                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::accelerationStructureCount),
-                         "(%" PRIu32 ") is not equal to descriptorCount (%" PRIu32 ").", write_as->accelerationStructureCount,
-                         update.descriptorCount);
-        }
-        return skip;
-    }
-
-    for (uint32_t j = 0; j < write_as->accelerationStructureCount; ++j) {
-        if (write_as->pAccelerationStructures[j] == VK_NULL_HANDLE && !enabled_features.nullDescriptor) {
-            skip |=
-                LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749", device,
-                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, j),
-                         "is VK_NULL_HANDLE, but the nullDescriptor feature is not enabled.");
-        }
-        auto as_state = Get<vvl::AccelerationStructureNV>(write_as->pAccelerationStructures[j]);
-        if (!as_state) continue;
-        if (as_state->create_info.info.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV) {
-            skip |=
-                LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03748", as_state->Handle(),
-                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, j),
-                         "was created with %s.", string_VkAccelerationStructureTypeKHR(as_state->create_info.info.type));
         }
     }
 
@@ -2508,21 +2457,6 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
         }
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
             break;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
-            const auto* acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
-            if (!acc_info) break;
-            for (uint32_t di = 0; di < update.descriptorCount; ++di) {
-                VkAccelerationStructureNV as = acc_info->pAccelerationStructures[di];
-                // nullDescriptor feature allows this to be VK_NULL_HANDLE
-                if (auto as_state = Get<vvl::AccelerationStructureNV>(as)) {
-                    skip |= VerifyBoundMemoryIsValid(
-                        as_state->MemoryState(), LogObjectList(as), as_state->Handle(),
-                        write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, di),
-                        kVUIDUndefined);
-                }
-            }
-
-        } break;
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
         {
             const auto *tensor_write_desc = vku::FindStructInPNextChain<VkWriteDescriptorSetTensorARM>(update.pNext);
@@ -2542,6 +2476,8 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
         }
         // KHR acceleration structures don't require memory to be bound manually to them.
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+        // VK_NV_ray_tracing is not validated
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
         case VK_DESCRIPTOR_TYPE_MAX_ENUM:
@@ -3291,24 +3227,6 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
         }
     }
 
-    if (pInfo->accelerationStructureNV != VK_NULL_HANDLE) {
-        if (auto acceleration_structure_state = Get<vvl::AccelerationStructureNV>(pInfo->accelerationStructureNV)) {
-            if (!(acceleration_structure_state->create_info.info.flags &
-                  VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-                skip |= LogError(
-                    "VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-accelerationStructureNV-08092",
-                    pInfo->accelerationStructureNV, error_obj.location, "pInfo->accelerationStructureNV was created with %s.",
-                    string_VkAccelerationStructureCreateFlagsKHR(acceleration_structure_state->create_info.info.flags).c_str());
-            }
-        }
-
-        if (pInfo->accelerationStructure != VK_NULL_HANDLE) {
-            skip |= LogError("VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-accelerationStructureNV-08094", device,
-                             error_obj.location,
-                             "If accelerationStructureNV is not VK_NULL_HANDLE, accelerationStructure must be VK_NULL_HANDLE.");
-        }
-    }
-
     return skip;
 }
 
@@ -3764,20 +3682,6 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 }
             }
         } break;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            data_field = Field::accelerationStructure;
-            if (pDescriptorInfo->data.accelerationStructure) {
-                const VkAccelerationStructureNV as = (VkAccelerationStructureNV)pDescriptorInfo->data.accelerationStructure;
-                auto as_state = Get<vvl::AccelerationStructureNV>(as);
-
-                if (!as_state) {
-                    skip |= LogError("VUID-VkDescriptorGetInfoEXT-type-08029", device, descriptor_info_loc.dot(Field::type),
-                                     "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV and accelerationStructure is not 0, but "
-                                     "accelerationStructure must contain the handle of a VkAccelerationStructureNV created on "
-                                     "device, returned by vkGetAccelerationStructureHandleNV");
-                }
-            }
-            break;
         case VK_DESCRIPTOR_TYPE_TENSOR_ARM: {
             const auto* tensor_struct = vku::FindStructInPNextChain<VkDescriptorGetTensorInfoARM>(pDescriptorInfo->pNext);
             if (!tensor_struct) {
@@ -3844,13 +3748,6 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             if ((pDescriptorInfo->data.accelerationStructure == 0) && !enabled_features.nullDescriptor) {
                 skip |= LogError("VUID-VkDescriptorDataEXT-type-08041", device, descriptor_info_loc.dot(Field::type),
                                  "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, but "
-                                 "accelerationStructure is 0 and the nullDescriptor feature was not enabled.");
-            }
-            break;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            if ((pDescriptorInfo->data.accelerationStructure == 0) && !enabled_features.nullDescriptor) {
-                skip |= LogError("VUID-VkDescriptorDataEXT-type-08042", device, descriptor_info_loc.dot(Field::type),
-                                 "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, but "
                                  "accelerationStructure is 0 and the nullDescriptor feature was not enabled.");
             }
             break;
@@ -4534,7 +4431,6 @@ enum DSL_DESCRIPTOR_GROUPS {
     DSL_TYPE_INPUT_ATTACHMENTS,
     DSL_TYPE_INLINE_UNIFORM_BLOCK,
     DSL_TYPE_ACCELERATION_STRUCTURE,
-    DSL_TYPE_ACCELERATION_STRUCTURE_NV,
     DSL_NUM_DESCRIPTOR_GROUPS
 };
 
@@ -4565,15 +4461,8 @@ static std::valarray<uint64_t> GetDescriptorCountMaxPerStage(
 
     // Allow iteration over enum values
     std::vector<DSL_DESCRIPTOR_GROUPS> dsl_groups = {
-        DSL_TYPE_SAMPLERS,
-        DSL_TYPE_UNIFORM_BUFFERS,
-        DSL_TYPE_STORAGE_BUFFERS,
-        DSL_TYPE_SAMPLED_IMAGES,
-        DSL_TYPE_STORAGE_IMAGES,
-        DSL_TYPE_INPUT_ATTACHMENTS,
-        DSL_TYPE_INLINE_UNIFORM_BLOCK,
-        DSL_TYPE_ACCELERATION_STRUCTURE,
-        DSL_TYPE_ACCELERATION_STRUCTURE_NV,
+        DSL_TYPE_SAMPLERS,       DSL_TYPE_UNIFORM_BUFFERS,   DSL_TYPE_STORAGE_BUFFERS,      DSL_TYPE_SAMPLED_IMAGES,
+        DSL_TYPE_STORAGE_IMAGES, DSL_TYPE_INPUT_ATTACHMENTS, DSL_TYPE_INLINE_UNIFORM_BLOCK, DSL_TYPE_ACCELERATION_STRUCTURE,
     };
 
     // Sum by layouts per stage, then pick max of stages per type
@@ -4629,9 +4518,6 @@ static std::valarray<uint64_t> GetDescriptorCountMaxPerStage(
                             break;
                         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                             stage_sum[DSL_TYPE_ACCELERATION_STRUCTURE] += binding->descriptorCount;
-                            break;
-                        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-                            stage_sum[DSL_TYPE_ACCELERATION_STRUCTURE_NV] += binding->descriptorCount;
                             break;
                         default:
                             break;
@@ -4971,17 +4857,6 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                          "maxDescriptorSetAccelerationStructures limit (%" PRIu32 ").",
                          sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR],
                          phys_dev_ext_props.acc_structure_props.maxDescriptorSetAccelerationStructures);
-    }
-
-    // Acceleration structures NV
-    if (sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV] >
-        phys_dev_ext_props.ray_tracing_props_nv.maxDescriptorSetAccelerationStructures) {
-        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02381", device, error_obj.location,
-                         "sum of acceleration structures NV bindings among all stages (%" PRIu64
-                         ") exceeds device "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures limit (%" PRIu32 ").",
-                         sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV],
-                         phys_dev_ext_props.ray_tracing_props_nv.maxDescriptorSetAccelerationStructures);
     }
 
     // Extension exposes new properties limits
@@ -5771,11 +5646,7 @@ bool CoreChecks::PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, uin
                     address_range.address, address_range.size, false, data_loc.dot(Field::pAddressRange), LogObjectList(device),
                     VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, "VUID-VkResourceDescriptorInfoEXT-type-11483");
             } else if (resource.type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
-                if (address_range.size != 0) {
-                    skip |= LogError("VUID-VkResourceDescriptorInfoEXT-type-11468", device,
-                                     data_loc.dot(Field::pAddressRange).dot(Field::size), "is %" PRIu64 ", but must be 0.",
-                                     address_range.size);
-                }
+                // VK_NV_ray_tracing is not validated
             } else {
                 assert(false);  // missing a descriptor type!
             }
@@ -6130,14 +6001,13 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
                                phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize);
 
     if (samplers_count >= max_count) {
-        const char* vuid =
-            loc.function == Func::vkCreateSampler                  ? "VUID-vkCreateSampler-maxSamplerAllocationCount-11412"
-            : loc.function == Func::vkCreateGraphicsPipelines      ? "VUID-vkCreateGraphicsPipelines-pCreateInfos-11414"
-            : loc.function == Func::vkCreateComputePipelines       ? "VUID-vkCreateComputePipelines-pCreateInfos-11414"
-            : loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-vkCreateRayTracingPipelinesKHR-pCreateInfos-11414"
-            : loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-vkCreateRayTracingPipelinesNV-pCreateInfos-11414"
-            : loc.function == Func::vkCreateShadersEXT             ? "VUID-vkCreateShadersEXT-pCreateInfos-11413"
-                                                                   : kVUIDUndefined;
+        const char* vuid = loc.function == Func::vkCreateSampler ? "VUID-vkCreateSampler-maxSamplerAllocationCount-11412"
+                           : loc.function == Func::vkCreateGraphicsPipelines ? "VUID-vkCreateGraphicsPipelines-pCreateInfos-11414"
+                           : loc.function == Func::vkCreateComputePipelines  ? "VUID-vkCreateComputePipelines-pCreateInfos-11414"
+                           : loc.function == Func::vkCreateRayTracingPipelinesKHR
+                               ? "VUID-vkCreateRayTracingPipelinesKHR-pCreateInfos-11414"
+                           : loc.function == Func::vkCreateShadersEXT ? "VUID-vkCreateShadersEXT-pCreateInfos-11413"
+                                                                      : kVUIDUndefined;
         skip |= LogError(vuid, device, loc,
                          "%s, but on this VkDevice there are currently %" PRIu32
                          " VkSampler created, which is at the limit of %" PRIu32 "\n maxSamplerAllocationCount = %" PRIu32
@@ -6152,13 +6022,12 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
         const uint32_t embedded_sampler_count =
             device_state->descriptor_heap_global_embedded_sampler_count_.load() + new_sampler_count;
         if (embedded_sampler_count > phys_dev_ext_props.descriptor_heap_props.maxDescriptorHeapEmbeddedSamplers) {
-            const char* vuid =
-                loc.function == Func::vkCreateGraphicsPipelines        ? "VUID-vkCreateGraphicsPipelines-pCreateInfos-11429"
-                : loc.function == Func::vkCreateComputePipelines       ? "VUID-vkCreateComputePipelines-pCreateInfos-11429"
-                : loc.function == Func::vkCreateRayTracingPipelinesKHR ? "VUID-vkCreateRayTracingPipelinesKHR-pCreateInfos-11429"
-                : loc.function == Func::vkCreateRayTracingPipelinesNV  ? "VUID-vkCreateRayTracingPipelinesNV-pCreateInfos-11429"
-                : loc.function == Func::vkCreateShadersEXT             ? "VUID-vkCreateShadersEXT-pCreateInfos-11428"
-                                                                       : kVUIDUndefined;
+            const char* vuid = loc.function == Func::vkCreateGraphicsPipelines ? "VUID-vkCreateGraphicsPipelines-pCreateInfos-11429"
+                               : loc.function == Func::vkCreateComputePipelines ? "VUID-vkCreateComputePipelines-pCreateInfos-11429"
+                               : loc.function == Func::vkCreateRayTracingPipelinesKHR
+                                   ? "VUID-vkCreateRayTracingPipelinesKHR-pCreateInfos-11429"
+                               : loc.function == Func::vkCreateShadersEXT ? "VUID-vkCreateShadersEXT-pCreateInfos-11428"
+                                                                          : kVUIDUndefined;
             skip |= LogError(vuid, device, loc,
                              "contains %" PRIu32 " embedded samplers, but on this VkDevice there are currently %" PRIu32
                              " embedded samplers in pipelines and shaders, and this will now exceed "

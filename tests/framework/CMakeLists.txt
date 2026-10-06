@@ -42,8 +42,6 @@ add_library(vk_test_framework STATIC
     ray_tracing_objects.cpp
     data_graph_objects.h
     data_graph_objects.cpp
-    ray_tracing_helper_nv.h
-    ray_tracing_helper_nv.cpp
     external_memory_sync.h
     external_memory_sync.cpp
     sync_helper.h

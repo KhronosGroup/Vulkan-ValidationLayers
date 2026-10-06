@@ -654,51 +654,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                           const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
-    auto device_dispatch = vvl::GetDispatchDevice(device);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
-
-    PipelineStates pipeline_states;
-
-    for (const auto& vo : device_dispatch->object_dispatch) {
-        if (!vo) {
-            continue;
-        }
-        auto lock = vo->ReadLock();
-        skip |= vo->PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                               pPipelines, error_obj, pipeline_states);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-
-    RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesNV);
-    for (auto& vo : device_dispatch->object_dispatch) {
-        if (!vo) {
-            continue;
-        }
-        auto lock = vo->WriteLock();
-        vo->PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                     record_obj, pipeline_states);
-    }
-
-    VkResult result;
-    result =
-        device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
-    record_obj.result = result;
-
-    for (auto& vo : device_dispatch->object_dispatch) {
-        if (!vo) {
-            continue;
-        }
-        auto lock = vo->WriteLock();
-        vo->PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                      record_obj, pipeline_states);
-    }
-    return result;
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                             const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,

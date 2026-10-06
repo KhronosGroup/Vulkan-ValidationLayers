@@ -121,7 +121,7 @@ static glsl::DescriptorEncoding GetDescriptorEncoding(const vvl::ImageSamplerDes
 }
 
 static glsl::DescriptorEncoding GetDescriptorEncoding(const vvl::AccelerationStructureDescriptor& ac) {
-    uint32_t id = ac.IsKHR() ? GetId(ac.GetAccelerationStructureStateKHR()) : GetId(ac.GetAccelerationStructureStateNV());
+    const uint32_t id = GetId(ac.GetAccelerationStructureStateKHR());
     glsl::DescriptorEncoding encoding(DescriptorClass::AccelerationStructure, id);
     if (auto as_state = ac.GetAccelerationStructureStateKHR()) {
         encoding.dwords_1_2 = SubState(*as_state).gpu_state.offset_address;
@@ -162,8 +162,7 @@ static glsl::DescriptorEncoding GetDescriptorEncoding(const vvl::MutableDescript
             return glsl::DescriptorEncoding(desc_class, tensor_state ? tensor_state->GetId() : glsl::kNullDescriptor);
         }
         case DescriptorClass::AccelerationStructure: {
-            uint32_t id =
-                desc.IsKHR() ? GetId(desc.GetAccelerationStructureStateKHR()) : GetId(desc.GetAccelerationStructureStateNV());
+            const uint32_t id = GetId(desc.GetAccelerationStructureStateKHR());
             return glsl::DescriptorEncoding(DescriptorClass::AccelerationStructure, id);
         }
         case DescriptorClass::InlineUniform:

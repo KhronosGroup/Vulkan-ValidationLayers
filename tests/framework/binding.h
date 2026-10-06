@@ -784,36 +784,6 @@ class ImageView : public internal::NonDispHandle<VkImageView> {
     void SetName(const char *name) { NonDispHandle<VkImageView>::SetName(VK_OBJECT_TYPE_IMAGE_VIEW, name); }
 };
 
-class AccelerationStructureNV : public internal::NonDispHandle<VkAccelerationStructureNV> {
-  public:
-    explicit AccelerationStructureNV(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true) {
-        Init(dev, info, init_memory);
-    }
-    ~AccelerationStructureNV() noexcept;
-    void Destroy() noexcept;
-
-    // vkCreateAccelerationStructureNV
-    void Init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true);
-    void SetName(const char *name) {
-        NonDispHandle<VkAccelerationStructureNV>::SetName(VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV, name);
-    }
-    // vkGetAccelerationStructureMemoryRequirementsNV()
-    VkMemoryRequirements2 MemoryRequirements() const;
-    VkMemoryRequirements2 BuildScratchMemoryRequirements() const;
-
-    uint64_t OpaqueHandle() const { return opaque_handle_; }
-
-    const VkAccelerationStructureInfoNV &Info() const { return info_; }
-
-    [[nodiscard]] Buffer CreateScratchBuffer(const Device &device, VkBufferCreateInfo *pCreateInfo = nullptr,
-                                             bool buffer_device_address = false) const;
-
-  private:
-    VkAccelerationStructureInfoNV info_;
-    DeviceMemory memory_;
-    uint64_t opaque_handle_;
-};
-
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
   public:
     ShaderModule() = default;

@@ -493,7 +493,6 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const* desc, bool is_p
             break;
         }
 
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
             if (const auto* acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext)) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
@@ -502,15 +501,6 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const* desc, bool is_p
                         "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter",
                         "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06240",
                         loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, i));
-                }
-            }
-            if (const auto* acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(desc->pNext)) {
-                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                    skip |= ValidateObject(
-                        acc_info_nv->pAccelerationStructures[i], kVulkanObjectTypeAccelerationStructureNV, true,
-                        "VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-parameter",
-                        "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06241",
-                        loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, i));
                 }
             }
             break;
@@ -545,6 +535,8 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const* desc, bool is_p
             break;
         }
 
+        // VK_NV_ray_tracing is not validated
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
         // PTLAS uses VkDeviceAddress values, not VkAccelerationStructureKHR handles - no objects to validate
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
         // Inline has no objects, so nothing to validate
@@ -1674,23 +1666,6 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
                 tracker.CreateObject(pipeline_handle, kVulkanObjectTypePipeline, pAllocator, record_obj.location, device);
                 RegisterCommonPipelinePoisoning(pCreateInfos, pPipelines, index);
             }
-        }
-    }
-}
-
-void Device::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                       const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                       const RecordObject& record_obj) {
-    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) {
-        return;
-    }
-    if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
-                                 record_obj.location.dot(Field::pPipelines, index), device);
-            RegisterCommonPipelinePoisoning(pCreateInfos, pPipelines, index);
         }
     }
 }

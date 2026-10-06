@@ -875,11 +875,6 @@ static const VulkanTypedHandle* GetUserOfIntermediateNode(const CoreChecks& core
                 return child->InUse();
             }
             break;
-        case kVulkanObjectTypeAccelerationStructureNV:
-            if (auto child = core.Get<vvl::AccelerationStructureNV>(node_handle.Cast<VkAccelerationStructureNV>())) {
-                return child->InUse();
-            }
-            break;
         case kVulkanObjectTypeTensorARM:
             if (auto child = core.Get<vvl::Tensor>(node_handle.Cast<VkTensorARM>())) {
                 return child->InUse();
@@ -1002,10 +997,6 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location& loc) const {
     switch (loc.function) {
         case Func::vkCreateRayTracingPipelinesKHR:
             vuid = "VUID-vkCreateRayTracingPipelinesKHR-device-09677";
-            flags = VK_QUEUE_COMPUTE_BIT;
-            break;
-        case Func::vkCreateRayTracingPipelinesNV:
-            vuid = "VUID-vkCreateRayTracingPipelinesNV-device-09677";
             flags = VK_QUEUE_COMPUTE_BIT;
             break;
         case Func::vkCreateComputePipelines:

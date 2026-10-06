@@ -45,7 +45,6 @@ class BufferView;
 class Tensor;
 class TensorView;
 class Pipeline;
-class AccelerationStructureNV;
 class AccelerationStructureKHR;
 struct AllocateDescriptorSetsData;
 
@@ -640,10 +639,7 @@ class AccelerationStructureDescriptor : public Descriptor {
                      bool is_bindless) override;
     VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
     const vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
-    vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
-    VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
-    const vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
-    vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
+    vvl::AccelerationStructureKHR* GetAccelerationStructureStateKHR() { return acc_state_.get(); }
     void CopyUpdate(DescriptorSet &set_state, const DeviceState &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
     bool IsKHR() const { return is_khr_; }
@@ -659,8 +655,6 @@ class AccelerationStructureDescriptor : public Descriptor {
     bool is_partition_nv_{false};
     VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
     std::shared_ptr<vvl::AccelerationStructureKHR> acc_state_;
-    VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
-    std::shared_ptr<vvl::AccelerationStructureNV> acc_state_nv_;
     VkDeviceAddress acc_partition_nv_{0};
 };
 
@@ -688,17 +682,7 @@ class MutableDescriptor : public Descriptor {
     std::shared_ptr<vvl::TensorView> GetSharedTensorView() const { return tensor_view_state_; }
     VkAccelerationStructureKHR GetAccelerationStructureKHR() const { return acc_; }
     const vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
-    vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
-    VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
-    const vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
-    vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
-    // Returns true if there is a stored KHR acceleration structure and false if there is a stored NV acceleration structure.
-    // Asserts that there is only one of the two.
-    bool IsAccelerationStructureKHR() const {
-        auto acc_khr = GetAccelerationStructureKHR();
-        assert((acc_khr != VK_NULL_HANDLE) ^ (GetAccelerationStructureNV() != VK_NULL_HANDLE));
-        return acc_khr != VK_NULL_HANDLE;
-    }
+    vvl::AccelerationStructureKHR* GetAccelerationStructureStateKHR() { return acc_state_.get(); }
 
     void UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) override;
     uint32_t GetTensorViewCount() const { return tensor_view_count_; }
@@ -733,8 +717,6 @@ class MutableDescriptor : public Descriptor {
     bool is_khr_{false};
     VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
     std::shared_ptr<vvl::AccelerationStructureKHR> acc_state_;
-    VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
-    std::shared_ptr<vvl::AccelerationStructureNV> acc_state_nv_;
     // Tensor Descriptor
     uint32_t tensor_view_count_{0};
     const VkTensorViewARM *tensor_views_{VK_NULL_HANDLE};
@@ -856,7 +838,6 @@ struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSet> desc_writes;
     std::vector<VkWriteDescriptorSetInlineUniformBlock> inline_infos;
     std::vector<VkWriteDescriptorSetAccelerationStructureKHR> inline_infos_khr;
-    std::vector<VkWriteDescriptorSetAccelerationStructureNV> inline_infos_nv;
     std::vector<VkWriteDescriptorSetPartitionedAccelerationStructureNV> inline_infos_ptlas;
     DecodedTemplateUpdate(const DeviceState &device_data, VkDescriptorSet descriptorSet,
                           const DescriptorUpdateTemplate &template_state, const void *pData,

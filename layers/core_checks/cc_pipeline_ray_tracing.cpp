@@ -62,7 +62,6 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline& pipeline,
                                             const vku::safe_VkRayTracingPipelineCreateInfoCommon& create_info,
                                             const Location& create_info_loc) const {
     bool skip = false;
-    const bool isKHR = create_info_loc.function == Func::vkCreateRayTracingPipelinesKHR;
     const auto* groups = create_info.ptr()->pGroups;
     const VkPipelineCreateFlags2 create_flags = pipeline.create_flags;
 
@@ -77,9 +76,8 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline& pipeline,
     if ((create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
         const uint32_t raygen_stages_count = CalcShaderStageCount(pipeline, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
         if (raygen_stages_count == 0) {
-            skip |= LogError(
-                isKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-stage-03425" : "VUID-VkRayTracingPipelineCreateInfoNV-stage-06232",
-                device, create_info_loc.dot(Field::pStages), "has no element with a stage of VK_SHADER_STAGE_RAYGEN_BIT_KHR.");
+            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-stage-03425", device, create_info_loc.dot(Field::pStages),
+                             "has no element with a stage of VK_SHADER_STAGE_RAYGEN_BIT_KHR.");
         }
     }
     if ((create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0 &&
@@ -98,19 +96,16 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline& pipeline,
                 !GroupHasValidIndex(
                     pipeline, group.generalShader,
                     VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)) {
-                skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474"
-                                       : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02413",
-                                 device, group_loc.dot(Field::generalShader),
-                                 "is %s, but type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR which requires it to be a "
-                                 "valid index to a VK_SHADER_STAGE_RAYGEN_BIT_KHR, VK_SHADER_STAGE_MISS_BIT_KHR, or "
-                                 "VK_SHADER_STAGE_CALLABLE_BIT_KHR shader.",
-                                 string_ShaderIndex(group.generalShader).c_str());
+                skip |=
+                    LogError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474", device, group_loc.dot(Field::generalShader),
+                             "is %s, but type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR which requires it to be a "
+                             "valid index to a VK_SHADER_STAGE_RAYGEN_BIT_KHR, VK_SHADER_STAGE_MISS_BIT_KHR, or "
+                             "VK_SHADER_STAGE_CALLABLE_BIT_KHR shader.",
+                             string_ShaderIndex(group.generalShader).c_str());
             }
             if (group.anyHitShader != VK_SHADER_UNUSED_KHR || group.closestHitShader != VK_SHADER_UNUSED_KHR ||
                 group.intersectionShader != VK_SHADER_UNUSED_KHR) {
-                skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03475"
-                                       : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02414",
-                                 device, group_loc,
+                skip |= LogError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03475", device, group_loc,
                                  "has a type of VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR, but anyHitShader is %s, "
                                  "closestHitShader is %s, and intersectionShader is %s (all three must be VK_SHADER_UNUSED_KHR).",
                                  string_ShaderIndex(group.anyHitShader).c_str(), string_ShaderIndex(group.closestHitShader).c_str(),
@@ -119,18 +114,16 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline& pipeline,
         } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR) {
             if (group.intersectionShader == VK_SHADER_UNUSED_KHR ||
                 !GroupHasValidIndex(pipeline, group.intersectionShader, VK_SHADER_STAGE_INTERSECTION_BIT_KHR)) {
-                skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476"
-                                       : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02415",
-                                 device, group_loc.dot(Field::intersectionShader),
+                skip |= LogError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476", device,
+                                 group_loc.dot(Field::intersectionShader),
                                  "is %s, but type is VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR which requires "
                                  "it to be a valid index to a VK_SHADER_STAGE_INTERSECTION_BIT_KHR shader.",
                                  string_ShaderIndex(group.intersectionShader).c_str());
             }
         } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR) {
             if (group.intersectionShader != VK_SHADER_UNUSED_KHR) {
-                skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03477"
-                                       : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02416",
-                                 device, group_loc.dot(Field::intersectionShader),
+                skip |= LogError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03477", device,
+                                 group_loc.dot(Field::intersectionShader),
                                  "is %s, but type is VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR which requires "
                                  "it to be VK_SHADER_UNUSED_KHR.",
                                  string_ShaderIndex(group.intersectionShader).c_str());
@@ -140,18 +133,16 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline& pipeline,
         if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR ||
             group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR) {
             if (!GroupHasValidIndex(pipeline, group.anyHitShader, VK_SHADER_STAGE_ANY_HIT_BIT_KHR)) {
-                skip |= LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479"
-                                       : "VUID-VkRayTracingShaderGroupCreateInfoNV-anyHitShader-02418",
-                                 device, group_loc.dot(Field::anyHitShader),
+                skip |= LogError("VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479", device,
+                                 group_loc.dot(Field::anyHitShader),
                                  "is %s, but type is %s which requires it to be either VK_SHADER_UNUSED_KHR or a valid index "
                                  "to a VK_SHADER_STAGE_ANY_HIT_BIT_KHR shader.",
                                  string_ShaderIndex(group.anyHitShader).c_str(), string_VkRayTracingShaderGroupTypeKHR(group.type));
             }
             if (!GroupHasValidIndex(pipeline, group.closestHitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)) {
                 skip |=
-                    LogError(isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478"
-                                   : "VUID-VkRayTracingShaderGroupCreateInfoNV-closestHitShader-02417",
-                             device, group_loc.dot(Field::closestHitShader),
+                    LogError("VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478", device,
+                             group_loc.dot(Field::closestHitShader),
                              "is %s, but type is %s which requires it to be either VK_SHADER_UNUSED_KHR or a valid index "
                              "to a VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR shader.",
                              string_ShaderIndex(group.closestHitShader).c_str(), string_VkRayTracingShaderGroupTypeKHR(group.type));
@@ -175,63 +166,9 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline& pipeline,
     auto pipeline_layout = pipeline.PipelineLayoutState();
     if (pipeline_layout && (pipeline_layout->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
         skip |= LogError(
-            isKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-12402" : "VUID-VkRayTracingPipelineCreateInfoNV-layout-12402",
-            pipeline_layout->Handle(), create_info_loc.dot(Field::layout),
+            "VUID-VkRayTracingPipelineCreateInfoKHR-layout-12402", pipeline_layout->Handle(), create_info_loc.dot(Field::layout),
             "was created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT (which is only designed for graphics pipeline "
             "Libraries).");
-    }
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                            const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                            const ErrorObject& error_obj, PipelineStates& pipeline_states) const {
-    bool skip = false;
-
-    skip |= ValidateDeviceQueueSupport(error_obj.location);
-    for (uint32_t i = 0; i < count; i++) {
-        const vvl::Pipeline* pipeline = pipeline_states[i].get();
-        ASSERT_AND_CONTINUE(pipeline);
-
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
-        const auto& create_info = pipeline->RayTracingCreateInfo();
-        if (pipeline->create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
-            std::shared_ptr<const vvl::Pipeline> base_pipeline;
-            const auto bpi = create_info.basePipelineIndex;
-            const auto bph = create_info.basePipelineHandle;
-            if (bpi != -1) {
-                base_pipeline = pipeline_states[bpi];
-            } else if (bph != VK_NULL_HANDLE) {
-                base_pipeline = Get<vvl::Pipeline>(bph);
-            }
-            if (!base_pipeline || !(base_pipeline->create_flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
-                skip |= LogError(
-                    "VUID-vkCreateRayTracingPipelinesNV-flags-03416", device, create_info_loc,
-                    "If the flags member of any element of pCreateInfos contains the "
-                    "VK_PIPELINE_CREATE_DERIVATIVE_BIT flag, "
-                    "the base pipeline must have been created with the VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT flag set.");
-            }
-        }
-        skip |= ValidateRayTracingPipeline(*pipeline, create_info, create_info_loc);
-        uint32_t stage_index = 0;
-        for (const auto& stage_ci : pipeline->shader_stages_ci) {
-            skip |= ValidatePipelineShaderStage(*pipeline, stage_ci, pCreateInfos[i].pNext,
-                                                create_info_loc.dot(Field::pStages, stage_index++));
-        }
-
-        if (pipeline->descriptor_heap_embedded_samplers_count > 0) {
-            skip |= ValidateEmbeddedSamplersCount(pipeline->descriptor_heap_embedded_samplers_count, create_info_loc);
-        }
-
-        if (create_info.maxRecursionDepth > phys_dev_ext_props.ray_tracing_props_nv.maxRecursionDepth) {
-            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-03457", device,
-                             create_info_loc.dot(Field::maxRecursionDepth),
-                             "(%" PRIu32
-                             ") must be less than or equal to "
-                             "maxRecursionDepth (%" PRIu32 ")",
-                             create_info.maxRecursionDepth, phys_dev_ext_props.ray_tracing_props_nv.maxRecursionDepth);
-        }
     }
     return skip;
 }

@@ -1356,7 +1356,7 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, V
                                                               uint32_t createInfoCount,
                                                               const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                              const RecordObject& record_obj, PipelineStates& pipeline_states) {
+                                                              const RecordObject& record_obj) {
     bp_state::LogResult(*this, device, record_obj);
 }
 

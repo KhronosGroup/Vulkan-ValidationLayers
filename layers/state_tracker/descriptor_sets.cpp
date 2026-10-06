@@ -1233,10 +1233,8 @@ bool vvl::TexelDescriptor::Invalid() const { return !buffer_view_state_ || buffe
 void vvl::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet& set_state, const vvl::DeviceState& dev_data,
                                                        const VkWriteDescriptorSet& update, const uint32_t index, bool is_bindless) {
     const auto* acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
-    const auto* acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
     const auto* acc_info_partition_nv =
         vku::FindStructInPNextChain<VkWriteDescriptorSetPartitionedAccelerationStructureNV>(update.pNext);
-    assert(acc_info || acc_info_nv || acc_info_partition_nv);
 
     if (acc_info_partition_nv) {
         // Partitioned AS are referenced by VkDeviceAddress, not by a handle, so there is no state object to track.
@@ -1245,13 +1243,11 @@ void vvl::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet& set_state,
         return;
     }
     is_partition_nv_ = false;
-    is_khr_ = (acc_info != NULL);
+    // VK_NV_ray_tracing acceleration structures are not tracked
+    is_khr_ = (acc_info != nullptr);
     if (is_khr_) {
         acc_ = acc_info->pAccelerationStructures[index];
         ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
-    } else {
-        acc_nv_ = acc_info_nv->pAccelerationStructures[index];
-        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless);
     }
 }
 
@@ -1259,14 +1255,10 @@ void vvl::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet& set_state, 
                                                       const Descriptor& src, bool is_bindless, VkDescriptorType src_type) {
     if (src.GetClass() == DescriptorClass::Mutable) {
         auto& acc_desc = static_cast<const MutableDescriptor&>(src);
-        is_khr_ = acc_desc.IsAccelerationStructureKHR();
+        is_khr_ = acc_desc.IsKHR();
         if (is_khr_) {
             acc_ = acc_desc.GetAccelerationStructureKHR();
             ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
-        } else {
-            acc_nv_ = acc_desc.GetAccelerationStructureNV();
-            ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
-                            is_bindless);
         }
         return;
     }
@@ -1280,9 +1272,6 @@ void vvl::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet& set_state, 
     if (is_khr_) {
         acc_ = acc_desc.acc_;
         ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_), is_bindless);
-    } else {
-        acc_nv_ = acc_desc.acc_nv_;
-        ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless);
     }
 }
 
@@ -1291,27 +1280,18 @@ bool vvl::AccelerationStructureDescriptor::AddParent(StateObject* state_object) 
     if (acc_state_) {
         result |= acc_state_->AddParent(state_object);
     }
-    if (acc_state_nv_) {
-        result |= acc_state_nv_->AddParent(state_object);
-    }
     return result;
 }
 void vvl::AccelerationStructureDescriptor::RemoveParent(StateObject* state_object) {
     if (acc_state_) {
         acc_state_->RemoveParent(state_object);
     }
-    if (acc_state_nv_) {
-        acc_state_nv_->RemoveParent(state_object);
-    }
 }
 bool vvl::AccelerationStructureDescriptor::Invalid() const {
-    if (is_partition_nv_) {
-        return false;  // no AS object
-    } else if (is_khr_) {
-        return !acc_state_ || acc_state_->Invalid();
-    } else {
-        return !acc_state_nv_ || acc_state_nv_->Invalid();
+    if (is_partition_nv_ || !is_khr_) {
+        return false;  // no tracked AS object
     }
+    return !acc_state_ || acc_state_->Invalid();
 }
 
 vvl::MutableDescriptor::MutableDescriptor()
@@ -1393,16 +1373,11 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet& set_state, const vvl::De
         }
         case DescriptorClass::AccelerationStructure: {
             const auto* acc_info = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
-            const auto* acc_info_nv = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
-            assert(acc_info || acc_info_nv);
-            is_khr_ = (acc_info != NULL);
+            // VK_NV_ray_tracing acceleration structures are not tracked
+            is_khr_ = (acc_info != nullptr);
             if (is_khr_) {
                 acc_ = acc_info->pAccelerationStructures[index];
                 ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_),
-                                is_bindless);
-            } else {
-                acc_nv_ = acc_info_nv->pAccelerationStructures[index];
-                ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
                                 is_bindless);
             }
             break;
@@ -1463,10 +1438,6 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet& set_state, const vvl::Dev
                 acc_ = acc_desc.GetAccelerationStructure();
                 ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_),
                                 is_bindless);
-            } else {
-                acc_nv_ = acc_desc.GetAccelerationStructureNV();
-                ReplaceStatePtr(set_state, acc_state_nv_, dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_),
-                                is_bindless);
             }
             break;
         }
@@ -1507,10 +1478,6 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet& set_state, const vvl::Dev
                         acc_ = mutable_src.GetAccelerationStructureKHR();
                         ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_),
                                         is_bindless);
-                    } else {
-                        acc_nv_ = mutable_src.GetAccelerationStructureNV();
-                        ReplaceStatePtr(set_state, acc_state_nv_,
-                                        dev_data.GetConstCastShared<vvl::AccelerationStructureNV>(acc_nv_), is_bindless);
                     }
 
                 } break;
@@ -1598,9 +1565,6 @@ bool vvl::MutableDescriptor::AddParent(StateObject* state_object) {
             if (acc_state_) {
                 result |= acc_state_->AddParent(state_object);
             }
-            if (acc_state_nv_) {
-                result |= acc_state_nv_->AddParent(state_object);
-            }
             break;
         case DescriptorClass::Tensor:
             if (tensor_view_state_) {
@@ -1630,9 +1594,6 @@ void vvl::MutableDescriptor::RemoveParent(StateObject* state_object) {
     if (acc_state_) {
         acc_state_->RemoveParent(state_object);
     }
-    if (acc_state_nv_) {
-        acc_state_nv_->RemoveParent(state_object);
-    }
     if (tensor_view_state_) {
         tensor_view_state_->RemoveParent(state_object);
     }
@@ -1656,11 +1617,8 @@ bool vvl::MutableDescriptor::Invalid() const {
             return !buffer_state_ || buffer_state_->Invalid();
 
         case DescriptorClass::AccelerationStructure:
-            if (is_khr_) {
-                return !acc_state_ || acc_state_->Invalid();
-            } else {
-                return !acc_state_nv_ || acc_state_nv_->Invalid();
-            }
+            // VK_NV_ray_tracing acceleration structures are not tracked
+            return is_khr_ && (!acc_state_ || acc_state_->Invalid());
         case DescriptorClass::Tensor:
             return !tensor_view_state_ || tensor_view_state_->Invalid() || !tensor_view_state_->tensor_state ||
                    tensor_view_state_->tensor_state->Invalid();
