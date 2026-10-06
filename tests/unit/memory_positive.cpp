@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <mutex>
 #include <thread>
 #include <vector>
 #include "layer_validation_tests.h"
@@ -811,4 +812,56 @@ TEST_F(PositiveMemory, BufferDeviceAddressAllocationAlignment) {
 
     vkt::DeviceMemory memory(*m_device, alloc_info);
     vk::BindBufferMemory(device(), buffer, memory, 0);
+}
+
+TEST_F(PositiveMemory, DeviceMemoryReportObjectHandle) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13329");
+    AddRequiredExtensions(VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceMemoryReport);
+    RETURN_IF_SKIP(InitFramework());
+
+    // static because the driver can call the callback until the device is destroyed
+    // which happens after the test body
+    static std::mutex records_lock;
+    static std::vector<VkDeviceMemoryReportCallbackDataEXT> records;
+    records.clear();
+
+    VkDeviceDeviceMemoryReportCreateInfoEXT report_ci = vku::InitStructHelper();
+    report_ci.pfnUserCallback = [](const VkDeviceMemoryReportCallbackDataEXT* pCallbackData, void*) {
+        std::lock_guard<std::mutex> guard(records_lock);
+        records.emplace_back(*pCallbackData);
+    };
+    RETURN_IF_SKIP(InitState(nullptr, &report_ci));
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = 4096;
+    alloc_info.memoryTypeIndex = 0;
+    uint64_t memory_handle = 0;
+    {
+        vkt::DeviceMemory memory(*m_device, alloc_info);
+        memory_handle = CastToUint64(memory.handle());
+    }
+
+    bool device_memory_reported = false;
+    bool allocate_found = false;
+    bool free_found = false;
+    {
+        std::lock_guard<std::mutex> guard(records_lock);
+        for (const auto& record : records) {
+            if (record.objectType != VK_OBJECT_TYPE_DEVICE_MEMORY) {
+                continue;
+            }
+            device_memory_reported = true;
+            if (record.objectHandle != memory_handle) {
+                continue;
+            }
+            allocate_found |= record.type == VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATE_EXT;
+            free_found |= record.type == VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_FREE_EXT;
+        }
+    }
+    if (!device_memory_reported) {
+        GTEST_SKIP() << "Driver did not report any VkDeviceMemory events";
+    }
+    ASSERT_TRUE(allocate_found);
+    ASSERT_TRUE(free_found);
 }

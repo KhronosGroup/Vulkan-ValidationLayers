@@ -209,14 +209,14 @@ class HandleWrapper : public Logger {
     HandleType Unwrap(HandleType wrapped_handle) {
         if (wrapped_handle == (HandleType)VK_NULL_HANDLE) return wrapped_handle;
         auto iter = unique_id_mapping.find(CastToUint64(wrapped_handle));
-        if (iter == unique_id_mapping.end()) return (HandleType)0;
+        if (iter == unique_id_mapping.end()) return passthrough_handles ? wrapped_handle : (HandleType)0;
         return (HandleType)iter->second;
     }
 
     // Wrap a newly created handle with a new unique ID, and return the new ID.
     template <typename HandleType>
     HandleType WrapNew(HandleType new_created_handle) {
-        if (new_created_handle == (HandleType)VK_NULL_HANDLE) return new_created_handle;
+        if (new_created_handle == (HandleType)VK_NULL_HANDLE || passthrough_handles) return new_created_handle;
         auto unique_id = global_unique_id++;
         unique_id = HashedUint64::hash(unique_id);
         assert(unique_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
@@ -231,7 +231,7 @@ class HandleWrapper : public Logger {
         if (iter != unique_id_mapping.end()) {
             return CastFromUint64<HandleType>(iter->second);
         } else {
-            return CastFromUint<HandleType>(0ULL);
+            return passthrough_handles ? wrapped_handle : CastFromUint<HandleType>(0ULL);
         }
     }
 
@@ -242,7 +242,7 @@ class HandleWrapper : public Logger {
         if (iter != unique_id_mapping.end()) {
             return CastFromUint64<HandleType>(iter->second);
         } else {
-            return CastFromUint<HandleType>(0ULL);
+            return passthrough_handles ? wrapped_handle : CastFromUint<HandleType>(0ULL);
         }
     }
 
@@ -265,6 +265,14 @@ class HandleWrapper : public Logger {
     static std::atomic<uint64_t> global_unique_id;
     static vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
     static bool wrap_handles;
+
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13329
+    // The driver calls the VK_EXT_device_memory_report callback directly, reporting its own handles, which the app could not match
+    // if they were wrapped.
+    // So handles created by a device using it are passed through as they are (as if handle wrapping was disabled).
+    // Handles wrapped by the instance (VkSurfaceKHR) are still found in |unique_id_mapping|, and everything not found there is one
+    // of this device's handles.
+    bool passthrough_handles = false;
 };
 
 class DispatchInstance : public HandleWrapper {

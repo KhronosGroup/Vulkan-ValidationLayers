@@ -913,6 +913,7 @@ DispatchDevice::DispatchDevice(DispatchInstance* instance, VkPhysicalDevice gpu,
       host_image_copy_props_copy_dst_layouts(stateless_device_data.host_image_copy_props_copy_dst_layouts),
       phys_dev_ext_props(stateless_device_data.phys_dev_ext_props),
       physical_device(gpu) {
+    passthrough_handles = vku::FindStructInPNextChain<VkDeviceDeviceMemoryReportCreateInfoEXT>(pCreateInfo->pNext) != nullptr;
     InitValidationObjects();
     InitObjectDispatchVectors();
     for (auto& vo : object_dispatch) {
