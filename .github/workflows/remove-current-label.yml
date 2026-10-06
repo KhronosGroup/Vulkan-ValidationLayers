@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 The Khronos Group Inc.
+# SPDX-License-Identifier: Apache-2.0
+---
+name: Remove "current" label on close
+
+on:
+  issues:
+    types: [closed]
+
+permissions:
+  issues: write
+
+jobs:
+  remove-current-label:
+    if: contains(github.event.issue.labels.*.name, 'current')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove label
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} --remove-label current
