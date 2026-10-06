@@ -2666,3 +2666,61 @@ TEST_F(PositivePipeline, ExclusiveScissorCountLargerThanViewportCount) {
     pipe.vp_state_ci_.pNext = &exclusive_scissor_state;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositivePipeline, SecondCreateInfo) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const char* sources[2] = {
+        R"glsl(
+            #version 450
+            layout(set = 0, binding = 0) buffer SSBO { uint x; };
+            void main() {
+                atomicAdd(x, 1);
+                atomicAdd(x, 1);
+            }
+        )glsl",
+        R"glsl(
+            #version 450
+            layout(set = 0, binding = 0) buffer SSBO { uint x; };
+            void main() {
+                atomicAdd(x, 1);
+            }
+        )glsl",
+    };
+
+    std::vector<uint32_t> shaders[2];
+    VkShaderModuleCreateInfo module_create_infos[2];
+    VkPipelineShaderStageCreateInfo stages[2];
+    CreateComputePipelineHelper pipes[2];
+
+    for (uint32_t i = 0; i < 2; i++) {
+        shaders[i] = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, sources[i]);
+
+        module_create_infos[i] = vku::InitStructHelper();
+        module_create_infos[i].pCode = shaders[i].data();
+        module_create_infos[i].codeSize = shaders[i].size() * sizeof(uint32_t);
+
+        stages[i] = vku::InitStructHelper(&module_create_infos[i]);
+        stages[i].stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        stages[i].module = VK_NULL_HANDLE;
+        stages[i].pName = "main";
+
+        pipes[i] = CreateComputePipelineHelper(*this);
+        pipes[i].cp_ci_.stage = stages[i];
+        pipes[i].cp_ci_.layout = pipeline_layout;
+    }
+
+    VkComputePipelineCreateInfo create_infos[2] = {pipes[0].cp_ci_, pipes[1].cp_ci_};
+    VkPipeline pipelines[2];
+    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 2, create_infos, nullptr, pipelines);
+
+    for (uint32_t i = 0; i < 2; i++) {
+        vk::DestroyPipeline(device(), pipelines[i], nullptr);
+    }
+}

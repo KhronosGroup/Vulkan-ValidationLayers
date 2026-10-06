@@ -2524,10 +2524,11 @@ bool DeviceState::PreCallValidateCreateComputePipelines(VkDevice device, VkPipel
                                                         chassis::CreateComputePipelines& chassis_state) const {
     pipeline_states.reserve(count);
     auto pipeline_cache = Get<PipelineCache>(pipelineCache);
+    chassis_state.stateless_data.resize(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         pipeline_states.push_back(CreateComputePipelineState(
-            &pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), &chassis_state.stateless_data));
+            &pCreateInfos[i], pipeline_cache, Get<PipelineLayout>(pCreateInfos[i].layout), &chassis_state.stateless_data[i]));
     }
     return false;
 }
