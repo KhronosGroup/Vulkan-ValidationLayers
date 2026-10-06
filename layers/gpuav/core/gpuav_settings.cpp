@@ -91,7 +91,7 @@ void GpuAVSettings::LoadCDLDump(std::string&& path, std::vector<std::string>& se
 
     bool found_pipeline = false;
     std::regex look_for_pipeline(R"(pipeline:\s*handle:[\s\S]*?\[([^\]]*)\])", std::regex_constants::ECMAScript);
-    for (std::smatch matches; (found_pipeline = std::regex_search(cdl_dump_txt, matches, look_for_pipeline));
+    for (std::smatch matches; (found_pipeline = std::regex_search(cdl_dump_txt, matches, look_for_pipeline)) == true;
          cdl_dump_txt = matches.suffix()) {
         const std::string pipe_name = matches[1];
         if (!pipe_name.empty()) {
