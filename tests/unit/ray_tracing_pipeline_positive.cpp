@@ -871,3 +871,119 @@ TEST_F(PositiveRayTracingPipeline, ShaderModuleIdentifier) {
         vk::DestroyPipeline(device(), pipeline, nullptr);
     }
 }
+
+TEST_F(PositiveRayTracingPipeline, LibraryLayoutPrefixCompatible) {
+    TEST_DESCRIPTION("Library layout uses fewer sets than the final pipeline layout, but the sets it has match");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    OneOffDescriptorSet set0(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
+    OneOffDescriptorSet set1(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
+    const vkt::PipelineLayout library_layout(*m_device, {&set0.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set0.layout_, &set1.layout_});
+
+    const char* ray_generation_shader = R"glsl(
+        #version 460 core
+        #extension GL_KHR_ray_tracing : enable
+        void main() {
+        }
+    )glsl";
+    VkShaderObj rgen_shader(*m_device, ray_generation_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    stage_create_info.module = rgen_shader;
+    stage_create_info.pName = "main";
+
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
+    group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+    group_create_info.generalShader = 0;
+    group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = vku::InitStructHelper();
+    interface_ci.maxPipelineRayHitAttributeSize = 4;
+    interface_ci.maxPipelineRayPayloadSize = 4;
+
+    VkRayTracingPipelineCreateInfoKHR library_pipeline_ci = vku::InitStructHelper();
+    library_pipeline_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    library_pipeline_ci.stageCount = 1;
+    library_pipeline_ci.pStages = &stage_create_info;
+    library_pipeline_ci.groupCount = 1;
+    library_pipeline_ci.pGroups = &group_create_info;
+    library_pipeline_ci.layout = library_layout;
+    library_pipeline_ci.pLibraryInterface = &interface_ci;
+    vkt::Pipeline library(*m_device, library_pipeline_ci);
+
+    VkPipelineLibraryCreateInfoKHR library_ci = vku::InitStructHelper();
+    library_ci.libraryCount = 1;
+    library_ci.pLibraries = &library.handle();
+
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
+    pipeline_ci.pLibraryInfo = &library_ci;
+    pipeline_ci.pLibraryInterface = &interface_ci;
+    pipeline_ci.layout = pipeline_layout;
+
+    vkt::Pipeline pipeline(*m_device, pipeline_ci);
+}
+
+TEST_F(PositiveRayTracingPipeline, LibraryLayoutIdenticallyDefined) {
+    TEST_DESCRIPTION("Library and pipeline use different, but identically defined, layouts");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    OneOffDescriptorSet set_a(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
+    OneOffDescriptorSet set_b(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
+    const vkt::PipelineLayout library_layout(*m_device, {&set_a.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_b.layout_});
+
+    const char* ray_generation_shader = R"glsl(
+        #version 460 core
+        #extension GL_KHR_ray_tracing : enable
+        void main() {
+        }
+    )glsl";
+    VkShaderObj rgen_shader(*m_device, ray_generation_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    stage_create_info.module = rgen_shader;
+    stage_create_info.pName = "main";
+
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
+    group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+    group_create_info.generalShader = 0;
+    group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = vku::InitStructHelper();
+    interface_ci.maxPipelineRayHitAttributeSize = 4;
+    interface_ci.maxPipelineRayPayloadSize = 4;
+
+    VkRayTracingPipelineCreateInfoKHR library_pipeline_ci = vku::InitStructHelper();
+    library_pipeline_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    library_pipeline_ci.stageCount = 1;
+    library_pipeline_ci.pStages = &stage_create_info;
+    library_pipeline_ci.groupCount = 1;
+    library_pipeline_ci.pGroups = &group_create_info;
+    library_pipeline_ci.layout = library_layout;
+    library_pipeline_ci.pLibraryInterface = &interface_ci;
+    vkt::Pipeline library(*m_device, library_pipeline_ci);
+
+    VkPipelineLibraryCreateInfoKHR library_ci = vku::InitStructHelper();
+    library_ci.libraryCount = 1;
+    library_ci.pLibraries = &library.handle();
+
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
+    pipeline_ci.pLibraryInfo = &library_ci;
+    pipeline_ci.pLibraryInterface = &interface_ci;
+    pipeline_ci.layout = pipeline_layout;
+
+    vkt::Pipeline pipeline(*m_device, pipeline_ci);
+}

@@ -171,6 +171,26 @@ bool CoreChecks::VerifyDescriptorSetIsCompatibile(const vvl::DescriptorSet& to_b
 
 bool CoreChecks::VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout& layout_a, const vvl::PipelineLayout& layout_b,
                                                    std::string& error_msg) const {
+    if (layout_a.push_constant_ranges_layout != layout_b.push_constant_ranges_layout) {
+        std::ostringstream ss;
+        ss << "Layouts have incompatible push constant ranges.\n";
+        const auto log_pc_range = [&](const vvl::PipelineLayout& layout) {
+            if (!layout.push_constant_ranges_layout->empty()) {
+                ss << FormatHandle(layout.Handle()) << " has the following push constant ranges:\n";
+                for (const auto [pcr_i, pcr] :
+                     vvl::enumerate(layout.push_constant_ranges_layout->data(), layout.push_constant_ranges_layout->size())) {
+                    ss << "\tVkPushConstantRange[" << pcr_i << "]: " << string_VkPushConstantRange(pcr) << '\n';
+                }
+            } else {
+                ss << FormatHandle(layout.Handle()) << " has no push constant ranges.\n";
+            }
+        };
+        log_pc_range(layout_a);
+        log_pc_range(layout_b);
+        error_msg = ss.str();
+        return false;
+    }
+
     const uint32_t num_sets = static_cast<uint32_t>(std::min(layout_a.set_layouts.list.size(), layout_b.set_layouts.list.size()));
     for (uint32_t i = 0; i < num_sets; ++i) {
         const auto ds_a = layout_a.set_layouts.list[i];
