@@ -50,12 +50,9 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
             skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, create_info_loc);
         }
 
-        // From dumping traces, we found almost all apps only create one pipeline at a time. To greatly simplify the logic, only
-        // check the stateless validation in the pNext chain for the first pipeline. (The core issue is because we parse the SPIR-V
-        // at state tracking time, and we state track pipelines first)
-        if (i == 0 && chassis_state.stateless_data.pipeline_pnext_module) {
+        if (chassis_state.stateless_data[i].pipeline_pnext_module) {
             skip |= stateless_spirv_validator.Validate(
-                *chassis_state.stateless_data.pipeline_pnext_module, chassis_state.stateless_data,
+                *chassis_state.stateless_data[i].pipeline_pnext_module, chassis_state.stateless_data[i],
                 create_info_loc.dot(Field::stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
         }
         if (pipeline->descriptor_heap_embedded_samplers_count > 0) {

@@ -115,7 +115,7 @@ struct CreateComputePipelines {
     bool is_modified = false;
     std::vector<vku::safe_VkComputePipelineCreateInfo> modified_create_infos;
     const VkComputePipelineCreateInfo* pCreateInfos = nullptr;
-    spirv::StatelessData stateless_data;
+    std::vector<spirv::StatelessData> stateless_data;
     // 2D array for [pipelineCount][stageCount]
     // While only 1 compute can be used, need interface to match with graphics/rtx structs
     std::vector<std::vector<ShaderInstrumentationMetadata>> shader_instrumentations_metadata;
