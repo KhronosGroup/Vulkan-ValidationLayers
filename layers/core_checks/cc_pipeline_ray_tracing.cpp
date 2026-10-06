@@ -361,6 +361,22 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline& pipeline
                 }
             }
         }
+
+        if (pipeline_create_info.layout != VK_NULL_HANDLE) {
+            auto pipeline_layout = pipeline.PipelineLayoutState();
+            auto lib_pipeline_layout = lib->PipelineLayoutState();
+            if (pipeline_layout && lib_pipeline_layout) {
+                std::string err_msg;
+                if (!VerifyPipelineLayoutCompatibility(*pipeline_layout, *lib_pipeline_layout, err_msg)) {
+                    skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03592", lib->Handle(), library_loc,
+                                     " has a pipeline layout (%s) incompatible with %s (%s).\n%s",
+                                     FormatHandle(lib_pipeline_layout->VkHandle()).c_str(),
+                                     create_info_loc.dot(Field::layout).Fields().c_str(),
+                                     FormatHandle(pipeline_layout->VkHandle()).c_str(), err_msg.c_str());
+                }
+            }
+        }
+
         if (pipeline.descriptor_heap_mode != lib->descriptor_heap_mode) {
             if (pipeline.descriptor_heap_mode) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-11275", lib->Handle(), library_loc,

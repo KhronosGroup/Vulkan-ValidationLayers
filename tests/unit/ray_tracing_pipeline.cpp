@@ -2556,3 +2556,63 @@ TEST_F(NegativeRayTracingPipeline, AtomicsSecondCreateInfo) {
         }
     }
 }
+
+TEST_F(NegativeRayTracingPipeline, LibraryLayoutPushConstantsNotCompatible) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11426");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, 4};
+    const vkt::PipelineLayout library_layout(*m_device, {});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+
+    const char* ray_generation_shader = R"glsl(
+        #version 460 core
+        #extension GL_KHR_ray_tracing : enable
+        void main() {
+        }
+    )glsl";
+    VkShaderObj rgen_shader(*m_device, ray_generation_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+
+    VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
+    stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    stage_create_info.module = rgen_shader;
+    stage_create_info.pName = "main";
+
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
+    group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+    group_create_info.generalShader = 0;
+    group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = vku::InitStructHelper();
+    interface_ci.maxPipelineRayHitAttributeSize = 4;
+    interface_ci.maxPipelineRayPayloadSize = 4;
+
+    VkRayTracingPipelineCreateInfoKHR library_pipeline_ci = vku::InitStructHelper();
+    library_pipeline_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    library_pipeline_ci.stageCount = 1;
+    library_pipeline_ci.pStages = &stage_create_info;
+    library_pipeline_ci.groupCount = 1;
+    library_pipeline_ci.pGroups = &group_create_info;
+    library_pipeline_ci.layout = library_layout;
+    library_pipeline_ci.pLibraryInterface = &interface_ci;
+    vkt::Pipeline library(*m_device, library_pipeline_ci);
+
+    VkPipelineLibraryCreateInfoKHR library_ci = vku::InitStructHelper();
+    library_ci.libraryCount = 1;
+    library_ci.pLibraries = &library.handle();
+
+    VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
+    pipeline_ci.pLibraryInfo = &library_ci;
+    pipeline_ci.pLibraryInterface = &interface_ci;
+    pipeline_ci.layout = pipeline_layout;
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03592");
+    vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+    m_errorMonitor->VerifyFound();
+}
