@@ -289,6 +289,9 @@ VkPipelineStageFlags2 AddLaterPipelineStages(VkPipelineStageFlags2 stage_mask);
 
 VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask);
 
+// True if there are accesses and all of them are reads
+bool IsReadOnlyAccess(VkAccessFlags2 access_mask);
+
 std::string StringAccessFlags(VkAccessFlags2 mask, bool sync1 = false);
 
 ExecScopes GetExecScopes(const VkDependencyInfo& dep_info);

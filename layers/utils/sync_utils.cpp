@@ -209,6 +209,26 @@ VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask) {
     return result;
 }
 
+bool IsReadOnlyAccess(VkAccessFlags2 access_mask) {
+    static constexpr uint32_t kNumAccessBits = sizeof(VkAccessFlags2) * 8;
+    if (access_mask == VK_ACCESS_2_NONE) {
+        return false;
+    }
+    SyncAccessFlags accesses;
+    for (size_t i = 0; i < kNumAccessBits; i++) {
+        VkAccessFlags2 bit = 1ULL << i;
+        if (access_mask & bit) {
+            auto access_rec = syncAccessMaskByAccessBit().find(bit);
+            // Unknown bits and the SHADER_WRITE meta access are not in the map
+            if (access_rec == syncAccessMaskByAccessBit().end()) {
+                return false;
+            }
+            accesses |= access_rec->second;
+        }
+    }
+    return (accesses & syncAccessWriteMask).none();
+}
+
 std::string StringAccessFlags(VkAccessFlags2 mask, bool sync1) {
     if (sync1) {
         VkAccessFlags sync1_mask = static_cast<VkAccessFlags>(mask & AllVkAccessFlagBits);

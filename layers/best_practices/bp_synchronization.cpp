@@ -20,10 +20,15 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 #include "generated/dispatch_functions.h"
+#include "utils/sync_utils.h"
 
 bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc, const VkDependencyInfo& dep_info,
                                         VkCommandBuffer commandBuffer) const {
     bool skip = false;
+    for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
+        skip |= ValidateReadToReadBarrier(objlist, dep_loc.dot(Field::pMemoryBarriers, i),
+                                          dep_info.pMemoryBarriers[i].srcAccessMask, dep_info.pMemoryBarriers[i].dstAccessMask);
+    }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
         skip |= ValidateImageMemoryBarrier(
             dep_loc.dot(Field::pImageMemoryBarriers, i), commandBuffer, dep_info.pImageMemoryBarriers[i].image,
@@ -35,6 +40,7 @@ bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Loca
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; ++i) {
         skip |= ValidateBufferMemoryBarrier(
             dep_loc.dot(Field::pBufferMemoryBarriers, i), commandBuffer, dep_info.pBufferMemoryBarriers[i].buffer,
+            dep_info.pBufferMemoryBarriers[i].srcAccessMask, dep_info.pBufferMemoryBarriers[i].dstAccessMask,
             dep_info.pBufferMemoryBarriers[i].srcQueueFamilyIndex, dep_info.pBufferMemoryBarriers[i].dstQueueFamilyIndex);
     }
 
@@ -242,6 +248,20 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
     return skip;
 }
 
+bool BestPractices::ValidateReadToReadBarrier(const LogObjectList& objlist, const Location& loc, VkAccessFlags2 srcAccessMask,
+                                              VkAccessFlags2 dstAccessMask) const {
+    bool skip = false;
+    if ((VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) && sync_utils::IsReadOnlyAccess(srcAccessMask) &&
+        sync_utils::IsReadOnlyAccess(dstAccessMask)) {
+        skip |= LogPerformanceWarning("BestPractices-PipelineBarrier-readToReadBarrier", objlist, loc,
+                                      "%s Don't issue read-to-read barriers. srcAccessMask (%s) and dstAccessMask (%s) only have "
+                                      "read accesses, and reads don't need to be synchronized with each other.",
+                                      VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str(),
+                                      string_VkAccessFlags2(srcAccessMask).c_str(), string_VkAccessFlags2(dstAccessMask).c_str());
+    }
+    return skip;
+}
+
 bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkCommandBuffer commandBuffer, VkImage image,
                                                VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccessMask,
                                                VkAccessFlags2 dstAccessMask, VkImageAspectFlags aspectMask,
@@ -253,6 +273,11 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkCommandBuf
                            "VkImageMemoryBarrier is being submitted with oldLayout VK_IMAGE_LAYOUT_UNDEFINED and the contents "
                            "may be discarded, but the newLayout is %s, which is read only.",
                            string_VkImageLayout(newLayout));
+    }
+
+    // Layout transitions and queue family ownership transfers are needed even with only reads
+    if (oldLayout == newLayout && srcQueueFamilyIndex == dstQueueFamilyIndex) {
+        skip |= ValidateReadToReadBarrier(LogObjectList(commandBuffer, image), loc, srcAccessMask, dstAccessMask);
     }
 
     if (device_state->special_supported.has_maintenance9 && srcQueueFamilyIndex != dstQueueFamilyIndex &&
@@ -301,8 +326,14 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkCommandBuf
 }
 
 bool BestPractices::ValidateBufferMemoryBarrier(const Location& loc, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
                                                 uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) const {
     bool skip = false;
+
+    // Queue family ownership transfers are needed even with only reads
+    if (srcQueueFamilyIndex == dstQueueFamilyIndex) {
+        skip |= ValidateReadToReadBarrier(LogObjectList(commandBuffer, buffer), loc, srcAccessMask, dstAccessMask);
+    }
 
     if (device_state->special_supported.has_maintenance9 && srcQueueFamilyIndex != dstQueueFamilyIndex &&
         srcQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && srcQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL &&
@@ -325,6 +356,10 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
     const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
     bool skip = false;
 
+    for (uint32_t i = 0; i < memoryBarrierCount; ++i) {
+        skip |= ValidateReadToReadBarrier(commandBuffer, error_obj.location.dot(Field::pMemoryBarriers, i),
+                                          pMemoryBarriers[i].srcAccessMask, pMemoryBarriers[i].dstAccessMask);
+    }
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
         skip |= ValidateImageMemoryBarrier(
             error_obj.location.dot(Field::pImageMemoryBarriers, i), commandBuffer, pImageMemoryBarriers[i].image,
@@ -334,7 +369,8 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
     }
     for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
         skip |= ValidateBufferMemoryBarrier(error_obj.location.dot(Field::pBufferMemoryBarriers, i), commandBuffer,
-                                            pBufferMemoryBarriers[i].buffer, pBufferMemoryBarriers[i].srcQueueFamilyIndex,
+                                            pBufferMemoryBarriers[i].buffer, pBufferMemoryBarriers[i].srcAccessMask,
+                                            pBufferMemoryBarriers[i].dstAccessMask, pBufferMemoryBarriers[i].srcQueueFamilyIndex,
                                             pBufferMemoryBarriers[i].dstQueueFamilyIndex);
     }
 
@@ -350,30 +386,11 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
                                           VendorSpecificTag(kBPVendorAMD), num, total_barriers, kMaxRecommendedBarriersSizeAMD);
         }
     }
-    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        static constexpr std::array<VkImageLayout, 3> read_layouts = {
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        };
-
+    // With unifiedImageLayouts, VK_IMAGE_LAYOUT_GENERAL has no performance cost
+    if (VendorCheckEnabled(kBPVendorAMD) && !enabled_features.unifiedImageLayouts) {
         for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
-            // read to read barriers
-            const auto& image_barrier = pImageMemoryBarriers[i];
-            const bool old_is_read_layout =
-                std::find(read_layouts.begin(), read_layouts.end(), image_barrier.oldLayout) != read_layouts.end();
-            const bool new_is_read_layout =
-                std::find(read_layouts.begin(), read_layouts.end(), image_barrier.newLayout) != read_layouts.end();
-
-            if (old_is_read_layout && new_is_read_layout) {
-                skip |= LogPerformanceWarning("BestPractices-PipelineBarrier-readToReadBarrier", commandBuffer, error_obj.location,
-                                              "%s Don't issue read-to-read barriers. "
-                                              "Get the resource in the right state the first time you use it.",
-                                              VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str());
-            }
-
             // general with no storage
-            if (VendorCheckEnabled(kBPVendorAMD) && image_barrier.newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+            if (pImageMemoryBarriers[i].newLayout == VK_IMAGE_LAYOUT_GENERAL) {
                 auto image_state = Get<vvl::Image>(pImageMemoryBarriers[i].image);
                 if (image_state && !(image_state->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                     const LogObjectList objlist(commandBuffer, pImageMemoryBarriers[i].image);

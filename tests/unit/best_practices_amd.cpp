@@ -366,12 +366,8 @@ TEST_F(NegativeBestPracticesAMD, Barriers) {
     vkt::Image image(*m_device, image_ci);
 
     m_command_buffer.Begin();
-    // check for read-to-read barrier
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-readToReadBarrier");
     image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-    m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryBarrier-oldLayout-01197");
 
@@ -583,6 +579,64 @@ TEST_F(NegativeBestPracticesAMD, ComputeWorkgroupSizeMaintenance5) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-LocalWorkgroup-Multiple64");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeBestPracticesAMD, ReadToReadBarrier) {
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkMemoryBarrier memory_barrier = vku::InitStructHelper();
+    memory_barrier.srcAccessMask = VK_ACCESS_UNIFORM_READ_BIT;
+    memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
+    buffer_barrier.srcAccessMask = VK_ACCESS_UNIFORM_READ_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    buffer_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    buffer_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    buffer_barrier.buffer = buffer;
+    buffer_barrier.size = VK_WHOLE_SIZE;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-readToReadBarrier");
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1,
+                           &memory_barrier, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-readToReadBarrier");
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
+                           nullptr, 1, &buffer_barrier, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeBestPracticesAMD, ReadToReadBarrier2) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-readToReadBarrier");
+    m_command_buffer.Barrier(barrier);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeBestPracticesAMD, SortAndBind) {
