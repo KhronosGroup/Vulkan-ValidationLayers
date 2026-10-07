@@ -114,6 +114,9 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
         out.append('// mask of all the VK_PIPELINE_STAGE_*_SHADER_BIT stages\n')
         out.append(f'const VkPipelineStageFlagBits2 AllVkPipelineShaderStageBits2 = {"|".join([flag.name for flag in self.vk.bitmasks["VkPipelineStageFlagBits2"].flags if "_SHADER_BIT" in flag.name])};\n')
         out.append('\n')
+        out.append('// mask of all the VK_ACCESS_2_*_READ_* accesses\n')
+        out.append(f'const VkAccessFlags2 AllVkAccessReadBits2 = {"|".join([flag.name for flag in self.vk.bitmasks["VkAccessFlagBits2"].flags if "_READ_" in flag.name])};\n')
+        out.append('\n')
 
         # Special edge cases
         out.append('// VK_SHADER_STAGE_ALL is special bit that is the collection of all bits.\n')

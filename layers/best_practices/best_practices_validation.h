@@ -253,7 +253,9 @@ class BestPractices : public vvl::DeviceProxy {
                                     VkImageAspectFlags aspectMask, uint32_t srcQueueFamilyIndex,
                                     uint32_t dstQueueFamilyIndex) const;
     bool ValidateBufferMemoryBarrier(const Location& loc, VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                     uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) const;
+                                     VkAccessFlags2 srcAccessMask, uint32_t srcQueueFamilyIndex,
+                                     uint32_t dstQueueFamilyIndex) const;
+    bool ValidateReadOnlySrcAccess(const LogObjectList& objlist, const Location& loc, VkAccessFlags2 srcAccessMask) const;
     bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                            VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                            uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,

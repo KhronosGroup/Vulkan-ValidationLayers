@@ -664,7 +664,7 @@ TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirection) {
     attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
     VkImageMemoryBarrier discard_barrier = vku::InitStructHelper();
-    discard_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.srcAccessMask = VK_ACCESS_NONE;
     discard_barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     discard_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -673,7 +673,7 @@ TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirection) {
                                         VK_REMAINING_ARRAY_LAYERS};
 
     VkImageMemoryBarrier2 discard_barrier2 = vku::InitStructHelper();
-    discard_barrier2.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+    discard_barrier2.srcAccessMask = VK_ACCESS_2_NONE;
     discard_barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     discard_barrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -829,7 +829,7 @@ TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirectionDepth) {
     begin_rendering_info.pStencilAttachment = &depth_attachment;
 
     VkImageMemoryBarrier discard_barrier = vku::InitStructHelper();
-    discard_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.srcAccessMask = VK_ACCESS_NONE;
     discard_barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     discard_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -838,7 +838,7 @@ TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirectionDepth) {
                                         VK_REMAINING_ARRAY_LAYERS};
 
     VkImageMemoryBarrier2 discard_barrier2 = vku::InitStructHelper();
-    discard_barrier2.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+    discard_barrier2.srcAccessMask = VK_ACCESS_2_NONE;
     discard_barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     discard_barrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1013,7 +1013,7 @@ TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirectionSubresource) {
     begin_rendering_info.pStencilAttachment = &depth_attachment;
 
     VkImageMemoryBarrier discard_barrier = vku::InitStructHelper();
-    discard_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.srcAccessMask = VK_ACCESS_NONE;
     discard_barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     discard_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1022,7 +1022,7 @@ TEST_F(NegativeBestPracticesNV, BindPipelineZcullDirectionSubresource) {
                                         VK_REMAINING_ARRAY_LAYERS};
 
     VkImageMemoryBarrier2 discard_barrier2 = vku::InitStructHelper();
-    discard_barrier2.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+    discard_barrier2.srcAccessMask = VK_ACCESS_2_NONE;
     discard_barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
     discard_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     discard_barrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
