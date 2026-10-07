@@ -668,6 +668,9 @@ foreach(layer_info, layers) {
   name = layer_info[0]
 
   target(library_type, "VkLayer_$name") {
+    # This prevents headers in sources from being implicitly marked as public
+    # headers.
+    public = []
     defines = []
     ldflags = []
     if (is_fuchsia) {
@@ -688,7 +691,9 @@ foreach(layer_info, layers) {
     public_configs = [ ":vulkan_layer_config" ]
     deps = [
       ":vulkan_layer_utils",
+      "$vulkan_headers_dir:vulkan_headers",
       "$vulkan_utility_libraries_dir:vulkan_layer_settings",
+      "${vvl_spirv_tools_dir}:spvtools_headers",
     ]
     if (layer_info[2] != "") {
       deps += layer_info[2]
