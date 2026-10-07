@@ -17,6 +17,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include "chassis/chassis_modification_state.h"
+#include "core_checks/cc_vuid_maps.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/debug_printf/debug_printf.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
@@ -945,13 +946,14 @@ bool Validator::PreCallValidateCmdPushDataEXT(VkCommandBuffer commandBuffer, con
 
 // Validates the buffer is allowed to be protected
 bool Validator::ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                                        const Location& buffer_loc, const char* vuid, const char* more_message) const {
+                                        const Location& buffer_loc, const char* more_message) const {
     bool skip = false;
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (buffer_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
-        skip |= LogError(vuid, objlist, buffer_loc, "(%s) is a protected buffer, but command buffer (%s) is unprotected.%s",
+        skip |= LogError(vvl::GetProtectedVUID(buffer_loc), objlist, buffer_loc,
+                         "(%s) is a protected buffer, but command buffer (%s) is unprotected.%s",
                          FormatHandle(buffer_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
     }
     return skip;
@@ -959,13 +961,14 @@ bool Validator::ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, cons
 
 // Validates the buffer is allowed to be unprotected
 bool Validator::ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                                          const Location& buffer_loc, const char* vuid, const char* more_message) const {
+                                          const Location& buffer_loc, const char* more_message) const {
     bool skip = false;
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (buffer_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
-        skip |= LogError(vuid, objlist, buffer_loc, "(%s) is an unprotected buffer, but command buffer (%s) is protected.%s",
+        skip |= LogError(vvl::GetUnprotectedVUID(buffer_loc), objlist, buffer_loc,
+                         "(%s) is an unprotected buffer, but command buffer (%s) is protected.%s",
                          FormatHandle(buffer_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
     }
     return skip;
@@ -973,28 +976,30 @@ bool Validator::ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, co
 
 // Validates the image is allowed to be protected
 bool Validator::ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& loc,
-                                       const char* vuid, const char* more_message) const {
+                                       const char* more_message) const {
     bool skip = false;
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (image_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-        skip |= LogError(vuid, objlist, loc, "(%s) is a protected image, but command buffer (%s) is unprotected.%s",
-                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+        skip |= LogError(vvl::GetProtectedVUID(loc), objlist, loc,
+                         "(%s) is a protected image, but command buffer (%s) is unprotected.%s", FormatHandle(image_state).c_str(),
+                         FormatHandle(cb_state).c_str(), more_message);
     }
     return skip;
 }
 
 // Validates the image is allowed to be unprotected
 bool Validator::ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& loc,
-                                         const char* vuid, const char* more_message) const {
+                                         const char* more_message) const {
     bool skip = false;
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (image_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-        skip |= LogError(vuid, objlist, loc, "(%s) is an unprotected image, but command buffer (%s) is protected.%s",
-                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+        skip |= LogError(vvl::GetUnprotectedVUID(loc), objlist, loc,
+                         "(%s) is an unprotected image, but command buffer (%s) is protected.%s", FormatHandle(image_state).c_str(),
+                         FormatHandle(cb_state).c_str(), more_message);
     }
     return skip;
 }

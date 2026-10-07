@@ -4546,13 +4546,10 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer& cb_st
                 // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
                 // Some Functions could not be protected. See VUID 02711.
 
-                std::string temp_vuid = CreateActionVuid(loc.function, vvl::ActionVUID::CB_UNPROTECTED_02707);
-                skip |= ValidateProtectedImage(cb_state, *view_state->image_state, loc, temp_vuid.c_str(), image_desc.c_str());
+                skip |= ValidateProtectedImage(cb_state, *view_state->image_state, loc, image_desc.c_str());
                 // Indirect commands already have 02711 which will be triggered already
                 if ((subpass.usage & ~VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0 && !IsCommandIndirect(loc.function)) {
-                    temp_vuid = CreateActionVuid(loc.function, vvl::ActionVUID::CB_PROTECTED_02712);
-                    skip |=
-                        ValidateUnprotectedImage(cb_state, *view_state->image_state, loc, temp_vuid.c_str(), image_desc.c_str());
+                    skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, loc, image_desc.c_str());
                 }
             }
         }

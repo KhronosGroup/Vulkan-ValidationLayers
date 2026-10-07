@@ -1031,8 +1031,8 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT, image_loc,
                                                 "VUID-vkCmdClearColorImage-image-01993");
     }
-    skip |= ValidateProtectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearColorImage-commandBuffer-01805");
-    skip |= ValidateUnprotectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearColorImage-commandBuffer-01806");
+    skip |= ValidateProtectedImage(cb_state, image_state, image_loc);
+    skip |= ValidateUnprotectedImage(cb_state, image_state, image_loc);
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
         skip |= ValidateCmdClearSubresourceRange(image_state, pRanges[i], objlist, range_loc);
@@ -1111,8 +1111,8 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                                                 "VUID-vkCmdClearDepthStencilImage-image-01994");
     }
     skip |= ValidateClearDepthStencilValue(commandBuffer, *pDepthStencil, error_obj.location.dot(Field::pDepthStencil));
-    skip |= ValidateProtectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-commandBuffer-01807");
-    skip |= ValidateUnprotectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-commandBuffer-01808");
+    skip |= ValidateProtectedImage(cb_state, image_state, image_loc);
+    skip |= ValidateUnprotectedImage(cb_state, image_state, image_loc);
 
     for (uint32_t i = 0; i < rangeCount; ++i) {
         const Location range_loc = error_obj.location.dot(Field::pRanges, i);
@@ -1401,10 +1401,8 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             if (!image_view || !image_view->image_state) {
                 continue;
             }
-            skip |= ValidateProtectedImage(cb_state, *image_view->image_state, attachment_loc,
-                                           "VUID-vkCmdClearAttachments-commandBuffer-02504");
-            skip |= ValidateUnprotectedImage(cb_state, *image_view->image_state, attachment_loc,
-                                             "VUID-vkCmdClearAttachments-commandBuffer-02505");
+            skip |= ValidateProtectedImage(cb_state, *image_view->image_state, attachment_loc);
+            skip |= ValidateUnprotectedImage(cb_state, *image_view->image_state, attachment_loc);
             const VkFormat image_view_format = image_view->create_info.format;
             if (vkuFormatIs64bit(image_view_format) && vkuFormatComponentCount(image_view_format) > 2) {
                 const LogObjectList objlist(commandBuffer, image_view->Handle());
@@ -3036,28 +3034,30 @@ void CoreChecks::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_
 
 // Validates the image is allowed to be protected
 bool CoreChecks::ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& loc,
-                                        const char* vuid, const char* more_message) const {
+                                        const char* more_message) const {
     bool skip = false;
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (image_state.unprotected == false)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-        skip |= LogError(vuid, objlist, loc, "(%s) is a protected image, but command buffer (%s) is unprotected.%s",
-                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+        skip |= LogError(vvl::GetProtectedVUID(loc), objlist, loc,
+                         "(%s) is a protected image, but command buffer (%s) is unprotected.%s", FormatHandle(image_state).c_str(),
+                         FormatHandle(cb_state).c_str(), more_message);
     }
     return skip;
 }
 
 // Validates the image is allowed to be unprotected
 bool CoreChecks::ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& loc,
-                                          const char* vuid, const char* more_message) const {
+                                          const char* more_message) const {
     bool skip = false;
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (image_state.unprotected == true)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-        skip |= LogError(vuid, objlist, loc, "(%s) is an unprotected image, but command buffer (%s) is protected.%s",
-                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+        skip |= LogError(vvl::GetUnprotectedVUID(loc), objlist, loc,
+                         "(%s) is an unprotected image, but command buffer (%s) is protected.%s", FormatHandle(image_state).c_str(),
+                         FormatHandle(cb_state).c_str(), more_message);
     }
     return skip;
 }

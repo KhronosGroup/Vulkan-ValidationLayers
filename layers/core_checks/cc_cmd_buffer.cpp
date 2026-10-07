@@ -742,8 +742,8 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     skip |= ValidateBufferUsageFlags(objlist, *dst_buffer_state, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdUpdateBuffer-dstBuffer-00034", buffer_loc);
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    skip |= ValidateProtectedBuffer(*cb_state, *dst_buffer_state, buffer_loc, "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
-    skip |= ValidateUnprotectedBuffer(*cb_state, *dst_buffer_state, buffer_loc, "VUID-vkCmdUpdateBuffer-commandBuffer-01814");
+    skip |= ValidateProtectedBuffer(*cb_state, *dst_buffer_state, buffer_loc);
+    skip |= ValidateUnprotectedBuffer(*cb_state, *dst_buffer_state, buffer_loc);
     if (dstOffset >= dst_buffer_state->GetSize()) {
         skip |= LogError("VUID-vkCmdUpdateBuffer-dstOffset-00032", objlist, error_obj.location.dot(Field::dstOffset),
                          "(%" PRIu64 ") is not less than the size (%" PRIu64 ").", dstOffset, dst_buffer_state->GetSize());

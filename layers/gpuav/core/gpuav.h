@@ -250,13 +250,13 @@ class Validator : public GpuShaderInstrumentor {
                                        const ErrorObject& error_obj) const override;
 
     bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
-                                const char* vuid, const char* more_message = "") const final;
+                                const char* more_message = "") const final;
     bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
-                                  const char* vuid, const char* more_message = "") const final;
+                                  const char* more_message = "") const final;
     bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
-                                 const char* vuid, const char* more_message = "") const final;
+                                 const char* more_message = "") const final;
     bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
-                                   const char* vuid, const char* more_message = "") const final;
+                                   const char* more_message = "") const final;
     bool ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
                                  const char* more_message = "") const final;
     bool ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
