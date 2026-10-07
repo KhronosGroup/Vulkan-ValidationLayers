@@ -97,13 +97,13 @@ class HazardDetector {
     HazardDetector(SyncAccessIndex access_index, const AccessContext& access_context)
         : access_info_(GetAccessInfo(access_index)), access_context_(access_context) {}
 
-    HazardResult Detect(const AccessMap::const_iterator& pos) const {
-        return DoDetect(access_context_, pos->second,
+    HazardResult Detect(const AccessRange&, const AccessState& state) const {
+        return DoDetect(access_context_, state,
                         [this](const AccessState& access_state) { return access_state.DetectHazard(access_info_); });
     }
 
-    HazardResult DetectAsync(const AccessMap::const_iterator& pos, ResourceUsageTag start_tag, QueueId queue_id) const {
-        return DoDetect(access_context_, pos->second, [this, start_tag, queue_id](const AccessState& access_state) {
+    HazardResult DetectAsync(const AccessState& state, ResourceUsageTag start_tag, QueueId queue_id) const {
+        return DoDetect(access_context_, state, [this, start_tag, queue_id](const AccessState& access_state) {
             return access_state.DetectAsyncHazard(access_info_, start_tag, queue_id);
         });
     }
@@ -123,16 +123,16 @@ class HazardDetectorAttachment {
           queue_id_(queue_id),
           detect_load_op_after_store_op_hazards_(detect_load_op_after_store_op_hazards) {}
 
-    HazardResult Detect(const AccessMap::const_iterator& pos) const {
+    HazardResult Detect(const AccessRange&, const AccessState& state) const {
         const OrderingBarrier& ordering = GetOrderingRules(attachment_access_.ordering);
-        return DoDetect(access_context_, pos->second, [this, &ordering](const AccessState& access_state) {
+        return DoDetect(access_context_, state, [this, &ordering](const AccessState& access_state) {
             return access_state.DetectHazard(access_info_, ordering, attachment_access_, 0, queue_id_,
                                              detect_load_op_after_store_op_hazards_);
         });
     }
 
-    HazardResult DetectAsync(const AccessMap::const_iterator& pos, ResourceUsageTag start_tag, QueueId queue_id) const {
-        return DoDetect(access_context_, pos->second, [this, start_tag, queue_id](const AccessState& access_state) {
+    HazardResult DetectAsync(const AccessState& state, ResourceUsageTag start_tag, QueueId queue_id) const {
+        return DoDetect(access_context_, state, [this, start_tag, queue_id](const AccessState& access_state) {
             return access_state.DetectAsyncHazard(access_info_, start_tag, queue_id);
         });
     }
@@ -148,13 +148,12 @@ class HazardDetectorAttachment {
 struct HazardDetectorMarker {
     HazardDetectorMarker(const AccessContext& access_context) : access_context(access_context) {}
 
-    HazardResult Detect(const AccessMap::const_iterator& pos) const {
-        return DoDetect(access_context, pos->second,
-                        [](const AccessState& access_state) { return access_state.DetectMarkerHazard(); });
+    HazardResult Detect(const AccessRange&, const AccessState& state) const {
+        return DoDetect(access_context, state, [](const AccessState& access_state) { return access_state.DetectMarkerHazard(); });
     }
 
-    HazardResult DetectAsync(const AccessMap::const_iterator& pos, ResourceUsageTag start_tag, QueueId queue_id) const {
-        return DoDetect(access_context, pos->second, [start_tag, queue_id](const AccessState& access_state) {
+    HazardResult DetectAsync(const AccessState& state, ResourceUsageTag start_tag, QueueId queue_id) const {
+        return DoDetect(access_context, state, [start_tag, queue_id](const AccessState& access_state) {
             return access_state.DetectAsyncHazard(GetAccessInfo(SYNC_COPY_TRANSFER_WRITE), start_tag, queue_id);
         });
     }
@@ -172,14 +171,14 @@ class BarrierHazardDetector {
           src_access_scope_(src_access_scope),
           queue_id_(queue_id) {}
 
-    HazardResult Detect(const AccessMap::const_iterator& pos) const {
-        return DoDetect(access_context_, pos->second, [this](const AccessState& access_state) {
+    HazardResult Detect(const AccessRange&, const AccessState& state) const {
+        return DoDetect(access_context_, state, [this](const AccessState& access_state) {
             return access_state.DetectBarrierHazard(access_info_, queue_id_, src_exec_scope_, src_access_scope_);
         });
     }
 
-    HazardResult DetectAsync(const AccessMap::const_iterator& pos, ResourceUsageTag start_tag, QueueId queue_id) const {
-        return DoDetect(access_context_, pos->second, [this, start_tag, queue_id](const AccessState& access_state) {
+    HazardResult DetectAsync(const AccessState& state, ResourceUsageTag start_tag, QueueId queue_id) const {
+        return DoDetect(access_context_, state, [this, start_tag, queue_id](const AccessState& access_state) {
             return access_state.DetectAsyncHazard(access_info_, start_tag, queue_id);
         });
     }
@@ -205,11 +204,8 @@ class EventBarrierHazardDetector {
           scope_pos_(event_scope.begin()),
           scope_end_(event_scope.end()) {}
 
-    HazardResult Detect(const AccessMap::const_iterator& pos) {
-        // Need to piece together coverage of pos->first range:
-        // Copy the range as we'll be chopping it up as needed
-        AccessRange range = pos->first;
-        const AccessState& access = pos->second;
+    HazardResult Detect(AccessRange range, const AccessState& access) {
+        // Piece together event-scope coverage of the supplied range
         HazardResult hazard;
 
         bool in_scope = AdvanceScope(range);
@@ -238,9 +234,9 @@ class EventBarrierHazardDetector {
         return hazard;
     }
 
-    HazardResult DetectAsync(const AccessMap::const_iterator& pos, ResourceUsageTag start_tag, QueueId queue_id) const {
+    HazardResult DetectAsync(const AccessState& state, ResourceUsageTag start_tag, QueueId queue_id) const {
         // Async barrier hazard detection can use the same path as the usage index is not IsRead, but is IsWrite
-        return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
+        return state.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
 
   private:
@@ -488,7 +484,7 @@ HazardResult AccessContext::DetectAsyncHazard(const Detector& detector, const Ac
     HazardResult hazard;
     auto pos = access_state_map_.LowerBound(range.begin);
     if (pos != access_state_map_.end() && pos->first.begin < range.end) {
-        hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
+        hazard = detector.DetectAsync(pos->second, async_tag, async_queue_id);
     }
     return hazard;
 }
@@ -502,7 +498,7 @@ HazardResult AccessContext::DetectAsyncHazard(const Detector& detector, ImageRan
     auto do_async_hazard_check = [&detector, async_tag, async_queue_id, &hazard](const ImageRangeGen::RangeType& range,
                                                                                  const ConstIterator& end, ConstIterator& pos) {
         while (pos != end && pos->first.begin < range.end) {
-            hazard = detector.DetectAsync(pos, async_tag, async_queue_id);
+            hazard = detector.DetectAsync(pos->second, async_tag, async_queue_id);
             if (hazard.IsHazard()) return true;
             ++pos;
         }
@@ -533,7 +529,7 @@ HazardResult AccessContext::DetectHazardOneRange(Detector& detector, bool detect
             gap.begin = pos->first.end;
         }
 
-        hazard = detector.Detect(pos);
+        hazard = detector.Detect(pos->first, pos->second);
         if (hazard.IsHazard()) return hazard;
         ++pos;
     }
@@ -559,7 +555,7 @@ HazardResult AccessContext::DetectPreviousHazard(Detector& detector, const Acces
 
     AccessMap& descent_map = descent_context.access_state_map_;
     for (auto prev = descent_map.begin(); prev != descent_map.end(); ++prev) {
-        HazardResult hazard = detector.Detect(prev);
+        HazardResult hazard = detector.Detect(prev->first, prev->second);
         if (hazard.IsHazard()) {
             return hazard;
         }
