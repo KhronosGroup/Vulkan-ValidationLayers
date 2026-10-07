@@ -963,11 +963,9 @@ void Device::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPi
                                                      const VkAllocationCallbacks* pAllocator,
                                                      VkPipelineBinaryHandlesInfoKHR* pBinaries, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
-    if (record_obj.result == VK_SUCCESS) {
+    if ((record_obj.result == VK_SUCCESS || record_obj.result == VK_INCOMPLETE) && pBinaries->pPipelineBinaries) {
         for (uint32_t i = 0; i < pBinaries->pipelineBinaryCount; ++i) {
-            if (pBinaries->pPipelineBinaries != nullptr) {
-                CreateObject(pBinaries->pPipelineBinaries[i]);
-            }
+            CreateObject(pBinaries->pPipelineBinaries[i]);
         }
     }
 }
