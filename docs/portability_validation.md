@@ -15,7 +15,7 @@ Either
 
 ## Running the portability tests
 
-All tests can be tested with `--gtest_filter=VkPortability*`
+All tests can be tested with `--gtest_filter=*PortabilitySubset*`
 
 The [./tests README](../tests/README.md) explains how to use the `VK_LAYER_KHRONOS_profiles` to test the Validation Layers
 

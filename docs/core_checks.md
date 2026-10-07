@@ -41,8 +41,8 @@ for work. Specifically the layer validates that:
 - checks texture formats and render target formats.
 
 Errors will be printed if validation checks are not correctly met and warnings if improper (but not illegal) use of
-memory is detected.  Validation also dumps all memory references and bindings for each operation.
+memory is detected.
 
 ## Swapchain validation functionality
 
-This area of functionality validates the use of the WSI (Window System Integration) "swapchain" extensions (e.g., `VK_EXT_KHR_swapchain` and `VK_EXT_KHR_device_swapchain`).
+This area of functionality validates the use of the WSI (Window System Integration) extensions (e.g., `VK_KHR_surface`, `VK_KHR_swapchain`, and `VK_KHR_display`).

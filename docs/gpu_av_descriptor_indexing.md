@@ -238,9 +238,9 @@ The descriptor checks in GPU-AV are done in 3 parts
 
 ### Descriptor Indexing OOB
 
-To prevent crashing, no matter what, we **must** wrap all indexes into a descriptor with a `if/else`. Because non-bindless doesn't have to worry about descriptors being  uninitialized and destroyed it is a much simpler check.
+To prevent crashing, we **must** wrap all indexes into a descriptor with a `if/else` (this is only done when `Safe Mode` is turned on, otherwise the check is just called before the access). Because non-bindless doesn't have to worry about descriptors being  uninitialized and destroyed it is a much simpler check.
 
-The GLSL (`descriptor_indexing_oob_bindless.comp`/`descriptor_indexing_oob_non_bindless.comp`) will look like the following when applied:
+The GLSL functions (both found in `descriptor_indexing_oob.comp`) will look like the following when applied:
 
 ```glsl
 if (inst_descriptor_indexing_oob_bindless(index)) {

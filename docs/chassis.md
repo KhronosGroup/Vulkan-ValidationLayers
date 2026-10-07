@@ -9,15 +9,16 @@ Eventually this will be use to allow different validation objects (such as GPU-A
 
 ## Dispatch objects
 
-The 'top-level' of the chassis is implemented by `vvl::dispatch::Instance` and `vvl::dispatch::Device`. These are containers for all of the active validation objects. For each Vulkan command `vkFoo()` the following sequence will be run:
+The 'top-level' of the chassis is implemented by `vvl::DispatchInstance` and `vvl::DispatchDevice`. These are containers for all of the active validation objects. For each Vulkan command `vkFoo()` the following sequence will be run:
 
 ```
 for all validation objects:
     skip |= PreCallValidateFoo()
-// skip can set by the VK_EXT_debug_utils message callback, which allows
-// applications to avoid issuing an invalid vulkan command to the ICD.
-if (skip):
-    return
+    // skip can set by the VK_EXT_debug_utils message callback, which allows
+    // applications to avoid issuing an invalid vulkan command to the ICD.
+    // The remaining validation objects are not called either.
+    if (skip):
+        return
 for all validation objects:
 	PreCallRecordFoo()
 // Call into the ICD, wrapping and unwrapping Vulkan handles (if enabled)
@@ -40,7 +41,7 @@ Validation has an option to replace ICD handles with generated handles which are
 
 ## Base validation objects
 
-`vvl::base::Device` and `vvl::base::Instance` provide the minimal interface for implementing a validation object. Stateless, object tracking and thread safety validation inherit directly from these classes, other types of validation use the state tracker, described below. These classes define the `PreCallValidate`, `PreCallRecord` and `PostCallRecord` methods used by the dispatch objects for all Vulkan commands.
+`vvl::BaseDevice` and `vvl::BaseInstance` provide the minimal interface for implementing a validation object. Stateless, legacy detection, object tracking and thread safety validation inherit directly from these classes, other types of validation use the state tracker, described below. These classes define the `PreCallValidate`, `PreCallRecord` and `PostCallRecord` methods used by the dispatch objects for all Vulkan commands.
 
 ## State tracking
 
@@ -60,7 +61,7 @@ Some validations objects require additional state to be tracked for various stat
 
 `VkCommandBuffer` objects is where most of the state tracking occurs. Currently the `vvl::CommandBuffer` object is easily 3 or 4x larger than the next state object. From profiling, a lot of wall clock time is spend in `vkCmd*` calls not because they are slow, but because they will get called millions of times in real world applications.
 
-We adopt a slightly different strategy with them, instead of using the chassis `PreCallRecord`/`PostCallRecord`, for as many spots as possible we want to funnel things through the `vvl::CommanBuffer` state object itself for recording.
+We adopt a slightly different strategy with them, instead of using the chassis `PreCallRecord`/`PostCallRecord`, for as many spots as possible we want to funnel things through the `vvl::CommandBuffer` state object itself for recording.
 
 What was once
 
@@ -99,7 +100,7 @@ void CommandBuffer::RecordXX() {
     }
 }
 
-// cc_state_tracker.cpp, gpuav_state_tracker.cpp, bp_state.cpp, etc
+// cc_state_tracker.cpp, gpuav_state_trackers.cpp, bp_state.cpp, etc
 void CommandBufferSubState::RecordXX() {
     base.state_c = 3;
     state_d = 4;

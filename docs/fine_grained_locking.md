@@ -8,7 +8,9 @@
 
 Fine grained locking is a performance improvement for multithreaded workloads. It allows Vulkan calls from different threads to be validated in parallel, instead of being serialized by a global lock. Waiting on this lock causes performance problems for multi-threaded applications, and most Vulkan games are heavily multi-threaded.  This feature has been tested with 15+ released games and improves performance in almost all of them, and many improve by about 150%.
 
-This document describes the design of the optimization and is mainly targeted at ValidationLayer developers.  Information on how to enable and disable the optimization can be found [here](fine_grained_locking_usage.md).
+This document describes the design of the optimization and is mainly targeted at ValidationLayer developers.  Information on how it is used can be found [here](fine_grained_locking_usage.md).
+
+> **Note:** This document was written alongside the original implementation (see the linked PRs). The overall design still applies, but the code has been refactored since then: the state tracker is now a single object shared by all validation objects (see [chassis.md](./chassis.md)), and many of the member variables listed in the per-state-object sections below have been renamed or redesigned. When in doubt, the source code is the authority.
 
 # Motivation
 
@@ -26,36 +28,36 @@ However, when the Vulkan ValidationLayer is enabled with the standard configurat
 
  A great discussion of the id Tech 7 engine can be found [here](https://advances.realtimerendering.com/s2020/RenderingDoomEternal.pdf).
 
-The largest location of wait time is ValidationObject::validation_object_mutex:
+The largest location of wait time was `ValidationObject::validation_object_mutex` (now `vvl::BaseDevice::validation_object_mutex`):
 
 ![alt_text](images/fine_grained_locking_image3.png "DoomEternal wait locations")
 
 
-ValidationObject is the base class for the objects used by each part of the validation layer (Core Validation, Best Practices, Synchronization, GPUAV, DebugPrintf, and others). Each part of validation will have its own set of `ValidationObjects`, and different parts (such as Core Validation and Synchronization) can run in parallel with each other. There is one `ValidationObject` created for every `VkInstance` and `VkDevice` in the program, and in most cases there will only be one of each. Almost every Vulkan call will need to contend on the lock for the `VkDevice’s` `ValidationObject`.
+`vvl::BaseInstance` and `vvl::BaseDevice` (originally a single `ValidationObject` class) are the base classes for the objects used by each part of the validation layer (Core Validation, Best Practices, Synchronization, GPUAV, DebugPrintf, and others). Each part of validation will have its own validation objects, and different parts (such as Core Validation and Synchronization) can run in parallel with each other. There is one validation object created for every `VkInstance` and `VkDevice` in the program, and in most cases there will only be one of each. Without fine grained locking, almost every Vulkan call would need to contend on the lock for the `VkDevice’s` validation object.
 
 The following pseudo-code shows how a Vulkan call, `vkFoo()`, is handled by the validation layer:
 
 
 ```
     // PreCallValidate phase
-    // layer_data is the per-VkInstance or VkDevice data saved by the layer
-    // object_dispatch is a vector of the active ValidationObjects
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateFoo(...)
+    // device_dispatch is the per-VkDevice vvl::DispatchDevice saved by the layer
+    // intercept_vectors[] holds, per function, the active validation objects that override it
+    for (auto vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateFoo]) {
+        auto lock = vo->ReadLock();
+        skip |= vo->PreCallValidateFoo(...)
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     // PreCallRecord phase
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordFoo(...);
+    for (auto vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordFoo]) {
+        auto lock = vo->WriteLock();
+        vo->PreCallRecordFoo(...);
     }
     // call down to next layer / ICD
-    VkResult result = DispatchFoo(...);
+    VkResult result = device_dispatch->Foo(...);
     // PostCallRecord phase
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordFoo(...);
+    for (auto vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordFoo]) {
+        auto lock = vo->WriteLock();
+        vo->PostCallRecordFoo(...);
     }
 ```
 
@@ -65,12 +67,14 @@ For most multithreaded programs where Vulkan is used from more than one thread, 
 
 # Core validation changes
 
-The current focus for optimization is core validation, implemented in the `CoreChecks` class. This is the most commonly used part of validation and it is complex and CPU intensive. `CoreChecks` and several other validation objects use common code for state tracking, implemented in the `ValidationStateTracker` class.  Because of this, other validation objects may have bugs or performance issues from using these experimental changes.
+The original focus for optimization was core validation, implemented in the `CoreChecks` class. This is the most commonly used part of validation and it is complex and CPU intensive. `CoreChecks` and several other validation objects share common state tracking, implemented in the `vvl::DeviceState` and `vvl::InstanceState` classes (originally the `ValidationStateTracker` base class).
 
 
 ## Keep, but disable, validation_object_mutex
 
-The `ValidationObject` methods `ReadLock()` and `WriteLock()` create lock guard objects that keep this mutex locked until they are destroyed. By overriding these methods to create the guards using the[ std::defer_lock](https://en.cppreference.com/w/cpp/thread/lock_tag) policy, the returned lock guard will not actually lock the lock. This technique is also used by the Thread Safety and Object Tracking validation objects.
+The `vvl::BaseDevice` methods `ReadLock()` and `WriteLock()` create lock guard objects that keep this mutex locked until they are destroyed. By overriding these methods to create the guards using the [std::defer_lock](https://en.cppreference.com/w/cpp/thread/lock_tag) policy, the returned lock guard will not actually lock the lock.
+
+`CoreChecks`, `BestPractices` and GPU-AV (including DebugPrintf) always override these methods this way (the setting to turn fine grained locking off was removed). The same technique is also used by the Thread Safety, Object Tracking and Stateless validation objects. The shared state tracker (`vvl::DeviceState`), Synchronization Validation, Legacy Detection and GPU Dump still use the default implementation, which locks their own `validation_object_mutex`.
 
 ###### PRs:
 
@@ -101,11 +105,11 @@ All Vulkan handles except `VkDevice` and `VkInstance` have a state object storin
 
 ### Instance and Device object maps
 
-State objects are stored in type specific maps within ValidationStateTracker.  The maps are set up with by macros declaring the handle type, the state object type and the name of the map member:
+State objects are stored in type specific maps within `vvl::DeviceState` (and `vvl::InstanceState` for instance level objects).  The maps are set up with by macros declaring the handle type, the state object type and the name of the map member:
 
 
 ```
-    VALSTATETRACK_MAP_AND_TRAITS(VkImage, vvl::Image, imageMap);
+    VALSTATETRACK_MAP_AND_TRAITS(VkImage, vvl::Image, image_map_);
 ```
 
 Each map is implemented using `vvl::concurrent_unordered_map`, which provides a locked map implementation and is already used elsewhere in the validation code. It is important to note that `vvl::concurrent_unordered_map` doesn’t allow thread safe iteration across the map without making a copy of it. There are a few places in the code where this is currently required but they are not in performance critical paths.
@@ -218,9 +222,9 @@ The following sections cover state objects with non-const data and describe how 
 ## Instance Data
 
 
-### VkInstance / ValidationStateTracker
+### VkInstance / vvl::InstanceState
 
-There it not any instance member data in `ValidationStateTracker` other than state object maps. It would be nice if there were separate classes for `VkInstance` and `VkDevice` state but that is beyond the scope of this project.
+Instance level state now lives in its own `vvl::InstanceState` class, separate from the device level `vvl::DeviceState`.
 
 
 ### VkPhysicalDevice / vvl::PhysicalDevice
@@ -239,9 +243,9 @@ The `perf_counters` map is a per-queue family map of the results of calls to `vk
 ## Device Data
 
 
-### VkDevice / ValidationStateTracker
+### VkDevice / vvl::DeviceState
 
-Since VkDevice’s state is a ValidationStateTracker, we don’t have a real C++ constructor. Instead Device state is set up in PostCallRecordCreateDevice().  The following members **could** be const, as they are set but never changed:
+Most of the `vvl::DeviceState` data is not known in the C++ constructor. Instead it is set up in `DeviceState::FinishDeviceSetup()` during device creation. (The dispatch objects also store cached copies of device properties, enabled features and enabled extensions.)  The following members **could** be const, as they are set but never changed:
 
 * physical_device_state
 
@@ -295,29 +299,28 @@ vvl::Queue tracks command buffers, semaphores and fences that have been submitte
 
 ```
     struct QueueSubmission {
-        struct SemaphoreInfo {
-            std::shared_ptr<vvl::Semaphore> semaphore;
-            uint64_t payload{0};
-        };
-
-        std::vector<std::shared_ptr<vvl::CommandBuffer>> cbs;
+        std::vector<vvl::CommandBufferSubmitInfo> cb_infos;
         std::vector<SemaphoreInfo> wait_semaphores;
         std::vector<SemaphoreInfo> signal_semaphores;
-        std::shared_ptr<vvl::Fence> fence;
-        uint32_t perf_submit_pass{0};
+        std::shared_ptr<Fence> fence;
+        uint64_t seq{0};
+        std::promise<void> completed;
+        std::shared_future<void> waiter;
+        // ...
     };
 
-    uint64_t seq_;
+    std::unique_ptr<std::thread> thread_;
     std::deque<QueueSubmission> submissions_;
+    std::atomic<uint64_t> seq_{0};
 ```
 
-Each `QueueSubmission` structure contains the state for a single call to `vkQueueSubmit()`, `vkQueueSubmit2()` or `vkQueueBindSparse()`. They are stored in order in the `submissions_` dequeue until the state tracker determines that they have completed execution.
+Each `QueueSubmission` structure contains the state for a single submission from `vkQueueSubmit()`, `vkQueueSubmit2()`, `vkQueueBindSparse()` or `vkQueuePresentKHR()`. They are stored in order in the `submissions_` dequeue until the state tracker determines that they have completed execution.
 
-`seq_` is a sequence number that increments in every `vkQueueSubmit()` call. It is also stored in `vvl::Semaphore` and `vvl::Fence`, to track at what point in the queue they will signal.
+`seq_` is a sequence number that increments for every submission. It is also stored in `vvl::Fence`, and semaphores refer to a submission with a `SubmissionReference` (queue + sequence number), to track at what point in the queue they will signal.
 
-`vvl::Queue::submissions_` and `seq_` are accessed during queue submissions, as well as when semaphore or fence state changes cause updates to the completion state of queues. In Vulkan calls to check the status of a fence or semaphore, the state tracker uses the sequence numbers to figure out how far execution of the queue has progressed and update the state of any objects earlier in the queue, which must have finished executing. Because this process happens in functions that do not require external synchronization on the queue, such as `vkGetFenceStatus()` and `vkWaitSemaphores()`, access to the dequeue and `seq_` are  lock guarded.
+Each `vvl::Queue` has its own worker thread (`ThreadFunc()`) that retires submissions. In Vulkan calls to check the status of a fence or semaphore, such as `vkWaitForFences()` and `vkWaitSemaphores()`, the state tracker uses the sequence numbers to figure out how far execution of the queue has progressed, and notifies the queue thread to retire everything up to that point (`Notify()`/`Wait()`). Because this happens in functions that do not require external synchronization on the queue, the queue data is guarded by the queue's `lock_`, and the `completed` promise in each submission allows other threads to wait for it to be retired.
 
-Snce `VkQueues`  exist until their `VkDevice` is destroyed, it is not necessary to use shared pointers for every reference to them.
+Since `VkQueues`  exist until their `VkDevice` is destroyed, it is not necessary to use shared pointers for every reference to them.
 
 ### VkFence / vvl::Fence
 
@@ -329,36 +332,29 @@ Snce `VkQueues`  exist until their `VkDevice` is destroyed, it is not necessary 
         State state_;
         Scope scope_{kInternal};
 
-This data is used to track the current state of the `VkFence`, and its position in the `VkQueue` that will signal it. `vvl::Fence` calls `vvl::Queue::Retire()` when it detects that the `VkFence` has been signaled. `vvl::Queue::Retire()` then updates its state for anything submitted before the fence.
+This data is used to track the current state of the `VkFence`, and its position in the `VkQueue` that will signal it. When the application waits on the `VkFence`, `vvl::Fence` notifies the `vvl::Queue` and waits for the queue thread to retire everything submitted up to and including the fence. The queue then calls `vvl::Fence::Retire()` to update the fence state.
 
 ### VkSemaphore / vvl::Semaphore
 
 `vvl::Semaphore` contains the following non-const members, which are used through accessor methods that manage locking:
 
 
-        Scope scope_{kInternal};
-        struct SemOp {
-            enum OpType op_type; /* values: kNone, kWait, kSignal, kBinaryAcquire, kBinaryPresent */
-            vvl::Queue *queue;
-            uint64_t seq;
-            uint64_t payload;
-        };
-        // the most recently completed operation
-        SemOp completed_;
-        uint64_t next_payload_;
-        std::multiset<SemOp> operations_;
+        enum Scope scope_{kInternal};
+        uint64_t current_payload_ = 0;
+        // Next payload value for binary semaphore operations
+        uint64_t next_binary_payload_;
+        // Set of pending operations ordered by payload.
+        std::map<uint64_t, TimePoint> timeline_;
+        // The recently completed semaphore operation
+        OpType completed_op_ = kNone;
+        uint64_t completed_payload_ = 0;
+        const Queue* completed_queue_ = nullptr;
 
 Vulkan semaphores are extremely complicated, and timeline semaphores behave very differently from binary semaphores. `vvl::Semaphore` behaves slightly differently depending on if it is used for a timeline or binary semaphore.
 
-For timeline semaphores, the `operations_` multiset stores all pending waits or signals, sorted by the `SemOp::payload` field, which is the user specified value. There can be multiple operations associated with each `payload` value and they can be added in almost any order.  Additionally, one signal operation could cause many wait operations to be completed.  All of these operations could be on different `VkQueues`. Because of this, the code for updating the state of the semaphore is more complex than for `vvl::Fence`:
+For timeline semaphores, the `timeline_` map stores all pending waits and signals, keyed by the user specified payload value. Each `TimePoint` holds the `SubmissionReference` of the signal (or the acquire command that signals it), the submissions that wait on it, and a promise/future pair that is completed when the timepoint is retired. There can be multiple wait operations associated with each payload value and they can be added in almost any order.  Additionally, one signal operation could cause many wait operations to be completed.  All of these operations could be on different `VkQueues`, so other threads use the timepoint's future to wait for it to complete, instead of holding locks across queues.
 
-    // Remove completed operations and return highest sequence numbers for all affected queues
-    using RetireResult = vvl::unordered_map<vvl::Queue *, uint64_t>;
-    RetireResult Retire(vvl::Queue *queue, uint64_t payload);
-
-`RetireResult` makes it possible to handle state changes for several queues.  When called from `vvl::Queue::Retire()`, the `RetireResult`(s) for all `QueueSubmission` is saved until the end of the current queue's processing, so that Retire() can be called on other queues without any locks held. `vvl::Semaphore::Retire()` can also be called from `vkWaitSemaphores()` or `vkGetSemaphoreCounterValueKHR()`, but these cases are much simpler.
-
-For binary semaphores, `SemOp::payload` is set from the `next_payload_` counter. Each semaphore operation will have a unique `payload` value. Having a `payload` value lets binary semaphores be treated as very simple and restricted timeline semaphores in most of the code.  Additionally, semaphores used with `vkQueuePresentKHR()` or `vkAcquireNextImageKHR()` must be treated specially because it isn't currently possible for the state tracker to reliably know when these semaphores change state.
+For binary semaphores, the payload is set from the `next_binary_payload_` counter. Each semaphore operation will have a unique payload value. Having a payload value lets binary semaphores be treated as very simple and restricted timeline semaphores in most of the code.  Additionally, semaphores used with `vkQueuePresentKHR()` or `vkAcquireNextImageKHR()` must be treated specially because it isn't currently possible for the state tracker to reliably know when these semaphores change state.
 
 ###### PRs:
 
@@ -372,22 +368,17 @@ For binary semaphores, `SemOp::payload` is set from the `next_payload_` counter.
 
 ### VkEvent / vvl::Event
 
-vvl::Event contains a counter to track if the event is set in a command buffer:
+`vvl::Event` tracks if the event is signaled, and the source stage mask (or `VkDependencyInfo` for `vkCmdSetEvent2`) used when setting the event, so that a wait can be validated if it occurs in a different command buffer:
 
 
 ```
-    int write_in_use;
+    bool signaled = false;
+    VkPipelineStageFlags2 signal_src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
+    std::optional<vku::safe_VkDependencyInfo> signal_dependency_info;
+    VkQueue signaling_queue = VK_NULL_HANDLE;
 ```
 
-
-It also tracks the stageMask used when setting the event, so that the wait stage mask can be validated if it occurs in a different command buffer:
-
-
-```
-     VkPipelineStageFlags2KHR stageMask;
-```
-
-TODO: These variables could be made thread safe using `std::atomic<>`.
+This state is only updated at queue submission granularity (or when signaled from the host). During command buffer recording, Core Checks tracks the per command buffer state separately (`event_signal_states` in its command buffer substate).
 
 ### VkCommandPool / vvl::CommandPool
 
@@ -410,7 +401,7 @@ Some of this data is moved into global state during queue submission, while othe
 
 Command buffers have external synchronization requirements for every `vkCmd*()` function and most applications will use a command pool and the command buffers it creates from a single thread. Because of the complexity of this state object, it is still necessary to have a single lock to guard its data. A well behaved application will be unlikely to have multiple threads contending on this lock, and an incorrect application should be protected from crashing with minimal implementation complexity.
 
-Command buffer locking is handled by the `StateTracker::GetWrite<>` and `GetRead<>` methods, which MUST be used instead of `Get<>`.  These methods return a `LockedSharedPtr` object which includes a read or write lock guard so that is held as long as the shared pointer is valid.
+Command buffer locking is handled by the state tracker `GetWrite<>` and `GetRead<>` methods, which MUST be used instead of `Get<>`.  These methods return a `LockedSharedPtr` object which includes a read or write lock guard so that is held as long as the shared pointer is valid.
 
  **This scheme is fragile and likely to evolve in the future**. In the meantime, developers should be especially worried about deadlock by calling GetRead<> or GetWrtite<> multiple times on the same command buffer in a single validation hook command. For example, the following hook functions were buggy in their initial implementations:
 
@@ -465,9 +456,7 @@ During queue submission, query validation is performed via lambda functions adde
 
 ##### Events
 
-Similar to queries, there are callbacks that validate and record event stage mask transitions in the command buffer. During submission the final stage mask generated by the command buffer is updated into `vvl::Event::stageMask` so that it becomes globally visible.
-
-Additionally, any events that are set or reset in the command buffer have `vvl::Event::write_in_use` incremented during submission and decremented when the command buffer is retired.
+Similar to queries, the signal state of events set or reset in the command buffer is tracked while recording. During submission the final signal state generated by the command buffer is updated into `vvl::Event` (`signaled`, `signal_src_stage_mask`, etc) so that it becomes globally visible.
 
 
 ##### Image Layout
@@ -529,7 +518,7 @@ layers: Remove excess state object lookups](https://github.com/KhronosGroup/Vulk
 ```
 
 
-The `p_driver_data` pointer is only used by Best Practices validation, but it is used in `vkCmdDrawIndexed()`. It may require further review when Best Practices no longer uses the `ValidationObject` lock.
+The `p_driver_data` pointer is used by Best Practices validation (in `vkCmdDrawIndexed()`) and GPU Dump. Since Best Practices now runs with fine grained locking, this access is not guarded by a lock.
 
 
 ### vvl::Bindable
@@ -554,16 +543,7 @@ TODO: `bound_memory_` is not thread safe if applications violate the Vulkan thre
 
 ### VkImage / vvl::Image
 
-`vvl::Image` contains flags used by Best Practices to ensure memory requirements are checked:
-
-
-```
-    std::array<bool, MAX_PLANES> memory_requirements_checked;
-    bool get_sparse_reqs_called;
-    bool sparse_metadata_bound;
-```
-
-TODO: These need to be made thread safe when Best Practices validation supports fine grained locking.
+The flags used by Best Practices to ensure memory requirements are checked (`memory_requirements_checked`, `get_sparse_reqs_called`, `sparse_metadata_bound`) are no longer part of `vvl::Image`, they are stored in the Best Practices image substate (`layers/best_practices/bp_state.h`).
 
 #### Swapchain state
 
@@ -571,32 +551,31 @@ These fields are set by `vkGetSwapchainImagesKHR()` or `vkBindImageMemory2()`, b
 
 
 ```
-    std::shared_ptr<SWAPCHAIN_NODE> bind_swapchain;
+    std::shared_ptr<vvl::Swapchain> bind_swapchain;
     uint32_t swapchain_image_index;
 ```
 
 
-These fields are set by `vkQueuePresentKHR()`:
+This field is set by `vkQueuePresentKHR()`:
 
 
 ```
-    bool shared_presentable;
     bool layout_locked;
 ```
 
-TODO: These flags should probably be `std::atomic<>`
+TODO: This flag should probably be `std::atomic<>`
 
-#### Fragment Encoder
+#### Subresource Encoder
 
-The `fragment_encoder` is used by synchronization validation:
+The `subresource_encoder` is used to map image subresources to a linear index (used for image layout tracking and synchronization validation):
 
 
 ```
-    std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;
+    const SubresourceEncoder subresource_encoder;
 ```
 
 
-For ‘normal’ images it is set during creation, but for android AHB external images the image layout cannot be figured out until memory is bound. Once this object is allocated, it does not change for the lifetime of the image.
+It is set during creation and is `const`, so it does not change for the lifetime of the image.
 
 
 #### Image Layouts
@@ -605,60 +584,39 @@ For ‘normal’ images it is set during creation, but for android AHB external 
 
 
 ```
-  class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkImageLayout, 16> {
-  public:
-    GlobalImageLayoutRangeMap(index_type index) : BothRangeMap<VkImageLayout, 16>(index) {}
-    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
-    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
-
-  private:
-    mutable std::shared_mutex lock_;
-  };
-
-  std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;
-
+    std::shared_ptr<ImageLayoutMap> layout_map;
+    std::shared_ptr<std::shared_mutex> layout_map_lock;
+    ReadLockGuard LayoutMapReadLock() const { return ReadLockGuard(*layout_map_lock); }
+    WriteLockGuard LayoutMapWriteLock() { return WriteLockGuard(*layout_map_lock); }
 ```
 
-This map entry for an image is updated from the per-command buffer layout state during queue submission. The entry is also read when an image is used by a Vulkan command, to initialize the per-command buffer layout state.  The “guts” of `BothRangeMap` is a `std::map` used to maintain per-subresource layout state for the image.  Updating or reading `BothRangeMap` is CPU intensive and it is a major performance bottleneck, especially for applications using large ‘bindless’ descriptor sets.
+`ImageLayoutMap` is a `sparse_container::SmallRangeMap<VkImageLayout, 16>` used to maintain per-subresource layout state for the image. This map is updated from the per-command buffer layout state during queue submission. Record time validation can't use this map, as the global image layout is known only during queue submit time. Updating or reading the layout maps is CPU intensive, especially for applications using large ‘bindless’ descriptor sets.
 
-TODO: Locking of the `GlobalImageLayoutRangeMap` is currently managed by the calling code, but it is possible this can be encapsulated at some point.
+Locking of the `layout_map` is managed by the calling code with `LayoutMapReadLock()` and `LayoutMapWriteLock()`.
 
-For images created with `VK_IMAGE_CREATE_ALIAS_BIT` or bound to the same swapchain index,  multiple images will share the same layout state by copying the layout_range_map shared_ptr, rather than creating a new map.
+For images created with `VK_IMAGE_CREATE_ALIAS_BIT` or bound to the same swapchain index, multiple images will share the same layout state by copying the `layout_map` (and `layout_map_lock`) shared_ptr, rather than creating a new map.
 
 Each `vvl::CommandBuffer` maintains its own copy of the image layout state, in a different data structure:
 
 ```
-   typedef vvl::unordered_map<const vvl::Image *,
-                                    std::shared_ptr<ImageLayoutRegistry>>  CommandBufferImageLayoutMap;
-   CommandBufferImageLayoutMap image_layout_map;
-   typedef vvl::unordered_map<const GlobalImageLayoutRangeMap *,
-                                     std::shared_ptr<ImageLayoutRegistry>>
-                                                                               CommandBufferAliasedLayoutMap;
-   CommandBufferAliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
-
+    using AliasedLayoutMap = vvl::unordered_map<const ImageLayoutMap *, std::shared_ptr<CommandBufferImageLayoutMap>>;
+    ImageLayoutRegistry image_layout_registry;
+    AliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 ```
 
-The image_layout_map maintains a local copy of the layout state for any images used by the command buffer.  It is used to update the global image states once the command buffer is submitted for execution.   The aliased_image_layout_map is used to make sure aliasing images share their local state so that they update correctly.
+The `image_layout_registry` maintains a local copy of the layout state for any images used by the command buffer.  It is used to update the global image states once the command buffer is submitted for execution.   The `aliased_image_layout_map` is used to make sure aliasing images share their local state so that they update correctly.
 
 ###### PRs:
 
 [layers: Make global QFO and Image Layout state threadsafe](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3669)
 
-VkBuffer / vvl::Buffer
+### VkBuffer / vvl::Buffer
 
-`vvl::Buffer` has a flag used only by Best Practices:
-
-
-```
-    bool memory_requirements_checked;
-```
-
-
-And `vvl::Buffer::deviceAddress` field is used for lookups in a separate map used by ray tracing validation in CoreChecks and GPUAV:
+The `vvl::Buffer::deviceAddress` field is used for lookups in a separate range map in `vvl::DeviceState`, used by buffer device address validation in CoreChecks and GPUAV. It is guarded by its own lock (`buffer_address_lock_`):
 
 
 ```
-    vvl::concurrent_unordered_map<VkDeviceAddress, vvl::Buffer*> buffer_address_map_;
+    BufferAddressRangeMap buffer_address_map_;
 ```
 
 
@@ -670,40 +628,33 @@ The `deviceAddress` field can only be set after memory is bound to the buffer, s
 There are separate state objects for the KHR and NV versions of the extensions. Unfortunately, due to differences in how memory is bound in the 2 extensions, these objects cannot be easily combined.
 
 
-The build_info state is set by vkCmdBuildAccelerationStructuresKHR() and similar functions.  There are no external synchronization requirements for the acceleration structure handle on these functions, so these fields may need to be lock guarded:
+The build state set by `vkCmdBuildAccelerationStructuresKHR()` and similar functions is no longer stored in `vvl::AccelerationStructureKHR`, which mostly holds const creation data. There are no external synchronization requirements for the acceleration structure handle on these functions, so the device address, which is set after creation, is a `std::atomic`:
 
 
 ```
-    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
-    bool built = false;
-```
-
-
-This field is set up in vkBindAccelerationStructureMemoryNV() and only used by GPUAV:
-
-
-```
-    uint64_t opaque_handle = 0;
+    std::atomic<VkDeviceAddress> acceleration_structure_address = 0;
 ```
 
 PRs:[
 layers: Refactor and improve acceleration structure state tracking](https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3782)
 
-### VkSwapchainKHR / SWAPCHAIN_NODE
+### VkSwapchainKHR / vvl::Swapchain
 
-`SWAPCHAIN_NODE` contains dynamic data about the state of its images:
+`vvl::Swapchain` contains dynamic data about the state of its images:
 
 
 ```
-    struct SWAPCHAIN_IMAGE {
-        vvl::Image *image_state = nullptr;
-        VkDeviceSize fake_base_address = 0;
+    struct SwapchainImage {
+        vvl::Image* image_state = nullptr;
         bool acquired = false;
+        bool ever_acquired = false;
+        std::shared_ptr<vvl::Semaphore> acquire_semaphore;
+        // ...
     };
 
-    std::vector<SWAPCHAIN_IMAGE> images;
+    std::vector<SwapchainImage> images;
     bool retired = false;
-    uint64_t max_present_id = 0;
+    std::atomic<uint64_t> max_present_id{0};
     uint32_t acquired_images = 0;
 ```
 
@@ -730,7 +681,7 @@ TODO: Accesses to most of these fields will need to be atomic or lock guarded.
 ```
 
 
-On some platforms, these calls are extremely slow. Therefore we cannot pre-query all possible combinations at surface creation time. These fields are updated when the application calls the appropriate function or when the `ValidationObject` needs a value that the application hasn’t ever looked up.  This data is fully encapsulated by accessor methods that manage the locking.
+On some platforms, these calls are extremely slow. Therefore we cannot pre-query all possible combinations at surface creation time. These fields are updated when the application calls the appropriate function or when validation needs a value that the application hasn’t ever looked up.  This data is fully encapsulated by accessor methods that manage the locking.
 
 Also, surfaces are instance level objects but they hold a reference on the current swapchain, which is a device level object. Care must be taken to ensure that device destruction cleans up these references.
 
@@ -754,12 +705,12 @@ All of the dynamic data in `vvl::DescriptorPool` is associated with tracking the
 
 
 ```
-   // Collection of all sets in this pool`
-    vvl::unordered_set<vvl::DescriptorSet *> sets;
     // Available descriptor sets in this pool
-    uint32_t availableSets;
+    uint32_t available_sets_;
     // Available # of descriptors of each type in this pool
-    std::map<uint32_t, uint32_t> availableDescriptorTypeCount;
+    TypeCountMap available_counts_;
+    // Collection of all sets in this pool
+    vvl::unordered_map<VkDescriptorSet, vvl::DescriptorSet *> sets_;
 ```
 
 This data is fully encapsulated by accessor methods that manage the locking.

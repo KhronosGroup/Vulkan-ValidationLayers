@@ -2,7 +2,7 @@
 
 For those brave souls, here are some overall basic tips/advice that should not get outdated as things actively change
 
-## You need to Validate with "Self Valiation"
+## You need to Validate with "Self Validation"
 
 Since GPU-AV itself utilizes the Vulkan API to perform its tasks,
 Vulkan function calls have to valid. To ensure that, those calls have to

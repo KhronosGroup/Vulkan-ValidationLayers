@@ -30,11 +30,11 @@ void main(){
 }
 ```
 
-it is first ran through a custom pass (`InstBindlessCheckPass`) to inject logic to call a known function, this will look like after
+it is first ran through a custom pass (`DescriptorIndexingOOBPass` in `layers/gpuav/spirv/`) to inject logic to call a known function, this will look like after (when using [Safe Mode](#safe-mode))
 
 ```glsl
 vec4 value;
-if (inst_bindless_descriptor(/*...*/)) {
+if (inst_descriptor_indexing_oob_bindless(/*...*/)) {
     value = texture(tex[index], vec2(0.0));
 } else {
     value = vec4(0.0);
@@ -42,23 +42,23 @@ if (inst_bindless_descriptor(/*...*/)) {
 uFragColor = value;
 ```
 
-The next step is to add the `inst_bindless_descriptor` function into the SPIR-V.
+The next step is to add the `inst_descriptor_indexing_oob_bindless` function into the SPIR-V.
 
-Currently, all these functions are found in `gpuav/shaders/instrumentation`
+Currently, all these functions are found in `layers/gpuav/shaders/instrumentation`
 
 ```glsl
-bool inst_bindless_descriptor(const uint inst_offset, const uvec4 stage_info, const uint desc_set,
-                              const uint binding, const uint desc_index, const uint byte_offset) {
+bool inst_descriptor_indexing_oob_bindless(const uint inst_offset, const uint desc_set, const uint binding,
+                                           const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     // logic
     return no_error_found;
 }
 ```
 
-which is compiled with `glslang`'s `--no-link` option. This is done offline and the module is found in the generated directory.
+which is compiled with `glslang`'s `--no-link` option. This is done offline and the module is found in the generated directory (`layers/vulkan/generated/gpuav_offline_spirv_glsl.cpp`).
 
 > Note: This uses `Linkage` which is not technically valid Vulkan Shader `SPIR-V`, while debugging the output of the SPIR-V passes, some tools might complain
 
-Now with the two modules, at runtime `GPU-AV` will call into `gpuav::spirv::Module::LinkFunction` which will match up the function arguments and create the final shader which looks like
+Now with the two modules, at runtime `GPU-AV` will call into `gpuav::spirv::Module::LinkFunctions` which will match up the function arguments and create the final shader which looks like
 
 ```glsl
 #version 460
@@ -70,8 +70,8 @@ layout(set = 0, binding = 1) uniform sampler2D tex[];
 layout(location = 0) out vec4 uFragColor;
 layout(location = 0) flat in uint index;
 
-bool inst_bindless_descriptor(uint inst_offset, uvec4 stage_info, uint desc_set,
-                              uint binding, uint desc_index, uint byte_offset) {
+bool inst_descriptor_indexing_oob_bindless(uint inst_offset, uint desc_set, uint binding,
+                                           uint desc_index, uint binding_layout_size, uint binding_layout_offset) {
     // logic
     return no_error_found;
 }
@@ -79,7 +79,8 @@ bool inst_bindless_descriptor(uint inst_offset, uvec4 stage_info, uint desc_set,
 void main()
 {
     vec4 value;
-    if (inst_bindless_descriptor(2, 42, uvec4(4, gl_FragCoord.xy, 0), 0, 1, index, 0)) {
+    // (instruction offset, set, binding, index, binding size, binding offset)
+    if (inst_descriptor_indexing_oob_bindless(42, 0, 1, index, 8, 0)) {
         value = texture(tex[index], vec2(0.0));
     } else {
         value = vec4(0.0);
@@ -88,7 +89,7 @@ void main()
 }
 ```
 
-## How runtime spirv-val for single instructions is instrumented (Currently in proposal status)
+## How runtime spirv-val for single instructions is instrumented
 
 There are a set of `VUID-RuntimeSpirv` VUs that could be validated in `spirv-val` statically **if** it was using `OpConstant`.
 
@@ -108,15 +109,15 @@ the instruction operands look like
 OpRayQueryInitializeKHR %ray_query %as %flags %cull_mask %ray_origin %ray_tmin %ray_dir %ray_tmax
 ```
 
-The first step will be adding logic to wrap every call of this instruction to look like
+This is done in the `TraceRayPass` (`layers/gpuav/spirv/trace_ray_pass.cpp`), which wraps every call of this instruction to look like
 
 ```glsl
-if (inst_ray_query_initialize(/* copy of arguments */)) {
+if (inst_ray_query_comp(/* copy of arguments */)) {
     rayQueryInitializeEXT(/* original arguments */)
 }
 ```
 
-From here, we will use the same `gpuav::spirv::Module::LinkFunction` flow to add the logic and link in where needed
+From here, we use the same `gpuav::spirv::Module::LinkFunctions` flow to add the logic (found in `trace_ray.comp`) and link in where needed
 
 The SPIR-V before and after adding the conditional check looks like
 
@@ -148,9 +149,9 @@ OpBranchConditional %compare %L2 %L3
 OpReturn
 ```
 
-## Unsafe Mode
+## Safe Mode
 
-The `Unsafe Mode` was designed as a way to improve performance. Every time we instrument a shader, if the driver doesn't support the SPIR-V `DontInline` (which there is no way to test), it gets exponentially slower to compile.
+The `Safe Mode` setting (`gpuav_safe_mode`) is **off** by default, which was designed as a way to improve performance. Every time we instrument a shader, if the driver doesn't support the SPIR-V `DontInline` (which there is no way to test), it gets exponentially slower to compile.
 
 To illustrate the idea, take the simple shader
 
@@ -162,9 +163,9 @@ sample(imageArray[8], b);  // access 2
 sample(imageArray[8], c);  // access 3
 ```
 
-Here we normally check all 3 access for being valid and safely wrap it in a `if` statement so the application will not crash. With `unsafe mode` we will only check the first access to `imageArray[8]` because it is valid, it will save the exponential cost of compiling to check the rest.
+With `Safe Mode` on, we check all 3 access for being valid and safely wrap it in a `if` statement so the application will not crash. With `Safe Mode` off (the default) we will only check the first access to `imageArray[8]` (within a block) and not wrap it in an `if` statement, it will save the exponential cost of compiling to check the rest.
 
-The goal with `unsafe mode` is to help people get going with GPU-AV by making it faster, If they are still finding a crash with `unsafe mode`, it hopefully can be isolated so they can then turn off `unsafe mode` to do the full validation without crashing. A future extension will hopefully provide another mechanism to stop the shader upon the first invalid access.
+The goal with `Safe Mode` being off by default is to help people get going with GPU-AV by making it faster, If they are still finding a crash, it hopefully can be isolated so they can then turn on `Safe Mode` to do the full validation without crashing. A future extension will hopefully provide another mechanism to stop the shader upon the first invalid access.
 
 ## Instrumentation Status
 
