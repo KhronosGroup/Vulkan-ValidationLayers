@@ -105,6 +105,7 @@ def BuildProfileLayer(mockAndroid):
     cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR}'
     cmake_cmd += ' -D CMAKE_BUILD_TYPE=Release'
     cmake_cmd += ' -D UPDATE_DEPS=ON'
+    cmake_cmd += ' -D BUILD_PROFILES_LIBRARY=OFF'
     cmake_cmd += ' -D CMAKE_INSTALL_LIBDIR=lib'
 
     if mockAndroid:
