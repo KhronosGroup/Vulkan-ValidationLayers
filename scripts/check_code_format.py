@@ -162,9 +162,9 @@ def VerifyCommitMessageFormat(commit):
         line_length = len(msg_line_text)
 
         if msg_cur_line == 1:
-            # Enforce subject line must be 64 chars or less
-            if line_length > 64:
-                CPrint('ERR_MSG', "The following subject line exceeds 64 characters in length.")
+            # Use to be 64, now 80
+            if line_length > 80:
+                CPrint('ERR_MSG', "The following subject line exceeds 80 characters in length.")
                 CPrint('CONTENT', f"     '{msg_line_text}'\n")
                 retval = 1
             # Output error if last char of subject line is not alpha-numeric
