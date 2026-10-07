@@ -61,7 +61,7 @@ We will want the local `draw index` value to do a lookup later which command buf
 
 ## Classic Descriptors
 
-With Vulkan 1.0 style descriptors, this is done by stealing the last descriptor set slot from the user. So if the driver exposed `maxBoundDescriptorSets == 8`, then GPU-AV will tell the app the real `maxBoundDescriptorSets` is actually `7` and use that final slot to inject the descriptor.
+With Vulkan 1.0 style descriptors, this is done by stealing the last descriptor set slot from the user. So if the driver exposed `maxBoundDescriptorSets == 8`, then GPU-AV will use set `7` to inject the descriptor (for very large limits, the slot is capped at `32`). Only when the deprecated `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT` is enabled will GPU-AV also tell the app the real `maxBoundDescriptorSets` is actually `7`.
 
 ## Descriptor Buffer
 

@@ -10,6 +10,6 @@ The handle wrapping facility is a feature of the Khronos Layer which aliases all
 
 **Note**:
 
-* If you are developing Vulkan extensions which include new APIs taking one or more Vulkan dispatchable objects as parameters, you may find it necessary to disable handle-wrapping in order use the validation layers. Handle wrapping can be disabled in the Khronos validation Layer using the VkConfig utility or as described in
+* If you are developing Vulkan extensions which include new APIs taking one or more Vulkan non-dispatchable objects as parameters, you may find it necessary to disable handle-wrapping in order use the validation layers. Handle wrapping can be disabled in the Khronos validation Layer using the VkConfig utility, or with the `unique_handles` setting (`VK_LAYER_UNIQUE_HANDLES=0`) as described in
 [khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details).
 

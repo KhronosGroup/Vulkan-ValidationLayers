@@ -493,9 +493,9 @@ The scope of memory access is instead _restricted_ to the set of accesses both l
 
 A marker representing a specific access for error reporting or sequence specific operations.
 
-#### ResourceAccessState
+#### AccessState
 
-The specific access/barrier state for a given extent of memory (or opaque range) addresses. The `ResourceAccessState` reflects the common state of a single contiguous range of "fake" addresses.
+The specific access/barrier state for a given extent of memory (or opaque range) addresses. The `AccessState` reflects the common state of a single contiguous range of "fake" addresses.
 
 Stores:
 
@@ -522,19 +522,17 @@ Implements:
 
 Queue Id and Sync stages are used for semaphore, queue, and fence wait operations, and for synchronization operation replay at queue submit time.
 
-#### ResourceAccessRangeMap
+#### AccessMap
 
-#### ResourceAccessRangeMap
-
-Interval tree of ResourceAccessState records within the unified "fake" address space, comprising VkDeviceMemory linear ranges and opaque ranges
+Interval tree of AccessState records within the unified "fake" address space, comprising VkDeviceMemory linear ranges and opaque ranges
 
 #### AccessContext
 
-ResourceAccessState and dependency information for a given “context” (for example within a given command buffer, but outside a renderpass, or within a given subpass of a renderpass instance)
+AccessState and dependency information for a given “context” (for example within a given command buffer, but outside a renderpass, or within a given subpass of a renderpass instance)
 
 Stores:
 
-*   "Fake"address space ResourceAccessRangeMap
+*   "Fake"address space AccessMap
 *   Subpass dependency and barrier information (for traversal within renderpass instances) if needed.
 
 Implements:
@@ -543,7 +541,7 @@ Implements:
 *   VkMemory FBA offset
 *   State update traversal over (potentially discontiguous) ranges for images and buffers
 *   Subpass dependency graph traversal for state lookup and resolution operations (including support  for RenderPass specific and Hazard detection operations)
-*   Range map operations to split (and potentially combine) ResourceAccessState records, to ensure state changes only impact the correct portion of the address space.
+*   Range map operations to split (and potentially combine) AccessState records, to ensure state changes only impact the correct portion of the address space.
 
 #### CommandBufferContext
 
@@ -587,16 +585,16 @@ Accesses within a QueueBatchContext are tagged with "global" (at device scope) R
 
 In the discussion below, validation or update of the state of resource is discussed as if it is a uniform, singular operation.  However, over the input range of a memory access or synchronization operation the resource access state can vary.  For images, the input range may even be discontinuous, covering a series of locally contiguous ranges (mapping to `VkDeviceMemory` or opaque range addresses).
 
-All resource access state operations described below happen over ranges over which the input and current access state values are constant.  As such, top-level operations (such as hazard detection for the use a of memory range in a copy operation), are implemented using range traversal functions to hide the complexity of the underlying variability in current state. Return values from certain query operations (like those needed for “resolve” operations below) are not single valued but are ResourceAccessRangeMap objects reflecting the set of range/value pairs in the query range.  State update operations also must deal with the potential of a non-constant current state over the range, range boundary misalignment, or gaps in current state, requiring record splitting or infilling of initial data.
+All resource access state operations described below happen over ranges over which the input and current access state values are constant.  As such, top-level operations (such as hazard detection for the use a of memory range in a copy operation), are implemented using range traversal functions to hide the complexity of the underlying variability in current state. Return values from certain query operations (like those needed for “resolve” operations below) are not single valued but are AccessMap objects reflecting the set of range/value pairs in the query range.  State update operations also must deal with the potential of a non-constant current state over the range, range boundary misalignment, or gaps in current state, requiring record splitting or infilling of initial data.
 
 The interposition of the traversal functions between the Access Context level operations and the Resource Access State Operations adds an unavoidable complexity to the implementation of each operation. To the extent possible, common traversal frameworks should be used to prevent the proliferation of range (and or graph) walkers.  (To the extent these are truly general, they should be add to the algorithms implemented with the underlying range_map.) Maintainers should become familiar and comfortable with the traversal tools for the range maps and their use in Synchronization Validation.
 
 Fragmentation of the access range maps is a distinct possibility, with the map implementation supporting record coalescence, should this prove a performance or memory usage issue. Optimizations such as using alternative update traversal algorithms are possible, for example, in situations where it is known that the update will fully overwrite the existing records.
 
 
-### ResourceAccessState Operations
+### AccessState Operations
 
-The ResourceAccessState is the leaf level structure at which the synchronization validation and state tracking is performed.  The operations on the access state implement the logic described in the Vulkan specification regarding the effects of access and synchronization operations from a resource (memory address range) point of view.  The caller _must _assure that both the input and the current state are constant and correctly bounded over the range of the operation.
+The AccessState is the leaf level structure at which the synchronization validation and state tracking is performed.  The operations on the access state implement the logic described in the Vulkan specification regarding the effects of access and synchronization operations from a resource (memory address range) point of view.  The caller _must _assure that both the input and the current state are constant and correctly bounded over the range of the operation.
 
 
 #### State Update
@@ -637,7 +635,7 @@ The ResourceAccessState is the leaf level structure at which the synchronization
       *   Remove write access from access state if:
           *   Write access matching queue/tag of wait operation
           *   -OR- if there are any read stages matching the wait criteria (MRA)
-  *   If all resulting ResourceAccessState contains no accesses, delete from AccessContext.
+  *   If all resulting AccessState contains no accesses, delete from AccessContext.
 
   > Note: Queue/Fence Wait operations require inspecting and updating all QueueBatchContext Access contexts, and is likely a heavyweight operation, though far less common that other state update operations.
 
@@ -732,7 +730,7 @@ Command buffer state commands also affect the execution of the action commands, 
 
 ### Image Layout Transitions
 
-As noted above Image Layout Transition are typically implemented in the context of a barrier operation, as such these have special support at the Resource Access level.  In the implementation of synchronization validation for these barriers, validation checks are only required for barriers with a layout transition.  State update for barriers with layout transitions first update the state to reflect the write-access, then update the destination barriers using the layout transition as the source access scope. Otherwise no state up operation is performed, and the source and destination scopes are passed to the ResourceAccess state to update the barrier state.
+As noted above Image Layout Transition are typically implemented in the context of a barrier operation, as such these have special support at the Resource Access level.  In the implementation of synchronization validation for these barriers, validation checks are only required for barriers with a layout transition.  State update for barriers with layout transitions first update the state to reflect the write-access, then update the destination barriers using the layout transition as the source access scope. Otherwise no state up operation is performed, and the source and destination scopes are passed to the AccessState to update the barrier state.
 
 
 ### Renderpass Operations

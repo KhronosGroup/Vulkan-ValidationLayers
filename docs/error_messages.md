@@ -61,28 +61,29 @@ const VkDebugUtilsObjectNameInfoEXT*  pObjects;
 The following is an example of how one could do their custom callback
 
 ```c++
-VkBool32 DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                       VkDebugUtilsMessageTypeFlagsEXT message_type,
-                       const VkDebugUtilsMessengerCallbackDataEXT *callback_data) {
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                             VkDebugUtilsMessageTypeFlagsEXT message_type,
+                                             const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
+                                             void *user_data) {
 
     // Other layers might also be trying to report via the callback, so can filter using the type
-    bool is_validation = messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    bool is_validation = message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
 
     // Only report Errors and Warnings
-    bool is_error = messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    bool is_warning = messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    bool is_error = message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    bool is_warning = message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     if (is_error || is_warning) {
         std::cout << "Validation " << (is_error ? "Error:" : "Warning:");
-        std::cout << " [ " << pCallbackData->pMessageIdName << " ]\n";
-        std::cout << pCallbackData->pMessage;
+        std::cout << " [ " << callback_data->pMessageIdName << " ]\n";
+        std::cout << callback_data->pMessage;
 
-        for (uint32_t i = 0; i < pCallbackData->objectCount; i++) {
+        for (uint32_t i = 0; i < callback_data->objectCount; i++) {
             std::cout << '\n';
-            if (pCallbackData->pObjects[i].objectHandle) {
-                std::cout << "    Object Handle [" << i << "] = " << " 0x" << std::hex << pCallbackData->pObjects[i].objectHandle;
+            if (callback_data->pObjects[i].objectHandle) {
+                std::cout << "    Object Handle [" << i << "] = " << " 0x" << std::hex << callback_data->pObjects[i].objectHandle;
             }
-            if (pCallbackData->pObjects[i].pObjectName) {
-                std::cout << "[" << pCallbackData->pObjects[i].pObjectName << "]";
+            if (callback_data->pObjects[i].pObjectName) {
+                std::cout << "[" << callback_data->pObjects[i].pObjectName << "]";
             }
         }
     }
@@ -130,7 +131,7 @@ Here is an example of what it looks like
 	"Severity" : "Error",
 	"VUID" : "VUID-vkCmdSetScissor-x-00595",
 	"Objects" : [
-		{"type" : "VkCommandBuffer", "handle" : "0x618497491590", "name" : "command_buffer_name"},
+		{"type" : "VkCommandBuffer", "handle" : "0x618497491590", "name" : "command_buffer_name"}
 	],
 	"MessageID" : "0xa54a6ff8",
 	"Function" : "vkCmdSetScissor",

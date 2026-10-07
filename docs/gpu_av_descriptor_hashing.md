@@ -11,7 +11,7 @@ The 3 most common cases for not having a valid descriptor are
 To detect these, we need to track every descriptor binary and be able to track it back later. Due to high performance cost and memory overhead, this is currently an opt-in setting.
 
 ```bash
-set VK_LAYER_DESCRIPTOR_HASHING = 1
+set VK_LAYER_DESCRIPTOR_HASHING=1
 ```
 
 > When descriptor hashing is enabled, it will also work for GPU Dump. This works the same, but we try to view the GPU heap/buffer memory from the CPU at draw/dispatch time. This is not as helpful if the memory is moved into the heap/buffer after recording time.

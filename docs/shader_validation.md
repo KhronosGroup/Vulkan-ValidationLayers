@@ -28,7 +28,7 @@ These can be found by searching for `RegisterPass` in the code
 Currently these are
 
 - Specialization constants
-  - This `spirv-opt` pass is used to inject the constants from the pipeline layout.
+  - This `spirv-opt` pass is used to inject the constants from the `VkSpecializationInfo`.
   - Some checks require the runtime spec constant values
 - Flatten OpGroupDecorations
   - Detects if group decorations were used; however, group decorations were [deprecated](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpGroupDecorate) early on in the development of the SPIR-v specification.
@@ -54,7 +54,7 @@ The code is currently split up into the following main sections
 
 ## Types of Shader Validation
 
-All Shader Validation can be broken into 4 types of checks
+All Shader Validation can be broken into the following types of checks
 
 - SPIR-V with runtime properties
   - Things like features and limits
@@ -75,14 +75,14 @@ When dealing with shader validation there are a few concepts to understand and n
   - Knows which variables and instructions are touched in stage
     - There might be things in a `ShaderModule` not related to shader stage validation
 - `SPIR-V Module`
-  - `SPIRV_MODULE_STATE`
+  - `spirv::Module`
   - This object takes in SPIR-V, parses it, creates `EntryPoint` objects, validates what we can
     - We do validation first as sometimes a bad SPIR-V can [crash a driver](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2835)
     - can contain [multiple EntryPoints](https://github.com/KhronosGroup/SPIRV-Guide/blob/master/chapters/entry_execution.md#instructions-with-multiple-execution-modes)
   - contains SPIR-V instructions (in an array of `uint32_t` words)
   - knows the relationship between instructions
 - `Shader Module` and `Shader Object`
-  - `VkShaderModule` object (`SHADER_MODULE_STATE`) or `VkShaderEXT` object (`SHADER_OBJECT_STATE`)
+  - `VkShaderModule` object (`vvl::ShaderModule`) or `VkShaderEXT` object (`vvl::ShaderObject`)
   - **can** hold a `SPIR-V module` reference
     - `Pipeline Library` (GPL) (`VK_EXT_graphics_pipeline_library`)
         - part of a pipeline that can be reused
@@ -98,7 +98,7 @@ When dealing with validation, it is important to know what should be validated, 
 
 If validation only cares about... :
 
-- the SPIR-V itself, is mapped to the `SPIRV_MODULE_STATE`
+- the SPIR-V itself, is mapped to the `spirv::Module`
 - if two stages interface, needs to be done when all stages are there
   - For `Pipeline Library` it might need to wait until linking
 - descriptors variables, use `EntryPoint`

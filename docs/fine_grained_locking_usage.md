@@ -9,19 +9,17 @@
 
 Fine grained locking is a performance improvement for multithreaded workloads. It allows Vulkan calls from different threads to be validated in parallel, instead of being serialized by a global lock. Waiting on this lock causes performance problems for multi-threaded applications, and most Vulkan games are heavily multi-threaded.  This feature has been tested with 15+ released games and improves performance in almost all of them, and many improve by about 150%.
 
-However, changes to locking strategy in a multi threaded program are a frequent cause of crashes, incorrect results, or deadlock. For debugging it can be disabled with the instructions below.
+However, changes to locking strategy in a multi threaded program are a frequent cause of crashes, incorrect results, or deadlock.
 
-Currently this optimization is available for Core Validation, Best Practices,  GPU Assisted Validation and Debug Printf.  Synchronization Validation always runs with global locking. Support for it will be added in a future release.
+Currently this optimization is available for Core Validation, Best Practices, GPU Assisted Validation and Debug Printf.  Synchronization Validation, Legacy Detection and GPU Dump still lock their validation object for each call. Support for it will be added in a future release.
 
 Thread Safety, Object Lifetime, Handle Wrapping and Stateless validation have always avoided global locking and they are thus unaffected by this feature.
 
 ### Configuring Fine Grained Locking
 
-Since the 1.4.357 SDK the `VK_LAYER_FINE_GRAINED_LOCKING` setting was removed, it is now only ever on and no reason to leave an option to disable it.
+Since the 1.4.357 SDK the `VK_LAYER_FINE_GRAINED_LOCKING` setting was removed, it is now only ever on and there is no way to disable it.
 
 ### Known Limitations
-
-Currently there is not a way to disable this setting via `VK_EXT_validation_features` or other programmatic interface. This will be addressed in a future release.
 
 The locking in Vulkan-ValidationLayer is not intended to provide correct results for programs that violate the thread safety guidelines described in *section 3.6 Threading Behavior* of the Vulkan specification. We will attempt to fix crash bugs in the layer resulting from insufficient external synchronization, but incorrect or inconsistent error messages will be likely. Please run Thread Safety violation to find problems like this.
 
@@ -30,7 +28,7 @@ The locking in Vulkan-ValidationLayer is not intended to provide correct results
 
 As mentioned above, solving all problems found by Thread Safety validation is highly recommended before trying to use Core Validation with Fine Grained Locking.
 
-If you encounter a crash, deadlock or incorrect behavior, re-run with Fine Grained Locking disabled. If your problem goes away, it is most likely a problem with the layer's locking code. If it remains, then it is probably caused by something else and will require further debugging.
+If you encounter a crash, deadlock or incorrect behavior, first make sure Thread Safety validation does not report any errors. If the problem only happens when calling Vulkan from multiple threads, it might be a problem with the layer's locking code, please report it.
 
 For crashes or deadlocks, it will be extremely helpful you provide stack traces for any threads in your program that were executing in the layer at the time the problem occurred.  In Microsoft Visual Studio, the [Parallel Stacks](https://docs.microsoft.com/en-us/visualstudio/debugger/using-the-parallel-stacks-window?view=vs-2022) window is a good way to check the status of all threads in your program.  With [gdb](https://sourceware.org/gdb/current/onlinedocs/gdb/Threads.html#Threads), you usually need to use the `info thread` and `thread` commands to view the stacks from each thread.
 
