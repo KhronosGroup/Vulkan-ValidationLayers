@@ -33,7 +33,7 @@ constexpr VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 
 // Stores the image layout of each subresource of a single image.
 // It is used to track the actual current layout (as opposed to record time tracking)
-using ImageLayoutMap = sparse_container::SmallRangeMap<VkImageLayout, 16>;
+using ImageLayoutMap = sparse_container::SmallRangeMap<VkImageLayout, 16, vvl::SubresourceEncoder::IndexType>;
 
 // Image layout state during command buffer recording
 struct ImageLayoutState {
@@ -65,10 +65,12 @@ struct ImageLayoutState {
 
 // Tracks image layout state of each subresource of a single image during record time.
 // Each command buffer has ImageLayoutRegistery that tracks all images.
-class CommandBufferImageLayoutMap : public sparse_container::SmallRangeMap<ImageLayoutState, 16> {
+class CommandBufferImageLayoutMap
+    : public sparse_container::SmallRangeMap<ImageLayoutState, 16, vvl::SubresourceEncoder::IndexType> {
   public:
-    CommandBufferImageLayoutMap(sparse_container::IndexType subresource_count, uint32_t image_id)
-        : sparse_container::SmallRangeMap<ImageLayoutState, 16>(subresource_count), image_id(image_id) {}
+    CommandBufferImageLayoutMap(vvl::SubresourceEncoder::IndexType subresource_count, uint32_t image_id)
+        : sparse_container::SmallRangeMap<ImageLayoutState, 16, vvl::SubresourceEncoder::IndexType>(subresource_count),
+          image_id(image_id) {}
     const uint32_t image_id;
 };
 using ImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandBufferImageLayoutMap>>;

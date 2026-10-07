@@ -175,6 +175,8 @@ SubresourceEncoder::SubresourceEncoder(const VkImageSubresourceRange& full_range
     assert(full_range.baseMipLevel == 0);
     // TODO: should be some static assert
     assert(param->AspectCount() <= kMaxSupportedAspect);
+    // The subresource count must not wrap in the index type
+    assert(static_cast<uint64_t>(full_range.layerCount) * full_range.levelCount * param->AspectCount() == SubresourceCount());
     PopulateFunctionPointers();
 }
 
