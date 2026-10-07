@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 #include <utility>
 
 // A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N elements.
@@ -52,7 +53,10 @@ class small_vector {
 
     small_vector(const small_vector &other) : size_(0), capacity_(N), working_store_(GetSmallStore()) { PushBackFrom(other); }
 
-    small_vector(small_vector &&other) : size_(0), capacity_(N), working_store_(GetSmallStore()) {
+    // Only steals the large store or moves the elements into the small store, so it never allocates.
+    // Being noexcept lets std::vector move, instead of copy, a small_vector when it reallocates.
+    small_vector(small_vector&& other) noexcept(std::is_nothrow_move_constructible_v<T>)
+        : size_(0), capacity_(N), working_store_(GetSmallStore()) {
         if (other.large_store_) {
             MoveLargeStore(other);
         } else {

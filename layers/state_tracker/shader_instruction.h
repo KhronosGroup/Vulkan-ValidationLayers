@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstdint>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
@@ -43,7 +44,6 @@ class Instruction {
   public:
     Instruction(std::vector<uint32_t>::const_iterator it);
     Instruction(const uint32_t* it);
-    ~Instruction() = default;
 
     // The word used to define the Instruction
     uint32_t Word(uint32_t index) const { return words_[index]; }
@@ -153,6 +153,10 @@ class Instruction {
     uint32_t d_words_[12];
 #endif
 };
+
+// Module::StaticData holds a std::vector<Instruction>, which only moves (instead of copying every instruction) when it grows or
+// shrinks if this holds. Don't declare a destructor or copy operation, as that removes the implicit move constructor.
+static_assert(std::is_nothrow_move_constructible_v<Instruction>);
 
 namespace ImageProcUsageBit {
     constexpr uint32_t kNone = 0;

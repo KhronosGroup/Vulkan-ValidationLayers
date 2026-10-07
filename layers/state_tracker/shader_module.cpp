@@ -970,7 +970,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
         // The absolute the lowest of any of the shaders the average was 3 (dwords-per-instruction)
         instructions.reserve(module_state.words_.size() / 3);
         while (it != module_state.words_.cend()) {
-            auto new_insn = instructions.emplace_back(it);
+            const Instruction& new_insn = instructions.emplace_back(it);
             const uint32_t opcode = new_insn.Opcode();
 
             // Check for opcodes that would require reparsing of the words
