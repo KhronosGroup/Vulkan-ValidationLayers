@@ -598,6 +598,7 @@ void CommandBufferSubState::ResetCBState() {
     bound_graphics_pipelines.clear();
     queue_submit_functions.clear();
     queue_submit_functions_after_render_pass.clear();
+    event_signaling_state.clear();
     ClearPushConstants();
 }
 
