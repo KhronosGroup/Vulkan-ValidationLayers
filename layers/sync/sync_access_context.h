@@ -249,6 +249,9 @@ class AccessContext {
     template <typename Predicate>
     void EraseIf(Predicate&& pred);
 
+    // Partially overlapping entries are kept
+    void EraseContainedEntries(const AccessRange& range);
+
     // For use during queue submit building up the QueueBatchContext AccessContext for validation, otherwise clear.
     void AddAsyncContext(const AccessContext& context, ResourceUsageTag tag, QueueId queue_id);
 
@@ -466,7 +469,7 @@ template <typename Predicate>
 void AccessContext::EraseIf(Predicate&& pred) {
     auto pos = access_state_map_.begin();
     while (pos != access_state_map_.end()) {
-        if (pred(*pos)) {
+        if (pred(pos->second)) {
             pos = access_state_map_.Erase(pos);
         } else {
             ++pos;

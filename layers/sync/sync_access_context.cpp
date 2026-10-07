@@ -193,6 +193,17 @@ void AccessContext::AddReferencedTags(ResourceUsageTagSet& used) const {
     }
 }
 
+void AccessContext::EraseContainedEntries(const AccessRange& range) {
+    auto pos = access_state_map_.LowerBound(range.begin);
+    while (pos != access_state_map_.end() && pos->first.begin < range.end) {
+        if (range.includes(pos->first)) {
+            pos = access_state_map_.Erase(pos);
+        } else {
+            ++pos;
+        }
+    }
+}
+
 const SubpassBarrier& AccessContext::GetSubpassBarrier(uint32_t src_subpass) const {
     if (src_subpass == VK_SUBPASS_EXTERNAL) {
         return subpass_barriers_.back();
