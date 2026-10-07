@@ -30,7 +30,7 @@ class DescriptorIdPool {
     DescriptorIdPool(Validator& gpuav, uint32_t max_descriptors);
     ~DescriptorIdPool();
 
-    DescriptorId NextId(const VulkanTypedHandle& handle);
+    DescriptorId NextId();
     void DeleteId(DescriptorId id);
 
     VkDeviceAddress GetDeviceAddress() const { return buffer_.Address(); }
@@ -40,7 +40,7 @@ class DescriptorIdPool {
 
     const uint32_t max_descriptors_;
     DescriptorId next_id_{1};
-    vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
+    vvl::unordered_set<DescriptorId> allocated_ids_;
 
     vko::Buffer buffer_;
     uint32_t* gpu_id_pool_state_{nullptr};
@@ -52,7 +52,7 @@ class DescriptorIdPool {
 // so that the instrumentation can decide if a descriptor is actually valid when it is used in a shader.
 class DescriptorIdTracker {
   public:
-    DescriptorIdTracker(DescriptorIdPool& id_pool_, VulkanTypedHandle handle) : id_pool(id_pool_), id(id_pool_.NextId(handle)) {}
+    explicit DescriptorIdTracker(DescriptorIdPool& id_pool_) : id_pool(id_pool_), id(id_pool_.NextId()) {}
 
     DescriptorIdTracker(const DescriptorIdTracker&) = delete;
     DescriptorIdTracker& operator=(const DescriptorIdTracker&) = delete;

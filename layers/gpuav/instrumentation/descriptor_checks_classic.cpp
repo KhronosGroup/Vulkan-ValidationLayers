@@ -60,7 +60,7 @@ DescriptorIdPool::~DescriptorIdPool() {
     }
 }
 
-DescriptorId DescriptorIdPool::NextId(const VulkanTypedHandle& handle) {
+DescriptorId DescriptorIdPool::NextId() {
     if (max_descriptors_ == 0) {
         return 0;
     }
@@ -69,7 +69,7 @@ DescriptorId DescriptorIdPool::NextId(const VulkanTypedHandle& handle) {
     // NOTE: valid ids are in the range [1, max_descriptors_] (inclusive)
     // 0 is the invalid id.
     std::lock_guard guard(lock_);
-    if (alloc_map_.size() >= max_descriptors_) {
+    if (allocated_ids_.size() >= max_descriptors_) {
         return 0;
     }
     do {
@@ -77,8 +77,8 @@ DescriptorId DescriptorIdPool::NextId(const VulkanTypedHandle& handle) {
         if (next_id_ > max_descriptors_) {
             next_id_ = 1;
         }
-    } while (alloc_map_.count(result) > 0);
-    alloc_map_[result] = handle;
+    } while (allocated_ids_.count(result) > 0);
+    allocated_ids_.insert(result);
     gpu_id_pool_state_[result / 32] |= 1u << (result & 31);
     return result;
 }
@@ -88,7 +88,7 @@ void DescriptorIdPool::DeleteId(DescriptorId id) {
         std::lock_guard guard(lock_);
         // Note: We don't mess with next_id_ here because ids should be assigned in LRU order.
         gpu_id_pool_state_[id / 32] &= ~(1u << (id & 31));
-        alloc_map_.erase(id);
+        allocated_ids_.erase(id);
     }
 }
 
