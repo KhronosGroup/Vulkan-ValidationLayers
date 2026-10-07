@@ -369,6 +369,12 @@ class DispatchDevice : public HandleWrapper {
     VkDevice device = VK_NULL_HANDLE;
     VkLayerDispatchTable device_dispatch_table;
 
+    // We need to get the format feature all over across multiple calls.
+    // A lot of time apps only use a few formats and just reusing them.
+    // Found a nice measurable improvement from traces to just cache these formats in a cache
+    VkFormatProperties3 GetFormatProperties(VkFormat format);
+    vvl::concurrent_unordered_map<VkFormat, VkFormatProperties3, 0> format_properties_cache;
+
     mutable std::vector<std::unique_ptr<BaseDevice>> object_dispatch;
     mutable std::vector<std::unique_ptr<BaseDevice>> aborted_object_dispatch;
     mutable std::vector<std::vector<BaseDevice*>> intercept_vectors;

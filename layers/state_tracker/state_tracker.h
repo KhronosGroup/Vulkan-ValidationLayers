@@ -262,9 +262,6 @@ class InstanceState : public vvl::BaseInstance {
                                             const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                             VkDisplayModeKHR* pMode, const RecordObject& record_obj) override;
 
-    VkFormatFeatureFlags2 GetImageFormatFeatures(VkPhysicalDevice physical_device, bool query_format_feature2,
-                                                 bool has_drm_modifiers, VkDevice device, VkImage image, VkFormat format,
-                                                 VkImageTiling tiling);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface, SurfaceType type);
     void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
@@ -1720,6 +1717,7 @@ class DeviceState : public vvl::BaseDevice {
                                                                           const vvl::Framebuffer& fb_state) const;
 
     VkFormatFeatureFlags2 GetPotentialFormatFeatures(VkFormat format) const;
+    VkFormatFeatureFlags2 GetImageFormatFeatures(VkImage image, VkFormat format, VkImageTiling tiling) const;
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
                                                     const vvl::DescriptorUpdateTemplate& template_state, const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,

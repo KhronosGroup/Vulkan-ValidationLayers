@@ -341,79 +341,59 @@ VkFormat DeviceState::GetExternalFormatResolveANDROID(uint64_t external_format) 
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-VkFormatFeatureFlags2 InstanceState::GetImageFormatFeatures(VkPhysicalDevice physical_device, bool query_format_feature2,
-                                                            bool has_drm_modifiers, VkDevice device, VkImage image, VkFormat format,
-                                                            VkImageTiling tiling) {
+// Add feature support according to Image Format Features (vkspec.html#resources-image-format-features)
+// if format is AHB external format then the features are already set
+VkFormatFeatureFlags2 DeviceState::GetImageFormatFeatures(VkImage image, VkFormat format, VkImageTiling tiling) const {
+    if (tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        const VkFormatProperties3 format_properties = dispatch_device_->GetFormatProperties(format);
+        return (tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
+                                                  : format_properties.optimalTilingFeatures;
+    }
+
+    // Look for the image modifier in the format's list of modifiers
     VkFormatFeatureFlags2 format_features = 0;
+    VkImageDrmFormatModifierPropertiesEXT drm_format_props = vku::InitStructHelper();
+    DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_props);
 
-    // Add feature support according to Image Format Features (vkspec.html#resources-image-format-features)
-    // if format is AHB external format then the features are already set
-    if (query_format_feature2) {
+    if (QueryFormatFeatureFlags2(extensions)) {
         VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
-        auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>(has_drm_modifiers ? &fmt_drm_props : nullptr);
-        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
         DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
 
-        fmt_props_3.linearTilingFeatures |= fmt_props_2.formatProperties.linearTilingFeatures;
-        fmt_props_3.optimalTilingFeatures |= fmt_props_2.formatProperties.optimalTilingFeatures;
-        fmt_props_3.bufferFeatures |= fmt_props_2.formatProperties.bufferFeatures;
-
-        if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            VkImageDrmFormatModifierPropertiesEXT drm_format_props = vku::InitStructHelper();
-
-            // If the driver returns zero, apparently that means nothing is valid
-            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11739
-            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4710
-            if (fmt_drm_props.drmFormatModifierCount == 0) {
-                return format_features;
-            }
-
-            // Find the image modifier
-            DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_props);
-
-            std::vector<VkDrmFormatModifierProperties2EXT> drm_mod_props;
-            drm_mod_props.resize(fmt_drm_props.drmFormatModifierCount);
-            fmt_drm_props.pDrmFormatModifierProperties = &drm_mod_props[0];
-
-            // Second query to have all the modifiers filled
-            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
-
-            // Look for the image modifier in the list
-            for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
-                if (fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_props.drmFormatModifier) {
-                    format_features = fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
-                    break;
-                }
-            }
-        } else {
-            format_features =
-                (tiling == VK_IMAGE_TILING_LINEAR) ? fmt_props_3.linearTilingFeatures : fmt_props_3.optimalTilingFeatures;
+        // If the driver returns zero, apparently that means nothing is valid
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11739
+        // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4710
+        if (fmt_drm_props.drmFormatModifierCount == 0) {
+            return format_features;
         }
-    } else if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
-        DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_properties);
 
-        VkFormatProperties2 format_properties_2 = vku::InitStructHelper();
-        VkDrmFormatModifierPropertiesListEXT drm_properties_list = vku::InitStructHelper();
-        format_properties_2.pNext = (void*)&drm_properties_list;
-        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &format_properties_2);
-        std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
-        drm_properties.resize(drm_properties_list.drmFormatModifierCount);
-        drm_properties_list.pDrmFormatModifierProperties = &drm_properties[0];
-        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &format_properties_2);
+        std::vector<VkDrmFormatModifierProperties2EXT> drm_mod_props(fmt_drm_props.drmFormatModifierCount);
+        fmt_drm_props.pDrmFormatModifierProperties = drm_mod_props.data();
 
-        for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
-            if (drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
-                format_features = drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+        // Second query to have all the modifiers filled
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+
+        for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+            if (fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_props.drmFormatModifier) {
+                format_features = fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
                 break;
             }
         }
     } else {
-        VkFormatProperties format_properties;
-        DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
-        format_features =
-            (tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures : format_properties.optimalTilingFeatures;
+        VkDrmFormatModifierPropertiesListEXT drm_properties_list = vku::InitStructHelper();
+        VkFormatProperties2 format_properties_2 = vku::InitStructHelper(&drm_properties_list);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &format_properties_2);
+
+        std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties(drm_properties_list.drmFormatModifierCount);
+        drm_properties_list.pDrmFormatModifierProperties = drm_properties.data();
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &format_properties_2);
+
+        for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
+            if (drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_props.drmFormatModifier) {
+                format_features = drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                break;
+            }
+        }
     }
     return format_features;
 }
@@ -439,9 +419,7 @@ void DeviceState::PostCallRecordCreateImage(VkDevice device, const VkImageCreate
         format_features = GetExternalFormatFeaturesANDROID(pCreateInfo->pNext);
     }
     if (format_features == 0) {
-        format_features = instance_state->GetImageFormatFeatures(physical_device, QueryFormatFeatureFlags2(extensions),
-                                                                 IsExtEnabled(extensions.vk_ext_image_drm_format_modifier), device,
-                                                                 *pImage, pCreateInfo->format, pCreateInfo->tiling);
+        format_features = GetImageFormatFeatures(*pImage, pCreateInfo->format, pCreateInfo->tiling);
     }
     Add(CreateImageState(*pImage, pCreateInfo, format_features));
 }
@@ -713,18 +691,7 @@ void DeviceState::PostCallRecordCreateBufferView(VkDevice device, const VkBuffer
     }
     auto buffer_state = Get<Buffer>(pCreateInfo->buffer);
 
-    VkFormatFeatureFlags2 buffer_features;
-    if (QueryFormatFeatureFlags2(extensions)) {
-        VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
-        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, pCreateInfo->format, &fmt_props_2);
-        buffer_features = fmt_props_3.bufferFeatures | fmt_props_2.formatProperties.bufferFeatures;
-    } else {
-        VkFormatProperties format_properties;
-        DispatchGetPhysicalDeviceFormatProperties(physical_device, pCreateInfo->format, &format_properties);
-        buffer_features = format_properties.bufferFeatures;
-    }
-
+    const VkFormatFeatureFlags2 buffer_features = dispatch_device_->GetFormatProperties(pCreateInfo->format).bufferFeatures;
     Add(CreateBufferViewState(buffer_state, *pView, pCreateInfo, buffer_features));
 }
 
@@ -784,9 +751,7 @@ void DeviceState::PostCallRecordCreateImageView(VkDevice device, const VkImageVi
         // The ImageView uses same Image's format feature since they share same AHB
         format_features = image_state->format_features;
     } else {
-        format_features = instance_state->GetImageFormatFeatures(
-            physical_device, QueryFormatFeatureFlags2(extensions), IsExtEnabled(extensions.vk_ext_image_drm_format_modifier),
-            device, image_state->VkHandle(), pCreateInfo->format, image_state->GetTiling());
+        format_features = GetImageFormatFeatures(image_state->VkHandle(), pCreateInfo->format, image_state->GetTiling());
     }
 
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
@@ -1138,53 +1103,37 @@ void DeviceState::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuf
 // Gets union of all features defined by Potential Format Features
 // except, does not handle the external format case for AHB as that only can be used for sampled images
 VkFormatFeatureFlags2 DeviceState::GetPotentialFormatFeatures(VkFormat format) const {
-    VkFormatFeatureFlags2 format_features = 0;
+    if (format == VK_FORMAT_UNDEFINED) {
+        return 0;
+    }
 
-    if (format != VK_FORMAT_UNDEFINED) {
+    const VkFormatProperties3 format_properties = dispatch_device_->GetFormatProperties(format);
+    VkFormatFeatureFlags2 format_features = format_properties.linearTilingFeatures | format_properties.optimalTilingFeatures;
+
+    if (IsExtEnabled(extensions.vk_ext_image_drm_format_modifier)) {
         if (QueryFormatFeatureFlags2(extensions)) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
-            auto fmt_props_3 = vku::InitStruct<VkFormatProperties3>(
-                IsExtEnabled(extensions.vk_ext_image_drm_format_modifier) ? &fmt_drm_props : nullptr);
-            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
             DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
 
-            format_features |= fmt_props_2.formatProperties.linearTilingFeatures;
-            format_features |= fmt_props_2.formatProperties.optimalTilingFeatures;
+            std::vector<VkDrmFormatModifierProperties2EXT> drm_properties(fmt_drm_props.drmFormatModifierCount);
+            fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
 
-            format_features |= fmt_props_3.linearTilingFeatures;
-            format_features |= fmt_props_3.optimalTilingFeatures;
-
-            if (IsExtEnabled(extensions.vk_ext_image_drm_format_modifier)) {
-                std::vector<VkDrmFormatModifierProperties2EXT> drm_properties;
-                drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
-                fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
-                DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
-
-                for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
-                    format_features |= fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
-                }
+            for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+                format_features |= fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
             }
         } else {
-            VkFormatProperties format_properties;
-            DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
-            format_features |= format_properties.linearTilingFeatures;
-            format_features |= format_properties.optimalTilingFeatures;
+            VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
+            VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
+            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
 
-            if (IsExtEnabled(extensions.vk_ext_image_drm_format_modifier)) {
-                VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
-                VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
+            std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties(fmt_drm_props.drmFormatModifierCount);
+            fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+            DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
 
-                DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
-
-                std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
-                drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
-                fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
-                DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
-
-                for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
-                    format_features |= fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
-                }
+            for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
+                format_features |= fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
             }
         }
     }
@@ -4471,10 +4420,7 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
             swapchain->images.resize(swapchain_image_count);
             const auto& image_ci = swapchain->image_create_info;
             for (uint32_t i = 0; i < swapchain_image_count; ++i) {
-                auto format_features =
-                    instance_state->GetImageFormatFeatures(physical_device, QueryFormatFeatureFlags2(extensions),
-                                                           IsExtEnabled(extensions.vk_ext_image_drm_format_modifier), device,
-                                                           swapchain_images[i], image_ci.format, image_ci.tiling);
+                auto format_features = GetImageFormatFeatures(swapchain_images[i], image_ci.format, image_ci.tiling);
                 auto image_state = CreateImageState(swapchain_images[i], image_ci.ptr(), swapchain->VkHandle(), i, format_features);
 
                 // Detect image resuse from the old swapchain

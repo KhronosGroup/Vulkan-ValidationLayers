@@ -895,6 +895,30 @@ BaseInstance* DispatchInstance::GetValidationObject(LayerObjectTypeId object_typ
     return nullptr;
 }
 
+VkFormatProperties3 DispatchDevice::GetFormatProperties(VkFormat format) {
+    if (auto found = format_properties_cache.find(format); found != format_properties_cache.end()) {
+        return found->second;
+    }
+
+    VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
+    if (QueryFormatFeatureFlags2(extensions)) {
+        VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
+        fmt_props_3.linearTilingFeatures |= fmt_props_2.formatProperties.linearTilingFeatures;
+        fmt_props_3.optimalTilingFeatures |= fmt_props_2.formatProperties.optimalTilingFeatures;
+        fmt_props_3.bufferFeatures |= fmt_props_2.formatProperties.bufferFeatures;
+    } else {
+        VkFormatProperties format_properties;
+        DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
+        fmt_props_3.linearTilingFeatures = format_properties.linearTilingFeatures;
+        fmt_props_3.optimalTilingFeatures = format_properties.optimalTilingFeatures;
+        fmt_props_3.bufferFeatures = format_properties.bufferFeatures;
+    }
+
+    format_properties_cache.insert_or_assign(format, fmt_props_3);
+    return fmt_props_3;
+}
+
 DispatchDevice::DispatchDevice(DispatchInstance* instance, VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo)
     : HandleWrapper(instance->debug_report),
       settings(instance->settings),
