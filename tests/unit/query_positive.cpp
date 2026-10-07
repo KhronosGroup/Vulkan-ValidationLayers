@@ -586,6 +586,64 @@ TEST_F(PositiveQuery, HostQueryResetSuccess) {
     vk::ResetQueryPoolEXT(device(), query_pool, 0, 1);
 }
 
+TEST_F(PositiveQuery, HostResetWhilePoolInFlight) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13390");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
+    RETURN_IF_SKIP(Init());
+    if (HasZeroTimestampValidBits()) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.";
+    }
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
+    vk::ResetQueryPool(device(), query_pool, 0, 2);
+
+    m_command_buffer.Begin();
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 1);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    // The in-flight command buffer only writes query 1
+    vk::ResetQueryPool(device(), query_pool, 0, 1);
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveQuery, HostResetAfterAvailabilityRead) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13390");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::hostQueryReset);
+    RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD, query results are never written";
+    }
+    if (HasZeroTimestampValidBits()) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.";
+    }
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
+    vk::ResetQueryPool(device(), query_pool, 0, 2);
+
+    m_command_buffer.Begin();
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    // Query 1 is never written
+    const VkQueryResultFlags flags = VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
+    uint64_t data[4] = {};
+    for (uint32_t i = 0; i < 1000000 && data[1] == 0; ++i) {
+        vk::GetQueryPoolResults(device(), query_pool, 0, 2, sizeof(data), data, 2 * sizeof(uint64_t), flags);
+    }
+    if (data[1] == 0) {
+        GTEST_SKIP() << "Query never became available";
+    }
+
+    vk::ResetQueryPool(device(), query_pool, 0, 1);
+
+    m_default_queue->Wait();
+}
+
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7874
 TEST_F(PositiveQuery, ReuseSecondaryWithQueryCommand) {
     TEST_DESCRIPTION("Regression test for a deadlock when secondary command buffer is reused and records a query command");
