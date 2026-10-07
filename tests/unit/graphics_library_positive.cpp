@@ -2671,3 +2671,16 @@ TEST_F(PositiveGraphicsLibrary, InputAttachmentRenderPass) {
 
     vkt::Pipeline exe_pipe(*m_device, {vi_lib, pr_lib, fs_lib, fo_lib}, pipeline_layout);
 }
+
+TEST_F(PositiveGraphicsLibrary, NullDSLWithFragmentDensityMap2) {
+    TEST_DESCRIPTION("Null set layout with VK_EXT_fragment_density_map2 enabled");
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                     });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, nullptr, &ds.layout_}, {},
+                                        VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+}

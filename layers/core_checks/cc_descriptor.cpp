@@ -5194,6 +5194,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         for (const auto& dsl : set_layouts) {
             // find the number of subsampled samplers across all stages
             // NOTE: this does not use the GetDescriptorSum patter because it needs the Get<vvl::Sampler> method
+            if (!dsl) {
+                continue;
+            }
             if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
                 continue;
             }
