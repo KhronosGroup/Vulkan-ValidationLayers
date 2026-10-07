@@ -1969,9 +1969,9 @@ void CommandBuffer::SetImageLayout(const vvl::Image& image_state, const VkImageS
 void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView& view_state, VkImageLayout layout,
                                               const char* submit_time_layout_mismatch_vuid) {
     if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
-        RangeGenerator range_gen(view_state.range_generator);
-        TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, view_state.normalized_subresource_range.aspectMask,
-                         submit_time_layout_mismatch_vuid, GetLastLabelCommandIndex(), current_command);
+        TrackFirstLayout(*image_layout_map, view_state.MakeImageLayoutRangeGenerator(), layout,
+                         view_state.normalized_subresource_range.aspectMask, submit_time_layout_mismatch_vuid,
+                         GetLastLabelCommandIndex(), current_command);
     }
 }
 
@@ -1980,7 +1980,7 @@ void CommandBuffer::TrackDepthAttachmentFirstLayout(const vvl::ImageView& view_s
     if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
         // According to the spec for dynamic rendering depth attachment, we must ignore
         // the aspect used to create the image view and use the DEPTH aspect instead
-        VkImageSubresourceRange image_layout_range = view_state.GetRangeGeneratorRange(dev_data.extensions);
+        VkImageSubresourceRange image_layout_range = view_state.image_layout_range;
         image_layout_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         RangeGenerator range_gen(view_state.image_state->subresource_encoder, image_layout_range);
 
@@ -1994,7 +1994,7 @@ void CommandBuffer::TrackStencilAttachmentFirstLayout(const vvl::ImageView& view
     if (auto image_layout_map = GetOrCreateImageLayoutMap(*view_state.image_state.get())) {
         // According to the spec for dynamic rendering stencil attachment, we must ignore
         // the aspect used to create the image view and use the STENCIL aspect instead
-        VkImageSubresourceRange image_layout_range = view_state.GetRangeGeneratorRange(dev_data.extensions);
+        VkImageSubresourceRange image_layout_range = view_state.image_layout_range;
         image_layout_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
         RangeGenerator range_gen(view_state.image_state->subresource_encoder, image_layout_range);
 
@@ -2023,24 +2023,25 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image& image_state, const V
 void CommandBuffer::SetImageViewLayout(const vvl::ImageView& view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
     const vvl::Image* image_state = view_state.image_state.get();
 
-    VkImageSubresourceRange sub_range = view_state.GetRangeGeneratorRange(dev_data.extensions);
+    VkImageSubresourceRange image_layout_range = view_state.image_layout_range;
 
-    if (sub_range.aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) && layoutStencil != kInvalidLayout) {
-        sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        SetImageLayout(*image_state, sub_range, layout);
-        sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-        SetImageLayout(*image_state, sub_range, layoutStencil);
+    if (image_layout_range.aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) &&
+        layoutStencil != kInvalidLayout) {
+        image_layout_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        SetImageLayout(*image_state, image_layout_range, layout);
+        image_layout_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+        SetImageLayout(*image_state, image_layout_range, layoutStencil);
     } else {
         // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth and
         // stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will also be
         // transitioned and thus must be included explicitly
         if (const VkFormat format = view_state.create_info.format; vkuFormatIsDepthAndStencil(format)) {
             if (layoutStencil == kInvalidLayout &&
-                (sub_range.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
-                sub_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                (image_layout_range.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+                image_layout_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
             }
         }
-        SetImageLayout(*image_state, sub_range, layout);
+        SetImageLayout(*image_state, image_layout_range, layout);
     }
 }
 

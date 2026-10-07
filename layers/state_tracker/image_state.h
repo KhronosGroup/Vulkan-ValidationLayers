@@ -316,7 +316,14 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     const bool filter_cubic;
     const bool filter_cubic_minmax;
     const VkImageSubresourceRange normalized_subresource_range;
-    const SubresourceRangeGenerator range_generator;
+
+    // The range that defines indexing space of all possible image layouts for this image view.
+    // It is used by the SubresourceRangeGenerator and the image layout maps.
+    // In the general case, it is different than the number of subresources (described by
+    // normalized_subresource_range), so when dealing with image layouts this range should
+    // always be used instead
+    const VkImageSubresourceRange image_layout_range;
+
     const VkSampleCountFlagBits samples;
     // VK_NULL_HANDLE if it doesn't have one chained in the pNext at creation time
     const VkSamplerYcbcrConversion sampler_conversion;
@@ -353,14 +360,14 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     static VkImageSubresourceRange NormalizeImageViewSubresourceRange(const Image &image_state,
                                                                       const VkImageViewCreateInfo &image_view_ci);
 
-    // The range that defines indexing space of all possible image layouts for this image view.
-    // It is used by the SubresourceRangeGenerator and the image layout maps.
-    // In the general case, it is different than the number of subresources (described by
-    // normalized_subresource_range), so when dealing with image layouts this function should
-    // always be used instead
-    VkImageSubresourceRange GetRangeGeneratorRange(const DeviceExtensions &extensions) const;
+    SubresourceRangeGenerator MakeImageLayoutRangeGenerator() const {
+        return SubresourceRangeGenerator(image_state->subresource_encoder, image_layout_range);
+    }
 
     std::string DescribeImageUsage(const Logger& logger) const;
+
+  private:
+    VkImageSubresourceRange GetImageLayoutRange(const DeviceExtensions &extensions) const;
 };
 
 class ImageViewSubState {

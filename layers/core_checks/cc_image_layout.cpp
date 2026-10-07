@@ -668,10 +668,7 @@ bool CoreChecks::ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffe
 
         for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
             VkImageAspectFlags test_aspect = 1u << aspect_index;
-            // NOTE: This part of validation works with view's GetRangeGeneratorRange() range,
-            // but it has the same aspect as normalized_subresource_range so it's fine to check the latter.
-            // Still one future improvement is to use view's range generator object directly to check for aspect.
-            if ((view_state->normalized_subresource_range.aspectMask & test_aspect) == 0) {
+            if ((view_state->image_layout_range.aspectMask & test_aspect) == 0) {
                 continue;
             }
 
@@ -694,8 +691,7 @@ bool CoreChecks::ValidateFramebufferAndRenderPassLayouts(const vvl::CommandBuffe
                 continue;
             }
 
-            // Cannot use view_state->range_generator directly since we need to modify aspectMask
-            VkImageSubresourceRange image_layout_range = view_state->GetRangeGeneratorRange(device_state->extensions);
+            VkImageSubresourceRange image_layout_range = view_state->image_layout_range;
             image_layout_range.aspectMask = test_aspect;
 
             LayoutUseCheckAndMessage layout_check(check_layout, test_aspect);
@@ -857,8 +853,7 @@ bool CoreChecks::ValidateRenderingAttachmentCurrentLayout(const core::RenderingA
             aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
         }
 
-        // Cannot use view_state->range_generator directly since we need to modify aspectMask
-        VkImageSubresourceRange image_layout_range = image_view_state->GetRangeGeneratorRange(device_state->extensions);
+        VkImageSubresourceRange image_layout_range = image_view_state->image_layout_range;
         image_layout_range.aspectMask = aspect_mask;
 
         LayoutUseCheckAndMessage layout_check(resolve ? vvl_attachment.info.resolveImageLayout : vvl_attachment.info.imageLayout,
@@ -932,22 +927,22 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer& cb_state, 
             vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
         if (attachment_description_stencil_layout) {
             const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
-            VkImageSubresourceRange sub_range = view_state->GetRangeGeneratorRange(device_state->extensions);
-            sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            cb_state.TrackImageFirstLayout(*image_state, sub_range, 0, 0, initial_layout);
-            sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-            cb_state.TrackImageFirstLayout(*image_state, sub_range, 0, 0, stencil_initial_layout);
+            VkImageSubresourceRange image_layout_range = view_state->image_layout_range;
+            image_layout_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            cb_state.TrackImageFirstLayout(*image_state, image_layout_range, 0, 0, initial_layout);
+            image_layout_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+            cb_state.TrackImageFirstLayout(*image_state, image_layout_range, 0, 0, stencil_initial_layout);
         } else {
-            auto subresource_range = view_state->GetRangeGeneratorRange(device_state->extensions);
+            auto image_layout_range = view_state->image_layout_range;
             // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth
             // and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will
             // also be transitioned and thus must be included explicitly
             if (const VkFormat format = view_state->create_info.format; vkuFormatIsDepthAndStencil(format)) {
-                if (subresource_range.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
-                    subresource_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                if (image_layout_range.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
+                    image_layout_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                 }
             }
-            cb_state.TrackImageFirstLayout(*image_state, subresource_range, 0, 0, initial_layout);
+            cb_state.TrackImageFirstLayout(*image_state, image_layout_range, 0, 0, initial_layout);
         }
     }
     // Now transition for first subpass (index 0)
@@ -1136,7 +1131,7 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
 
     // Validate layout of the found attachment
     skip |= ForEachMatchingLayoutMapRange(
-        *cb_image_layouts, RangeGenerator(matching_attatchment_view_state->range_generator),
+        *cb_image_layouts, matching_attatchment_view_state->MakeImageLayoutRangeGenerator(),
         [this, &image_state, &barrier_loc](const LayoutRange& range, const ImageLayoutState& state) {
             // Use current layout if it is specified (we tracked actual image layout transition).
             // Otherwise use expected layout (specified by various APIs): during execution the

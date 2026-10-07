@@ -1170,8 +1170,8 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                         VulkanTypedHandle(image_view, kVulkanObjectTypeImageView));
 
             skip |= dev_proxy.ValidateDescriptorImageLayout(objlist, *image_state, aspect_flags, image_layout, *image_layout_map,
-                                                            vvl::SubresourceRangeGenerator(image_view_state->range_generator),
-                                                            loc.Get(), describe_descriptor_callback);
+                                                            image_view_state->MakeImageLayoutRangeGenerator(), loc.Get(),
+                                                            describe_descriptor_callback);
         }
     }
 
