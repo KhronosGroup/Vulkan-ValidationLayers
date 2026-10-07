@@ -300,9 +300,7 @@ void QueueBatchContext::Trim() {
 
 template <typename Predicate>
 void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& last_synchronized_present) {
-    access_context_.EraseIf([this, &last_synchronized_present, &predicate](AccessMap::value_type& access) {
-        AccessState& access_state = access.second;
-
+    access_context_.EraseIf([this, &last_synchronized_present, &predicate](AccessState& access_state) {
         // Tell EraseIf to remove present accesses that are already synchronized according to LastSynchronizedPresent
         if (access_state.HasWriteOp() && access_state.LastWrite().IsPresent()) {
             const ResourceUsageRecord& usage_record = *batch_log_.GetAccessRecord(access_state.LastWriteTag()).record;
@@ -399,7 +397,7 @@ void QueueBatchContext::ApplyAcquireWait(const AcquiredImage& acquired) {
 
 void QueueBatchContext::OnResourceDestroyed(const AccessRange& resource_range) {
     // Remove all accesses associated with the resource being destroyed
-    access_context_.EraseIf([&resource_range](AccessMap::value_type& access) { return resource_range.includes(access.first); });
+    access_context_.EraseContainedEntries(resource_range);
 }
 
 // Batch barrier ops don't modify in place, and thus don't need to hold pending state, and also are *never* layout transitions.
