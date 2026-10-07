@@ -687,22 +687,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties
 
 // Access helper functions for external modules
 VkFormatProperties3 CoreChecks::GetPDFormatProperties(const VkFormat format) const {
-    VkFormatProperties3 fmt_props_3 = vku::InitStructHelper();
-    VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-
-    if (QueryFormatFeatureFlags2(extensions)) {
-        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
-        fmt_props_3.linearTilingFeatures |= fmt_props_2.formatProperties.linearTilingFeatures;
-        fmt_props_3.optimalTilingFeatures |= fmt_props_2.formatProperties.optimalTilingFeatures;
-        fmt_props_3.bufferFeatures |= fmt_props_2.formatProperties.bufferFeatures;
-    } else {
-        VkFormatProperties format_properties;
-        DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
-        fmt_props_3.linearTilingFeatures = format_properties.linearTilingFeatures;
-        fmt_props_3.optimalTilingFeatures = format_properties.optimalTilingFeatures;
-        fmt_props_3.bufferFeatures = format_properties.bufferFeatures;
-    }
-    return fmt_props_3;
+    return dispatch_device_->GetFormatProperties(format);
 }
 
 VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,

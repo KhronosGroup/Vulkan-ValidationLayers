@@ -1247,15 +1247,14 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                      string_VkFormat(vertex_attrib_desc.format));
                 }
 
-                VkFormatProperties properties;
-                DispatchGetPhysicalDeviceFormatProperties(physical_device, vertex_attrib_desc.format, &properties);
-                if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+                const VkFormatFeatureFlags2 buffer_features =
+                    dispatch_device_->GetFormatProperties(vertex_attrib_desc.format).bufferFeatures;
+                if ((buffer_features & VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT) == 0) {
                     skip |=
                         LogError("VUID-VkVertexInputAttributeDescription-format-00623", device, attribute_loc.dot(Field::format),
                                  "(%s) doesn't support VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT.\n"
                                  "(supported bufferFeatures: %s)",
-                                 string_VkFormat(vertex_attrib_desc.format),
-                                 string_VkFormatFeatureFlags2(properties.bufferFeatures).c_str());
+                                 string_VkFormat(vertex_attrib_desc.format), string_VkFormatFeatureFlags2(buffer_features).c_str());
                 }
             }
         }

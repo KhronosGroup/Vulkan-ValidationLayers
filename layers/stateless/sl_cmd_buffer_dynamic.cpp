@@ -249,15 +249,15 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
                          pVertexAttributeDescriptions[attribute].offset, phys_dev_props.limits.maxVertexInputAttributeOffset);
         }
 
-        VkFormatProperties properties;
-        DispatchGetPhysicalDeviceFormatProperties(physical_device, pVertexAttributeDescriptions[attribute].format, &properties);
-        if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+        const VkFormatFeatureFlags2 buffer_features =
+            dispatch_device_->GetFormatProperties(pVertexAttributeDescriptions[attribute].format).bufferFeatures;
+        if ((buffer_features & VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT) == 0) {
             skip |=
                 LogError("VUID-VkVertexInputAttributeDescription2EXT-format-04805", commandBuffer, attribute_loc.dot(Field::format),
                          "(%s) doesn't support VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT.\n"
                          "(supported bufferFeatures: %s)",
                          string_VkFormat(pVertexAttributeDescriptions[attribute].format),
-                         string_VkFormatFeatureFlags2(properties.bufferFeatures).c_str());
+                         string_VkFormatFeatureFlags2(buffer_features).c_str());
         }
     }
 
