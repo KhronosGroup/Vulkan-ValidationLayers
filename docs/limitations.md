@@ -31,5 +31,7 @@ The Validation Layers will check that the pointer is not null, but if the pointe
 
 It is possible for an app to call `exit()` and do cleanup in their `atexit()` callback.
 Unfortunately, this will destroy our static allocation from under us and there is no way to detect it at runtime.
-We have our own `atexit()` call set at `vkCreateDevice()` time to cleanup the layers, so we require the application to call their `atexit()` **before** `vkCreateDevice()`.
+We register our own `atexit()` handler on the first `vkCreateInstance()` call to clean up the layer's dispatch objects.
+Because `atexit()` handlers run in the reverse order of registration, an application handler registered **before** the first `vkCreateInstance()` will run **after** the layer has cleaned up, and any Vulkan call made from it will abort (with a message saying the `VkDevice` dispatch handle was not found).
+If the application needs to make Vulkan calls in its `atexit()` handler, it must register it **after** the first `vkCreateInstance()`.
 

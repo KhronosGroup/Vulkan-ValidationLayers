@@ -36,11 +36,13 @@ If only dealing with a single file,  run `scripts/generate_source.py` with `--ta
 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/ --target chassis.cpp
 ```
 
+> The `external/` paths depend on where `update_deps.py` installed the dependencies (when using CMake, it is `UPDATE_DEPS_DIR`, for example `external/Debug/64/`)
+
 # Adding and Editing code generation
 
 > Make sure to look at the [python coding style guide](python_scripts_code_style.md)
 
-The `base_generator.py` and `vulkan_object.py` are the core of all generated code
+The `base_generator.py` and `vulkan_object.py` are the core of all generated code. They live in the `registry` folder of [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers/tree/main/registry) (and are shared with other repositories that generate code from `vk.xml`), so changes to them need to be made upstream.
 
 - `BaseGenerator`
   - This is the only file that understands the `reg.py` flow in the `registry`
@@ -64,19 +66,19 @@ for struct in [x for x in self.vk.structs.values() if x.sType]:
 
 #
 # Print each command parameter C string
-for command in self.vk.commands.value():
+for command in self.vk.commands.values():
     for param in command.params:
         print(param.cDeclaration)
 
 #
 # Loop commands with Transfer Queues
-for command in [x for x in self.vk.commands.value() if Queues.TRANSFER & x.queues]:
+for command in [x for x in self.vk.commands.values() if 'VK_QUEUE_TRANSFER_BIT' in x.queues]:
     print(command.name)
 
 #
 # Find enums that are extended with an Instance extension
-for enum in self.vk.enum.values():
-    for extension in [x for x in enum.extensions if x.instance]:
+for enum in self.vk.enums.values():
+    for extension in [self.vk.extensions[x] for x in enum.extensions if self.vk.extensions[x].instance]:
         print(f'{enum.name} - {extension.name}')
 
 #
@@ -110,7 +112,7 @@ Code generation is **not** a bottleneck for performance, but trying add/edit/deb
 
 # How it works
 
-`generate_source.py` sets up the environment and then calls into `run_generator.py` where each file is generated at a time. Many of the generation scripts will generate both the `.cpp` source and `.h` header.
+`generate_source.py` sets up the environment and then, in `RunGenerators()`, generates one file at a time from the `generators` table (which maps each output file name to the generator class in `scripts/generators/`). Many of the generation scripts will generate both the `.cpp` source and `.h` header.
 
 The Vulkan code is generated from [vk.xml](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/registry/vk.xml) and uses the python helper functions in the `Vulkan-Headers/registry` folder.
 
@@ -122,7 +124,7 @@ The `Vulkan-Headers/registry` generation scripts biggest issue is it's designed 
 The Validation Layers became very messy as each generated file had to re-parse this and try to create its own containers.
 The new flow was designed to still make use of the `registry` generation file, but allow a more maintainable way to find data when one only wants to add a little extra code to generation.
 
-The `base_generator.py` and `vulkan_object.py` are were added to help reduce the work needed for each script.
+The `base_generator.py` and `vulkan_object.py` were added to help reduce the work needed for each script.
 
 Before the workflow was:
 

@@ -22,7 +22,7 @@ While the `VK_EXT_validation_features` extension is **never going away**, it was
 You just need to remove your `VK_LAYER_ENABLES=....` and `VK_LAYER_DISABLES=...` and replace with the new dedicated setting:
 
 - `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT` -> `VK_LAYER_GPUAV_ENABLE=1`
-- `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT` -> (removed, we always reserve a slot now)
+- `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT` -> (removed, GPU-AV always uses the last descriptor set slot now. This flag only makes the layer report a `maxBoundDescriptorSets` that is one lower)
 - `VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT` -> `VK_LAYER_VALIDATE_BEST_PRACTICES=1`
 - `VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT` -> `VK_LAYER_PRINTF_ENABLE=1`
 - `VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT` -> `VK_LAYER_VALIDATE_SYNC=1`

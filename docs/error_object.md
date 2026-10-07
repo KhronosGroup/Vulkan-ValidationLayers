@@ -6,7 +6,7 @@ In the past, there was a lot of parameters passed around functions only for the 
 
 ## Single ErrorObject
 
-The `chassis.cpp` holds the single `ErrorObject` reference which is passed to all `PreCallValidate` calls.
+The generated `layers/vulkan/generated/chassis.cpp` creates a single `ErrorObject` for each Vulkan call, which is passed to all `PreCallValidate` calls.
 
 ## Location
 
@@ -59,7 +59,7 @@ using the `Location::Fields()` you can print the location, minus the function, a
 const Location loc = error_obj.location.dot(Field::pBindInfo, i); // vkQueueBindSparse(): pBindInfo[3]
 
 // prints "pBindInfo[3]"
-LogError(/*..*/, "%s". loc.Fields().c_str());
+LogError(/*..*/, "%s", loc.Fields().c_str());
 ```
 
 ### Limitations
@@ -77,7 +77,7 @@ The 2 ways around the are:
 
 ```cpp
 // Create 2nd variable
-const Location attachment_loc = loc.dot(Field::attachment)
+const Location attachment_loc = loc.dot(Field::attachment);
 const Location layout_loc     = attachment_loc.dot(Field::layout);
 LogError(/*..*/, layout_loc, "good");
 ```
@@ -104,4 +104,11 @@ which slowly leads to a LOT more code and becomes very error prone to forget to 
 
 ## LogObjectList
 
-// TODO
+`LogObjectList` (found in `layers/error_message/logging.h`) is the list of Vulkan handles related to the error. These are the objects printed in the `Objects:` section of the error message (and passed to the callback as `VkDebugUtilsMessengerCallbackDataEXT::pObjects`).
+
+`ErrorObject::objlist` only contains the dispatchable handle of the function call. When other objects are involved, create a new list with the handles (or `VulkanTypedHandle` from a state object's `Handle()`) so the user can find them easily.
+
+```cpp
+const LogObjectList objlist(commandBuffer, rp_state->Handle(), depth_view_state->Handle());
+LogError("VUID-E", objlist, loc, "...");
+```
