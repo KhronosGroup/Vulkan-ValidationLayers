@@ -1157,38 +1157,7 @@ void HandleWrapper::UnwrapGraphicsPipelineCreateInfoHandles(vku::safe_VkGraphics
         safe_ci.renderPass = Unwrap(safe_ci.renderPass);
     }
 
-    auto* link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(safe_ci.pNext);
-    if (link_info) {
-        auto* unwrapped_libs = const_cast<VkPipeline*>(link_info->pLibraries);
-        for (uint32_t idx1 = 0; idx1 < link_info->libraryCount; ++idx1) {
-            unwrapped_libs[idx1] = Unwrap(link_info->pLibraries[idx1]);
-        }
-    }
-
-    auto device_generated_commands = vku::FindStructInPNextChain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(safe_ci.pNext);
-    if (device_generated_commands) {
-        for (uint32_t idx1 = 0; idx1 < device_generated_commands->groupCount; ++idx1) {
-            for (uint32_t idx2 = 0; idx2 < device_generated_commands->pGroups[idx1].stageCount; ++idx2) {
-                auto unwrapped_stage =
-                    const_cast<VkPipelineShaderStageCreateInfo*>(&device_generated_commands->pGroups[idx1].pStages[idx2]);
-                if (device_generated_commands->pGroups[idx1].pStages[idx2].module) {
-                    unwrapped_stage->module = Unwrap(device_generated_commands->pGroups[idx1].pStages[idx2].module);
-                }
-            }
-        }
-        auto unwrapped_pipelines = const_cast<VkPipeline*>(device_generated_commands->pPipelines);
-        for (uint32_t idx1 = 0; idx1 < device_generated_commands->pipelineCount; ++idx1) {
-            unwrapped_pipelines[idx1] = Unwrap(device_generated_commands->pPipelines[idx1]);
-        }
-    }
-
-    auto* binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(safe_ci.pNext);
-    if (binary_info) {
-        auto* unwrapped_binaries = const_cast<VkPipelineBinaryKHR*>(binary_info->pPipelineBinaries);
-        for (uint32_t idx1 = 0; idx1 < binary_info->binaryCount; ++idx1) {
-            unwrapped_binaries[idx1] = Unwrap(binary_info->pPipelineBinaries[idx1]);
-        }
-    }
+    UnwrapPnextChainHandles(safe_ci.pNext);
 }
 
 VkResult DispatchDevice::CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
@@ -2022,13 +1991,7 @@ VkResult DispatchDevice::CreateRayTracingPipelinesKHR(VkDevice device, VkDeferre
                     local_pCreateInfos[index0].basePipelineHandle = Unwrap(pCreateInfos[index0].basePipelineHandle);
                 }
 
-                auto* binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(local_pCreateInfos[index0].pNext);
-                if (binary_info) {
-                    auto* unwrapped_binaries = const_cast<VkPipelineBinaryKHR*>(binary_info->pPipelineBinaries);
-                    for (uint32_t idx1 = 0; idx1 < binary_info->binaryCount; ++idx1) {
-                        unwrapped_binaries[idx1] = Unwrap(binary_info->pPipelineBinaries[idx1]);
-                    }
-                }
+                UnwrapPnextChainHandles(local_pCreateInfos[index0].pNext);
             }
         }
     }
@@ -2538,13 +2501,7 @@ VkResult DispatchDevice::CreateRayTracingPipelinesNV(VkDevice device, VkPipeline
                     local_pCreateInfos[index0].basePipelineHandle = Unwrap(pCreateInfos[index0].basePipelineHandle);
                 }
 
-                auto* binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(local_pCreateInfos[index0].pNext);
-                if (binary_info) {
-                    auto* unwrapped_binaries = const_cast<VkPipelineBinaryKHR*>(binary_info->pPipelineBinaries);
-                    for (uint32_t idx1 = 0; idx1 < binary_info->binaryCount; ++idx1) {
-                        unwrapped_binaries[idx1] = Unwrap(binary_info->pPipelineBinaries[idx1]);
-                    }
-                }
+                UnwrapPnextChainHandles(local_pCreateInfos[index0].pNext);
             }
         }
     }
