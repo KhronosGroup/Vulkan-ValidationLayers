@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <cstring>
 #include <string>
 
 #include <vulkan/vk_enum_string_helper.h>
@@ -1567,10 +1568,10 @@ bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool quer
     }
 
     // Same idea as VUID-vkDestroyQueryPool-queryPool-00793
+    // A query is only ENDED between the submission that wrote it and that submission completing (or its results being read)
     const uint32_t last_query = query_pool_state->ClampQueryRange(firstQuery, queryCount);
     for (uint32_t i = firstQuery; i < last_query; ++i) {
-        const QueryState query_state = query_pool_state->GetQueryState(i, 0);
-        if (query_state != QUERYSTATE_AVAILABLE && query_state != QUERYSTATE_UNKNOWN) {
+        if (query_pool_state->GetQueryState(i, 0) == QUERYSTATE_ENDED) {
             skip |= ValidateObjectNotInUse(query_pool_state.get(), error_obj.location, "VUID-vkResetQueryPool-firstQuery-02741");
             break;  // only need to check first query
         }
@@ -1587,15 +1588,27 @@ bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool q
 void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                    size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                                    const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
+    if (record_obj.result != VK_SUCCESS && record_obj.result != VK_NOT_READY) {
         return;
     }
     auto query_pool_state = Get<vvl::QueryPool>(queryPool);
     ASSERT_AND_RETURN(query_pool_state);
 
-    if ((flags & VK_QUERY_RESULT_PARTIAL_BIT) == 0) {
+    if (record_obj.result == VK_SUCCESS && (flags & VK_QUERY_RESULT_PARTIAL_BIT) == 0) {
         for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
             query_pool_state->SetQueryState(i, 0, QUERYSTATE_AVAILABLE);
+        }
+    } else if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
+        // Not every query is available, but the last value written for each query says if it is
+        const uint32_t value_size = (flags & VK_QUERY_RESULT_64_BIT) ? sizeof(uint64_t) : sizeof(uint32_t);
+        // zero when the layout is driver defined
+        const uint32_t query_size = query_pool_state->GetQuerySize(flags);
+        for (uint32_t i = 0; query_size >= value_size && i < queryCount; ++i) {
+            uint64_t availability = 0;
+            std::memcpy(&availability, static_cast<const uint8_t*>(pData) + i * stride + query_size - value_size, value_size);
+            if (availability != 0) {
+                query_pool_state->SetQueryState(firstQuery + i, 0, QUERYSTATE_AVAILABLE);
+            }
         }
     }
 }
