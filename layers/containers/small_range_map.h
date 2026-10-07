@@ -25,11 +25,9 @@
 
 namespace sparse_container {
 
-using IndexType = uint64_t;
-
 // Adds "small map optimization" to  vvl::range_map.
 // Note that N must be < uint8_t max
-template <typename T, size_t N>
+template <typename T, size_t N, typename IndexType = uint64_t>
 class SmallRangeMap {
     using ArrayMap = array_range_map<IndexType, T, vvl::range<IndexType>, N>;
     using ArrayMapIterator = typename ArrayMap::iterator;

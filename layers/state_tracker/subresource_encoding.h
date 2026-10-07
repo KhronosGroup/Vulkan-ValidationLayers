@@ -60,7 +60,7 @@ struct Subresource : public VkImageSubresource {
 // into continuous index ranges
 class SubresourceEncoder {
   public:
-    using IndexType = uint64_t;  // TODO: just update to 32 bit, but before collect memory usage stats, perf stats
+    using IndexType = uint32_t;
     using IndexRange = vvl::range<IndexType>;
 
     static constexpr uint32_t kMaxSupportedAspect = 4;
@@ -227,8 +227,8 @@ class SubresourceEncoder {
 
   private:
     VkImageSubresourceRange full_range_;
-    const size_t mip_size_;
-    const size_t aspect_size_;
+    const IndexType mip_size_;
+    const IndexType aspect_size_;
     const VkImageAspectFlagBits* const aspect_bits_;
     IndexType (SubresourceEncoder::*encode_function_)(const Subresource&) const;
     Subresource (SubresourceEncoder::*decode_function_)(const IndexType&) const;

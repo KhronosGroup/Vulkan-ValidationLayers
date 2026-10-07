@@ -30,6 +30,10 @@ namespace syncval {
 
 class ImageRangeEncoder : public vvl::SubresourceEncoder {
   public:
+    // Byte offsets and ranges in the fake address space. The base class indexes subresources
+    using IndexType = VkDeviceSize;
+    using IndexRange = vvl::range<IndexType>;
+
     struct SubresInfo {
         VkSubresourceLayout layout;
         VkExtent3D extent;
