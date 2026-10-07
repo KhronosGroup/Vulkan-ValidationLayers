@@ -621,35 +621,35 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
 }
 
 ImageSubState::ImageSubState(vvl::Image& obj, DescriptorIdPool& id_pool)
-    : vvl::ImageSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()) {}
+    : vvl::ImageSubState(obj), id_tracker(std::in_place, id_pool) {}
 
 void ImageSubState::Destroy() { id_tracker.reset(); }
 
 void ImageSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
 ImageViewSubState::ImageViewSubState(vvl::ImageView& obj, DescriptorIdPool& id_pool)
-    : vvl::ImageViewSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()) {}
+    : vvl::ImageViewSubState(obj), id_tracker(std::in_place, id_pool) {}
 
 void ImageViewSubState::Destroy() { id_tracker.reset(); }
 
 void ImageViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
 BufferSubState::BufferSubState(vvl::Buffer& obj, DescriptorIdPool& id_pool)
-    : vvl::BufferSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()) {}
+    : vvl::BufferSubState(obj), id_tracker(std::in_place, id_pool) {}
 
 void BufferSubState::Destroy() { id_tracker.reset(); }
 
 void BufferSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
 BufferViewSubState::BufferViewSubState(vvl::BufferView& obj, DescriptorIdPool& id_pool)
-    : vvl::BufferViewSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()) {}
+    : vvl::BufferViewSubState(obj), id_tracker(std::in_place, id_pool) {}
 
 void BufferViewSubState::Destroy() { id_tracker.reset(); }
 
 void BufferViewSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
 SamplerSubState::SamplerSubState(vvl::Sampler& obj, DescriptorIdPool& id_pool)
-    : vvl::SamplerSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()) {}
+    : vvl::SamplerSubState(obj), id_tracker(std::in_place, id_pool) {}
 
 void SamplerSubState::Destroy() { id_tracker.reset(); }
 
@@ -657,7 +657,7 @@ void SamplerSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid
 
 AccelerationStructureKHRSubState::AccelerationStructureKHRSubState(Validator& validator, vvl::AccelerationStructureKHR& obj,
                                                                    DescriptorIdPool& id_pool)
-    : vvl::AccelerationStructureKHRSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()), validator(validator) {
+    : vvl::AccelerationStructureKHRSubState(obj), id_tracker(std::in_place, id_pool), validator(validator) {
     gpu_state = validator.gpu_resources_manager_.GetHostCoherentBufferRange(sizeof(uint32_t));
     gpu_state.Clear();
 
@@ -766,14 +766,14 @@ void AccelerationStructureKHRSubState::NotifyInvalidate(const vvl::StateObject::
 }
 
 TensorSubState::TensorSubState(vvl::Tensor& obj, DescriptorIdPool& id_pool)
-    : vvl::TensorSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()) {}
+    : vvl::TensorSubState(obj), id_tracker(std::in_place, id_pool) {}
 
 void TensorSubState::Destroy() { id_tracker.reset(); }
 
 void TensorSubState::NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) { id_tracker.reset(); }
 
 TensorViewSubState::TensorViewSubState(vvl::TensorView& obj, DescriptorIdPool& id_pool)
-    : vvl::TensorViewSubState(obj), id_tracker(std::in_place, id_pool, obj.Handle()) {}
+    : vvl::TensorViewSubState(obj), id_tracker(std::in_place, id_pool) {}
 
 void TensorViewSubState::Destroy() { id_tracker.reset(); }
 
