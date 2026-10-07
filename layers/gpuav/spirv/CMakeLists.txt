@@ -124,19 +124,46 @@ file(GLOB_RECURSE GPUAV_SHADERS CONFIGURE_DEPENDS
     "${GPUAV_SHADERS_DIR}/*.slang"
     "${GPUAV_SHADERS_DIR}/*.h"
 )
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-set(GPUAV_SHADERS_STAMP "${CMAKE_CURRENT_BINARY_DIR}/gpuav_offline_spirv.stamp")
-add_custom_command(
-    OUTPUT "${GPUAV_SHADERS_STAMP}"
-    BYPRODUCTS
-      "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h"
-      "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp"
-      "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_slang.cpp"
-    COMMAND Python3::Interpreter "scripts/generate_spirv.py"
-    COMMAND ${CMAKE_COMMAND} -E touch "${GPUAV_SHADERS_STAMP}"
-    DEPENDS ${GPUAV_SHADERS}
-    WORKING_DIRECTORY ${VVL_SOURCE_DIR}
-    VERBATIM
-)
-add_custom_target(vvl_gpu_av_shaders_spirv DEPENDS "${GPUAV_SHADERS_STAMP}")
-add_dependencies(gpu_av_spirv vvl_gpu_av_shaders_spirv)
+# The shader compilers used by generate_spirv.py come from update_deps.py, which builds them for the target.
+# When cross compiling they cannot run on the host, so rely on the checked in generated files instead.
+if (CMAKE_CROSSCOMPILING)
+    set(_compile_gpuav_shaders_default OFF)
+else()
+    set(_compile_gpuav_shaders_default ON)
+endif()
+option(VVL_COMPILE_GPUAV_SHADERS "Recompile GPU-AV shaders to SPIR-V when they change" ${_compile_gpuav_shaders_default})
+if (VVL_COMPILE_GPUAV_SHADERS)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    set(GPUAV_SHADERS_STAMP "${CMAKE_CURRENT_BINARY_DIR}/gpuav_offline_spirv.stamp")
+    add_custom_command(
+        OUTPUT "${GPUAV_SHADERS_STAMP}"
+        BYPRODUCTS
+          "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h"
+          "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp"
+          "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_slang.cpp"
+        COMMAND Python3::Interpreter "scripts/generate_spirv.py"
+        COMMAND ${CMAKE_COMMAND} -E touch "${GPUAV_SHADERS_STAMP}"
+        DEPENDS ${GPUAV_SHADERS}
+        WORKING_DIRECTORY ${VVL_SOURCE_DIR}
+        VERBATIM
+    )
+    add_custom_target(vvl_gpu_av_shaders_spirv DEPENDS "${GPUAV_SHADERS_STAMP}")
+    add_dependencies(gpu_av_spirv vvl_gpu_av_shaders_spirv)
+else()
+    # The checked in generated files would not match edited shaders, so fail instead of using them.
+    # Editing a shader re-runs CMake so this is checked again.
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GPUAV_SHADERS})
+    find_package(Git QUIET)
+    if (GIT_FOUND)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} status --porcelain -- ${GPUAV_SHADERS}
+            WORKING_DIRECTORY ${VVL_SOURCE_DIR}
+            RESULT_VARIABLE _git_status_result
+            OUTPUT_VARIABLE _edited_gpuav_shaders
+            ERROR_QUIET
+        )
+        if (_git_status_result EQUAL 0 AND _edited_gpuav_shaders)
+            message(FATAL_ERROR "GPU-AV shaders were edited, but they are not compiled to SPIR-V as VVL_COMPILE_GPUAV_SHADERS is OFF (default when cross compiling):\n${_edited_gpuav_shaders}")
+        endif()
+    endif()
+endif()

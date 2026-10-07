@@ -520,8 +520,8 @@ class GoodRepo(object):
             print(command_output(['git', 'status'], self.repo_dir))
 
 
-    def DownloadAndExtractArtifact(self):
-        """Download and extract file located at given url."""
+    def ArtifactUrl(self):
+        """Url of the release artifact for the target system and arch."""
 
         system = platform.system().lower()
         arch = self._args.arch
@@ -531,7 +531,12 @@ class GoodRepo(object):
         if arch in self.url_format_map:
             arch = self.url_format_map[arch]
 
-        formatted_url = self.url.format(release=self.release, system=system, arch=arch)
+        return self.url.format(release=self.release, system=system, arch=arch)
+
+    def DownloadAndExtractArtifact(self):
+        """Download and extract file located at given url."""
+
+        formatted_url = self.ArtifactUrl()
 
         download_path = os.path.join(self.build_dir, formatted_url[formatted_url.rfind('/') + 1:])
         download_file = formatted_url[formatted_url.rfind('/')+1:]
@@ -772,10 +777,12 @@ class GoodRepo(object):
             )
 
         # Skip if this release is already installed
+        # The artifact name is recorded rather than the release alone, as it also identifies the system and arch
+        artifact = os.path.basename(self.ArtifactUrl())
         release_file = os.path.join(self.install_dir, '.release')
         if os.path.isfile(release_file):
             with open(release_file) as f:
-                if f.read() == self.release:
+                if f.read() == artifact:
                     print(f"{self.name} ({self.release}) already installed", flush=True)
                     return
 
@@ -786,7 +793,7 @@ class GoodRepo(object):
             return
 
         with open(release_file, 'w') as f:
-            f.write(self.release)
+            f.write(artifact)
 
         total_time = time.time() - start
 
@@ -930,7 +937,7 @@ def main():
         dest='arch',
         choices=['32', '64', 'x86', 'x64', 'win32', 'win64', 'arm64'],
         type=str.lower,
-        help="Set build files architecture (Visual Studio Generator Only)",
+        help="Set target architecture (Visual Studio -A option and downloaded binaries)",
         default=GetDefaultArch())
     parser.add_argument(
         '--config',
