@@ -155,7 +155,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const Location& lo
     const uint32_t max_layers = image_state.GetArrayLayers() - base_array_layer;
     const uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
     const uint32_t max_levels = image_state.GetMipLevels() - subresource_range.baseMipLevel;
-    const uint32_t mip_levels = std::min(image_state.GetMipLevels(), max_levels);
+    const uint32_t mip_levels = std::min(subresource_range.levelCount, max_levels);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
