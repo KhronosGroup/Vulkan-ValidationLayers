@@ -607,7 +607,7 @@ ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl:
       filter_cubic(cubic_props.filterCubic == VK_TRUE),
       filter_cubic_minmax(cubic_props.filterCubicMinmax == VK_TRUE),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
-      range_generator(image_state->subresource_encoder, GetRangeGeneratorRange(device_state.extensions)),
+      image_layout_range(GetImageLayoutRange(device_state.extensions)),
       samples(image_state->GetSamples()),
       sampler_conversion(GetSamplerConversion(create_info)),
       min_lod(GetImageViewMinLod(create_info)),
@@ -657,7 +657,7 @@ VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Imag
     return range;
 }
 
-VkImageSubresourceRange ImageView::GetRangeGeneratorRange(const DeviceExtensions& extensions) const {
+VkImageSubresourceRange ImageView::GetImageLayoutRange(const DeviceExtensions& extensions) const {
     VkImageSubresourceRange subres_range = create_info.subresourceRange;
 
     // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
