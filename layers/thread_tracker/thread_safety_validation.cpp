@@ -69,6 +69,11 @@ static std::string GetPThreadName() {
 namespace threadsafety {
 
 static std::atomic_uint32_t next_thread_id{1};  // 0 is reserved as default state (no thread)
+
+// Entries are intentionally retained after thread exit, so the map grows with the
+// total number of registered threads. The overhead is about 100 bytes per thread.
+// Cleanup using thread_local destructors adds TLS destruction order and library
+// unloading concerns (Android < 28 can unload libraries with pending destructors)
 static vvl::concurrent_unordered_map<uint32_t, ThreadInfo, 4> thread_id_map;
 
 std::string GetCurrentThreadName() {
