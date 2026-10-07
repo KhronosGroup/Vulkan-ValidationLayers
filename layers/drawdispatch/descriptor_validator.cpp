@@ -323,13 +323,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
     }
     if (dev_proxy.enabled_features.protectedMemory == VK_TRUE) {
-        std::string temp_vuid = CreateActionVuid(loc.Get().function, ActionVUID::CB_UNPROTECTED_02707);
-        skip |= dev_proxy.ValidateProtectedBuffer(cb_state, *buffer_node, loc.Get(), temp_vuid.c_str(),
-                                                  " (Buffer is in a descriptorSet)");
+        skip |= dev_proxy.ValidateProtectedBuffer(cb_state, *buffer_node, loc.Get(), " (Buffer is in a descriptorSet)");
         if (resource_variable.IsWrittenTo()) {
-            temp_vuid = CreateActionVuid(loc.Get().function, ActionVUID::CB_PROTECTED_02712);
-            skip |= dev_proxy.ValidateUnprotectedBuffer(cb_state, *buffer_node, loc.Get(), temp_vuid.c_str(),
-                                                        " (Buffer is in a descriptorSet)");
+            skip |= dev_proxy.ValidateUnprotectedBuffer(cb_state, *buffer_node, loc.Get(), " (Buffer is in a descriptorSet)");
         }
     }
     return skip;
@@ -1235,13 +1231,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     }
 
     if (dev_proxy.enabled_features.protectedMemory == VK_TRUE) {
-        std::string temp_vuid = CreateActionVuid(loc.Get().function, ActionVUID::CB_UNPROTECTED_02707);
-        skip |= dev_proxy.ValidateProtectedImage(cb_state, *image_state, loc.Get(), temp_vuid.c_str(),
-                                                 " (Image is in a descriptorSet)");
+        skip |= dev_proxy.ValidateProtectedImage(cb_state, *image_state, loc.Get(), " (Image is in a descriptorSet)");
         if (resource_variable.IsWrittenTo()) {
-            temp_vuid = CreateActionVuid(loc.Get().function, ActionVUID::CB_PROTECTED_02712);
-            skip |= dev_proxy.ValidateUnprotectedImage(cb_state, *image_state, loc.Get(), temp_vuid.c_str(),
-                                                       " (Image is in a descriptorSet)");
+            skip |= dev_proxy.ValidateUnprotectedImage(cb_state, *image_state, loc.Get(), " (Image is in a descriptorSet)");
         }
     }
 
@@ -1470,12 +1462,10 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     }
 
     if (dev_proxy.enabled_features.protectedMemory == VK_TRUE && buffer_view_state->buffer_state) {
-        std::string temp_vuid = CreateActionVuid(loc.Get().function, ActionVUID::CB_UNPROTECTED_02707);
-        skip |= dev_proxy.ValidateProtectedBuffer(cb_state, *buffer_view_state->buffer_state, loc.Get(), temp_vuid.c_str(),
+        skip |= dev_proxy.ValidateProtectedBuffer(cb_state, *buffer_view_state->buffer_state, loc.Get(),
                                                   " (Buffer is in a descriptorSet)");
         if (resource_variable.IsWrittenTo()) {
-            temp_vuid = CreateActionVuid(loc.Get().function, ActionVUID::CB_PROTECTED_02712);
-            skip |= dev_proxy.ValidateUnprotectedBuffer(cb_state, *buffer_view_state->buffer_state, loc.Get(), temp_vuid.c_str(),
+            skip |= dev_proxy.ValidateUnprotectedBuffer(cb_state, *buffer_view_state->buffer_state, loc.Get(),
                                                         " (Buffer is in a descriptorSet)");
         }
     }

@@ -103,6 +103,9 @@ const char* GetSurfaceSupportVUID(const Location& loc);
 const char* GetRenderPassCompatibilityVUID(const Location& loc, const char* vuid);
 const char* GetDispatchIndirectProtectVUID(const Location& loc);
 
+std::string GetProtectedVUID(const Location& loc);
+std::string GetUnprotectedVUID(const Location& loc);
+
 enum class BuildASError {
     IsBuilt_03667,
     SameCount_03758,

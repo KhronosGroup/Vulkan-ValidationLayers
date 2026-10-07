@@ -350,13 +350,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                          const char* vuid = nullptr) const;
     bool ReportInvalidCommandBuffer(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
-                                const char* vuid, const char* more_message = "") const override;
+                                const char* more_message = "") const override;
     bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
-                                  const char* vuid, const char* more_message = "") const override;
+                                  const char* more_message = "") const override;
     bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
-                                 const char* vuid, const char* more_message = "") const override;
+                                 const char* more_message = "") const override;
     bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
-                                   const char* vuid, const char* more_message = "") const override;
+                                   const char* more_message = "") const override;
     bool ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,
                                  const char* more_message = "") const override;
     bool ValidateUnprotectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state, const Location& tensor_loc,

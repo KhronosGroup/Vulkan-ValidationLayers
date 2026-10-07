@@ -3609,8 +3609,7 @@ bool CoreChecks::ValidateVideoEncodeQuantizationMapInfo(const vvl::CommandBuffer
                          FormatHandle(iv_state->image_state->Handle()).c_str());
         }
 
-        skip |= ValidateProtectedImage(cb_state, *iv_state->image_state, loc.dot(Field::quantizationMap),
-                                       "VUID-vkCmdEncodeVideoKHR-pNext-10313");
+        skip |= ValidateProtectedImage(cb_state, *iv_state->image_state, loc.dot(Field::quantizationMap));
 
         skip |= ValidateVideoImageLayout(cb_state, *iv_state->image_state, iv_state->normalized_subresource_range,
                                          VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, loc.dot(Field::quantizationMap),
@@ -5118,10 +5117,8 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                     }
 
                     const Location reference_image_view_loc = reference_resource_loc.dot(Field::imageViewBinding);
-                    skip |= ValidateProtectedImage(*cb_state, *reference_resource.image_state, reference_image_view_loc,
-                                                   "VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07235");
-                    skip |= ValidateUnprotectedImage(*cb_state, *reference_resource.image_state, reference_image_view_loc,
-                                                     "VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07236");
+                    skip |= ValidateProtectedImage(*cb_state, *reference_resource.image_state, reference_image_view_loc);
+                    skip |= ValidateUnprotectedImage(*cb_state, *reference_resource.image_state, reference_image_view_loc);
 
                     if (!IsImageCompatibleWithVideoSession(*reference_resource.image_state, *vs_state)) {
                         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession,
@@ -5456,8 +5453,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
     const auto& profile_caps = vs_state->profile->GetCapabilities();
 
     if (auto buffer_state = Get<vvl::Buffer>(pDecodeInfo->srcBuffer)) {
-        skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, decode_info_loc.dot(Field::srcBuffer),
-                                        "VUID-vkCmdDecodeVideoKHR-commandBuffer-07136");
+        skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, decode_info_loc.dot(Field::srcBuffer));
 
         if ((buffer_state->usage & VK_BUFFER_USAGE_2_VIDEO_DECODE_SRC_BIT_KHR) == 0) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
@@ -5566,10 +5562,8 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                      "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07144", "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07145");
     if (dst_resource) {
         const Location dst_image_view_loc = dst_resource_loc.dot(Field::imageViewBinding);
-        skip |= ValidateProtectedImage(*cb_state, *dst_resource.image_state, dst_image_view_loc,
-                                       "VUID-vkCmdDecodeVideoKHR-commandBuffer-07147");
-        skip |= ValidateUnprotectedImage(*cb_state, *dst_resource.image_state, dst_image_view_loc,
-                                         "VUID-vkCmdDecodeVideoKHR-commandBuffer-07148");
+        skip |= ValidateProtectedImage(*cb_state, *dst_resource.image_state, dst_image_view_loc);
+        skip |= ValidateUnprotectedImage(*cb_state, *dst_resource.image_state, dst_image_view_loc);
 
         if (!IsImageCompatibleWithVideoSession(*dst_resource.image_state, *vs_state)) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), dst_resource.image_view_state->Handle(),
@@ -5943,10 +5937,8 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
     skip |= ValidateVideoEncodeIntraRefreshInfo(*cb_state, *vs_state, *pEncodeInfo, encode_info_loc);
 
     if (auto buffer_state = Get<vvl::Buffer>(pEncodeInfo->dstBuffer)) {
-        skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, encode_info_loc.dot(Field::dstBuffer),
-                                        "VUID-vkCmdEncodeVideoKHR-commandBuffer-08202");
-        skip |= ValidateUnprotectedBuffer(*cb_state, *buffer_state, encode_info_loc.dot(Field::dstBuffer),
-                                          "VUID-vkCmdEncodeVideoKHR-commandBuffer-08203");
+        skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, encode_info_loc.dot(Field::dstBuffer));
+        skip |= ValidateUnprotectedBuffer(*cb_state, *buffer_state, encode_info_loc.dot(Field::dstBuffer));
 
         if ((buffer_state->usage & VK_BUFFER_USAGE_2_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
@@ -6056,8 +6048,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                      "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08208", "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08209");
     if (src_resource) {
         const Location src_image_view_loc = src_resource_loc.dot(Field::imageViewBinding);
-        skip |= ValidateProtectedImage(*cb_state, *src_resource.image_state, src_image_view_loc,
-                                       "VUID-vkCmdEncodeVideoKHR-commandBuffer-08211");
+        skip |= ValidateProtectedImage(*cb_state, *src_resource.image_state, src_image_view_loc);
 
         if (!IsImageCompatibleWithVideoSession(*src_resource.image_state, *vs_state)) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), src_resource.image_view_state->Handle(),

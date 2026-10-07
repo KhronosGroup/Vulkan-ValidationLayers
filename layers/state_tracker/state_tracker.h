@@ -2306,19 +2306,19 @@ class DeviceProxy : public vvl::BaseDevice {
     // callbacks for image layout validation, which is implemented in both core validation and gpu-av
     // TODO - It would be nice to have a way to not need a duplicate copy in both CoreChecks and GPU-AV code
     virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                        const Location& image_loc, const char* vuid, const char* more_message = "") const {
+                                        const Location& image_loc, const char* more_message = "") const {
         return false;
     }
     virtual bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                          const Location& image_loc, const char* vuid, const char* more_message = "") const {
+                                          const Location& image_loc, const char* more_message = "") const {
         return false;
     }
     virtual bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                                         const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+                                         const Location& buffer_loc, const char* more_message = "") const {
         return false;
     }
     virtual bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                                           const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+                                           const Location& buffer_loc, const char* more_message = "") const {
         return false;
     }
     virtual bool ValidateProtectedTensor(const vvl::CommandBuffer& cb_state, const vvl::Tensor& tensor_state,

@@ -949,8 +949,7 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
         skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, srcBuffer), *src_buffer_state,
                                          VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT, true, vuid, src_buffer_loc);
 
-        vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01822" : "VUID-vkCmdCopyBuffer-commandBuffer-01822";
-        skip |= ValidateProtectedBuffer(cb_state, *src_buffer_state, src_buffer_loc, vuid);
+        skip |= ValidateProtectedBuffer(cb_state, *src_buffer_state, src_buffer_loc);
     }
 
     // dst buffer
@@ -963,10 +962,8 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
         skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, dstBuffer), *dst_buffer_state,
                                          VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, true, vuid, dst_buffer_loc);
 
-        vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01823" : "VUID-vkCmdCopyBuffer-commandBuffer-01823";
-        skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
-        vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01824" : "VUID-vkCmdCopyBuffer-commandBuffer-01824";
-        skip |= ValidateUnprotectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
+        skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc);
+        skip |= ValidateUnprotectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc);
     }
 
     return skip;
@@ -2048,12 +2045,9 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                          string_VkSampleCountFlagBits(dst_image_state->GetSamples()));
     }
 
-    vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-01825" : "VUID-vkCmdCopyImage-commandBuffer-01825";
-    skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc, vuid);
-    vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-01826" : "VUID-vkCmdCopyImage-commandBuffer-01826";
-    skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
-    vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-01827" : "VUID-vkCmdCopyImage-commandBuffer-01827";
-    skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
+    skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc);
+    skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc);
+    skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc);
 
     skip |= ValidateCmd(cb_state, loc);
 
@@ -2324,11 +2318,9 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         skip |=
             ValidateBufferUsageFlags(objlist, *dst_buffer_state, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, true, vuid, dst_buffer_loc);
 
-        vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01832" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832";
-        skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
+        skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc);
 
-        vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01833" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01833";
-        skip |= ValidateUnprotectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
+        skip |= ValidateUnprotectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc);
     }
 
     // src image
@@ -2343,8 +2335,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         skip |=
             ValidateImageUsageFlags(commandBuffer, *src_image_state, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, true, vuid, src_image_loc);
 
-        vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01831" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01831";
-        skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc, vuid);
+        skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc);
 
         // Validation for VK_EXT_fragment_density_map
         if (src_image_state->create_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
@@ -2505,8 +2496,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         skip |=
             ValidateBufferUsageFlags(objlist, *src_buffer_state, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT, true, vuid, src_buffer_loc);
 
-        vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-01828" : "VUID-vkCmdCopyBufferToImage-commandBuffer-01828";
-        skip |= ValidateProtectedBuffer(cb_state, *src_buffer_state, src_buffer_loc, vuid);
+        skip |= ValidateProtectedBuffer(cb_state, *src_buffer_state, src_buffer_loc);
     }
 
     // dst image
@@ -2521,11 +2511,9 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         skip |=
             ValidateImageUsageFlags(commandBuffer, *dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true, vuid, dst_image_loc);
 
-        vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-01829" : "VUID-vkCmdCopyBufferToImage-commandBuffer-01829";
-        skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
+        skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc);
 
-        vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-01830" : "VUID-vkCmdCopyBufferToImage-commandBuffer-01830";
-        skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
+        skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc);
 
         // Validation for VK_EXT_fragment_density_map
         if (dst_image_state->create_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
@@ -3098,8 +3086,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         skip |=
             ValidateImageFormatFeatureFlags(commandBuffer, *src_image_state, VK_FORMAT_FEATURE_2_BLIT_SRC_BIT, src_image_loc, vuid);
 
-        vuid = is_2 ? "VUID-vkCmdBlitImage2-commandBuffer-01834" : "VUID-vkCmdBlitImage-commandBuffer-01834";
-        skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc, vuid);
+        skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc);
 
         if (src_image_state->create_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImage-02545" : "VUID-vkCmdBlitImage-dstImage-02545";
@@ -3163,11 +3150,9 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         skip |=
             ValidateImageFormatFeatureFlags(commandBuffer, *dst_image_state, VK_FORMAT_FEATURE_2_BLIT_DST_BIT, dst_image_loc, vuid);
 
-        vuid = is_2 ? "VUID-vkCmdBlitImage2-commandBuffer-01835" : "VUID-vkCmdBlitImage-commandBuffer-01835";
-        skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
+        skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc);
 
-        vuid = is_2 ? "VUID-vkCmdBlitImage2-commandBuffer-01836" : "VUID-vkCmdBlitImage-commandBuffer-01836";
-        skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
+        skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc);
 
         if (dst_image_state->create_flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImage-02545" : "VUID-vkCmdBlitImage-dstImage-02545";
@@ -3583,8 +3568,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00256" : "VUID-vkCmdResolveImage-srcImage-00256";
         skip |= ValidateMemoryIsBoundToImage(src_objlist, *src_image_state, src_image_loc, vuid);
 
-        vuid = is_2 ? "VUID-vkCmdResolveImage2-commandBuffer-01837" : "VUID-vkCmdResolveImage-commandBuffer-01837";
-        skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc, vuid);
+        skip |= ValidateProtectedImage(cb_state, *src_image_state, src_image_loc);
 
         vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-06762" : "VUID-vkCmdResolveImage-srcImage-06762";
         skip |=
@@ -3630,11 +3614,9 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT, dst_image_loc, vuid,
                 false);
         }
-        vuid = is_2 ? "VUID-vkCmdResolveImage2-commandBuffer-01838" : "VUID-vkCmdResolveImage-commandBuffer-01838";
-        skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
+        skip |= ValidateProtectedImage(cb_state, *dst_image_state, dst_image_loc);
 
-        vuid = is_2 ? "VUID-vkCmdResolveImage2-commandBuffer-01839" : "VUID-vkCmdResolveImage-commandBuffer-01839";
-        skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc, vuid);
+        skip |= ValidateUnprotectedImage(cb_state, *dst_image_state, dst_image_loc);
 
         vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-06764" : "VUID-vkCmdResolveImage-dstImage-06764";
         skip |=
