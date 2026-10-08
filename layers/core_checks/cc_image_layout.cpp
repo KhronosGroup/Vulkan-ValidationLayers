@@ -120,7 +120,7 @@ bool CoreChecks::ValidateSubresourceImageLayout(const vvl::CommandBuffer& cb_sta
     VkImageSubresourceRange normalized_subresource_range =
         image_state.NormalizeSubresourceRange(RangeFromLayers(subresource_layers));
 
-    if (CanTransitionDepthSlices(extensions, image_state.GetImageType(), image_state.create_flags)) {
+    if (CanTransitionDepthSlices(enabled_features, image_state.GetImageType(), image_state.create_flags)) {
         normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
         normalized_subresource_range.layerCount = depth_extent;
     }
@@ -1161,7 +1161,7 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const
 
     // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
     if (mem_barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
-        CanTransitionDepthSlices(extensions, image_state.GetImageType(), image_state.create_flags)) {
+        CanTransitionDepthSlices(enabled_features, image_state.GetImageType(), image_state.create_flags)) {
         normalized_subresource_range.layerCount = image_state.GetExtent().depth - normalized_subresource_range.baseArrayLayer;
     }
 

@@ -443,8 +443,8 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
         }
         for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
             const auto& sub_state = SubState(*barrier.image);
-            const bool can_transition_depth_slices =
-                CanTransitionDepthSlices(env.validator.extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
+            const bool can_transition_depth_slices = CanTransitionDepthSlices(
+                env.validator.enabled_features, sub_state.base.GetImageType(), sub_state.base.create_flags);
             ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
             EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
             ApplyMarkupFunctor markup_action(barrier.layout_transition);
@@ -503,8 +503,8 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
                                                     barrier.handle_index, pending_barriers);
 
             const auto& sub_state = SubState(*barrier.image);
-            const bool can_transition_depth_slices =
-                CanTransitionDepthSlices(env.validator.extensions, sub_state.base.GetImageType(), sub_state.base.create_flags);
+            const bool can_transition_depth_slices = CanTransitionDepthSlices(
+                env.validator.enabled_features, sub_state.base.GetImageType(), sub_state.base.create_flags);
             ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
             EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
 

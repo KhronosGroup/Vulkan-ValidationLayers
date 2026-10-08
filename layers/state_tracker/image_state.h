@@ -32,7 +32,7 @@ class Swapchain;
 class VideoProfileDesc;
 }  // namespace vvl
 
-struct DeviceExtensions;
+struct DeviceFeatures;
 
 // Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
 static inline VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
@@ -367,7 +367,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     std::string DescribeImageUsage(const Logger& logger) const;
 
   private:
-    VkImageSubresourceRange GetImageLayoutRange(const DeviceExtensions &extensions) const;
+    VkImageSubresourceRange GetImageLayoutRange(const DeviceFeatures& features) const;
 };
 
 class ImageViewSubState {

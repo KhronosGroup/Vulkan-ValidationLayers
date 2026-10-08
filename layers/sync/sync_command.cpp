@@ -1026,7 +1026,7 @@ bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& a
         }
         const vvl::Image& image_state = *image_barrier.image;
         const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(validator.extensions, image_state.GetImageType(), image_state.create_flags);
+            CanTransitionDepthSlices(validator.enabled_features, image_state.GetImageType(), image_state.create_flags);
 
         const auto hazard = access_context.DetectImageBarrierHazard(
             image_state, image_barrier.barrier.src_exec_scope.exec_scope, image_barrier.barrier.src_access_scope,
