@@ -553,14 +553,9 @@ HazardResult AccessContext::DetectPreviousHazard(Detector& detector, const Acces
     AccessContext descent_context;
     ResolveSubpassDependencies(range, descent_context, false);
 
-    AccessMap& descent_map = descent_context.access_state_map_;
-    for (auto prev = descent_map.begin(); prev != descent_map.end(); ++prev) {
-        HazardResult hazard = detector.Detect(prev->first, prev->second);
-        if (hazard.IsHazard()) {
-            return hazard;
-        }
-    }
-    return {};
+    const AccessMap& descent_map = descent_context.access_state_map_;
+    auto prev = descent_map.begin();
+    return DetectHazardOneRange(detector, false, prev, descent_map.end(), range);
 }
 
 }  // namespace syncval
