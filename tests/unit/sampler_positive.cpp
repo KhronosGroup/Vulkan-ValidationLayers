@@ -145,6 +145,18 @@ TEST_F(PositiveSampler, SamplerConversionDifferentHandle) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 }
 
+TEST_F(PositiveSampler, ImmutableSamplerNullImageView) {
+    TEST_DESCRIPTION("A null imageView is allowed when the immutable sampler has no YCbCr conversion");
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(Init());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()}});
+    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, VK_NULL_HANDLE);
+    descriptor_set.UpdateDescriptorSets();
+}
+
 TEST_F(PositiveSampler, FilterCubicRangeClampWithReducionMode) {
     TEST_DESCRIPTION("Sample an image view with VK_FILTER_CUBIC_EXT filter and sampler reductionMode "
                      "VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_RANGECLAMP_QCOM while the cubicRangeClamp feature is enabled.");

@@ -2205,7 +2205,8 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
                 const Location image_info_loc = write_loc.dot(Field::pImageInfo, di);
                 const VkImageView image_view = update.pImageInfo[di].imageView;
                 if (image_view == VK_NULL_HANDLE) {
-                    if (desc.IsImmutableSampler()) {
+                    const vvl::Sampler* immutable_sampler = desc.IsImmutableSampler() ? desc.GetSamplerState() : nullptr;
+                    if (immutable_sampler && immutable_sampler->sampler_conversion != VK_NULL_HANDLE) {
                         // Only hit if using nullDescriptor
                         const LogObjectList objlist(update.dstSet, desc.GetSampler());
                         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-09506", objlist,
