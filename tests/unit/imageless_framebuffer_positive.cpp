@@ -303,3 +303,55 @@ TEST_F(PositiveImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
         vkt::Framebuffer fb(*m_device, fb_info);
     }
 }
+
+TEST_F(PositiveImagelessFramebuffer, ArrayViewRemainingArrayLayers) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.CreateRenderPass();
+
+    VkImageFormatListCreateInfo format_list = vku::InitStructHelper();
+    format_list.viewFormatCount = 1;
+    format_list.pViewFormats = &format;
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 4, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.pNext = &format_list;
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS);
+
+    VkFramebufferAttachmentImageInfo fb_attachment_image_info = vku::InitStructHelper();
+    fb_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    fb_attachment_image_info.width = 32;
+    fb_attachment_image_info.height = 32;
+    fb_attachment_image_info.layerCount = 4;
+    fb_attachment_image_info.viewFormatCount = 1;
+    fb_attachment_image_info.pViewFormats = &format;
+    VkFramebufferAttachmentsCreateInfo fb_attachments_ci = vku::InitStructHelper();
+    fb_attachments_ci.attachmentImageInfoCount = 1;
+    fb_attachments_ci.pAttachmentImageInfos = &fb_attachment_image_info;
+    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper(&fb_attachments_ci);
+    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+    fb_ci.renderPass = rp;
+    fb_ci.attachmentCount = 1;
+    fb_ci.width = 32;
+    fb_ci.height = 32;
+    fb_ci.layers = 4;
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+
+    VkRenderPassAttachmentBeginInfo rp_attachment_bi = vku::InitStructHelper();
+    rp_attachment_bi.attachmentCount = 1;
+    rp_attachment_bi.pAttachments = &image_view.handle();
+    VkRenderPassBeginInfo rp_bi = vku::InitStructHelper(&rp_attachment_bi);
+    rp_bi.renderPass = rp;
+    rp_bi.framebuffer = framebuffer;
+    rp_bi.renderArea.extent = {32, 32};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_bi);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

@@ -114,7 +114,11 @@ bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle& rp1_ob
                      string_VkSampleCountFlagBits(primary_pass_ci.pAttachments[primary_attachment].samples), secondary_attachment,
                      string_VkSampleCountFlagBits(secondary_pass_ci.pAttachments[secondary_attachment].samples));
     }
-    if (primary_pass_ci.pAttachments[primary_attachment].flags != secondary_pass_ci.pAttachments[secondary_attachment].flags) {
+
+    constexpr VkAttachmentDescriptionFlags ignored_flags = VK_ATTACHMENT_DESCRIPTION_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR |
+                                                           VK_ATTACHMENT_DESCRIPTION_RESOLVE_ENABLE_TRANSFER_FUNCTION_BIT_KHR;
+    if ((primary_pass_ci.pAttachments[primary_attachment].flags & ~ignored_flags) !=
+        (secondary_pass_ci.pAttachments[secondary_attachment].flags & ~ignored_flags)) {
         const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
         skip |= LogError(vvl::GetRenderPassCompatibilityVUID(caller_loc, vuid), objlist, caller_loc,
                          "%s is incompatible between %s (from %s) and %s (from %s), "
@@ -1226,9 +1230,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
         // TODO - Need to understand when this rule actually applies everywhere. There is some special language around
         // vk_khr_maintenance9 where this logic isn't true for pipeline barriers
-        const uint32_t layer_count = image_view_create_info->subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
-                                        ? image_view_create_info->subresourceRange.layerCount
-                                        : image_state->GetExtent().depth;
+        const uint32_t layer_count = subresource_range.layerCount;
         if (framebuffer_attachment_image_info->layerCount != layer_count) {
             skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03213", objlist, attachment_loc,
                              "has a subresource range with a layerCount of %" PRIu32
@@ -2086,8 +2088,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                     }
                     last_sample_count_attachment = j;
 
-                    if (subpass_performs_resolve && current_sample_count == VK_SAMPLE_COUNT_1_BIT &&
-                        !enabled_features.externalFormatResolve) {
+                    if (subpass.pResolveAttachments && subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED &&
+                        current_sample_count == VK_SAMPLE_COUNT_1_BIT && !enabled_features.externalFormatResolve) {
                         const char* vuid = use_rp2 ? "VUID-VkSubpassDescription2-externalFormatResolve-09338"
                                                    : "VUID-VkSubpassDescription-pResolveAttachments-00848";
                         skip |= LogError(vuid, device, attachment_loc.dot(Field::samples), "is VK_SAMPLE_COUNT_1_BIT.");
@@ -2362,7 +2364,9 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2& create_inf
                                  "access non-framebuffer space %s.",
                                  string_VkPipelineStageFlags(dependency.srcStageMask).c_str(),
                                  string_VkPipelineStageFlags(dependency.dstStageMask).c_str());
-            } else if ((HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) == false) &&
+            } else if (HasFramebufferStagePipelineStageFlags(dependency.srcStageMask) &&
+                       HasFramebufferStagePipelineStageFlags(dependency.dstStageMask) &&
+                       (HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) == false) &&
                        (HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask) == false) &&
                        ((dependency.dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT) == 0)) {
                 vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcSubpass-02245" : "VUID-VkSubpassDependency-srcSubpass-02243";
@@ -2584,11 +2588,13 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& crea
     if (subpass.pDepthStencilAttachment == nullptr) {
         return skip;
     } else if (subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
-        // while should be ignored, this is an explicit VU and some drivers will crash if this is let through
-        skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177", device, subpass_loc,
+        if (resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+            skip |=
+                LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177", device, subpass_loc,
                          "includes a VkSubpassDescriptionDepthStencilResolve "
-                         "structure with resolve attachment %" PRIu32 ", but pDepthStencilAttachment=VK_ATTACHMENT_UNUSED.",
+                         "structure with resolve attachment %" PRIu32 ", but pDepthStencilAttachment is VK_ATTACHMENT_UNUSED.",
                          resolve->pDepthStencilResolveAttachment->attachment);
+        }
         return skip;
     }
 
@@ -3280,7 +3286,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfoMultisampledResolveMode(const co
                                  "VK_SAMPLE_COUNT_1_BIT, and "
                                  "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE");
             }
-            if (vvl_attachment.info.resolveImageView != VK_NULL_HANDLE) {
+            if (vvl_attachment.info.resolveMode != VK_RESOLVE_MODE_NONE && vvl_attachment.info.resolveImageView != VK_NULL_HANDLE) {
                 skip |= LogError(
                     "VUID-VkRenderingAttachmentInfo-imageView-06863", vvl_attachment.GetObjectList(),
                     vvl_attachment.Loc().dot(Field::resolveMode),
