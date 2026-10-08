@@ -2603,7 +2603,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline& p
 
         if ((subpass_desc.flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_EXT) != 0) {
             const uint32_t raster_samples = SampleCountSize(multisample_state->rasterizationSamples);
-            if ((raster_samples != subpass_input_attachment_samples) &&
+            if (subpass_input_attachment_samples != 0 && (raster_samples != subpass_input_attachment_samples) &&
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-rasterizationSamples-04899", device,
                                  ms_loc.dot(Field::rasterizationSamples),
