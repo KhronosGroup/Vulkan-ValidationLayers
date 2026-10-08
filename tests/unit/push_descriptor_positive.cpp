@@ -488,6 +488,20 @@ TEST_F(PositivePushDescriptor, SamplerPushDescriptorWithImmutableSampler) {
     m_command_buffer.Begin();
     vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 2u, write_sets);
     m_command_buffer.End();
+
+    VkDescriptorSetLayoutBinding binding2 = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()};
+    vkt::DescriptorSetLayout push_dsl(*m_device, binding2, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::PipelineLayout pipeline_layout_push(*m_device, {&push_dsl});
+
+    VkDescriptorImageInfo image_info = {CastToHandle<VkSampler, uintptr_t>(0xbaadbeef), VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
+    VkWriteDescriptorSet write = vku::InitStructHelper();
+    write.dstBinding = 0;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    write.pImageInfo = &image_info;
+    m_command_buffer.Begin();
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_push, 0, 1, &write);
+    m_command_buffer.End();
 }
 
 TEST_F(PositivePushDescriptor, PushDescriptorWithTemplate2) {

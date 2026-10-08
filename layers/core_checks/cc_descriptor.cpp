@@ -2344,7 +2344,8 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
                              FormatHandle(dst_set.GetLayout().get()->Handle()).c_str());
             }
 
-            if (!update.pImageInfo) {
+            // For immutable samplers pImageInfo is ignored (push descriptors)
+            if (!update.pImageInfo || desc.IsImmutableSampler()) {
                 break;
             }
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
