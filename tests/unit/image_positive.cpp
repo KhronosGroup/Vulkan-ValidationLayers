@@ -888,6 +888,11 @@ TEST_F(PositiveImage, ImageView2dOf3dBaseLayer) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image image(*m_device, image_ci);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0u, 1u, 1u, 1u);
+
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.extent = {32u, 32u, 4u};
+    vkt::Image image2(*m_device, image_ci);
+    vkt::ImageView image_view2 = image2.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0u, 1u, 3u, VK_REMAINING_ARRAY_LAYERS);
 }
 
 TEST_F(PositiveImage, FramebufferRemainingArrayLayers) {

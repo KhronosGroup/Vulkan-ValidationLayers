@@ -3033,7 +3033,8 @@ bool CoreChecks::ValidateDynamicRenderingBarriersCommon(const LogObjectList& obj
 
     // Check shader tile image features
     const bool features_enabled = enabled_features.shaderTileImageColorReadAccess ||
-                                  enabled_features.shaderTileImageDepthReadAccess || enabled_features.dynamicRenderingLocalRead;
+                                  enabled_features.shaderTileImageDepthReadAccess ||
+                                  enabled_features.shaderTileImageStencilReadAccess || enabled_features.dynamicRenderingLocalRead;
     if (!features_enabled) {
         const auto& feature_error_vuid =
             GetDynamicRenderingBarrierVUID(outer_loc, vvl::DynamicRenderingBarrierError::kFeatureError);

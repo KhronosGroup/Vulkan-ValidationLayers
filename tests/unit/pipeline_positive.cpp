@@ -1560,6 +1560,15 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     create_pipe_with_depth_bias_representation(depth_bias_representation);
 }
 
+TEST_F(PositivePipeline, DepthBiasClampWithDepthBiasDisabled) {
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+    CreatePipelineHelper pipe(*this);
+    pipe.rs_state_ci_.depthBiasEnable = VK_FALSE;
+    pipe.rs_state_ci_.depthBiasClamp = 0.5f;
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositivePipeline, DeviceGeneratedCommandsNV) {
     TEST_DESCRIPTION("Test creating pipeline with device generated commands");
     SetTargetApiVersion(VK_API_VERSION_1_1);

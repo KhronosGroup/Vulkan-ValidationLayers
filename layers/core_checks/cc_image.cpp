@@ -2338,7 +2338,7 @@ bool CoreChecks::ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create
     }
 
     if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        const uint32_t remaining_layers = image_state.GetArrayLayers() - create_info.subresourceRange.baseArrayLayer;
+        const uint32_t remaining_layers = normalized_subresource_range.layerCount;
         if (view_type == VK_IMAGE_VIEW_TYPE_CUBE && remaining_layers != 6) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-02962", create_info.image,
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
