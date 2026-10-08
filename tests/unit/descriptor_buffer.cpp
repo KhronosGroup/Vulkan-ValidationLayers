@@ -534,7 +534,6 @@ TEST_F(NegativeDescriptorBuffer, BindWithNoValidUsageFlags) {
     binding_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-usage-10998");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &binding_info);
     m_errorMonitor->VerifyFound();
 }
