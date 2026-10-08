@@ -20,6 +20,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
+#include "gpu_av_helper.h"
 #include "cooperative_matrix_helper.h"
 
 void GpuAVDescriptorIndexingTest::InitGpuVUDescriptorIndexing(bool safe_mode) {
@@ -2857,5 +2858,188 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageNonUniformAtomicOr) {
     vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
     m_command_buffer.End();
 
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorIndexing, NonUniformDecorated) {
+    TEST_DESCRIPTION("Each invocation indexes a different descriptor, and the index is marked with nonuniformEXT");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    if (!CanCheckNonUniformIndex(*this, VK_SHADER_STAGE_COMPUTE_BIT)) {
+        GTEST_SKIP() << "Subgroup vote is not supported in compute shaders";
+    }
+
+    vkt::Image image(*m_device, 16, 16, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Buffer data_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {3, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    for (uint32_t i = 0; i < 2; i++) {
+        descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, i);
+        descriptor_set.WriteDescriptorBufferInfo(1, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, i);
+        descriptor_set.WriteDescriptorImageInfo(3, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                i);
+    }
+    descriptor_set.WriteDescriptorImageInfo(2, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptor_set.UpdateDescriptorSets();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    // glslang does not declare SampledImageArrayNonUniformIndexing for the sampler array, the decoration is enough
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(local_size_x = 2) in;
+        layout(set = 0, binding = 0) uniform sampler2D tex[2];
+        layout(set = 0, binding = 1) buffer Data { vec4 color; } data[2];
+        layout(set = 0, binding = 2) uniform texture2D image;
+        layout(set = 0, binding = 3) uniform sampler samplers[2];
+        void main() {
+            uint index = gl_LocalInvocationIndex;
+            data[nonuniformEXT(index)].color = textureLod(tex[nonuniformEXT(index)], vec2(0.5), 0.0) +
+                                               textureLod(sampler2D(image, samplers[nonuniformEXT(index)]), vec2(0.5), 0.0);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorIndexing, NonUniformAcrossSubgroups) {
+    TEST_DESCRIPTION("The index differs between workgroups, but is uniform within each subgroup, which is allowed");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    if (!CanCheckNonUniformIndex(*this, VK_SHADER_STAGE_COMPUTE_BIT)) {
+        GTEST_SKIP() << "Subgroup vote is not supported in compute shaders";
+    }
+
+    vkt::Buffer data_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set.WriteDescriptorBufferInfo(0, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(0, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        layout(set = 0, binding = 0) buffer Data { uint value; } data[2];
+        void main() {
+            data[gl_WorkGroupID.x].value = 1;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 2, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorIndexing, NonUniformBranchGuarded) {
+    TEST_DESCRIPTION("Only one invocation of the subgroup reaches the access, so the index is uniform");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    if (!CanCheckNonUniformIndex(*this, VK_SHADER_STAGE_COMPUTE_BIT)) {
+        GTEST_SKIP() << "Subgroup vote is not supported in compute shaders";
+    }
+
+    vkt::Buffer data_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set.WriteDescriptorBufferInfo(0, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(0, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 2) in;
+        layout(set = 0, binding = 0) buffer Data { uint value; } data[2];
+        void main() {
+            if (gl_LocalInvocationIndex == 1) {
+                data[gl_LocalInvocationIndex].value = 1;
+            }
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVDescriptorIndexing, NonUniformWaterfall) {
+    TEST_DESCRIPTION("A waterfall loop makes the index uniform by hand, so nonuniformEXT is not needed");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_props);
+    if (!CanCheckNonUniformIndex(*this, VK_SHADER_STAGE_COMPUTE_BIT) ||
+        (subgroup_props.supportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT) == 0) {
+        GTEST_SKIP() << "Subgroup vote and ballot are not supported in compute shaders";
+    }
+
+    vkt::Buffer data_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set.WriteDescriptorBufferInfo(0, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(0, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_ballot : enable
+        layout(local_size_x = 2) in;
+        layout(set = 0, binding = 0) buffer Data { uint value; } data[2];
+        void main() {
+            uint index = gl_LocalInvocationIndex;
+            while (true) {
+                uint first = subgroupBroadcastFirst(index);
+                if (first == index) {
+                    data[first].value = 1;
+                    break;
+                }
+            }
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }

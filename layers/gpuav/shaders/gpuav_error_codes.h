@@ -70,6 +70,7 @@ const int kExecutionModel_Unknown = 17;  // replace if new stage is added
 const int kErrorSubCode_DescriptorIndexing_Bounds = 1;
 const int kErrorSubCode_DescriptorIndexing_Uninitialized = 2;
 const int kErrorSubCode_DescriptorIndexing_Destroyed = 3;
+const int kErrorSubCode_DescriptorIndexing_NonUniform = 4;
 
 // Descriptor Class specific errors
 //

@@ -1062,7 +1062,11 @@ void Module::PostProcess() {
 
     // Vulkan 1.1 is required, so if incoming SPIR-V is 1.0, might need to adjust it
     const uint32_t spirv_version_1_0 = 0x00010000;
-    if (header_.version == spirv_version_1_0) {
+    const uint32_t spirv_version_1_3 = 0x00010300;
+    if (need_subgroup_operations_ && header_.version < spirv_version_1_3) {
+        // SPIR-V 1.1 to 1.3 only added features (the interface list rules change at 1.4), so the shader stays valid
+        header_.version = spirv_version_1_3;
+    } else if (header_.version == spirv_version_1_0) {
         // SPV_KHR_storage_buffer_storage_class is needed, but glslang removes it from linking functions
         AddExtension("SPV_KHR_storage_buffer_storage_class");
 
