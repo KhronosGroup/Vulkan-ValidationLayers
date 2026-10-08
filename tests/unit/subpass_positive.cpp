@@ -593,3 +593,29 @@ TEST_F(PositiveSubpass, ColorWriteEnableCountAcrossSubpasses) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSubpass, SelfDependencyWithoutFramebufferStage) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    RenderPassSingleSubpass rp1(*this);
+    rp1.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp1.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp1.AddSubpassSelfDependency(VK_PIPELINE_STAGE_NONE, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_ACCESS_NONE, VK_ACCESS_NONE, 0);
+    rp1.CreateRenderPass();
+
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+    mem_barrier.srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+    VkSubpassDependency2 dependency = vku::InitStructHelper(&mem_barrier);
+    dependency.srcSubpass = 0;
+    dependency.dstSubpass = 0;
+    RenderPass2SingleSubpass rp2(*this);
+    rp2.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp2.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp2.AddSubpassDependency(dependency);
+    rp2.CreateRenderPass();
+}

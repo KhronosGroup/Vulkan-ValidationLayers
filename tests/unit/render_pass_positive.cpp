@@ -1247,6 +1247,51 @@ TEST_F(PositiveRenderPass, RenderPassSampleLocationsBeginInfo) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveRenderPass, MultisampledRenderToSingleSampledResolveModeNone) {
+    TEST_DESCRIPTION("resolveImageView is ignored when resolveMode is VK_RESOLVE_MODE_NONE");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
+    VkImageFormatProperties format_props;
+    if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL, image_ci.usage,
+                                                   image_ci.flags, &format_props) != VK_SUCCESS ||
+        (format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) == 0) {
+        GTEST_SKIP() << "4x sample count not supported";
+    }
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Image resolve_image(*m_device, 32, 32, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView resolve_view = resolve_image.CreateView();
+
+    VkMultisampledRenderToSingleSampledInfoEXT ms_render_to_ss = vku::InitStructHelper();
+    ms_render_to_ss.multisampledRenderToSingleSampledEnable = VK_TRUE;
+    ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
+    color_attachment.resolveImageView = resolve_view;  // ignored
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&ms_render_to_ss);
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveRenderPass, MultisampledRenderToSingleSampled) {
     TEST_DESCRIPTION("Test VK_EXT_multisampled_render_to_single_sampled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1453,6 +1498,46 @@ TEST_F(PositiveRenderPass, RenderPass2DependencyCompatibility) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass2, framebuffer, 32u, 32u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveRenderPass, CompatibilityIgnoresResolveTransferFunctionFlags) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance10);
+    RETURN_IF_SKIP(Init());
+    VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance10_props);
+    if (!maintenance10_props.resolveSrgbFormatSupportsTransferFunctionControl) {
+        GTEST_SKIP() << "resolveSrgbFormatSupportsTransferFunctionControl not supported";
+    }
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+    VkAttachmentDescription attachment = {0,
+                                          format,
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                          VK_IMAGE_LAYOUT_UNDEFINED,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    RenderPassSingleSubpass rp_a(*this);
+    rp_a.AddAttachmentDescription(attachment);
+    rp_a.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp_a.CreateRenderPass();
+    attachment.flags = VK_ATTACHMENT_DESCRIPTION_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR;
+    RenderPassSingleSubpass rp_b(*this);
+    rp_b.AddAttachmentDescription(attachment);
+    rp_b.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp_b.CreateRenderPass();
+
+    vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer framebuffer(*m_device, rp_a, 1, &image_view.handle());
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp_b, framebuffer, 32, 32);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }

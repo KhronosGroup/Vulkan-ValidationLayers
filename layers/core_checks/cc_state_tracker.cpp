@@ -254,6 +254,10 @@ void CommandBufferSubState::RecordNextSubpass(const VkSubpassBeginInfo&, const V
 void CommandBufferSubState::RecordBeginRendering(const VkRenderingInfo& rendering_info, const Location& loc) {
     custom_resolve.started = false;
     custom_resolve.used = false;
+
+    if ((rendering_info.flags & VK_RENDERING_RESUMING_BIT) == 0) {
+        fragment_density_offsets.clear();
+    }
 }
 
 void CommandBufferSubState::RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin, const VkSubpassBeginInfo&,
@@ -1230,6 +1234,8 @@ void CommandBufferSubState::ResetCBState() {
     custom_resolve.stencil_format = VK_FORMAT_UNDEFINED;
 
     custom_primitive_restart_index = 0;
+
+    fragment_density_offsets.clear();
 
     event_signal_states.clear();
     event_wait_barriers.clear();
