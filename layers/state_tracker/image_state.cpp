@@ -471,7 +471,7 @@ uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers& resource) co
 VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState& device_state,
                                                           const VkImageSubresourceRange& full_range) {
     VkImageSubresourceRange encoder_range = full_range;
-    if (CanTransitionDepthSlices(device_state.extensions, GetImageType(), create_flags)) {
+    if (CanTransitionDepthSlices(device_state.enabled_features, GetImageType(), create_flags)) {
         encoder_range.layerCount = create_info.extent.depth;
     }
     return encoder_range;
@@ -607,7 +607,7 @@ ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl:
       filter_cubic(cubic_props.filterCubic == VK_TRUE),
       filter_cubic_minmax(cubic_props.filterCubicMinmax == VK_TRUE),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
-      image_layout_range(GetImageLayoutRange(device_state.extensions)),
+      image_layout_range(GetImageLayoutRange(device_state.enabled_features)),
       samples(image_state->GetSamples()),
       sampler_conversion(GetSamplerConversion(create_info)),
       min_lod(GetImageViewMinLod(create_info)),
@@ -657,7 +657,7 @@ VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Imag
     return range;
 }
 
-VkImageSubresourceRange ImageView::GetImageLayoutRange(const DeviceExtensions& extensions) const {
+VkImageSubresourceRange ImageView::GetImageLayoutRange(const DeviceFeatures& features) const {
     VkImageSubresourceRange subres_range = create_info.subresourceRange;
 
     // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
@@ -670,7 +670,7 @@ VkImageSubresourceRange ImageView::GetImageLayoutRange(const DeviceExtensions& e
     //     If the maintenance9 feature is not enabled, any layout transitions performed on such an attachment view during a render
     //     pass instance still apply to the entire subresource referenced which includes all the slices of the selected mip level.
     //
-    if (is_depth_sliced && !CanTransitionDepthSlices(extensions, image_state->GetImageType(), image_state->create_flags)) {
+    if (is_depth_sliced && !CanTransitionDepthSlices(features, image_state->GetImageType(), image_state->create_flags)) {
         subres_range.baseArrayLayer = 0;
         subres_range.layerCount = 1;
     }

@@ -19,7 +19,7 @@
 
 #include "sync/sync_common.h"
 
-struct DeviceExtensions;
+struct DeviceFeatures;
 
 namespace syncval {
 
@@ -131,9 +131,9 @@ struct BarrierSet {
                                   const VkBufferMemoryBarrier2* barriers);
 
     void MakeImageMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
-                                 uint32_t barrier_count, const VkImageMemoryBarrier* barriers, const DeviceExtensions& extensions);
+                                 uint32_t barrier_count, const VkImageMemoryBarrier* barriers, const DeviceFeatures& features);
     void MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                 const VkImageMemoryBarrier2* barriers, const DeviceExtensions& extensions);
+                                 const VkImageMemoryBarrier2* barriers, const DeviceFeatures& features);
 };
 
 // Defines the source scope of the barrier.

@@ -24,6 +24,7 @@
 #include <vulkan/vulkan_core.h>
 
 struct DeviceExtensions;
+struct DeviceFeatures;
 
 uint32_t GetEffectiveLevelCount(const VkImageSubresourceRange& subresource_range, uint32_t total_level_count);
 uint32_t GetEffectiveLayerCount(const VkImageSubresourceRange& subresource_range, uint32_t total_layer_count);
@@ -90,7 +91,7 @@ bool IsImageLayoutStencilReadOnly(VkImageLayout layout);
 bool IsDepthSliceView(VkImageType imageType, VkImageCreateFlags2KHR imageCreateFlags, VkImageViewType view_type);
 
 // Return true if layout transitions of separate slices of a 3d image are supported for the image with the given create info
-bool CanTransitionDepthSlices(const DeviceExtensions &extensions, VkImageType imageType, VkImageCreateFlags2KHR imageCreateFlags);
+bool CanTransitionDepthSlices(const DeviceFeatures& features, VkImageType imageType, VkImageCreateFlags2KHR imageCreateFlags);
 
 bool IsImageViewTypeCompatibleWithImageType(const DeviceExtensions& extensions, VkImageViewType view_type, VkImageType image_type,
                                             VkImageCreateFlags2KHR image_flags);

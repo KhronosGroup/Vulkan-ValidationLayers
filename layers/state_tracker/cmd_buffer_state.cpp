@@ -2008,7 +2008,8 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image& image_state, const V
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
         VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(subresource_range);
 
-        if (depth_extent != 0 && CanTransitionDepthSlices(dev_data.extensions, image_state.GetImageType(), image_state.create_flags)) {
+        if (depth_extent != 0 &&
+            CanTransitionDepthSlices(dev_data.enabled_features, image_state.GetImageType(), image_state.create_flags)) {
             normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
             normalized_subresource_range.layerCount = depth_extent;
         }
