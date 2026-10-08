@@ -1740,7 +1740,7 @@ void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipe
                     // if render pass uses no attachment, all bound pipelines in the same subpass must have the same
                     // pMultisampleState->rasterizationSamples. To check that, record pMultisampleState->rasterizationSamples of the
                     // first bound pipeline.
-                    if (render_pass->UsesNoAttachment(subpass)) {
+                    if (render_pass->UsesNoAttachment(subpass) && !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
                         if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
                                 GetActiveSubpassRasterizationSampleCount();
                             !subpass_rasterization_samples) {

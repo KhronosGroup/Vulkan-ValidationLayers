@@ -2089,17 +2089,19 @@ bool CoreChecks::ValidatePipelineRasterizationConservativeStateCreateInfo(
     const Location& raster_loc) const {
     bool skip = false;
 
-    if (rasterization_conservative_state_ci.extraPrimitiveOverestimationSize < 0.0f ||
-        rasterization_conservative_state_ci.extraPrimitiveOverestimationSize >
-            phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
-        skip |=
-            LogError("VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769", device,
-                     raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
-                                      Field::extraPrimitiveOverestimationSize),
-                     "is (%f), which is not between 0.0 and "
-                     "maxExtraPrimitiveOverestimationSize (%f).",
-                     rasterization_conservative_state_ci.extraPrimitiveOverestimationSize,
-                     phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
+    if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
+        if (rasterization_conservative_state_ci.extraPrimitiveOverestimationSize < 0.0f ||
+            rasterization_conservative_state_ci.extraPrimitiveOverestimationSize >
+                phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
+            skip |= LogError("VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769",
+                             device,
+                             raster_loc.pNext(Struct::VkPipelineRasterizationConservativeStateCreateInfoEXT,
+                                              Field::extraPrimitiveOverestimationSize),
+                             "is (%f), which is not between 0.0 and "
+                             "maxExtraPrimitiveOverestimationSize (%f).",
+                             rasterization_conservative_state_ci.extraPrimitiveOverestimationSize,
+                             phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
+        }
     }
 
     if (!phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization &&

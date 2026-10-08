@@ -315,7 +315,7 @@ bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::Command
     if (!enabled_features.variableMultisampleRate) {
         // if render pass uses no attachment, verify that all bound pipelines referencing this subpass have the same
         // pMultisampleState->rasterizationSamples.
-        if (rp_state.UsesNoAttachment(subpass)) {
+        if (rp_state.UsesNoAttachment(subpass) && !pipeline_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             // If execution ends up here, GetActiveSubpassRasterizationSampleCount() can still be empty if this is
             // the first bound pipeline with the previous conditions holding. Rasterization samples count for the
             // subpass will be updated in PostCallRecordCmdBindPipeline, if it is empty.
