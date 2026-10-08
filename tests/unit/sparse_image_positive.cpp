@@ -88,6 +88,56 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveSparseImage, RecordBeforeQueueBindSparse) {
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+    if (!(m_device->Physical().queue_properties_[m_device->graphics_queue_node_index_].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+        GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &barrier.subresourceRange);
+    m_command_buffer.End();
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = mem_reqs.size;
+    ASSERT_TRUE(m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0));
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+
+    VkSparseMemoryBind bind = {};
+    bind.size = mem_reqs.size;
+    bind.memory = memory;
+    VkSparseImageOpaqueMemoryBindInfo opaque_bind = {image, 1, &bind};
+    vkt::Semaphore semaphore(*m_device);
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.imageOpaqueBindCount = 1;
+    bind_info.pImageOpaqueBinds = &opaque_bind;
+    bind_info.signalSemaphoreCount = 1;
+    bind_info.pSignalSemaphores = &semaphore.handle();
+    vk::QueueBindSparse(m_default_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveSparseImage, BindFreeMemory) {
     TEST_DESCRIPTION("Test using a sparse image after freeing memory that was bound to it.");
 
