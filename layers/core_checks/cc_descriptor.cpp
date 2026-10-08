@@ -2867,7 +2867,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
         BufferAddressValidation<4> buffer_address_validator = {{{
             {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055",
              [buffer_usage](const vvl::Buffer& buffer_state) {
-                 return ((buffer_state.usage & descriptor_buffer_usage) != (buffer_usage & descriptor_buffer_usage));
+                 const VkBufferUsageFlags2 required_usage = buffer_usage & descriptor_buffer_usage;
+                 return (buffer_state.usage & required_usage) != required_usage;
              },
              [buffer_usage, i]() {
                  return "pBindingInfos[" + std::to_string(i) + "].usage is " +

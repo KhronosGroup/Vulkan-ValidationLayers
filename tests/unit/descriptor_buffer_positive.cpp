@@ -650,6 +650,15 @@ TEST_F(PositiveDescriptorBuffer, BindingInfoUsage2) {
     m_command_buffer.Begin();
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
     m_command_buffer.End();
+
+    vkt::Buffer buffer2(*m_device, 4096,
+                        VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT,
+                        vkt::device_address);
+    dbbi.address = buffer2.Address();
+    dbbi.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDescriptorBuffer, DescriptorBufferBindingInfoUsage2) {
