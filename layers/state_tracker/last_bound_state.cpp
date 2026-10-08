@@ -1078,6 +1078,8 @@ const spirv::Module* LastBound::GetFragmentSpirvModule() const {
 }
 
 vvl::DescriptorMode LastBound::GetActionDescriptorMode() const {
+    // #CLAUDE NegativeDebugPrintf.PipelineUnboundDescriptorBufferSetLayout just showed this early return is wrong and we need to
+    // look at the pipeline state in this case. Can I safely remove this early return or will it break something?
     if (descriptor_mode != vvl::DescriptorModeUnknown) {
         return descriptor_mode;  // Most common case
     }

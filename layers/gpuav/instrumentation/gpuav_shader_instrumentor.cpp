@@ -98,21 +98,17 @@ void GpuShaderInstrumentor::SetupClassicDescriptor(const Location& loc) {
         return;
     }
 
-    std::vector<VkDescriptorSetLayout> debug_layouts;
+    std::vector<VkDescriptorSetLayout> dummy_desc_set_layouts;
     for (uint32_t j = 0; j < instrumentation_desc_set_bind_index_; ++j) {
-        debug_layouts.push_back(dummy_desc_layout_[vvl::DescriptorModeClassic]);
+        dummy_desc_set_layouts.push_back(dummy_desc_layout_[vvl::DescriptorModeClassic]);
     }
-    debug_layouts.push_back(instrumentation_desc_layout_[vvl::DescriptorModeClassic]);
+    dummy_desc_set_layouts.push_back(instrumentation_desc_layout_[vvl::DescriptorModeClassic]);
 
-    const VkPipelineLayoutCreateInfo debug_pipeline_layout_info = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-                                                                   nullptr,
-                                                                   0u,
-                                                                   static_cast<uint32_t>(debug_layouts.size()),
-                                                                   debug_layouts.data(),
-                                                                   0u,
-                                                                   nullptr};
-    result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, nullptr,
-                                          &instrumentation_pipeline_layout_[vvl::DescriptorModeClassic]);
+    VkPipelineLayoutCreateInfo inst_plci = vku::InitStructHelper();
+    inst_plci.setLayoutCount = (uint32_t)dummy_desc_set_layouts.size();
+    inst_plci.pSetLayouts = dummy_desc_set_layouts.data();
+    result =
+        DispatchCreatePipelineLayout(device, &inst_plci, nullptr, &instrumentation_pipeline_layout_[vvl::DescriptorModeClassic]);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "vkCreatePipelineLayout failed for internal pipeline layout");
         Cleanup();

@@ -884,12 +884,70 @@ void PipelineSubState::AddHandleToDestroy(VkPipeline pipeline) {
 }
 
 void ShaderObjectSubState::Destroy() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    for (VkPipelineLayout& pipeline_layout : instrumentation_pipeline_layouts_) {
+        if (pipeline_layout != VK_NULL_HANDLE) {
+            DispatchDestroyPipelineLayout(gpuav_.device, pipeline_layout, nullptr);
+            pipeline_layout = VK_NULL_HANDLE;
+        }
+    }
     if (stale_handle != VK_NULL_HANDLE) {
         // vkDestroyShaderEXT expects an unwrapped handle,
         // so cannot use DispatchDestroyPipeline as it will try to unwrap supplied pipeline handle
         auto layer_data = vvl::GetDispatchDevice(gpuav_.device);
         layer_data->device_dispatch_table.DestroyShaderEXT(gpuav_.device, stale_handle, nullptr);
     }
+}
+
+VkPipelineLayout ShaderObjectSubState::GetInstrumentationPipelineLayout(const LastBound& last_bound, const Location& loc,
+                                                                        vvl::DescriptorMode mode) const {
+    std::unique_lock<std::mutex> lock(mutex_);
+    VkPipelineLayout& pipe_layout = instrumentation_pipeline_layouts_[mode];
+    if (pipe_layout != VK_NULL_HANDLE) {
+        return pipe_layout;
+    }
+
+    // Vulkan states:
+    // VUID-vkCmdDraw-None-08878
+    // - All bound graphics shader objects must have been created with identical or identically defined push constant ranges
+    // VUID-vkCmdDraw-None-08879
+    // - All bound graphics shader objects must have been created with identical or identically defined arrays of descriptor set
+    // layouts
+    // => To create a VkPipelineLayout, only need to get compute or vertex/mesh shader and look at their bindings
+    const vvl::DescriptorSetLayoutList& set_layouts = base.set_layouts;
+    PushConstantRangesId push_constants_layouts = base.push_constant_ranges;
+
+    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
+    if (last_bound.desc_set_pipeline_layout) {
+        pipe_layout_ci.flags = last_bound.desc_set_pipeline_layout->CreateFlags();
+    }
+    std::vector<VkDescriptorSetLayout> set_layout_handles;
+    {
+        set_layout_handles.reserve(gpuav_.instrumentation_desc_set_bind_index_ + 1);
+        for (const auto& set_layout : set_layouts.list) {
+            set_layout_handles.push_back(set_layout->VkHandle());
+        }
+        for (uint32_t set_i = static_cast<uint32_t>(set_layouts.list.size()); set_i < gpuav_.instrumentation_desc_set_bind_index_;
+             ++set_i) {
+            set_layout_handles.push_back(gpuav_.dummy_desc_layout_[mode]);
+        }
+        set_layout_handles.push_back(gpuav_.GetInstrumentationDescriptorSetLayout(mode));
+        pipe_layout_ci.setLayoutCount = static_cast<uint32_t>(set_layout_handles.size());
+        pipe_layout_ci.pSetLayouts = set_layout_handles.data();
+    }
+
+    if (push_constants_layouts) {
+        pipe_layout_ci.pushConstantRangeCount = static_cast<uint32_t>(push_constants_layouts->size());
+        pipe_layout_ci.pPushConstantRanges = push_constants_layouts->data();
+    }
+    VkResult result = DispatchCreatePipelineLayout(gpuav_.device, &pipe_layout_ci, VK_NULL_HANDLE, &pipe_layout);
+    if (result != VK_SUCCESS) {
+        pipe_layout = VK_NULL_HANDLE;
+        gpuav_.InternalError(gpuav_.device, loc, "Failed to create instrumentation pipeline layout");
+        return VK_NULL_HANDLE;
+    }
+
+    return pipe_layout;
 }
 
 void ShaderObjectSubState::AddHandleToDestroy(VkShaderEXT shader) {
