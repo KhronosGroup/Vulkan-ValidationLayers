@@ -3299,6 +3299,7 @@ void DeviceState::PostCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
     // but after much discussion
     // (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7504#note_546442)
     // it seems this call alone is not the correct spot to invalidate anything
+    // #ARNO And GPU-AV trips up on this
 }
 
 void DeviceState::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,

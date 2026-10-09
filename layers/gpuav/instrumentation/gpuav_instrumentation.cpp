@@ -544,6 +544,14 @@ void PreCallSetupShaderInstrumentationResourcesDescriptorBuffer(Validator& gpuav
     // There likely is only Push Constants (and BDA) used, but because the VkDescriptorSetLayout is using VK_EXT_descriptor_buffer,
     // and GPU-AV requires using a previous vkCmdBindDescriptorBuffersEXT to inject our code, so we have to inject it ourselves
     if (cb_state.base.descriptor_buffer.binding_info.empty()) {
+        How does validation binds its own descriptor buffer ? It should inject in the user one I think;
+
+        /*Also:
+              Left alone: LastBoundPipelineOrShaderDescSetBindingsCount and LastBoundPipelineOrShaderPushConstantsRangesCount are
+  only called in that same shader-object case, so their pipeline branches are dead too. As a follow-up, the remaining function could
+  become a ShaderObjectSubState::GetPipelineLayoutUnion, matching the pipeline one.
+            */
+
         VkDescriptorBufferBindingInfoEXT binding_info = vku::InitStructHelper();
         binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
         binding_info.address = global_descriptor_buffer.Address();
