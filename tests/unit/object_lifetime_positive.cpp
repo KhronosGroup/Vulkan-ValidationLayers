@@ -202,3 +202,31 @@ TEST_F(PositiveObjectLifetime, DescriptorSetMutableBufferDestroyed) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveObjectLifetime, DescriptorSetLayoutDestroyedBeforePipeline) {
+    TEST_DESCRIPTION("dEQP-VK.api.descriptor_set.descriptor_set_layout_lifetime.compute");
+    RETURN_IF_SKIP(Init());
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    vkt::DescriptorSetLayout set_layout(*m_device, binding);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
+    set_layout.Destroy();
+
+    OneOffDescriptorSet descriptor_set(m_device, {binding});
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO { uint x; };
+        void main() {
+            x = 1;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+}
