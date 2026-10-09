@@ -1413,7 +1413,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
         bool fail = false;
         const uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupInvocations;
         uint64_t invocations = static_cast<uint64_t>(local_size.x) * static_cast<uint64_t>(local_size.y);
-        // Prevent overflow.
+        // Prevent overflow, local_size of zero is validated in spirv-val
         if (invocations > limit) {
             fail = true;
         }
@@ -1806,7 +1806,7 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module& module_stat
     }
 
     uint64_t invocations = static_cast<uint64_t>(local_size.x) * static_cast<uint64_t>(local_size.y);
-    // Prevent overflow.
+    // Prevent overflow, local_size of zero is validated in spirv-val
     bool fail = false;
     const uint32_t max_workgroup_size = is_task ? phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupInvocations
                                                 : phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupInvocations;
@@ -1859,26 +1859,16 @@ bool CoreChecks::ValidateTaskShaderLimits(const spirv::Module& module_state, con
                              "workgroup count (%" PRIu32 ").",
                              entrypoint.Describe().c_str(), z, phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2]);
         }
-        if (found_x && found_y && found_z) {
-            uint64_t invocations = static_cast<uint64_t>(x) * static_cast<uint64_t>(y);
-            // Prevent overflow.
-            bool fail = false;
-            if (invocations > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount) {
-                fail = true;
-            }
-            if (!fail) {
-                invocations *= z;
-                if (invocations > vvl::kU32Max ||
-                    invocations > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount) {
-                    fail = true;
-                }
-            }
-            if (fail) {
+        // prevent overflow, zero is valid as well
+        // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/5007
+        if (found_x && found_y && found_z && x != 0 && y != 0 && z != 0) {
+            uint64_t xy = static_cast<uint64_t>(x) * y;
+            if (xy > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount ||
+                xy * z > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount) {
                 skip |= LogError("VUID-RuntimeSpirv-TaskEXT-07302", module_state.handle(), loc,
-                                 "shader %s is emitting %" PRIu32 " x %" PRIu32 " x %" PRIu32 " mesh work groups (total %" PRIu32
-                                 "), which is greater than max mesh "
-                                 "workgroup total count (%" PRIu32 ").",
-                                 entrypoint.Describe().c_str(), x, y, z, x * y * z,
+                                 "shader %s is emitting %" PRIu32 " x %" PRIu32 " x %" PRIu32
+                                 " mesh work groups, which together is greater than maxMeshWorkGroupTotalCount (%" PRIu32 ").",
+                                 entrypoint.Describe().c_str(), x, y, z,
                                  phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount);
             }
         }
