@@ -1413,7 +1413,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
         bool fail = false;
         const uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupInvocations;
         uint64_t invocations = static_cast<uint64_t>(local_size.x) * static_cast<uint64_t>(local_size.y);
-        // Prevent overflow.
+        // Prevent overflow, local_size of zero is validated in spirv-val
         if (invocations > limit) {
             fail = true;
         }
@@ -1806,7 +1806,7 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const spirv::Module& module_stat
     }
 
     uint64_t invocations = static_cast<uint64_t>(local_size.x) * static_cast<uint64_t>(local_size.y);
-    // Prevent overflow.
+    // Prevent overflow, local_size of zero is validated in spirv-val
     bool fail = false;
     const uint32_t max_workgroup_size = is_task ? phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupInvocations
                                                 : phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupInvocations;
@@ -1861,7 +1861,8 @@ bool CoreChecks::ValidateTaskShaderLimits(const spirv::Module& module_state, con
         }
         if (found_x && found_y && found_z) {
             uint64_t invocations = static_cast<uint64_t>(x) * static_cast<uint64_t>(y);
-            // Prevent overflow.
+            // Prevent overflow, local_size of zero is validated in spirv-val
+            // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/5007
             bool fail = false;
             if (invocations > phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount) {
                 fail = true;

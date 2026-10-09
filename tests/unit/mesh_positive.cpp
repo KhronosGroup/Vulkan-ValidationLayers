@@ -495,3 +495,28 @@ TEST_F(PositiveMesh, TaskPayloadSharedSpecConstant) {
     pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveMesh, DrawMeshTasksZeroGroupCountZ) {
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    InitRenderTarget();
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_props);
+    const uint32_t x = mesh_props.maxMeshWorkGroupCount[0];
+    const uint32_t y = mesh_props.maxMeshWorkGroupCount[1];
+    if (uint64_t(x) * uint64_t(y) <= mesh_props.maxMeshWorkGroupTotalCount) {
+        GTEST_SKIP() << "maxMeshWorkGroupTotalCount is not smaller than X * Y";
+    }
+
+    VkShaderObj ms(*m_device, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, x, y, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
