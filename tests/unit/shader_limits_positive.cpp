@@ -401,3 +401,66 @@ TEST_F(PositiveShaderLimits, MaxLongVectorIdComponentCount) {
     };
     CreatePipelineHelper::OneshotTest(*this, outputPipeline, kErrorBit);
 }
+
+TEST_F(PositiveShaderLimits, MaxCombinedClipAndCullDistancesInputAndOutput) {
+    TEST_DESCRIPTION("dEQP-VK.clipping.user_defined.clip_cull_distance.vert_geom.4_4");
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::shaderClipDistance);
+    AddRequiredFeature(vkt::Feature::shaderCullDistance);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const auto& limits = m_device->Physical().limits_;
+    if (limits.maxClipDistances < 4 || limits.maxCullDistances < 4 || limits.maxCombinedClipAndCullDistances < 8) {
+        GTEST_SKIP() << "Clip/Cull distance limits are too small";
+    }
+
+    const char* vs_source = R"glsl(
+        #version 450
+        out gl_PerVertex {
+            vec4 gl_Position;
+            float gl_ClipDistance[4];
+            float gl_CullDistance[4];
+        };
+        void main() {
+            gl_Position = vec4(0.0);
+            for (int i = 0; i < 4; ++i) {
+                gl_ClipDistance[i] = 1.0;
+                gl_CullDistance[i] = 1.0;
+            }
+        }
+    )glsl";
+
+    const char* gs_source = R"glsl(
+        #version 450
+        layout(triangles) in;
+        layout(triangle_strip, max_vertices = 3) out;
+        in gl_PerVertex {
+            vec4 gl_Position;
+            float gl_ClipDistance[4];
+            float gl_CullDistance[4];
+        } gl_in[];
+        out gl_PerVertex {
+            vec4 gl_Position;
+            float gl_ClipDistance[4];
+            float gl_CullDistance[4];
+        };
+        void main() {
+            for (int v = 0; v < 3; ++v) {
+                gl_Position = gl_in[v].gl_Position;
+                for (int i = 0; i < 4; ++i) {
+                    gl_ClipDistance[i] = gl_in[v].gl_ClipDistance[i];
+                    gl_CullDistance[i] = gl_in[v].gl_CullDistance[i];
+                }
+                EmitVertex();
+            }
+        }
+    )glsl";
+
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(*m_device, gs_source, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
