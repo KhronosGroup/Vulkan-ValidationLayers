@@ -1003,6 +1003,36 @@ TEST_F(PositiveImage, ExtendedFlags) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveImage, ExtendedFlagsZeroCreateFlags) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedFlags);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateFlags2CreateInfoKHR create_flags = vku::InitStructHelper();
+    create_flags.flags = 0u;
+
+    VkImageUsageFlags2CreateInfoKHR usage_flags = vku::InitStructHelper(&create_flags);
+    usage_flags.usage = VK_IMAGE_USAGE_2_TRANSFER_DST_BIT_KHR | VK_IMAGE_USAGE_2_SAMPLED_BIT_KHR;
+
+    VkPhysicalDeviceImageFormatInfo2 format_info = vku::InitStructHelper(&usage_flags);
+    format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    format_info.type = VK_IMAGE_TYPE_2D;
+    format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    VkImageFormatProperties2 format_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &format_info, &format_properties);
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper(&usage_flags);
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32u, 32u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    vkt::Image image(*m_device, image_ci);
+}
+
 TEST_F(PositiveImage, SparsePropertiesExtendedFlags) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
