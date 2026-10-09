@@ -2544,15 +2544,15 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
             const auto& source_data = mapping.sourceData.constantOffset;
             if (source_data.heapOffset == 0 && source_data.heapArrayStride == 0 &&
                 (source_data.samplerHeapOffset != 0 || source_data.samplerHeapArrayStride != 0)) {
-                skip |= LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-constantOffset-sampler", module_state.handle(),
-                                 mapping_loc.dot(Field::source),
-                                 "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are "
-                                 "setting samplerHeapOffset/samplerHeapArrayStride instead of "
-                                 "heapOffset/heapArrayStride.\nThe samplerHeapOffset field is there to map the sampler "
-                                 "portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
-                                 "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
-                                 string_VkDescriptorMappingSourceEXT(mapping.source),
-                                 resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str());
+                skip |= LogWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-constantOffset-sampler", module_state.handle(),
+                                   mapping_loc.dot(Field::source),
+                                   "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are "
+                                   "setting samplerHeapOffset/samplerHeapArrayStride instead of "
+                                   "heapOffset/heapArrayStride.\nThe samplerHeapOffset field is there to map the sampler "
+                                   "portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
+                                   "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
+                                   string_VkDescriptorMappingSourceEXT(mapping.source),
+                                   resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str());
             }
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT) {
             const auto& source_data = mapping.sourceData.pushIndex;
@@ -2562,15 +2562,16 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                           (source_data.samplerHeapOffset != 0 || source_data.samplerPushOffset != 0 ||
                                            source_data.samplerHeapArrayStride != 0 || source_data.samplerHeapIndexStride != 0);
             if (zero_heap && non_zero_sampler) {
-                skip |= LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-pushIndex-sampler", module_state.handle(),
-                                 mapping_loc.dot(Field::source),
-                                 "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
-                                 "samplerHeapOffset/samplerPushOffset/samplerHeapArrayStride/samplerHeapIndexStride instead of "
-                                 "heapOffset/pushOffset/heapArrayStride/heapIndexStride.\nThe samplerHeapOffset field is there to "
-                                 "map the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
-                                 "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
-                                 string_VkDescriptorMappingSourceEXT(mapping.source),
-                                 resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str());
+                skip |=
+                    LogWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-pushIndex-sampler", module_state.handle(),
+                               mapping_loc.dot(Field::source),
+                               "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
+                               "samplerHeapOffset/samplerPushOffset/samplerHeapArrayStride/samplerHeapIndexStride instead of "
+                               "heapOffset/pushOffset/heapArrayStride/heapIndexStride.\nThe samplerHeapOffset field is there to "
+                               "map the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
+                               "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
+                               string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
+                               entrypoint.Describe().c_str());
             }
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_EXT) {
             const auto& source_data = mapping.sourceData.indirectIndex;
@@ -2582,16 +2583,16 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                         source_data.samplerHeapIndexStride != 0);
             if (zero_heap && non_zero_heap) {
                 skip |=
-                    LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler", module_state.handle(),
-                             mapping_loc.dot(Field::source),
-                             "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
-                             "samplerHeapOffset/samplerPushOffset/samplerAddressOffset/samplerHeapArrayStride/"
-                             "samplerHeapIndexStride instead of "
-                             "heapOffset/pushOffset/addressOffset/heapArrayStride/heapIndexStride.\nThe samplerHeapOffset field "
-                             "is there to map the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
-                             "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
-                             string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                             entrypoint.Describe().c_str());
+                    LogWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndex-sampler", module_state.handle(),
+                               mapping_loc.dot(Field::source),
+                               "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
+                               "samplerHeapOffset/samplerPushOffset/samplerAddressOffset/samplerHeapArrayStride/"
+                               "samplerHeapIndexStride instead of "
+                               "heapOffset/pushOffset/addressOffset/heapArrayStride/heapIndexStride.\nThe samplerHeapOffset field "
+                               "is there to map the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
+                               "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
+                               string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
+                               entrypoint.Describe().c_str());
             }
         } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_INDIRECT_INDEX_ARRAY_EXT) {
             const auto& source_data = mapping.sourceData.indirectIndexArray;
@@ -2602,15 +2603,15 @@ bool CoreChecks::ValidateDescriptorMappingSourceHeap(const spirv::Module& module
                                                   source_data.samplerAddressOffset != 0 || source_data.samplerHeapIndexStride != 0);
             if (zero_heap && non_zero_heap) {
                 skip |=
-                    LogError("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-sampler", module_state.handle(),
-                             mapping_loc.dot(Field::source),
-                             "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
-                             "samplerHeapOffset/samplerPushOffset/samplerAddressOffset/samplerHeapIndexStride instead of "
-                             "heapOffset/pushOffset/addressOffset/heapIndexStride.\nThe samplerHeapOffset field is there to map "
-                             "the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
-                             "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
-                             string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
-                             entrypoint.Describe().c_str());
+                    LogWarning("WARNING-VkDescriptorSetAndBindingMappingEXT-indirectIndexArray-sampler", module_state.handle(),
+                               mapping_loc.dot(Field::source),
+                               "(%s) is used to map descriptor %s in %s which is a sampler, but seems like you are setting "
+                               "samplerHeapOffset/samplerPushOffset/samplerAddressOffset/samplerHeapIndexStride instead of "
+                               "heapOffset/pushOffset/addressOffset/heapIndexStride.\nThe samplerHeapOffset field is there to map "
+                               "the sampler portion of a VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, but for "
+                               "VK_DESCRIPTOR_TYPE_SAMPLER, you just use heapOffset to offset into the sampler heap.",
+                               string_VkDescriptorMappingSourceEXT(mapping.source), resource_variable.DescribeDescriptor().c_str(),
+                               entrypoint.Describe().c_str());
             }
         }
     }
