@@ -145,6 +145,44 @@ TEST_F(PositiveSyncObject, BarrierQueueFamily2) {
     excl_test(other_family, submit_family, submit_family);
 }
 
+TEST_F(PositiveSyncObject, BarrierQueueFamilyExclusiveWithMemExt) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13405");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    const bool foreign = IsExtensionsEnabled(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+
+    const uint32_t submit_family = m_device->graphics_queue_node_index_;
+    BarrierQueueFamilyTestHelper::Context test_context(this, {submit_family});
+    Barrier2QueueFamilyTestHelper::Context test_context2(this, {submit_family});
+
+    BarrierQueueFamilyTestHelper excl_test(&test_context);
+    excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
+    Barrier2QueueFamilyTestHelper excl_test2(&test_context2);
+    excl_test2.Init();  // *exclusive* sharing mode.
+
+    // No ownership transfer
+    excl_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
+    excl_test(submit_family, submit_family);
+    excl_test2(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
+    excl_test2(submit_family, submit_family);
+
+    // Ownership transfer to and from an external queue family
+    excl_test(submit_family, VK_QUEUE_FAMILY_EXTERNAL);
+    excl_test(VK_QUEUE_FAMILY_EXTERNAL, submit_family);
+    excl_test2(submit_family, VK_QUEUE_FAMILY_EXTERNAL);
+    excl_test2(VK_QUEUE_FAMILY_EXTERNAL, submit_family);
+    if (foreign) {
+        excl_test(submit_family, VK_QUEUE_FAMILY_FOREIGN_EXT);
+        excl_test(VK_QUEUE_FAMILY_FOREIGN_EXT, submit_family);
+        excl_test2(submit_family, VK_QUEUE_FAMILY_FOREIGN_EXT);
+        excl_test2(VK_QUEUE_FAMILY_FOREIGN_EXT, submit_family);
+    }
+}
+
 TEST_F(PositiveSyncObject, LayoutFromPresentWithoutAccessMemoryRead) {
     // Transition an image away from PRESENT_SRC_KHR without ACCESS_MEMORY_READ
     // in srcAccessMask.

@@ -74,6 +74,26 @@ TEST_F(NegativeDeviceAddressCommandsSync, MemoryBarrierDstExclusive) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDeviceAddressCommandsSync, MemoryBarrierExclusiveIgnored) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13405");
+    RETURN_IF_SKIP(InitSyncDeviceAddressCommands());
+
+    m_command_buffer.Begin();
+
+    memory_range_barrier_.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryRangeBarrierKHR-address-13088");
+    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info_);
+    m_errorMonitor->VerifyFound();
+
+    memory_range_barrier_.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    memory_range_barrier_.dstQueueFamilyIndex = m_default_queue->family_index;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryRangeBarrierKHR-address-13087");
+    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info_);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDeviceAddressCommandsSync, MemoryBarrierHost) {
     RETURN_IF_SKIP(InitSyncDeviceAddressCommands());
 

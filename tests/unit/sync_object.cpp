@@ -1505,7 +1505,7 @@ TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
     barrier.buffer = buffer;
     barrier.size = VK_WHOLE_SIZE;
     // source and destination families should be equal if HOST stage is used
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
     barrier.dstQueueFamilyIndex = 0;
 
     // HOST stage as source
@@ -1544,7 +1544,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
     barrier.image = image;
     barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     // source and destination families should be equal if HOST stage is used
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
     barrier.dstQueueFamilyIndex = 0;
 
     // HOST stage as source
