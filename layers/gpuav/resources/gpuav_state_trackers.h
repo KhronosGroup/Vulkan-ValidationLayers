@@ -446,6 +446,11 @@ class ShaderObjectSubState : public vvl::ShaderObjectSubState {
     spirv::InstrumentationStatus instrumented_status;
     uint32_t unique_shader_id = 0;
 
+    // Pipeline layout composed from this shader object
+    // Created and cached on first call, one per descriptor mode
+    VkPipelineLayout GetInstrumentationPipelineLayout(const LastBound& last_bound, const Location& loc,
+                                                      vvl::DescriptorMode mode) const;
+
     // We need to keep incase the user calls vkGetShaderBinaryDataEXT
     vku::safe_VkShaderCreateInfoEXT original_create_info;
     VkShaderEXT original_handle = VK_NULL_HANDLE;
@@ -455,8 +460,9 @@ class ShaderObjectSubState : public vvl::ShaderObjectSubState {
 
   private:
     Validator& gpuav_;
+    mutable VkPipelineLayout instrumentation_pipeline_layouts_[vvl::DescriptorModeCount] = {};
     // Multiple threads can record multiple commands using the same shader,
-    // so shader destruction has to be thread safe
+    // so instrumentation pipeline layouts access and shader destruction have to be thread safe
     mutable std::mutex mutex_{};
 };
 
