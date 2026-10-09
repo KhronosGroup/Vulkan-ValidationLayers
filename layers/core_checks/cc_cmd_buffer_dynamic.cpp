@@ -1048,7 +1048,8 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
         }
     }
 
-    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT) &&
+        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
         if (!last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             // Only a Pipeline can have a static rasterizationSamples
             if (cb_state.dynamic_state_value.samples_mask_samples < pipeline_state->MultisampleState()->rasterizationSamples) {
