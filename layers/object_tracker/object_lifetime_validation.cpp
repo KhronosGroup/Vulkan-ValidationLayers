@@ -300,7 +300,10 @@ void Tracker::RecordDestroyObject(VulkanTypedHandle object, const Location& loc)
             // Poison users of this object (except the scenarios when users don't care)
             const bool pipeline_layout_maintenance4 =
                 object.type == kVulkanObjectTypePipelineLayout && is_device_maintenance4_enabled_;
-            const bool poison_users = !pipeline_layout_maintenance4;
+            // Pipeline layouts don't access their set layouts after vkCreatePipelineLayout
+            const bool is_set_layout = object.type == kVulkanObjectTypeDescriptorSetLayout;
+            const bool poison_users = !pipeline_layout_maintenance4 && !is_set_layout;
+
             if (poison_users) {
                 for (VulkanTypedHandle poisonee : object_state->objects_to_poison) {
                     if (auto poisonee_state = GetObjectState(poisonee)) {
