@@ -2369,10 +2369,6 @@ static bool IsQueueFamilyValid(const vvl::DeviceState& device_data, uint32_t que
     return (queue_family < static_cast<uint32_t>(device_data.physical_device_state->queue_family_properties.size()));
 }
 
-static bool IsQueueFamilySpecial(uint32_t queue_family) {
-    return IsQueueFamilyExternal(queue_family) || (queue_family == VK_QUEUE_FAMILY_IGNORED);
-}
-
 static const char* GetFamilyAnnotation(const vvl::DeviceState& device_data, uint32_t family) {
     switch (family) {
         case VK_QUEUE_FAMILY_EXTERNAL:
@@ -2560,11 +2556,12 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList& objects, cons
             }
         }
     } else {
+        // A valid queue family, VK_QUEUE_FAMILY_EXTERNAL or VK_QUEUE_FAMILY_FOREIGN_EXT, but never VK_QUEUE_FAMILY_IGNORED
         if (sharing_mode == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
-            if (!(IsQueueFamilyValid(*device_state, src_queue_family) || IsQueueFamilySpecial(src_queue_family))) {
+            if (!(IsQueueFamilyValid(*device_state, src_queue_family) || IsQueueFamilyExternal(src_queue_family))) {
                 skip |= log_queue_family_error(vvl::QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
             }
-            if (!(IsQueueFamilyValid(*device_state, dst_queue_family) || IsQueueFamilySpecial(dst_queue_family))) {
+            if (!(IsQueueFamilyValid(*device_state, dst_queue_family) || IsQueueFamilyExternal(dst_queue_family))) {
                 skip |= log_queue_family_error(vvl::QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
             }
         }
