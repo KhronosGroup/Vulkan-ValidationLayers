@@ -368,8 +368,10 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
                                        const vvl::Pipeline* pipeline, const Location& loc) const {
     bool skip = false;
 
-    uint32_t clip_distance_total = 0;
-    uint32_t cull_distance_total = 0;
+    // Input and Output interfaces are counted separately
+    // [0] is Input and [1] is Output
+    uint32_t clip_distance_total[2] = {0, 0};
+    uint32_t cull_distance_total[2] = {0, 0};
 
     // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/4965
     const bool skip_clip_cull = phys_dev_props.limits.maxClipDistances == 0 || phys_dev_props.limits.maxCullDistances == 0 ||
@@ -398,12 +400,13 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
         }
         // ClipDistance/CullDistance can show up as both a top-level array variable and a member of a Block-decorated struct
         // Geo/Tess might be wrapped in an extra array (ex. gl_in[] / gl_out[]) which is already stripped out
+        const uint32_t interface_index = variable->storage_class == spv::StorageClassOutput ? 1 : 0;
         if (variable->type_struct_info) {
             for (uint32_t i = 0; i < variable->built_in_block.size(); i++) {
                 const spv::BuiltIn member_built_in = variable->built_in_block[i];
                 if (member_built_in == spv::BuiltInClipDistance) {
                     const uint32_t array_size = module_state.GetFlattenArraySize(*variable->type_struct_info->members[i].insn);
-                    clip_distance_total += array_size;
+                    clip_distance_total[interface_index] += array_size;
                     if (array_size > phys_dev_props.limits.maxClipDistances) {
                         skip |= LogError("VUID-RuntimeSpirv-maxClipDistances-00708", module_state.handle(), loc,
                                          "shader %s ClipDistance BuiltIn array size is %" PRIu32
@@ -412,7 +415,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
                     }
                 } else if (member_built_in == spv::BuiltInCullDistance) {
                     const uint32_t array_size = module_state.GetFlattenArraySize(*variable->type_struct_info->members[i].insn);
-                    cull_distance_total += array_size;
+                    cull_distance_total[interface_index] += array_size;
                     if (array_size > phys_dev_props.limits.maxCullDistances) {
                         skip |= LogError("VUID-RuntimeSpirv-maxCullDistances-00709", module_state.handle(), loc,
                                          "shader %s CullDistance BuiltIn array size is %" PRIu32
@@ -422,7 +425,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
                 }
             }
         } else if (variable->decorations.built_in == spv::BuiltInClipDistance) {
-            clip_distance_total += variable->array_size;
+            clip_distance_total[interface_index] += variable->array_size;
             if (variable->array_size > phys_dev_props.limits.maxClipDistances) {
                 skip |= LogError("VUID-RuntimeSpirv-maxClipDistances-00708", module_state.handle(), loc,
                                  "shader %s ClipDistance BuiltIn array size is %" PRIu32
@@ -430,7 +433,7 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
                                  entrypoint.Describe().c_str(), variable->array_size, phys_dev_props.limits.maxClipDistances);
             }
         } else if (variable->decorations.built_in == spv::BuiltInCullDistance) {
-            cull_distance_total += variable->array_size;
+            cull_distance_total[interface_index] += variable->array_size;
             if (variable->array_size > phys_dev_props.limits.maxCullDistances) {
                 skip |= LogError("VUID-RuntimeSpirv-maxCullDistances-00709", module_state.handle(), loc,
                                  "shader %s CullDistance BuiltIn array size is %" PRIu32
@@ -440,13 +443,16 @@ bool CoreChecks::ValidateBuiltInLimits(const spirv::Module& module_state, const 
         }
     }
 
-    if (!skip_clip_cull && (clip_distance_total + cull_distance_total) > phys_dev_props.limits.maxCombinedClipAndCullDistances) {
-        skip |= LogError("VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710", module_state.handle(), loc,
-                         "shader %s has a ClipDistance BuiltIn array size of %" PRIu32
-                         " and a CullDistance BuiltIn array size of %" PRIu32 " which sum to %" PRIu32
-                         " and exceed maxCombinedClipAndCullDistances of %" PRIu32 ".",
-                         entrypoint.Describe().c_str(), clip_distance_total, cull_distance_total,
-                         clip_distance_total + cull_distance_total, phys_dev_props.limits.maxCombinedClipAndCullDistances);
+    for (uint32_t i = 0; i < 2 && !skip_clip_cull; i++) {
+        const uint32_t combined_total = clip_distance_total[i] + cull_distance_total[i];
+        if (combined_total > phys_dev_props.limits.maxCombinedClipAndCullDistances) {
+            skip |= LogError("VUID-RuntimeSpirv-maxCombinedClipAndCullDistances-00710", module_state.handle(), loc,
+                             "shader %s has an %s ClipDistance BuiltIn array size of %" PRIu32
+                             " and a CullDistance BuiltIn array size of %" PRIu32 " which sum to %" PRIu32
+                             " and exceed maxCombinedClipAndCullDistances of %" PRIu32 ".",
+                             entrypoint.Describe().c_str(), i == 0 ? "Input" : "Output", clip_distance_total[i],
+                             cull_distance_total[i], combined_total, phys_dev_props.limits.maxCombinedClipAndCullDistances);
+        }
     }
 
     return skip;
