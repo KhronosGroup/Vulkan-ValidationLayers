@@ -49,6 +49,7 @@
 #include "gpuav/spirv/buffer_device_address_pass.h"
 #include "gpuav/spirv/descriptor_indexing_oob_pass.h"
 #include "gpuav/spirv/descriptor_class_general_buffer_pass.h"
+#include "gpuav/spirv/descriptor_indexing_non_uniform_pass.h"
 #include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
 #include "gpuav/spirv/descriptor_buffer_pass.h"
 #include "gpuav/spirv/descriptor_heap_pass.h"
@@ -1890,6 +1891,10 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
                 spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
                 modified |= general_buffer_pass.Run();
             }
+
+            // AccessPaths are cached, so this runs after the OOB pass has split blocks
+            spirv::DescriptorIndexingNonUniformPass non_uniform_pass(module);
+            modified |= non_uniform_pass.Run();
         } else if (interface.descriptor_mode == vvl::DescriptorModeBuffer) {
             spirv::DescriptorBufferPass pass(module);
             modified |= pass.Run();

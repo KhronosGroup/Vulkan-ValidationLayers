@@ -15,6 +15,7 @@
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
 #include "shader_helper.h"
+#include "gpu_av_helper.h"
 
 class NegativeGpuAVMesh : public GpuAVMesh {};
 
@@ -440,4 +441,52 @@ TEST_F(NegativeGpuAVMesh, DISABLED_TaskPayloadSharedMissingShaderObject) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeGpuAVMesh, NonUniformDescriptorIndex) {
+    TEST_DESCRIPTION("Index a storage buffer array with a different value in each mesh invocation, without nonuniformEXT");
+    RETURN_IF_SKIP(InitBasicMeshAndTask());
+    if (!CanCheckNonUniformIndex(*this, VK_SHADER_STAGE_MESH_BIT_EXT)) {
+        GTEST_SKIP() << "Subgroup vote is not supported in mesh shaders";
+    }
+    InitRenderTarget();
+
+    const char* mesh_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 2) in;
+        layout(triangles, max_vertices = 3, max_primitives = 1) out;
+        layout(set = 0, binding = 0) buffer Data { uint value; } data[2];
+        void main() {
+            SetMeshOutputsEXT(0, 0);
+            data[gl_LocalInvocationIndex].value = 1;
+        }
+    )glsl";
+    VkShaderObj ms(*m_device, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(*m_device, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    vkt::Buffer data_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set.WriteDescriptorBufferInfo(0, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(0, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-StorageBufferArrayNonUniformIndexing-10136");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
 }

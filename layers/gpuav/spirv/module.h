@@ -123,6 +123,8 @@ class Module {
 
     // Prevent adding function if nothing was instrumented
     bool need_log_error_ = false;
+    // Set when the instrumentation itself uses subgroup operations, which need SPIR-V 1.3
+    bool need_subgroup_operations_ = false;
     // Used when UseErrorPayloadVariable is set. Needs to be same for all passes.
     // Will be set in the LogErrorPass
     uint32_t error_payload_variable_id_ = 0;

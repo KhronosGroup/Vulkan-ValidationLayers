@@ -38,3 +38,12 @@ bool CanEnableGpuAV(Test &test) {
     }
     return true;
 }
+
+// The non-uniform descriptor index check uses subgroup vote, and needs two invocations in a subgroup to see two indices
+template <typename Test>
+bool CanCheckNonUniformIndex(Test &test, VkShaderStageFlagBits stage) {
+    VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+    test.GetPhysicalDeviceProperties2(subgroup_props);
+    return (subgroup_props.supportedOperations & VK_SUBGROUP_FEATURE_VOTE_BIT) != 0 &&
+           (subgroup_props.supportedStages & stage) != 0 && subgroup_props.subgroupSize >= 2;
+}

@@ -247,6 +247,8 @@ vvl_sources = [
   "layers/gpuav/spirv/descriptor_class_texel_buffer_pass.h",
   "layers/gpuav/spirv/descriptor_heap_pass.cpp",
   "layers/gpuav/spirv/descriptor_heap_pass.h",
+  "layers/gpuav/spirv/descriptor_indexing_non_uniform_pass.cpp",
+  "layers/gpuav/spirv/descriptor_indexing_non_uniform_pass.h",
   "layers/gpuav/spirv/descriptor_indexing_oob_pass.cpp",
   "layers/gpuav/spirv/descriptor_indexing_oob_pass.h",
   "layers/gpuav/spirv/function_basic_block.cpp",
