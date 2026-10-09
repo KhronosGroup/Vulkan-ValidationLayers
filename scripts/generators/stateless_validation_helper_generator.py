@@ -459,6 +459,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             for member in [x for x in struct.members if x.name in structMemberBlacklist[struct.name]]:
                 member.noAutoValidity = True
 
+        # HACK: VkImageCreateFlags2CreateInfoKHR::flags missing optional="true"
+        # Likely added in 1.4.366
+        # https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8648
+        self.vk.structs['VkImageCreateFlags2CreateInfoKHR'].members[2].optional = True
+
         # HACK: force VkDebugUtilsObjectNameInfoEXT to extends some structs
         # Remove after merging https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8336
         hack = ["VkResourceDescriptorInfoEXT",

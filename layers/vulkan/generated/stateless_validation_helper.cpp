@@ -6226,7 +6226,7 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkImageCreateFlags2CreateInfoKHR);
                 VkImageCreateFlags2CreateInfoKHR* structure = (VkImageCreateFlags2CreateInfoKHR*)header;
                 skip |= ValidateFlags(pNext_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits2KHR,
-                                      AllVkImageCreateFlagBits2KHR, structure->flags, kRequiredFlags,
+                                      AllVkImageCreateFlagBits2KHR, structure->flags, kOptionalFlags,
                                       "VUID-VkImageCreateFlags2CreateInfoKHR-flags-parameter", nullptr, false);
             }
         } break;
