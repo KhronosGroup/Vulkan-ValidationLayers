@@ -1073,6 +1073,23 @@ bool SpirvValidator::ValidateShaderStageGroupNonUniform(const spirv::Module& mod
     return skip;
 }
 
+// Tessellation has separate limits for per-vertex and per-patch variables
+static const spirv::InterfaceSlot* GetMaxTessellationSlot(const spirv::EntryPoint& entrypoint, spv::StorageClass storage_class,
+                                                          bool is_patch) {
+    const spirv::InterfaceSlot* max_slot = nullptr;
+    for (const auto* variable : entrypoint.user_defined_interface_variables) {
+        if (variable->storage_class != storage_class || variable->is_patch != is_patch) {
+            continue;
+        }
+        for (const auto& slot : variable->interface_slots) {
+            if (!max_slot || slot.slot > max_slot->slot) {
+                max_slot = &slot;
+            }
+        }
+    }
+    return max_slot;
+}
+
 bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                                           const spirv::StatelessData& stateless_data, const Location& loc) const {
     const VkShaderStageFlagBits stage = entrypoint.stage;
@@ -1124,33 +1141,41 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module& m
                                  entrypoint.Describe().c_str(), max_input_slot.Describe().c_str(),
                                  limits.maxTessellationControlPerVertexInputComponents);
             }
-            if (entrypoint.max_output_slot_variable) {
-                if (entrypoint.max_output_slot_variable->is_patch &&
-                    max_output_slot.slot >= limits.maxTessellationControlPerPatchOutputComponents) {
-                    skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
-                                     "shader %s output interface variable (%s) "
-                                     "exceeds component limit maxTessellationControlPerPatchOutputComponents (%" PRIu32 ").",
-                                     entrypoint.Describe().c_str(), max_output_slot.Describe().c_str(),
-                                     limits.maxTessellationControlPerPatchOutputComponents);
-                }
-                if (!entrypoint.max_output_slot_variable->is_patch &&
-                    max_output_slot.slot >= limits.maxTessellationControlPerVertexOutputComponents) {
-                    skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
-                                     "shader %s output interface variable (%s) "
-                                     "exceeds component limit maxTessellationControlPerVertexOutputComponents (%" PRIu32 ").",
-                                     entrypoint.Describe().c_str(), max_output_slot.Describe().c_str(),
-                                     limits.maxTessellationControlPerVertexOutputComponents);
-                }
+            if (const auto* slot = GetMaxTessellationSlot(entrypoint, spv::StorageClassOutput, false);
+                slot && slot->slot >= limits.maxTessellationControlPerVertexOutputComponents) {
+                skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
+                                 "shader %s output interface variable (%s) "
+                                 "exceeds component limit maxTessellationControlPerVertexOutputComponents (%" PRIu32 ").",
+                                 entrypoint.Describe().c_str(), slot->Describe().c_str(),
+                                 limits.maxTessellationControlPerVertexOutputComponents);
+            }
+            if (const auto* slot = GetMaxTessellationSlot(entrypoint, spv::StorageClassOutput, true);
+                slot && slot->slot >= limits.maxTessellationControlPerPatchOutputComponents) {
+                skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
+                                 "shader %s per-patch output interface variable (%s) "
+                                 "exceeds component limit maxTessellationControlPerPatchOutputComponents (%" PRIu32 ").",
+                                 entrypoint.Describe().c_str(), slot->Describe().c_str(),
+                                 limits.maxTessellationControlPerPatchOutputComponents);
             }
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            if (max_input_slot.slot >= limits.maxTessellationEvaluationInputComponents) {
+            if (const auto* slot = GetMaxTessellationSlot(entrypoint, spv::StorageClassInput, false);
+                slot && slot->slot >= limits.maxTessellationEvaluationInputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
                                  "shader %s input interface variable (%s) "
                                  "exceeds component limit maxTessellationEvaluationInputComponents (%" PRIu32 ").",
-                                 entrypoint.Describe().c_str(), max_input_slot.Describe().c_str(),
+                                 entrypoint.Describe().c_str(), slot->Describe().c_str(),
                                  limits.maxTessellationEvaluationInputComponents);
+            }
+            // Per-patch inputs are written as per-patch outputs of the tessellation control shader
+            if (const auto* slot = GetMaxTessellationSlot(entrypoint, spv::StorageClassInput, true);
+                slot && slot->slot >= limits.maxTessellationControlPerPatchOutputComponents) {
+                skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,
+                                 "shader %s per-patch input interface variable (%s) "
+                                 "exceeds component limit maxTessellationControlPerPatchOutputComponents (%" PRIu32 ").",
+                                 entrypoint.Describe().c_str(), slot->Describe().c_str(),
+                                 limits.maxTessellationControlPerPatchOutputComponents);
             }
             if (max_output_slot.slot >= limits.maxTessellationEvaluationOutputComponents) {
                 skip |= LogError("VUID-RuntimeSpirv-Location-06272", module_state.handle(), loc,

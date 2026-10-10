@@ -306,3 +306,27 @@ TEST_F(PositiveGeometryTessellation, TessGeomPointPrimitiveTopology) {
                            pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveGeometryTessellation, PatchInputsBeyondEvaluationInputLimit) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13416");
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    RETURN_IF_SKIP(Init());
+
+    const auto& limits = m_device->Physical().limits_;
+    if (limits.maxTessellationEvaluationInputComponents >= limits.maxTessellationControlPerPatchOutputComponents) {
+        GTEST_SKIP()
+            << "maxTessellationControlPerPatchOutputComponents is not greater than maxTessellationEvaluationInputComponents";
+    }
+
+    const uint32_t location = limits.maxTessellationEvaluationInputComponents / 4;
+    const std::string tes_source =
+        "#version 450\n"
+        "layout(triangles, equal_spacing, cw) in;\n"
+        "layout(location = " +
+        std::to_string(location) +
+        ") patch in vec4 patch_data;\n"
+        "void main() {\n"
+        "    gl_Position = vec4(gl_TessCoord, 1.0) * patch_data;\n"
+        "}\n";
+    VkShaderObj tes(*m_device, tes_source.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+}
