@@ -2700,7 +2700,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline& pipeline
     } else if (IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
         // if VK_KHR_dynamic_rendering is not enabled, can be null renderpass if using GPL
         if (!fragment_output_state_undefined && pipeline.OwnsLibState(pipeline.fragment_output_state) &&
-            !pipeline.MultisampleState()) {
+            !pipeline.MultisampleState() && !ms_state_dynamic) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderpass-06631", device,
                              create_info_loc.dot(Field::pMultisampleState),
                              "is NULL, but pipeline is being created with fragment shader that uses samples.");
