@@ -1270,26 +1270,19 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
 
     const uint32_t max_total_count = has_task ? phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount
                                               : phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount;
-    uint64_t invocations = static_cast<uint64_t>(groupCountX) * static_cast<uint64_t>(groupCountY);
-    // Prevent overflow.
-    bool fail = false;
-    if (invocations > vvl::kU32Max || invocations > max_total_count) {
-        fail = true;
-    }
-    if (!fail) {
-        invocations *= static_cast<uint64_t>(groupCountZ);
-        if (invocations > vvl::kU32Max || invocations > max_total_count) {
-            fail = true;
+
+    if (groupCountX != 0 && groupCountY != 0 && groupCountZ != 0) {
+        uint64_t xy = static_cast<uint64_t>(groupCountX) * groupCountY;
+        if (xy > max_total_count || xy * groupCountZ > max_total_count) {
+            const char* limit_vuid =
+                has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07329";
+            skip |= LogError(limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
+                             "The product of groupCountX (%" PRIu32 "), groupCountY (%" PRIu32 "), and groupCountZ (%" PRIu32
+                             ") must be less than or equal to "
+                             "VkPhysicalDeviceMeshShaderPropertiesEXT::%s (%" PRIu32 ").",
+                             groupCountX, groupCountY, groupCountZ,
+                             has_task ? "maxTaskWorkGroupTotalCount" : "maxMeshWorkGroupTotalCount", max_total_count);
         }
-    }
-    if (fail) {
-        const char* limit_vuid = has_task ? "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325" : "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07329";
-        skip |= LogError(limit_vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location,
-                         "The product of groupCountX (%" PRIu32 "), groupCountY (%" PRIu32 "), and groupCountZ (%" PRIu32
-                         ") must be less than or equal to "
-                         "VkPhysicalDeviceMeshShaderPropertiesEXT::%s (%" PRIu32 ").",
-                         groupCountX, groupCountY, groupCountZ,
-                         has_task ? "maxTaskWorkGroupTotalCount" : "maxMeshWorkGroupTotalCount", max_total_count);
     }
 
     return skip;
