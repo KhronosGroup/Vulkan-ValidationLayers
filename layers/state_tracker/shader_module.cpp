@@ -1721,7 +1721,7 @@ LocalSize Module::FindLocalSize(const EntryPoint& entrypoint) const {
     return local_size;
 }
 
-uint32_t Module::CalculateWorkgroupSharedMemory() const {
+uint32_t Module::CalculateWorkgroupSharedMemory(const EntryPoint& entrypoint) const {
     uint32_t total_size = 0;
     // when using WorkgroupMemoryExplicitLayoutKHR
     // either all or none the structs are decorated with Block,
@@ -1730,23 +1730,29 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
     bool find_max_block = false;
 
     for (const Instruction* insn : static_data_.variable_inst) {
-        // StorageClass Workgroup is shared memory
-        if (insn->StorageClass() == spv::StorageClassWorkgroup) {
-            if (GetDecorationSet(insn->Word(2)).Has(DecorationSet::aliased_bit)) {
-                find_max_block = true;
-            }
+        if (insn->StorageClass() != spv::StorageClassWorkgroup) {
+            continue;  // "shared memory" == the Workgroup storage class
+        }
 
-            const Instruction* type = GetVariablePointerType(*insn);
+        // With multiple entry points, only count the variables this entry point can access
+        if (static_data_.entry_points.size() > 1 && !vvl::Contains(entrypoint.accessible.variables, insn)) {
+            continue;
+        }
 
-            // structs might have an offset padding
-            const uint32_t variable_shared_size =
-                (type->Opcode() == spv::OpTypeStruct) ? GetTypeStructInfo(type)->GetSize(*this).size : GetTypeBytesSize(type);
+        if (GetDecorationSet(insn->Word(2)).Has(DecorationSet::aliased_bit)) {
+            find_max_block = true;
+        }
 
-            if (find_max_block) {
-                total_size = std::max(total_size, variable_shared_size);
-            } else {
-                total_size += variable_shared_size;
-            }
+        const Instruction* type = GetVariablePointerType(*insn);
+
+        // structs might have an offset padding
+        const uint32_t variable_shared_size =
+            (type->Opcode() == spv::OpTypeStruct) ? GetTypeStructInfo(type)->GetSize(*this).size : GetTypeBytesSize(type);
+
+        if (find_max_block) {
+            total_size = std::max(total_size, variable_shared_size);
+        } else {
+            total_size += variable_shared_size;
         }
     }
     return total_size;

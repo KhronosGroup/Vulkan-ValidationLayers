@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <sstream>
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 
@@ -463,4 +464,47 @@ TEST_F(PositiveShaderLimits, MaxCombinedClipAndCullDistancesInputAndOutput) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderLimits, ComputeSharedMemoryOtherEntryPoint) {
+    TEST_DESCRIPTION("Workgroup variables used only by another entry point do not count against the limit");
+    RETURN_IF_SKIP(Init());
+    const uint32_t floats_per_entry = (m_device->Physical().limits_.maxComputeSharedMemorySize / 4) * 3 / 4;
+    std::ostringstream cs;
+    cs << R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpEntryPoint GLCompute %main2 "main2"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpExecutionMode %main2 LocalSize 1 1 1
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+    %float_1 = OpConstant %float 1
+     %length = OpConstant %uint )"
+       << floats_per_entry << R"(
+  %arr_float = OpTypeArray %float %length
+ %ptr_wg_arr = OpTypePointer Workgroup %arr_float
+%ptr_wg_float = OpTypePointer Workgroup %float
+          %a = OpVariable %ptr_wg_arr Workgroup
+          %b = OpVariable %ptr_wg_arr Workgroup
+       %main = OpFunction %void None %func
+         %l1 = OpLabel
+         %pa = OpAccessChain %ptr_wg_float %a %uint_0
+               OpStore %pa %float_1
+               OpReturn
+               OpFunctionEnd
+      %main2 = OpFunction %void None %func
+         %l2 = OpLabel
+         %pb = OpAccessChain %ptr_wg_float %b %uint_0
+               OpStore %pb %float_1
+               OpReturn
+               OpFunctionEnd
+    )";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
 }
