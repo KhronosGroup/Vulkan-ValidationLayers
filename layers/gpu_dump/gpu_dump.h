@@ -17,9 +17,17 @@
 #include <vulkan/vulkan.h>
 #include "chassis/layer_object_id.h"
 #include "state_tracker/state_tracker.h"
+#include <iosfwd>  // Forward declarations of <ostream>
 
 // Wanted 'gpu_dump' but conflicts with EnableFlags::gpu_dump
 namespace gpudump {
+
+// Prints a value as "0x..." without leaving the stream in std::hex
+struct Hex {
+    explicit Hex(uint64_t value) : value(value) {}
+    uint64_t value;
+};
+std::ostream& operator<<(std::ostream& os, const Hex& hex);
 
 class Instance : public vvl::InstanceProxy {
   public:
