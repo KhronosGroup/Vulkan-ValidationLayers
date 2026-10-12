@@ -2809,10 +2809,9 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                           {VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT, VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_ADDRESS_EXT,
                            VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT})) {
                 const spirv::Instruction* found_inst = nullptr;
-                const uint32_t desc_type = module_state.FindDef(resource_variable.type_id)->ResultId();
                 for (const spirv::Instruction* array_length_inst : module_state.static_data_.array_length_inst) {
-                    const spirv::Instruction* type = module_state.FindDef(array_length_inst->Word(3));
-                    if (type->Opcode() == spv::OpVariable && type->Word(1) == desc_type) {
+                    const spirv::Instruction* structure = module_state.FindDef(array_length_inst->Word(3));
+                    if (structure->Opcode() == spv::OpVariable && structure->ResultId() == resource_variable.id) {
                         found_inst = array_length_inst;
                         break;
                     }
