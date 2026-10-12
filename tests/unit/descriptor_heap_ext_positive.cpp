@@ -3617,6 +3617,48 @@ TEST_F(PositiveDescriptorHeapEXT, SecondSamplerHeap) {
     m_default_queue->SubmitAndWait(cb2);
 }
 
+TEST_F(PositiveDescriptorHeapEXT, ArrayLengthBufferOfSameType) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    const char* cs_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %rta ArrayStride 4
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %SSBO BufferBlock
+               OpDecorate %a DescriptorSet 0
+               OpDecorate %a Binding 0
+               OpDecorate %b DescriptorSet 0
+               OpDecorate %b Binding 1
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+        %rta = OpTypeRuntimeArray %uint
+       %SSBO = OpTypeStruct %rta
+   %ptr_ssbo = OpTypePointer Uniform %SSBO
+   %ptr_uint = OpTypePointer Uniform %uint
+          %a = OpVariable %ptr_ssbo Uniform
+          %b = OpVariable %ptr_ssbo Uniform
+       %main = OpFunction %void None %func
+      %label = OpLabel
+        %len = OpArrayLength %uint %b 0
+         %pa = OpAccessChain %ptr_uint %a %int_0 %int_0
+               OpStore %pa %len
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
+    mappings[1] = MakeZeroSetAndBindingMappingEXT(0, 1, VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info, SPV_SOURCE_ASM);
+}
+
 TEST_F(PositiveDescriptorHeapEXT, InputAttachment) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
     InitRenderTarget();
