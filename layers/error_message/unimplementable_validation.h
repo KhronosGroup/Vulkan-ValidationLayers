@@ -1058,6 +1058,10 @@ const char* deprecated_validation[] = {
     // TransformFeedback has been legacy for awhile and will only add if someone ACTUALLY needs these
     "VUID-VkGraphicsPipelineCreateInfo-rasterizationStream-02319",
     "VUID-VkGraphicsPipelineCreateInfo-rasterizationStream-02320",
+
+    // Way too complex to implement for the assumed return value
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7481
+    "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-dst-03561",
 };
 
 // clang-format on
