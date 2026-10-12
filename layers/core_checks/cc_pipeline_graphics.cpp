@@ -1524,6 +1524,17 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
         return skip;
     }
 
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state) && pipeline.fragment_output_state) {
+        const ShaderStageState* stage_state = pipeline.GetShaderStageState(pipeline.pre_raster_state->last_stage);
+        if (stage_state && stage_state->HasSpirv() && stage_state->entrypoint->written_built_in_primitive_shading_rate_khr) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09317", stage_state->module_state->Handle(),
+                             create_info_loc.dot(Field::subpass),
+                             "(%" PRIu32 ") has an external format resolve attachment (externalFormat %" PRIu64
+                             "), but the last pre-rasterization shader stage %s statically writes to PrimitiveShadingRateKHR.",
+                             pipeline.Subpass(), external_format, stage_state->entrypoint->Describe().c_str());
+        }
+    }
+
     const auto* multisample_state = pipeline.MultisampleState();
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && multisample_state) {
         if (multisample_state->rasterizationSamples != VK_SAMPLE_COUNT_1_BIT) {
@@ -1601,6 +1612,17 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(c
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09310", device,
                              create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
                              "is %" PRIu64 " but the fragment shader declares StencilRefReplacingEXT.", external_format);
+        }
+    }
+
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state) && pipeline.fragment_output_state) {
+        const ShaderStageState* stage_state = pipeline.GetShaderStageState(pipeline.pre_raster_state->last_stage);
+        if (stage_state && stage_state->HasSpirv() && stage_state->entrypoint->written_built_in_primitive_shading_rate_khr) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09308", stage_state->module_state->Handle(),
+                             create_info_loc.pNext(Struct::VkExternalFormatANDROID, Field::externalFormat),
+                             "is %" PRIu64
+                             " but the last pre-rasterization shader stage %s statically writes to PrimitiveShadingRateKHR.",
+                             external_format, stage_state->entrypoint->Describe().c_str());
         }
     }
 
