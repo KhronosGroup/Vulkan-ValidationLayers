@@ -819,6 +819,49 @@ TEST_F(NegativeAndroidExternalResolve, PipelineRasterizationSamplesDynamicRender
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeAndroidExternalResolve, PipelinePrimitiveShadingRateDynamicRendering) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
+    RETURN_IF_SKIP(InitBasicAndroidExternalResolve());
+
+    if (nullColorAttachmentWithExternalFormatResolve) {
+        GTEST_SKIP() << "nullColorAttachmentWithExternalFormatResolve enabled";
+    }
+
+    vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420, AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE, 64, 64);
+    if (!ahb.handle()) {
+        GTEST_SKIP() << "could not allocate AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420";
+    }
+
+    VkAndroidHardwareBufferFormatResolvePropertiesANDROID format_resolve_prop = vku::InitStructHelper();
+
+    VkExternalFormatANDROID external_format = vku::InitStructHelper();
+    external_format.externalFormat = ahb.GetExternalFormat(*m_device, &format_resolve_prop);
+
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&external_format);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    const char* vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_fragment_shading_rate : enable
+        void main() {
+            gl_PrimitiveShadingRateEXT = gl_ShadingRateFlag4VerticalPixelsEXT | gl_ShadingRateFlag4HorizontalPixelsEXT;
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09308");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeAndroidExternalResolve, MissingImageUsage) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
