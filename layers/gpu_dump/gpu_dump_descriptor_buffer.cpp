@@ -57,17 +57,17 @@ struct BindingInfo {
     bool operator<(const BindingInfo& other) const { return range.begin < other.range.begin; }
 
     void Print(std::ostringstream& ss) {
-        ss << "    - SPIR-V Binding " << std::dec << index;
+        ss << "    - SPIR-V Binding " << index;
         if (!variable_name.empty()) {
             ss << " [\"" << variable_name << "\"]";
         }
         ss << "\n";
         if (!embedded) {
             ss << "      - " << string_VkDescriptorType(type) << "\n";
-            ss << "      - offset: " << std::dec << offset << ", range: " << string_range_hex(range) << "\n";
-            ss << "      - size: " << String(size_field) << " [" << std::dec << size << "]";
+            ss << "      - offset: " << offset << ", range: " << string_range_hex(range) << "\n";
+            ss << "      - size: " << String(size_field) << " [" << size << "]";
             if (count > 1) {
-                ss << " * descriptorCount [" << std::dec << count << "]";
+                ss << " * descriptorCount [" << count << "]";
             }
             if (type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
                 ss << " (max of all mutable types)";
@@ -93,16 +93,15 @@ struct SetInfo {
     bool operator<(const SetInfo& other) const { return range.begin < other.range.begin; }
 
     void Print(std::ostringstream& ss) {
-        ss << "  - SPIR-V Set " << std::dec << index << "\n";
+        ss << "  - SPIR-V Set " << index << "\n";
         if (embedded) {
             ss << "    - Embedded Sampler";
         } else {
-            ss << "    - offset: " << std::dec << binding_offset << ", size: " << range.size()
-               << " bytes, range: " << string_range_hex(range);
+            ss << "    - offset: " << binding_offset << ", size: " << range.size() << " bytes, range: " << string_range_hex(range);
         }
         if (binding_index != vvl::kNoIndex32) {
             // Only print if there are multiple pBindingInfos
-            ss << " (specified in pBindingInfos[" << std::dec << binding_index << "])";
+            ss << " (specified in pBindingInfos[" << binding_index << "])";
         }
         ss << '\n';
     }
@@ -237,7 +236,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         const bool resource_buffer = (usage_flags & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
         const bool sampler_buffer = (usage_flags & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
 
-        ss << "  - pBindingInfos[" << std::dec << binding_i << "].address " << Hex(address) << ' ';
+        ss << "  - pBindingInfos[" << binding_i << "].address " << Hex(address) << ' ';
         if (resource_buffer && sampler_buffer) {
             ss << "(resource and sampler buffer)";
         } else if (resource_buffer) {
@@ -325,7 +324,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
 
             if (set_info == nullptr) {
                 if (var_set >= last_bound.ds_slots.size() || var_set >= pipeline_layout.set_layouts.list.size()) {
-                    ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
+                    ss << "  - [WARNING] SPIR-V Set " << var_set
                        << " is not a valid bound set as vkCmdSetDescriptorBufferOffsetsEXT was either not called or invalidated "
                           "for "
                        << string_VkPipelineBindPoint(last_bound.bind_point) << '\n';
@@ -337,25 +336,24 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
 
                 // Will print the invalid/unknown sets first, no need to sort these
                 if (!dsl || dsl->Destroyed()) {
-                    ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
+                    ss << "  - [WARNING] SPIR-V Set " << var_set
                        << " VkDescriptorSetLayout was destroyed (TODO - Track more info in pipeline layout)\n";
                     found_warning = true;
                     continue;
                 } else if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) == 0) {
-                    ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
+                    ss << "  - [WARNING] SPIR-V Set " << var_set
                        << " was not created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT\n";
                     found_warning = true;
                     continue;
                 } else if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) != 0) {
-                    ss << "  - SPIR-V Set " << std::dec << var_set
-                       << " was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT\n";
+                    ss << "  - SPIR-V Set " << var_set << " was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT\n";
                     continue;
                 } else if ((dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) != 0) {
-                    ss << "  - SPIR-V Set " << std::dec << var_set
+                    ss << "  - SPIR-V Set " << var_set
                        << " was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT\n";
                     continue;
                 } else if (!descriptor_buffer_binding.has_value()) {
-                    ss << "  - [WARNING] SPIR-V Set " << std::dec << var_set
+                    ss << "  - [WARNING] SPIR-V Set " << var_set
                        << " was never bound with an offset. This is only valid if descriptor is not used in the shader";
                     if (dsl->HasImmutableSamplers()) {
                         ss << " or because all bindings are using Immutable Samplers";
