@@ -410,7 +410,13 @@ bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module& module_state,
     } else if (stage == VK_SHADER_STAGE_VERTEX_BIT &&
                ((pipeline.create_info_shaders & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) ==
                 0)) {
-        if (!entrypoint.written_built_in_point_size && IsPointTopology(pipeline.topology_at_rasterizer) && !maintenance5) {
+        // Only the input assembly topology matters here, VK_POLYGON_MODE_POINT does not require PointSize
+        // https://docs.vulkan.org/guide/latest/primitive_topology.html
+        const auto* ia_state = pipeline.InputAssemblyState();
+        const bool point_list = ia_state && ia_state->topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST &&
+                                !(pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
+                                  phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted);
+        if (!entrypoint.written_built_in_point_size && point_list && !maintenance5) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-topology-08773", module_state.handle(), loc,
                              "shader %s PointSize is not written to, but Pipeline topology is set to "
                              "VK_PRIMITIVE_TOPOLOGY_POINT_LIST.",
