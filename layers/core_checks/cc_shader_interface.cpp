@@ -478,8 +478,12 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module& module_state, co
             if (stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
                 tess_output_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
                 break;
-            } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                tess_output_topology = stage_state.entrypoint->execution_mode.GetTessellationEvalOutputTopology();
+            } else {
+                // The subdivision mode can be declared in either tessellation shader
+                const VkPrimitiveTopology topology = stage_state.entrypoint->execution_mode.GetTessellationEvalOutputTopology();
+                if (topology != VK_PRIMITIVE_TOPOLOGY_MAX_ENUM) {
+                    tess_output_topology = topology;
+                }
             }
         }
     }
