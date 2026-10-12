@@ -264,6 +264,64 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsGraphics) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDeviceGeneratedCommands, PreprocessUsesStateCommandBufferPipeline) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    VkIndirectCommandsVertexBufferTokenEXT vertex_buffer_token = {0};
+    VkIndirectCommandsLayoutTokenEXT tokens[2];
+    tokens[0] = vku::InitStructHelper();
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT;
+    tokens[0].data.pVertexBuffer = &vertex_buffer_token;
+    tokens[0].offset = 0;
+    tokens[1] = vku::InitStructHelper();
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+    tokens[1].offset = 16;
+
+    vkt::PipelineLayout layout(*m_device);
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.flags = VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_EXT;
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    command_layout_ci.pipelineLayout = layout;
+    command_layout_ci.tokenCount = 2;
+    command_layout_ci.pTokens = tokens;
+    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+
+    CreatePipelineHelper dgc_pipe(*this);
+    dgc_pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    dgc_pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper other_pipe(*this);
+    other_pipe.CreateGraphicsPipeline();
+
+    VkGeneratedCommandsPipelineInfoEXT pipeline_info = vku::InitStructHelper();
+    pipeline_info.pipeline = dgc_pipe;
+
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
+    generated_commands_info.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    generated_commands_info.indirectExecutionSet = VK_NULL_HANDLE;
+    generated_commands_info.indirectCommandsLayout = command_layout;
+    generated_commands_info.indirectAddressSize = 64;
+    generated_commands_info.indirectAddress = block_buffer.Address();
+    generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
+    generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info, &pipeline_info);
+
+    vkt::CommandBuffer state_cb(*m_device, m_command_pool);
+    state_cb.Begin();
+    vk::CmdBindPipeline(state_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, dgc_pipe);
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, other_pipe);
+    vk::CmdPreprocessGeneratedCommandsEXT(m_command_buffer, &generated_commands_info, state_cb);
+    m_command_buffer.End();
+    state_cb.End();
+}
+
 TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetPipeline) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();

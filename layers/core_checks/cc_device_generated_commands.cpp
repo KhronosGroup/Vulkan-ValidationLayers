@@ -497,7 +497,8 @@ bool CoreChecks::ValidateGeneratedCommandsShaderInfo(const LogObjectList objlist
     return skip;
 }
 
-bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_state,
+// |state_cb_state| is stateCommandBuffer for vkCmdPreprocessGeneratedCommandsEXT
+bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& state_cb_state,
                                                const vvl::IndirectCommandsLayout& indirect_commands_layout,
                                                const VkGeneratedCommandsInfoEXT& generated_commands_info, bool preprocessed,
                                                const Location& info_loc) const {
@@ -505,9 +506,9 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
 
     if (indirect_commands_layout.has_vertex_buffer_token) {
         // If had vertex buffer token, it had to be graphic bind point (else would hit error earlier)
-        const auto pipeline = cb_state.GetLastBoundGraphics().pipeline_state;
+        const auto pipeline = state_cb_state.GetLastBoundGraphics().pipeline_state;
         if (pipeline && !pipeline->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
+            const LogObjectList objlist(cb_state.Handle(), state_cb_state.Handle(), pipeline->Handle());
             skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11079", objlist,
                              info_loc.dot(Field::indirectCommandsLayout),
                              "contains a VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT token but the last bound graphics "
@@ -772,7 +773,8 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
             OutsideRenderPass(cb_state, error_obj.location, "VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-10769");
     }
 
-    skip |= ValidateGeneratedCommandsInfo(cb_state, *indirect_commands_layout, *pGeneratedCommandsInfo, isPreprocessed, info_loc);
+    skip |= ValidateGeneratedCommandsInfo(cb_state, cb_state, *indirect_commands_layout, *pGeneratedCommandsInfo, isPreprocessed,
+                                          info_loc);
 
     // You can only have 1 "action token" so we know there is only a draw or dispatch or traceRay
     // If a VkIndirectExecutionSetEXT is not used, we can guarantee the pipeline/shaderObject being used.
@@ -886,7 +888,8 @@ bool CoreChecks::PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffe
     skip |= ValidatePreprocessGeneratedCommandsStateCommandBuffer(cb_state, *state_cb_state, *indirect_commands_layout,
                                                                   *pGeneratedCommandsInfo, error_obj.location);
 
-    skip |= ValidateGeneratedCommandsInfo(cb_state, *indirect_commands_layout, *pGeneratedCommandsInfo, false, info_loc);
+    skip |= ValidateGeneratedCommandsInfo(cb_state, *state_cb_state, *indirect_commands_layout, *pGeneratedCommandsInfo, false,
+                                          info_loc);
 
     return skip;
 }
