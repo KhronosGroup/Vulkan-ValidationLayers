@@ -222,13 +222,13 @@ void WarnInfo::IndirectUniformUsage(VkDeviceAddress address) {
             found = true;
             if (buffer_states.size() == 1) {
                 const vvl::Buffer& buffer_state = *buffer_states.front();
-                ss << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (0x" << std::hex << address
-                   << ") belongs to " << buffer_state.Describe(dump.dev_data) << ", but that VkBuffer was created with usage "
+                ss << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (" << Hex(address) << ") belongs to "
+                   << buffer_state.Describe(dump.dev_data) << ", but that VkBuffer was created with usage "
                    << string_VkBufferUsageFlags2(buffer_state.usage)
                    << " (missing VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT) and any access to this descriptor will be "
                       "invalid";
             } else {
-                ss << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (0x" << std::hex << address
+                ss << new_bullet_line << "[WARNING] BUFFER TYPE - the indirect address (" << Hex(address)
                    << ") is not accessing any VkBuffer created with VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT and any access to "
                       "this descriptor will be invalid";
             }
@@ -253,7 +253,7 @@ void WarnInfo::ResourceBufferUsage(VkDeviceAddress address) {
         }
         if (!buffer_found) {
             found = true;
-            ss << new_bullet_line << "[WARNING] BUFFER TYPE - the resource address (0x" << std::hex << address
+            ss << new_bullet_line << "[WARNING] BUFFER TYPE - the resource address (" << Hex(address)
                << ") is not accessing any VkBuffer created with "
                << (is_storage_buffer ? "VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT" : "VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT")
                << " and any access to this descriptor will be invalid";
@@ -473,7 +473,7 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address, bool from_reso
         }
         if (!entry) {
             found = true;
-            ss << new_bullet_line << "[WARNING] NO DESCRIPTOR - No known descriptor found in the heap at 0x" << std::hex << address;
+            ss << new_bullet_line << "[WARNING] NO DESCRIPTOR - No known descriptor found in the heap at " << Hex(address);
             return "";
         }
     }
@@ -490,7 +490,7 @@ std::string WarnInfo::ValidateDescriptor(VkDeviceAddress address, bool from_reso
         return "";
     } else if (!entry->HasType(descriptor_type)) {
         found = true;
-        ss << new_bullet_line << "[WARNING] WRONG DESCRIPTOR - At 0x" << std::hex << address << " expected a "
+        ss << new_bullet_line << "[WARNING] WRONG DESCRIPTOR - At " << Hex(address) << " expected a "
            << string_VkDescriptorType(descriptor_type)
            << " descriptor, but instead found a descriptor for: " << descriptor_hashing.Describe(*dump.dev_data.device_state, key);
         return "";
@@ -525,7 +525,7 @@ VkDeviceSize CommandBufferSubState::GetPushData(std::ostringstream& ss, WarnInfo
         ss << std::dec << push_index;
     } else if (size == 8) {
         push_index = (VkDeviceSize) * ((VkDeviceAddress*)&push_data_value[offset]);
-        ss << "0x" << std::hex << push_index;
+        ss << Hex(push_index);
     }
 
     return push_index;
@@ -533,7 +533,7 @@ VkDeviceSize CommandBufferSubState::GetPushData(std::ostringstream& ss, WarnInfo
 
 void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                                              const VkDescriptorMappingSourceConstantOffsetEXT& map_data) const {
-    ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", heapArrayStride: " << std::dec << map_data.heapArrayStride;
+    ss << "heapOffset: " << Hex(map_data.heapOffset) << ", heapArrayStride: " << std::dec << map_data.heapArrayStride;
 
     VkDeviceSize index_zero_offset = map_data.heapOffset;
     if (dump.is_alias) {
@@ -543,7 +543,7 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
 
     // CONSTANT_OFFSET will be fully caught already in normal VVL if alignment is off
     VkDeviceAddress index_zero_address = dump.heap_range.begin + index_zero_offset;
-    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: 0x" << std::hex << index_zero_address;
+    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: " << Hex(index_zero_address);
     if (dump.is_array) {
         ss << " + (descriptor_index * " << std::dec << map_data.heapArrayStride << ")";
         const VkDeviceSize available_space = (dump.heap_range.size() - index_zero_offset) - dump.descriptor_size;
@@ -597,7 +597,7 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
     }
 
     if (dump.inspect_sampler) {
-        ss << new_bullet_line << "samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset
+        ss << new_bullet_line << "samplerHeapOffset: " << Hex(map_data.samplerHeapOffset)
            << ", samplerHeapArrayStride: " << std::dec << map_data.samplerHeapArrayStride;
 
         index_zero_offset = map_data.samplerHeapOffset;
@@ -608,7 +608,7 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
         }
 
         index_zero_address = dump.sampler_range.begin + index_zero_offset;
-        ss << new_bullet_line << "Sampler Heap address: 0x" << std::hex << index_zero_address;
+        ss << new_bullet_line << "Sampler Heap address: " << Hex(index_zero_address);
         if (dump.is_array) {
             ss << " + (descriptor_index * " << std::dec << map_data.samplerHeapArrayStride << ")";
             const VkDeviceSize available_space = (dump.sampler_range.size() - index_zero_offset) - dump.sampler_descriptor_size;
@@ -663,7 +663,7 @@ void CommandBufferSubState::DumpDescriptorHeapConstantOffset(std::ostringstream&
 
 void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                                         const VkDescriptorMappingSourcePushIndexEXT& map_data) const {
-    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", heapOffset: 0x" << std::hex << map_data.heapOffset
+    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", heapOffset: " << Hex(map_data.heapOffset)
        << ", heapIndexStride: " << std::dec << map_data.heapIndexStride << ", heapArrayStride: " << map_data.heapArrayStride;
 
     VkDeviceSize push_index = GetPushData(ss, warn, map_data.pushOffset, 4);
@@ -683,7 +683,7 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
     }
 
     VkDeviceAddress index_zero_address = dump.heap_range.begin + index_zero_offset;
-    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: 0x" << std::hex << index_zero_address;
+    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: " << Hex(index_zero_address);
 
     warn.AlignmentDescriptor(index_zero_address);
 
@@ -738,9 +738,9 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
     }
 
     if (dump.inspect_sampler) {
-        ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset << ", samplerHeapOffset: 0x"
-           << std::hex << map_data.samplerHeapOffset << ", samplerHeapIndexStride: " << std::dec << map_data.samplerHeapIndexStride
-           << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride
+        ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset
+           << ", samplerHeapOffset: " << Hex(map_data.samplerHeapOffset) << ", samplerHeapIndexStride: " << std::dec
+           << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride
            << ", useCombinedImageSamplerIndex: " << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
         push_index = GetPushData(ss, warn, dump.combined_index ? map_data.pushOffset : map_data.samplerPushOffset, 4);
         if (dump.combined_index) {
@@ -761,7 +761,7 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
         }
 
         index_zero_address = dump.sampler_range.begin + index_zero_offset;
-        ss << new_bullet_line << "Sampler Heap address: 0x" << std::hex << index_zero_address;
+        ss << new_bullet_line << "Sampler Heap address: " << Hex(index_zero_address);
 
         warn.AlignmentSampler(index_zero_address);
 
@@ -821,14 +821,14 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
 
 void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                                             const VkDescriptorMappingSourceIndirectIndexEXT& map_data) const {
-    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", addressOffset: 0x" << std::hex << map_data.addressOffset
-       << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: " << std::dec << map_data.heapIndexStride
+    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", addressOffset: " << Hex(map_data.addressOffset)
+       << ", heapOffset: " << Hex(map_data.heapOffset) << ", heapIndexStride: " << std::dec << map_data.heapIndexStride
        << ", heapArrayStride: " << map_data.heapArrayStride;
     VkDeviceSize push_indirect_address = GetPushData(ss, warn, map_data.pushOffset, 8);
 
     VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
-    ss << new_bullet_line << "indirectAddress: 0x" << std::hex << final_indirect_address << " (0x" << push_indirect_address
-       << " + 0x" << map_data.addressOffset << ")";
+    ss << new_bullet_line << "indirectAddress: " << Hex(final_indirect_address) << " (" << Hex(push_indirect_address) << " + "
+       << Hex(map_data.addressOffset) << ")";
 
     warn.AlignmentScalarIndirect(final_indirect_address, 4);
     warn.IndirectUniformUsage(final_indirect_address);
@@ -858,7 +858,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
 
     VkDeviceAddress index_zero_address = dump.heap_range.begin + index_zero_offset;
 
-    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: 0x" << std::hex << index_zero_address;
+    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: " << Hex(index_zero_address);
     if (dump.is_array) {
         ss << " + (descriptor_index * " << std::dec << map_data.heapArrayStride << ")";
 
@@ -917,10 +917,10 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
     }
 
     if (dump.inspect_sampler) {
-        ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset << std::hex
-           << ", samplerAddressOffset: 0x" << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x"
-           << map_data.samplerHeapOffset << ", samplerHeapIndexStride: " << std::dec << map_data.samplerHeapIndexStride
-           << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride
+        ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset
+           << ", samplerAddressOffset: " << Hex(map_data.samplerAddressOffset)
+           << ", samplerHeapOffset: " << Hex(map_data.samplerHeapOffset) << ", samplerHeapIndexStride: " << std::dec
+           << map_data.samplerHeapIndexStride << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride
            << ", useCombinedImageSamplerIndex: " << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
 
         push_indirect_address = GetPushData(ss, warn, dump.combined_index ? map_data.pushOffset : map_data.samplerPushOffset, 8);
@@ -930,8 +930,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
 
         const uint32_t sampler_address_offset = dump.combined_index ? map_data.addressOffset : map_data.samplerAddressOffset;
         final_indirect_address = push_indirect_address + sampler_address_offset;
-        ss << new_bullet_line << "indirectAddress: 0x" << std::hex << final_indirect_address << " (0x" << push_indirect_address
-           << " + 0x" << sampler_address_offset << ")";
+        ss << new_bullet_line << "indirectAddress: " << Hex(final_indirect_address) << " (" << Hex(push_indirect_address) << " + "
+           << Hex(sampler_address_offset) << ")";
         if (dump.combined_index) {
             ss << " (using addressOffset)";
         }
@@ -966,7 +966,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
 
         index_zero_address = dump.sampler_range.begin + index_zero_offset;
 
-        ss << new_bullet_line << "Sampler Heap address: 0x" << std::hex << index_zero_address;
+        ss << new_bullet_line << "Sampler Heap address: " << Hex(index_zero_address);
         if (dump.is_array) {
             ss << " + (descriptor_index * " << std::dec << map_data.samplerHeapArrayStride << ")";
 
@@ -1031,8 +1031,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
 
 void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
     std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn, const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data) const {
-    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", addressOffset: 0x" << std::hex << map_data.addressOffset
-       << ", heapOffset: 0x" << map_data.heapOffset << ", heapIndexStride: " << std::dec << map_data.heapIndexStride;
+    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", addressOffset: " << Hex(map_data.addressOffset)
+       << ", heapOffset: " << Hex(map_data.heapOffset) << ", heapIndexStride: " << std::dec << map_data.heapIndexStride;
     VkDeviceAddress push_indirect_address = GetPushData(ss, warn, map_data.pushOffset, 8);
 
     VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
@@ -1041,15 +1041,16 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
         ss << new_bullet_line << "binding offset: " << std::dec << dump.binding_offset << " * sizeof(uint32_t)";
     }
 
-    ss << new_bullet_line << "indirectAddress: 0x" << std::hex << final_indirect_address << " (0x" << push_indirect_address
-       << " + 0x" << map_data.addressOffset << " + binding offset)";
+    ss << new_bullet_line << "indirectAddress: " << Hex(final_indirect_address) << " (" << Hex(push_indirect_address) << " + "
+       << Hex(map_data.addressOffset) << " + binding offset)";
 
     warn.AlignmentScalarIndirect(final_indirect_address, 4);
     warn.IndirectUniformUsage(final_indirect_address);
     warn.found |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
-    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: 0x" << std::hex
-       << dump.heap_range.begin + map_data.heapOffset << " + (indirectIndex * " << std::dec << map_data.heapIndexStride << ")";
+    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource")
+       << " Heap address: " << Hex(dump.heap_range.begin + map_data.heapOffset) << " + (indirectIndex * " << std::dec
+       << map_data.heapIndexStride << ")";
 
     if (const vvl::Buffer* buffer_state = GetLargestBuffer(dev_data, final_indirect_address)) {
         uint32_t available_bytes = (uint32_t)(buffer_state->DeviceAddressRange().end - final_indirect_address);
@@ -1088,8 +1089,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
                 warn.AlignmentDescriptor(final_address);
                 warn.HeapOOB(final_offset + dump.descriptor_size, false);
 
-                ss << new_sub_line << "Final address: 0x" << std::hex << final_address << " (indirectIndex: " << std::dec
-                   << indirect_index << ")";
+                ss << new_sub_line << "Final address: " << Hex(final_address) << " (indirectIndex: " << std::dec << indirect_index
+                   << ")";
             } else if (!dump.is_runtime_array) {
                 // Runtime arrays are unbounded and there is no idea where to stop looking,
                 // can add if people find valuable.
@@ -1138,9 +1139,10 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
     warn.HeapOOB(map_data.heapOffset + dump.descriptor_size, false);
 
     if (dump.inspect_sampler) {
-        ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset << std::hex
-           << ", samplerAddressOffset: 0x" << map_data.samplerAddressOffset << ", samplerHeapOffset: 0x"
-           << map_data.samplerHeapOffset << ", samplerHeapIndexStride: " << std::dec << map_data.samplerHeapIndexStride
+        ss << new_bullet_line << "samplerPushOffset: " << std::dec << map_data.samplerPushOffset
+           << ", samplerAddressOffset: " << Hex(map_data.samplerAddressOffset)
+           << ", samplerHeapOffset: " << Hex(map_data.samplerHeapOffset) << ", samplerHeapIndexStride: " << std::dec
+           << map_data.samplerHeapIndexStride
            << ", useCombinedImageSamplerIndex: " << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
 
         push_indirect_address = GetPushData(ss, warn, dump.combined_index ? map_data.pushOffset : map_data.samplerPushOffset, 8);
@@ -1155,8 +1157,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
             ss << new_bullet_line << "binding offset: " << std::dec << dump.binding_offset << " * sizeof(uint32_t)";
         }
 
-        ss << new_bullet_line << "indirectAddress: 0x" << std::hex << final_indirect_address << " (0x" << push_indirect_address
-           << " + 0x" << sampler_address_offset << " + binding offset)";
+        ss << new_bullet_line << "indirectAddress: " << Hex(final_indirect_address) << " (" << Hex(push_indirect_address) << " + "
+           << Hex(sampler_address_offset) << " + binding offset)";
         if (dump.combined_index) {
             ss << " (using addressOffset)";
         }
@@ -1165,7 +1167,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
         warn.IndirectUniformUsage(final_indirect_address);
         warn.found |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
-        ss << new_bullet_line << "Sampler Heap address: 0x" << std::hex << dump.sampler_range.begin + map_data.samplerHeapOffset
+        ss << new_bullet_line << "Sampler Heap address: " << Hex(dump.sampler_range.begin + map_data.samplerHeapOffset)
            << " + (indirectIndex * " << std::dec << map_data.samplerHeapIndexStride << ")";
 
         if (const vvl::Buffer* buffer_state = GetLargestBuffer(dev_data, final_indirect_address)) {
@@ -1204,7 +1206,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
                     warn.AlignmentSampler(final_address);
                     warn.HeapOOB(final_offset + dump.sampler_descriptor_size, true);
 
-                    ss << new_sub_line << "Final address: 0x" << std::hex << final_address << " (indirectIndex: " << std::dec
+                    ss << new_sub_line << "Final address: " << Hex(final_address) << " (indirectIndex: " << std::dec
                        << indirect_index << ")";
                 } else if (!dump.is_runtime_array) {
                     ss << new_bullet_line << "indirectIndex values from buffer: [" << std::dec;
@@ -1257,14 +1259,14 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexArray(
 
 void CommandBufferSubState::DumpDescriptorHeapHeapData(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                                        const VkDescriptorMappingSourceHeapDataEXT& map_data) const {
-    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", heapOffset: 0x" << std::hex << map_data.heapOffset;
+    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", heapOffset: " << Hex(map_data.heapOffset);
     VkDeviceSize push_data = GetPushData(ss, warn, map_data.pushOffset, 4);
 
-    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource") << " Heap address: 0x" << std::hex
-       << dump.heap_range.begin + map_data.heapOffset << " + 0x" << push_data;
+    ss << new_bullet_line << (dump.is_sampler ? "Sampler" : "Resource")
+       << " Heap address: " << Hex(dump.heap_range.begin + map_data.heapOffset) << " + " << Hex(push_data);
     VkDeviceAddress final_offset = map_data.heapOffset + push_data;
     VkDeviceAddress final_address = dump.heap_range.begin + final_offset;
-    ss << new_sub_line << "Final address: 0x" << std::hex << final_address;
+    ss << new_sub_line << "Final address: " << Hex(final_address);
 
     warn.AlignmentHeapUBO(final_address);
     warn.HeapOOB(final_offset + dump.descriptor_size, false);
@@ -1294,13 +1296,13 @@ void CommandBufferSubState::DumpDescriptorHeapPushAddress(std::ostringstream& ss
 
 void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                                               const VkDescriptorMappingSourceIndirectAddressEXT& map_data) const {
-    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", addressOffset: 0x" << std::hex << map_data.addressOffset;
+    ss << "pushOffset: " << std::dec << map_data.pushOffset << ", addressOffset: " << Hex(map_data.addressOffset);
     VkDeviceSize push_indirect_address = GetPushData(ss, warn, map_data.pushOffset, 8);
 
     VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
 
-    ss << new_bullet_line << "indirectAddress: 0x" << std::hex << final_indirect_address << " (0x" << push_indirect_address
-       << " + 0x" << map_data.addressOffset << ")";
+    ss << new_bullet_line << "indirectAddress: " << Hex(final_indirect_address) << " (" << Hex(push_indirect_address) << " + "
+       << Hex(map_data.addressOffset) << ")";
 
     warn.AlignmentScalarIndirect(final_indirect_address, 8);
     warn.IndirectUniformUsage(final_indirect_address);
@@ -1309,7 +1311,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream
     std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
     if (!indirect_address_data.empty()) {
         const VkDeviceAddress resource_address = *((VkDeviceAddress*)indirect_address_data.data());
-        ss << new_bullet_line << "Resource address: 0x" << std::hex << resource_address;
+        ss << new_bullet_line << "Resource address: " << Hex(resource_address);
 
         warn.AlignmentIndirectAddress(resource_address);
 
@@ -1326,11 +1328,11 @@ void CommandBufferSubState::DumpDescriptorHeapShaderRecordIndex(
     std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn, const VkDescriptorMappingSourceShaderRecordIndexEXT& map_data) const {
     // Reading shader record data is not really possible:
     // it depends on what ray tracing shader is actually executed
-    ss << "heapOffset: 0x" << std::hex << map_data.heapOffset << ", shaderRecordOffset: " << std::dec << map_data.shaderRecordOffset
+    ss << "heapOffset: " << Hex(map_data.heapOffset) << ", shaderRecordOffset: " << std::dec << map_data.shaderRecordOffset
        << ", heapIndexStride: " << map_data.heapIndexStride << ", heapArrayStride: " << map_data.heapArrayStride;
 
     if (dump.inspect_sampler) {
-        ss << new_bullet_line << "samplerHeapOffset: 0x" << std::hex << map_data.samplerHeapOffset
+        ss << new_bullet_line << "samplerHeapOffset: " << Hex(map_data.samplerHeapOffset)
            << ", samplerShaderRecordOffset: " << std::dec << map_data.samplerShaderRecordOffset
            << ", samplerHeapIndexStride: " << map_data.samplerHeapIndexStride
            << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride;
@@ -1892,7 +1894,7 @@ bool UntypedContext::Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state)
         for (const HeapAccess& access : it->second) {
             assert(is_sampler == (access.descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER));
 
-            ss << "    - heap offset: 0x" << std::hex << access.heap_offset;
+            ss << "    - heap offset: " << Hex(access.heap_offset);
 
             if (!access.is_array) {
                 ss << ", single element\n";
@@ -1933,8 +1935,7 @@ bool UntypedContext::Print(std::ostringstream& ss, vvl::CommandBuffer& cb_state)
             }
 
             if (access.final_address != 0) {
-                ss << "      - " << (is_sampler ? "Sampler" : "Resource") << " heap address: 0x" << std::hex << access.final_address
-                   << '\n';
+                ss << "      - " << (is_sampler ? "Sampler" : "Resource") << " heap address: " << Hex(access.final_address) << '\n';
             }
 
             const VkDeviceSize descriptor_size = device_state.cached_descriptor_size.GetSize(access.descriptor_type);

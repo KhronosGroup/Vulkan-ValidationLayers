@@ -16,6 +16,7 @@
 
 #include "gpu_dump.h"
 #include <cstdint>
+#include <ostream>
 #include "chassis/layer_object_id.h"
 #include "generated/dispatch_functions.h"
 #include "generated/vk_extension_helper.h"
@@ -24,6 +25,13 @@
 #include "state_tracker/ray_tracing_state.h"
 
 namespace gpudump {
+
+std::ostream& operator<<(std::ostream& os, const Hex& hex) {
+    const std::ios_base::fmtflags flags = os.flags();
+    os << "0x" << std::hex << hex.value;
+    os.flags(flags);
+    return os;
+}
 
 GpuDump::GpuDump(vvl::DispatchDevice* dev, gpudump::Instance* instance_vo)
     : vvl::DeviceProxy(dev, instance_vo, LayerObjectTypeGpuDump) {}
@@ -132,7 +140,7 @@ bool GpuDump::ListBuffers(std::ostringstream& ss, VkDeviceAddress address, uint3
     }
 
     if (buffer_states.empty()) {
-        ss << "- [WARNING] No VkBuffer found at 0x" << std::hex << address;
+        ss << "- [WARNING] No VkBuffer found at " << Hex(address);
     }
 
     if (!new_line_start) {
@@ -165,7 +173,7 @@ bool GpuDump::ListAccelerationStructures(std::ostringstream& ss, VkDeviceAddress
     }
 
     if (as_states.empty()) {
-        ss << "- [WARNING] No VkAccelerationStructureKHR found at 0x" << std::hex << address;
+        ss << "- [WARNING] No VkAccelerationStructureKHR found at " << Hex(address);
     }
 
     if (!new_line_start) {

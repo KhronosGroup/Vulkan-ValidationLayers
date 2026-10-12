@@ -237,7 +237,7 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
         const bool resource_buffer = (usage_flags & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
         const bool sampler_buffer = (usage_flags & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
 
-        ss << "  - pBindingInfos[" << std::dec << binding_i << "].address 0x" << std::hex << address << ' ';
+        ss << "  - pBindingInfos[" << std::dec << binding_i << "].address " << Hex(address) << ' ';
         if (resource_buffer && sampler_buffer) {
             ss << "(resource and sampler buffer)";
         } else if (resource_buffer) {
