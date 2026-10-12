@@ -719,6 +719,8 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& create_info, const VkSubpassDescription2& subpass,
                                      const Location& subpass_loc) const;
+    bool ValidatePreserveAttachment(const VkRenderPassCreateInfo2& create_info, const VkSubpassDescription2& subpass,
+                                    const Location& subpass_loc) const;
 
     // Prototypes for CoreChecks accessor functions
     VkFormatProperties3 GetPDFormatProperties(const VkFormat format) const;

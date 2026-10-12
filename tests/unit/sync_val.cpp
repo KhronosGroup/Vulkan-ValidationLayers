@@ -3924,20 +3924,6 @@ struct CreateRenderPassHelper {
     // Capture the current input and color attachements, which can then be modified
     void AddInputColorSubpassDescription() { subpass_description_store.emplace_back(input_attachments, color_attachments); }
 
-    // Create a subpass description with all the attachments preserved
-    void AddPreserveInputColorSubpassDescription() {
-        std::vector<uint32_t> preserve;
-        preserve.reserve(input_attachments.size() + color_attachments.size());
-        for (const auto& att : input_attachments) {
-            preserve.push_back(att.attachment);
-        }
-        for (const auto& att : color_attachments) {
-            preserve.push_back(att.attachment);
-        }
-        subpass_description_store.emplace_back();
-        subpass_description_store.back().SetPreserve(preserve);
-    }
-
     // This is the default for a single subpass renderpass, don't call if you want to change that
     void InitSubpassDescription() {
         if (subpass_description_store.empty()) {
@@ -4416,8 +4402,6 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     const VkAttachmentReference input_ref{0u, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 
-    std::array<std::array<uint32_t, 2>, kNumImages - 1> preserve_subpass{{{2, 3}, {1, 3}, {1, 2}}};
-
     std::array<VkSubpassDescription, kNumImages> subpasses{};
 
     subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -4432,8 +4416,6 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         subpasses[i].pInputAttachments = &input_ref;
         subpasses[i].colorAttachmentCount = 1;
         subpasses[i].pColorAttachments = &color_refs[i];
-        subpasses[i].preserveAttachmentCount = preserve_subpass[i - 1].size();
-        subpasses[i].pPreserveAttachments = preserve_subpass[i - 1].data();
     }
 
     VkRenderPassCreateInfo renderpass_info = vku::InitStructHelper();
@@ -5987,7 +5969,7 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
 
     // Two subpasses to ensure that the "next subpass" error checks work
     rp_helper2.InitAttachmentArrays();
-    rp_helper2.AddPreserveInputColorSubpassDescription();
+    rp_helper2.AddSubpassDescription({}, {});
     rp_helper2.AddInputColorSubpassDescription();
 
     rp_helper2.InitRenderPass();
