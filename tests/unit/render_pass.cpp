@@ -568,8 +568,8 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
                                     color.data(),
                                     resolve.data(),
                                     &depth,
-                                    size32(preserve),
-                                    preserve.data()};
+                                    0,
+                                    nullptr};
 
     auto rpci =
         vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(), 1u, &subpass, 0u, nullptr);
@@ -649,6 +649,8 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     attachments[subpass.pColorAttachments[0].attachment].format = attachments[subpass.pResolveAttachments[0].attachment].format;
 
     // Test for UNUSED preserve attachments
+    subpass.preserveAttachmentCount = size32(preserve);
+    subpass.pPreserveAttachments = preserve.data();
     preserve[0] = VK_ATTACHMENT_UNUSED;
 
     CreateRenderPassTest(rpci, rp2Supported, "VUID-VkSubpassDescription-attachment-00853",
@@ -658,10 +660,18 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     // Test for preserve attachments used elsewhere in the subpass
     color[0].attachment = preserve[0];
 
-    CreateRenderPassTest(rpci, rp2Supported, "VUID-VkSubpassDescription-pPreserveAttachments-00854",
-                         "VUID-VkSubpassDescription2-pPreserveAttachments-03074");
+    // The only subpass can't have a dependency from a prior subpass
+    m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo-None-10915");
+    CreateRenderPassTest(rpci, false, "VUID-VkSubpassDescription-pPreserveAttachments-00854", nullptr);
+    if (rp2Supported) {
+        auto create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
+        m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-None-10916");
+        TestRenderPass2KHRCreate(*create_info2.ptr(), {"VUID-VkSubpassDescription2-pPreserveAttachments-03074"});
+    }
 
     color[0].attachment = 1;
+    subpass.preserveAttachmentCount = 0;
+    subpass.pPreserveAttachments = nullptr;
     input[0].attachment = 0;
     input[0].layout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -711,6 +721,72 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
             TestRenderPass2KHRCreate(*create_info2.ptr(), {"VUID-VkSubpassDescription2-pDepthStencilAttachment-04440"});
         }
     }
+}
+
+TEST_F(NegativeRenderPass, PreserveAttachmentWithoutDependency) {
+    AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    const bool rp2_supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+
+    VkAttachmentDescription attachment = {0,
+                                          VK_FORMAT_R8G8B8A8_UNORM,
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_STORE,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentDescription attachments[2] = {attachment, attachment};
+    VkAttachmentReference color_refs[2] = {{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+                                           {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
+    const uint32_t preserve = 0;
+
+    // subpass 0 writes attachment 0, subpass 1 writes attachment 1 and preserves attachment 0
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_refs[0];
+    subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[1].colorAttachmentCount = 1;
+    subpasses[1].pColorAttachments = &color_refs[1];
+    subpasses[1].preserveAttachmentCount = 1;
+    subpasses[1].pPreserveAttachments = &preserve;
+
+    VkSubpassDependency dependency = {0,
+                                      1,
+                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                      0};
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.attachmentCount = 2;
+    rpci.pAttachments = attachments;
+    rpci.subpassCount = 2;
+    rpci.pSubpasses = subpasses;
+
+    // No dependency at all
+    CreateRenderPassTest(rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-None-10915", "VUID-VkRenderPassCreateInfo2-None-10916");
+
+    // VK_SUBPASS_EXTERNAL is not a prior subpass
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    rpci.dependencyCount = 1;
+    rpci.pDependencies = &dependency;
+    CreateRenderPassTest(rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-None-10915", "VUID-VkRenderPassCreateInfo2-None-10916");
+
+    // Dependency from subpass 0, but subpass 0 doesn't use attachment 0
+    dependency.srcSubpass = 0;
+    subpasses[0].pColorAttachments = &color_refs[1];
+    CreateRenderPassTest(rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-None-10915", "VUID-VkRenderPassCreateInfo2-None-10916");
+
+    // Subpass 0 preserves attachment 0 itself, which only moves the error to subpass 0
+    subpasses[0].colorAttachmentCount = 0;
+    subpasses[0].pColorAttachments = nullptr;
+    subpasses[0].preserveAttachmentCount = 1;
+    subpasses[0].pPreserveAttachments = &preserve;
+    CreateRenderPassTest(rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-None-10915", "VUID-VkRenderPassCreateInfo2-None-10916");
 }
 
 TEST_F(NegativeRenderPass, CustomResolve) {

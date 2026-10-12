@@ -136,6 +136,13 @@ const char* unimplementable_validation[] = {
     // The logic in CoreChecks::InsideRenderPass() already gives a good error message
     "VUID-vkCmdBeginRendering-commandBuffer-10914",
 
+    // These are about attachments bound to overlapping VkDeviceMemory,
+    // but VkRenderPassCreateInfo2 only has attachment descriptions.
+    // The images (and bound memory) are not known until the framebuffer/render pass begin
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10618
+    "VUID-VkRenderPassCreateInfo2-None-03049",
+    "VUID-VkRenderPassCreateInfo2-attachment-03050",
+
     // If VkDeviceAddress can be zero, we will validate it in cc_buffer_address.h
     // We cover these in VUID-VkDeviceAddress-size-11364
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7517#note_546958

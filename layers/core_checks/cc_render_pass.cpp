@@ -2408,6 +2408,7 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_
         const VkSubpassDescription2& subpass = create_info.pSubpasses[i];
 
         skip |= ValidateDepthStencilResolve(create_info, subpass, subpass_loc);
+        skip |= ValidatePreserveAttachment(create_info, subpass, subpass_loc);
 
         if (subpass.viewMask != 0) {
             view_mask_non_zero = true;
@@ -2751,6 +2752,74 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2& crea
                          "enables shader resolve, which requires the depth/stencil resolve attachment"
                          " must be VK_ATTACHMENT_UNUSED, but a reference to attachment %" PRIu32 " was found instead.",
                          resolve_attachment);
+    }
+
+    return skip;
+}
+
+static bool SubpassUsesOrPreservesAttachment(const VkSubpassDescription2& subpass, uint32_t attachment) {
+    for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
+        if (subpass.pInputAttachments[i].attachment == attachment) return true;
+    }
+    for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+        if (subpass.pColorAttachments[i].attachment == attachment) return true;
+        if (subpass.pResolveAttachments && subpass.pResolveAttachments[i].attachment == attachment) return true;
+    }
+    if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment == attachment) return true;
+    if (const auto* ds_resolve = vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext)) {
+        if (ds_resolve->pDepthStencilResolveAttachment && ds_resolve->pDepthStencilResolveAttachment->attachment == attachment) {
+            return true;
+        }
+    }
+    if (const auto* fsr = vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext)) {
+        if (fsr->pFragmentShadingRateAttachment && fsr->pFragmentShadingRateAttachment->attachment == attachment) {
+            return true;
+        }
+    }
+    for (uint32_t i = 0; i < subpass.preserveAttachmentCount; ++i) {
+        if (subpass.pPreserveAttachments[i] == attachment) return true;
+    }
+    return false;
+}
+
+bool CoreChecks::ValidatePreserveAttachment(const VkRenderPassCreateInfo2& create_info, const VkSubpassDescription2& subpass,
+                                            const Location& subpass_loc) const {
+    bool skip = false;
+    const uint32_t subpass_index = subpass_loc.index;
+
+    for (uint32_t preserve_idx = 0; preserve_idx < subpass.preserveAttachmentCount; ++preserve_idx) {
+        const uint32_t attachment = subpass.pPreserveAttachments[preserve_idx];
+        if (attachment == VK_ATTACHMENT_UNUSED || attachment >= create_info.attachmentCount) {
+            continue;  // validated in ValidateRenderpassAttachmentUsage
+        }
+
+        // VK_SUBPASS_EXTERNAL is not a prior subpass, so the first subpass can never preserve an attachment
+        bool found_dependency = false;
+        for (uint32_t dep_idx = 0; dep_idx < create_info.dependencyCount; ++dep_idx) {
+            const VkSubpassDependency2& dependency = create_info.pDependencies[dep_idx];
+            if (dependency.dstSubpass == subpass_index && dependency.srcSubpass < subpass_index &&
+                SubpassUsesOrPreservesAttachment(create_info.pSubpasses[dependency.srcSubpass], attachment)) {
+                found_dependency = true;
+                break;
+            }
+        }
+
+        if (!found_dependency) {
+            const bool use_rp2 = subpass_loc.function != Func::vkCreateRenderPass;
+            const char* vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-None-10916" : "VUID-VkRenderPassCreateInfo-None-10915";
+            const Location preserve_loc = subpass_loc.dot(Field::pPreserveAttachments, preserve_idx);
+            if (subpass_index == 0) {
+                skip |= LogError(vuid, device, preserve_loc,
+                                 "is attachment %" PRIu32
+                                 ", but the first subpass has no prior subpass that could have used or preserved it.",
+                                 attachment);
+            } else {
+                skip |= LogError(vuid, device, preserve_loc,
+                                 "is attachment %" PRIu32 ", but there is no VkSubpassDependency with dstSubpass %" PRIu32
+                                 " whose srcSubpass is a prior subpass that uses or preserves attachment %" PRIu32 ".",
+                                 attachment, subpass_index, attachment);
+            }
+        }
     }
 
     return skip;
