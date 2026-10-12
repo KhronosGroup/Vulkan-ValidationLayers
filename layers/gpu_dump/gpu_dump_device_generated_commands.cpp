@@ -48,7 +48,7 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
             ss << "    - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "    - [WARNING] No VkBuffer found at 0x" << std::hex << info.sequenceCountAddress << "\n";
+            ss << "    - [WARNING] No VkBuffer found at " << Hex(info.sequenceCountAddress) << "\n";
             found_warning = true;
         }
     }
@@ -61,7 +61,7 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
             ss << "    - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "    - [WARNING] No VkBuffer found at 0x" << std::hex << info.preprocessAddress << "\n";
+            ss << "    - [WARNING] No VkBuffer found at " << Hex(info.preprocessAddress) << "\n";
             found_warning = true;
         }
     }
@@ -74,7 +74,7 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
             ss << "    - " << buffer_state->Describe(dev_data) << "\n";
         }
         if (buffer_states.empty()) {
-            ss << "    - [WARNING] No VkBuffer found at 0x" << std::hex << info.indirectAddress << "\n";
+            ss << "    - [WARNING] No VkBuffer found at " << Hex(info.indirectAddress) << "\n";
             found_warning = true;
         }
     }
@@ -140,7 +140,7 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_MAX_ENUM_EXT:
                 break;
         }
-        ss << " (offset " << std::dec << token.offset << ")\n";
+        ss << " (offset " << token.offset << ")\n";
     }
 
     if (dev_data.gpu_dump_settings.to_stdout) {
