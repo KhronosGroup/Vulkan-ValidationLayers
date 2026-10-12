@@ -307,6 +307,22 @@ bool CoreChecks::IgnoreAllocationSize(const VkMemoryAllocateInfo& allocate_info)
     return false;
 }
 
+// fd and host pointer imports have their own VUID for this, not just the Win32 one
+static const char* GetImportSupportVuid(const vvl::DeviceMemory& memory) {
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(memory.allocate_info.pNext)) {
+        return "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-09861";
+    }
+#endif
+    if (vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(memory.allocate_info.pNext)) {
+        return "VUID-VkImportMemoryFdInfoKHR-handleType-09862";
+    }
+    if (vku::FindStructInPNextChain<VkImportMemoryHostPointerInfoEXT>(memory.allocate_info.pNext)) {
+        return "VUID-VkImportMemoryHostPointerInfoEXT-handleType-01747";
+    }
+    return kVUIDUndefined;
+}
+
 bool CoreChecks::GetExternalMemoryPropertiesBuffer(const vvl::Buffer& buffer, VkExternalMemoryHandleTypeFlagBits handle_type,
                                                    VkExternalMemoryProperties& out_properties) const {
     VkPhysicalDeviceExternalBufferInfo info = vku::InitStructHelper();
@@ -709,6 +725,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             // There is no reasonable way to query all variations of Image/Buffer creation to see what is supported, but if the
             // import has dedicated Image/Buffer, we can at least validate that it has import support
             // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3667
+            // Non-dedicated imports and other handle types (like DMA_BUF) are only caught at bind time, with the VUID of the import
+            // struct used. Strictly these VUIDs only need import support by any one resource type, so that is best effort.
             if (dedicated_image != VK_NULL_HANDLE) {
                 auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
                 if (dedicated_image_state &&
@@ -1282,7 +1300,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
             if (!HasExternalMemoryImportSupport(*buffer_state, mem_info->import_handle_type.value())) {
                 const LogObjectList objlist(buffer, memory);
                 skip |= LogError(
-                    "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-09861", objlist, loc.dot(Field::memory),
+                    GetImportSupportVuid(*mem_info), objlist, loc.dot(Field::memory),
                     "(%s) was imported from handleType %s but VkExternalBufferProperties does not report it as importable.",
                     FormatHandle(memory).c_str(), string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()));
             }
@@ -1851,7 +1869,7 @@ bool CoreChecks::ValidateBindTensorMemoryARM(uint32_t bindInfoCount, const VkBin
             if (!HasExternalMemoryImportSupport(*tensor_state, mem_info->import_handle_type.value())) {
                 const LogObjectList objlist(bind_info.tensor, bind_info.memory);
                 skip |= LogError(
-                    "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-09861", objlist, bind_info_loc.dot(Field::memory),
+                    GetImportSupportVuid(*mem_info), objlist, bind_info_loc.dot(Field::memory),
                     "(%s) was imported from handleType %s but VkExternalTensorProperties does not report it as importable.",
                     FormatHandle(bind_info.memory).c_str(),
                     string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()));
@@ -2384,7 +2402,7 @@ bool CoreChecks::ValidateBindImageMemoryResource(const VkBindImageMemoryInfo& bi
         // Check if image can be bound to memory imported from specific handle type
         if (!HasExternalMemoryImportSupport(image_state, memory_state.import_handle_type.value())) {
             const LogObjectList objlist(bind_info.image, bind_info.memory);
-            skip |= LogError("VUID-VkImportMemoryWin32HandleInfoKHR-handleType-09861", objlist, loc.dot(Field::memory),
+            skip |= LogError(GetImportSupportVuid(memory_state), objlist, loc.dot(Field::memory),
                              "(%s) was imported from handleType %s but VkExternalImageFormatProperties does not report "
                              "it as importable.",
                              FormatHandle(bind_info.memory).c_str(),
