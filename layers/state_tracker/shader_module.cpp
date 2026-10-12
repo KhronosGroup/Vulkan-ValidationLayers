@@ -2827,7 +2827,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
 
     for (const Instruction* pointer : entrypoint.accessible.access_chains) {
         const spirv::Instruction* base = module_state.FindDef(pointer->Word(3));
-        if (base->Opcode() == spv::OpVariable && type_id == base->Word(1)) {
+        if (base->Opcode() == spv::OpVariable && base->ResultId() == id) {
             const spirv::Instruction* base_pointer = module_state.FindDef(base->Word(1));
             const spirv::Instruction* base_type = module_state.FindDef(base_pointer->Word(3));
             if (base_type->IsArray()) {

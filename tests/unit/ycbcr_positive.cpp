@@ -967,6 +967,37 @@ TEST_F(PositiveYcbcr, DescriptorIndexNotYCbcr) {
     pipe.CreateComputePipeline();
 }
 
+TEST_F(PositiveYcbcr, DescriptorIndexOtherArraySameType) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM);
+    auto conversion_info = conversion.ConversionInfo();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
+    VkSampler samplers[3] = {sampler, sampler, sampler};
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, samplers},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const char* cs_source = R"glsl(
+        #version 460
+        layout(set = 0, binding = 0) uniform sampler2D ycbcr[3];
+        layout(set = 0, binding = 1) buffer SSBO { vec4 result; uint x; };
+        layout(set = 0, binding = 2) uniform sampler2D other[3];
+        void main() {
+            result = texture(ycbcr[2], vec2(0));   // YCbCr, constant index
+            result += texture(other[x], vec2(0));  // not YCbCr, dynamic index
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(PositiveYcbcr, YcbcrDegammaCombinedSampledImage) {
     TEST_DESCRIPTION("Use Ycbcr degamma in Ycbcr conversion sampler.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
