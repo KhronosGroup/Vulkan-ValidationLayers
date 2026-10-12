@@ -2469,26 +2469,28 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
+    const bool bound_frag_shader = last_bound_state.IsStageBound(VK_SHADER_STAGE_FRAGMENT_BIT);
 
+    // With shader objects, the color blend state is only used if a fragment shader is bound
+    // For pipelines, we need still need to look at the color blend state
     if (has_pipeline && !last_bound_state.pipeline_state->ColorBlendState()) {
         return skip;
-    }
-
-    if (last_bound_state.IsRasterizationDisabled()) {
+    } else if (!has_pipeline && !bound_frag_shader) {
+        return skip;
+    } else if (last_bound_state.IsRasterizationDisabled()) {
         return skip;
     }
 
-    if (last_bound_state.IsStageBound(VK_SHADER_STAGE_FRAGMENT_BIT)) {
-        if (enabled_features.colorWriteEnable && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
-            cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
-            // Found in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4116 that not setting all attachment can invalidate
-            // previous calls, so the last call needs to have set them all
-            const uint32_t blend_attachment_count = (uint32_t)cb_state.active_color_attachments_index.size();
-            const uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
-            if (dynamic_attachment_count < blend_attachment_count) {
-                LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-                skip |=
-                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_WRITE_ENABLE_COUNT_07750), objlist, loc,
+    if (bound_frag_shader && enabled_features.colorWriteEnable &&
+        last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
+        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+        // Found in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4116 that not setting all attachment can invalidate
+        // previous calls, so the last call needs to have set them all
+        const uint32_t blend_attachment_count = (uint32_t)cb_state.active_color_attachments_index.size();
+        const uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
+        if (dynamic_attachment_count < blend_attachment_count) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::COLOR_WRITE_ENABLE_COUNT_07750), objlist, loc,
                              "There are currently (%" PRIu32
                              ") active color attachments, but the last call to vkCmdSetColorWriteEnableEXT() only set the color "
                              "write enables for attachmentCount of %" PRIu32
@@ -2496,7 +2498,6 @@ bool CoreChecks::ValidateDrawAttachmentColorBlend(const LastBound& last_bound_st
                              blend_attachment_count, dynamic_attachment_count,
                              cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT).c_str(),
                              cb_state.DescribeActiveColorAttachment().c_str());
-            }
         }
     }
 
