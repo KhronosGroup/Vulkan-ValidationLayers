@@ -201,6 +201,30 @@ TEST_F(PositiveBuffer, IndexBufferNull) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveBuffer, IndexBufferNullAfterNonNull) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+    vkt::Buffer index_buffer(*m_device, 16, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(m_command_buffer, 4, 1, 0, 0, 0);
+    vk::CmdBindIndexBuffer(m_command_buffer, VK_NULL_HANDLE, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(m_command_buffer, 64, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveBuffer, BufferViewUsageBasic) {
     TEST_DESCRIPTION("VkBufferUsageFlags2CreateInfoKHR with good flags.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
