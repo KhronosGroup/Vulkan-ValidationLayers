@@ -3433,7 +3433,7 @@ void DeviceState::PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer
 
     if (buffer == VK_NULL_HANDLE) {
         if (enabled_features.maintenance6) {
-            cb_state->index_buffer_binding.bound = true;
+            cb_state->index_buffer_binding = IndexBufferBinding(VK_NULL_HANDLE, 0, 0, indexType);
         }
     } else {
         auto buffer_state = Get<Buffer>(buffer);
@@ -3456,7 +3456,7 @@ void DeviceState::PostCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffe
 
     if (buffer == VK_NULL_HANDLE) {
         if (enabled_features.maintenance6) {
-            cb_state->index_buffer_binding.bound = true;
+            cb_state->index_buffer_binding = IndexBufferBinding(VK_NULL_HANDLE, 0, 0, indexType);
         }
     } else {
         auto buffer_state = Get<Buffer>(buffer);
