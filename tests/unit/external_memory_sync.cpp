@@ -2328,6 +2328,58 @@ TEST_F(NegativeExternalMemorySync, FdMemoryHandleProperties) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeExternalMemorySync, ImportMemoryFdBindBufferSupport) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+    VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
+    external_buffer_info.handleTypes = handle_type;
+    const auto buffer_info = vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}, &external_buffer_info);
+
+    VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
+    external_info.usage = buffer_info.usage;
+    external_info.handleType = handle_type;
+    VkExternalBufferProperties external_properties = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalBufferProperties(Gpu(), &external_info, &external_properties);
+    if (external_properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) {
+        GTEST_SKIP() << "Need a buffer that can't import DMA_BUF";
+    }
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkBufferCreateInfo-pNext-00920");
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
+
+    // Needs a real fd, so export one first. No dedicated buffer, so the check only happens at bind time
+    VkExportMemoryAllocateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;
+    auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0, &export_info);
+    vkt::DeviceMemory exported_memory;
+    if (exported_memory.TryInit(*m_device, alloc_info) != VK_SUCCESS) {
+        GTEST_SKIP() << "Unable to allocate exportable DMA_BUF memory";
+    }
+    VkMemoryGetFdInfoKHR get_fd_info = vku::InitStructHelper();
+    get_fd_info.memory = exported_memory;
+    get_fd_info.handleType = handle_type;
+    int fd = -1;
+    if (vk::GetMemoryFdKHR(device(), &get_fd_info, &fd) != VK_SUCCESS) {
+        GTEST_SKIP() << "Unable to export a DMA_BUF fd";
+    }
+
+    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper();
+    import_info.handleType = handle_type;
+    import_info.fd = fd;
+    alloc_info.pNext = &import_info;
+    vkt::DeviceMemory memory;
+    if (memory.TryInit(*m_device, alloc_info) != VK_SUCCESS) {
+        GTEST_SKIP() << "Unable to import the DMA_BUF fd";
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-VkImportMemoryFdInfoKHR-handleType-09862");
+    buffer.BindMemory(memory, 0);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeExternalMemorySync, ImportMemoryFdBadFd) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
