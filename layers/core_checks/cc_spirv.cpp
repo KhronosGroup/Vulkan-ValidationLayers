@@ -464,7 +464,7 @@ bool CoreChecks::ValidateWorkgroupSharedMemory(const spirv::Module& module_state
                                                VkShaderStageFlagBits stage, const Location& loc) const {
     bool skip = false;
 
-    const uint32_t total_workgroup_shared_memory = module_state.CalculateWorkgroupSharedMemory();
+    const uint32_t total_workgroup_shared_memory = module_state.CalculateWorkgroupSharedMemory(entrypoint);
 
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         if (total_workgroup_shared_memory > phys_dev_props.limits.maxComputeSharedMemorySize) {

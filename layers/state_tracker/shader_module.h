@@ -847,7 +847,7 @@ struct Module {
     std::shared_ptr<const EntryPoint> FindEntrypoint(const char *name, VkShaderStageFlagBits stageBits) const;
     LocalSize FindLocalSize(const EntryPoint &entrypoint) const;
 
-    uint32_t CalculateWorkgroupSharedMemory() const;
+    uint32_t CalculateWorkgroupSharedMemory(const EntryPoint& entrypoint) const;
 
     uint32_t ResolveConstantSizeOf(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, const spirv::Instruction& inst) const;
     uint32_t ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
