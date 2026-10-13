@@ -159,6 +159,53 @@ TEST_F(PositiveDeviceAddressCommands, VertexBindingDifferentFunctions) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveDeviceAddressCommands, BindVertexBuffers3StrideInvalidated) {
+    TEST_DESCRIPTION("static stride getting invalidated but stride set by vkCmdBindVertexBuffers3KHR");
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vkt::device_address);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        void main(){}
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkVertexInputBindingDescription input_binding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
+
+    CreatePipelineHelper static_pipe(*this);
+    static_pipe.SetVertexInput(input_binding, attribute);
+    static_pipe.shader_stages_ = {vs.GetStageCreateInfo(), static_pipe.fs_->GetStageCreateInfo()};
+    static_pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper dynamic_pipe(*this);
+    dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
+    dynamic_pipe.SetVertexInput(input_binding, attribute);
+    dynamic_pipe.shader_stages_ = {vs.GetStageCreateInfo(), dynamic_pipe.fs_->GetStageCreateInfo()};
+    dynamic_pipe.CreateGraphicsPipeline();
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_TRUE;
+    info.addressRange = buffer.StridedAddressRange(sizeof(float));
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dynamic_pipe);
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0u, 1u, &info);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, static_pipe);
+    info.setStride = VK_FALSE;
+    info.addressRange.stride = 0;
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0u, 1u, &info);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDeviceAddressCommands, StorageBufferAddressFlags) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
 

@@ -1727,9 +1727,13 @@ void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipe
         }
 
         if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
-            !pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) && pipeline.vertex_input_state) {
-            for (const auto& [binding_index, binding_state] : pipeline.vertex_input_state->bindings) {
-                current_vertex_buffer_binding_info[binding_index].stride = binding_state.desc.stride;
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
+            stride_set_with_bind_vertex_buffer_3 = false;
+
+            if (pipeline.vertex_input_state) {
+                for (const auto& [binding_index, binding_state] : pipeline.vertex_input_state->bindings) {
+                    current_vertex_buffer_binding_info[binding_index].stride = binding_state.desc.stride;
+                }
             }
         }
 
