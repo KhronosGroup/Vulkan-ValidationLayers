@@ -771,6 +771,26 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
     if (indirect_commands_layout->has_draw_token) {
         skip |=
             OutsideRenderPass(cb_state, error_obj.location, "VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-10769");
+
+        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8653
+        if (bound_stages != 0) {
+            const VkShaderStageFlags mesh_stages = VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
+            if (indirect_commands_layout->has_mesh_draw_token && (bound_stages & VK_SHADER_STAGE_MESH_BIT_EXT) == 0) {
+                skip |=
+                    LogError("UNASSIGNED-vkCmdExecuteGeneratedCommandsEXT-MeshDrawToken",
+                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), info_loc.dot(Field::indirectCommandsLayout),
+                             "contains a VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_* token, but no mesh shader is bound\n"
+                             "bound shader stages are: %s",
+                             string_VkShaderStageFlags(bound_stages).c_str());
+            } else if (!indirect_commands_layout->has_mesh_draw_token && (bound_stages & mesh_stages) != 0) {
+                skip |=
+                    LogError("UNASSIGNED-vkCmdExecuteGeneratedCommandsEXT-NonMeshDrawToken",
+                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), info_loc.dot(Field::indirectCommandsLayout),
+                             "contains a non-mesh draw token, but a task or mesh shader is bound (bound shader stages are "
+                             "%s).\nHint: Use a VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_* token instead.",
+                             string_VkShaderStageFlags(bound_stages).c_str());
+            }
+        }
     }
 
     skip |= ValidateGeneratedCommandsInfo(cb_state, cb_state, *indirect_commands_layout, *pGeneratedCommandsInfo, isPreprocessed,

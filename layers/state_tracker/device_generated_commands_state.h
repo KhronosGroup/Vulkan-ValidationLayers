@@ -64,6 +64,7 @@ class IndirectCommandsLayout : public StateObject {
     bool has_vertex_buffer_token = false;     // VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT
     bool has_draw_token = false;              // VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_*
     bool has_multi_draw_count_token = false;  // VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_*_COUNT_*
+    bool has_mesh_draw_token = false;         // VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_*
 
     VkShaderStageFlags execution_set_token_shader_stage_flags = 0;
 };
