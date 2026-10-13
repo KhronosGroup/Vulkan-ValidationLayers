@@ -550,6 +550,43 @@ TEST_F(PositiveSecondaryCommandBuffer, NestedDrawWithoutInline) {
     secondary.End();
 }
 
+TEST_F(PositiveSecondaryCommandBuffer, NestedInheritedFramebuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nestedCommandBuffer);
+    AddRequiredFeature(vkt::Feature::nestedCommandBufferRendering);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkCommandBufferInheritanceInfo inner_inheritance_info = vku::InitStructHelper();
+    inner_inheritance_info.renderPass = RenderPass();
+    inner_inheritance_info.subpass = 0;
+    inner_inheritance_info.framebuffer = Framebuffer();
+    VkCommandBufferBeginInfo inner_begin_info = vku::InitStructHelper();
+    inner_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    inner_begin_info.pInheritanceInfo = &inner_inheritance_info;
+
+    VkCommandBufferInheritanceInfo outer_inheritance_info = inner_inheritance_info;
+    outer_inheritance_info.framebuffer = VK_NULL_HANDLE;
+    VkCommandBufferBeginInfo outer_begin_info = vku::InitStructHelper();
+    outer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    outer_begin_info.pInheritanceInfo = &outer_inheritance_info;
+
+    vkt::CommandBuffer inner(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    inner.Begin(&inner_begin_info);
+    inner.End();
+    vkt::CommandBuffer outer(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    outer.Begin(&outer_begin_info);
+    vk::CmdExecuteCommands(outer, 1u, &inner.handle());
+    outer.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &outer.handle());
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSecondaryCommandBuffer, CustomResolveDynamicRendering) {
     TEST_DESCRIPTION("Call vkCmdBeginCustomResolveEXT in the secondary");
     AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
