@@ -25,6 +25,7 @@ class GpuDump;
 struct MappingInfo;
 struct DumpInfo;
 struct WarnInfo;
+struct HeapView;
 
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
@@ -55,10 +56,18 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                           const VkDescriptorMappingSourceConstantOffsetEXT& map_data) const;
     void DumpDescriptorHeapPushIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                      const VkDescriptorMappingSourcePushIndexEXT& map_data) const;
+    void DumpDescriptorHeapPushIndexHeap(std::ostringstream& ss, WarnInfo& warn, const HeapView& heap, uint32_t push_offset,
+                                         uint32_t heap_offset, uint32_t index_stride, uint32_t array_stride) const;
     void DumpDescriptorHeapIndirectIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                          const VkDescriptorMappingSourceIndirectIndexEXT& map_data) const;
+    void DumpDescriptorHeapIndirectIndexHeap(std::ostringstream& ss, WarnInfo& warn, const HeapView& heap, uint32_t push_offset,
+                                             uint32_t address_offset, uint32_t heap_offset, uint32_t index_stride,
+                                             uint32_t array_stride) const;
     void DumpDescriptorHeapIndirectIndexArray(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                               const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data) const;
+    void DumpDescriptorHeapIndirectIndexArrayHeap(std::ostringstream& ss, WarnInfo& warn, const HeapView& heap,
+                                                  uint32_t push_offset, uint32_t address_offset, uint32_t heap_offset,
+                                                  uint32_t index_stride) const;
     void DumpDescriptorHeapHeapData(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                     const VkDescriptorMappingSourceHeapDataEXT& map_data) const;
     void DumpDescriptorHeapPushAddress(std::ostringstream& ss, WarnInfo& warn, uint32_t pushAddressOffset) const;

@@ -79,15 +79,15 @@ vkCmdDispatch(): [Dump Descriptor] (VkCommandBuffer 0x5ae561283160, VkPipeline 0
     - SPIR-V Binding 0 ["ssbo"]
       - specified in pMappings[0] - VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT
       - heapOffset: 0x0, heapArrayStride: 64
-      - Resource Heap address: 0x300000000 + (descriptor_index * 64)
+      - Resource heap address: 0x300000000 + (descriptor_index * 64)
             The final descriptor index at [7] will access [0x3000001c0, 0x300000200)
       - Descriptor size: 64 (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-      - [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element starting at index [4] will be out of bounds of the heap and invalid if accessed
+      - [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element starting at index [4] will be out of bounds of the heap and any access to those indexes will be invalid
 ```
 
 GPU Dump prints the mapping of where the heap will be read from, but it also issues a `warning`:
 
-> [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element starting at index [4] will be out of bounds of the heap and invalid if accessed
+> [WARNING] OUT OF BOUNDS - descriptor has an array length of [8] but any element starting at index [4] will be out of bounds of the heap and any access to those indexes will be invalid
 
 This helps catch errors where, if the user accesses `ssbo[4]`, it will actually be out of bounds of the bound descriptor heap memory.
 
@@ -113,7 +113,7 @@ vkCmdDispatch(): [Dump Descriptor] (VkCommandBuffer 0x5ae561283160, VkPipeline 0
     - SPIR-V Binding 0 ["ssbo"]
       - specified in pMappings[0] - VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT
       - heapOffset: 0x0, heapArrayStride: 64
-      - Resource Heap address: 0x300000000 + (descriptor_index * 64)
+      - Resource heap address: 0x300000000 + (descriptor_index * 64)
             The descriptor runtime array will be out of bounds of the heap starting at index [4]
       - Descriptor size: 64 (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
 ```

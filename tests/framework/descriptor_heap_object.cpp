@@ -88,7 +88,7 @@ void DescriptorHeapEXT::CreateSamplerHeap(VkDeviceSize app_size, bool reserved_r
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
     sampler_heap_data_ = static_cast<uint8_t*>(sampler_heap_.Memory().Map());
     if (reserved_range_in_front) {
-        heap_offset_ = AlignSampler(reserved_range);
+        sampler_heap_offset_ = AlignSampler(reserved_range);
     }
 }
 
@@ -245,7 +245,7 @@ VkDeviceSize DescriptorHeapEXT::GetResourceHeapReservedRangeOffset() const {
 VkDeviceSize DescriptorHeapEXT::GetSamplerHeapReservedRangeOffset() const {
     const VkDeviceSize min_reserved_range =
         embedded_samplers ? heap_props.minSamplerHeapReservedRangeWithEmbedded : heap_props.minSamplerHeapReservedRange;
-    if (resource_reserved_range_in_front_) {
+    if (sampler_reserved_range_in_front_) {
         return 0;
     } else {
         return sampler_heap_.CreateInfo().size - min_reserved_range;
