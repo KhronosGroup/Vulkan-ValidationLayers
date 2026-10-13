@@ -2939,6 +2939,68 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
 }
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
+TEST_F(NegativeWsi, FullScreenExclusiveWin32NullHmonitor) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Only run test MockICD due to CI stability";
+    }
+
+    InitRenderTarget();
+    RETURN_IF_SKIP(InitSwapchain());
+
+    VkSurfaceFullScreenExclusiveWin32InfoEXT fullscreen_exclusive_win32_info = vku::InitStructHelper();
+    fullscreen_exclusive_win32_info.hmonitor = NULL;  // Invalid
+    VkSurfaceFullScreenExclusiveInfoEXT fullscreen_exclusive_info = vku::InitStructHelper(&fullscreen_exclusive_win32_info);
+    fullscreen_exclusive_info.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
+
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&fullscreen_exclusive_info);
+    surface_info.surface = m_surface;
+
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-hmonitor-02673");
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    m_errorMonitor->VerifyFound();
+
+    uint32_t count = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-hmonitor-02673");
+    vk::GetPhysicalDeviceSurfaceFormats2KHR(Gpu(), &surface_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-hmonitor-02673");
+    vk::GetPhysicalDeviceSurfacePresentModes2EXT(Gpu(), &surface_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    VkDeviceGroupPresentModeFlagsKHR modes = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-hmonitor-02673");
+    vk::GetDeviceGroupSurfacePresentModes2EXT(device(), &surface_info, &modes);
+    m_errorMonitor->VerifyFound();
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&fullscreen_exclusive_info);
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = GetSwapchainExtent(m_surface_capabilities);
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = m_swapchain;
+
+    VkSwapchainKHR swapchain;
+    m_errorMonitor->SetDesiredError("VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-hmonitor-02673");
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
