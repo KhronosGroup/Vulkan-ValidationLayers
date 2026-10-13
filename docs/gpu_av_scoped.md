@@ -12,23 +12,25 @@ We provide various ways to select these shaders.
 
 ## Provide a Debug Name
 
-It is normally desirable to not need to recompile your source code nor shaders. If you already have a debug name (set by `vkSetDebugUtilsObjectNameEXT`) then you can use those names to select which shaders to instrument.
+It is normally desirable to not need to recompile your source code nor shaders. If you already have a debug name (set by `vkSetDebugUtilsObjectNameEXT`) then you can use those names to select which shaders/pipelines to instrument.
 
-This is done either easily in vkconfig or passing a list of regex strings to `VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT`/`gpuav_shaders_to_instrument`
+This is done either easily in vkconfig or passing a list of name patterns to `VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT`/`gpuav_shaders_to_instrument`.
+Only shaders/pipelines with a debug name containing a listed pattern will be instrumented.
+In a pattern, `*` matches any sequence of characters (including none), every other character is matched literally.
 
 as environment variables
 
 ```bash
 set VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS=1
-set VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT=bim_bap_boom,.*_my_pipeline.*
+set VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT=bim_bap_boom,*_my_pipeline*
 ```
 
 or with `VK_EXT_layer_settings`
 
 ```c++
 // example
-std::array<const char*, 2> shader_regexes = {{"bim_bap_boom", ".*_my_pipeline.*"}};
-layer_setting = {"VK_LAYER_KHRONOS_validation", "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes), shader_regexes.data()};
+std::array<const char*, 2> shader_patterns = {{"bim_bap_boom", "my*pipeline"}};
+layer_setting = {"VK_LAYER_KHRONOS_validation", "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_patterns), shader_patterns.data()};
 ```
 
 ## Manually do inside your code

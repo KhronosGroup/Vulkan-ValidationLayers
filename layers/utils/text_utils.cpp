@@ -67,4 +67,49 @@ void ToUpper(std::string& str) {
     std::transform(str.begin(), str.end(), str.begin(), [](char c) { return static_cast<char>(std::toupper(c)); });
 }
 
+bool DoesStringMatchesPattern(std::string_view str, std::string_view pattern) {
+    // sp <==> sub pattern
+    size_t sp_beg = pattern.find_first_not_of('*');
+    size_t sp_end = pattern.find_first_of('*', sp_beg + 1);
+
+    size_t str_i = 0;
+    while (sp_beg < pattern.size()) {
+        std::string_view sp = pattern.substr(sp_beg, sp_end - sp_beg);
+
+        const bool star_before_sp = sp_beg > 0 && pattern[sp_beg - 1] == '*';
+        const bool star_after_sp = sp_end < pattern.size() && pattern[sp_end] == '*';
+
+        str_i = str.find(sp, str_i);
+        if (str_i == str.npos) {
+            return false;
+        }
+
+        if (!star_before_sp && star_after_sp) {
+            if (str_i != 0) {
+                return false;
+            }
+        }
+
+        if (star_before_sp && !star_after_sp) {
+            str_i = str.rfind(sp);
+            if (str_i + sp.size() < str.size()) {
+                return false;
+            }
+        }
+
+        if (!star_before_sp && !star_after_sp) {
+            if (str_i != 0 || str_i + sp.size() < str.size()) {
+                return false;
+            }
+        }
+
+        str_i += sp.size();
+
+        sp_beg = pattern.find_first_not_of('*', sp_end);
+        sp_end = pattern.find_first_of('*', sp_beg + 1);
+    }
+
+    return true;
+}
+
 }  // namespace text

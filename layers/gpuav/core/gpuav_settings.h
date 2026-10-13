@@ -26,7 +26,7 @@ struct GpuAVSettings {
 
     bool force_on_robustness = false;
     bool select_instrumented_shaders = false;
-    std::vector<std::string> shader_selection_regexes{};
+    std::vector<std::string> shader_selection_patterns{};
 
     bool validate_indirect_draws_buffers = true;
     bool validate_indirect_dispatches_buffers = true;

@@ -239,7 +239,7 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersRegex) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     std::vector<VkLayerSettingEXT> layer_settings(2);
     layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    std::array<const char*, 2> shader_regexes = {{"vertex_foo", "fragment_.*"}};
+    std::array<const char*, 2> shader_regexes = {{"vertex_foo", "fragment_*"}};
     layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
                          shader_regexes.data()};
 
@@ -793,7 +793,7 @@ TEST_F(NegativeGpuAVScoped, SelectInstrumentedShadersRegexDestroyedShaders) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     std::vector<VkLayerSettingEXT> layer_settings(2);
     layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    std::array<const char*, 2> shader_regexes = {{"vertex_foo", "fragment_.*"}};
+    std::array<const char*, 2> shader_regexes = {{"vertex_foo", "fragment_*"}};
     layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
                          shader_regexes.data()};
 
@@ -1019,7 +1019,7 @@ TEST_F(NegativeGpuAVScoped, GPLWriteSelectPipeline) {
 
     std::vector<VkLayerSettingEXT> layer_settings(2);
     layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    std::array<const char*, 2> shader_regexes = {{"bim_bap_boom", ".*_my_pipeline.*"}};
+    std::array<const char*, 2> shader_regexes = {{"bim_bap_boom", "*_my_pipeline"}};
     layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
                          shader_regexes.data()};
 
@@ -1117,7 +1117,7 @@ TEST_F(NegativeGpuAVScoped, GPLWriteSelectShaders) {
 
     std::vector<VkLayerSettingEXT> layer_settings(2);
     layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    std::array<const char*, 2> shader_regexes = {{"verte[xyz]_foo", ".*gment_.*"}};
+    std::array<const char*, 2> shader_regexes = {{"vert*_foo", "*gment_*"}};
     layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
                          shader_regexes.data()};
 
@@ -1226,7 +1226,7 @@ TEST_F(NegativeGpuAVScoped, RayGenUseQueryUninitSelectShaders) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     std::vector<VkLayerSettingEXT> layer_settings(2);
     layer_settings[0] = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
-    std::array<const char*, 3> shader_regexes = {{"vertex_foo", "fragment_.*", ".*ray.*"}};
+    std::array<const char*, 3> shader_regexes = {{"vertex_foo", "fragment_*", "*ray*"}};
     layer_settings[1] = {OBJECT_LAYER_NAME, "gpuav_shaders_to_instrument", VK_LAYER_SETTING_TYPE_STRING_EXT, size32(shader_regexes),
                          shader_regexes.data()};
     RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
