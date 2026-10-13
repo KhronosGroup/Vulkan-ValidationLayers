@@ -1553,11 +1553,15 @@ void DeviceState::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
         submission.AddFence(Get<Fence>(fence));
         submissions.emplace_back(std::move(submission));
     }
+
     // Now process each individual submit
     for (uint32_t submit_i = 0; submit_i < submitCount; submit_i++) {
-        Location submit_loc = record_obj.location.dot(Struct::VkSubmitInfo, Field::pSubmits, submit_i);
-        QueueSubmission submission(submit_loc);
         const VkSubmitInfo* submit = &pSubmits[submit_i];
+        Location submit_loc = record_obj.location.dot(Struct::VkSubmitInfo, Field::pSubmits, submit_i);
+        if (auto frame_boundary = vku::FindStructInPNextChain<VkFrameBoundaryEXT>(submit->pNext)) {
+            submit_loc.frame_id = frame_boundary->frameID;
+        }
+        QueueSubmission submission(submit_loc);
         auto* timeline_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             auto wait_semaphore = Get<Semaphore>(submit->pWaitSemaphores[i]);
@@ -1590,6 +1594,7 @@ void DeviceState::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
         if (submit_i == (submitCount - 1) && fence != VK_NULL_HANDLE) {
             submission.AddFence(Get<Fence>(fence));
         }
+
         submissions.emplace_back(std::move(submission));
     }
 
@@ -1624,9 +1629,12 @@ void DeviceState::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount,
     }
 
     for (uint32_t submit_i = 0; submit_i < submitCount; submit_i++) {
-        Location submit_loc = record_obj.location.dot(Struct::VkSubmitInfo2, Field::pSubmits, submit_i);
-        QueueSubmission submission(submit_loc);
         const VkSubmitInfo2KHR& submit = pSubmits[submit_i];
+        Location submit_loc = record_obj.location.dot(Struct::VkSubmitInfo2, Field::pSubmits, submit_i);
+        if (auto frame_boundary = vku::FindStructInPNextChain<VkFrameBoundaryEXT>(submit.pNext)) {
+            submit_loc.frame_id = frame_boundary->frameID;
+        }
+        QueueSubmission submission(submit_loc);
         for (const VkSemaphoreSubmitInfo& wait_sem_info : make_span(submit.pWaitSemaphoreInfos, submit.waitSemaphoreInfoCount)) {
             auto wait_semaphore = Get<Semaphore>(wait_sem_info.semaphore);
             ASSERT_AND_CONTINUE(wait_semaphore);
@@ -1648,6 +1656,7 @@ void DeviceState::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount,
         if (submit_i == (submitCount - 1)) {
             submission.AddFence(Get<Fence>(fence));
         }
+
         submissions.emplace_back(std::move(submission));
     }
     queue_state->PreSubmit(std::move(submissions));

@@ -179,6 +179,41 @@ TEST_F(NegativeImageLayout, SubmitTimeDebugRegion) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeImageLayout, SubmitTimeFrameID) {
+    AddRequiredExtensions(VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image img_src_transfer(*m_device, 64, 64, fmt, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image img_color(*m_device, 64, 64, fmt,
+                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    img_src_transfer.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    img_color.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blit_region.srcOffsets[1] = {64, 64, 1};
+    blit_region.dstOffsets[1] = {64, 64, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdBlitImage(m_command_buffer, img_src_transfer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_color, VK_IMAGE_LAYOUT_GENERAL,
+                     1, &blit_region, VK_FILTER_LINEAR);
+    m_command_buffer.End();
+
+    VkFrameBoundaryEXT frame_boundary = vku::InitStructHelper();
+    frame_boundary.frameID = 42;
+    VkSubmitInfo submit_info = vku::InitStructHelper(&frame_boundary);
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDraw-None-09600", "frameID 42");
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeImageLayout, Compute) {
     TEST_DESCRIPTION("Attempt to use an image with an invalid layout in a compute shader");
 

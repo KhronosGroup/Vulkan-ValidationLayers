@@ -57,6 +57,9 @@ std::string Location::Fields() const {
 
 std::string Location::Message() const {
     std::ostringstream out;
+    if (frame_id != vvl::kNoIndex64) {
+        out << "[ VkFrameBoundaryEXT::frameID " << frame_id << " ] ";
+    }
     if (debug_region && !debug_region->empty()) {
         out << "[ Debug region: " << *debug_region << " ] ";
     }

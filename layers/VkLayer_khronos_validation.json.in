@@ -62,6 +62,11 @@
                 "entrypoints": [
                     "vkGetPhysicalDeviceToolPropertiesEXT"
                 ]
+            },
+            {
+                "name": "VK_EXT_frame_boundary",
+                "spev_version": "1",
+                "entrypoints": []
             }
         ],
         "features": {

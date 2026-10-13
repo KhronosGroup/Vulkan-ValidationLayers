@@ -39,6 +39,7 @@ struct Location {
     const bool isPNext{};    // will print the struct is from a |pNext| chain
     const Location* prev{};
     mutable const std::string* debug_region{};
+    uint64_t frame_id = vvl::kNoIndex64;
 
     Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, uint32_t i = vvl::kNoIndex32)
         : function(func), structure(s), field(f), index(i), isPNext(false), prev(nullptr) {}
@@ -46,14 +47,15 @@ struct Location {
         : function(func), structure(vvl::Struct::Empty), field(f), index(i), isPNext(false), prev(nullptr) {}
     Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, uint32_t i, bool p)
         : function(prev_loc.function), structure(s), field(f), index(i), isPNext(p), prev(&prev_loc) {}
-    Location(const Location& loc, const std::string& debug_region)
+    Location(const Location& loc, const std::string& debug_region, uint64_t frame_id)
         : function(loc.function),
           structure(loc.structure),
           field(loc.field),
           index(loc.index),
           isPNext(loc.isPNext),
           prev(loc.prev),
-          debug_region(&debug_region) {}
+          debug_region(&debug_region),
+          frame_id(frame_id) {}
 
     void AppendFields(std::ostream &out) const;
 

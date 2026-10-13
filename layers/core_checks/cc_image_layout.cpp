@@ -294,7 +294,7 @@ static std::string DescribeFirstLayoutCommand(vvl::Func command) {
 
 // This validates that the first layout specified in the command buffer for the image
 // is the same as this image's global (actual/current) layout
-bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBufferSubmitInfo& cb_info,
+bool CoreChecks::ValidateCmdBufImageLayouts(const Location& submit_loc, const vvl::CommandBufferSubmitInfo& cb_info,
                                             vvl::unordered_map<const vvl::Image*, ImageLayoutMap>& local_image_layout_state) const {
     if (disabled[image_layout_validation]) {
         return false;
@@ -359,7 +359,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                                            : "VUID-vkCmdDraw-None-09600";
                     const std::string debug_region = vvl::CommandBuffer::GetDebugRegionName(
                         cb_info.cb->GetLabelCommands(), cb_layout_state.first_layout_label_command_i, cb_info.initial_label_stack);
-                    const Location loc_with_region(loc, debug_region);
+                    const Location loc_with_region(submit_loc, debug_region, submit_loc.frame_id);
                     const std::string expected_by = DescribeFirstLayoutCommand(cb_layout_state.first_layout_command);
                     // We can report all the errors for the intersected range directly
                     for (auto index : vvl::range_view<decltype(intersected_range)>(intersected_range)) {
@@ -396,7 +396,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                             "vkAcquireNextImageKHR, and before it is released by vkQueuePresentKHR. This includes transitioning "
                             "the image layout and rendering commands "
                             "(https://docs.vulkan.org/refpages/latest/refpages/source/VkSwapchainKHR.html#_description)";
-                        skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, loc,
+                        skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, submit_loc,
                                          "performs a layout transition on presentable %s, but the image has not been acquired from "
                                          "%s (either never or since the last present operation).\n%s",
                                          FormatHandle(*image_state).c_str(), FormatHandle(*image_state->bind_swapchain).c_str(),
@@ -421,7 +421,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& loc, const vvl::Comm
                             "The Vulkan spec states: After acquiring a presentable image and before modifying it, the application "
                             "must use a synchronization primitive to ensure that the presentation engine has finished reading from "
                             "the image (https://docs.vulkan.org/refpages/latest/refpages/source/VkSwapchainKHR.html#_description)";
-                        skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, loc,
+                        skip |= LogError("UNASSIGNED-non-acquired-swapchain-image-used", objlist, submit_loc,
                                          "performs a layout transition on presentable %s, but %s signaled by image acquire "
                                          "operation %s not waited on.\n%s",
                                          FormatHandle(*image_state).c_str(), oss.str().c_str(), was_were,
