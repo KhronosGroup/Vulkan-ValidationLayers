@@ -14,6 +14,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <spirv/unified1/spirv.hpp>
 #include "descriptor_checks_classic.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "gpuav/core/gpuav.h"
@@ -205,6 +206,55 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                     }
 
                     out_vuid_msg = "UNASSIGNED-Descriptor destroyed";
+                    error_found = true;
+                } break;
+
+                case kErrorSubCode_DescriptorIndexing_NonUniform: {
+                    // Zero means the shader declares the capability, and only the NonUniform decoration is missing
+                    const uint32_t missing_capability = error_record[kInst_LogError_ParameterOffset_1];
+                    const char* capability_name = nullptr;
+                    switch (missing_capability) {
+                        case spv::CapabilityUniformBufferArrayNonUniformIndexing:
+                            capability_name = "UniformBufferArrayNonUniformIndexing";
+                            out_vuid_msg = "VUID-RuntimeSpirv-UniformBufferArrayNonUniformIndexing-10134";
+                            break;
+                        case spv::CapabilitySampledImageArrayNonUniformIndexing:
+                            capability_name = "SampledImageArrayNonUniformIndexing";
+                            out_vuid_msg = "VUID-RuntimeSpirv-SampledImageArrayNonUniformIndexing-10135";
+                            break;
+                        case spv::CapabilityStorageBufferArrayNonUniformIndexing:
+                            capability_name = "StorageBufferArrayNonUniformIndexing";
+                            out_vuid_msg = "VUID-RuntimeSpirv-StorageBufferArrayNonUniformIndexing-10136";
+                            break;
+                        case spv::CapabilityStorageImageArrayNonUniformIndexing:
+                            capability_name = "StorageImageArrayNonUniformIndexing";
+                            out_vuid_msg = "VUID-RuntimeSpirv-StorageImageArrayNonUniformIndexing-10137";
+                            break;
+                        case spv::CapabilityInputAttachmentArrayNonUniformIndexing:
+                            capability_name = "InputAttachmentArrayNonUniformIndexing";
+                            out_vuid_msg = "VUID-RuntimeSpirv-InputAttachmentArrayNonUniformIndexing-10138";
+                            break;
+                        case spv::CapabilityUniformTexelBufferArrayNonUniformIndexing:
+                            capability_name = "UniformTexelBufferArrayNonUniformIndexing";
+                            out_vuid_msg = "VUID-RuntimeSpirv-UniformTexelBufferArrayNonUniformIndexing-10139";
+                            break;
+                        case spv::CapabilityStorageTexelBufferArrayNonUniformIndexing:
+                            capability_name = "StorageTexelBufferArrayNonUniformIndexing";
+                            out_vuid_msg = "VUID-RuntimeSpirv-StorageTexelBufferArrayNonUniformIndexing-10140";
+                            break;
+                        default:
+                            out_vuid_msg = "VUID-RuntimeSpirv-subgroupSize-10149";
+                            break;
+                    }
+
+                    strm << "(set = " << set_num << ", binding = " << binding_num << ") The descriptor index (" << descriptor_index
+                         << " in this invocation) is not the same for every active invocation in the subgroup, but the access is "
+                            "not decorated with NonUniform";
+                    if (capability_name) {
+                        strm << " and the shader does not declare the " << capability_name << " capability";
+                    }
+                    strm << ". Mark the index as non-uniform, with nonuniformEXT() in GLSL or NonUniformResourceIndex() in HLSL "
+                            "and Slang.";
                     error_found = true;
                 } break;
             }

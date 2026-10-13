@@ -475,6 +475,7 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
         case spv::OpBitwiseOr:
         case spv::OpBitwiseXor:
         case spv::OpBitwiseAnd:
+        case spv::OpGroupNonUniformAllEqual:
             swap(1);
             swap(3);
             swap(4);

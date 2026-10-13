@@ -230,11 +230,12 @@ When dealing with bindless and invalid descriptors we will need to use `robustBu
 
 ## How does GPU-AV descriptor check works
 
-The descriptor checks in GPU-AV are done in 3 parts
+The descriptor checks in GPU-AV are done in 4 parts
 
 1. Descriptor Indexing OOB
 2. Descriptor Class
-3. Post Processing
+3. Non-uniform Index
+4. Post Processing
 
 ### Descriptor Indexing OOB
 
@@ -272,6 +273,18 @@ inst_descriptor_class_texel_buffer(index, offset_to_value_inside);
 texel_buffer_descriptor[index].value_inside = 0;
 ```
 
+### Non-uniform Index
+
+Unless the access is decorated with `NonUniform`, the index into a descriptor array must be the same for every active invocation in the subgroup (`nonuniformEXT()` in GLSL adds the decoration). A subgroup vote checks it, and only one invocation of the subgroup reports the error.
+
+```glsl
+// From descriptor_indexing_non_uniform.comp
+inst_descriptor_indexing_non_uniform(index);
+descriptor[index].value_inside = 0;
+```
+
+This is only done in compute, task and mesh shaders. In the other stages a subgroup can hold invocations from more than one draw, and an index that is the same for each draw is allowed to differ within the subgroup.
+
 ### Post Processing
 
 The final step is once we know which descriptor was accessed, we can run the normal "core validation" on the descriptor. There is a Post Process buffer that will write which indexes are accessed and after the `vkQueueSubmit` a timeline semaphore will validate it on the CPU.
@@ -285,7 +298,7 @@ descriptor[index].value_inside = 0;
 
 ### Putting it all together
 
-With these 3 parts the following GLSL
+With these parts the following GLSL
 
 ```glsl
 layout(set=0, binding=0) uniform foo { uint index; };

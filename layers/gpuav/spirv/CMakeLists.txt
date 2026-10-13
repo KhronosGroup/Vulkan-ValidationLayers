@@ -19,6 +19,8 @@ target_sources(gpu_av_spirv PRIVATE
     # Passes
     descriptor_indexing_oob_pass.h
     descriptor_indexing_oob_pass.cpp
+    descriptor_indexing_non_uniform_pass.h
+    descriptor_indexing_non_uniform_pass.cpp
     descriptor_class_general_buffer_pass.h
     descriptor_class_general_buffer_pass.cpp
     descriptor_class_texel_buffer_pass.h
