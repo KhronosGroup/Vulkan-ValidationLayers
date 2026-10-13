@@ -69,6 +69,8 @@ enum class ErrorMsgBuffer : uint8_t {
     Flag,
     // Used by the implicit "bound to memory" check ValidateDeviceAddress adds for every device address
     MemoryBound,
+    // Prints the memoryTypeIndex of the bound memory
+    MemoryType,
 };
 
 // Only called once an error is being built
@@ -85,6 +87,14 @@ static inline std::string DescribeBufferForError(ErrorMsgBuffer error_msg_buffer
                 return "buffer is bound to memory (" + validator.FormatHandle(memory_state->Handle()) + ") but it has been freed";
             }
             return std::string("buffer has not been bound to memory");
+        }
+        case ErrorMsgBuffer::MemoryType: {
+            const auto memory_state = buffer_state.MemoryState();
+            if (!memory_state) {
+                return std::string();
+            }
+            return "is bound to memory (" + validator.FormatHandle(memory_state->Handle()) + ") with memoryTypeIndex " +
+                   std::to_string(memory_state->allocate_info.memoryTypeIndex);
         }
         case ErrorMsgBuffer::Empty:
             break;
