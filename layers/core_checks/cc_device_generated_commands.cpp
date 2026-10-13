@@ -619,15 +619,16 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
     }
 
     // Only dispatch if we know this is valid
+    VkMemoryRequirements2 mem_reqs = vku::InitStructHelper();
     if (valid_dispatch) {
         VkGeneratedCommandsMemoryRequirementsInfoEXT req_info = vku::InitStructHelper();
         req_info.maxSequenceCount = generated_commands_info.maxSequenceCount;
+        req_info.maxDrawCount = generated_commands_info.maxDrawCount;
         req_info.indirectCommandsLayout = generated_commands_info.indirectCommandsLayout;
         req_info.indirectExecutionSet = generated_commands_info.indirectExecutionSet;
         if (generated_commands_info.indirectExecutionSet == VK_NULL_HANDLE) {
             req_info.pNext = pipeline_info ? (void*)pipeline_info : (void*)shader_info;
         }
-        VkMemoryRequirements2 mem_reqs = vku::InitStructHelper();
         DispatchGetGeneratedCommandsMemoryRequirementsEXT(device, &req_info, &mem_reqs);
 
         if (generated_commands_info.preprocessAddress == 0 && mem_reqs.memoryRequirements.size != 0) {
@@ -652,13 +653,29 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
     }
 
     {
-        BufferAddressValidation<1> buffer_address_validator = {
+        // A size of zero means no preprocess memory is needed (and memoryTypeBits might not be filled in)
+        const uint32_t memory_type_bits =
+            (mem_reqs.memoryRequirements.size != 0) ? mem_reqs.memoryRequirements.memoryTypeBits : vvl::kU32Max;
+        BufferAddressValidation<2> buffer_address_validator = {
             {{{"VUID-VkGeneratedCommandsInfoEXT-preprocessAddress-11069",
                [](const vvl::Buffer& buffer_state) {
                    return (buffer_state.usage & VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT) == 0;
                },
                []() { return "The following buffers are missing VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT"; },
-               ErrorMsgBuffer::Usage}}}};
+               ErrorMsgBuffer::Usage},
+              {"VUID-VkGeneratedCommandsInfoEXT-preprocessAddress-11064",
+               [memory_type_bits](const vvl::Buffer& buffer_state) {
+                   const auto memory_state = buffer_state.MemoryState();
+                   return memory_state && !memory_state->Destroyed() &&
+                          ((1u << memory_state->allocate_info.memoryTypeIndex) & memory_type_bits) == 0;
+               },
+               [memory_type_bits]() {
+                   std::stringstream ss;
+                   ss << "The following buffers are bound to memory with a memoryTypeIndex not allowed by the memoryTypeBits (0x"
+                      << std::hex << memory_type_bits << ") returned by vkGetGeneratedCommandsMemoryRequirementsEXT";
+                   return ss.str();
+               },
+               ErrorMsgBuffer::MemoryType}}}};
 
         skip |= buffer_address_validator.ValidateDeviceAddress(*this, info_loc.dot(Field::preprocessAddress),
                                                                LogObjectList(cb_state.Handle()),
