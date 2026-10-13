@@ -609,9 +609,12 @@ void vvl::Semaphore::SetSwapchainWaitInfo(const SwapchainWaitInfo& info) {
     swapchain_wait_info_.emplace(info);
 }
 
-void vvl::Semaphore::ClearSwapchainWaitInfo() {
+void vvl::Semaphore::ClearSwapchainWaitInfo(VkQueue queue_filter) {
     auto guard = WriteLock();
-    swapchain_wait_info_.reset();
+
+    if (queue_filter == VK_NULL_HANDLE || (swapchain_wait_info_ && swapchain_wait_info_->queue == queue_filter)) {
+        swapchain_wait_info_.reset();
+    }
 }
 
 std::optional<vvl::Semaphore::SwapchainWaitInfo> vvl::Semaphore::GetSwapchainWaitInfo() const {

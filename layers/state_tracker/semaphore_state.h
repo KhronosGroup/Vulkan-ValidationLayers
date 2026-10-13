@@ -63,6 +63,7 @@ class Semaphore : public RefcountedStateObject {
     // Swapchain information associated with QueuePresent wait semaphore
     struct SwapchainWaitInfo {
         std::shared_ptr<vvl::Swapchain> swapchain;
+        VkQueue queue = VK_NULL_HANDLE;
         uint32_t image_index = vvl::kNoIndex32;  // image being presented
         uint32_t acquire_counter_value = 0;      // value of vvl::Swapchain::acquire_request_count when the image was acquired
     };
@@ -128,7 +129,7 @@ class Semaphore : public RefcountedStateObject {
     void SetAcquiredImage(const std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t image_index);
 
     void SetSwapchainWaitInfo(const SwapchainWaitInfo &info);
-    void ClearSwapchainWaitInfo();
+    void ClearSwapchainWaitInfo(VkQueue queue_filter = VK_NULL_HANDLE);
     std::optional<SwapchainWaitInfo> GetSwapchainWaitInfo() const;
 
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);

@@ -1956,13 +1956,10 @@ void DeviceState::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject&
         queue_state->NotifyAndWait(record_obj.location);
 
         // Reset semaphore's in-use-by-swapchain state.
-        // Only for pre-swapchain-maintenance1 code. New code should realy on presentation fence.
-        if (!IsExtEnabled(extensions.vk_khr_swapchain_maintenance1) && !IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
-            if (queue_state->is_used_for_presentation) {
-                for (const auto& entry : semaphore_map_.snapshot()) {
-                    const std::shared_ptr<vvl::Semaphore>& semaphore_state = entry.second;
-                    semaphore_state->ClearSwapchainWaitInfo();
-                }
+        if (queue_state->is_used_for_presentation) {
+            for (const auto& entry : semaphore_map_.snapshot()) {
+                const std::shared_ptr<vvl::Semaphore>& semaphore_state = entry.second;
+                semaphore_state->ClearSwapchainWaitInfo(queue);
             }
         }
     }
@@ -1994,12 +1991,9 @@ void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObje
         queue->Wait(record_obj.location);
     }
     // Reset semaphore's in-use-by-swapchain state.
-    // Only for pre-swapchain-maintenance1 code. New code should rely on the presentation fence.
-    if (!IsExtEnabled(extensions.vk_khr_swapchain_maintenance1) && !IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
-        for (const auto& entry : semaphore_map_.snapshot()) {
-            const std::shared_ptr<vvl::Semaphore>& semaphore_state = entry.second;
-            semaphore_state->ClearSwapchainWaitInfo();
-        }
+    for (const auto& entry : semaphore_map_.snapshot()) {
+        const std::shared_ptr<vvl::Semaphore>& semaphore_state = entry.second;
+        semaphore_state->ClearSwapchainWaitInfo();
     }
 }
 
@@ -4575,6 +4569,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
     }
+    semaphore_swapchain_info.queue = queue;
 
     small_vector<std::shared_ptr<vvl::Semaphore>, 1> present_wait_semaphores;
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {

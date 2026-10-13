@@ -2541,7 +2541,7 @@ TEST_F(PositiveWsi, SignalPresentSemaphoreAfterFenceWait) {
 }
 
 TEST_F(PositiveWsi, SignalPresentSemaphoreAfterQueueWait) {
-    TEST_DESCRIPTION("Signal present wait semaphore after waiting on device queue. Only works for pre-swapchain-maintenance1");
+    TEST_DESCRIPTION("Signal present wait semaphore after waiting on device queue without swapchain-maintenance1");
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
@@ -2549,6 +2549,31 @@ TEST_F(PositiveWsi, SignalPresentSemaphoreAfterQueueWait) {
 
     vkt::Semaphore acquire_semaphore(*m_device);
     uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    m_command_buffer.End();
+
+    vkt::Semaphore present_semaphore(*m_device);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
+    m_default_queue->Present(m_swapchain, image_index, present_semaphore);
+
+    m_default_queue->Wait();
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(present_semaphore));
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, SignalPresentSemaphoreAfterQueueWait2) {
+    TEST_DESCRIPTION("Signal present wait semaphore after waiting on device queue with swapchain-maintenance1");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
     m_command_buffer.Begin();
     m_command_buffer.TransitionLayout(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     m_command_buffer.End();
