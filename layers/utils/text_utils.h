@@ -1,6 +1,6 @@
-/* Copyright (c) 2025 The Khronos Group Inc.
- * Copyright (c) 2025 Valve Corporation
- * Copyright (c) 2025 LunarG, Inc.
+/* Copyright (c) 2026 The Khronos Group Inc.
+ * Copyright (c) 2026 Valve Corporation
+ * Copyright (c) 2026 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 #include <cstdarg>
 #include <string>
+#include <string_view>
 
 namespace text {
 
@@ -29,5 +30,12 @@ std::string Format(const char *format, ...);
 
 void ToLower(std::string &str);
 void ToUpper(std::string &str);
+
+// Tries to find `str` against `pattern`
+// In a pattern a '*' matches any sequence of characters (including none).
+// So "foo*" pattern matches against "foobar" and "foo".
+// But "foobar" pattern does not match against "foo".
+// See tests in layer_utils_positive.cpp for examples
+bool DoesStringMatchesPattern(std::string_view str, std::string_view pattern);
 
 }  // namespace text

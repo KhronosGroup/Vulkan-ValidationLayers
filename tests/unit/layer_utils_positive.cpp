@@ -12,6 +12,7 @@
 
 #include "layer_validation_tests.h"
 #include "utils/image_utils.h"
+#include "utils/text_utils.h"
 
 class PositiveLayerUtils : public VkLayerTest {};
 
@@ -206,4 +207,36 @@ TEST_F(PositiveLayerUtils, IsImageLayoutStencilOnly) {
     for (auto layout : all_layouts_but_stencil_only) {
         ASSERT_FALSE(IsImageLayoutStencilOnly(layout));
     }
+}
+
+TEST_F(PositiveLayerUtils, StringMatchesPattern) {
+    // No '*', must match the whole string exactly
+    ASSERT_TRUE(text::DoesStringMatchesPattern("vertex_foo", "vertex_foo"));
+    ASSERT_FALSE(text::DoesStringMatchesPattern("vertex_foo_bar", "vertex_foo"));
+    ASSERT_FALSE(text::DoesStringMatchesPattern("my_vertex_foo", "vertex_foo"));
+    ASSERT_FALSE(text::DoesStringMatchesPattern("", "vertex_foo"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("", ""));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("a", ""));
+
+    // '*' matches any sequence, including empty
+    ASSERT_TRUE(text::DoesStringMatchesPattern("", "*"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("anything", "*"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("anything", "**"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("fragment_", "fragment_*"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("fragment_bar", "fragment_*"));
+    ASSERT_FALSE(text::DoesStringMatchesPattern("fragment", "fragment_*"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("oh_my_pipeline", "*_my_pipeline*"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("oh_my_pipeline_2", "*_my_pipeline*"));
+    ASSERT_FALSE(text::DoesStringMatchesPattern("my_pipeline", "*_my_pipeline*"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("vertex_foo", "vert*_foo"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("my_oh_my_ray_gen", "*ray*"));
+
+    // Needs to backtrack: first "_foo" candidate is not the end of the string
+    ASSERT_TRUE(text::DoesStringMatchesPattern("a_foo_foo", "*_foo"));
+    ASSERT_TRUE(text::DoesStringMatchesPattern("aXbYbZc", "a*b*c"));
+    ASSERT_FALSE(text::DoesStringMatchesPattern("aXbYbZ", "a*b*c"));
+
+    // Characters that were special in regexes are now literal
+    ASSERT_TRUE(text::DoesStringMatchesPattern("pass[0].main", "pass[0].main"));
+    ASSERT_FALSE(text::DoesStringMatchesPattern("anything", ".*"));
 }

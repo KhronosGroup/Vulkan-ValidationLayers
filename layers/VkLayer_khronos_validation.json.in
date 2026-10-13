@@ -1069,7 +1069,7 @@
                                         {
                                             "key": "gpuav_select_instrumented_shaders",
                                             "label": "Selective Instrument Shaders",
-                                            "description": "When turned on, shaders are NOT instrumented unless selected. This can be done by:\n- passing a VkValidationFeaturesEXT struct in the pNext of VkShaderModuleCreateInfo/VkPipelineShaderStageCreateInfo/vkCreateShadersEXT pNext\n- using a regex matching a shader/pipeline debug name.\n- Providing a CDL dump file to parse the debug names from it.",
+                                            "description": "When turned on, shaders are NOT instrumented unless selected. This can be done by:\n- passing a VkValidationFeaturesEXT struct in the pNext of VkShaderModuleCreateInfo/VkPipelineShaderStageCreateInfo/vkCreateShadersEXT pNext\n- using a pattern matching a shader/pipeline debug name.\n- Providing a CDL dump file to parse the debug names from it.",
                                             "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_scoped.md",
                                             "type": "BOOL",
                                             "default": false,
@@ -1082,8 +1082,8 @@
                                             "settings": [
                                                 {
                                                     "key": "gpuav_shaders_to_instrument",
-                                                    "label": "Shader/pipeline name regexes",
-                                                    "description": "Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed regular expression will be instrumented when creating pipelines with those shaders or libraries. Regex grammar: Modified ECMAScript. No support for shader objects yet. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this regex selection system. In this case, consider naming pipeline libraries instead.",
+                                                    "label": "Shader/pipeline name patterns",
+                                                    "description": "Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed pattern will be instrumented when creating pipelines with those shaders or libraries. In a pattern, '*' matches any sequence of characters (including none), every other character is matched literally. For instance `foo` will only match for `foo`, `foo*` with every name starting with `foo`. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this name selection system. In this case, consider naming pipeline libraries instead.",
                                                     "type": "LIST",
                                                     "default": [],
                                                     "dependence": {
