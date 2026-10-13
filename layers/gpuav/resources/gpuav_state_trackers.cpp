@@ -338,7 +338,8 @@ bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc
 bool CommandBufferSubState::NeedsPostProcess() { return error_output_buffer_range_.buffer != VK_NULL_HANDLE; }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info, const Location& loc) {
+void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info,
+                                         const Location& submission_loc) {
     VVL_ZoneScoped;
 
     // CommandBuffer::Destroy can happen on an other thread,
@@ -377,7 +378,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBuffer
                 if (error_logger_i == gpuav_.gpuav_settings.invalid_index_command) {
                     const LogObjectList objlist(queue, VkHandle());
                     gpuav_.LogError(
-                        "GPUAV-Overflow-Unknown", queue, loc,
+                        "GPUAV-Overflow-Unknown", queue, submission_loc,
                         "An error was detected, but after internal limit of %" PRIu32
                         " draw/dispatch/traceRays commands in a command buffer, we are unable to track which validation error "
                         "occurred.\nThis can be adjusted setting env var VK_LAYER_GPUAV_MAX_INDICES_COUNT to a higher value.",
@@ -390,7 +391,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBuffer
 
                     std::string debug_region_name = vvl::CommandBuffer::GetDebugRegionName(
                         base.GetLabelCommands(), error_logger.label_cmd_i, cb_info.initial_label_stack);
-                    Location loc_with_debug_region(error_logger.loc.Get(), debug_region_name);
+                    Location loc_with_debug_region(error_logger.loc.Get(), debug_region_name, submission_loc.frame_id);
                     error_logger.error_logger_func(error_record_ptr, loc_with_debug_region, objlist);
                 }
 
@@ -416,7 +417,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBuffer
 
     bool success = true;
     for (auto& on_cb_completion_func : on_cb_completion_functions) {
-        success = on_cb_completion_func(gpuav_, *this, cb_info, loc);
+        success = on_cb_completion_func(gpuav_, *this, cb_info, submission_loc);
         if (!success) {
             break;
         }
@@ -608,12 +609,12 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
             for (vvl::CommandBufferSubmitInfo& cb_info : cb_infos) {
                 auto guard = cb_info.cb->WriteLock();
                 auto& gpu_cb = SubState(*cb_info.cb);
-                auto loc = submission.loc.Get();
-                gpu_cb.OnCompletion(VkHandle(), cb_info, loc);
+                auto submission_loc = submission.loc.Get();
+                gpu_cb.OnCompletion(VkHandle(), cb_info, submission_loc);
                 for (vvl::CommandBuffer* secondary_cb : gpu_cb.base.linked_command_buffers) {
                     auto secondary_guard = secondary_cb->WriteLock();
                     auto& secondary_gpu_cb = SubState(*secondary_cb);
-                    secondary_gpu_cb.OnCompletion(VkHandle(), cb_info, loc);
+                    secondary_gpu_cb.OnCompletion(VkHandle(), cb_info, submission_loc);
                 }
             }
         }

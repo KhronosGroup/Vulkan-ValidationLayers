@@ -1322,7 +1322,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                       const ErrorObject& error_obj) const override;
 
-    bool ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBufferSubmitInfo& cb_info,
+    bool ValidateCmdBufImageLayouts(const Location& submit_loc, const vvl::CommandBufferSubmitInfo& cb_info,
                                     vvl::unordered_map<const vvl::Image*, ImageLayoutMap>& local_image_layout_state) const;
 
     void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);

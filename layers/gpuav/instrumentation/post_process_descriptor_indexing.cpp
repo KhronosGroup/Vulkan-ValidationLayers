@@ -265,7 +265,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                     std::string debug_region_name = vvl::CommandBuffer::GetDebugRegionName(
                         cb.base.GetLabelCommands(), cmd_error_logger.label_cmd_i, cb_info.initial_label_stack);
 
-                    Location access_loc(cmd_error_logger.loc.Get(), debug_region_name);
+                    Location access_loc(cmd_error_logger.loc.Get(), debug_region_name, submission_loc.frame_id);
                     context.SetLocationForGpuAv(access_loc);
                     context.ValidateBindingDynamic(*resource_variable, *descriptor_binding, descriptor_access.index);
                 }

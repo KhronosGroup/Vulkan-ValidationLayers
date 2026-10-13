@@ -448,6 +448,13 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location& lo
         oss << "\"," << new_line;
     }
     {
+        oss << line_start << "\"VkFrameBoundaryEXT::frameID\" : \"";
+        if (loc.frame_id != vvl::kNoIndex64) {
+            oss << loc.frame_id;
+        }
+        oss << "\"," << new_line;
+    }
+    {
         oss << line_start << "\"DebugRegion\" : \"";
         if (loc.debug_region && !loc.debug_region->empty()) {
             AppendJsonEscaped(oss, *loc.debug_region);

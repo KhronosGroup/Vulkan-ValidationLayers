@@ -39,8 +39,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndexBufferOOB) {
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {1, 2, 3});
 
-    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
@@ -51,6 +50,67 @@ TEST_F(NegativeGpuAVIndexBuffer, IndexBufferOOB) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndexBuffer, IndexBufferOOBFrameID) {
+    TEST_DESCRIPTION("Validate overruning the index buffer. Supply a VkFrameBoundaryEXT::frameID");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    VkDrawIndexedIndirectCommand draw_params{};
+    draw_params.indexCount = 3;
+    draw_params.instanceCount = 1;
+    draw_params.firstIndex = 1;
+    draw_params.vertexOffset = 0;
+    draw_params.firstInstance = 0;
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {draw_params});
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {1, 2, 3});
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+    label.pLabelName = "debug_region";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    VkFrameBoundaryEXT frame_boundary = vku::InitStructHelper();
+    frame_boundary.frameID = 42;
+
+    VkSubmitInfo submit = vku::InitStructHelper(&frame_boundary);
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &m_command_buffer.handle();
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798", "frameID 42.*debug_region");
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+    m_device->Wait();
+    m_errorMonitor->VerifyFound();
+
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = m_command_buffer;
+
+    VkSubmitInfo2 submit_info = vku::InitStructHelper(&frame_boundary);
+    submit_info.commandBufferInfoCount = 1;
+    submit_info.pCommandBufferInfos = &cb_info;
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798", "frameID 42.*debug_region");
+    vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 

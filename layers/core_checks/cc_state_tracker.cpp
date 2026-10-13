@@ -348,7 +348,7 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
                                                 vk_memory);
                     const std::string dbg_region_name = vvl::CommandBuffer::GetDebugRegionName(
                         base.GetLabelCommands(), label_command_i, submission.cb_infos[cb_index].initial_label_stack);
-                    const Location loc_with_dbg_region(loc, dbg_region_name);
+                    const Location loc_with_dbg_region(loc, dbg_region_name, submission.loc.Get().frame_id);
                     const bool is_2 = loc.function == vvl::Func::vkCmdCopyBuffer2 || loc.function == vvl::Func::vkCmdCopyBuffer2KHR;
                     const char* vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
                     skip |= validator.LogError(

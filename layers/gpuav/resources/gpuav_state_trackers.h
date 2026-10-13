@@ -115,7 +115,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     [[nodiscard]] bool PreSubmit(QueueSubState &queue, const Location &loc);
     [[nodiscard]] bool PostSubmit(QueueSubState &queue, const Location &loc);
-    void OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info, const Location& loc);
+    void OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info, const Location& submission_loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);

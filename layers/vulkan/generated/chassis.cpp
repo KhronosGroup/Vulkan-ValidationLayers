@@ -43,10 +43,11 @@ static constexpr std::array<VkExtensionProperties, 4> kInstanceExtensions = {
     VkExtensionProperties{VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_EXT_VALIDATION_FEATURES_SPEC_VERSION},
     VkExtensionProperties{VK_EXT_LAYER_SETTINGS_EXTENSION_NAME, VK_EXT_LAYER_SETTINGS_SPEC_VERSION},
 };
-static constexpr std::array<VkExtensionProperties, 3> kDeviceExtensions = {
+static constexpr std::array<VkExtensionProperties, 4> kDeviceExtensions = {
     VkExtensionProperties{VK_EXT_VALIDATION_CACHE_EXTENSION_NAME, VK_EXT_VALIDATION_CACHE_SPEC_VERSION},
     VkExtensionProperties{VK_EXT_DEBUG_MARKER_EXTENSION_NAME, VK_EXT_DEBUG_MARKER_SPEC_VERSION},
     VkExtensionProperties{VK_EXT_TOOLING_INFO_EXTENSION_NAME, VK_EXT_TOOLING_INFO_SPEC_VERSION},
+    VkExtensionProperties{VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME, VK_EXT_FRAME_BOUNDARY_SPEC_VERSION},
 };
 namespace vulkan_layer_chassis {
 static const VkLayerProperties global_layer = {
