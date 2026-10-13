@@ -52,16 +52,23 @@ vvl::IndirectCommandsLayout::IndirectCommandsLayout(vvl::DeviceState& dev, VkInd
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_COUNT_EXT:
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_COUNT_EXT:
+                has_draw_token = true;
+                has_multi_draw_count_token = true;
+                break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_EXT:
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_NV_EXT:
                 has_draw_token = true;
                 has_multi_draw_count_token = true;
+                has_mesh_draw_token = true;
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_EXT:
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT:
+                has_draw_token = true;
+                break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV_EXT:
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_EXT:
                 has_draw_token = true;
+                has_mesh_draw_token = true;
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT:
                 bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
