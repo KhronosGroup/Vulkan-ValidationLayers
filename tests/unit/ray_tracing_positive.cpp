@@ -2339,3 +2339,52 @@ TEST_F(PositiveRayTracing, CreateAccelerationStructure2KHR) {
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
+
+TEST_F(PositiveRayTracing, BuildAccelerationStructuresBoundAfterCreate) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
+    for (int i = 0; i < 2; ++i) {
+        auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+        blas.GetDstAS()->SetDeviceBufferInitNoMem(true);
+        blas.GetDstAS()->Create();
+        VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        blas.GetDstAS()->GetBuffer().AllocateAndBindMemory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
+        blas_vec.emplace_back(std::move(blas));
+    }
+
+    m_command_buffer.Begin();
+    vkt::as::BuildAccelerationStructuresKHR(m_command_buffer, blas_vec);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveRayTracing, ZeroStrideHitSbt) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline rt_pipeline(*this, m_device);
+    rt_pipeline.AddCreateInfoFlags(VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR);
+    rt_pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipeline.AddGlslMissShader(kRayTracingPayloadMinimalGlsl);
+    rt_pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
+    rt_pipeline.Build();
+    vkt::rt::TraceRaysSbt sbt = rt_pipeline.GetTraceRaysSbt();
+    // valid
+    sbt.hit_sbt.stride = 0;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline);
+    vk::CmdTraceRaysKHR(m_command_buffer, &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 1, 1, 1);
+    m_command_buffer.End();
+}
