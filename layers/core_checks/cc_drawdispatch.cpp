@@ -977,32 +977,29 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location& loc, const LastBound& l
     if (pHitShaderBindingTable) {
         const Location table_loc = loc.dot(Field::pHitShaderBindingTable);
         if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
-            if ((pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0)) {
+            if (pHitShaderBindingTable->size == 0) {
                 const char* vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03514" : "VUID-vkCmdTraceRaysKHR-flags-03514";
-                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
-                                 "either size (%" PRIu64 ") or stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
-                                 pHitShaderBindingTable->stride);
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc.dot(Field::size),
+                                 "is zero.");
             }
         }
         if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
-            if ((pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0)) {
+            if (pHitShaderBindingTable->size == 0) {
                 const char* vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03513" : "VUID-vkCmdTraceRaysKHR-flags-03513";
-                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
-                                 "either size (%" PRIu64 ") or stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
-                                 pHitShaderBindingTable->stride);
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc.dot(Field::size),
+                                 "is zero.");
             }
         }
         if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
             // No vuid to check for pHitShaderBindingTable->deviceAddress == 0 with this flag
 
-            if (pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
+            if (pHitShaderBindingTable->size == 0) {
                 const char* vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03512" : "VUID-vkCmdTraceRaysKHR-flags-03512";
-                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
-                                 "either size (%" PRIu64 ") or stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
-                                 pHitShaderBindingTable->stride);
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc.dot(Field::size),
+                                 "is zero.");
             }
         }
 

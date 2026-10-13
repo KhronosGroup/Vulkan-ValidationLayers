@@ -86,8 +86,9 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
         std::shared_ptr<vvl::Buffer> buffer_state;
     };
 
+    vvl::DeviceState& device_state;
     std::variant<CreateInfo1, vku::safe_VkAccelerationStructureCreateInfo2KHR> create_info;
-    VkDeviceAddressRangeKHR device_address_range{};
+    mutable VkDeviceAddressRangeKHR device_address_range{};
     bool was_deserialized_ = false;
     uint64_t opaque_handle = 0;
     std::atomic<VkDeviceAddress> acceleration_structure_address = 0;
