@@ -27,6 +27,20 @@
 #include <bitset>
 
 namespace stateless {
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+static bool ValidateSurfaceFullScreenExclusiveWin32Info(const Context& context, const void* pNext, const Location& loc) {
+    bool skip = false;
+    if (const auto* win32_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pNext)) {
+        if (win32_info->hmonitor == nullptr) {
+            skip |= context.log.LogError("VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-hmonitor-02673", context.error_obj.handle,
+                                         loc.pNext(vvl::Struct::VkSurfaceFullScreenExclusiveWin32InfoEXT, vvl::Field::hmonitor),
+                                         "is NULL.");
+        }
+    }
+    return skip;
+}
+#endif
+
 bool Device::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                        VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                        const Context& context) const {
@@ -224,6 +238,10 @@ bool Device::ValidateSwapchainCreateInfo(const Context& context, const VkSwapcha
 
     skip |= ValidateSwapchainCreateInfoMaintenance1(create_info, loc);
 
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    skip |= ValidateSurfaceFullScreenExclusiveWin32Info(context, create_info.pNext, loc);
+#endif
+
     return skip;
 }
 
@@ -393,6 +411,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
+    skip |= ValidateSurfaceFullScreenExclusiveWin32Info(context, pSurfaceInfo->pNext, error_obj.location.dot(Field::pSurfaceInfo));
+
     const auto* capabilities_full_screen_exclusive =
         vku::FindStructInPNextChain<VkSurfaceCapabilitiesFullScreenExclusiveEXT>(pSurfaceCapabilities->pNext);
     if (capabilities_full_screen_exclusive) {
@@ -473,6 +493,9 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysi
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    skip |= ValidateSurfaceFullScreenExclusiveWin32Info(context, pSurfaceInfo->pNext, error_obj.location.dot(Field::pSurfaceInfo));
+#endif
     if (pSurfaceFormats) {
         if (vku::FindStructInPNextChain<VkImageCompressionPropertiesEXT>(pSurfaceFormats->pNext)) {
             const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -500,6 +523,7 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(Vk
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
+    skip |= ValidateSurfaceFullScreenExclusiveWin32Info(context, pSurfaceInfo->pNext, error_obj.location.dot(Field::pSurfaceInfo));
     return skip;
 }
 
@@ -508,6 +532,11 @@ bool Instance::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, 
                                                            const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
+
+    if (pCreateInfo->hinstance == nullptr) {
+        skip |= LogError("VUID-VkWin32SurfaceCreateInfoKHR-hinstance-01307", instance,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::hinstance), "is NULL.");
+    }
 
     if (pCreateInfo->hwnd == nullptr) {
         skip |= LogError("VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308", instance,
@@ -559,6 +588,9 @@ bool Device::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice devic
 
         skip |=
             context.ValidateRequiredHandle(error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface), pSurfaceInfo->surface);
+
+        skip |=
+            ValidateSurfaceFullScreenExclusiveWin32Info(context, pSurfaceInfo->pNext, error_obj.location.dot(Field::pSurfaceInfo));
     }
     return skip;
 }
