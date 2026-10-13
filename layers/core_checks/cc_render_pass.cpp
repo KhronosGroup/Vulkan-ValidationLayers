@@ -5937,6 +5937,9 @@ bool CoreChecks::ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb
                                                     const VkCommandBufferInheritanceInfo& secondary_inheritance_info,
                                                     const Location& loc) const {
     bool skip = false;
+    if (cb_state.IsSecondary() && !cb_state.active_framebuffer) {
+        return skip;  // Nested secondary command buffer, the framebuffer of the render pass instance is not known yet
+    }
     VkFramebuffer primary_fb = cb_state.active_framebuffer ? cb_state.active_framebuffer->VkHandle() : VK_NULL_HANDLE;
     VkFramebuffer secondary_fb = secondary_inheritance_info.framebuffer;
     if (secondary_fb != VK_NULL_HANDLE && primary_fb != secondary_fb) {
