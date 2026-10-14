@@ -88,6 +88,12 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationPerPrimitiveEXT:  // VK_EXT_mesh_shader
             flags |= per_primitive_ext;
             break;
+        case spv::DecorationFlat:
+            flags |= flat_bit;
+            break;
+        case spv::DecorationNoPerspective:
+            flags |= no_perspective_bit;
+            break;
         case spv::DecorationOffset:
             offset = value;
             break;
@@ -2399,7 +2405,8 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                     if (padding_components != 0) {
                         component_offset = padding_components * (j / column_components);
                     }
-                    slots.emplace_back(base_location, j + component_offset, numerical_type_opcode, numerical_type_width);
+                    slots.emplace_back(base_location, j + component_offset, numerical_type_opcode, numerical_type_width,
+                                       variable.decorations.flags | (members.decorations ? members.decorations->flags : 0));
                 }
                 base_location++;  // If using, each members starts a new Location
             }
@@ -2443,7 +2450,7 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                             component_offset = padding_components * (j / column_components);
                         }
                         slots.emplace_back(location, starting_component + j + component_offset, numerical_type_opcode,
-                                           numerical_type_width);
+                                           numerical_type_width, variable.decorations.flags | member_decoration.flags);
                     }
                 }
             }
@@ -2481,7 +2488,7 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                     matrix_offset += (4 - vector_components);  // skip to next Location
                 }
                 slots.emplace_back(location, component + starting_component + matrix_offset, numerical_type_opcode,
-                                   numerical_type_width);
+                                   numerical_type_width, variable.decorations.flags);
             }
         }
     }

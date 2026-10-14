@@ -470,6 +470,8 @@ StatelessDeviceData::StatelessDeviceData(DispatchInstance* instance, VkPhysicalD
                                              &phys_dev_ext_props.descriptor_buffer_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_buffer,
                                              &phys_dev_ext_props.descriptor_buffer_density_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_graphics_pipeline_library,
+                                             &phys_dev_ext_props.graphics_pipeline_library_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_device_generated_commands,
                                              &phys_dev_ext_props.device_generated_commands_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_pipeline_binary,

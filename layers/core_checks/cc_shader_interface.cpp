@@ -739,6 +739,46 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
     return skip;
 }
 
+// https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-iointerfaces-matching
+bool CoreChecks::ValidateGraphicsLibraryInterpolation(const vvl::Pipeline& pipeline, const ShaderStageState& last_pre_raster,
+                                                      const ShaderStageState& fragment, const Location& create_info_loc) const {
+    bool skip = false;
+    if (phys_dev_ext_props.graphics_pipeline_library_props.graphicsPipelineLibraryIndependentInterpolationDecoration) {
+        return skip;  // the decorations can to be different
+    } else if (!pipeline.pre_raster_state || !pipeline.fragment_shader_state || !last_pre_raster.HasSpirv() ||
+               !fragment.HasSpirv()) {
+        return skip;
+    } else if (&pipeline.pre_raster_state->parent == &pipeline.fragment_shader_state->parent) {
+        return skip;  // Both were compiled in the same library
+    }
+
+    const auto& outputs = last_pre_raster.entrypoint->output_interface_slots;
+    const uint32_t interpolation_mask = spirv::DecorationBase::flat_bit | spirv::DecorationBase::no_perspective_bit;
+    for (const auto& [input_slot, input_var] : fragment.entrypoint->input_interface_slots) {
+        const auto output_it = outputs.find(input_slot);
+        if (output_it == outputs.end()) {
+            continue;
+        }
+        const auto& [output_slot, output_var] = *output_it;
+        if (((output_slot.decoration_flags ^ input_slot.decoration_flags) & interpolation_mask) == 0) {
+            continue;
+        }
+
+        std::ostringstream ss;
+        ss << "(SPIR-V Interface) at Location " << input_slot.Location() << " Component " << input_slot.Component()
+           << ", the Flat or NoPerspective decorations differ between\n";
+        ss << last_pre_raster.entrypoint->Describe() << '\n' << last_pre_raster.spirv_state->DescribeVariable(output_var->id);
+        ss << fragment.entrypoint->Describe() << '\n' << fragment.spirv_state->DescribeVariable(input_var->id);
+        ss << "The pre-rasterization and fragment shaders are in separate graphics pipeline libraries and "
+              "graphicsPipelineLibraryIndependentInterpolationDecoration is VK_FALSE.";
+        const LogObjectList objlist(last_pre_raster.spirv_state->handle(), fragment.spirv_state->handle());
+        skip |= LogError("VUID-RuntimeSpirv-OpVariable-08746", objlist, create_info_loc, "%s", ss.str().c_str());
+
+        break;  // Only need to report the first mismatch
+    }
+    return skip;
+}
+
 // Note - This is missing a variation check for ShaderObjects, but there is one for Dynamic Rendering and likely people using
 // ShaderObject are not using Render Passes
 bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
@@ -1212,6 +1252,10 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline& pipeli
             const ShaderStageState& producer = pipeline.stage_states[producer_index];
             const ShaderStageState& consumer = pipeline.stage_states[consumer_index];
             skip |= ValidateInterfaceBetweenStages(producer, consumer, create_info_loc);
+
+            if (pipeline.library_create_info && consumer.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
+                skip |= ValidateGraphicsLibraryInterpolation(pipeline, producer, consumer, create_info_loc);
+            }
 
             producer_index = consumer_index;
         }

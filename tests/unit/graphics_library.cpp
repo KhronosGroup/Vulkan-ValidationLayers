@@ -4179,3 +4179,116 @@ TEST_F(NegativeGraphicsLibrary, DescriptorHeapLibrariesLinkedWithLayout) {
     vkt::Pipeline exe_pipe(*m_device, {vertex_input_lib, pre_raster_lib, frag_shader_lib, frag_out_lib}, pipeline_layout);
     m_errorMonitor->VerifyFound();
 }
+TEST_F(NegativeGraphicsLibrary, InterpolationDecorationMismatch) {
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT gpl_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(gpl_props);
+    if (gpl_props.graphicsPipelineLibraryIndependentInterpolationDecoration) {
+        GTEST_SKIP() << "graphicsPipelineLibraryIndependentInterpolationDecoration is VK_TRUE";
+    }
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 460
+        layout(location = 0) flat out vec4 x;
+        void main() {
+            x = vec4(1.0);
+            gl_Position = vec4(1.0);
+        }
+    )glsl";
+    const char* fs_source = R"glsl(
+        #version 460
+        layout(location = 0) in vec4 x;
+        layout(location = 0) out vec4 color;
+        void main() {
+            color = x;
+        }
+    )glsl";
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+    frag_shader_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpVariable-08746");
+    vkt::Pipeline exe_pipe(*m_device, {vertex_input_lib, pre_raster_lib, frag_shader_lib, frag_out_lib},
+                           pre_raster_lib.gp_ci_.layout);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGraphicsLibrary, InterpolationDecorationMismatchBlockMember) {
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT gpl_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(gpl_props);
+    if (gpl_props.graphicsPipelineLibraryIndependentInterpolationDecoration) {
+        GTEST_SKIP() << "graphicsPipelineLibraryIndependentInterpolationDecoration is VK_TRUE";
+    }
+    InitRenderTarget();
+
+    // Flat and NoPerspective are OpMemberDecorate on the block members
+    const char* vs_source = R"glsl(
+        #version 460
+        layout(location = 0) out Block {
+            vec4 a;
+            flat vec4 b;
+        } o;
+        void main() {
+            o.a = vec4(1.0);
+            o.b = vec4(1.0);
+            gl_Position = vec4(1.0);
+        }
+    )glsl";
+    const char* fs_source = R"glsl(
+        #version 460
+        layout(location = 0) in Block {
+            vec4 a;
+            noperspective vec4 b;
+        } i;
+        layout(location = 0) out vec4 color;
+        void main() {
+            color = i.a + i.b;
+        }
+    )glsl";
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+    frag_shader_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpVariable-08746");
+    vkt::Pipeline exe_pipe(*m_device, {vertex_input_lib, pre_raster_lib, frag_shader_lib, frag_out_lib},
+                           pre_raster_lib.gp_ci_.layout);
+    m_errorMonitor->VerifyFound();
+}
