@@ -153,8 +153,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
 
     Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
-             std::shared_ptr<const vvl::PipelineLayout> &&layout,
-             spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
+             std::shared_ptr<const vvl::PipelineLayout> &&layout, std::vector<spirv::StatelessData> *stateless_data);
 
     Pipeline(const DeviceState &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
@@ -568,13 +567,14 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
   protected:
     static std::shared_ptr<VertexInputState> CreateVertexInputState(const Pipeline &p, const DeviceState &state,
                                                                     const vku::safe_VkGraphicsPipelineCreateInfo &create_info);
-    static std::shared_ptr<PreRasterState> CreatePreRasterState(
-        const Pipeline &p, const DeviceState &state, const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
-        const std::shared_ptr<const vvl::RenderPass> &rp, spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
+    static std::shared_ptr<PreRasterState> CreatePreRasterState(const Pipeline& p, const DeviceState& state,
+                                                                const vku::safe_VkGraphicsPipelineCreateInfo& create_info,
+                                                                const std::shared_ptr<const vvl::RenderPass>& rp,
+                                                                std::vector<spirv::StatelessData>* stateless_data);
     static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(
         const Pipeline &p, const DeviceState &state, const VkGraphicsPipelineCreateInfo &create_info,
         const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp,
-        spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
+        std::vector<spirv::StatelessData> *stateless_data);
     static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(
         const Pipeline &p, const DeviceState &state, const VkGraphicsPipelineCreateInfo &create_info,
         const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp);

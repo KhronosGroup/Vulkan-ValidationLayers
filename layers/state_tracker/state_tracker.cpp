@@ -2287,12 +2287,13 @@ void DeviceState::PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineC
     Destroy<PipelineCache>(pipelineCache);
 }
 
-std::shared_ptr<Pipeline> DeviceState::CreateGraphicsPipelineState(
-    const VkGraphicsPipelineCreateInfo* create_info, std::shared_ptr<const PipelineCache> pipeline_cache,
-    std::shared_ptr<const RenderPass>&& render_pass, std::shared_ptr<const PipelineLayout>&& layout,
-    spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) const {
+std::shared_ptr<Pipeline> DeviceState::CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* create_info,
+                                                                   std::shared_ptr<const PipelineCache> pipeline_cache,
+                                                                   std::shared_ptr<const RenderPass>&& render_pass,
+                                                                   std::shared_ptr<const PipelineLayout>&& layout,
+                                                                   std::vector<spirv::StatelessData>& stateless_data) const {
     return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(render_pass), std::move(layout),
-                                      stateless_data);
+                                      &stateless_data);
 }
 
 // PreCallValidate used here to have a single global spot to build the vvl::Pipeline object so we can use it right away
@@ -2305,8 +2306,10 @@ bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipe
     // Set up the state that CoreChecks, gpu_validation and later StateTracker Record will use.
     pipeline_states.reserve(count);
     auto pipeline_cache = Get<PipelineCache>(pipelineCache);
+    chassis_state.stateless_data.resize(count);
     for (uint32_t i = 0; i < count; i++) {
         const auto& create_info = pCreateInfos[i];
+        chassis_state.stateless_data[i].resize(create_info.stageCount);
         auto layout_state = Get<PipelineLayout>(create_info.layout);
         std::shared_ptr<const RenderPass> render_pass;
 
@@ -2399,7 +2402,7 @@ bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipe
             render_pass = std::make_shared<RenderPass>(rendering_ci);
         }
         pipeline_states.push_back(CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass),
-                                                              std::move(layout_state), chassis_state.stateless_data));
+                                                              std::move(layout_state), chassis_state.stateless_data[i]));
     }
     return skip;
 }

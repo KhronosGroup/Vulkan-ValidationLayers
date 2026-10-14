@@ -105,7 +105,7 @@ struct VertexInputState : public PipelineLibraryState {
 struct PreRasterState : public PipelineLibraryState {
     PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &dev_data,
                    const vku::safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp,
-                   spirv::StatelessData *stateless_data);
+                   std::vector<spirv::StatelessData> *stateless_data);
 
     static inline VkShaderStageFlags ValidShaderStages() {
         return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
@@ -152,7 +152,7 @@ struct FragmentShaderState : public PipelineLibraryState {
 
     template <typename CreateInfo>
     FragmentShaderState(const vvl::Pipeline &pipeline_state, const vvl::DeviceState &dev_data, const CreateInfo &create_info,
-                        std::shared_ptr<const vvl::RenderPass> rp, spirv::StatelessData *stateless_data)
+                        std::shared_ptr<const vvl::RenderPass> rp, std::vector<spirv::StatelessData> *stateless_data)
         : FragmentShaderState(pipeline_state, dev_data, rp, create_info.subpass, create_info.layout) {
         if (create_info.pMultisampleState) {
             ms_state = ToSafeMultisampleState(*create_info.pMultisampleState);
@@ -180,10 +180,10 @@ struct FragmentShaderState : public PipelineLibraryState {
   private:
     static void SetFragmentShaderInfo(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
                                       const vvl::DeviceState &state_data, const VkGraphicsPipelineCreateInfo &create_info,
-                                      spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
+                                      std::vector<spirv::StatelessData> *stateless_data);
     static void SetFragmentShaderInfo(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
                                       const vvl::DeviceState &state_data, const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
-                                      spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
+                                      std::vector<spirv::StatelessData> *stateless_data);
 };
 
 struct FragmentOutputState : public PipelineLibraryState {

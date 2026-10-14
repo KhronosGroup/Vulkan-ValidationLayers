@@ -40,9 +40,6 @@ enum class ShaderObjectStage : uint32_t {
 
 constexpr uint32_t kShaderObjectStageCount = 8u;
 
-// It is very rare to have more than 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
-static const uint32_t kCommonMaxGraphicsShaderStages = 3;
-
 static const VkShaderStageFlags kShaderStageAllGraphics =
     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
     VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;

@@ -61,17 +61,12 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
         skip |= ValidateGraphicsPipeline(*pipeline_states[i].get(), pCreateInfos[i].pNext, create_info_loc);
         skip |= ValidateGraphicsPipelineDerivatives(pipeline_states, i, create_info_loc);
 
-        // From dumping traces, we found almost all apps only create one pipeline at a time. To greatly simplify the logic, only
-        // check the stateless validation in the pNext chain for the first pipeline. (The core issue is because we parse the SPIR-V
-        // at state tracking time, and we state track pipelines first)
-        if (i == 0) {
-            uint32_t stage_count = std::min(pCreateInfos[0].stageCount, kCommonMaxGraphicsShaderStages);
-            for (uint32_t stage = 0; stage < stage_count; stage++) {
-                if (chassis_state.stateless_data[stage].pipeline_pnext_module) {
-                    skip |= stateless_spirv_validator.Validate(
-                        *chassis_state.stateless_data[stage].pipeline_pnext_module, chassis_state.stateless_data[stage],
-                        create_info_loc.dot(Field::pStages, stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
-                }
+        const std::vector<spirv::StatelessData>& stateless_data = chassis_state.stateless_data[i];
+        for (uint32_t stage = 0; stage < stateless_data.size(); stage++) {
+            if (stateless_data[stage].pipeline_pnext_module) {
+                skip |= stateless_spirv_validator.Validate(
+                    *stateless_data[stage].pipeline_pnext_module, stateless_data[stage],
+                    create_info_loc.dot(Field::pStages, stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
             }
         }
     }

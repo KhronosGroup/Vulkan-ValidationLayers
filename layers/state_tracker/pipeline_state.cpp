@@ -65,9 +65,6 @@ static std::shared_ptr<vvl::ShaderModule> GetShaderModuleFromInlinedSpirv(
     spirv::StatelessData* stateless_data) {
     // Using VkShaderModuleCreateInfo to inline SPIR-V with VK_KHR_maintenance5
     if (const auto shader_ci = vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(shader_stage_ci.pNext)) {
-        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10029
-        // This works for Compute because there is a single shader, but stateless_data will need to be indexed into
-        // We might have to remove (or increase) kCommonMaxGraphicsShaderStages as well
         auto spirv_module =
             vvl::CreateSpirvModuleState(shader_ci->codeSize, shader_ci->pCode, state_data.global_settings, stateless_data);
         if (stateless_data) {
@@ -767,9 +764,10 @@ std::shared_ptr<VertexInputState> Pipeline::CreateVertexInputState(const Pipelin
     return {};
 }
 
-std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(
-    const Pipeline& p, const DeviceState& state, const vku::safe_VkGraphicsPipelineCreateInfo& create_info,
-    const std::shared_ptr<const vvl::RenderPass>& rp, spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
+std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(const Pipeline& p, const DeviceState& state,
+                                                               const vku::safe_VkGraphicsPipelineCreateInfo& create_info,
+                                                               const std::shared_ptr<const vvl::RenderPass>& rp,
+                                                               std::vector<spirv::StatelessData>* stateless_data) {
     const auto lib_type = GetGraphicsLibType(create_info);
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
         // Creating a pre-raster graphics library
@@ -793,7 +791,7 @@ std::shared_ptr<PreRasterState> Pipeline::CreatePreRasterState(
 std::shared_ptr<FragmentShaderState> Pipeline::CreateFragmentShaderState(
     const Pipeline& p, const DeviceState& state, const VkGraphicsPipelineCreateInfo& create_info,
     const vku::safe_VkGraphicsPipelineCreateInfo& safe_create_info, const std::shared_ptr<const vvl::RenderPass>& rp,
-    spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
+    std::vector<spirv::StatelessData>* stateless_data) {
     const auto lib_type = GetGraphicsLibType(create_info);
 
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
@@ -914,8 +912,7 @@ std::shared_ptr<const vvl::ShaderModule> Pipeline::GetGraphicsLibraryStateShader
 
 Pipeline::Pipeline(const DeviceState& state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
                    std::shared_ptr<const vvl::PipelineCache> pipe_cache, std::shared_ptr<const vvl::RenderPass>&& rpstate,
-                   std::shared_ptr<const vvl::PipelineLayout>&& layout,
-                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages])
+                   std::shared_ptr<const vvl::PipelineLayout>&& layout, std::vector<spirv::StatelessData>* stateless_data)
     : StateObject(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
       create_info(MakeGraphicsCreateInfo(*pCreateInfo, rpstate, state_data)),
@@ -934,7 +931,7 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkGraphicsPipelineCreate
       fragment_shader_state(
           CreateFragmentShaderState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate, stateless_data)),
       fragment_output_state(CreateFragmentOutputState(*this, state_data, *pCreateInfo, GraphicsCreateInfo(), rpstate)),
-      stage_states(GetStageStates(state_data, *this, GraphicsCreateInfo().layout, stateless_data)),
+      stage_states(GetStageStates(state_data, *this, GraphicsCreateInfo().layout, nullptr)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       linking_shaders(GetLinkingShaders(library_create_info, state_data)),
       active_shaders(create_info_shaders | linking_shaders),
