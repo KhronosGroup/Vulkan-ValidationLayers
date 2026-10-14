@@ -1592,6 +1592,56 @@ TEST_F(PositiveShaderSpirv, SubgroupRotateClustered) {
     VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
 }
 
+TEST_F(PositiveShaderSpirv, SubgroupBroadcastConstantId) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3305");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_props);
+    if (!(subgroup_props.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) ||
+        !(subgroup_props.supportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT)) {
+        GTEST_SKIP() << "Subgroup ballot operations not supported in compute shaders";
+    }
+
+    // A constant Id does not need subgroupBroadcastDynamicId
+    const char* source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_ballot: enable
+        layout(binding = 0) buffer Buffers { uint value; } data;
+        void main() {
+            data.value = subgroupBroadcast(data.value, 1);
+        }
+    )glsl";
+
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+}
+
+TEST_F(PositiveShaderSpirv, SubgroupBroadcastDynamicId) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3305");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::subgroupBroadcastDynamicId);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_props);
+    if (!(subgroup_props.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) ||
+        !(subgroup_props.supportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT)) {
+        GTEST_SKIP() << "Subgroup ballot operations not supported in compute shaders";
+    }
+
+    const char* source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_ballot: enable
+        layout(binding = 0) buffer Buffers { uint value; uint id; } data;
+        void main() {
+            data.value = subgroupBroadcast(data.value, data.id);
+        }
+    )glsl";
+
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+}
+
 TEST_F(PositiveShaderSpirv, ReadShaderClockDevice) {
     TEST_DESCRIPTION("Test VK_KHR_shader_clock");
 

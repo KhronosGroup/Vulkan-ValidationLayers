@@ -2102,6 +2102,60 @@ TEST_F(NegativeShaderSpirv, SubgroupRotateClustered) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderSpirv, SubgroupBroadcastDynamicId) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3305");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_props);
+    if (!(subgroup_props.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) ||
+        !(subgroup_props.supportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT)) {
+        GTEST_SKIP() << "Subgroup ballot operations not supported in compute shaders";
+    }
+
+    // Non-constant Id is allowed by SPIR-V 1.5, but needs subgroupBroadcastDynamicId
+    const char* source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_ballot: enable
+        layout(binding = 0) buffer Buffers { uint value; uint id; } data;
+        void main() {
+            data.value = subgroupBroadcast(data.value, data.id);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-subgroupBroadcastDynamicId-06277");
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderSpirv, SubgroupQuadBroadcastDynamicId) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3305");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSubgroupProperties subgroup_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(subgroup_props);
+    if (!(subgroup_props.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT) ||
+        !(subgroup_props.supportedOperations & VK_SUBGROUP_FEATURE_QUAD_BIT)) {
+        GTEST_SKIP() << "Subgroup quad operations not supported in compute shaders";
+    }
+
+    // Non-constant Index is allowed by SPIR-V 1.5, but needs subgroupBroadcastDynamicId
+    const char* source = R"glsl(
+        #version 450
+        #extension GL_KHR_shader_subgroup_quad: enable
+        layout(binding = 0) buffer Buffers { uint value; uint id; } data;
+        void main() {
+            data.value = subgroupQuadBroadcast(data.value, data.id);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-subgroupBroadcastDynamicId-06276");
+    VkShaderObj cs(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderSpirv, DeviceMemoryScope) {
     TEST_DESCRIPTION("Validate using Device memory scope in spirv.");
 

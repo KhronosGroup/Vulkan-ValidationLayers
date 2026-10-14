@@ -119,6 +119,7 @@ bool SpirvValidator::Validate(const spirv::Module& module_state, const spirv::St
         skip |= ValidateTexelOffsetLimits(module_state, insn, loc);
         skip |= ValidateMemoryScope(module_state, insn, loc);
         skip |= ValidateSubgroupRotateClustered(module_state, insn, loc);
+        skip |= ValidateSubgroupBroadcastDynamicId(module_state, insn, loc);
         skip |= ValidateUntypedPointerFeature(module_state, insn, loc, check_untyped_pointers);
     }
 
@@ -977,6 +978,34 @@ bool SpirvValidator::ValidateSubgroupRotateClustered(const spirv::Module& module
         skip |= LogError("VUID-RuntimeSpirv-shaderSubgroupRotateClustered-09566", module_state.handle(), loc,
                          "SPIR-V uses ClusterSize operand, but the shaderSubgroupRotateClustered feature was not enabled.\n%s\n",
                          module_state.DescribeInstruction(insn).c_str());
+    }
+    return skip;
+}
+
+bool SpirvValidator::ValidateSubgroupBroadcastDynamicId(const spirv::Module& module_state, const spirv::Instruction& insn,
+                                                        const Location& loc) const {
+    bool skip = false;
+    const uint32_t opcode = insn.Opcode();
+    if (opcode != spv::OpGroupNonUniformBroadcast && opcode != spv::OpGroupNonUniformQuadBroadcast) {
+        return skip;
+    }
+
+    // Before SPIR-V 1.5 the SPIR-V spec itself requires a constant, which is already checked by spirv-val
+    constexpr uint32_t spirv_version_1_5 = 0x00010500;
+    const bool spirv_1_5_or_later = module_state.words_.size() > 1 && module_state.words_[1] >= spirv_version_1_5;
+    if (enabled_features.subgroupBroadcastDynamicId || !spirv_1_5_or_later) {
+        return skip;
+    }
+
+    const spirv::Instruction* id_def = module_state.GetAnyConstantDef(insn.Word(5));
+    if (!id_def || !id_def->IsConstant()) {
+        const bool is_quad = opcode == spv::OpGroupNonUniformQuadBroadcast;
+        const char* vuid =
+            is_quad ? "VUID-RuntimeSpirv-subgroupBroadcastDynamicId-06276" : "VUID-RuntimeSpirv-subgroupBroadcastDynamicId-06277";
+        skip |= LogError(vuid, module_state.handle(), loc,
+                         "SPIR-V uses %s with a non-constant %s operand, but the subgroupBroadcastDynamicId feature was not "
+                         "enabled.\n%s\n",
+                         string_SpvOpcode(opcode), is_quad ? "Index" : "Id", module_state.DescribeInstruction(insn).c_str());
     }
     return skip;
 }
