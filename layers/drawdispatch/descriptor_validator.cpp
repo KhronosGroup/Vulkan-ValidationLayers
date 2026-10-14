@@ -893,7 +893,7 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
             }
         }
 
-        if (IsExtEnabled(dev_proxy.extensions.vk_img_filter_cubic)) {
+        if (IsExtEnabled(dev_proxy.extensions.vk_img_filter_cubic) && !IsExtEnabled(dev_proxy.extensions.vk_ext_filter_cubic)) {
             if (image_view_state.create_info.viewType == VK_IMAGE_VIEW_TYPE_3D ||
                 image_view_state.create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
                 image_view_state.create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
@@ -901,7 +901,8 @@ bool DescriptorValidator::ValidateImageSamplerDescriptor(const spirv::ResourceIn
                                             image_view_state.Handle());
                 skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::FILTER_CUBIC_02693), objlist, loc.Get(),
                                  "the %s has %s which is set to use VK_FILTER_CUBIC_EXT while the VK_IMG_filter_cubic "
-                                 "extension is enabled, but image view (%s) has an invalid imageViewType (%s).%s",
+                                 "extension is enabled, but image view (%s) has an invalid imageViewType (%s).\nHint: This can be "
+                                 "allowed if VK_EXT_filter_cubic is enabled.%s",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                                  FormatHandle(sampler_state.Handle()).c_str(), FormatHandle(image_view_state.Handle()).c_str(),
                                  string_VkImageViewType(image_view_state.create_info.viewType), DescribeInstruction().c_str());
