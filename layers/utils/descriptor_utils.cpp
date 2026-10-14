@@ -365,6 +365,8 @@ VkDeviceSize CachedDescriptorSize::GetSize(VkDescriptorType type, bool use_heap)
         index = 12;
     } else if (type == VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM) {
         index = 13;
+    } else if (type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+        return 0;  // there is not size (allowed for descriptor buffers)
     } else {
         assert(IsValueIn(
             type, {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
