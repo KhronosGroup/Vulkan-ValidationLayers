@@ -135,6 +135,8 @@ bool BindingInfo::ValidateDescriptor(std::ostringstream& ss, GpuDump& dev_data) 
         return false;  // TODO - handle
     } else if (type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         return false;  // TODO - handle
+    } else if (type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+        return false;  // data, not a descriptor
     }
 
     const auto& descriptor_hashing = *dev_data.device_state->descriptor_hashing;
@@ -424,6 +426,8 @@ bool CommandBufferSubState::DumpDescriptorBuffer(std::ostringstream& ss, const L
                 if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
                     descriptor_size =
                         (uint32_t)dev_data.phys_dev_ext_props.descriptor_buffer_props.combinedImageSamplerDescriptorSize;
+                } else if (type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+                    descriptor_size = 1;  // descriptorCount is its size in bytes
                 } else if (type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
                     for (VkDescriptorType mutable_type : ds_layout_def.GetMutableTypes(var_binding)) {
                         descriptor_size = std::max(
