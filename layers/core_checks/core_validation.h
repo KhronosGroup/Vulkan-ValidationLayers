@@ -1443,6 +1443,8 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                       const ErrorObject& error_obj) const override;
+    void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
+                                    const RecordObject& record_obj) override;
 
     bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
                                           const ErrorObject& error_obj) const override;

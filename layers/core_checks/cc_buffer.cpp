@@ -398,6 +398,12 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
     return skip;
 }
 
+void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
+                                            const RecordObject& record_obj) {
+    // Ownership transfer releases that were never acquired
+    qfo_release_buffer_barrier_map.erase(buffer);
+}
+
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
                                                   const ErrorObject& error_obj) const {
     bool skip = false;
