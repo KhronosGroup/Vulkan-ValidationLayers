@@ -1011,7 +1011,9 @@ bool Device::ValidateViewport(const VkViewport& viewport, VkCommandBuffer object
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
         height_healthy = false;
-        skip |= LogError("VUID-VkViewport-apiVersion-07917", object, loc.dot(Field::height), "(%f) is not greater than zero.",
+        skip |= LogError("VUID-VkViewport-apiVersion-07917", object, loc.dot(Field::height),
+                         "(%f) is not greater than zero.\nHint: This can be allowed in some cases if VK_KHR_maintenance1 (or "
+                         "Vulkan 1.1) is enabled.",
                          viewport.height);
     } else if (!(f_lte_u32_exact(fabsf(viewport.height), max_h) || f_lte_u32_direct(fabsf(viewport.height), max_h))) {
         height_healthy = false;

@@ -1129,8 +1129,10 @@ bool CoreChecks::ValidateCopyImageRegionCommon(const ImageCopyRegion& region, co
                         (is_2 || is_host) ? "VUID-VkImageCopy2-apiVersion-07941" : "VUID-VkImageCopy-apiVersion-07941";
                     skip |=
                         LogError(vuid, region.objlist, src_subresource_loc.dot(Field::layerCount),
-                                 "(%" PRIu32 ") does not match %s (%" PRIu32 ").", region.normalized_src_layer_count,
-                                 dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), region.normalized_dst_layer_count);
+                                 "(%" PRIu32 ") does not match %s (%" PRIu32
+                                 ").\nHint: This can be allowed in some cases if VK_KHR_maintenance1 (or Vulkan 1.1) is enabled.",
+                                 region.normalized_src_layer_count, dst_subresource_loc.dot(Field::layerCount).Fields().c_str(),
+                                 region.normalized_dst_layer_count);
                 }
             }
             if (!IsExtEnabled(extensions.vk_khr_sampler_ycbcr_conversion)) {
@@ -1178,7 +1180,8 @@ bool CoreChecks::ValidateCopyImageRegionCommon(const ImageCopyRegion& region, co
                     skip |= LogError(vuid, region.objlist, region_loc.dot(Field::srcSubresource).dot(Field::baseArrayLayer),
                                      "is %" PRIu32
                                      " and srcSubresource.layerCount is %s\nFor copies with either src or dst of type "
-                                     "VK_IMAGE_TYPE_3D, baseArrayLayer must be 0 and layerCount must be 1.",
+                                     "VK_IMAGE_TYPE_3D, baseArrayLayer must be 0 and layerCount must be 1.\nHint: This can be "
+                                     "allowed in some cases if VK_KHR_maintenance1 (or Vulkan 1.1) is enabled.",
                                      region.src_subresource.baseArrayLayer,
                                      string_LayerCount(region.src_state.GetArrayLayers(), region.src_subresource).c_str());
                 }
@@ -1187,7 +1190,8 @@ bool CoreChecks::ValidateCopyImageRegionCommon(const ImageCopyRegion& region, co
                     skip |= LogError(vuid, region.objlist, region_loc.dot(Field::dstSubresource).dot(Field::baseArrayLayer),
                                      "is %" PRIu32
                                      " and dstSubresource.layerCount is %s\nFor copies with either src or dst of type "
-                                     "VK_IMAGE_TYPE_3D, baseArrayLayer must be 0 and layerCount must be 1.",
+                                     "VK_IMAGE_TYPE_3D, baseArrayLayer must be 0 and layerCount must be 1.\nHint: This can be "
+                                     "allowed in some cases if VK_KHR_maintenance1 (or Vulkan 1.1) is enabled.",
                                      region.dst_subresource.baseArrayLayer,
                                      string_LayerCount(region.dst_state.GetArrayLayers(), region.dst_subresource).c_str());
                 }
@@ -1619,9 +1623,11 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         } else {  // !vk_khr_maintenance1
             if ((src_is_2d || dst_is_2d) && (region.extent.depth != 1)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-apiVersion-08969" : "VUID-vkCmdCopyImage-apiVersion-08969";
-                skip |= LogError(vuid, all_objlist, region_loc,
-                                 "srcImage is %s and dstImage is %s, but extent.depth is %" PRIu32 " (should be 1).",
-                                 string_VkImageType(src_image_type), string_VkImageType(dst_image_type), region.extent.depth);
+                skip |= LogError(
+                    vuid, all_objlist, region_loc,
+                    "srcImage is %s and dstImage is %s, but extent.depth is %" PRIu32
+                    " (should be 1).\nHint: This can be allowed in some cases if VK_KHR_maintenance1 (or Vulkan 1.1) is enabled.",
+                    string_VkImageType(src_image_type), string_VkImageType(dst_image_type), region.extent.depth);
             }
 
             if (src_image_type != dst_image_type) {
@@ -3289,7 +3295,9 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                  "dstImage %s\n"
                                  "srcSubresource (baseArrayLayer = %" PRIu32
                                  ", layerCount = %s)\n"
-                                 "dstSubresource (baseArrayLayer = %" PRIu32 ", layerCount = %s)\n",
+                                 "dstSubresource (baseArrayLayer = %" PRIu32
+                                 ", layerCount = %s)\n"
+                                 "Hint: This can be allowed in some cases if maintenance8 feature is enabled.",
                                  string_VkImageType(src_type), string_VkImageType(dst_type), src_subresource.baseArrayLayer,
                                  string_LayerCount(src_image_state->GetArrayLayers(), src_subresource).c_str(),
                                  dst_subresource.baseArrayLayer,

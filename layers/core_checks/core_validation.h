@@ -1041,7 +1041,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                           const Location& region_loc) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, vvl::Field image_layer_count_var,
-                                       const LogObjectList& objlist, const Location& subresource_loc) const;
+                                       const LogObjectList& objlist, const Location& subresource_loc,
+                                       bool maintenance9_hint = false) const;
     bool ValidateMultipassRenderedToSingleSampledSampleCount(VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                              vvl::Image& image_state, VkSampleCountFlagBits msrtss_samples,
                                                              const Location& rasterization_samples_loc) const;
