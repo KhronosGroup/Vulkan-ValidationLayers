@@ -1855,6 +1855,11 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRate) {
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
+    begin_rendering_info.viewMask = 0x7;
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06124");
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
