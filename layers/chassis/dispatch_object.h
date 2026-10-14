@@ -23,6 +23,7 @@
 
 #pragma once
 #include <atomic>
+#include <mutex>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -397,6 +398,9 @@ class DispatchDevice : public HandleWrapper {
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(std::pair<uint32_t, VkPipeline*>)>>, 0>
         deferred_operation_post_check;
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::pair<uint32_t, VkPipeline*>, 0> deferred_operation_pipelines;
+    // Multiple threads can see a deferred operation complete (vkDeferredOperationJoinKHR or vkGetDeferredOperationResultKHR
+    // returning VK_SUCCESS), the functions above need to be done running before any of them returns to the application
+    std::mutex deferred_operation_mutex;
 
     // State we track in order to populate HandleData for things such as ignored pointers
     vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};

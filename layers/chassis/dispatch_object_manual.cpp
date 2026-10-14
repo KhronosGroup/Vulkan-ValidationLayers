@@ -2075,6 +2075,7 @@ VkResult DispatchDevice::DeferredOperationJoinKHR(VkDevice device, VkDeferredOpe
 
     // If this thread completed the operation, free any retained memory.
     if (result == VK_SUCCESS) {
+        std::lock_guard<std::mutex> lock(deferred_operation_mutex);
         auto post_op_completion_fns = deferred_operation_post_completion.pop(operation);
         if (post_op_completion_fns != deferred_operation_post_completion.end()) {
             for (auto& post_op_completion_fn : post_op_completion_fns->second) {
@@ -2106,6 +2107,9 @@ VkResult DispatchDevice::GetDeferredOperationResultKHR(VkDevice device, VkDeferr
     VkResult result = device_dispatch_table.GetDeferredOperationResultKHR(device, operation);
     // Add created pipelines if successful
     if (result == VK_SUCCESS) {
+        // Another thread might be done with vkDeferredOperationJoinKHR but still running the post completion functions
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4914
+        std::lock_guard<std::mutex> lock(deferred_operation_mutex);
         // Perfectly valid to never call vkDeferredOperationJoin before getting the result,
         // so we need to make sure functions associated to the current operation and
         // stored in deferred_operation_post_completion have been called
