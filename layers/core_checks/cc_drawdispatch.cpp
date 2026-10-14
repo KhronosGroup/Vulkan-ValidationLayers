@@ -3097,11 +3097,12 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
                                      : "");
             }
         }
-    } else if (pipeline_cr_info) {
+    } else if (pipeline_cr_info && !enabled_features.dynamicRenderingUnusedAttachments) {
         skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11523),
                          cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "%s::flags did not include VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline was "
-                         "created with a VkCustomResolveCreateInfoEXT struct",
+                         "created with a VkCustomResolveCreateInfoEXT struct.\nHint: This can be allowed if the "
+                         "dynamicRenderingUnusedAttachments feature is enabled.",
                          String(flags_struct));
     }
 
