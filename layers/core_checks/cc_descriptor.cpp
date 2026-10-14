@@ -5229,7 +5229,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                              "sum of sampler bindings with flags containing "
                              "VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT or "
                              "VK_SAMPLER_CREATE_SUBSAMPLED_COARSE_RECONSTRUCTION_BIT_EXT among all stages(% d) "
-                             "exceeds device maxDescriptorSetSubsampledSamplers limit (%" PRIu32 ").",
+                             "is greater than maxDescriptorSetSubsampledSamplers limit (%" PRIu32 ").",
                              sum_subsampled_samplers,
                              phys_dev_ext_props.fragment_density_map2_props.maxDescriptorSetSubsampledSamplers);
         }
