@@ -1129,8 +1129,10 @@ bool Instance::ValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physi
             const char* vuid = context.error_obj.location.function == Func::vkGetPhysicalDeviceFormatProperties
                                    ? "VUID-vkGetPhysicalDeviceFormatProperties-None-12272"
                                    : "VUID-vkGetPhysicalDeviceFormatProperties2-None-12273";
-            skip |=
-                LogError(vuid, physicalDevice, context.error_obj.location.dot(Field::format), "is %s.", string_VkFormat(format));
+            skip |= LogError(vuid, physicalDevice, context.error_obj.location.dot(Field::format),
+                             "is %s.\nHint: This format can be used with Vulkan 1.3, "
+                             "VK_KHR_maintenance5, or VK_EXT_ycbcr_2plane_444_formats.",
+                             string_VkFormat(format));
         }
     }
 

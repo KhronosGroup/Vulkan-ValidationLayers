@@ -384,10 +384,11 @@ bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module& module_state,
     if (stage == VK_SHADER_STAGE_GEOMETRY_BIT && output_points) {
         if (enabled_features.shaderTessellationAndGeometryPointSize && !entrypoint.written_built_in_point_size &&
             entrypoint.emit_vertex_geometry && !maintenance5) {
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-shaderTessellationAndGeometryPointSize-08776", module_state.handle(),
-                         loc, "shader %s PointSize is not written, but shaderTessellationAndGeometryPointSize was enabled.",
-                         entrypoint.Describe().c_str());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-shaderTessellationAndGeometryPointSize-08776",
+                             module_state.handle(), loc,
+                             "shader %s PointSize is not written, but shaderTessellationAndGeometryPointSize was enabled.\nHint: "
+                             "This can be allowed in some cases if maintenance5 feature is enabled.",
+                             entrypoint.Describe().c_str());
         } else if (!enabled_features.shaderTessellationAndGeometryPointSize && entrypoint.written_built_in_point_size) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Geometry-07726", module_state.handle(), loc,
                              "shader %s PointSize is written to, but shaderTessellationAndGeometryPointSize was not "
@@ -399,7 +400,8 @@ bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module& module_state,
         if (enabled_features.shaderTessellationAndGeometryPointSize && !entrypoint.written_built_in_point_size && !maintenance5) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07723", module_state.handle(), loc,
                              "shader %s PointSize is not written, but "
-                             "shaderTessellationAndGeometryPointSize was enabled.",
+                             "shaderTessellationAndGeometryPointSize was enabled.\nHint: This can be allowed in some cases if "
+                             "maintenance5 feature is enabled.",
                              entrypoint.Describe().c_str());
         } else if (!enabled_features.shaderTessellationAndGeometryPointSize && entrypoint.written_built_in_point_size) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07724", module_state.handle(), loc,
@@ -417,10 +419,11 @@ bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module& module_state,
                                 !(pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
                                   phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted);
         if (!entrypoint.written_built_in_point_size && point_list && !maintenance5) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-topology-08773", module_state.handle(), loc,
-                             "shader %s PointSize is not written to, but Pipeline topology is set to "
-                             "VK_PRIMITIVE_TOPOLOGY_POINT_LIST.",
-                             entrypoint.Describe().c_str());
+            skip |= LogError(
+                "VUID-VkGraphicsPipelineCreateInfo-topology-08773", module_state.handle(), loc,
+                "shader %s PointSize is not written to, but Pipeline topology is set to "
+                "VK_PRIMITIVE_TOPOLOGY_POINT_LIST.\nHint: This can be allowed in some cases if maintenance5 feature is enabled.",
+                entrypoint.Describe().c_str());
         }
     }
 

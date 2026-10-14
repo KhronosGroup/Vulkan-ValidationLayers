@@ -3967,8 +3967,8 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
             skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07895", ds_pool_state->Handle(),
                              allocate_info_loc.dot(Field::descriptorSetCount),
                              "is %" PRIu32 " which is not enough as %s only has %" PRIu32
-                             " descriptorSets remaining. (With VK_KHR_maintenance1 enabled, the driver will return "
-                             "VK_ERROR_OUT_OF_POOL_MEMORY_KHR in this situation).",
+                             " descriptorSets remaining.\nHint: With VK_KHR_maintenance1 enabled, the driver will return "
+                             "VK_ERROR_OUT_OF_POOL_MEMORY_KHR in this situation.",
                              pAllocateInfo->descriptorSetCount, FormatHandle(*ds_pool_state).c_str(),
                              ds_pool_state->GetAvailableSets());
         }
@@ -3977,13 +3977,15 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
             const uint32_t available_count = ds_pool_state->GetAvailableCount(it->first);
 
             if (ds_data.required_descriptors_by_type.at(it->first) > available_count) {
-                skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07896", ds_pool_state->Handle(), error_obj.location,
-                                 "Unable to allocate %" PRIu32
-                                 " descriptors of type %s from %s"
-                                 ". This pool only has %" PRIu32 " descriptors of this type remaining.",
-                                 ds_data.required_descriptors_by_type.at(it->first),
-                                 string_VkDescriptorType(VkDescriptorType(it->first)), FormatHandle(*ds_pool_state).c_str(),
-                                 available_count);
+                skip |= LogError(
+                    "VUID-VkDescriptorSetAllocateInfo-apiVersion-07896", ds_pool_state->Handle(), error_obj.location,
+                    "Unable to allocate %" PRIu32
+                    " descriptors of type %s from %s"
+                    ". This pool only has %" PRIu32
+                    " descriptors of this type remaining.\nHint: With VK_KHR_maintenance1 enabled, the driver will return "
+                    "VK_ERROR_OUT_OF_POOL_MEMORY_KHR in this situation.",
+                    ds_data.required_descriptors_by_type.at(it->first), string_VkDescriptorType(VkDescriptorType(it->first)),
+                    FormatHandle(*ds_pool_state).c_str(), available_count);
             }
         }
     } else if (!global_settings.only_report_errors) {
@@ -4805,7 +4807,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03030", device, error_obj.location,
                              "sum of dynamic uniform buffer bindings among all stages (%" PRIu64
                              ") exceeds device "
-                             "maxDescriptorSetUniformBuffersDynamic limit (%" PRIu32 ").",
+                             "maxDescriptorSetUniformBuffersDynamic limit (%" PRIu32
+                             ").\nHint: If the maintenance7 feature is enabled, the limits in "
+                             "VkPhysicalDeviceMaintenance7PropertiesKHR are used instead.",
                              sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC],
                              phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic);
         }
@@ -4816,7 +4820,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03032", device, error_obj.location,
                              "sum of dynamic storage buffer bindings among all stages (%" PRIu64
                              ") exceeds device "
-                             "maxDescriptorSetStorageBuffersDynamic limit (%" PRIu32 ").",
+                             "maxDescriptorSetStorageBuffersDynamic limit (%" PRIu32
+                             ").\nHint: If the maintenance7 feature is enabled, the limits in "
+                             "VkPhysicalDeviceMaintenance7PropertiesKHR are used instead.",
                              sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC],
                              phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic);
         }
@@ -5100,7 +5106,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038", device, error_obj.location,
                                  "sum of dynamic uniform buffer bindings among all stages (%" PRIu64
                                  ") exceeds both the maxDescriptorSetUpdateAfterBindUniformBuffersDynamic (%" PRIu32
-                                 ") and maxDescriptorSetUniformBuffersDynamic (%" PRIu32 ") limit.",
+                                 ") and maxDescriptorSetUniformBuffersDynamic (%" PRIu32
+                                 ") limit.\nHint: If the maintenance7 feature is enabled, the limits in "
+                                 "VkPhysicalDeviceMaintenance7PropertiesKHR are used instead.",
                                  sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC],
                                  phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic,
                                  phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic);
@@ -5114,7 +5122,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040", device, error_obj.location,
                                  "sum of dynamic storage buffer bindings among all stages (%" PRIu64
                                  ") exceeds both the maxDescriptorSetUpdateAfterBindStorageBuffersDynamic (%" PRIu32
-                                 ") and maxDescriptorSetStorageBuffersDynamic (%" PRIu32 ") limit.",
+                                 ") and maxDescriptorSetStorageBuffersDynamic (%" PRIu32
+                                 ") limit.\nHint: If the maintenance7 feature is enabled, the limits in "
+                                 "VkPhysicalDeviceMaintenance7PropertiesKHR are used instead.",
                                  sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC],
                                  phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic,
                                  phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic);

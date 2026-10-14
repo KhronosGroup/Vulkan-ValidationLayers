@@ -3695,9 +3695,12 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                              "width (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRId32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
-                             ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                             ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").%s",
                              view_state.image_state->GetExtent().width, render_area.offset.x, render_area.extent.width,
-                             fsr_attachment_info.shadingRateAttachmentTexelSize.width);
+                             fsr_attachment_info.shadingRateAttachmentTexelSize.width,
+                             enabled_features.maintenance7
+                                 ? ""
+                                 : "\nHint: This can be allowed in some cases if maintenance7 feature is enabled.");
         }
 
         if (static_cast<int64_t>(view_state.image_state->GetExtent().height) <
@@ -3707,9 +3710,12 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                              "height (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRId32
                              ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
-                             ") ) / shadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                             ") ) / shadingRateAttachmentTexelSize.height (%" PRIu32 ").%s",
                              view_state.image_state->GetExtent().height, render_area.offset.y, render_area.extent.height,
-                             fsr_attachment_info.shadingRateAttachmentTexelSize.height);
+                             fsr_attachment_info.shadingRateAttachmentTexelSize.height,
+                             enabled_features.maintenance7
+                                 ? ""
+                                 : "\nHint: This can be allowed in some cases if maintenance7 feature is enabled.");
         }
     } else {
         if (device_group_begin_info) {
@@ -3728,9 +3734,12 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                         rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                         "width (%" PRIu32 ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                         "].offset.x (%" PRId32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
-                        "].extent.width (%" PRIu32 ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                        "].extent.width (%" PRIu32 ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").%s",
                         image_state->GetExtent().width, deviceRenderAreaIndex, offset_x, deviceRenderAreaIndex, width,
-                        fsr_attachment_info.shadingRateAttachmentTexelSize.width);
+                        fsr_attachment_info.shadingRateAttachmentTexelSize.width,
+                        enabled_features.maintenance7
+                            ? ""
+                            : "\nHint: This can be allowed in some cases if maintenance7 feature is enabled.");
                 }
                 if (image_state->GetExtent().height <
                     vvl::GetQuotientCeil(offset_y + height, fsr_attachment_info.shadingRateAttachmentTexelSize.height)) {
@@ -3741,9 +3750,12 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                         "].offset.y (%" PRId32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                         "].extent.height (%" PRIu32
                         ") ) / shadingRateAttachmentTexelSize.height "
-                        "(%" PRIu32 ").",
+                        "(%" PRIu32 ").%s",
                         image_state->GetExtent().height, deviceRenderAreaIndex, offset_y, deviceRenderAreaIndex, height,
-                        fsr_attachment_info.shadingRateAttachmentTexelSize.height);
+                        fsr_attachment_info.shadingRateAttachmentTexelSize.height,
+                        enabled_features.maintenance7
+                            ? ""
+                            : "\nHint: This can be allowed in some cases if maintenance7 feature is enabled.");
                 }
             }
         }
@@ -5326,9 +5338,12 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
                                          ") and the "
                                          "specified shading rate texel width (%" PRIu32
                                          ") are smaller than the "
-                                         "corresponding framebuffer width (%" PRIu32 ").",
+                                         "corresponding framebuffer width (%" PRIu32 ").%s",
                                          subresource_range.baseMipLevel, j, mip_width,
-                                         fsr_attachment->shadingRateAttachmentTexelSize.width, create_info.width);
+                                         fsr_attachment->shadingRateAttachmentTexelSize.width, create_info.width,
+                                         enabled_features.maintenance7
+                                             ? ""
+                                             : "\nHint: This can be allowed in some cases if maintenance7 feature is enabled.");
                     }
                     if (validate_render_area &&
                         (mip_height * fsr_attachment->shadingRateAttachmentTexelSize.height) < create_info.height) {
@@ -5342,9 +5357,12 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
                                          ") and the "
                                          "specified shading rate texel height (%" PRIu32
                                          ") are smaller than the corresponding "
-                                         "framebuffer height (%" PRIu32 ").",
+                                         "framebuffer height (%" PRIu32 ").%s",
                                          subresource_range.baseMipLevel, j, mip_height,
-                                         fsr_attachment->shadingRateAttachmentTexelSize.height, create_info.height);
+                                         fsr_attachment->shadingRateAttachmentTexelSize.height, create_info.height,
+                                         enabled_features.maintenance7
+                                             ? ""
+                                             : "\nHint: This can be allowed in some cases if maintenance7 feature is enabled.");
                     }
                     if (highest_view_bit >= 0) {
                         fsr_non_zero_viewmasks = true;
@@ -5645,8 +5663,11 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                                          ") and the "
                                          "specified shading rate texel width (%" PRIu32
                                          ") are smaller than the corresponding framebuffer "
-                                         "width (%" PRIu32 ").",
-                                         j, aii.width, fsr_attachment->shadingRateAttachmentTexelSize.width, create_info.width);
+                                         "width (%" PRIu32 ").%s",
+                                         j, aii.width, fsr_attachment->shadingRateAttachmentTexelSize.width, create_info.width,
+                                         enabled_features.maintenance7
+                                             ? ""
+                                             : "\nHint: This can be allowed in some cases if maintenance7 feature is enabled.");
                     }
                     if (validate_render_area &&
                         (aii.height * fsr_attachment->shadingRateAttachmentTexelSize.height) < create_info.height) {
@@ -5657,8 +5678,11 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                                          ") and the "
                                          "specified shading rate texel height (%" PRIu32
                                          ") are smaller than the corresponding "
-                                         "framebuffer height (%" PRIu32 ").",
-                                         j, aii.height, fsr_attachment->shadingRateAttachmentTexelSize.height, create_info.height);
+                                         "framebuffer height (%" PRIu32 ").%s",
+                                         j, aii.height, fsr_attachment->shadingRateAttachmentTexelSize.height, create_info.height,
+                                         enabled_features.maintenance7
+                                             ? ""
+                                             : "\nHint: This can be allowed in some cases if maintenance7 feature is enabled.");
                     }
                     if (highest_view_bit >= 0) {
                         fsr_non_zero_viewmasks = true;

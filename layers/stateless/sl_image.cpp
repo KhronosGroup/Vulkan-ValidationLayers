@@ -421,7 +421,9 @@ bool Device::ValidateCreateImageSparse(const VkImageCreateInfo& create_info, con
         }
         if ((!enabled_features.maintenance9 || !phys_dev_ext_props.maintenance9_props.image2DViewOf3DSparse) &&
             create_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) {
-            skip |= LogError("VUID-VkImageCreateInfo-imageType-10197", device, create_flags_loc, "is %s.",
+            skip |= LogError("VUID-VkImageCreateInfo-imageType-10197", device, create_flags_loc,
+                             "is %s.\nHint: This can be allowed if maintenance9 feature is enabled and "
+                             "VkPhysicalDeviceMaintenance9PropertiesKHR::image2DViewOf3DSparse is supported.",
                              string_VkImageCreateFlags2KHR(create_flags).c_str());
         }
         if (create_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) {
