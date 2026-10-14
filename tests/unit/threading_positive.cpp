@@ -60,9 +60,10 @@ TEST_F(PositiveThreading, DisplayPlaneObjects) {
         VkDisplayPlanePropertiesKHR display_plane_props = {};
         // Create a VkDisplayKHR object
         vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &prop_count, &display_plane_props);
-        // Now use this new object in an API call
-        prop_count = 0;
-        vk::GetDisplayModePropertiesKHR(Gpu(), display_plane_props.currentDisplay, &prop_count, nullptr);
+        if (display_plane_props.currentDisplay != VK_NULL_HANDLE) {
+            prop_count = 0;
+            vk::GetDisplayModePropertiesKHR(Gpu(), display_plane_props.currentDisplay, &prop_count, nullptr);
+        }
     }
 }
 

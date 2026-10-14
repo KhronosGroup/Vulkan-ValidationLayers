@@ -1967,9 +1967,9 @@ TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedHole) {
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
     m_command_buffer.Begin();
-    uint8_t data = 0;
-    m_command_buffer.PushDataEXT(0, 4, &data);
-    m_command_buffer.PushDataEXT(32, 4, &data);
+    uint32_t data = 0;
+    m_command_buffer.PushDataEXT(0, sizeof(data), &data);
+    m_command_buffer.PushDataEXT(32, sizeof(data), &data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     desc_heap.BindResourceHeap(m_command_buffer);
     // TODO - Remove this false positive
@@ -2013,9 +2013,9 @@ TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedStructStaticIndex) {
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info);
 
     m_command_buffer.Begin();
-    uint8_t data = 0;
-    m_command_buffer.PushDataEXT(0, 4, &data);
-    m_command_buffer.PushDataEXT(24, 4, &data);
+    uint32_t data = 0;
+    m_command_buffer.PushDataEXT(0, sizeof(data), &data);
+    m_command_buffer.PushDataEXT(24, sizeof(data), &data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     desc_heap.BindResourceHeap(m_command_buffer);
     // TODO - Remove this false positive
@@ -2085,9 +2085,9 @@ TEST_F(PositiveDescriptorHeapEXT, PushDataUnusedChainedAccessChains) {
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
 
     m_command_buffer.Begin();
-    uint8_t data = 0;
-    m_command_buffer.PushDataEXT(0, 4, &data);
-    m_command_buffer.PushDataEXT(24, 4, &data);
+    uint32_t data = 0;
+    m_command_buffer.PushDataEXT(0, sizeof(data), &data);
+    m_command_buffer.PushDataEXT(24, sizeof(data), &data);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     desc_heap.BindResourceHeap(m_command_buffer);
     // TODO - Remove this false positive

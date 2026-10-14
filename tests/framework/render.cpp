@@ -925,14 +925,14 @@ SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surfac
 
     vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &info.surface_capabilities);
 
-    uint32_t format_count;
+    uint32_t format_count = 0;
     vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &format_count, nullptr);
     if (format_count != 0) {
         info.surface_formats.resize(format_count);
         vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &format_count, info.surface_formats.data());
     }
 
-    uint32_t present_mode_count;
+    uint32_t present_mode_count = 0;
     vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &present_mode_count, nullptr);
     if (present_mode_count != 0) {
         info.surface_present_modes.resize(present_mode_count);
