@@ -2684,3 +2684,93 @@ TEST_F(PositiveGraphicsLibrary, NullDSLWithFragmentDensityMap2) {
     vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_, nullptr, &ds.layout_}, {},
                                         VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 }
+
+TEST_F(PositiveGraphicsLibrary, InterpolationDecorationBlockMember) {
+    TEST_DESCRIPTION("Flat on a loose output variable matches Flat on an input block member");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 460
+        layout(location = 0) flat out vec4 x;
+        void main() {
+            x = vec4(1.0);
+            gl_Position = vec4(1.0);
+        }
+    )glsl";
+    const char* fs_source = R"glsl(
+        #version 460
+        layout(location = 0) in Block {
+            flat vec4 x;
+        } i;
+        layout(location = 0) out vec4 color;
+        void main() {
+            color = i.x;
+        }
+    )glsl";
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib.gp_ci_.layout = pre_raster_lib.gp_ci_.layout;
+    frag_shader_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    vkt::Pipeline exe_pipe(*m_device, {vertex_input_lib, pre_raster_lib, frag_shader_lib, frag_out_lib},
+                           pre_raster_lib.gp_ci_.layout);
+}
+
+TEST_F(PositiveGraphicsLibrary, InterpolationDecorationMismatch) {
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 460
+        layout(location = 0) flat out vec4 x;
+        void main() {
+            x = vec4(1.0);
+            gl_Position = vec4(1.0);
+        }
+    )glsl";
+    const char* fs_source = R"glsl(
+        #version 460
+        layout(location = 0) in vec4 x;
+        layout(location = 0) out vec4 color;
+        void main() {
+            color = x;
+        }
+    )glsl";
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper shader_lib(*this);
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+    std::vector<VkPipelineShaderStageCreateInfo> stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+    shader_lib.InitShaderLibInfo(stages);
+    shader_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    vkt::Pipeline exe_pipe(*m_device, {vertex_input_lib, shader_lib, frag_out_lib}, shader_lib.gp_ci_.layout, RenderPass());
+}

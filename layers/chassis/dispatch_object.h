@@ -107,6 +107,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceNestedCommandBufferPropertiesEXT nested_command_buffer_props;
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props;
     VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT descriptor_buffer_density_props;
+    VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT graphics_pipeline_library_props;
     VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props;
     VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props;
     VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_memory_placed_props;

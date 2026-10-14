@@ -77,6 +77,8 @@ struct DecorationBase {
         per_task_nv = 1 << 9,
         per_primitive_ext = 1 << 10,
         sample_bit = 1 << 11,
+        flat_bit = 1 << 12,
+        no_perspective_bit = 1 << 13,
     };
 
     // bits to know if things have been set or not by a Decoration
@@ -312,12 +314,17 @@ struct InterfaceSlot {
     const uint32_t type = 0;  // Opcode of OpType*
     const uint32_t bit_width = 0;
 
+    // For a block member, this is the variable's OpDecorate flags combined with the member's OpMemberDecorate flags
+    // (decoration such as Flat can be on either and applies the same way)
+    // Always zero for members of nested structs.
+    const uint32_t decoration_flags = 0;
+
     uint32_t Location() const { return slot / 4; }
     uint32_t Component() const { return slot % 4; }
     std::string Describe() const;
     // Having a single uint32_t slot allows a 64-bit Vec3 to pass in (Loc 0, Comp 5) and have it automatically mean (Loc 1, Comp 1)
-    InterfaceSlot(uint32_t location, uint32_t component, uint32_t type, uint32_t bit_width)
-        : slot(GetSlotValue(location, component)), type(type), bit_width(bit_width) {}
+    InterfaceSlot(uint32_t location, uint32_t component, uint32_t type, uint32_t bit_width, uint32_t decoration_flags = 0)
+        : slot(GetSlotValue(location, component)), type(type), bit_width(bit_width), decoration_flags(decoration_flags) {}
     InterfaceSlot(uint32_t slot, uint32_t type, uint32_t bit_width) : slot(slot), type(type), bit_width(bit_width) {}
 
     bool operator<(const InterfaceSlot &rhs) const { return slot < rhs.slot; }

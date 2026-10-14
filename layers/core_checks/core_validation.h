@@ -1009,6 +1009,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateSpecializations(const vku::safe_VkSpecializationInfo* spec, const Location& loc) const;
     bool ValidateInterfaceBetweenStages(const ShaderStageState& producer, const ShaderStageState& consumer,
                                         const Location& create_info_loc) const;
+    bool ValidateGraphicsLibraryInterpolation(const vvl::Pipeline& pipeline, const ShaderStageState& last_pre_raster,
+                                              const ShaderStageState& fragment, const Location& create_info_loc) const;
     bool ValidateFsOutputsAgainstRenderPass(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                             const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidatePipelineTessellationStages(const ShaderStageState& tesc_stage, const ShaderStageState& tese_stage,
