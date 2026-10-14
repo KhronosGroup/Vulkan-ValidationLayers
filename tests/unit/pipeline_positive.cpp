@@ -2733,3 +2733,68 @@ TEST_F(PositivePipeline, SecondCreateInfo) {
         vk::DestroyPipeline(device(), pipelines[i], nullptr);
     }
 }
+
+TEST_F(PositivePipeline, SecondCreateInfoGraphics) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char* sources[2] = {
+        R"glsl(
+            #version 450
+            layout(set = 0, binding = 0) buffer SSBO { uint x; };
+            layout(location = 0) out vec4 color;
+            void main() {
+                atomicAdd(x, 1);
+                atomicAdd(x, 1);
+                color = vec4(1.0);
+            }
+        )glsl",
+        R"glsl(
+            #version 450
+            layout(set = 0, binding = 0) buffer SSBO { uint x; };
+            layout(location = 0) out vec4 color;
+            void main() {
+                atomicAdd(x, 1);
+                color = vec4(1.0);
+            }
+        )glsl",
+    };
+
+    CreatePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.LateBindPipelineInfo();
+
+    std::vector<uint32_t> shaders[2];
+    VkShaderModuleCreateInfo module_create_infos[2];
+    VkPipelineShaderStageCreateInfo stages[2][2];
+    VkGraphicsPipelineCreateInfo create_infos[2];
+
+    for (uint32_t i = 0; i < 2; i++) {
+        shaders[i] = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, sources[i]);
+
+        module_create_infos[i] = vku::InitStructHelper();
+        module_create_infos[i].pCode = shaders[i].data();
+        module_create_infos[i].codeSize = shaders[i].size() * sizeof(uint32_t);
+
+        stages[i][0] = pipe.vs_->GetStageCreateInfo();
+        stages[i][1] = vku::InitStructHelper(&module_create_infos[i]);
+        stages[i][1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        stages[i][1].module = VK_NULL_HANDLE;
+        stages[i][1].pName = "main";
+
+        create_infos[i] = pipe.gp_ci_;
+        create_infos[i].stageCount = 2;
+        create_infos[i].pStages = stages[i];
+    }
+
+    VkPipeline pipelines[2];
+    vk::CreateGraphicsPipelines(device(), VK_NULL_HANDLE, 2, create_infos, nullptr, pipelines);
+
+    for (uint32_t i = 0; i < 2; i++) {
+        vk::DestroyPipeline(device(), pipelines[i], nullptr);
+    }
+}
