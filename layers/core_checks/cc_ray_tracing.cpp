@@ -64,7 +64,7 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
     if (pCreateInfo->offset + pCreateInfo->size > buffer_state->GetSize()) {
         skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-offset-03616", buffer_state->Handle(),
                          error_obj.location.dot(Field::pCreateInfo).dot(Field::offset),
-                         "(%" PRIu64 ") + size (%" PRIu64 ") must be less than the size of buffer (%" PRIu64 ").",
+                         "(%" PRIu64 ") + size (%" PRIu64 ") must not be greater than the size of the buffer (%" PRIu64 ").",
                          pCreateInfo->offset, pCreateInfo->size, buffer_state->GetSize());
     }
 

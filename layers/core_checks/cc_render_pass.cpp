@@ -4169,7 +4169,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
             vku::FindStructInPNextChain<VkRenderPassPerformanceCountersByRegionBeginInfoARM>(pRenderingInfo->pNext)) {
         const LogObjectList objlist(cb_state->Handle());
         uint32_t layer_or_view_count = 0;
-        if (enabled_features.multiview) {
+        if (pRenderingInfo->viewMask != 0) {
             layer_or_view_count = MostSignificantBit(pRenderingInfo->viewMask);
         } else {
             layer_or_view_count = pRenderingInfo->layerCount;

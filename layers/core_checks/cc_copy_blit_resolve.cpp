@@ -4051,7 +4051,7 @@ bool CoreChecks::ValidateStridedDeviceAddressRange(VkCommandBuffer command_buffe
     bool skip = false;
     if (strided_range.stride > strided_range.size) {
         skip |= LogError("VUID-VkStridedDeviceAddressRangeKHR-stride-10957", command_buffer, strided_range_loc.dot(Field::stride),
-                         "(%" PRIu64 ") must be less than size (%" PRIu64 ")", strided_range.stride, strided_range.size);
+                         "(%" PRIu64 ") must not be greater than the size (%" PRIu64 ")", strided_range.stride, strided_range.size);
     }
 
     const char* usage_vuid = strided_range_loc.function == Func::vkCmdCopyMemoryIndirectKHR

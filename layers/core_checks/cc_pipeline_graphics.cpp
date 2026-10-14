@@ -4355,12 +4355,12 @@ bool CoreChecks::ValidatePipelineVertexDivisors(const vvl::Pipeline& pipeline, c
         const auto* vibdd = &(divisor_state_info->pVertexBindingDivisors[j]);
         if (vibdd->binding >= phys_dev_props.limits.maxVertexInputBindings) {
             skip |= LogError("VUID-VkVertexInputBindingDivisorDescription-binding-01869", device, divisor_loc.dot(Field::binding),
-                             "(%" PRIu32 ") exceeds device maxVertexInputBindings (%" PRIu32 ").", vibdd->binding,
+                             "(%" PRIu32 ") is greater than maxVertexInputBindings (%" PRIu32 ").", vibdd->binding,
                              phys_dev_props.limits.maxVertexInputBindings);
         }
         if (vibdd->divisor > phys_dev_props_core14.maxVertexAttribDivisor) {
             skip |= LogError("VUID-VkVertexInputBindingDivisorDescription-divisor-01870", device, divisor_loc.dot(Field::divisor),
-                             "(%" PRIu32 ") exceeds device maxVertexAttribDivisor (%" PRIu32 ").", vibdd->divisor,
+                             "(%" PRIu32 ") is greater than maxVertexAttribDivisor (%" PRIu32 ").", vibdd->divisor,
                              phys_dev_props_core14.maxVertexAttribDivisor);
         }
         if ((0 == vibdd->divisor) && !enabled_features.vertexAttributeInstanceRateZeroDivisor) {

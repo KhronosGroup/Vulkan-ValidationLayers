@@ -321,10 +321,12 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device,
                                      create_info_loc.dot(Field::basePipelineIndex),
                                      "is %" PRId32 " and basePipelineHandle is not VK_NULL_HANDLE.", create_info.basePipelineIndex);
                 }
-                if (create_info.basePipelineIndex > static_cast<int32_t>(i)) {
-                    skip |=
-                        LogError("VUID-vkCreateRayTracingPipelinesKHR-flags-03415", device,
-                                 create_info_loc.dot(Field::basePipelineIndex), "is %" PRId32 ".", create_info.basePipelineIndex);
+                if (create_info.basePipelineIndex >= static_cast<int32_t>(i)) {
+                    skip |= LogError(
+                        "VUID-vkCreateRayTracingPipelinesKHR-flags-03415", device, create_info_loc.dot(Field::basePipelineIndex),
+                        "is %" PRId32
+                        ", but the base pipeline must occur earlier in pCreateInfos than this pipeline (index %" PRIu32 ").",
+                        create_info.basePipelineIndex, i);
                 }
             }
             if (create_info.basePipelineHandle == VK_NULL_HANDLE) {

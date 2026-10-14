@@ -1938,10 +1938,8 @@ bool CoreChecks::ValidateCmdSetPatchControlPoints(VkCommandBuffer commandBuffer,
     } else if (patchControlPoints > phys_dev_props.limits.maxTessellationPatchSize) {
         const char* vuid = "VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874";
         skip |= LogError(vuid, commandBuffer, error_obj.location.dot(Field::patchControlPoints),
-                         "(%" PRIu32
-                         ") must be less than "
-                         "maxTessellationPatchSize (%" PRIu32 ")",
-                         patchControlPoints, phys_dev_props.limits.maxTessellationPatchSize);
+                         "(%" PRIu32 ") must not be greater than maxTessellationPatchSize (%" PRIu32 ")", patchControlPoints,
+                         phys_dev_props.limits.maxTessellationPatchSize);
     }
     return skip;
 }
