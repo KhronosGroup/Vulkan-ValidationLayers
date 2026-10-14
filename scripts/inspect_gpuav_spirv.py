@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 The Khronos Group Inc.
-# Copyright (c) 2025 Valve Corporation
-# Copyright (c) 2025 LunarG, Inc.
+# Copyright (c) 2026 The Khronos Group Inc.
+# Copyright (c) 2026 Valve Corporation
+# Copyright (c) 2026 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ def PrintExecutionModels(execution_models: set):
     return ",".join(names)
 
 def ExtractShaderId(path: str):
-    match = re.search(r'dump_(\d+)_after\.spv', path)
+    match = re.search(r'dump_(\d+)\w+_after\.spv', path)
     return int(match.group(1)) if match else None
 
 def ParseSpirv(file: str, stats_collector: dict):
@@ -136,7 +136,7 @@ def main(argv):
     spirv_list = []
     if args.directory:
         after_files = []
-        pattern = re.compile(r'dump_(\d+)_after')
+        pattern = re.compile(r'dump_(\d+)\w+_after\.spv')
         for root, _, files in os.walk(args.directory):
             for file in files:
                 if pattern.search(file):
