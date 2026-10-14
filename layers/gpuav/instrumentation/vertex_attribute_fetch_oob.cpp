@@ -303,7 +303,8 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
             }
             out_error_msg +=
                 "Note: Vertex buffer binding size is the effective, valid one, based on how the VkBuffer was created and "
-                "the vkCmdBindVertexBuffers parameters. So it can be clamped up to 0 if binding was invalid.";
+                "the vkCmdBindVertexBuffers parameters. So it can be clamped up to 0 if binding was invalid.\nHint: This can be "
+                "allowed if the robustBufferAccess feature is enabled.";
 
             return true;
         };

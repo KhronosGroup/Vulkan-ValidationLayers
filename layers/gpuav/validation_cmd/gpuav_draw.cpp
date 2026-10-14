@@ -257,8 +257,12 @@ void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Loca
 
         skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
                                "The firstInstance member of the %s structure at "
-                               "index %" PRIu32 " is %" PRIu32 ".",
-                               vvl::String(api_struct_name), index, invalid_first_instance);
+                               "index %" PRIu32 " is %" PRIu32 ".%s",
+                               vvl::String(api_struct_name), index, invalid_first_instance,
+                               gpuav.enabled_features.drawIndirectFirstInstance
+                                   ? ""
+                                   : "\nHint: firstInstance must be zero because the drawIndirectFirstInstance feature was not "
+                                     "enabled.");
 
         return skip;
     };
@@ -1017,7 +1021,8 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
 
                                        "%s\n"
 
-                                       "%s\n",
+                                       "%s\n"
+                                       "Hint: This can be allowed if the robustBufferAccess2 feature is enabled.",
 
                                        // OOB index info
                                        highest_accessed_index, draw_i, first_index, index_count,

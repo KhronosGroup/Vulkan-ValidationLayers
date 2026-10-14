@@ -2106,9 +2106,13 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
             if (!has_depth_aspect || !has_stencil_aspect) {
                 const LogObjectList objlist(cb_state.Handle(), image);
                 auto vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kNotDepthAndStencilAspect);
-                skip |= LogError(vuid, objlist, image_loc, "(%s) has depth/stencil format %s, but its aspectMask is %s.",
+                skip |= LogError(vuid, objlist, image_loc, "(%s) has depth/stencil format %s, but its aspectMask is %s.%s",
                                  FormatHandle(image).c_str(), string_VkFormat(image_format),
-                                 string_VkImageAspectFlags(barrier_aspect_mask).c_str());
+                                 string_VkImageAspectFlags(barrier_aspect_mask).c_str(),
+                                 (has_depth_aspect || has_stencil_aspect)
+                                     ? "\nHint: Using only the depth or stencil aspect can be allowed if the "
+                                       "separateDepthStencilLayouts feature is enabled."
+                                     : "");
             }
         }
     } else if (vkuFormatIsDepthOnly(image_format)) {
@@ -2156,14 +2160,18 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
         if (new_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
             const LogObjectList objlist(cb_state.Handle(), image);
             auto vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kDynamicRenderingLocalReadNew);
-            skip |= LogError(vuid, objlist, image_loc, "(%s) cannot have newLayout = %s.", FormatHandle(image).c_str(),
-                             string_VkImageLayout(new_layout));
+            skip |= LogError(
+                vuid, objlist, image_loc,
+                "(%s) cannot have newLayout = %s\nHint: This is allowed if the dynamicRenderingLocalRead feature was is enabled.",
+                FormatHandle(image).c_str(), string_VkImageLayout(new_layout));
         }
         if (old_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
             const LogObjectList objlist(cb_state.Handle(), image);
             auto vuid = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kDynamicRenderingLocalReadOld);
-            skip |= LogError(vuid, objlist, image_loc, "(%s) cannot have oldLayout = %s.", FormatHandle(image).c_str(),
-                             string_VkImageLayout(old_layout));
+            skip |= LogError(
+                vuid, objlist, image_loc,
+                "(%s) cannot have oldLayout = %s\nHint: This is allowed if the dynamicRenderingLocalRead feature was is enabled.",
+                FormatHandle(image).c_str(), string_VkImageLayout(old_layout));
         }
     }
 
@@ -2588,7 +2596,8 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList& objects, cons
             skip |= LogError(vuid, objects, barrier_loc,
                              "barrier using %s created with sharingMode %s, has srcQueueFamilyIndex %" PRIu32
                              "%s and dstQueueFamilyIndex %" PRIu32
-                             "%s. Source or destination queue family must be VK_QUEUE_FAMILY_IGNORED.",
+                             "%s. Source or destination queue family must be VK_QUEUE_FAMILY_IGNORED.\nHint: This can be "
+                             "allowed if the synchronization2 feature is enabled.",
                              FormatHandle(resource_handle).c_str(), string_VkSharingMode(sharing_mode), src_queue_family,
                              src_annotation, dst_queue_family, dst_annotation);
         }
@@ -2860,8 +2869,10 @@ bool CoreChecks::ValidateDynamicRenderingAccess(const LogObjectList& objlist, co
         const VkAccessFlags2 forbiden_accesses = access_mask & ~allowed_accesses;
         if (forbiden_accesses != 0) {
             const auto& vuid = GetDynamicRenderingBarrierVUID(loc, vvl::DynamicRenderingBarrierError::kAccessFlags);
-            skip |= LogError(vuid, objlist, loc, "(%s) includes forbidden accesses %s", string_VkAccessFlags2(access_mask).c_str(),
-                             string_VkAccessFlags2(forbiden_accesses).c_str());
+            skip |= LogError(vuid, objlist, loc,
+                             "(%s) includes forbidden accesses %s.\nHint: This can be allowed in some cases if the "
+                             "dynamicRenderingLocalRead feature is enabled.",
+                             string_VkAccessFlags2(access_mask).c_str(), string_VkAccessFlags2(forbiden_accesses).c_str());
         }
     }
     return skip;
@@ -3046,7 +3057,8 @@ bool CoreChecks::ValidateDynamicRenderingBarriersCommon(const LogObjectList& obj
                 GetDynamicRenderingBarrierVUID(outer_loc, vvl::DynamicRenderingBarrierError::kNoBuffersOrImages);
             skip |= LogError(buf_img_vuid, objlist, outer_loc,
                              "can only include memory barriers, but the application specified an image barrier count of %" PRIu32
-                             " and a buffer barrier count of %" PRIu32,
+                             " and a buffer barrier count of %" PRIu32
+                             ".\nHint: This can be allowed if the dynamicRenderingLocalRead feature is enabled.",
                              image_barrier_count, buffer_barrier_count);
         }
     }

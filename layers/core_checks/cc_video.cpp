@@ -5264,9 +5264,10 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession);
         skip |= LogError(codec_op_requires_params_vuid, objlist, begin_info_loc.dot(Field::videoSession),
                          "%s was created with %s but no video session parameters object was "
-                         "specified in pBeginInfo->videoSessionParameters.",
+                         "specified in pBeginInfo->videoSessionParameters.%s",
                          FormatHandle(pBeginInfo->videoSession).c_str(),
-                         string_VkVideoCodecOperationFlagBitsKHR(vs_state->GetCodecOp()));
+                         string_VkVideoCodecOperationFlagBitsKHR(vs_state->GetCodecOp()),
+                         vs_state->IsDecode() ? "\nHint: This can be allowed if the videoMaintenance2 feature is enabled." : "");
     }
 
     if (vs_state->IsEncode()) {

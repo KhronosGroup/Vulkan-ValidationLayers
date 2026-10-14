@@ -1228,12 +1228,24 @@ static const vvl::unordered_map<QueueError, std::vector<Entry>>& GetBarrierQueue
 
 const vvl::unordered_map<QueueError, std::string>& GetQueueErrorSummaryMap() {
     static const vvl::unordered_map<QueueError, std::string> kQueueErrorSummary{
-        {QueueError::kSrcNoExternalExt, "Source queue family must not be VK_QUEUE_FAMILY_EXTERNAL."},
-        {QueueError::kDstNoExternalExt, "Destination queue family must not be VK_QUEUE_FAMILY_EXTERNAL."},
-        {QueueError::kSrcNoForeignExt, "Source queue family must not be VK_QUEUE_FAMILY_FOREIGN_EXT."},
-        {QueueError::kDstNoForeignExt, "Destination queue family must not be VK_QUEUE_FAMILY_FOREIGN_EXT."},
-        {QueueError::kSync1ConcurrentSrc, "Source queue family must be VK_QUEUE_FAMILY_IGNORED or VK_QUEUE_FAMILY_EXTERNAL."},
-        {QueueError::kSync1ConcurrentDst, "Destination queue family must be VK_QUEUE_FAMILY_IGNORED or VK_QUEUE_FAMILY_EXTERNAL."},
+        {QueueError::kSrcNoExternalExt,
+         "Source queue family must not be VK_QUEUE_FAMILY_EXTERNAL.\nHint: This can be allowed if VK_KHR_external_memory "
+         "(or Vulkan 1.1) is enabled."},
+        {QueueError::kDstNoExternalExt,
+         "Destination queue family must not be VK_QUEUE_FAMILY_EXTERNAL.\nHint: This can be allowed if VK_KHR_external_memory "
+         "(or Vulkan 1.1) is enabled."},
+        {QueueError::kSrcNoForeignExt,
+         "Source queue family must not be VK_QUEUE_FAMILY_FOREIGN_EXT.\nHint: This can be allowed if VK_EXT_queue_family_foreign "
+         "is enabled."},
+        {QueueError::kDstNoForeignExt,
+         "Destination queue family must not be VK_QUEUE_FAMILY_FOREIGN_EXT.\nHint: This can be allowed if "
+         "VK_EXT_queue_family_foreign is enabled."},
+        {QueueError::kSync1ConcurrentSrc,
+         "Source queue family must be VK_QUEUE_FAMILY_IGNORED or VK_QUEUE_FAMILY_EXTERNAL.\nHint: This can be allowed if the "
+         "synchronization2 feature is enabled."},
+        {QueueError::kSync1ConcurrentDst,
+         "Destination queue family must be VK_QUEUE_FAMILY_IGNORED or VK_QUEUE_FAMILY_EXTERNAL.\nHint: This can be allowed if "
+         "the synchronization2 feature is enabled."},
         {QueueError::kExclusiveSrc, "Source queue family must be valid when using VK_SHARING_MODE_EXCLUSIVE."},
         {QueueError::kExclusiveDst, "Destination queue family must be valid when using VK_SHARING_MODE_EXCLUSIVE."},
     };

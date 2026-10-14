@@ -306,10 +306,10 @@ bool CoreChecks::ValidateBeginCommandBufferInheritanceInfo(const vvl::CommandBuf
 
     if ((!info.occlusionQueryEnable || !enabled_features.occlusionQueryPrecise) &&
         (info.queryFlags & VK_QUERY_CONTROL_PRECISE_BIT)) {
-        skip |= LogError("VUID-vkBeginCommandBuffer-commandBuffer-00052", cb_state.Handle(), inheritance_loc,
-                         "Secondary %s must not have VK_QUERY_CONTROL_PRECISE_BIT if "
-                         "occlusionQuery is disabled or the device does not support precise occlusion queries.",
-                         FormatHandle(cb_state.Handle()).c_str());
+        skip |= LogError(
+            "VUID-vkBeginCommandBuffer-commandBuffer-00052", cb_state.Handle(), inheritance_loc.dot(Field::queryFlags),
+            "includes VK_QUERY_CONTROL_PRECISE_BIT, but %s.",
+            !info.occlusionQueryEnable ? "occlusionQueryEnable is VK_FALSE" : "the occlusionQueryPrecise feature was not enabled");
     }
     auto p_inherited_viewport_scissor_info =
         vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info.pNext);
