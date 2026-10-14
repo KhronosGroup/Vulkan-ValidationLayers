@@ -1116,6 +1116,7 @@ void Device::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR sw
     auto snapshot = image_map.snapshot(
         [swapchain](const std::shared_ptr<ObjectState>& pNode) { return pNode->parent_object == HandleToUint64(swapchain); });
     for (const auto& itr : snapshot) {
+        debug_report->EraseObjectName(itr.first);
         image_map.erase(itr.first);
     }
 }
