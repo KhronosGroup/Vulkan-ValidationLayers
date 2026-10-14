@@ -3542,7 +3542,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                          FormatHandle(fdm_image_state->Handle()).c_str());
     }
     int32_t layer_count = static_cast<int32_t>(fdm_image_view->normalized_subresource_range.layerCount);
-    if (layer_count != 1 && !enabled_features.multiview) {
+    if (layer_count != 1 && !enabled_features.multiview && api_version < VK_API_VERSION_1_1) {
         const LogObjectList objlist(commandBuffer, fdm_attachment_info.imageView);
         skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908", objlist, view_loc,
                          "must have a layerCount (%" PRId32 ") equal to 1.", layer_count);
@@ -3553,11 +3553,11 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                          "must have a layerCount (%" PRId32 ") equal to 1 when viewMask is equal to 0", layer_count);
     }
 
-    if ((rendering_info.viewMask != 0) && (layer_count < MostSignificantBit(rendering_info.viewMask))) {
+    if ((rendering_info.viewMask != 0) && (layer_count <= MostSignificantBit(rendering_info.viewMask))) {
         const LogObjectList objlist(commandBuffer, fdm_attachment_info.imageView);
         skip |= LogError("VUID-VkRenderingInfo-imageView-06108", objlist, view_loc,
                          "must have a layerCount (%" PRId32
-                         ") greater than or equal to the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
+                         ") greater than the index of the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
                          layer_count, MostSignificantBit(rendering_info.viewMask), rendering_info.viewMask);
     }
 
@@ -3634,11 +3634,11 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(
     } else {
         int highest_view_bit = MostSignificantBit(rendering_info.viewMask);
         int32_t layer_count = view_state->normalized_subresource_range.layerCount;
-        if (layer_count != 1 && layer_count < highest_view_bit) {
+        if (layer_count != 1 && layer_count <= highest_view_bit) {
             skip |= LogError("VUID-VkRenderingInfo-imageView-06124", objlist,
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                              "has a layerCount (%" PRId32
-                             ") but must either be equal to 1 or greater than or equal to the index of the most "
+                             ") but must either be equal to 1 or greater than the index of the most "
                              "significant bit (%d) in viewMask (0x%" PRIx32 ")",
                              layer_count, highest_view_bit, rendering_info.viewMask);
         }
