@@ -2203,8 +2203,10 @@ bool core::Instance::ValidateGetPhysicalDeviceDisplayPlaneProperties(VkPhysicalD
                                                                      const Location& plane_index_loc) const {
     bool skip = false;
 
-    uint32_t display_plane_property_count;
-    DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, &display_plane_property_count, nullptr);
+    uint32_t display_plane_property_count = 0;
+    if (DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, &display_plane_property_count, nullptr) != VK_SUCCESS) {
+        return skip;
+    }
     if (planeIndex >= display_plane_property_count) {
         skip |= LogError("VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, plane_index_loc,
                          "(%" PRIu32 ") must be in the range [0, %" PRIu32

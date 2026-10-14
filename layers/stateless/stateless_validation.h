@@ -162,8 +162,9 @@ class Context {
                 skip |= log.LogError(count_ptr_required_vuid, error_obj.handle, count_loc, "is NULL.");
             }
         } else {
+            const uint32_t count_value = (array != nullptr) ? *count : 0;
             skip |=
-                ValidateStructTypeArray(count_loc, array_loc, (*count), array, sType, count_value_required && (array != nullptr),
+                ValidateStructTypeArray(count_loc, array_loc, count_value, array, sType, count_value_required && (array != nullptr),
                                         array_required, stype_vuid, param_vuid, count_required_vuid);
         }
 
