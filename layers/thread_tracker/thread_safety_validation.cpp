@@ -518,6 +518,7 @@ void Device::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool comm
     // remove references to implicitly freed command pools
     for (auto command_buffer : pool_command_buffers_map[commandPool]) {
         DestroyObject(command_buffer);
+        command_pool_map.erase(command_buffer);
     }
     pool_command_buffers_map[commandPool].clear();
     pool_command_buffers_map.erase(commandPool);
