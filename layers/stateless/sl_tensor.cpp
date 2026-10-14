@@ -95,7 +95,8 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM& descript
             if (!is_packed && i > 0) {
                 skip |= LogError("VUID-VkTensorDescriptionARM-None-09740", device, description_loc,
                                  "does not define a packed tensor: pStrides[%" PRIi64 "] (%" PRIi64 ") != pStrides[%" PRIi64
-                                 "] (%" PRIi64 ") * pDimensions[%" PRIi64 "] (%" PRIi64 ")",
+                                 "] (%" PRIi64 ") * pDimensions[%" PRIi64 "] (%" PRIi64
+                                 ").\nHint: This can be allowed if the tensorNonPacked feature is enabled.",
                                  i - 1, strides[i - 1], i, strides[i], i, description.pDimensions[i]);
             }
         }

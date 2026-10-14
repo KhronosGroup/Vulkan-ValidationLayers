@@ -2951,8 +2951,12 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                     const LogObjectList objlist(device, image_state->Handle());
                     skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-image-03320", objlist,
                                      transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
-                                     "is %s and image was created with format %s.", string_VkImageAspectFlags(aspect_mask).c_str(),
-                                     string_VkFormat(image_format));
+                                     "is %s and image was created with format %s.%s",
+                                     string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format),
+                                     (has_depth_mask || has_stencil_mask)
+                                         ? "\nHint: Using only the depth or stencil aspect can be allowed if the "
+                                           "separateDepthStencilLayouts feature is enabled."
+                                         : "");
                 }
             }
         } else if (vkuFormatIsDepthOnly(image_format)) {

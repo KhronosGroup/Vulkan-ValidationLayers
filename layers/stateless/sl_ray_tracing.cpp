@@ -205,7 +205,8 @@ bool Device::ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFla
 
     if (flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR &&
         (!enabled_features.rayTracingPipelineShaderGroupHandleCaptureReplay)) {
-        skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03598", device, flags_loc, "is %s.",
+        skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03598", device, flags_loc,
+                         "is %s, but the rayTracingPipelineShaderGroupHandleCaptureReplay feature was not enabled.",
                          string_VkPipelineCreateFlags2(flags).c_str());
     }
 
@@ -372,11 +373,13 @@ bool Device::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device,
         if (!IsExtEnabled(extensions.vk_khr_pipeline_library)) {
             if (create_info.pLibraryInfo) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03595", device,
-                                 create_info_loc.dot(Field::pLibraryInfo), "is not NULL.");
+                                 create_info_loc.dot(Field::pLibraryInfo),
+                                 "is not NULL, but the VK_KHR_pipeline_library extension was not enabled.");
             }
             if (create_info.pLibraryInterface) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03595", device,
-                                 create_info_loc.dot(Field::pLibraryInterface), "is not NULL.");
+                                 create_info_loc.dot(Field::pLibraryInterface),
+                                 "is not NULL, but the VK_KHR_pipeline_library extension was not enabled.");
             }
         }
 

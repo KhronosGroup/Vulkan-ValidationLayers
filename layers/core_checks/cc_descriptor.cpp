@@ -431,7 +431,10 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer& cb_stat
             const LogObjectList objlist(cb_state.Handle(), set_handle);
             const char* vuid =
                 is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-06563" : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563";
-            skip |= LogError(vuid, objlist, set_loc, "(%s) is not a valid VkDescriptorSet.", FormatHandle(set_handle).c_str());
+            skip |= LogError(vuid, objlist, set_loc, "(%s) is not a valid VkDescriptorSet.%s", FormatHandle(set_handle).c_str(),
+                             set_handle == VK_NULL_HANDLE
+                                 ? "\nHint: VK_NULL_HANDLE can be allowed if the graphicsPipelineLibrary feature is enabled."
+                                 : "");
         }
     }
     //  dynamicOffsetCount must equal the total number of dynamic descriptors in the sets being bound

@@ -317,7 +317,8 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_s
                          "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
                          ")) "
                          "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
-                         " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
+                         " bytes, which is greater than the index buffer size (%" PRIuLEAST64
+                         ").\nHint: This can be allowed if the robustBufferAccess2 feature is enabled.",
                          index_size, firstIndex, indexCount, buffer_offset, end_offset + buffer_offset,
                          cb_state.index_buffer_binding.size + buffer_offset);
     }
@@ -2992,6 +2993,9 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
                        << "  stride = " << vertex_buffer_binding->stride << "\n"
                        << "  attribute offset = " << attr_desc.offset << "\n"
                        << "  attribAddress = bufferBindingAddress + (stride * vertexIndex) + attribute offset\n";
+                    if (!enabled_features.legacyVertexAttributes && (is_packed_format || !vkuFormatIs64bit(attr_desc.format))) {
+                        ss << "Hint: This can be allowed if the legacyVertexAttributes feature is enabled.";
+                    }
 
                     skip |= LogError(CreateActionVuid(loc.function, vuid), objlist, loc, "%s", ss.str().c_str());
                 }
@@ -3074,7 +3078,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11522),
                                  cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "%s::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline was not "
-                                 "created with a VkCustomResolveCreateInfoEXT struct",
+                                 "created with a VkCustomResolveCreateInfoEXT struct.\nHint: This can be allowed if the "
+                                 "dynamicRenderingUnusedAttachments feature is enabled.",
                                  String(flags_struct));
             }
         } else if (cb_sub_state.custom_resolve.started && !pipeline_cr_info->customResolve) {
@@ -3082,7 +3087,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
                 skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11524),
                                  cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                  "vkCmdBeginCustomResolveEXT was called in this render pass, but the bound pipeline "
-                                 "VkCustomResolveCreateInfoEXT::customResolve is VK_FALSE");
+                                 "VkCustomResolveCreateInfoEXT::customResolve is VK_FALSE.\nHint: This can be allowed if the "
+                                 "dynamicRenderingUnusedAttachments feature is enabled.");
             }
         } else if (!cb_sub_state.custom_resolve.started && pipeline_cr_info->customResolve) {
             // Exception if inside the seconary, as the vkCmdBeginCustomResolveEXT can be called prior to vkCmdExecuteCommands
@@ -3119,7 +3125,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
                          cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "%s::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound pipeline "
                          "VkCustomResolveCreateInfoEXT::colorAttachmentCount (%" PRIu32
-                         ") doesn't match %s::colorAttachmentCount (%" PRIu32 ")",
+                         ") doesn't match %s::colorAttachmentCount (%" PRIu32
+                         ").\nHint: This can be allowed if the dynamicRenderingUnusedAttachments feature is enabled.",
                          String(flags_struct), pipeline_cr_info->colorAttachmentCount, String(flags_struct),
                          rendering_info.colorAttachmentCount);
     }
@@ -3150,7 +3157,9 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
                     cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                     "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
                     "pipeline VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32
-                    "] (%s) doesn't match VkRenderingInfo::pColorAttachments[%" PRIu32 "]->resolveImageView (%s) created with %s",
+                    "] (%s) doesn't match VkRenderingInfo::pColorAttachments[%" PRIu32
+                    "]->resolveImageView (%s) created with %s.\nHint: If the dynamicRenderingUnusedAttachments feature "
+                    "is enabled, the pipeline format can also be VK_FORMAT_UNDEFINED.",
                     i, string_VkFormat(pipeline_cr_info->pColorAttachmentFormats[i]), i, FormatHandle(resolve_image_view).c_str(),
                     string_VkFormat(resolve_image_view_state->create_info.format));
             }
@@ -3162,7 +3171,8 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
                              "VkRenderingInfo::pColorAttachments[%" PRIu32
                              "]->resolveImageView is VK_NULL_HANDLE, but the bound "
                              "pipeline VkCustomResolveCreateInfoEXT::pColorAttachmentFormats[%" PRIu32
-                             "] (%s) is not VK_FORMAT_UNDEFINED",
+                             "] (%s) is not VK_FORMAT_UNDEFINED.\nHint: This can be allowed if the "
+                             "dynamicRenderingUnusedAttachments feature is enabled.",
                              i, i, string_VkFormat(pipeline_cr_info->pColorAttachmentFormats[i]));
         }
     }
@@ -3172,12 +3182,14 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
         if (resolve_image_view == VK_NULL_HANDLE) {
             if (pipeline_cr_info->depthAttachmentFormat != VK_FORMAT_UNDEFINED &&
                 !enabled_features.dynamicRenderingUnusedAttachments) {
-                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11865),
-                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                 "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
-                                 "VkRenderingInfo::pDepthAttachment->resolveImageView is VK_NULL_HANDLE, but the bound "
-                                 "pipeline VkCustomResolveCreateInfoEXT::depthAttachmentFormat (%s) is not VK_FORMAT_UNDEFINED",
-                                 string_VkFormat(pipeline_cr_info->depthAttachmentFormat));
+                skip |=
+                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11865),
+                             cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
+                             "VkRenderingInfo::pDepthAttachment->resolveImageView is VK_NULL_HANDLE, but the bound "
+                             "pipeline VkCustomResolveCreateInfoEXT::depthAttachmentFormat (%s) is not VK_FORMAT_UNDEFINED.\nHint: "
+                             "This can be allowed if the dynamicRenderingUnusedAttachments feature is enabled.",
+                             string_VkFormat(pipeline_cr_info->depthAttachmentFormat));
             }
         } else {
             auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
@@ -3196,13 +3208,15 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
                                  string_VkFormat(resolve_image_view_state->create_info.format));
                 }
             } else if (pipeline_cr_info->depthAttachmentFormat != resolve_image_view_state->create_info.format) {
-                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11866),
-                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                 "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
-                                 "pipeline VkCustomResolveCreateInfoEXT::depthAttachmentFormat (%s) doesn't match "
-                                 "VkRenderingInfo::pDepthAttachment->resolveImageView (%s) created with %s",
-                                 string_VkFormat(pipeline_cr_info->depthAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
-                                 string_VkFormat(resolve_image_view_state->create_info.format));
+                skip |= LogError(
+                    CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11866),
+                    cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                    "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
+                    "pipeline VkCustomResolveCreateInfoEXT::depthAttachmentFormat (%s) doesn't match "
+                    "VkRenderingInfo::pDepthAttachment->resolveImageView (%s) created with %s.\nHint: If the "
+                    "dynamicRenderingUnusedAttachments feature is enabled, the pipeline format can also be VK_FORMAT_UNDEFINED.",
+                    string_VkFormat(pipeline_cr_info->depthAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
+                    string_VkFormat(resolve_image_view_state->create_info.format));
             }
         }
     }
@@ -3212,12 +3226,14 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
         if (resolve_image_view == VK_NULL_HANDLE) {
             if (pipeline_cr_info->stencilAttachmentFormat != VK_FORMAT_UNDEFINED &&
                 !enabled_features.dynamicRenderingUnusedAttachments) {
-                skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11868),
-                                 cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                 "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
-                                 "VkRenderingInfo::pStencilAttachment->resolveImageView is VK_NULL_HANDLE, but the bound "
-                                 "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) is not VK_FORMAT_UNDEFINED",
-                                 string_VkFormat(pipeline_cr_info->stencilAttachmentFormat));
+                skip |= LogError(
+                    CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11868),
+                    cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                    "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, "
+                    "VkRenderingInfo::pStencilAttachment->resolveImageView is VK_NULL_HANDLE, but the bound "
+                    "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) is not VK_FORMAT_UNDEFINED.\nHint: This "
+                    "can be allowed if the dynamicRenderingUnusedAttachments feature is enabled.",
+                    string_VkFormat(pipeline_cr_info->stencilAttachmentFormat));
             }
         } else {
             auto resolve_image_view_state = Get<vvl::ImageView>(resolve_image_view);
@@ -3236,14 +3252,15 @@ bool CoreChecks::ValidateDrawCustomResolve(const LastBound& last_bound, const vv
                                      string_VkFormat(resolve_image_view_state->create_info.format));
                 }
             } else if (pipeline_cr_info->stencilAttachmentFormat != resolve_image_view_state->create_info.format) {
-                skip |=
-                    LogError(CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11869),
-                             cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                             "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
-                             "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) doesn't match "
-                             "VkRenderingInfo::pStencilAttachment->resolveImageView (%s) created with %s",
-                             string_VkFormat(pipeline_cr_info->stencilAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
-                             string_VkFormat(resolve_image_view_state->create_info.format));
+                skip |= LogError(
+                    CreateActionVuid(loc.function, vvl::ActionVUID::CUSTOM_RESOLVE_11869),
+                    cb_sub_state.base.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                    "VkRenderingInfo::flags includes VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT, but the bound "
+                    "pipeline VkCustomResolveCreateInfoEXT::stencilAttachmentFormat (%s) doesn't match "
+                    "VkRenderingInfo::pStencilAttachment->resolveImageView (%s) created with %s.\nHint: If the "
+                    "dynamicRenderingUnusedAttachments feature is enabled, the pipeline format can also be VK_FORMAT_UNDEFINED.",
+                    string_VkFormat(pipeline_cr_info->stencilAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
+                    string_VkFormat(resolve_image_view_state->create_info.format));
             }
         }
     }

@@ -202,13 +202,15 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info
             if (IsImageLayoutDepthOnly(attachment.initialLayout) || IsImageLayoutStencilOnly(attachment.initialLayout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03284"
                                : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284";
-                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout), "is %s.",
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout),
+                                 "is %s, but the separateDepthStencilLayouts feature was not enabled.",
                                  string_VkImageLayout(attachment.initialLayout));
             }
             if (IsImageLayoutDepthOnly(attachment.finalLayout) || IsImageLayoutStencilOnly(attachment.finalLayout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03285"
                                : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285";
-                skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.",
+                skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
+                                 "is %s, but the separateDepthStencilLayouts feature was not enabled.",
                                  string_VkImageLayout(attachment.finalLayout));
             }
         }

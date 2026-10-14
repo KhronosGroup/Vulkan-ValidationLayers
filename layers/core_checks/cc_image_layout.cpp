@@ -183,12 +183,17 @@ bool CoreChecks::ValidateVideoImageLayout(const vvl::CommandBuffer& cb_state, co
                     expected_layout += " or VK_IMAGE_LAYOUT_GENERAL";
                 }
                 const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-                local_skip |= LogError(mismatch_layout_vuid, objlist, loc,
-                                       "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
-                                       ") with specific layout %s that doesn't match the "
-                                       "%s layout %s.",
-                                       FormatHandle(image_state).c_str(), subresource.arrayLayer, subresource.mipLevel,
-                                       expected_layout.c_str(), layout_check.message, string_VkImageLayout(layout_check.layout));
+                local_skip |=
+                    LogError(mismatch_layout_vuid, objlist, loc,
+                             "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
+                             ") with specific layout %s that doesn't match the "
+                             "%s layout %s.%s",
+                             FormatHandle(image_state).c_str(), subresource.arrayLayer, subresource.mipLevel,
+                             expected_layout.c_str(), layout_check.message, string_VkImageLayout(layout_check.layout),
+                             (!enabled_features.unifiedImageLayoutsVideo && layout_check.layout == VK_IMAGE_LAYOUT_GENERAL)
+                                 ? "\nHint: VK_IMAGE_LAYOUT_GENERAL can be allowed if the unifiedImageLayoutsVideo "
+                                   "feature is enabled."
+                                 : "");
             }
             return local_skip;
         });

@@ -1140,11 +1140,12 @@ bool CoreChecks::ValidateCopyImageRegionCommon(const ImageCopyRegion& region, co
                 if (region.src_subresource.aspectMask != region.dst_subresource.aspectMask) {
                     const char* vuid =
                         (is_2 || is_host) ? "VUID-VkImageCopy2-apiVersion-07940" : "VUID-VkImageCopy-apiVersion-07940";
-                    skip |=
-                        LogError(vuid, region.objlist, src_subresource_loc.dot(Field::aspectMask), "(%s) does not match %s (%s).",
-                                 string_VkImageAspectFlags(region.src_subresource.aspectMask).c_str(),
-                                 dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
-                                 string_VkImageAspectFlags(region.dst_subresource.aspectMask).c_str());
+                    skip |= LogError(vuid, region.objlist, src_subresource_loc.dot(Field::aspectMask),
+                                     "(%s) does not match %s (%s).\nHint: This can be allowed in some cases if "
+                                     "VK_KHR_sampler_ycbcr_conversion (or Vulkan 1.1) is enabled.",
+                                     string_VkImageAspectFlags(region.src_subresource.aspectMask).c_str(),
+                                     dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
+                                     string_VkImageAspectFlags(region.dst_subresource.aspectMask).c_str());
                 }
             }
         }

@@ -3451,7 +3451,8 @@ bool CoreChecks::ValidateRenderingAttachmentFlagsInfo(const core::RenderingAttac
         }
         if (!enabled_features.dynamicRenderingLocalRead) {
             skip |= LogError("VUID-VkRenderingAttachmentFlagsInfoKHR-flags-11755", vvl_attachment.GetObjectList(),
-                             vvl_attachment.Loc().pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags), "is %s.",
+                             vvl_attachment.Loc().pNext(Struct::VkRenderingAttachmentFlagsInfoKHR, Field::flags),
+                             "is %s, but the dynamicRenderingLocalRead feature was not enabled.",
                              string_VkRenderingAttachmentFlagsKHR(attachment_flags->flags).c_str());
         }
     }
@@ -3502,7 +3503,8 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                     const LogObjectList objlist(commandBuffer, rendering_info.pColorAttachments[j].imageView);
                     skip |= LogError("VUID-VkRenderingInfo-imageView-06107", objlist,
                                      rendering_info_loc.dot(Field::pColorAttachments, j).dot(Field::imageView),
-                                     "must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.");
+                                     "must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.\nHint: This can be allowed if the "
+                                     "fragmentDensityMapNonSubsampledImages feature is enabled.");
                 }
             }
         }
@@ -3513,7 +3515,8 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                 const LogObjectList objlist(commandBuffer, rendering_info.pDepthAttachment->imageView);
                 skip |= LogError("VUID-VkRenderingInfo-imageView-06107", objlist,
                                  rendering_info_loc.dot(Field::pDepthAttachment).dot(Field::imageView),
-                                 "must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.");
+                                 "must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.\nHint: This can be allowed if the "
+                                 "fragmentDensityMapNonSubsampledImages feature is enabled.");
             }
         }
 
@@ -3523,7 +3526,8 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                 const LogObjectList objlist(commandBuffer, rendering_info.pStencilAttachment->imageView);
                 skip |= LogError("VUID-VkRenderingInfo-imageView-06107", objlist,
                                  rendering_info_loc.dot(Field::pStencilAttachment).dot(Field::imageView),
-                                 "must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.");
+                                 "must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.\nHint: This can be allowed if the "
+                                 "fragmentDensityMapNonSubsampledImages feature is enabled.");
             }
         }
     }
@@ -3545,7 +3549,9 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
     if (layer_count != 1 && !enabled_features.multiview && api_version < VK_API_VERSION_1_1) {
         const LogObjectList objlist(commandBuffer, fdm_attachment_info.imageView);
         skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908", objlist, view_loc,
-                         "must have a layerCount (%" PRId32 ") equal to 1.", layer_count);
+                         "must have a layerCount (%" PRId32
+                         ") equal to 1.\nHint: This can be allowed in some cases if the multiview feature is enabled.",
+                         layer_count);
     }
     if ((rendering_info.viewMask == 0) && (layer_count != 1)) {
         const LogObjectList objlist(commandBuffer, fdm_attachment_info.imageView);
@@ -3853,7 +3859,8 @@ bool CoreChecks::ValidateBeginRenderingSampleCount(VkCommandBuffer commandBuffer
                 skip |=
                     LogError("VUID-VkRenderingInfo-imageView-09429", objlist,
                              rendering_info_loc.dot(Field::pColorAttachments, j).dot(Field::imageView),
-                             "was created with %s, but pColorAttachments[0].imageView was created with %s.",
+                             "was created with %s, but pColorAttachments[0].imageView was created with %s.\nHint: This can be "
+                             "allowed in some cases if the multisampledRenderToSingleSampled feature is enabled.",
                              string_VkSampleCountFlagBits(image_view->samples), string_VkSampleCountFlagBits(first_sample_count));
             }
         }
@@ -4113,7 +4120,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
     if (cb_state->IsSecondary() && ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0) &&
         !enabled_features.nestedCommandBuffer) {
         skip |= LogError("VUID-vkCmdBeginRendering-commandBuffer-06068", commandBuffer, rendering_info_loc.dot(Field::flags),
-                         "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT in a secondary command buffer.");
+                         "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT in a secondary command "
+                         "buffer.\nHint: This can be allowed if the nestedCommandBuffer feature is enabled.");
     }
 
     // --- Color

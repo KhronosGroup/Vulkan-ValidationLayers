@@ -298,10 +298,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     auto buffer_node = descriptor.GetBufferState();
     if ((!buffer_node && !dev_proxy.enabled_features.nullDescriptor) || (buffer_node && buffer_node->Destroyed())) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
-        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
-                         "the %s is using buffer %s that is invalid or has been destroyed.%s",
-                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer).c_str(),
-                         DescribeInstruction().c_str());
+        skip |= LogError(
+            CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
+            "the %s is using buffer %s that is invalid or has been destroyed.%s%s",
+            DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer).c_str(),
+            buffer == VK_NULL_HANDLE ? "\nHint: VK_NULL_HANDLE can be allowed if the nullDescriptor feature is enabled." : "",
+            DescribeInstruction().c_str());
         // early return if no valid
         return skip;
     }
@@ -1119,10 +1121,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         // Image view must have been destroyed since initial update. Could potentially flag the descriptor
         //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
-        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
-                         "the %s is using imageView %s that is invalid or has been destroyed.%s",
-                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
-                         DescribeInstruction().c_str());
+        skip |= LogError(
+            CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
+            "the %s is using imageView %s that is invalid or has been destroyed.%s%s",
+            DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_view).c_str(),
+            image_view == VK_NULL_HANDLE ? "\nHint: VK_NULL_HANDLE can be allowed if the nullDescriptor feature is enabled." : "",
+            DescribeInstruction().c_str());
         return skip;  // if invalid, end early
     }
 
@@ -1320,10 +1324,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if ((!buffer_view_state && !dev_proxy.enabled_features.nullDescriptor) ||
         (buffer_view_state && buffer_view_state->Destroyed())) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
-        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
-                         "the %s is using bufferView %s that is invalid or has been destroyed.%s",
-                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer_view).c_str(),
-                         DescribeInstruction().c_str());
+        skip |= LogError(
+            CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
+            "the %s is using bufferView %s that is invalid or has been destroyed.%s%s",
+            DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(buffer_view).c_str(),
+            buffer_view == VK_NULL_HANDLE ? "\nHint: VK_NULL_HANDLE can be allowed if the nullDescriptor feature is enabled." : "",
+            DescribeInstruction().c_str());
         return skip;  // early return if invalid
     }
 
@@ -1503,10 +1509,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             // the AccelerationStructure could be null via nullDescriptor and accessing it is legal
             if (acc != VK_NULL_HANDLE || !dev_proxy.enabled_features.nullDescriptor) {
                 const LogObjectList objlist(this->objlist, descriptor_set.Handle());
-                skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
-                                 "the %s is using acceleration structure %s that is invalid or has been destroyed.%s",
-                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
-                                 DescribeInstruction().c_str());
+                skip |= LogError(
+                    CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
+                    "the %s is using acceleration structure %s that is invalid or has been destroyed.%s%s",
+                    DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str(),
+                    acc == VK_NULL_HANDLE ? "\nHint: VK_NULL_HANDLE can be allowed if the nullDescriptor feature is enabled." : "",
+                    DescribeInstruction().c_str());
             }
         } else if (auto as_buffer = acc_node->GetFirstValidBuffer(*dev_proxy.device_state)) {
             for (const auto& mem_binding : as_buffer.state->GetInvalidMemory()) {
@@ -1568,10 +1576,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     if ((!tensor_view_state && !dev_proxy.enabled_features.nullDescriptor) ||
         (tensor_view_state && tensor_view_state->Destroyed())) {
         const LogObjectList objlist(this->objlist, descriptor_set.Handle());
-        skip |= LogError(CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
-                         "the %s is using tensorView %s that is invalid or has been destroyed.%s",
-                         DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(tensor_view).c_str(),
-                         DescribeInstruction().c_str());
+        skip |= LogError(
+            CreateActionVuid(loc.Get().function, ActionVUID::DESCRIPTOR_08114), objlist, loc.Get(),
+            "the %s is using tensorView %s that is invalid or has been destroyed.%s%s",
+            DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(tensor_view).c_str(),
+            tensor_view == VK_NULL_HANDLE ? "\nHint: VK_NULL_HANDLE can be allowed if the nullDescriptor feature is enabled." : "",
+            DescribeInstruction().c_str());
         return skip;  // early return if invalid
     }
 

@@ -857,9 +857,10 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                         skip |= LogError(
                             CreateActionVuid(loc.function, vvl::ActionVUID::VERTEX_INPUT_08734), vert_spirv_state.handle(), loc,
                             "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32 "] (binding %" PRIu32
-                            ", location %" PRIu32 ") with format %s but the vertex shader %s is numeric type %s",
+                            ", location %" PRIu32 ") with format %s but the vertex shader %s is numeric type %s%s",
                             attrib->index, attrib->desc.binding, attrib->desc.location, string_VkFormat(attrib->desc.format),
-                            variable_ptr->Describe().c_str(), vert_spirv_state.DescribeType(var_base_type_id).c_str());
+                            variable_ptr->Describe().c_str(), vert_spirv_state.DescribeType(var_base_type_id).c_str(),
+                            shader64 ? "" : "\nHint: This can be allowed if the legacyVertexAttributes feature is enabled.");
                     }
                 } else if (attribute64 && !shader64) {
                     skip |= LogError(
