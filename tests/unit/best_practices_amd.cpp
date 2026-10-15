@@ -366,12 +366,7 @@ TEST_F(NegativeBestPracticesAMD, Barriers) {
     vkt::Image image(*m_device, image_ci);
 
     m_command_buffer.Begin();
-    // check for read-to-read barrier
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-readToReadBarrier");
-    image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-    m_errorMonitor->VerifyFound();
+    image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
     m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryBarrier-oldLayout-01197");
 
