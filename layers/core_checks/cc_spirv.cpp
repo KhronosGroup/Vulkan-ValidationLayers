@@ -710,17 +710,16 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module& module_
     if (!binding) {
         if (variable.IsHeap()) {
             skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::ShaderStage_07988), objlist, loc,
-                             "SPIR-V (%s) is trying to use descriptor heaps (%s) but is also trying to use a %s, either set the "
+                             "SPIR-V %s is trying to use descriptor heaps (%s) but is also trying to use a %s, either set the "
                              "layout to NULL or remove the heaps from the shader.",
                              entrypoint.Describe().c_str(), variable.DescribeDescriptor().c_str(),
                              stage_state.HasPipeline() ? "VkPipelineLayout" : "VkDescriptorSetLayout");
         } else {
-            skip |=
-                LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::ShaderStage_07988), objlist, loc,
-                         "SPIR-V (%s) uses descriptor %s but the binding was not declared in the %s.\nPossible VkDescriptorType "
-                         "that could be used are: %s",
-                         entrypoint.Describe().c_str(), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str(),
-                         resource_type.Describe(false).c_str());
+            skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::ShaderStage_07988), objlist, loc,
+                             "SPIR-V %s uses descriptor %s but the binding was not declared in the %s.\nPossible VkDescriptorType "
+                             "that could be used are: %s",
+                             entrypoint.Describe().c_str(), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str(),
+                             resource_type.Describe(false).c_str());
         }
         return skip;
     }
