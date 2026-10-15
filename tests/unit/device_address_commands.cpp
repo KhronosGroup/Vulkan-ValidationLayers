@@ -961,7 +961,7 @@ TEST_F(NegativeDeviceAddressCommands, QueryResultsStride) {
 
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
     query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-    query_pool_ci.queryCount = 1u;
+    query_pool_ci.queryCount = 2u;
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
@@ -972,6 +972,8 @@ TEST_F(NegativeDeviceAddressCommands, QueryResultsStride) {
     m_command_buffer.Begin();
     vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
     vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1u);
 
     range.address = buffer.Address() + 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13077");
@@ -980,9 +982,12 @@ TEST_F(NegativeDeviceAddressCommands, QueryResultsStride) {
 
     range.address = buffer.Address();
     range.stride = 9;
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13077");
-    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 1u, &range, 0u, 0u);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-stride-4");
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 2u, &range, 0u, 0u);
     m_errorMonitor->VerifyFound();
+
+    // stride is unused for a single query
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 1u, &range, 0u, 0u);
 
     m_command_buffer.End();
 }
@@ -992,7 +997,7 @@ TEST_F(NegativeDeviceAddressCommands, QueryResults64Stride) {
 
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
     query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
-    query_pool_ci.queryCount = 1u;
+    query_pool_ci.queryCount = 2u;
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
@@ -1003,6 +1008,8 @@ TEST_F(NegativeDeviceAddressCommands, QueryResults64Stride) {
     m_command_buffer.Begin();
     vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
     vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1u);
 
     range.address = buffer.Address() + 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13078");
@@ -1011,9 +1018,12 @@ TEST_F(NegativeDeviceAddressCommands, QueryResults64Stride) {
 
     range.address = buffer.Address();
     range.stride = 9;
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13078");
-    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 1u, &range, 0u, VK_QUERY_RESULT_64_BIT);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-stride-8");
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 2u, &range, 0u, VK_QUERY_RESULT_64_BIT);
     m_errorMonitor->VerifyFound();
+
+    // stride is unused for a single query
+    vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 1u, &range, 0u, VK_QUERY_RESULT_64_BIT);
 
     m_command_buffer.End();
 }
