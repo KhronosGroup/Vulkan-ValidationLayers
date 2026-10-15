@@ -72,8 +72,8 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
     }
 
     // cant use |descriptor_type| as its only for the image resource here
-    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0 && is_sampler) {
-        return true;
+    if (is_sampler) {
+        return (resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0;
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 &&
         (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)) {
