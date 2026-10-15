@@ -3068,6 +3068,41 @@ TEST_F(NegativeDeviceGeneratedCommands, IndirectCommandPushData) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDeviceGeneratedCommands, IndirectCommandPushDataMaxPushDataSize) {
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&heap_props);
+    GetPhysicalDeviceProperties2(props2);
+    const uint32_t max_push_data_size = static_cast<uint32_t>(heap_props.maxPushDataSize);
+
+    VkIndirectCommandsPushConstantTokenEXT pc_token;
+    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
+    token.offset = 0;
+    token.data.pPushConstant = &pc_token;
+
+    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
+    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
+    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
+    command_layout_ci.tokenCount = 1;
+    command_layout_ci.pTokens = &token;
+    VkIndirectCommandsLayoutEXT command_layout;
+
+    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT;
+    pc_token.updateRange = {VK_SHADER_STAGE_ALL, max_push_data_size - 4, 8};
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkIndirectCommandsPushConstantTokenEXT-updateRange-maxPushDataSize");
+    vk::CreateIndirectCommandsLayoutEXT(device(), &command_layout_ci, nullptr, &command_layout);
+    m_errorMonitor->VerifyFound();
+
+    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT;
+    pc_token.updateRange = {VK_SHADER_STAGE_ALL, max_push_data_size, 4};
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkIndirectCommandsPushConstantTokenEXT-updateRange-maxPushDataSize");
+    vk::CreateIndirectCommandsLayoutEXT(device(), &command_layout_ci, nullptr, &command_layout);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDeviceGeneratedCommands, NoLayoutOrHeapFlag) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorHeap);
