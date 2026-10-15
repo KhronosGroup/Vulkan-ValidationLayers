@@ -1630,6 +1630,44 @@ TEST_F(PositiveDescriptors, WriteDescriptorSetTypeStageMatch) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 }
 
+TEST_F(PositiveDescriptors, CopyMutableDescriptorPastDstBinding) {
+    TEST_DESCRIPTION("Copy with dstArrayElement past the end of dstBinding, skipping over a binding with no descriptors");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorType mutable_types[2] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
+    VkMutableDescriptorTypeListEXT type_lists[3] = {{2, mutable_types}, {2, mutable_types}, {2, mutable_types}};
+    VkMutableDescriptorTypeCreateInfoEXT mutable_ci = vku::InitStructHelper();
+    mutable_ci.mutableDescriptorTypeListCount = 3;
+    mutable_ci.pMutableDescriptorTypeLists = type_lists;
+
+    // Binding 1 has no descriptors, bindings 0 and 2 have one each
+    OneOffDescriptorSet dst_set(m_device,
+                                {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                 {1, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 0, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                 {2, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
+                                0, &mutable_ci, 0, nullptr, &mutable_ci);
+    OneOffDescriptorSet src_set(m_device, {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}}, 0,
+                                &mutable_ci, 0, nullptr, &mutable_ci);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    src_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
+    src_set.UpdateDescriptorSets();
+
+    // Element 1 of binding 0 skips the empty binding 1, so this writes element 0 of binding 2
+    VkCopyDescriptorSet copy = vku::InitStructHelper();
+    copy.srcSet = src_set.set_;
+    copy.srcBinding = 0;
+    copy.srcArrayElement = 0;
+    copy.dstSet = dst_set.set_;
+    copy.dstBinding = 0;
+    copy.dstArrayElement = 1;
+    copy.descriptorCount = 1;
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy);
+}
+
 TEST_F(PositiveDescriptors, AllocateOverDescriptorCount) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
