@@ -389,17 +389,17 @@ bool Device::manual_PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer c
 
     for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
         VkColorBlendAdvancedEXT const& advanced = pColorBlendAdvanced[attachment];
-        if (advanced.srcPremultiplied == VK_TRUE &&
+        if (advanced.srcPremultiplied != VK_TRUE &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
             skip |= LogError("VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505", commandBuffer,
                              error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::srcPremultiplied),
-                             "is VK_TRUE but the advancedBlendNonPremultipliedSrcColor feature was not enabled.");
+                             "is VK_FALSE, but advancedBlendNonPremultipliedSrcColor is not supported.");
         }
-        if (advanced.dstPremultiplied == VK_TRUE &&
+        if (advanced.dstPremultiplied != VK_TRUE &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
             skip |= LogError("VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506", commandBuffer,
                              error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::dstPremultiplied),
-                             "is VK_TRUE but the advancedBlendNonPremultipliedDstColor feature was not enabled.");
+                             "is VK_FALSE, but advancedBlendNonPremultipliedDstColor is not supported.");
         }
         if (advanced.blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
