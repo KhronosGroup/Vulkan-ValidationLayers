@@ -1275,7 +1275,7 @@ TEST_F(PositiveDynamicState, DynamicAdvancedBlendMaxAttachments) {
         VkBool32 color_blend_enable = i == 0;
         vk::CmdSetColorBlendEnableEXT(m_command_buffer, i, 1u, &color_blend_enable);
         VkColorBlendAdvancedEXT color_blend_advanced;
-        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_ADD;
+        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
         color_blend_advanced.srcPremultiplied = VK_TRUE;
         color_blend_advanced.dstPremultiplied = VK_TRUE;
         color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
@@ -1346,7 +1346,7 @@ TEST_F(PositiveDynamicState, DynamicBlendMix) {
 
     VkColorBlendEquationEXT equation = {VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
                                         VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD};
-    VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_ADD, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
+    VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_MULTIPLY_EXT, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
     vk::CmdSetColorBlendEquationEXT(m_command_buffer, 0, 1, &equation);
     vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 1, 1, &advanced);
     vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);

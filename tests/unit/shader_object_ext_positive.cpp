@@ -1641,7 +1641,7 @@ TEST_F(PositiveShaderObjectEXT, SetColorBlendAdvancedEXT) {
     SetDefaultDynamicStatesExcludeEXT({VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT});
     VkBool32 blend_enable = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &blend_enable);
-    VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_ADD, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
+    VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_MULTIPLY_EXT, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
     vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 0u, 1u, &advanced);
     VkColorBlendEquationEXT equation = {
         VK_BLEND_FACTOR_CONSTANT_COLOR,
