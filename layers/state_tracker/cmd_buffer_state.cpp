@@ -1576,6 +1576,7 @@ void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secon
                     void update(ImageLayoutState& dst, const ImageLayoutState& src) const {
                         if (src.current_layout != kInvalidLayout && src.current_layout != dst.current_layout) {
                             dst.current_layout = src.current_layout;
+                            dst.current_layout_command = src.current_layout_command;
                         }
                     }
                     std::optional<ImageLayoutState> insert(const ImageLayoutState& src) const {

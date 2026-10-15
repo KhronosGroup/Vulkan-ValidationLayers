@@ -57,6 +57,7 @@ static bool UpdateLayoutMapRange(LayoutsMap& layout_map, const IndexRange& range
 
             if (!intersected_range.empty() && update_current) {
                 entry.current_layout = new_entry.current_layout;
+                entry.current_layout_command = new_entry.current_layout_command;
                 auto overwrite_result = layout_map.overwrite_range(pos->lower_bound, std::make_pair(intersected_range, entry));
                 // If we didn't cover the whole range, we'll need to go around again
                 pos.invalidate(overwrite_result, intersected_range.begin);
@@ -111,12 +112,16 @@ bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGen
                          VkImageLayout expected_layout, VkImageAspectFlags aspect_mask, uint32_t label_command_i,
                          vvl::Func command) {
     assert(layout != kInvalidLayout);
-    ImageLayoutState entry{};
+
+    ImageLayoutState entry;
     entry.current_layout = layout;
+    entry.current_layout_command = command;
+
     entry.first_layout = (expected_layout != kInvalidLayout) ? expected_layout : layout;
-    entry.aspect_mask = aspect_mask;
-    entry.label_command_i = label_command_i;
     entry.first_layout_command = command;
+    entry.first_layout_label_command_i = label_command_i;
+
+    entry.aspect_mask = aspect_mask;
     return UpdateLayoutMap(image_layout_map, std::move(range_gen), entry);
 }
 
@@ -124,13 +129,14 @@ void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenera
                       VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid, uint32_t label_command_i,
                       vvl::Func command) {
     assert(expected_layout != kInvalidLayout);
-    ImageLayoutState entry{};
-    entry.current_layout = kInvalidLayout;
+
+    ImageLayoutState entry;
     entry.first_layout = expected_layout;
+    entry.first_layout_command = command;
+    entry.first_layout_label_command_i = label_command_i;
+
     entry.aspect_mask = aspect_mask;
     entry.submit_time_layout_mismatch_vuid = submit_time_layout_mismatch_vuid;
-    entry.label_command_i = label_command_i;
-    entry.first_layout_command = command;
     UpdateLayoutMap(image_layout_map, std::move(range_gen), entry);
 }
 

@@ -37,30 +37,31 @@ using ImageLayoutMap = sparse_container::SmallRangeMap<VkImageLayout, 16, vvl::S
 
 // Image layout state during command buffer recording
 struct ImageLayoutState {
-    VkImageLayout current_layout;
+    VkImageLayout current_layout = kInvalidLayout;
+
+    // The command that set |current_layout|
+    vvl::Func current_layout_command = vvl::Func::Empty;
 
     // Tracks the first known layout of the subresource in the command buffer.
     // This value is tracked based on the expected layout parameters from various API functions.
     // For example, for vkCmdCopyImageToBuffer the expected layout is the srcImageLayout parameter,
     // and for image barrier it is the oldLayout.
-    VkImageLayout first_layout;
+    VkImageLayout first_layout = kInvalidLayout;
+
+    // The command that set |first_layout|
+    vvl::Func first_layout_command = vvl::Func::Empty;
+
+    // Index into the recording command buffer's label-command stream when |first_layout| was recorded
+    uint32_t first_layout_label_command_i = vvl::kNoIndex32;
 
     // Aspect mask is used to normalize layouts before comparison.
     // TODO: consider storing two additional normalized layouts instead of this field
-    VkImageAspectFlags aspect_mask;
+    VkImageAspectFlags aspect_mask = 0;
 
     // Submit time validation compares first_layout against image's current global layout.
     // If not null, this vuid is used to report an error.
     // If null, the current implementation will use VUID-vkCmdDraw-None-09600 until we fix all the places
-    const char* submit_time_layout_mismatch_vuid;
-
-    // Index into the recording command buffer's label-command stream at the moment
-    // first_layout was recorded
-    uint32_t label_command_i = vvl::kNoIndex32;
-
-    // The command that set |first_layout|
-    // so submit time errors can say which command expected it
-    vvl::Func first_layout_command = vvl::Func::Empty;
+    const char* submit_time_layout_mismatch_vuid = nullptr;
 };
 
 // Tracks image layout state of each subresource of a single image during record time.
