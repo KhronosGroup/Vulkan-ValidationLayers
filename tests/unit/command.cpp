@@ -2052,6 +2052,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-offset-02710");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDrawIndirectCount-maxDrawCount-03111");
     vk::CmdDrawIndirectCountKHR(m_command_buffer, draw_buffer, 1, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
@@ -2066,6 +2067,10 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-stride-03110");
     vk::CmdDrawIndirectCountKHR(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-maxDrawCount-03111");
+    vk::CmdDrawIndirectCountKHR(m_command_buffer, draw_buffer, 4, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -2134,6 +2139,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-offset-02710");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143");
     vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer, draw_buffer, 1, count_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
@@ -2148,6 +2154,10 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-stride-03142");
     vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143");
+    vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer, draw_buffer, 4, count_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
