@@ -3312,7 +3312,6 @@ TEST_F(NegativeShaderObjectEXT, MissingCmdSetDepthBiasEXT) {
 
 TEST_F(NegativeShaderObjectEXT, MissingCmdSetBlendConstantsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetBlendConstantsEXT.");
-    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     CreateMinimalShaders();
@@ -3332,13 +3331,6 @@ TEST_F(NegativeShaderObjectEXT, MissingCmdSetBlendConstantsEXT) {
     m_command_buffer.BindShadersEXT(m_vert_shader, m_frag_shader);
     VkBool32 color_blend_enable = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &color_blend_enable);
-    VkColorBlendAdvancedEXT color_blend_advanced;
-    color_blend_advanced.advancedBlendOp = VK_BLEND_OP_ADD;
-    color_blend_advanced.srcPremultiplied = VK_TRUE;
-    color_blend_advanced.dstPremultiplied = VK_TRUE;
-    color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
-    color_blend_advanced.clampResults = VK_FALSE;
-    vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 0u, 1u, &color_blend_advanced);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07835");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
@@ -7243,7 +7235,7 @@ TEST_F(NegativeShaderObjectEXT, AdvancedBlendMaxAttachments) {
         vk::CmdSetColorBlendEnableEXT(m_command_buffer, i, 1u, &color_blend_enable);
         vk::CmdSetColorWriteMaskEXT(m_command_buffer, i, 1u, &color_write_mask);
         VkColorBlendAdvancedEXT color_blend_advanced;
-        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_ADD;
+        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
         color_blend_advanced.srcPremultiplied = VK_TRUE;
         color_blend_advanced.dstPremultiplied = VK_TRUE;
         color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;

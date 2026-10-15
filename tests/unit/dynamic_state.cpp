@@ -2042,7 +2042,7 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendAdvanced) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    VkColorBlendAdvancedEXT second = {VK_BLEND_OP_ADD, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
+    VkColorBlendAdvancedEXT second = {VK_BLEND_OP_MULTIPLY_EXT, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
     vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 1u, 1u, &second);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-10863");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -2061,6 +2061,21 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendAdvanced) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
 
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, ColorBlendAdvancedBasicBlendOp) {
+    TEST_DESCRIPTION("vkCmdSetColorBlendAdvancedEXT with a blend op that is not an advanced blend operation");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendAdvanced);
+    RETURN_IF_SKIP(Init());
+
+    m_command_buffer.Begin();
+    const VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_ADD, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkColorBlendAdvancedEXT-advancedBlendOp");
+    vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 0u, 1u, &advanced);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 
@@ -5133,7 +5148,7 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
         VkBool32 color_blend_enable = i == 0;
         vk::CmdSetColorBlendEnableEXT(m_command_buffer, i, 1u, &color_blend_enable);
         VkColorBlendAdvancedEXT color_blend_advanced;
-        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_ADD;
+        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
         color_blend_advanced.srcPremultiplied = VK_TRUE;
         color_blend_advanced.dstPremultiplied = VK_TRUE;
         color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
