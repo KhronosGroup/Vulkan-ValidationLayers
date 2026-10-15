@@ -349,31 +349,10 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
                                           ". Consider consolidating and re-organizing the frame to use fewer barriers.",
                                           VendorSpecificTag(kBPVendorAMD), num, total_barriers, kMaxRecommendedBarriersSizeAMD);
         }
-    }
-    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        static constexpr std::array<VkImageLayout, 3> read_layouts = {
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        };
 
         for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
-            // read to read barriers
-            const auto& image_barrier = pImageMemoryBarriers[i];
-            const bool old_is_read_layout =
-                std::find(read_layouts.begin(), read_layouts.end(), image_barrier.oldLayout) != read_layouts.end();
-            const bool new_is_read_layout =
-                std::find(read_layouts.begin(), read_layouts.end(), image_barrier.newLayout) != read_layouts.end();
-
-            if (old_is_read_layout && new_is_read_layout) {
-                skip |= LogPerformanceWarning("BestPractices-PipelineBarrier-readToReadBarrier", commandBuffer, error_obj.location,
-                                              "%s Don't issue read-to-read barriers. "
-                                              "Get the resource in the right state the first time you use it.",
-                                              VendorSpecificTag(kBPVendorAMD | kBPVendorNVIDIA).c_str());
-            }
-
             // general with no storage
-            if (VendorCheckEnabled(kBPVendorAMD) && image_barrier.newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+            if (pImageMemoryBarriers[i].newLayout == VK_IMAGE_LAYOUT_GENERAL) {
                 auto image_state = Get<vvl::Image>(pImageMemoryBarriers[i].image);
                 if (image_state && !(image_state->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                     const LogObjectList objlist(commandBuffer, pImageMemoryBarriers[i].image);
