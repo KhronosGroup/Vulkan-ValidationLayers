@@ -2644,7 +2644,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList& objects, const Locat
                          "%s has offset 0x%" PRIx64 " and size 0x%" PRIx64 " whose sum is greater than total size 0x%" PRIx64 ".",
                          FormatHandle(mem_barrier.buffer).c_str(), mem_barrier.offset, mem_barrier.size, buffer_size);
         }
-        if (mem_barrier.size == 0) {
+        if (!is_memory_range && mem_barrier.size == 0) {
             auto size_loc = barrier_loc.dot(Field::size);
             const auto& vuid = GetBufferBarrierVUID(size_loc, vvl::BufferError::kSizeZero);
             skip |= LogError(vuid, objects, barrier_loc, "%s has a size of 0.", FormatHandle(mem_barrier.buffer).c_str());
