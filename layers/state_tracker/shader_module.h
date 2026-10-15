@@ -79,6 +79,8 @@ struct DecorationBase {
         sample_bit = 1 << 11,
         flat_bit = 1 << 12,
         no_perspective_bit = 1 << 13,
+        descriptor_set_bit = 1 << 14,
+        binding_bit = 1 << 15,
     };
 
     // bits to know if things have been set or not by a Decoration
@@ -110,7 +112,11 @@ struct DecorationBase {
 // subset only for OpDecorate
 // Can't have nested structs with OpMemberDecorate, this class prevents accidentally creating a 2nd level of member decorations,
 struct DecorationSet : public DecorationBase {
-    // For descriptors
+    // The only two times these are not set:
+    //  1. When not using a descriptor and these values should be ignored
+    //  2. When using descriptor heaps, so just call IsHeap()
+    //
+    // We still need these to have kInvalidValue because things like GetDescriptorSetLayoutBindingPtrFromBinding to work
     uint32_t set = kInvalidValue;
     uint32_t binding = kInvalidValue;
 

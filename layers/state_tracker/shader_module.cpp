@@ -143,9 +143,11 @@ uint32_t DecorationBase::GetArrayStride(const Module& module_state,
 void DecorationSet::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
         case spv::DecorationDescriptorSet:
+            flags |= descriptor_set_bit;
             set = value;
             break;
         case spv::DecorationBinding:
+            flags |= binding_bit;
             binding = value;
             break;
         case spv::DecorationInputAttachmentIndex:
@@ -2565,7 +2567,7 @@ bool ResourceInterfaceVariable::IsHeap() const {
     // It is only legal to not have a set/binding for descriptors if they are the heap
     // We might one day want to know which heap it is, and could just check for |ResourceHeapEXT| or |SamplerHeapEXT| but that will
     // for sure require more testing
-    return decorations.set == kInvalidValue || decorations.binding == kInvalidValue;
+    return !(decorations.Has(DecorationBase::descriptor_set_bit) && decorations.Has(DecorationBase::binding_bit));
 }
 
 const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVariable& variable, const Module& module_state) {
