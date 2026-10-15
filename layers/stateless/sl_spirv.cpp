@@ -783,7 +783,7 @@ bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module& m
             skip |= LogError(
                 "VUID-RuntimeSpirv-XfbBuffer-06309", module_state.handle(), loc,
                 "SPIR-V uses transform feedback with stream (%" PRIu32 ") having the sum of buffer data sizes (%" PRIu32
-                ") not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreamDataSize "
+                ") greater than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreamDataSize "
                 "(%" PRIu32 ").",
                 stream.first, stream.second, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreamDataSize);
         }

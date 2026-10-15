@@ -261,10 +261,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     // Offset of 4 should error
-    m_errorMonitor->SetDesiredWarningRegex(
-        "WARNING-GPU-AV-drawCount",
-        "Indirect draw count of 1 would exceed size \\(16\\) of buffer .* stride = 16 offset = 4 "
-        ".* = 20");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-maxDrawCount-03111");
     vk::CmdDrawIndirectCountKHR(m_command_buffer, draw_buffer, 4, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -305,10 +302,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
     // Offset of 4 should error
-    m_errorMonitor->SetDesiredWarningRegex(
-        "WARNING-GPU-AV-drawCount",
-        "Indirect draw count of 1 would exceed size \\(20\\) of buffer .* stride = 20 offset = 4 "
-        ".* = 24");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143");
     vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer, indexed_draw_buffer, 4, count_buffer, 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();

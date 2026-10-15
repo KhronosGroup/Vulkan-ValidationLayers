@@ -1914,10 +1914,10 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
             if (pCreateInfo->planeStackIndex >= display_plane_property_count) {
                 skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-planeReorderPossible-01253", display_mode,
                                  create_info_loc.dot(Field::planeStackIndex),
-                                 "(%" PRIu32 ") must be in the range [0, %" PRIu32
-                                 "] that was returned by "
+                                 "(%" PRIu32 ") must be less than the number of display planes (%" PRIu32
+                                 ") returned by "
                                  "vkGetPhysicalDeviceDisplayPlanePropertiesKHR.\nNote: planeReorderPossible was found to be true.",
-                                 pCreateInfo->planeStackIndex, display_plane_property_count - 1);
+                                 pCreateInfo->planeStackIndex, display_plane_property_count);
             }
         } else {
             std::vector<VkDisplayPlanePropertiesKHR> plane_props(display_plane_property_count);
@@ -2209,10 +2209,10 @@ bool core::Instance::ValidateGetPhysicalDeviceDisplayPlaneProperties(VkPhysicalD
     }
     if (planeIndex >= display_plane_property_count) {
         skip |= LogError("VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, plane_index_loc,
-                         "(%" PRIu32 ") must be in the range [0, %" PRIu32
-                         "] that was returned by "
+                         "(%" PRIu32 ") must be less than the number of display planes (%" PRIu32
+                         ") returned by "
                          "vkGetPhysicalDeviceDisplayPlanePropertiesKHR\nHint: Do you have the plane index hardcoded?",
-                         planeIndex, display_plane_property_count - 1);
+                         planeIndex, display_plane_property_count);
     }
 
     return skip;

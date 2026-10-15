@@ -1305,9 +1305,9 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                         has_pipeline ? vvl::ActionVUID::SET_VIEWPORT_SWIZZLE_07493 : vvl::ActionVUID::SET_VIEWPORT_SWIZZLE_09421;
                     skip |= LogError(CreateActionVuid(loc.function, vuid), cb_state.Handle(), loc,
                                      "viewportCount (%" PRIu32
-                                     ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32 ") set with %s",
-                                     cb_state.dynamic_state_value.viewport_count, viewport_swizzle_count,
-                                     has_pipeline ? "VkPipelineViewportSwizzleStateCreateInfoNV" : "vkCmdSetViewportSwizzleNV");
+                                     ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32
+                                     ") set with vkCmdSetViewportSwizzleNV",
+                                     cb_state.dynamic_state_value.viewport_count, viewport_swizzle_count);
                 }
             } else if (auto viewport_state = last_bound_state.pipeline_state->ViewportState()) {
                 // Only applies when the pipeline actually chained the struct, otherwise there is no per-viewport swizzle array
