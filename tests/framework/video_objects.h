@@ -184,7 +184,7 @@ class VideoConfig {
 
     uint32_t MaxEncodeH265CTBSize() const {
         assert(profile_.videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR);
-        return 16 * static_cast<uint32_t>(log2(EncodeCapsH265()->ctbSizes));
+        return 16u << static_cast<uint32_t>(log2(EncodeCapsH265()->ctbSizes));
     }
 
     uint32_t MaxEncodeH265CTBCount() const {
