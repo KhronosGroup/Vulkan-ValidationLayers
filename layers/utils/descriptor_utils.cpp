@@ -96,8 +96,8 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
     }
 
     const uint32_t opcode = resource_variable.base_type.Opcode();
-    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0 && opcode == spv::OpTypeSampler) {
-        return true;
+    if (opcode == spv::OpTypeSampler) {
+        return (resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0;
     }
     if (opcode == spv::OpTypeImage) {
         if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 && resource_variable.base_type.Word(7) == 1) {
