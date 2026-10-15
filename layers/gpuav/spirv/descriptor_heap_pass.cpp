@@ -72,12 +72,16 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
     }
 
     // cant use |descriptor_type| as its only for the image resource here
-    if (is_sampler) {
-        return (resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0;
+    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0 && is_sampler) {
+        return true;
     }
+
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 &&
         (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)) {
-        return true;
+        // We don't have the OpTypeImage information, so make sure this is not the
+        if (!is_sampler && !access_path.descriptor.is_combined_image_sampler) {
+            return true;
+        }
     }
     if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE || descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER ||
         descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
@@ -96,6 +100,7 @@ bool DescriptorHeapPass::ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT 
         access_path.descriptor.is_combined_image_sampler) {
         return true;
     }
+
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT) != 0 &&
         descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
         return true;

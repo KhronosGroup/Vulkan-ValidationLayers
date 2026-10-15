@@ -151,7 +151,12 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
             return;
         }
 
-        descriptor.is_combined_image_sampler = (sampler_load_inst == nullptr && ImageSampleOperation(opcode));
+        // We need to catch things like OpImageFetch that can have an unused sampler
+        // https://godbolt.org/z/9vq9zPPc8
+        const Type* load_inst_type = type_manager.FindTypeById(load_inst->TypeId());
+
+        descriptor.is_combined_image_sampler = (sampler_load_inst == nullptr && ImageSampleOperation(opcode)) ||
+                                               (load_inst_type && load_inst_type->spv_type_ == SpvType::kSampledImage);
 
         // From here the load should look like a non-image access
         ptr_id = load_inst->Operand(0);

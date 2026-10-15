@@ -6063,6 +6063,54 @@ TEST_F(NegativeDescriptorHeapEXT, ReadOnlyStorageBufferHlsl) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorHeapEXT, NoMappingSamplers) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    {
+        mappings[0] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
+        mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+        mappings[1] = MakeSetAndBindingMappingEXT(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
+        mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+        char const* cs_source = R"glsl(
+            #version 450
+            layout(set = 0, binding = 0) uniform texture2D tex;
+            layout(set = 0, binding = 1) uniform sampler sampl;
+            void main() {
+                vec4 color = texture(sampler2D(tex, sampl), vec2(0.5f));
+            }
+        )glsl";
+
+        m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
+        vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        // Should be VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT
+        mappings[0] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
+        mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+        char const* cs_source = R"glsl(
+            #version 450
+            layout(set = 0, binding = 0) uniform sampler2D tex;
+            void main() {
+                vec4 color = texelFetch(tex, ivec2(0), 0);
+            }
+        )glsl";
+
+        m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-11312");
+        vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeDescriptorHeapEXT, ComputeShaderRecordMapping) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
