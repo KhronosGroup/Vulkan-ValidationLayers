@@ -62,18 +62,28 @@ bool Device::manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandB
     }
 
     if (queryResultFlags & VK_QUERY_RESULT_64_BIT) {
-        if (!IsPointerAligned(pDstRange->address, 8) || !IsIntegerMultipleOf(pDstRange->stride, 8)) {
+        if (queryCount > 1 && !IsIntegerMultipleOf(pDstRange->stride, 8)) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8664
+            skip |= LogError("UNASSIGNED-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-stride-8", objlist,
+                             error_obj.location.dot(Field::pDstRange).dot(Field::stride),
+                             "(%" PRIu64 ") is not a multiple of 8 (queryCount is %" PRIu32 ").", pDstRange->stride, queryCount);
+        }
+        if (!IsPointerAligned(pDstRange->address, 8)) {
             skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13078", objlist,
-                             error_obj.location.dot(Field::pDstRange).dot(Field::address),
-                             "(0x%" PRIx64 ") must be aligned to 8 and pDstRange.stride (%" PRIu64 ") must be a multiple of 8.",
-                             pDstRange->address, pDstRange->stride);
+                             error_obj.location.dot(Field::pDstRange).dot(Field::address), "(0x%" PRIx64 ") is not aligned to 8.",
+                             pDstRange->address);
         }
     } else {
-        if (!IsPointerAligned(pDstRange->address, 4) || !IsIntegerMultipleOf(pDstRange->stride, 4)) {
+        if (queryCount > 1 && !IsIntegerMultipleOf(pDstRange->stride, 4)) {
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8664
+            skip |= LogError("UNASSIGNED-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-stride-4", objlist,
+                             error_obj.location.dot(Field::pDstRange).dot(Field::stride),
+                             "(%" PRIu64 ") is not a multiple of 4 (queryCount is %" PRIu32 ").", pDstRange->stride, queryCount);
+        }
+        if (!IsPointerAligned(pDstRange->address, 4)) {
             skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-flags-13077", objlist,
-                             error_obj.location.dot(Field::pDstRange).dot(Field::address),
-                             "(0x%" PRIx64 ") must be aligned to 4 and pDstRange.stride (%" PRIu64 ") must be a multiple of 4.",
-                             pDstRange->address, pDstRange->stride);
+                             error_obj.location.dot(Field::pDstRange).dot(Field::address), "(0x%" PRIx64 ") is not aligned to 4.",
+                             pDstRange->address);
         }
     }
 
