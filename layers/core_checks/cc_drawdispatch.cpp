@@ -769,7 +769,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
         skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
         skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
                                                 Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), error_obj.location);
-        if (maxDrawCount > 1) {
+        if (maxDrawCount >= 1) {
             skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
                                                     Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), maxDrawCount,
                                                     offset, *indirect_buffer_state, error_obj.location);
@@ -847,7 +847,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
-        if (maxDrawCount > 1) {
+        if (maxDrawCount >= 1) {
             skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
                                                     Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
                                                     maxDrawCount, offset, *indirect_buffer_state, error_obj.location);
@@ -1211,7 +1211,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                                                 Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
                                                 error_obj.location);
 
-        if (maxDrawCount > 1) {
+        if (maxDrawCount >= 1) {
             skip |=
                 ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", stride,
                                                 Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
@@ -1389,7 +1389,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
         skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,
                                                 Struct::VkDrawMeshTasksIndirectCommandEXT,
                                                 sizeof(VkDrawMeshTasksIndirectCommandEXT), error_obj.location);
-        if (maxDrawCount > 1) {
+        if (maxDrawCount >= 1) {
             skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097", stride,
                                                     Struct::VkDrawMeshTasksIndirectCommandEXT,
                                                     sizeof(VkDrawMeshTasksIndirectCommandEXT), maxDrawCount, offset,
