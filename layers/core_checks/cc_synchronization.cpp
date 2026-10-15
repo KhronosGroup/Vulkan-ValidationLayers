@@ -1954,8 +1954,8 @@ bool CoreChecks::ValidateSubpassDependency(const Location& loc, const VkSubpassD
 }
 
 // Verify an image barrier's old/new layouts are compatible with the image's usage flags.
-bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location &layout_loc, VkImage image, VkImageLayout layout,
-                                                      VkImageUsageFlags2KHR usage_flags) const {
+bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, VkImage image, VkImageLayout layout,
+                                                      VkImageUsageFlags2KHR usage_flags, bool is_stencil_usage) const {
     bool skip = false;
     bool is_error = false;
     switch (layout) {
@@ -2046,8 +2046,9 @@ bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location &layout_loc
 
     if (is_error) {
         const auto& vuid = vvl::GetBadImageLayoutVUID(layout_loc, layout);
-        skip |= LogError(vuid, image, layout_loc, "(%s) is not compatible with %s usage flags %s.", string_VkImageLayout(layout),
-                         FormatHandle(image).c_str(), string_VkImageUsageFlags2KHR(usage_flags).c_str());
+        skip |= LogError(vuid, image, layout_loc, "(%s) is not compatible with %s %s flags %s.", string_VkImageLayout(layout),
+                         FormatHandle(image).c_str(), is_stencil_usage ? "stencilUsage" : "usage",
+                         string_VkImageUsageFlags2KHR(usage_flags).c_str());
     }
     return skip;
 }
@@ -2079,8 +2080,12 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
                                                  barrier_loc.dot(Field::subresourceRange));
 
     if ((barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) || (old_layout != new_layout)) {
-        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::oldLayout), image, old_layout, image_state.usage);
-        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::newLayout), image, new_layout, image_state.usage);
+        // A stencil-only barrier is checked against the separate stencil usage when the image has one
+        const bool is_stencil_usage = image_state.stencil_usage.has_value() && barrier_aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT;
+
+        const VkImageUsageFlags2KHR usage = is_stencil_usage ? *image_state.stencil_usage : image_state.usage;
+        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::oldLayout), image, old_layout, usage, is_stencil_usage);
+        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::newLayout), image, new_layout, usage, is_stencil_usage);
     }
 
     // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked

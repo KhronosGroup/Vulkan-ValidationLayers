@@ -1250,7 +1250,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const VkRenderingInfo& rendering_info, const Location& barrier_loc) const;
 
     bool ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, VkImage image, VkImageLayout layout,
-                                              VkImageUsageFlags2KHR usage) const;
+                                              VkImageUsageFlags2KHR usage, bool is_stencil_usage = false) const;
 
     bool ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                           const Location& barrier_loc, const vvl::Image& image_state,

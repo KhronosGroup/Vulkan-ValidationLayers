@@ -2903,6 +2903,32 @@ TEST_F(PositiveSyncObject, Maintenance9ImageBarriers) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveSyncObject, BarrierStencilAspectUsesStencilUsage) {
+    TEST_DESCRIPTION("A stencil-only barrier is checked against VkImageStencilUsageCreateInfo::stencilUsage");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+    VkImageStencilUsageCreateInfo stencil_usage = vku::InitStructHelper();
+    stencil_usage.stencilUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image_ci.pNext = &stencil_usage;
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(barrier);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSyncObject, BufferOwnershipTransferWholeSize) {
     TEST_DESCRIPTION("Use VK_WHOLE_SIZE for release and an explicit size for acquire");
     SetTargetApiVersion(VK_API_VERSION_1_3);
