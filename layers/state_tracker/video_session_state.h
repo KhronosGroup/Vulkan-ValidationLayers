@@ -18,6 +18,7 @@
 
 #include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
+#include "utils/math_utils.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <cmath>
 #include <memory>
@@ -130,12 +131,14 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
             }
 
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
-                uint32_t max_ctb_size = 16 * static_cast<uint32_t>(log2(capabilities_.encode_h265.ctbSizes));
+                // VK_VIDEO_ENCODE_H265_CTB_SIZE_16_BIT_KHR is bit 0, each next bit doubles the size
+                const uint32_t max_ctb_size = 16u << MostSignificantBit(capabilities_.encode_h265.ctbSizes);
                 return {max_ctb_size, max_ctb_size};
             }
 
             case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
-                uint32_t max_sb_size = 128 * static_cast<uint32_t>(log2(capabilities_.encode_av1.superblockSizes));
+                // VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR is bit 0, each next bit doubles the size
+                const uint32_t max_sb_size = 64u << MostSignificantBit(capabilities_.encode_av1.superblockSizes);
                 return {max_sb_size, max_sb_size};
             }
 

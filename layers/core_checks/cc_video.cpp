@@ -184,32 +184,29 @@ bool CoreChecks::ValidateVideoEncodeIntraRefreshInfo(const vvl::CommandBuffer& c
                                  encode_info_loc.dot(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshCycleDuration)
                                      .Fields()
                                      .c_str());
-            } else {
-                if (intra_refresh_info->intraRefreshCycleDuration < 2 ||
-                    intra_refresh_info->intraRefreshCycleDuration >
-                        profile_caps.encode_ext.intra_refresh.maxIntraRefreshCycleDuration) {
-                    const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
-                    skip |=
-                        LogError("VUID-vkCmdEncodeVideoKHR-pNext-10844", objlist,
-                                 encode_info_loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshCycleDuration),
-                                 "(%" PRIu32 ") is not between 2 and the maxIntraRefreshCycleDuration (%" PRIu32
-                                 ") supported by the video profile (%s).",
-                                 intra_refresh_info->intraRefreshCycleDuration,
-                                 profile_caps.encode_ext.intra_refresh.maxIntraRefreshCycleDuration,
-                                 string_VideoProfileDesc(*vs_state.profile).c_str());
-                }
-
-                if (intra_refresh_info->intraRefreshIndex >= intra_refresh_info->intraRefreshCycleDuration) {
-                    skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10841", cb_state.Handle(),
-                                     encode_info_loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshIndex),
-                                     "(%" PRIu32 ") is greater than or equal to intraRefreshCycleDuration (%" PRIu32 ").",
-                                     intra_refresh_info->intraRefreshIndex, intra_refresh_info->intraRefreshCycleDuration);
-                }
+            } else if (intra_refresh_info->intraRefreshIndex >= intra_refresh_info->intraRefreshCycleDuration) {
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10841", cb_state.Handle(),
+                                 encode_info_loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshIndex),
+                                 "(%" PRIu32 ") is greater than or equal to intraRefreshCycleDuration (%" PRIu32 ").",
+                                 intra_refresh_info->intraRefreshIndex, intra_refresh_info->intraRefreshCycleDuration);
             }
         } else {
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10839", cb_state.Handle(), encode_info_loc.dot(Field::pNext),
                              "chain does not contain a VkVideoEncodeIntraRefreshInfoKHR structure.");
         }
+    }
+
+    if (intra_refresh_info && intra_refresh_info->intraRefreshCycleDuration != 0 &&
+        (intra_refresh_info->intraRefreshCycleDuration < 2 ||
+         intra_refresh_info->intraRefreshCycleDuration > profile_caps.encode_ext.intra_refresh.maxIntraRefreshCycleDuration)) {
+        const LogObjectList objlist(cb_state.Handle(), vs_state.Handle());
+        skip |= LogError("VUID-vkCmdEncodeVideoKHR-pNext-10844", objlist,
+                         encode_info_loc.pNext(Struct::VkVideoEncodeIntraRefreshInfoKHR, Field::intraRefreshCycleDuration),
+                         "(%" PRIu32 ") is not zero and not between 2 and the maxIntraRefreshCycleDuration (%" PRIu32
+                         ") supported by the video profile (%s).",
+                         intra_refresh_info->intraRefreshCycleDuration,
+                         profile_caps.encode_ext.intra_refresh.maxIntraRefreshCycleDuration,
+                         string_VideoProfileDesc(*vs_state.profile).c_str());
     }
 
     for (uint32_t i = 0; i < encode_info.referenceSlotCount; ++i) {
@@ -1504,7 +1501,7 @@ bool CoreChecks::ValidateEncodeH265ParametersAddInfo(const vvl::VideoSession& vs
                     vuid = "VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-08321";
                 }
                 skip |= LogError(vuid, device, loc.function,
-                                 "%s.num_tile_columns_minus1 (%" PRIu32 ") exceeds the maxTiles.width (%" PRIu32
+                                 "%s.num_tile_columns_minus1 (%" PRIu32 ") is greater than or equal to the maxTiles.width (%" PRIu32
                                  ") "
                                  "supported by the video profile (%s) %s was created with.",
                                  loc.dot(Field::pStdPPSs, i).Fields().c_str(), add_info->pStdPPSs[i].num_tile_columns_minus1,
@@ -1521,7 +1518,7 @@ bool CoreChecks::ValidateEncodeH265ParametersAddInfo(const vvl::VideoSession& vs
                     vuid = "VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-08322";
                 }
                 skip |= LogError(vuid, device, loc.function,
-                                 "%s.num_tile_rows_minus1 (%" PRIu32 ") exceeds the maxTiles.height (%" PRIu32
+                                 "%s.num_tile_rows_minus1 (%" PRIu32 ") is greater than or equal to the maxTiles.height (%" PRIu32
                                  ") "
                                  "supported by the video profile (%s) %s was created with.",
                                  loc.dot(Field::pStdPPSs, i).Fields().c_str(), add_info->pStdPPSs[i].num_tile_rows_minus1,
@@ -2109,7 +2106,8 @@ bool CoreChecks::ValidateVideoDecodeInfoAV1(const vvl::CommandBuffer& cb_state, 
                                  picture_info->pTileOffsets[i], decode_info.srcBufferRange);
             }
 
-            if (picture_info->pTileOffsets[i] + picture_info->pTileSizes[i] > decode_info.srcBufferRange) {
+            if (static_cast<VkDeviceSize>(picture_info->pTileOffsets[i]) + picture_info->pTileSizes[i] >
+                decode_info.srcBufferRange) {
                 skip |= LogError("VUID-vkCmdDecodeVideoKHR-pTileOffsets-09252", cb_state.Handle(),
                                  loc.pNext(Struct::VkVideoDecodeAV1PictureInfoKHR, Field::pTileOffsets, i),
                                  "(%" PRIu32 ") plus pTileSizes[%" PRIu32 "] (%" PRIu32
@@ -2283,8 +2281,8 @@ bool CoreChecks::ValidateVideoEncodeInfoH264(const vvl::CommandBuffer& cb_state,
 
         VkExtent2D max_coding_block_size = vs_state.profile->GetMaxCodingBlockSize();
         VkExtent2D min_coding_block_extent = {
-            encode_info.srcPictureResource.codedExtent.width / max_coding_block_size.width,
-            encode_info.srcPictureResource.codedExtent.height / max_coding_block_size.height,
+            (encode_info.srcPictureResource.codedExtent.width + max_coding_block_size.width - 1) / max_coding_block_size.width,
+            (encode_info.srcPictureResource.codedExtent.height + max_coding_block_size.height - 1) / max_coding_block_size.height,
         };
         if (profile_caps.encode_h264.flags & VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR) {
             if (picture_info->naluSliceEntryCount > min_coding_block_extent.width * min_coding_block_extent.height) {

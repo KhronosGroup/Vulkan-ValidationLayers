@@ -251,6 +251,7 @@ TEST_F(PositiveVideoEncodeIntraRefresh, EncodeCapsDifferentSliceTypesH265) {
     }
 
     config.SetVideoEncodeIntraRefreshMode(VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_PER_PICTURE_PARTITION_BIT_KHR);
+    config.UpdateMaxCodedExtent(config.Caps()->maxCodedExtent);
 
     VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
