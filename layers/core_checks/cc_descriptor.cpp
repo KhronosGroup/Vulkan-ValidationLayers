@@ -1053,6 +1053,13 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet& update, const Loc
             const LogObjectList objlist(update.srcSet, src_layout.Handle());
             return LogError("VUID-VkCopyDescriptorSet-srcBinding-00345", objlist, copy_loc.dot(Field::srcBinding),
                             "(%" PRIu32 ") does not exist in %s.", update.srcBinding, FormatHandle(src_set->Handle()).c_str());
+        } else if (src_layout.GetDescriptorCountFromBinding(update.srcBinding) == 0) {
+            const LogObjectList objlist(update.srcSet, src_layout.Handle());
+            // VUID being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8657
+            return LogError("UNASSIGNED-VkCopyDescriptorSet-srcBinding-zero-descriptorCount", objlist,
+                            copy_loc.dot(Field::srcBinding),
+                            "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.", update.srcBinding,
+                            FormatHandle(src_layout.Handle()).c_str());
         }
 
         uint32_t src_start_idx = src_set->GetGlobalIndexRangeFromBinding(update.srcBinding).begin + update.srcArrayElement;
@@ -1078,6 +1085,13 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet& update, const Loc
             const LogObjectList objlist(update.dstSet, dst_layout.Handle());
             return LogError("VUID-VkCopyDescriptorSet-dstBinding-00347", objlist, copy_loc.dot(Field::dstBinding),
                             "(%" PRIu32 ") does not exist in %s.", update.dstBinding, FormatHandle(dst_set->Handle()).c_str());
+        } else if (dst_layout.GetDescriptorCountFromBinding(update.dstBinding) == 0) {
+            const LogObjectList objlist(update.dstSet, dst_layout.Handle());
+            // VUID being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8657
+            return LogError("UNASSIGNED-VkCopyDescriptorSet-dstBinding-zero-descriptorCount", objlist,
+                            copy_loc.dot(Field::dstBinding),
+                            "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.", update.dstBinding,
+                            FormatHandle(dst_layout.Handle()).c_str());
         }
 
         uint32_t dst_start_idx = dst_layout.GetGlobalIndexRangeFromBinding(update.dstBinding).begin + update.dstArrayElement;
@@ -1259,9 +1273,11 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet& up
     }
 
     if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
-        dst_type =
-            static_cast<const vvl::MutableDescriptor*>(dst_set.GetDescriptorFromBinding(update.dstBinding, update.dstArrayElement))
-                ->ActiveType();
+        // dstArrayElement can go past dstBinding (consecutive binding updates)
+        auto dst_iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
+        if (dst_iter.IsValid() && dst_iter.CurrentBinding().type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+            dst_type = static_cast<const vvl::MutableDescriptor&>(*dst_iter).ActiveType();
+        }
     }
     if (dst_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
         auto dst_iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
