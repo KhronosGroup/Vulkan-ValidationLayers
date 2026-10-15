@@ -2663,6 +2663,8 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
                          ") is applied to the address, there are no VkBuffer found at 0x%" PRIx64
                          " and you are out-of-bounds of any valid descriptor buffer.",
                          buffer_index, start, PrintBufferRanges(*this, buffer_states).c_str(), i, offset, start + offset);
+        } else if (set_layout->GetBindingCount() == 0) {
+            continue;  // The layout has no descriptors, so nothing at this offset can be out of bounds
         } else {
             VkDeviceSize set_layout_size = set_layout->GetLayoutSizeInBytes();
             if (set_layout_size > 0) {

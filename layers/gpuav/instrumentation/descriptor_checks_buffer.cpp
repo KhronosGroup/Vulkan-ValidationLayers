@@ -127,6 +127,10 @@ void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSub
                         glsl::DescriptorBufferBindingEncoding{dsl_binding.binding, (uint32_t)binding_offset});
                 }
 
+                if (binding_encoding.empty()) {
+                    continue;  // The layout has no descriptors, so nothing at this offset can be out of bounds
+                }
+
                 const size_t binding_encoding_size = sizeof(glsl::DescriptorBufferBindingEncoding) * binding_encoding.size();
                 vko::BufferRange binding_encoding_range =
                     cb.gpu_resources_manager.GetHostCoherentBufferRange(binding_encoding_size);
