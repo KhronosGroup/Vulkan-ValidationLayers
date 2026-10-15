@@ -279,14 +279,18 @@ bool LastBound::IsColorWriteEnabled(uint32_t i) const {
             return cb_state.dynamic_state_value.color_write_enabled[i];
         }
     } else {
-        if (const auto& color_blend = pipeline_state->ColorBlendState()) {
-            auto color_write = vku::FindStructInPNextChain<VkPipelineColorWriteCreateInfoEXT>(color_blend->pNext);
-            if (color_write && i < color_write->attachmentCount) {
-                return color_write->pColorWriteEnables[i];
-            }
+        const auto& color_blend = pipeline_state->ColorBlendState();
+        const auto* color_write =
+            color_blend ? vku::FindStructInPNextChain<VkPipelineColorWriteCreateInfoEXT>(color_blend->pNext) : nullptr;
+        if (!color_write) {
+            return true;  // Without VkPipelineColorWriteCreateInfoEXT, color writes are enabled for every attachment
+        }
+        if (i < color_write->attachmentCount) {
+            return color_write->pColorWriteEnables[i];
         }
     }
-    return true;
+    // With dynamicRenderingUnusedAttachments we might have extra attachments and want to ignore them
+    return false;
 }
 
 bool LastBound::IsColorBlendEnabled(uint32_t i) const {
@@ -301,7 +305,8 @@ bool LastBound::IsColorBlendEnabled(uint32_t i) const {
             }
         }
     }
-    return true;
+    // With dynamicRenderingUnusedAttachments we might have extra attachments and want to ignore them
+    return false;
 }
 
 std::string LastBound::DescribeColorBlendEnabled(uint32_t i) const {
