@@ -2330,3 +2330,49 @@ TEST_F(PositiveDescriptorBuffer, NullDescriptorSetLayoutGPL) {
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDescriptorBuffer, SetOffsetsForEmptySetLayout) {
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    vkt::DescriptorSetLayout empty_set_layout(*m_device, std::vector<VkDescriptorSetLayoutBinding>{},
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    vkt::DescriptorSetLayout set_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&empty_set_layout, &set_layout});
+
+    vkt::Buffer storage_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer descriptor_buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+    VkDeviceSize binding_offset = 0;
+    vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), set_layout, 0, &binding_offset);
+    vkt::DescriptorGetInfo get_info(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, storage_buffer, 64);
+    uint8_t* mapped_descriptor_buffer = static_cast<uint8_t*>(descriptor_buffer.Memory().Map());
+    vk::GetDescriptorEXT(device(), get_info, descriptor_buffer_properties.storageBufferDescriptorSize,
+                         mapped_descriptor_buffer + binding_offset);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 1, binding = 0) buffer S { uint y; } s;
+        void main() { s.y = 5; }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    VkDescriptorBufferBindingInfoEXT binding_info = vku::InitStructHelper();
+    binding_info.address = descriptor_buffer.Address();
+    binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    // Set 1 at the start of the buffer, the empty set 0 at the next aligned offset
+    const uint32_t buffer_indices[2] = {0, 0};
+    const VkDeviceSize offsets[2] = {std::max<VkDeviceSize>(descriptor_buffer_properties.descriptorBufferOffsetAlignment, 64), 0};
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &binding_info);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 2, buffer_indices,
+                                         offsets);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
