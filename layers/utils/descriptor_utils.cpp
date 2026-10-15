@@ -96,8 +96,8 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
     }
 
     const uint32_t opcode = resource_variable.base_type.Opcode();
-    if (opcode == spv::OpTypeSampler) {
-        return (resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0;
+    if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0 && opcode == spv::OpTypeSampler) {
+        return true;
     }
     if (opcode == spv::OpTypeImage) {
         if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0 && resource_variable.base_type.Word(7) == 1) {
@@ -153,7 +153,9 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
         return "base type is " + std::string(string_SpvOpcode(opcode)) + ", not OpTypeSampler";
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0) {
-        if (opcode != spv::OpTypeImage) {
+        if (opcode == spv::OpTypeSampledImage) {
+            return "base type is OpTypeSampledImage, not OpTypeImage (which would need COMBINED_SAMPLED_IMAGE_BIT)";
+        } else if (opcode != spv::OpTypeImage) {
             return "base type is " + std::string(string_SpvOpcode(opcode)) + ", not OpTypeImage";
         } else if (resource_variable.base_type.Word(7) != 1) {
             return "OpTypeImage Sampled is " + std::to_string(resource_variable.base_type.Word(7)) + ", not 1";

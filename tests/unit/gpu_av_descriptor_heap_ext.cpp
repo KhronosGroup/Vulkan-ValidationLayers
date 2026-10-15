@@ -3885,3 +3885,96 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, DifferentMappingResourceMaskSampler) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorHeapEXT, DifferentMappingResourceMaskCombinedImageSampler) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    const VkDeviceSize image_stride = heap_props.imageDescriptorSize;
+    desc_heap.CreateResourceHeap(image_stride, true);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize, true);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    const VkDeviceSize image_offset = desc_heap.WriteImageDescriptor(image);
+    const VkDeviceSize sampler_offset = desc_heap.WriteSamplerDescriptor();
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)image_offset;
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)(image_offset + (image_stride * 2));
+    mappings[1].sourceData.constantOffset.samplerHeapOffset = (uint32_t)sampler_offset;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        void main() {
+            vec4 color = texelFetch(tex, ivec2(0), 0);
+        }
+    )glsl";
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorHeapEXT, DifferentMappingResourceMaskSamplerlessFetch) {
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap());
+
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    const VkDeviceSize image_stride = heap_props.imageDescriptorSize;
+    desc_heap.CreateResourceHeap(image_stride, true);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize, true);
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    const VkDeviceSize image_offset = desc_heap.WriteImageDescriptor(image);
+    const VkDeviceSize sampler_offset = desc_heap.WriteSamplerDescriptor();
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.heapOffset = (uint32_t)image_offset;
+    mappings[0].sourceData.constantOffset.samplerHeapOffset = (uint32_t)sampler_offset;
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[1].sourceData.constantOffset.heapOffset = (uint32_t)(image_offset + (image_stride * 2));
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_samplerless_texture_functions : require
+        layout(set = 0, binding = 0) uniform texture2D tex;
+        void main() {
+            vec4 color = texelFetch(tex, ivec2(0), 0);
+        }
+    )glsl";
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-11309");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
