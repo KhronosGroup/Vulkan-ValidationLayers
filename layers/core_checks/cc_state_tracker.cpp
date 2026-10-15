@@ -535,6 +535,9 @@ void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, co
                 auto val_fn = [this, rect_count, clear_rect_copy, loc](const vvl::CommandBuffer& secondary,
                                                                        const vvl::CommandBuffer* prim_cb, const vvl::Framebuffer*) {
                     assert(rect_count == clear_rect_copy->size());
+                    if (!prim_cb->IsPrimary()) {
+                        return false;  // When nested in another secondary, the renderArea/layerCount are not known yet
+                    }
                     return validator.ValidateClearAttachmentExtent(
                         secondary, prim_cb->render_area,
                         prim_cb->active_render_pass->dynamic_rendering_begin_rendering_info.layerCount, rect_count,

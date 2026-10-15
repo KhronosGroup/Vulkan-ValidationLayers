@@ -587,6 +587,60 @@ TEST_F(PositiveSecondaryCommandBuffer, NestedInheritedFramebuffer) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveSecondaryCommandBuffer, NestedClearAttachmentsDynamicRendering) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nestedCommandBuffer);
+    AddRequiredFeature(vkt::Feature::nestedCommandBufferRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image(*m_device, 32, 32, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
+    inheritance_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+    inheritance_rendering_info.colorAttachmentCount = 1;
+    inheritance_rendering_info.pColorAttachmentFormats = &color_format;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
+    VkCommandBufferBeginInfo secondary_begin_info = vku::InitStructHelper();
+    secondary_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    secondary_begin_info.pInheritanceInfo = &inheritance_info;
+
+    vkt::CommandBuffer inner_secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    vkt::CommandBuffer outer_secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    inner_secondary.Begin(&secondary_begin_info);
+    VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0, {}};
+    VkClearRect clear_rect = {{{4, 4}, {16, 16}}, 0, 1};
+    vk::CmdClearAttachments(inner_secondary, 1, &clear_attachment, 1, &clear_rect);
+    inner_secondary.End();
+    outer_secondary.Begin(&secondary_begin_info);
+    vk::CmdExecuteCommands(outer_secondary, 1, &inner_secondary.handle());
+    outer_secondary.End();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &outer_secondary.handle());
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveSecondaryCommandBuffer, CustomResolveDynamicRendering) {
     TEST_DESCRIPTION("Call vkCmdBeginCustomResolveEXT in the secondary");
     AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
