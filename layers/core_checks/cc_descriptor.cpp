@@ -1825,8 +1825,8 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet& dst_set, const Vk
                         dsl_error_source.PrintMessage(*this).c_str());
     } else if (update.dstBinding > dst_layout->GetMaxBinding()) {
         return LogError("VUID-VkWriteDescriptorSet-dstBinding-00315", dst_layout->Handle(), dst_binding_loc,
-                        "(%" PRIu32 ") is larger than bindingCount (%" PRIu32 ") used to create %s.\n%s", update.dstBinding,
-                        dst_layout->GetBindingCount(), FormatHandle(dst_layout->Handle()).c_str(),
+                        "(%" PRIu32 ") is larger than the largest binding number (%" PRIu32 ") in %s.\n%s", update.dstBinding,
+                        dst_layout->GetMaxBinding(), FormatHandle(dst_layout->Handle()).c_str(),
                         dsl_error_source.PrintMessage(*this).c_str());
     }
 
@@ -1954,7 +1954,7 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet& dst_set, const Vk
                                      ") was created with %s\n"
                                      "The descriptorCount was %" PRIu32 " and the offset of %" PRIu32 " references binding %" PRIu32
                                      " which was created with %s.\n"
-                                     "When doing consecutive binding updates, the stageFlags must match for each binding.",
+                                     "When doing consecutive binding updates, the binding flags must match for each binding.",
                                      update.dstBinding, string_VkDescriptorBindingFlags(binding_flags).c_str(),
                                      update.descriptorCount, i, current_binding->binding,
                                      string_VkDescriptorBindingFlags(current_binding->binding_flags).c_str());
@@ -4496,6 +4496,12 @@ static std::valarray<uint64_t> GetDescriptorCountMaxPerStage(
         stage_flags.push_back(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
         stage_flags.push_back(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     }
+    if (enabled_features->taskShader) {
+        stage_flags.push_back(VK_SHADER_STAGE_TASK_BIT_EXT);
+    }
+    if (enabled_features->meshShader) {
+        stage_flags.push_back(VK_SHADER_STAGE_MESH_BIT_EXT);
+    }
     if (enabled_features->rayTracingPipeline) {
         stage_flags.push_back(VK_SHADER_STAGE_RAYGEN_BIT_KHR);
         stage_flags.push_back(VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
@@ -6089,7 +6095,7 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
                              "contains %" PRIu32 " embedded samplers, but on this VkDevice there are currently %" PRIu32
                              " embedded samplers in pipelines and shaders, and this will now exceed "
                              "maxDescriptorHeapEmbeddedSamplers (%" PRIu32 ")",
-                             new_sampler_count, embedded_sampler_count,
+                             new_sampler_count, embedded_sampler_count - new_sampler_count,
                              phys_dev_ext_props.descriptor_heap_props.maxDescriptorHeapEmbeddedSamplers);
         }
     }

@@ -1147,7 +1147,8 @@ bool CoreChecks::ValidatePipelineTessellationStages(const ShaderStageState& tesc
         skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-00713", device, create_info_loc.dot(Field::pCode),
                          "is using OutputVertices (patch size) %" PRIu32
                          ", which is not between 1 and maxTessellationPatchSize (%" PRIu32 ").",
-                         tesc_patch_size, phys_dev_props.limits.maxTessellationPatchSize);
+                         tesc_patch_size != spirv::kInvalidValue ? tesc_patch_size : tese_patch_size,
+                         phys_dev_props.limits.maxTessellationPatchSize);
     }
 
     return skip;

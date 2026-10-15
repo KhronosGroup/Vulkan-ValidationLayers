@@ -521,10 +521,10 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
         const uint64_t limit = 1ULL << 24;
         const uint64_t count = (uint64_t)generated_commands_info.maxDrawCount * (uint64_t)generated_commands_info.maxSequenceCount;
         if (count >= limit) {
-            skip |= LogError(
-                "VUID-VkGeneratedCommandsInfoEXT-maxDrawCount-11078", cb_state.Handle(), info_loc.dot(Field::maxDrawCount),
-                "(%" PRIu32 ") times maxSequenceCount (%" PRIu32 ") is %" PRIu64 " which is over the limit of 2^24 (16777216)",
-                generated_commands_info.maxDrawCount, generated_commands_info.maxSequenceCount, count);
+            skip |=
+                LogError("VUID-VkGeneratedCommandsInfoEXT-maxDrawCount-11078", cb_state.Handle(), info_loc.dot(Field::maxDrawCount),
+                         "(%" PRIu32 ") times maxSequenceCount (%" PRIu32 ") is %" PRIu64 " which is not less than 2^24 (16777216)",
+                         generated_commands_info.maxDrawCount, generated_commands_info.maxSequenceCount, count);
         }
     }
 
@@ -955,7 +955,7 @@ bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevi
         if (count >= limit) {
             skip |= LogError(
                 "VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-maxDrawCount-11146", device, info_loc.dot(Field::maxDrawCount),
-                "(%" PRIu32 ") times maxSequenceCount (%" PRIu32 ") is %" PRIu64 " which is over the limit of 2^24 (16777216)",
+                "(%" PRIu32 ") times maxSequenceCount (%" PRIu32 ") is %" PRIu64 " which is not less than 2^24 (16777216)",
                 pInfo->maxDrawCount, pInfo->maxSequenceCount, count);
         }
     }

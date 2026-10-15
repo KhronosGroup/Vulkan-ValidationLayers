@@ -628,7 +628,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                                                  VK_ATTACHMENT_LOAD_OP_CLEAR)) {
             clear_op_size = static_cast<uint32_t>(i) + 1;
 
-            if (vkuFormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues) {
+            if (vkuFormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues && i < pRenderPassBegin->clearValueCount) {
                 skip |= ValidateClearDepthStencilValue(commandBuffer, pRenderPassBegin->pClearValues[i].depthStencil,
                                                        rp_begin_loc.dot(Field::pClearValues, i).dot(Field::depthStencil));
             }
@@ -645,8 +645,8 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                          "attachment number so even if some pClearValues entries between 0 and %" PRIu32
                          " correspond to attachments "
                          "that aren't cleared they will be ignored.",
-                         pRenderPassBegin->clearValueCount, clear_op_size, FormatHandle(rp_state->Handle()).c_str(), clear_op_size,
-                         clear_op_size - 1);
+                         pRenderPassBegin->clearValueCount, clear_op_size, FormatHandle(rp_state->Handle()).c_str(),
+                         clear_op_size - 1, clear_op_size - 1);
     }
     skip |= VerifyFramebufferAndRenderPassImageViews(*pRenderPassBegin, rp_begin_loc);
     skip |= VerifyRenderAreaBounds(*pRenderPassBegin, rp_begin_loc);
@@ -2504,10 +2504,11 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             if (MostSignificantBit(multiview_info->pViewMasks[i]) >=
                 static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
                 skip |= LogError("VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", device, error_obj.location,
-                                 "Most significant bit in "
-                                 "VkRenderPassMultiviewCreateInfo->pViewMask[%" PRIu32 "] (%" PRIu32
+                                 "Most significant bit (%d) in "
+                                 "VkRenderPassMultiviewCreateInfo->pViewMask[%" PRIu32 "] (0x%" PRIx32
                                  ") must be less than maxMultiviewViewCount(%" PRIu32 ").",
-                                 i, multiview_info->pViewMasks[i], phys_dev_props_core11.maxMultiviewViewCount);
+                                 MostSignificantBit(multiview_info->pViewMasks[i]), i, multiview_info->pViewMasks[i],
+                                 phys_dev_props_core11.maxMultiviewViewCount);
             }
         }
         if (!all_zero && !all_not_zero) {
@@ -5397,9 +5398,8 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
                         skip |=
                             LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
                                      "has a layer count (%" PRId32
-                                     ") different than 1 or lower than the most significant bit (%d) in viewMask (0x%" PRIx32
-                                     ""
-                                     ") but renderPass (%s) was specified with non-zero view masks.",
+                                     ") that is not 1 and not greater than the index of the most significant bit (%d) in viewMask "
+                                     "(0x%" PRIx32 ") but renderPass (%s) was specified with non-zero view masks.",
                                      layer_count, highest_view_bit, subpass.viewMask, FormatHandle(create_info.renderPass).c_str());
                     }
 
@@ -5659,7 +5659,8 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
 
             if (enabled_features.attachmentFragmentShadingRate) {
                 const auto* fsr_attachment = vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext);
-                if (fsr_attachment && fsr_attachment->pFragmentShadingRateAttachment->attachment == i) {
+                if (fsr_attachment && fsr_attachment->pFragmentShadingRateAttachment &&
+                    fsr_attachment->pFragmentShadingRateAttachment->attachment == i) {
                     used_as_fragment_shading_rate_attachment = true;
                     const bool validate_render_area =
                         !enabled_features.maintenance7 ||

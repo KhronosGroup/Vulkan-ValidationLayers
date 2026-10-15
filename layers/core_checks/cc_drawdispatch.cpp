@@ -919,8 +919,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
     if ((vertexStride <= 0) || (vertexStride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride)) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289",
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::vertexStride),
-                         "(%" PRIu32 ") must be between 0 and maxTransformFeedbackBufferDataStride (%" PRIu32 ").", vertexStride,
-                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
+                         "(%" PRIu32
+                         ") must be greater than 0 and less than or equal to maxTransformFeedbackBufferDataStride (%" PRIu32 ").",
+                         vertexStride, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
     }
 
     if (!IsIntegerMultipleOf(counterBufferOffset, 4)) {

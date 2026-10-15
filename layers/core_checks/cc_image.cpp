@@ -3169,7 +3169,7 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo& 
         (normalized_subresource_range.layerCount < (sample_weight_info->numPhases))) {
         skip |= LogError("VUID-VkImageViewCreateInfo-pNext-06954", create_info.image, create_info_loc.dot(Field::pNext),
                          "chain includes VkImageViewSampleWeightCreateInfoQCOM "
-                         "and the view type is VK_IMAGE_VIEW_TYPE_1D_ARRAY but the subresourceRange.layerCount (%s) is not greater "
+                         "and the view type is VK_IMAGE_VIEW_TYPE_2D_ARRAY but the subresourceRange.layerCount (%s) is not greater "
                          "than or equal to "
                          "VkImageViewSampleWeightCreateInfoQCOM::numPhases (%" PRIu32 ").",
                          string_LayerCount(image_state.GetArrayLayers(), create_info.subresourceRange).c_str(),
@@ -3182,7 +3182,7 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo& 
                          ") is not greater than or equal to filterSize.width (%" PRIu32 ").",
                          image_extent.width, sample_weight_info->filterSize.width);
     }
-    if ((create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) && (image_extent.width < sample_weight_info->filterSize.height)) {
+    if ((create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) && (image_extent.height < sample_weight_info->filterSize.height)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-pNext-06956", create_info.image, create_info_loc.dot(Field::pNext),
                          "chain includes VkImageViewSampleWeightCreateInfoQCOM "
                          "for a VK_IMAGE_VIEW_TYPE_2D_ARRAY but the created image extent.height (%" PRIu32
@@ -3221,20 +3221,16 @@ bool CoreChecks::ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo& 
     const Location filter_center_loc =
         create_info_loc.pNext(vvl::Struct::VkImageViewSampleWeightCreateInfoQCOM, Field::filterCenter);
     if ((static_cast<uint32_t>(sample_weight_info->filterCenter.x) >= sample_weight_info->filterSize.width)) {
-        skip |= LogError("VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06960", create_info.image,
-                         filter_center_loc.dot(Field::x),
-                         "(%" PRId32
-                         ") is not less than "
-                         "VkImageViewSampleWeightCreateInfoQCOM::filterSize.width (%" PRIu32 ").",
-                         sample_weight_info->filterCenter.x, sample_weight_info->filterSize.width);
+        skip |= LogError(
+            "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06960", create_info.image, filter_center_loc.dot(Field::x),
+            "(%" PRId32 ") is not in the range [0, VkImageViewSampleWeightCreateInfoQCOM::filterSize.width (%" PRIu32 ") - 1].",
+            sample_weight_info->filterCenter.x, sample_weight_info->filterSize.width);
     }
     if ((static_cast<uint32_t>(sample_weight_info->filterCenter.y) >= sample_weight_info->filterSize.height)) {
-        skip |= LogError("VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06961", create_info.image,
-                         filter_center_loc.dot(Field::y),
-                         "(%" PRId32
-                         ") is not less than "
-                         "VkImageViewSampleWeightCreateInfoQCOM::filterSize.height (%" PRIu32 ").",
-                         sample_weight_info->filterCenter.y, sample_weight_info->filterSize.height);
+        skip |= LogError(
+            "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06961", create_info.image, filter_center_loc.dot(Field::y),
+            "(%" PRId32 ") is not in the range [0, VkImageViewSampleWeightCreateInfoQCOM::filterSize.height (%" PRIu32 ") - 1].",
+            sample_weight_info->filterCenter.y, sample_weight_info->filterSize.height);
     }
     if (!IsPowerOfTwo(sample_weight_info->numPhases) || (MostSignificantBit(sample_weight_info->numPhases) % 2 != 0)) {
         skip |= LogError("VUID-VkImageViewSampleWeightCreateInfoQCOM-numPhases-06962", create_info.image,

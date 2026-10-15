@@ -1375,7 +1375,7 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer& cb_state, V
         skip |=
             LogError(vuid, objlist, loc,
                      "query (%" PRIu32 ") + number of bits (%" PRIu32 ") in current viewMask (0x%" PRIx32
-                     ") is not lower than the number of queries (%" PRIu32 ") in %s.",
+                     ") is greater than the number of queries (%" PRIu32 ") in %s.",
                      slot, view_mask_bits, view_mask, query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
     }
 

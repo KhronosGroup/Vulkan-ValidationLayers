@@ -1687,7 +1687,7 @@ bool CoreChecks::ValidateMemoryIsMapped(uint32_t mem_range_count, const VkMapped
                 skip |= LogError("VUID-VkMappedMemoryRange-size-00685", mem_ranges[i].memory, memory_range_loc,
                                  "size (%" PRIu64 ") + offset (%" PRIu64
                                  ") "
-                                 "exceed the Memory Object's upper-bound (%" PRIu64 ").",
+                                 "exceeds the end of the currently mapped range (%" PRIu64 ").",
                                  mem_ranges[i].size, mem_ranges[i].offset, data_end);
             }
         }
@@ -1705,7 +1705,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
         const VkDeviceSize size = mem_ranges[i].size;
 
         if (!IsIntegerMultipleOf(offset, atom_size)) {
-            skip |= LogError("VUID-VkMappedMemoryRange-offset-00687", mem_ranges->memory, memory_range_loc.dot(Field::offset),
+            skip |= LogError("VUID-VkMappedMemoryRange-offset-00687", mem_ranges[i].memory, memory_range_loc.dot(Field::offset),
                              "(%" PRIu64 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64 ").",
                              offset, atom_size);
         }
@@ -1718,7 +1718,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
             const VkDeviceSize mapping_size = mem_info->mapped_range.size;
             const VkDeviceSize mapping_end = ((mapping_size == VK_WHOLE_SIZE) ? allocation_size : mapping_offset + mapping_size);
             if (!IsIntegerMultipleOf(mapping_end, atom_size) && mapping_end != allocation_size) {
-                skip |= LogError("VUID-VkMappedMemoryRange-size-01389", mem_ranges->memory, memory_range_loc.dot(Field::size),
+                skip |= LogError("VUID-VkMappedMemoryRange-size-01389", mem_ranges[i].memory, memory_range_loc.dot(Field::size),
                                  "is VK_WHOLE_SIZE but the mapping is invalid\n1. The offset (%" PRIu64 ") + size (%" PRIu64
                                  ") ends at %" PRIu64
                                  " which is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64
@@ -1730,7 +1730,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(uint32_t mem_range_count,
         } else {
             const VkDeviceSize range_end = size + offset;
             if (range_end != allocation_size && !IsIntegerMultipleOf(size, atom_size)) {
-                skip |= LogError("VUID-VkMappedMemoryRange-size-01390", mem_ranges->memory, memory_range_loc.dot(Field::size),
+                skip |= LogError("VUID-VkMappedMemoryRange-size-01390", mem_ranges[i].memory, memory_range_loc.dot(Field::size),
                                  "(%" PRIu64 ") is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (%" PRIu64
                                  ")\nThe offset (%" PRIu64 ") + size (%" PRIu64 ") ends at %" PRIu64
                                  " which is also not valid because it doesn't reach the end of the memory allocation size (%" PRIu64

@@ -2686,7 +2686,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
         skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounter-09630", commandBuffer,
                          error_obj.location.dot(Field::firstCounterBuffer),
                          "is %" PRIu32 " and counterBufferCount is %" PRIu32
-                         " but vkCmdBindTransformFeedbackBuffersEXT only bound %" PRIu32 " buffers.",
+                         " but vkCmdBindTransformFeedbackBuffersEXT has only bound buffers to the first %" PRIu32 " bindings.",
                          firstCounterBuffer, counterBufferCount, cb_state->transform_feedback_buffers_bound);
     }
 
@@ -2742,7 +2742,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedback2EXT(VkCommandBuffer co
         skip |= LogError("VUID-vkCmdBeginTransformFeedback2EXT-firstCounter-09630", commandBuffer,
                          error_obj.location.dot(Field::firstCounterRange),
                          "is %" PRIu32 " and counterBufferCount is %" PRIu32
-                         " but vkCmdBindTransformFeedbackBuffers2EXT only bound %" PRIu32 " buffers.",
+                         " but vkCmdBindTransformFeedbackBuffersEXT has only bound buffers to the first %" PRIu32 " bindings.",
                          firstCounterRange, counterRangeCount, cb_state->transform_feedback_buffers_bound);
     }
 
