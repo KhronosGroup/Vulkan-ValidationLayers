@@ -79,6 +79,22 @@ TEST_F(PositiveGraphicsLibrary, FragmentOutput) {
     pipe.CreateGraphicsPipeline(false);
 }
 
+TEST_F(PositiveGraphicsLibrary, FragmentOutputNoColorAttachments) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(FindSupportedDepthStencilFormat(Gpu()));
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.CreateRenderPass();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitFragmentOutputLibInfo();
+    pipe.gp_ci_.renderPass = rp;
+    pipe.CreateGraphicsPipeline(false);
+}
+
 TEST_F(PositiveGraphicsLibrary, FragmentMixedAttachmentSamplesAMD) {
     TEST_DESCRIPTION("Create a fragment graphics library with mixed attachement sample support");
 

@@ -2030,7 +2030,8 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const vvl::Pipeline& pi
                          rendering_struct->colorAttachmentCount);
     }
 
-    if (!null_rp && subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
+    if (!null_rp && subpass_desc && rp_state->UsesColorAttachment(pipeline.Subpass()) &&
+        color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
         if (!pipeline.IsColorBlendStateAttachmentCountIgnore(enabled_features.advancedBlendCoherentOperations)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-07609", device, color_loc.dot(Field::attachmentCount),
                              "(%" PRIu32 ") is different than %s pSubpasses[%" PRIu32 "].colorAttachmentCount (%" PRIu32
