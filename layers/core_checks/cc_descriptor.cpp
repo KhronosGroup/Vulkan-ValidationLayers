@@ -244,7 +244,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer& cb_stat
     uint32_t total_dynamic_descriptors = 0;
 
     // If we detect we are binding to many sets, the extra sets will always be incompatible, so check first
-    if ((firstSet + descriptorSetCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.list.size())) {
+    if ((static_cast<uint64_t>(firstSet) + descriptorSetCount) > pipeline_layout->set_layouts.list.size()) {
         const char* vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-firstSet-00360" : "VUID-vkCmdBindDescriptorSets-firstSet-00360";
         const LogObjectList objlist(cb_state.Handle(), layout);
         skip |= LogError(vuid, objlist, loc.dot(Field::firstSet),
