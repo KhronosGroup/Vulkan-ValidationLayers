@@ -2335,6 +2335,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_INSTANCE, 0};
         m_errorMonitor->SetDesiredError("VUID-VkVertexInputBindingDescription2EXT-divisor-04798");
+        m_errorMonitor->SetDesiredError("VUID-VkVertexInputBindingDescription2EXT-divisor-04799");
         vk::CmdSetVertexInputEXT(m_command_buffer, 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
@@ -6085,6 +6086,29 @@ TEST_F(NegativeDynamicState, SetColorBlendWriteMaskArrayLength) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetColorWriteMaskEXT-attachmentCount-arraylength");
     vk::CmdSetColorWriteMaskEXT(m_command_buffer, 0, 0, &write_mask);
     m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, VertexInputDynamicStateZeroDivisor) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
+    RETURN_IF_SKIP(Init());
+
+    m_command_buffer.Begin();
+
+    VkVertexInputBindingDescription2EXT binding = {
+        VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_INSTANCE, 0};
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1, &binding, 0, nullptr);
+
+    binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    m_errorMonitor->SetDesiredError("VUID-VkVertexInputBindingDescription2EXT-divisor-06227");
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1, &binding, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
     m_command_buffer.End();
 }
 

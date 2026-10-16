@@ -181,47 +181,46 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
 
     for (uint32_t binding = 0; binding < vertexBindingDescriptionCount; ++binding) {
         const Location binding_loc = error_obj.location.dot(Field::pVertexBindingDescriptions, binding);
-        if (pVertexBindingDescriptions[binding].binding >= phys_dev_props.limits.maxVertexInputBindings) {
+        const VkVertexInputBindingDescription2EXT& binding_desc = pVertexBindingDescriptions[binding];
+        if (binding_desc.binding >= phys_dev_props.limits.maxVertexInputBindings) {
             skip |=
                 LogError("VUID-VkVertexInputBindingDescription2EXT-binding-04796", commandBuffer, binding_loc.dot(Field::binding),
-                         "(%" PRIu32 ") is not less than maxVertexInputBindings (%" PRIu32 ").",
-                         pVertexBindingDescriptions[binding].binding, phys_dev_props.limits.maxVertexInputBindings);
+                         "(%" PRIu32 ") is not less than maxVertexInputBindings (%" PRIu32 ").", binding_desc.binding,
+                         phys_dev_props.limits.maxVertexInputBindings);
         }
 
-        if (pVertexBindingDescriptions[binding].stride > phys_dev_props.limits.maxVertexInputBindingStride) {
+        if (binding_desc.stride > phys_dev_props.limits.maxVertexInputBindingStride) {
             skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-stride-04797", commandBuffer, binding_loc.dot(Field::stride),
-                             "(%" PRIu32 ") is greater than maxVertexInputBindingStride (%" PRIu32 ").",
-                             pVertexBindingDescriptions[binding].stride, phys_dev_props.limits.maxVertexInputBindingStride);
+                             "(%" PRIu32 ") is greater than maxVertexInputBindingStride (%" PRIu32 ").", binding_desc.stride,
+                             phys_dev_props.limits.maxVertexInputBindingStride);
         }
 
-        if (pVertexBindingDescriptions[binding].divisor == 0 && (!enabled_features.vertexAttributeInstanceRateZeroDivisor)) {
+        if (binding_desc.divisor == 0 && (!enabled_features.vertexAttributeInstanceRateZeroDivisor)) {
             skip |=
                 LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04798", commandBuffer, binding_loc.dot(Field::divisor),
                          "is zero, but the vertexAttributeInstanceRateZeroDivisor feature was not enabled.");
         }
 
-        if (pVertexBindingDescriptions[binding].divisor > 1) {
+        if (binding_desc.divisor != 1) {
             if (!enabled_features.vertexAttributeInstanceRateDivisor) {
                 skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-04799", commandBuffer,
                                  binding_loc.dot(Field::divisor),
                                  "is %" PRIu32
-                                 " (greater than 1), but the vertexAttributeInstanceRateDivisor feature was not "
+                                 " (not 1), but the vertexAttributeInstanceRateDivisor feature was not "
                                  "enabled.",
-                                 pVertexBindingDescriptions[binding].divisor);
-            } else {
-                if (pVertexBindingDescriptions[binding].divisor > phys_dev_props_core14.maxVertexAttribDivisor) {
-                    skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-06226", commandBuffer,
-                                     binding_loc.dot(Field::divisor),
-                                     "(%" PRIu32 ") is greater than maxVertexAttribDivisor (%" PRIu32 ")",
-                                     pVertexBindingDescriptions[binding].divisor, phys_dev_props_core14.maxVertexAttribDivisor);
-                }
+                                 binding_desc.divisor);
+            } else if (binding_desc.divisor > phys_dev_props_core14.maxVertexAttribDivisor) {
+                skip |=
+                    LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-06226", commandBuffer,
+                             binding_loc.dot(Field::divisor), "(%" PRIu32 ") is greater than maxVertexAttribDivisor (%" PRIu32 ")",
+                             binding_desc.divisor, phys_dev_props_core14.maxVertexAttribDivisor);
+            }
 
-                if (pVertexBindingDescriptions[binding].inputRate != VK_VERTEX_INPUT_RATE_INSTANCE) {
-                    skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-06227", commandBuffer,
-                                     binding_loc.dot(Field::divisor), "is %" PRIu32 " (greater than 1) but inputRate is %s.",
-                                     pVertexBindingDescriptions[binding].divisor,
-                                     string_VkVertexInputRate(pVertexBindingDescriptions[binding].inputRate));
-                }
+            if (binding_desc.inputRate != VK_VERTEX_INPUT_RATE_INSTANCE) {
+                skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-06227", commandBuffer,
+                                 binding_loc.dot(Field::divisor),
+                                 "is %" PRIu32 " (not 1) but inputRate is %s (not VK_VERTEX_INPUT_RATE_INSTANCE).",
+                                 binding_desc.divisor, string_VkVertexInputRate(binding_desc.inputRate));
             }
         }
     }
