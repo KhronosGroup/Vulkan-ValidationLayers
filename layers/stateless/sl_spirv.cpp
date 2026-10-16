@@ -874,7 +874,7 @@ bool SpirvValidator::ValidateTexelOffsetLimits(const spirv::Module& module_state
     uint32_t index = image_operand_position + 1;
     // Each bit has it's own operand, starts with the smallest set bit and loop to the highest bit among
     // ImageOperandsOffsetMask, ImageOperandsConstOffsetMask and ImageOperandsConstOffsetsMask
-    for (uint32_t i = 1; i < spv::ImageOperandsConstOffsetsMask; i <<= 1) {
+    for (uint32_t i = 1; i <= spv::ImageOperandsConstOffsetsMask; i <<= 1) {
         if ((image_operand & i) == 0) {
             continue;
         }
@@ -885,8 +885,20 @@ bool SpirvValidator::ValidateTexelOffsetLimits(const spirv::Module& module_state
             const spirv::Instruction* constant = module_state.FindDef(constant_id);
             const bool is_dynamic_offset = constant == nullptr;
             if (!is_dynamic_offset && constant->Opcode() == spv::OpConstantComposite) {
+                // ConstOffsets is an array of 4 offset vectors,
+                small_vector<uint32_t, 8> comp_ids;
                 for (uint32_t j = 3; j < constant->Length(); ++j) {
-                    uint32_t comp_id = constant->Word(j);
+                    const spirv::Instruction* element = module_state.FindDef(constant->Word(j));
+                    if (element->Opcode() == spv::OpConstantComposite) {
+                        for (uint32_t k = 3; k < element->Length(); ++k) {
+                            comp_ids.emplace_back(element->Word(k));
+                        }
+                    } else {
+                        comp_ids.emplace_back(constant->Word(j));
+                    }
+                }
+
+                for (const uint32_t comp_id : comp_ids) {
                     const spirv::Instruction* comp = module_state.FindDef(comp_id);
                     const spirv::Instruction* comp_type = module_state.FindDef(comp->Word(1));
                     // Get operand value

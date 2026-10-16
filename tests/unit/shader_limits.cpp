@@ -389,8 +389,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
 }
 
 TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
-    TEST_DESCRIPTION("Test shader with offset less than minTexelOffset and greather than maxTexelOffset");
-
+    AddRequiredFeature(vkt::Feature::shaderImageGatherExtended);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -454,6 +453,49 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06435");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageSample-06436", 2);
     VkShaderObj fs(*m_device, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+
+    const char* spv_source2 = R"(
+               OpCapability Shader
+               OpCapability ImageGatherExtended
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %samp DescriptorSet 0
+               OpDecorate %samp Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+         %10 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %11 = OpTypeSampledImage %10
+%_ptr_UniformConstant_11 = OpTypePointer UniformConstant %11
+       %samp = OpVariable %_ptr_UniformConstant_11 UniformConstant
+    %v2float = OpTypeVector %float 2
+  %float_0_5 = OpConstant %float 0.5
+         %17 = OpConstantComposite %v2float %float_0_5 %float_0_5
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %v2int = OpTypeVector %int 2
+     %uint_4 = OpConstant %uint 4
+  %arr_v2int = OpTypeArray %v2int %uint_4
+      %int_0 = OpConstant %int 0
+   %int_n100 = OpConstant %int -100
+    %int_100 = OpConstant %int 100
+   %offset_0 = OpConstantComposite %v2int %int_0 %int_0
+ %offset_bad = OpConstantComposite %v2int %int_n100 %int_100
+    %offsets = OpConstantComposite %arr_v2int %offset_0 %offset_0 %offset_bad %offset_0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpLoad %11 %samp
+         %24 = OpImageGather %v4float %14 %17 %int_0 ConstOffsets %offsets
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06376");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06377");
+    auto cs = VkShaderObj::CreateFromASM(this, spv_source2, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
 
