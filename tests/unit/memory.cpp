@@ -800,6 +800,12 @@ TEST_F(NegativeMemory, MapMemoryFlush) {
     vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
     m_errorMonitor->VerifyFound();
 
+    // VK_WHOLE_SIZE with an offset at the end of the mapped range
+    mem_range.offset = 6 * atom_size;
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-00686");
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
+    m_errorMonitor->VerifyFound();
+
     // Try flushing and invalidating host memory not mapped
     vk::UnmapMemory(device(), mem);
     mem_range.offset = 0;
