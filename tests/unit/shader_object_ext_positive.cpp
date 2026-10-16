@@ -1745,6 +1745,58 @@ TEST_F(PositiveShaderObjectEXT, CustomResolve) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveShaderObjectEXT, CustomResolveRasterizationSamples) {
+    TEST_DESCRIPTION("After vkCmdBeginCustomResolveEXT, rasterizationSamples matches the resolve attachments");
+    AddRequiredExtensions(VK_EXT_CUSTOM_RESOLVE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::customResolve);
+    RETURN_IF_SKIP(Init());
+    CreateMinimalShaders();
+
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image color_image(*m_device, image_ci);
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image resolve_image(*m_device, image_ci);
+    vkt::ImageView resolve_image_view = resolve_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_CUSTOM_BIT_EXT;
+    color_attachment.resolveImageView = resolve_image_view;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.flags = VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    VkBeginCustomResolveInfoEXT begin_resolve_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    SetDefaultDynamicStatesExcludeEXT();
+    VkSampleMask sample_mask = 0xFFFFFFFF;
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_4_BIT);
+    vk::CmdSetSampleMaskEXT(m_command_buffer, VK_SAMPLE_COUNT_4_BIT, &sample_mask);
+    m_command_buffer.BindShadersEXT(m_vert_shader, m_frag_shader);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    vk::CmdBeginCustomResolveEXT(m_command_buffer, &begin_resolve_info);
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT);
+    vk::CmdSetSampleMaskEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT, &sample_mask);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveShaderObjectEXT, DisableShaderValidation) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
