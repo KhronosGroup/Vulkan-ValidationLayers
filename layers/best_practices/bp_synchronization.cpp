@@ -256,8 +256,8 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkCommandBuf
     }
 
     if (device_state->special_supported.has_maintenance9 && srcQueueFamilyIndex != dstQueueFamilyIndex &&
-        srcQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && srcQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL &&
-        dstQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && dstQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL) {
+        !IsValueIn(srcQueueFamilyIndex, {VK_QUEUE_FAMILY_FOREIGN_EXT, VK_QUEUE_FAMILY_EXTERNAL, VK_QUEUE_FAMILY_IGNORED}) &&
+        !IsValueIn(dstQueueFamilyIndex, {VK_QUEUE_FAMILY_FOREIGN_EXT, VK_QUEUE_FAMILY_EXTERNAL, VK_QUEUE_FAMILY_IGNORED})) {
         auto image_state = Get<vvl::Image>(image);
         const char* warning = enabled_features.maintenance9
                                   ? "is not required, because maintenance9 is enabled"
@@ -305,8 +305,8 @@ bool BestPractices::ValidateBufferMemoryBarrier(const Location& loc, VkCommandBu
     bool skip = false;
 
     if (device_state->special_supported.has_maintenance9 && srcQueueFamilyIndex != dstQueueFamilyIndex &&
-        srcQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && srcQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL &&
-        dstQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && dstQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL) {
+        !IsValueIn(srcQueueFamilyIndex, {VK_QUEUE_FAMILY_FOREIGN_EXT, VK_QUEUE_FAMILY_EXTERNAL, VK_QUEUE_FAMILY_IGNORED}) &&
+        !IsValueIn(dstQueueFamilyIndex, {VK_QUEUE_FAMILY_FOREIGN_EXT, VK_QUEUE_FAMILY_EXTERNAL, VK_QUEUE_FAMILY_IGNORED})) {
         const char* warning = enabled_features.maintenance9
                                   ? "is not required, because maintenance9 is enabled"
                                   : "could be omitted, if maintenance9 (which is supported by the physical device) were enabled";

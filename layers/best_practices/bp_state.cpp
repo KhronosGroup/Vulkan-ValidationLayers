@@ -162,7 +162,8 @@ void CommandBufferSubState::RecordBeginRenderingCommon(const VkRenderPassBeginIn
                         }
                     }
                 }
-                for (uint32_t i = 0; i < pRenderPassBegin->clearValueCount; ++i) {
+                const uint32_t clear_count = std::min(pRenderPassBegin->clearValueCount, rp_state->create_info.attachmentCount);
+                for (uint32_t i = 0; i < clear_count; ++i) {
                     const auto& attachment = rp_state->create_info.pAttachments[i];
                     if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                         const auto& clear_color = pRenderPassBegin->pClearValues[i].color;
