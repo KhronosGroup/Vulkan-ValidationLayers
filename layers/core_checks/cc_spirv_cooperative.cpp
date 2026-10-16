@@ -216,7 +216,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
         return skip;  // If the capability isn't enabled, don't bother with the rest of this function.
     }
 
-    if (!module_state.static_data_.cooperative_matrix_inst.empty() && api_version < VK_API_VERSION_1_3) {
+    if (!module_state.static_data_.cooperative_matrix_inst.empty() && !spirv_1_6_or_later) {
         if (!stage_state.RequiresFullSubgroup()) {
             const char* vuid = stage_state.HasPipeline() ? "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10770"
                                                          : "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10771";
