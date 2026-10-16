@@ -850,11 +850,12 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT;
 
             if ((import_memory_win32_info->handleType &
-                 (nt_handles_outside_vulkan_api | global_share_handles_outside_vulkan_api)) != 0) {
+                 (nt_handles_outside_vulkan_api | global_share_handles_outside_vulkan_api)) != 0 &&
+                import_memory_win32_info->handle != nullptr) {
                 VkMemoryWin32HandlePropertiesKHR handle_properties = vku::InitStructHelper();
-                DispatchGetMemoryWin32HandlePropertiesKHR(device, import_memory_win32_info->handleType,
-                                                          import_memory_win32_info->handle, &handle_properties);
-                if (((1 << pAllocateInfo->memoryTypeIndex) & handle_properties.memoryTypeBits) == 0) {
+                const VkResult result = DispatchGetMemoryWin32HandlePropertiesKHR(
+                    device, import_memory_win32_info->handleType, import_memory_win32_info->handle, &handle_properties);
+                if (result == VK_SUCCESS && ((1 << pAllocateInfo->memoryTypeIndex) & handle_properties.memoryTypeBits) == 0) {
                     skip |= LogError(
                         "VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645", device, allocate_info_loc.dot(Field::memoryTypeIndex),
                         "is %" PRIu32 " but VkMemoryWin32HandlePropertiesKHR::memoryTypeBits is 0x%" PRIx32 " with handleType %s.",

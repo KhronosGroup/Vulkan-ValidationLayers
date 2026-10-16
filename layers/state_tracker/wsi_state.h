@@ -102,7 +102,7 @@ class Swapchain : public RefcountedStateObject, public SubStateManager<Swapchain
     std::vector<VkPresentModeKHR> present_modes;
     std::vector<SwapchainImage> images;
     bool retired = false;
-    bool exclusive_full_screen_access;
+    std::atomic<bool> exclusive_full_screen_access;
     const bool shared_presentable;
     // Read by vkWaitForPresent2KHR while presentation updates it
     std::atomic<uint64_t> max_present_id{0};

@@ -1711,10 +1711,10 @@ void DeviceState::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, c
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {
         WriteLockGuard guard(win32_handle_map_lock_);
+        // Every call to vkGetMemoryWin32HandleKHR with an NT handle type creates a new HANDLE
         for (auto it = win32_handle_map_.begin(); it != win32_handle_map_.end();) {
             if (it->second.device_memory == mem) {
                 it = win32_handle_map_.erase(it);
-                break;
             } else {
                 ++it;
             }
@@ -4634,6 +4634,11 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         assert(pPresentInfo->swapchainCount < 2 || pPresentInfo->pResults);
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
 
+        if (local_result == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT) {
+            // The application is allowed to acquire exclusive full-screen access again
+            swapchain_data->exclusive_full_screen_access = false;
+        }
+
         // If the present timing queue reports as full, any waits would have been enqueued and therefore need to
         // be tracked here, however the presentation will be dropped
         if (local_result == VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT) {
@@ -4773,9 +4778,19 @@ void DeviceState::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR sw
     }
 }
 
+void DeviceState::RecordFullScreenExclusiveModeLost(VkSwapchainKHR swapchain) {
+    // The application is allowed to acquire exclusive full-screen access again
+    if (auto swapchain_state = Get<Swapchain>(swapchain)) {
+        swapchain_state->exclusive_full_screen_access = false;
+    }
+}
+
 void DeviceState::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                     VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                     const RecordObject& record_obj) {
+    if (record_obj.result == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT) {
+        RecordFullScreenExclusiveModeLost(swapchain);
+    }
     if ((VK_SUCCESS != record_obj.result) && (VK_SUBOPTIMAL_KHR != record_obj.result)) {
         return;
     }
@@ -4784,6 +4799,9 @@ void DeviceState::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchain
 
 void DeviceState::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
                                                      uint32_t* pImageIndex, const RecordObject& record_obj) {
+    if (record_obj.result == VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT) {
+        RecordFullScreenExclusiveModeLost(pAcquireInfo->swapchain);
+    }
     if ((VK_SUCCESS != record_obj.result) && (VK_SUBOPTIMAL_KHR != record_obj.result)) {
         return;
     }

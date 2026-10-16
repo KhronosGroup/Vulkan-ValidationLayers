@@ -41,16 +41,16 @@ static VkExternalMemoryHandleTypeFlags GetExportHandleTypes(const VkMemoryAlloca
 std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(const VkMemoryAllocateInfo& alloc_info) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     auto win32_import = vku::FindStructInPNextChain<VkImportMemoryWin32HandleInfoKHR>(alloc_info.pNext);
-    if (win32_import) {
+    if (win32_import && win32_import->handleType != 0) {
         return win32_import->handleType;
     }
 #endif
     auto fd_import = vku::FindStructInPNextChain<VkImportMemoryFdInfoKHR>(alloc_info.pNext);
-    if (fd_import) {
+    if (fd_import && fd_import->handleType != 0) {
         return fd_import->handleType;
     }
     auto host_pointer_import = vku::FindStructInPNextChain<VkImportMemoryHostPointerInfoEXT>(alloc_info.pNext);
-    if (host_pointer_import) {
+    if (host_pointer_import && host_pointer_import->handleType != 0) {
         return host_pointer_import->handleType;
     }
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
