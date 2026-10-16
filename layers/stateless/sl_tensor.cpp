@@ -113,33 +113,38 @@ bool Device::ValidateTensorDescriptionARM(const VkTensorDescriptionARM& descript
     {
         int64_t total_elements = 1;
         auto* dims = description.pDimensions;
-        auto would_overflow = false;
         for (uint32_t i = 0; i < description.dimensionCount; i++) {
-            if (INT64_MAX / total_elements >= dims[i]) {
-                total_elements *= dims[i];
-            } else {
-                would_overflow = true;
-            }
             if (dims[i] <= 0) {
                 skip |= LogError("VUID-VkTensorDescriptionARM-pDimensions-09734", device,
                                  description_loc.dot(Field::pDimensions, i), "(%" PRIi64 ") must be greater than 0.", dims[i]);
+                break;
             } else if (static_cast<uint64_t>(dims[i]) > phys_dev_ext_props.tensor_properties.maxPerDimensionTensorElements) {
                 skip |=
                     LogError("VUID-VkTensorDescriptionARM-pDimensions-09883", device, description_loc.dot(Field::pDimensions, i),
                              "(%" PRIi64 ") is greater than maxPerDimensionTensorElements (%" PRIu64 ")", dims[i],
                              phys_dev_ext_props.tensor_properties.maxPerDimensionTensorElements);
+                break;
             }
-        }
-        if (would_overflow) {
-            skip |= LogError("VUID-VkTensorCreateInfoARM-tensorElements-09721", device, description_loc.dot(Field::pDimensions),
+            // compute total_elements, but break if overflow
+            if (INT64_MAX / total_elements >= dims[i]) {
+                total_elements *= dims[i];
+            } else {
+                // overflow: report error and break: it can only get worse with more dimensions
+                skip |=
+                    LogError("VUID-VkTensorCreateInfoARM-tensorElements-09721", device, description_loc.dot(Field::pDimensions),
                              "describe a total number of elements that overflows a 64-bit signed integer, which is greater than "
                              "maxTensorElements (%" PRIu64 ").",
                              phys_dev_ext_props.tensor_properties.maxTensorElements);
-        } else if (static_cast<uint64_t>(total_elements) > phys_dev_ext_props.tensor_properties.maxTensorElements) {
-            skip |=
-                LogError("VUID-VkTensorCreateInfoARM-tensorElements-09721", device, description_loc.dot(Field::pDimensions),
-                         "describe a total number of elements (%" PRIi64 ") which is greater than maxTensorElements (%" PRIu64 ").",
-                         total_elements, phys_dev_ext_props.tensor_properties.maxTensorElements);
+                break;
+            }
+            if (static_cast<uint64_t>(total_elements) > phys_dev_ext_props.tensor_properties.maxTensorElements) {
+                // too many elements: report error and break: it can only get worse with more dimensions
+                skip |= LogError("VUID-VkTensorCreateInfoARM-tensorElements-09721", device, description_loc.dot(Field::pDimensions),
+                                 "describe a total number of elements (%" PRIi64
+                                 ") which is greater than maxTensorElements (%" PRIu64 ").",
+                                 total_elements, phys_dev_ext_props.tensor_properties.maxTensorElements);
+                break;
+            }
         }
     }
 

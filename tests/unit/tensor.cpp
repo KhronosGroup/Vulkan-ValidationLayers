@@ -14,6 +14,8 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "data_graph_objects.h"
+#include <algorithm>
+#include <iterator>
 #include <vector>
 
 class NegativeTensor : public TensorTest {};
@@ -244,23 +246,29 @@ TEST_F(NegativeTensor, MaxDimensionCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeTensor, DimensionsHaveZeros) {
-    TEST_DESCRIPTION("Test creating a tensor where the one of the dimensions is zero");
+TEST_F(NegativeTensor, DimensionsHaveZerosOrNegative) {
+    TEST_DESCRIPTION("Test creating a tensor where one of the dimensions is zero or negative");
     RETURN_IF_SKIP(InitBasicTensor());
 
     VkTensorDescriptionARM desc = DefaultDesc();
     VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
 
-    std::vector<int64_t> dims(2, 1);
-    dims[1] = 0;
-    desc.dimensionCount = 2;
+    constexpr int64_t good_dims[]{1, 2, 3, 4};
+    constexpr uint32_t n_dims = std::size(good_dims);
+    std::vector<int64_t> dims(n_dims);
+    desc.dimensionCount = dims.size();
     desc.pDimensions = dims.data();
     desc.tiling = VK_TENSOR_TILING_OPTIMAL_ARM;
     desc.pStrides = nullptr;
 
-    m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pDimensions-09734");
-    vkt::Tensor tensor(*m_device, info);
-    m_errorMonitor->VerifyFound();
+    for (int32_t i = 0; i < n_dims; i++) {
+        std::copy(std::begin(good_dims), std::end(good_dims), dims.begin());
+        dims[i] = -i;
+
+        m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pDimensions-09734");
+        vkt::Tensor tensor(*m_device, info);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeTensor, PerDimensionsMaxElement) {
