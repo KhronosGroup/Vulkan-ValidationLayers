@@ -388,6 +388,11 @@ TEST_F(NegativeDescriptors, DescriptorSetNotInRange) {
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 1u, 2u, descriptor_set_handles,
                               0u, nullptr);
     m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-firstSet-00360");
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, vvl::kU32Max, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptors, DescriptorSetNotInRange2) {
