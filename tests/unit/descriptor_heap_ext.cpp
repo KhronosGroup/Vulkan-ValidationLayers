@@ -3239,6 +3239,38 @@ TEST_F(NegativeDescriptorHeapEXT, MappedStructLessThanMaxPushDataSize) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptorHeapEXT, MaxPushDataSizeLeadOffset) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    if (heap_props.maxPushDataSize != 256) {
+        GTEST_SKIP() << "maxPushDataSize is not 256";
+    }
+
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT;
+    mappings[0].sourceData.pushDataOffset = 0;
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2;
+    mapping_info.pMappings = mappings;
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) uniform Input { layout(offset = 256) uvec4 a; } x;
+        layout(set = 0, binding = 1) buffer Output { uvec4 b; } y;
+        void main() {
+            y.b = x.a;
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11316");
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptorHeapEXT, MaxPushDataSizeShaderObject) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
