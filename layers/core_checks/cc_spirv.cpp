@@ -2728,34 +2728,36 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
             // If there is a runtime array, we can't detect statically, but should be handled in some GPU-AV check
             if (type_struct_info && !type_struct_info->has_runtime_array) {
                 if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) {
-                    const uint64_t struct_size = (uint64_t)type_struct_info->GetSize(module_state).size;
-                    if (struct_size >
-                        (uint64_t)(phys_dev_ext_props.descriptor_heap_props.maxPushDataSize - mapping.sourceData.pushDataOffset)) {
+                    const spirv::TypeStructSize struct_range = type_struct_info->GetSize(module_state);
+                    const uint32_t struct_size = struct_range.offset + struct_range.size;
+                    const uint32_t max_push_data_size = (uint32_t)phys_dev_ext_props.descriptor_heap_props.maxPushDataSize;
+                    if (struct_size > (max_push_data_size - mapping.sourceData.pushDataOffset)) {
                         const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11316"
                                                     : "VUID-VkShaderCreateInfoEXT-pNext-11316";
-                        skip |=
-                            LogError(vuid, module_state.handle(), mapping_loc.dot(Field::source),
-                                     "(VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) is used to map descriptor %s in %s which has a "
-                                     "structure size of %" PRIu64 ", which when the pushDataOffset (%" PRIu32
-                                     ") is applied, will be larger than the maxPushDataSize (%" PRIu64 ").",
-                                     resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_size,
-                                     mapping.sourceData.pushDataOffset, phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
+                        skip |= LogError(
+                            vuid, module_state.handle(), mapping_loc.dot(Field::source),
+                            "(VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_DATA_EXT) is used to map descriptor %s in %s which is at the range "
+                            "[%" PRIu32 ", %" PRIu32 "), which when the pushDataOffset (%" PRIu32
+                            ") is applied, will not fit in the maxPushDataSize (%" PRIu64 ") limit.",
+                            resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_range.offset,
+                            struct_size, mapping.sourceData.pushDataOffset,
+                            phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
                     }
                 } else if (mapping.source == VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) {
-                    const uint32_t struct_size = type_struct_info ? type_struct_info->GetSize(module_state).size : 0;
+                    const spirv::TypeStructSize struct_range = type_struct_info->GetSize(module_state);
+                    const uint32_t struct_size = struct_range.offset + struct_range.size;
                     if (mapping.sourceData.shaderRecordDataOffset + struct_size >
                         phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride) {
                         const char* vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pNext-11317"
                                                     : "VUID-VkShaderCreateInfoEXT-pNext-11317";
-                        skip |= LogError(
-                            vuid, module_state.handle(), mapping_loc.dot(Field::source),
-                            "(VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) is used to map descriptor %s in %s which has a "
-                            "structure "
-                            "size of %" PRIu32 ", which summed with shaderRecordDataOffset (%" PRIu32
-                            ") is larger than maxShaderGroupStride (%" PRIu32 ").",
-                            resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(), struct_size,
-                            mapping.sourceData.shaderRecordDataOffset,
-                            phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
+                        skip |= LogError(vuid, module_state.handle(), mapping_loc.dot(Field::source),
+                                         "(VK_DESCRIPTOR_MAPPING_SOURCE_SHADER_RECORD_DATA_EXT) is used to map descriptor %s in %s "
+                                         "which is at the "
+                                         "range [%" PRIu32 ", %" PRIu32 ") which when the shaderRecordDataOffset (%" PRIu32
+                                         ") is applied, will not fix in the maxShaderGroupStride (%" PRIu32 ") limit.",
+                                         resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(),
+                                         struct_range.offset, struct_size, mapping.sourceData.shaderRecordDataOffset,
+                                         phys_dev_ext_props.ray_tracing_props_khr.maxShaderGroupStride);
                     }
                 }
             }
