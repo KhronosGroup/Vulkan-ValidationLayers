@@ -1668,11 +1668,20 @@ bool CoreChecks::ValidateMemoryIsMapped(uint32_t mem_range_count, const VkMapped
                              FormatHandle(mem_ranges[i].memory).c_str());
         }
 
+        const uint64_t data_end = (mem_info->mapped_range.size == VK_WHOLE_SIZE)
+                                      ? mem_info->allocate_info.allocationSize
+                                      : (mem_info->mapped_range.offset + mem_info->mapped_range.size);
+
         if (mem_ranges[i].size == VK_WHOLE_SIZE) {
             if (mem_info->mapped_range.offset > mem_ranges[i].offset) {
                 skip |= LogError("VUID-VkMappedMemoryRange-size-00686", mem_ranges[i].memory, memory_range_loc.dot(Field::offset),
                                  "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is VK_WHOLE_SIZE).",
                                  mem_ranges[i].offset, mem_info->mapped_range.offset);
+            } else if (mem_info->mapped_range.size != 0 && mem_ranges[i].offset >= data_end) {
+                skip |= LogError("VUID-VkMappedMemoryRange-size-00686", mem_ranges[i].memory, memory_range_loc.dot(Field::offset),
+                                 "(%" PRIu64 ") is not less than the end of the currently mapped range (%" PRIu64
+                                 ") (and size is VK_WHOLE_SIZE).",
+                                 mem_ranges[i].offset, data_end);
             }
         } else {
             if (mem_info->mapped_range.offset > mem_ranges[i].offset) {
@@ -1681,9 +1690,6 @@ bool CoreChecks::ValidateMemoryIsMapped(uint32_t mem_range_count, const VkMapped
                              "(%" PRIu64 ") is less than the mapped memory offset (%" PRIu64 ") (and size is not VK_WHOLE_SIZE).",
                              mem_ranges[i].offset, mem_info->mapped_range.offset);
             }
-            const uint64_t data_end = (mem_info->mapped_range.size == VK_WHOLE_SIZE)
-                                          ? mem_info->allocate_info.allocationSize
-                                          : (mem_info->mapped_range.offset + mem_info->mapped_range.size);
             if ((data_end < (mem_ranges[i].offset + mem_ranges[i].size))) {
                 skip |= LogError("VUID-VkMappedMemoryRange-size-00685", mem_ranges[i].memory, memory_range_loc,
                                  "size (%" PRIu64 ") + offset (%" PRIu64
