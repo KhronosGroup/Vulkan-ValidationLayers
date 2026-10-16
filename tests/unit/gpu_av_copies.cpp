@@ -69,6 +69,39 @@ TEST_F(NegativeGpuAVCopies, BufferToImageD32) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVCopies, BufferToImageD32RemainingArrayLayers) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 64 * 64,
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
+    float* ptr = static_cast<float*>(copy_src_buffer.Memory().Map());
+    for (size_t i = 0; i < 64 * 64; ++i) {
+        ptr[i] = 0.1f;
+    }
+    ptr[4094] = 42.0f;
+
+    vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT,
+                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkBufferImageCopy buffer_image_copy = {};
+    buffer_image_copy.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, VK_REMAINING_ARRAY_LAYERS};
+    buffer_image_copy.imageExtent = {64, 64, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                             &buffer_image_copy);
+    m_command_buffer.End();
+    // VUID-vkCmdCopyBufferToImage-pRegions-07931
+    m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVCopies, MemoryToImageD32) {
     TEST_DESCRIPTION(
         "Copy depth buffer to image with some of its depth value being outside of the [0, 1] legal range. Depth image has format "

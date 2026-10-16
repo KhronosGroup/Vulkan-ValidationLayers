@@ -167,7 +167,8 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
             BufferImageCopy& gpu_region = gpu_regions_ptr[gpu_regions_count];
             gpu_region.src_buffer_byte_offset = static_cast<uint32_t>(cpu_region.bufferOffset);
             gpu_region.start_layer = cpu_region.imageSubresource.baseArrayLayer;
-            gpu_region.layer_count = cpu_region.imageSubresource.layerCount;
+            gpu_region.layer_count =
+                image_state->NormalizeSubresourceRange(RangeFromLayers(cpu_region.imageSubresource)).layerCount;
             gpu_region.row_extent = std::max(cpu_region.bufferRowLength, image_extent.width * block_size);
             gpu_region.slice_extent = std::max(cpu_region.bufferImageHeight, image_extent.height * gpu_region.row_extent);
             gpu_region.layer_extent = image_extent.depth * gpu_region.slice_extent;
