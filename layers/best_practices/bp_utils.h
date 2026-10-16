@@ -30,11 +30,14 @@ std::string VendorSpecificTag(BPVendorFlags vendors);
 
 template <typename Func>
 static inline void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {
-    const uint32_t layer_count = GetEffectiveLayerCount(range, image.full_range.layerCount);
+    // With maintenance9 the layers of a 3D image range can be slices, which are all in the one array layer
+    const bool is_3d = image.GetImageType() == VK_IMAGE_TYPE_3D;
+    const uint32_t base_layer = is_3d ? 0 : range.baseArrayLayer;
+    const uint32_t layer_count = is_3d ? 1 : GetEffectiveLayerCount(range, image.full_range.layerCount);
     const uint32_t level_count = GetEffectiveLevelCount(range, image.full_range.levelCount);
 
     for (uint32_t i = 0; i < layer_count; ++i) {
-        const uint32_t layer = range.baseArrayLayer + i;
+        const uint32_t layer = base_layer + i;
         for (uint32_t j = 0; j < level_count; ++j) {
             const uint32_t level = range.baseMipLevel + j;
             func(layer, level);

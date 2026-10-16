@@ -47,8 +47,8 @@ bool BestPractices::ValidateMultisampledBlendingArm(const vvl::Pipeline& pipelin
 
     const auto* color_blend_state = pipeline.ColorBlendState();
     const auto* ms_state = pipeline.MultisampleState();
-    if (!color_blend_state || !ms_state || ms_state->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT ||
-        ms_state->sampleShadingEnable) {
+    if (!color_blend_state || pipeline.ignore_color_attachments || !ms_state ||
+        ms_state->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT || ms_state->sampleShadingEnable) {
         return skip;
     }
 
