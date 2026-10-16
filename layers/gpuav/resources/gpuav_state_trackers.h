@@ -19,6 +19,7 @@
 #pragma once
 
 #include <mutex>
+#include <type_traits>
 #include <vector>
 #include <vulkan/utility/vk_safe_struct.hpp>
 
@@ -65,6 +66,20 @@ struct CommonDescriptorUpdate {
     uint32_t binding{0};
 };
 
+// Must not own anything: pending submissions can keep it after GPU-AV is destroyed
+// => Destructor must not free/release anything. Use std::is_trivially_destructible to check that.
+struct CommandBufferSubmissionSubState {
+    explicit CommandBufferSubmissionSubState(vko::GpuResourcesManager& resources_manager) : resources_manager(resources_manager) {}
+
+    // For resources allocated per submission
+    vko::GpuResourcesManager& resources_manager;
+};
+static_assert(std::is_trivially_destructible_v<CommandBufferSubmissionSubState>);
+
+static inline CommandBufferSubmissionSubState& SubState(vvl::CommandBufferSubmitInfo& cb_info) {
+    return *static_cast<CommandBufferSubmissionSubState*>(cb_info.SubState(LayerObjectTypeGpuAssisted));
+}
+
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     struct LabelLogging {
@@ -85,7 +100,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                       const Location& submission_loc),
                                  64>;
     using OnPreCommandBufferSubmission =
-        stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb), 48>;
+        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, CommandBufferSubmissionSubState& submission,
+                                      VkCommandBuffer per_pre_submission_cb),
+                                 48>;
     using OnPostCommandBufferSubmission =
         stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_post_submission_cb), 32>;
     using OnPostCallRecordCmdBuildAccelerationStructures =
@@ -113,7 +130,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
     ~CommandBufferSubState();
 
-    [[nodiscard]] bool PreSubmit(QueueSubState &queue, const Location &loc);
+    [[nodiscard]] bool PreSubmit(QueueSubState &queue, vvl::CommandBufferSubmitInfo &cb_info, const Location &loc);
     [[nodiscard]] bool PostSubmit(QueueSubState &queue, const Location &loc);
     void OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info, const Location& submission_loc);
 
@@ -268,7 +285,7 @@ class QueueSubState : public vvl::QueueSubState {
     vko::SharedResourcesCache<true> shared_resources_cache;
 
   protected:
-    void SubmitBarrier(const Location &loc, uint64_t seq);
+    void SubmitBarrier(const Location& loc, uint64_t seq);
 
     Validator &gpuav_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};

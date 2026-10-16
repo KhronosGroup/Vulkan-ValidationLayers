@@ -37,7 +37,10 @@ class DeviceState;
 class QueueSubState;
 struct QueueSubmission;
 
-struct CommandBufferSubmitInfo {
+// shared_ptr: CommandBufferSubmitInfo is copied (GPU-AV retiring_, SubmitTimeTracker::ProcessBatch),
+// copies outliving the submission keep the sub states alive.
+// void: shared_ptr keeps the deleter of the actual sub state type, no common base class needed
+struct CommandBufferSubmitInfo : public SubStateManager<void, std::shared_ptr<void>> {
     std::shared_ptr<vvl::CommandBuffer> cb;
 
     // Snapshot of the queue's debug label stack at the start of this command buffer.
@@ -71,7 +74,7 @@ struct QueueSubmission {
 
     void AddCommandBuffer(const std::shared_ptr<vvl::CommandBuffer>& cb_state,
                           const std::vector<std::string>& initial_label_stack) {
-        cb_infos.push_back(CommandBufferSubmitInfo{cb_state, initial_label_stack});
+        cb_infos.push_back(CommandBufferSubmitInfo{{}, cb_state, initial_label_stack});
     }
 
     void AddSignalSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {

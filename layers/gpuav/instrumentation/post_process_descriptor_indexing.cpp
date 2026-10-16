@@ -81,12 +81,13 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
     auto bound_desc_sets_to_pp_buffer_map =
         std::make_shared<vvl::unordered_map<std::shared_ptr<vvl::DescriptorSet>, vko::StagingBuffer>>();
     cb.on_pre_cb_submission_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](Validator& gpuav, CommandBufferSubState& cb,
+                                                                                      CommandBufferSubmissionSubState& submission,
                                                                                       VkCommandBuffer per_pre_submission_cb) {
         VVL_ZoneScoped;
         DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.Get<DescriptorSetBindings>();
 
         for (const DescriptorSetBindings::BindingCommand& desc_binding_cmd : desc_set_bindings.descriptor_set_binding_commands) {
-            vko::BufferRange desc_set_buffer_lut_buffer_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(
+            vko::BufferRange desc_set_buffer_lut_buffer_range = submission.resources_manager.GetHostCoherentBufferRange(
                 32 * sizeof(VkDeviceAddress));  // No driver offers more than 32 descriptor set bindings
 
             // For each unique bound descriptor set in this command buffer,

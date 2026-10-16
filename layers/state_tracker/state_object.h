@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -135,10 +135,11 @@ class RefcountedStateObject : public StateObject {
     const VulkanTypedHandle* InUse() const override { return ((in_use_.load() > 0) || StateObject::InUse()) ? &Handle() : nullptr; }
 };
 
-template <typename T>
+// By default SubState is not copyable, so held through a std::unique_ptr
+template <typename T, typename Ptr = std::unique_ptr<T>>
 class SubStateManager {
   public:
-    void SetSubState(LayerObjectTypeId id, std::unique_ptr<T> &&substate) { sub_states_.emplace(id, std::move(substate)); }
+    void SetSubState(LayerObjectTypeId id, Ptr&& substate) { sub_states_.emplace(id, std::move(substate)); }
     void RemoveSubState(LayerObjectTypeId id) { sub_states_.erase(id); }
 
     T *SubState(LayerObjectTypeId id) {
@@ -152,7 +153,7 @@ class SubStateManager {
     }
 
   protected:
-    std::map<LayerObjectTypeId, std::unique_ptr<T>> sub_states_;
+    std::map<LayerObjectTypeId, Ptr> sub_states_;
 };
 
 } // namespace vvl

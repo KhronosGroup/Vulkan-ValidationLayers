@@ -131,32 +131,33 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
             out_update.binding = glsl::kBindingInstBufferDeviceAddress;
         });
 
-    cb.on_pre_cb_submission_functions.emplace_back(
-        [](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
-            BufferDeviceAddressCbState* bda_cb_state = cb.shared_resources_cache.TryGet<BufferDeviceAddressCbState>();
-            // Can happen if command buffer did not record any action command
-            if (!bda_cb_state) {
-                return;
-            }
+    cb.on_pre_cb_submission_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
+                                                      CommandBufferSubmissionSubState& submission,
+                                                      VkCommandBuffer per_submission_cb) {
+        BufferDeviceAddressCbState* bda_cb_state = cb.shared_resources_cache.TryGet<BufferDeviceAddressCbState>();
+        // Can happen if command buffer did not record any action command
+        if (!bda_cb_state) {
+            return;
+        }
 
-            // Update buffer device address (BDA) table
-            // One snapshot update per CB submission, to prevent concurrent submissions of the same CB to write and read
-            // to the same snapshot.
-            const size_t bda_ranges_count = gpuav.device_state->GetBufferAddressRangesCount();
-            const VkDeviceSize bda_table_byte_size = 2 * sizeof(uint32_t) + 2 * sizeof(VkDeviceAddress) * bda_ranges_count;
-            vko::BufferRange bda_table = cb.gpu_resources_manager.GetHostCachedBufferRange(bda_table_byte_size);
+        // Update buffer device address (BDA) table
+        // One snapshot update per CB submission, to prevent concurrent submissions of the same CB to write and read
+        // to the same snapshot.
+        const size_t bda_ranges_count = gpuav.device_state->GetBufferAddressRangesCount();
+        const VkDeviceSize bda_table_byte_size = 2 * sizeof(uint32_t) + 2 * sizeof(VkDeviceAddress) * bda_ranges_count;
+        vko::BufferRange bda_table = submission.resources_manager.GetHostCachedBufferRange(bda_table_byte_size);
 
-            auto bda_table_ranges_u32_ptr = (uint32_t*)bda_table.offset_mapped_ptr;
-            *bda_table_ranges_u32_ptr = (uint32_t)bda_ranges_count;
-            gpuav.device_state->GetBufferAddressRanges((vvl::DeviceState::BufferAddressRange*)(bda_table_ranges_u32_ptr + 2));
-            cb.gpu_resources_manager.FlushAllocation(bda_table);
+        auto bda_table_ranges_u32_ptr = (uint32_t*)bda_table.offset_mapped_ptr;
+        *bda_table_ranges_u32_ptr = (uint32_t)bda_ranges_count;
+        gpuav.device_state->GetBufferAddressRanges((vvl::DeviceState::BufferAddressRange*)(bda_table_ranges_u32_ptr + 2));
+        submission.resources_manager.FlushAllocation(bda_table);
 
-            // Fill a GPU buffer with a pointer to the BDA table
-            vko::BufferRange bda_table_ptr = cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(VkDeviceAddress));
-            *(VkDeviceAddress*)bda_table_ptr.offset_mapped_ptr = bda_table.offset_address;
+        // Fill a GPU buffer with a pointer to the BDA table
+        vko::BufferRange bda_table_ptr = submission.resources_manager.GetHostCoherentBufferRange(sizeof(VkDeviceAddress));
+        *(VkDeviceAddress*)bda_table_ptr.offset_mapped_ptr = bda_table.offset_address;
 
-            vko::CmdSynchronizedCopyBufferRange(per_submission_cb, bda_cb_state->bda_ranges_snapshot_ptr, bda_table_ptr);
-        });
+        vko::CmdSynchronizedCopyBufferRange(per_submission_cb, bda_cb_state->bda_ranges_snapshot_ptr, bda_table_ptr);
+    });
 }
 
 }  // namespace gpuav
