@@ -942,6 +942,7 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
             for (const auto& slot : variable.interface_slots) {
                 if (variable.storage_class == spv::StorageClassInput) {
                     input_interface_slots[slot] = &variable;
+                    input_interface_locations.insert(slot.Location());
                     if (!max_input_slot || slot.slot > max_input_slot->slot) {
                         max_input_slot = &slot;
                         max_input_slot_variable = &variable;

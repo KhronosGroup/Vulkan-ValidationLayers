@@ -628,6 +628,9 @@ struct EntryPoint {
     // spirv-val guarantees no overlap so 2 variables won't have same slot
     vvl::unordered_map<InterfaceSlot, const StageInterfaceVariable *, InterfaceSlot::Hash> input_interface_slots;
     vvl::unordered_map<InterfaceSlot, const StageInterfaceVariable *, InterfaceSlot::Hash> output_interface_slots;
+    // Every Location that has an input slot
+    // We want to reduce per-draw vertex binding check but building this up once
+    vvl::unordered_set<uint32_t> input_interface_locations;
     // Uesd for limit check
     const StageInterfaceVariable *max_input_slot_variable = nullptr;
     const StageInterfaceVariable *max_output_slot_variable = nullptr;
