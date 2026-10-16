@@ -57,7 +57,7 @@ static inline const ImageSubState& SubState(const vvl::Image& img) {
 ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view);
 ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, uint32_t view_mask,
                                 VkImageAspectFlags override_depth_stencil_aspect_mask = 0);
-ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, const VkOffset3D& offset, const VkExtent3D& extent,
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, VkOffset3D offset, VkExtent3D extent,
                                 VkImageAspectFlags override_depth_stencil_aspect_mask = 0);
 
 class SwapchainSubState : public vvl::SwapchainSubState {
