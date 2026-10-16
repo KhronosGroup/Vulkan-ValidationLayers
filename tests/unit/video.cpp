@@ -2321,6 +2321,25 @@ TEST_F(NegativeVideo, DeviceAddressCommandsQueryResultFlags) {
     cb.End();
 }
 
+TEST_F(NegativeVideo, CreateSessionInvalidQueueFamilyIndex) {
+    TEST_DESCRIPTION("Releated https://gitlab.khronos.org/vulkan/vulkan/-/work_items/5018");
+    RETURN_IF_SKIP(Init());
+    VideoConfig config = GetConfig();
+    if (!config) {
+        GTEST_SKIP() << "Test requires video support";
+    }
+
+    VkVideoSessionKHR session;
+    VkVideoSessionCreateInfoKHR create_info = *config.SessionCreateInfo();
+    create_info.pVideoProfile = config.Profile();
+    create_info.pStdHeaderVersion = config.StdVersion();
+    create_info.queueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    m_errorMonitor->SetDesiredError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-11759");
+    vk::CreateVideoSessionKHR(device(), &create_info, nullptr, &session);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeVideo, VideoFormatQueryMissingProfileExtendedFlags) {
     TEST_DESCRIPTION("vkGetPhysicalDeviceVideoFormatPropertiesKHR with extended flags - missing profile info");
     AddRequiredExtensions(VK_KHR_EXTENDED_FLAGS_EXTENSION_NAME);
