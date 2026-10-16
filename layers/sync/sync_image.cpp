@@ -16,6 +16,8 @@
  */
 #include "sync_image.h"
 #include "state_tracker/state_tracker.h"
+#include <vulkan/utility/vk_format_utils.h>
+#include <algorithm>
 
 namespace syncval {
 
@@ -109,16 +111,46 @@ ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, uint32_t view_mask,
     return sub_state.MakeImageRangeGen(subresource_range, view.is_depth_sliced, view_mask);
 }
 
-ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, const VkOffset3D& offset, const VkExtent3D& extent,
-                                VkImageAspectFlags override_depth_stencil_aspect_mask) {
-    if (view.Invalid()) ImageRangeGen();
+static void TexelBlockRegionToImageTexels(const vvl::Image& image, const VkImageSubresourceRange& subresource_range,
+                                          VkOffset3D& offset, VkExtent3D& extent) {
+    const VkExtent3D block_extent = vkuFormatTexelBlockExtent(image.GetFormat());
+    offset.x *= int32_t(block_extent.width);
+    offset.y *= int32_t(block_extent.height);
+    offset.z *= int32_t(block_extent.depth);
 
+    const VkExtent3D mip_extent = image.GetEffectiveSubresourceExtent(subresource_range);
+    if (uint32_t(offset.x) >= mip_extent.width || uint32_t(offset.y) >= mip_extent.height ||
+        uint32_t(offset.z) >= mip_extent.depth) {
+        extent = {};
+        return;
+    }
+
+    extent.width *= block_extent.width;
+    extent.height *= block_extent.height;
+    extent.depth *= block_extent.depth;
+
+    // Clamp partial blocks at the mip edge to the image's texel extent
+    extent = {std::min(extent.width, mip_extent.width - uint32_t(offset.x)),
+              std::min(extent.height, mip_extent.height - uint32_t(offset.y)),
+              std::min(extent.depth, mip_extent.depth - uint32_t(offset.z))};
+}
+
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, VkOffset3D offset, VkExtent3D extent,
+                                VkImageAspectFlags override_depth_stencil_aspect_mask) {
     VkImageSubresourceRange subresource_range = view.normalized_subresource_range;
     if (override_depth_stencil_aspect_mask != 0) {
         assert((override_depth_stencil_aspect_mask & kDepthStencilAspects) == override_depth_stencil_aspect_mask);
         subresource_range.aspectMask = override_depth_stencil_aspect_mask;
     }
-    const auto& sub_state = SubState(*view.image_state);
+    const vvl::Image& image = *view.image_state;
+
+    if (vkuFormatIsCompressed(image.GetFormat()) && !vkuFormatIsCompressed(view.create_info.format)) {
+        // Each uncompressed view texel represents one compressed block.
+        // Convert the region to image texels
+        TexelBlockRegionToImageTexels(image, subresource_range, offset, extent);
+    }
+
+    const ImageSubState& sub_state = SubState(image);
     return sub_state.MakeImageRangeGen(subresource_range, offset, extent, view.is_depth_sliced);
 }
 

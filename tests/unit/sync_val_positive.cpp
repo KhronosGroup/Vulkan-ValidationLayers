@@ -5531,3 +5531,102 @@ TEST_F(PositiveSyncVal, RenderPassLayoutTransitionAndSecondaryCmdBuffer2) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, PartialBlockWriteToSeparateMip) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13446
+    TEST_DESCRIPTION("Test writing to a partially used block in a non-power-of-two sized mip doesn't affect other mips");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_BC2_UNORM_BLOCK;
+    const VkFormatFeatureFlags format_flags = VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_properties);
+    if ((format_properties.optimalTilingFeatures & format_flags) != format_flags) {
+        GTEST_SKIP() << "Device does not support transfers for VK_FORMAT_BC2_UNORM_BLOCK, skipping test.\n";
+    }
+
+    const uint32_t mip_sizes[3] = {12, 6, 3};
+    const uint32_t buffer_row_lengths[3] = {12, 8, 4};
+    const uint32_t mip_data_sizes[3] = {144, 64, 16};  // 1 byte per compressed texel
+    const uint32_t buffer_size = mip_data_sizes[0] + mip_data_sizes[2];
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(mip_sizes[0], mip_sizes[0], 3, 1, format,
+                                                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkImageMemoryBarrier2 mip2_transition_to_src = vku::InitStructHelper();
+    mip2_transition_to_src.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    mip2_transition_to_src.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    mip2_transition_to_src.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    mip2_transition_to_src.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    mip2_transition_to_src.image = image;
+    mip2_transition_to_src.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 2, 1, 0, 1};
+
+    VkBufferImageCopy mip1_copy_dst{};
+    mip1_copy_dst.bufferRowLength = buffer_row_lengths[1];
+    mip1_copy_dst.bufferImageHeight = buffer_row_lengths[1];
+    mip1_copy_dst.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, 1};
+    mip1_copy_dst.imageOffset = {4, 4, 0};
+    mip1_copy_dst.imageExtent = {2, 2, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(mip2_transition_to_src);
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &mip1_copy_dst);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, BlockTexelViewRenderAreaLoad) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC2_UNORM_BLOCK,
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.flags =
+        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+
+    VkImageFormatProperties properties{};
+    if (GetImageFormatProps(Gpu(), image_ci, properties) != VK_SUCCESS) {
+        GTEST_SKIP() << "BC2 image with block-compatible attachment views is not supported";
+    }
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R32G32B32A32_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "Uncompressed attachment view format unsupported";
+    }
+
+    vkt::Image image(*m_device, image_ci);
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
+    view_ci.image = image;
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.format = VK_FORMAT_R32G32B32A32_UINT;
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView view(*m_device, view_ci);
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy copy{};
+    copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    // Copy the first compressed block [0, 0] - (4, 4)
+    copy.imageExtent = {4, 4, 1};
+
+    VkRenderingAttachmentInfo attachment = vku::InitStructHelper();
+    attachment.imageView = view;
+    attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+
+    VkRenderingInfo rendering = vku::InitStructHelper();
+    // Each view texel is one compressed block. Load the block to the right of the copied block
+    rendering.renderArea = {{1, 0}, {1, 1}};
+    rendering.layerCount = 1;
+    rendering.colorAttachmentCount = 1;
+    rendering.pColorAttachments = &attachment;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy);
+    m_command_buffer.BeginRendering(rendering);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
