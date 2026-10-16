@@ -4206,8 +4206,13 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
                 break;
         }
 
-        auto qf_ext_props = device_state->queue_family_ext_props[pCreateInfo->queueFamilyIndex];
-        if ((pCreateInfo->pVideoProfile->videoCodecOperation & qf_ext_props.video_props.videoCodecOperations) == 0) {
+        if (pCreateInfo->queueFamilyIndex >= device_state->queue_family_ext_props.size()) {
+            skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-11759", device,
+                             create_info_loc.dot(Field::queueFamilyIndex),
+                             "(%" PRIu32 ") is not the index of a queue family of the physical device (queue family count is %zu).",
+                             pCreateInfo->queueFamilyIndex, device_state->queue_family_ext_props.size());
+        } else if (const auto& qf_ext_props = device_state->queue_family_ext_props[pCreateInfo->queueFamilyIndex];
+                   (pCreateInfo->pVideoProfile->videoCodecOperation & qf_ext_props.video_props.videoCodecOperations) == 0) {
             skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-11759", device,
                              create_info_loc.dot(Field::pVideoProfile).dot(Field::videoCodecOperation),
                              "(%s) is not supported by the queue family index specified to create the video session.\n"
