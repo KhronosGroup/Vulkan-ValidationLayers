@@ -28,6 +28,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "core_validation.h"
+#include "containers/small_vector.h"
 #include "generated/spirv_grammar_helper.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/shader_instruction.h"
@@ -923,19 +924,34 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bou
     vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
 
     struct Attachment {
+        uint32_t location = 0;
         const VkRenderingAttachmentInfo* rendering_attachment_info = nullptr;
         const spirv::StageInterfaceVariable* output = nullptr;
         std::optional<uint32_t> mapped_location = std::nullopt;
     };
-    std::map<uint32_t, Attachment> location_map;
+
+    // Use to use a std::map (order matters here) but per-draw is a hot spot and from dumpping the colorAttachmentCount for various
+    // trace, found 6 or 8 is the most any app ever used
+    small_vector<Attachment, 8> attachments;
+
+    auto find_attachment = [&attachments](uint32_t location) -> Attachment& {
+        for (Attachment& attachment : attachments) {
+            if (attachment.location == location) {
+                return attachment;
+            }
+        }
+        Attachment& attachment = attachments.emplace_back();
+        attachment.location = location;
+        return attachment;
+    };
 
     const size_t color_attachment_count = cb_state.rendering_attachments.color_locations.size();
     for (size_t i = 0; i < color_attachment_count; ++i) {
         uint32_t color_location = cb_state.rendering_attachments.color_locations[i];
         if (color_location != VK_ATTACHMENT_UNUSED) {
-            location_map[color_location].rendering_attachment_info =
-                rp_state.dynamic_rendering_begin_rendering_info.pColorAttachments[i].ptr();
-            location_map[color_location].mapped_location = static_cast<uint32_t>(i);
+            Attachment& attachment = find_attachment(color_location);
+            attachment.rendering_attachment_info = rp_state.dynamic_rendering_begin_rendering_info.pColorAttachments[i].ptr();
+            attachment.mapped_location = static_cast<uint32_t>(i);
         }
     }
 
@@ -952,10 +968,11 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bou
         }
         // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
         // This means all Locations in slots will be the same
-        location_map[variable->interface_slots[0].Location()].output = variable;
+        find_attachment(variable->interface_slots[0].Location()).output = variable;
     }
 
-    for (const auto& [location, attachment_info] : location_map) {
+    for (const Attachment& attachment_info : attachments) {
+        const uint32_t location = attachment_info.location;
         const bool has_attachment =
             attachment_info.rendering_attachment_info && attachment_info.rendering_attachment_info->imageView != VK_NULL_HANDLE;
         const spirv::StageInterfaceVariable* output = attachment_info.output;

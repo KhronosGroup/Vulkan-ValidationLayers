@@ -2889,10 +2889,6 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
     if (!vertex_entry_point) {
         return skip;
     }
-    vvl::unordered_set<uint32_t> spirv_input_locations;
-    for (const auto& pair : vertex_entry_point->input_interface_slots) {
-        spirv_input_locations.emplace(pair.first.Location());
-    }
 
     // It is ok to have binding descriptions not used, them and find if there is matching buffer tied to it or not
     for (const auto& [binding_index, binding_description] : vertex_bindings) {
@@ -2903,7 +2899,8 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
 
         bool shader_has_location = false;
         for (const auto& location : binding_description.locations) {
-            if (spirv_input_locations.find(location.first) != spirv_input_locations.end()) {
+            if (vertex_entry_point->input_interface_locations.find(location.first) !=
+                vertex_entry_point->input_interface_locations.end()) {
                 shader_has_location = true;
                 break;
             }
