@@ -752,11 +752,11 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
     if (rendering_info) {
         const int msb = MostSignificantBit(rendering_info->viewMask);
         const uint32_t required_count = static_cast<uint32_t>(msb + 1);
-        if (multiview_per_view_info.perViewRenderAreaCount != required_count) {
+        if (multiview_per_view_info.perViewRenderAreaCount < required_count) {
             skip |=
                 LogError("VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-pNext-07866", objlist,
                          loc.pNext(Struct::VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM).dot(Field::perViewRenderAreaCount),
-                         "is %" PRIu32 " but must be %" PRIu32 ", the most significant bit index (%" PRId32
+                         "is %" PRIu32 " but must be at least %" PRIu32 ", the most significant bit index (%" PRId32
                          ") of VkRenderingInfo::viewMask (0x%" PRIx32 ") plus one.",
                          multiview_per_view_info.perViewRenderAreaCount, required_count, msb, rendering_info->viewMask);
         }
