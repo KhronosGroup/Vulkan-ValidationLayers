@@ -65,6 +65,13 @@ struct CommonDescriptorUpdate {
     uint32_t binding{0};
 };
 
+struct CommandBufferSubmissionSubState : public vvl::CommandBufferSubmissionSubState {
+    explicit CommandBufferSubmissionSubState(vko::GpuResourcesManager& resources_manager) : resources_manager(resources_manager) {}
+
+    // For resources allocated per submission
+    vko::GpuResourcesManager& resources_manager;
+};
+
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     struct LabelLogging {
@@ -85,7 +92,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                       const Location& submission_loc),
                                  64>;
     using OnPreCommandBufferSubmission =
-        stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb), 48>;
+        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, CommandBufferSubmissionSubState& submission,
+                                      VkCommandBuffer per_pre_submission_cb),
+                                 48>;
     using OnPostCommandBufferSubmission =
         stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_post_submission_cb), 32>;
     using OnPostCallRecordCmdBuildAccelerationStructures =
@@ -113,7 +122,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
     ~CommandBufferSubState();
 
-    [[nodiscard]] bool PreSubmit(QueueSubState &queue, const Location &loc);
+    [[nodiscard]] bool PreSubmit(QueueSubState &queue, vvl::CommandBufferSubmitInfo &cb_info, const Location &loc);
     [[nodiscard]] bool PostSubmit(QueueSubState &queue, const Location &loc);
     void OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info, const Location& loc);
 
@@ -268,7 +277,7 @@ class QueueSubState : public vvl::QueueSubState {
     vko::SharedResourcesCache<true> shared_resources_cache;
 
   protected:
-    void SubmitBarrier(const Location &loc, uint64_t seq);
+    void SubmitBarrier(const Location& loc, uint64_t seq);
 
     Validator &gpuav_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};

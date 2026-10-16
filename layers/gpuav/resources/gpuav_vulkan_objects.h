@@ -19,6 +19,7 @@
 
 #include "external/vma/vma.h"
 
+#include <memory>
 #include <typeinfo>
 #include <vector>
 #include <cassert>
@@ -200,6 +201,22 @@ class GpuResourcesManager {
             staging.DestroyBuffers();
         }
     } buffer_caches_;
+};
+
+// A GpuResourcesManager is needed per command buffer submission.
+// Use this cache to avoid creating/destroying them for each submission.
+class GpuResourcesManagerCache {
+  public:
+    explicit GpuResourcesManagerCache(Validator& gpuav) : gpuav_(gpuav) {}
+    GpuResourcesManager& Get();
+    // WARNING: GPU must be done with the manager's resources
+    void Return(GpuResourcesManager& manager);
+
+  private:
+    Validator& gpuav_;
+    std::mutex lock_;
+    std::vector<std::unique_ptr<GpuResourcesManager>> managers_;
+    std::vector<GpuResourcesManager*> available_managers_;
 };
 
 class StagingBuffer {

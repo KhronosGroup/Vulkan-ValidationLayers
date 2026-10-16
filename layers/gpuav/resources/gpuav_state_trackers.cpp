@@ -271,7 +271,7 @@ struct FenceWaiter {
     std::vector<VkFence> fences;
 };
 
-bool CommandBufferSubState::PreSubmit(QueueSubState& queue, const Location& loc) {
+bool CommandBufferSubState::PreSubmit(QueueSubState& queue, vvl::CommandBufferSubmitInfo& cb_info, const Location& loc) {
     VVL_ZoneScoped;
     if (!on_pre_cb_submission_functions.empty()) {
         vko::CommandPool& cb_pool =
@@ -280,12 +280,21 @@ bool CommandBufferSubState::PreSubmit(QueueSubState& queue, const Location& loc)
         if (per_pre_submission_cb == VK_NULL_HANDLE) {
             return false;
         }
+
+        std::shared_ptr<vvl::CommandBufferSubmissionSubState>& sub_state = cb_info.sub_states[LayerObjectTypeGpuAssisted];
+        if (!sub_state) {
+            sub_state = std::make_shared<CommandBufferSubmissionSubState>(
+                gpuav_.shared_resources_cache.GetOrCreate<vko::GpuResourcesManagerCache>(gpuav_).Get());
+        }
+        auto& gpuav_sub_state = static_cast<CommandBufferSubmissionSubState&>(*sub_state);
+
         DispatchResetCommandBuffer(per_pre_submission_cb, 0);
         VkCommandBufferBeginInfo cb_bi = vku::InitStructHelper();
         cb_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         DispatchBeginCommandBuffer(per_pre_submission_cb, &cb_bi);
+
         for (auto& pre_submission_func : on_pre_cb_submission_functions) {
-            pre_submission_func(gpuav_, *this, per_pre_submission_cb);
+            pre_submission_func(gpuav_, *this, gpuav_sub_state, per_pre_submission_cb);
         }
         DispatchEndCommandBuffer(per_pre_submission_cb);
 
@@ -521,19 +530,19 @@ void QueueSubState::SubmitBarrier(const Location& loc, uint64_t seq) {
 
 void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     bool success = true;
-    for (const auto& submission : submissions) {
+    for (auto& submission : submissions) {
         auto loc = submission.loc.Get();
         for (auto& cb_info : submission.cb_infos) {
             auto guard = cb_info.cb->ReadLock();
             auto& gpu_cb = SubState(*cb_info.cb);
-            success = gpu_cb.PreSubmit(*this, loc);
+            success = gpu_cb.PreSubmit(*this, cb_info, loc);
             if (!success) {
                 return;
             }
             for (auto* secondary_cb : gpu_cb.base.linked_command_buffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
                 auto& secondary_gpu_cb = SubState(*secondary_cb);
-                success = secondary_gpu_cb.PreSubmit(*this, loc);
+                success = secondary_gpu_cb.PreSubmit(*this, cb_info, loc);
                 if (!success) {
                     return;
                 }
@@ -614,6 +623,13 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
                     auto secondary_guard = secondary_cb->WriteLock();
                     auto& secondary_gpu_cb = SubState(*secondary_cb);
                     secondary_gpu_cb.OnCompletion(VkHandle(), cb_info, loc);
+                }
+
+                if (auto sub_state = cb_info.sub_states.find(LayerObjectTypeGpuAssisted); sub_state != cb_info.sub_states.end()) {
+                    auto& gpuav_sub_state = static_cast<CommandBufferSubmissionSubState&>(*sub_state->second);
+                    auto* resources_manager_cache = gpuav_.shared_resources_cache.TryGet<vko::GpuResourcesManagerCache>();
+                    assert(resources_manager_cache);
+                    resources_manager_cache->Return(gpuav_sub_state.resources_manager);
                 }
             }
         }
