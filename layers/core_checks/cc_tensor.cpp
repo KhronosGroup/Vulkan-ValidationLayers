@@ -357,7 +357,8 @@ bool CoreChecks::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, 
                                  "pDimensions[%" PRIu32 "] for srcTensor (%" PRIi64 ") and dstTensor (%" PRIi64 ") are different.",
                                  i, src_tensor_state.description.pDimensions[i], dst_tensor_state.description.pDimensions[i]);
                 } else {
-                    if (region.pExtent) {
+                    // pExtent has region.dimensionCount elements, which can differ from the tensors (09954)
+                    if (region.pExtent && i < region.dimensionCount) {
                         if (static_cast<int64_t>(region.pExtent[i]) != src_tensor_state.description.pDimensions[i]) {
                             skip |= LogError("VUID-VkCopyTensorInfoARM-pRegions-09689", src_objlist,
                                              copy_info_loc.dot(Field::pRegions).dot(Field::pExtent, i),
