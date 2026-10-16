@@ -1723,6 +1723,7 @@ class DeviceState : public vvl::BaseDevice {
                                                     const vvl::DescriptorUpdateTemplate& template_state, const void* pData);
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t* pImageIndex, vvl::Func command);
+    void RecordFullScreenExclusiveModeLost(VkSwapchainKHR swapchain);
     virtual std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                                  VkSwapchainKHR handle);
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
