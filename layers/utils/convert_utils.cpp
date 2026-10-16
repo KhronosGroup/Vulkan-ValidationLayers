@@ -199,7 +199,7 @@ vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkR
             for (uint32_t cai = 0; cai < subpass.colorAttachmentCount; ++cai) {
                 if (out_struct.pAttachments && subpass.pColorAttachments) {
                     const auto& color_attachment = subpass.pColorAttachments[cai];
-                    if (color_attachment.attachment != VK_ATTACHMENT_UNUSED) {
+                    if (color_attachment.attachment < out_struct.attachmentCount) {
                         const auto format = out_struct.pAttachments[color_attachment.attachment].format;
                         color_attachment_aspect_masks[si][cai] = GetAspectFromFormat(format);
                     }
@@ -208,7 +208,7 @@ vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkR
 
             if (out_struct.pAttachments && subpass.pDepthStencilAttachment) {
                 const auto& ds_attachment = *subpass.pDepthStencilAttachment;
-                if (ds_attachment.attachment != VK_ATTACHMENT_UNUSED) {
+                if (ds_attachment.attachment < out_struct.attachmentCount) {
                     const auto format = out_struct.pAttachments[ds_attachment.attachment].format;
                     depth_stencil_attachment_aspect_masks[si] = GetAspectFromFormat(format);
                 }
@@ -217,7 +217,7 @@ vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkR
             for (uint32_t iai = 0; iai < subpass.inputAttachmentCount; ++iai) {
                 if (out_struct.pAttachments && subpass.pInputAttachments) {
                     const auto& input_attachment = subpass.pInputAttachments[iai];
-                    if (input_attachment.attachment != VK_ATTACHMENT_UNUSED) {
+                    if (input_attachment.attachment < out_struct.attachmentCount) {
                         const auto format = out_struct.pAttachments[input_attachment.attachment].format;
                         input_attachment_aspect_masks[si][iai] = GetAspectFromFormat(format);
                     }
@@ -243,7 +243,7 @@ vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkR
     if (out_struct.subpassCount && create_info.pSubpasses) {
         out_struct.pSubpasses = new vku::safe_VkSubpassDescription2[out_struct.subpassCount];
         for (uint32_t i = 0; i < out_struct.subpassCount; ++i) {
-            const uint32_t view_mask = has_view_mask ? multiview_info->pViewMasks[i] : 0;
+            const uint32_t view_mask = (has_view_mask && i < multiview_info->subpassCount) ? multiview_info->pViewMasks[i] : 0;
             out_struct.pSubpasses[i] = ToV2KHR(create_info.pSubpasses[i], view_mask, color_attachment_aspect_masks[i].data(),
                                                depth_stencil_attachment_aspect_masks[i], input_attachment_aspect_masks[i].data());
         }
@@ -253,7 +253,8 @@ vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkR
     if (out_struct.dependencyCount && create_info.pDependencies) {
         out_struct.pDependencies = new vku::safe_VkSubpassDependency2[out_struct.dependencyCount];
         for (uint32_t i = 0; i < out_struct.dependencyCount; ++i) {
-            const int32_t view_offset = has_view_offset ? multiview_info->pViewOffsets[i] : 0;
+            const int32_t view_offset =
+                (has_view_offset && i < multiview_info->dependencyCount) ? multiview_info->pViewOffsets[i] : 0;
             out_struct.pDependencies[i] = ToV2KHR(create_info.pDependencies[i], view_offset);
         }
     }

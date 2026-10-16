@@ -1819,8 +1819,6 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
             const Location ds_loc = subpass_loc.dot(Field::pDepthStencilAttachment);
             const Location attachment_loc = create_info_loc.dot(Field::pAttachments, attachment);
 
-            const auto depth_stencil_attachment = create_info.pAttachments[attachment];
-
             skip |= ValidateAttachmentIndex(attachment, create_info.attachmentCount, ds_loc);
 
             const VkImageLayout attachment_layout = subpass.pDepthStencilAttachment->layout;
@@ -1854,6 +1852,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
             // safe to dereference pCreateInfo->pAttachments[]
             if (attachment < create_info.attachmentCount) {
+                const auto& depth_stencil_attachment = create_info.pAttachments[attachment];
                 const VkFormat attachment_format = depth_stencil_attachment.format;
                 skip |= ValidateAttachmentReference(*subpass.pDepthStencilAttachment, attachment_format, false, ds_loc);
                 skip |= AddAttachmentUse(attachment_uses, attachment_layouts, attachment, ATTACHMENT_DEPTH, image_layout, ds_loc);
@@ -2191,8 +2190,9 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                              color_loc.dot(Field::attachment).Fields().c_str(), attachment_index);
                         }
 
-                        const auto& color_desc = create_info.pAttachments[attachment_index];
-                        if (color_desc.samples != VK_SAMPLE_COUNT_1_BIT) {
+                        if (attachment_index < create_info.attachmentCount &&
+                            create_info.pAttachments[attachment_index].samples != VK_SAMPLE_COUNT_1_BIT) {
+                            const auto& color_desc = create_info.pAttachments[attachment_index];
                             skip |= LogError("VUID-VkSubpassDescription2-externalFormatResolve-09345", device,
                                              create_info_loc.dot(Field::pAttachments, attachment_index).dot(Field::samples),
                                              "is %s (referenced by %s).", string_VkSampleCountFlagBits(color_desc.samples),
@@ -2270,7 +2270,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                     skip |= LogError(vuid, device, resolve_loc.dot(Field::attachment),
                                      "is %" PRIu32 ", but %s is VK_ATTACHMENT_UNUSED.", resolve_attachment_index,
                                      color_loc.dot(Field::attachment).Fields().c_str());
-                } else {
+                } else if (attachment_index < create_info.attachmentCount) {
                     const auto& color_desc = create_info.pAttachments[attachment_index];
                     if (color_desc.format != resolve_desc.format) {
                         const char* vuid = use_rp2 ? "VUID-VkSubpassDescription2-externalFormatResolve-09339"

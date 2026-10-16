@@ -2606,6 +2606,43 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeRenderPass, AttachmentIndexOOB) {
+    RETURN_IF_SKIP(Init());
+
+    VkAttachmentDescription attachment = {};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference color_ref = {0x10000000, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_ref;
+
+    VkRenderPassCreateInfo rp_ci = vku::InitStructHelper();
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attachment;
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = &subpass;
+
+    VkRenderPass render_pass;
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo-attachment-00834");
+    vk::CreateRenderPass(device(), &rp_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+
+    VkAttachmentReference input_ref = {0x10000000, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    subpass.colorAttachmentCount = 0;
+    subpass.inputAttachmentCount = 1;
+    subpass.pInputAttachments = &input_ref;
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo-attachment-00834");
+    vk::CreateRenderPass(device(), &rp_ci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
     TEST_DESCRIPTION("Create image view with missing usage bits.");
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
