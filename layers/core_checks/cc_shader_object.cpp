@@ -391,7 +391,8 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
 
         if (create_info.pSpecializationInfo) {
             vku::safe_VkSpecializationInfo safe_specialization_info(create_info.pSpecializationInfo);
-            skip |= ValidateSpecializations(&safe_specialization_info, error_obj.location.dot(Field::pSpecializationInfo));
+            skip |= ValidateSpecializations(&safe_specialization_info,
+                                            error_obj.location.dot(Field::pCreateInfos, i).dot(Field::pSpecializationInfo));
         }
     }
 
