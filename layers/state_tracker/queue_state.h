@@ -37,6 +37,11 @@ class DeviceState;
 class QueueSubState;
 struct QueueSubmission;
 
+class CommandBufferSubmissionSubState {
+  public:
+    virtual ~CommandBufferSubmissionSubState() = default;
+};
+
 struct CommandBufferSubmitInfo {
     std::shared_ptr<vvl::CommandBuffer> cb;
 
@@ -44,6 +49,9 @@ struct CommandBufferSubmitInfo {
     // Errors can be reported when Queue::cmdbuf_label_stack has already advanced
     // (e.g. GPU-AV post-submit error reporting, deferred wait-before-signal batches in core checks).
     std::vector<std::string> initial_label_stack;
+
+    // shared_ptr: copies outliving the submission (e.g. GPU-AV retiring_) keep it alive
+    vvl::unordered_map<LayerObjectTypeId, std::shared_ptr<CommandBufferSubmissionSubState>> sub_states;
 };
 
 struct QueueSubmission {
@@ -71,7 +79,7 @@ struct QueueSubmission {
 
     void AddCommandBuffer(const std::shared_ptr<vvl::CommandBuffer>& cb_state,
                           const std::vector<std::string>& initial_label_stack) {
-        cb_infos.push_back(CommandBufferSubmitInfo{cb_state, initial_label_stack});
+        cb_infos.push_back(CommandBufferSubmitInfo{cb_state, initial_label_stack, {}});
     }
 
     void AddSignalSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {
@@ -194,6 +202,9 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     LockGuard Lock() const { return LockGuard(lock_); }
 
     const std::deque<QueueSubmission> &Submissions() { return submissions_; }
+
+    // Also removes pending submissions' sub states, which may reference the removed validation object
+    void RemoveSubState(LayerObjectTypeId id);
 
   protected:
     // called when the worker thread decides a submissions has finished executing

@@ -314,6 +314,18 @@ void vvl::Queue::Destroy() {
     StateObject::Destroy();
 }
 
+void vvl::Queue::RemoveSubState(LayerObjectTypeId id) {
+    {
+        auto guard = Lock();
+        for (QueueSubmission& submission : submissions_) {
+            for (CommandBufferSubmitInfo& cb_info : submission.cb_infos) {
+                cb_info.sub_states.erase(id);
+            }
+        }
+    }
+    SubStateManager<QueueSubState>::RemoveSubState(id);
+}
+
 vvl::QueueSubmission* vvl::Queue::NextSubmission() {
     QueueSubmission* result = nullptr;
     // Find if the next submission is ready so that the thread function doesn't need to worry
