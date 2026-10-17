@@ -21,14 +21,14 @@ class NegativeGpuAVSharedMemoryDataRace : public GpuAVSharedMemoryDataRaceTest {
     void TestHelper(const char* source, int source_type, uint32_t count, VkScopeKHR coopmat_scope = VK_SCOPE_DEVICE_KHR,
                     const char* error = "SharedMemoryDataRace");
     void TestHelperRegex(const char* shader_source, const std::string& full_regex, SpvSourceType source_type = SPV_SOURCE_GLSL,
-                         const char* allowed_error = nullptr);
+                         const char* allowed_error = nullptr, spv_target_env env = SPV_ENV_VULKAN_1_2);
 };
 
 void NegativeGpuAVSharedMemoryDataRace::TestHelperRegex(const char* shader_source, const std::string& full_regex,
-                                                        SpvSourceType source_type, const char* allowed_error) {
+                                                        SpvSourceType source_type, const char* allowed_error, spv_target_env env) {
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, source_type);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, env, source_type);
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -65,7 +65,8 @@ void NegativeGpuAVSharedMemoryDataRace::TestHelper(const char* shader_source, in
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
-    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, (SpvSourceType)source_type);
+    const auto env = coopmat_scope == VK_SCOPE_DEVICE_KHR ? SPV_ENV_VULKAN_1_2 : SPV_ENV_VULKAN_1_3;
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, env, (SpvSourceType)source_type);
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -1234,9 +1235,11 @@ TEST_F(NegativeGpuAVSharedMemoryDataRace, AtomicVsCoopMatStore) {
         }
     )glsl";
 
-    TestHelperRegex(shader_source, R"((?=[\s\S]*SharedMemoryDataRace))"
-                                   R"((?=[\s\S]*Likely against unknown invocation))"
-                                   R"((?=[\s\S]*The other access in this race was at:))");
+    TestHelperRegex(shader_source,
+                    R"((?=[\s\S]*SharedMemoryDataRace))"
+                    R"((?=[\s\S]*Likely against unknown invocation))"
+                    R"((?=[\s\S]*The other access in this race was at:))",
+                    SPV_SOURCE_GLSL, nullptr, SPV_ENV_VULKAN_1_3);
 }
 
 TEST_F(NegativeGpuAVSharedMemoryDataRace, SharedMemoryIndexOutOfBounds) {

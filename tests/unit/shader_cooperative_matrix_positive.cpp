@@ -428,7 +428,7 @@ TEST_F(PositiveShaderCooperativeMatrix, BFloat16) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.CreateComputePipeline();
 }
 
@@ -460,7 +460,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Float8) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.CreateComputePipeline();
 }
 
@@ -867,7 +867,7 @@ TEST_F(PositiveShaderCooperativeMatrix, Properties2RuntimeQuerySelectors) {
         const vkt::ShaderEXT shader(*m_device, create_info);
     };
 
-    create_shader_object(*default_config, props11.subgroupSize, 0);
+    create_shader_object(*default_config, props11.subgroupSize, VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
 
     create_shader_object(*varying_config, subgroup_size_control_props.maxSubgroupSize,
                          VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT | VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
