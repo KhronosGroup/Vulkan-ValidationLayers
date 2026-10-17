@@ -5531,3 +5531,48 @@ TEST_F(PositiveSyncVal, RenderPassLayoutTransitionAndSecondaryCmdBuffer2) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, PartialBlockWriteToSeparateMip) {
+    TEST_DESCRIPTION("Test writing to a partially used block in a non-power-of-two sized mip doesn't affect other mips");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkFormat format = VK_FORMAT_BC2_UNORM_BLOCK;
+    const VkFormatFeatureFlags format_flags = VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_properties);
+    if ((format_properties.optimalTilingFeatures & format_flags) != format_flags) {
+        GTEST_SKIP() << "Device does not support transfers for VK_FORMAT_BC2_UNORM_BLOCK, skipping test.\n";
+    }
+
+    const uint32_t mip_sizes[3] = {12, 6, 3};
+    const uint32_t buffer_row_lengths[3] = {12, 8, 4};
+    const uint32_t mip_data_sizes[3] = {144, 64, 16};  // 1 byte per compressed texel
+    const uint32_t buffer_size = mip_data_sizes[0] + mip_data_sizes[2];
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(mip_sizes[0], mip_sizes[0], 3, 1, format,
+                                                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkImageMemoryBarrier2 mip2_transition_to_src = vku::InitStructHelper();
+    mip2_transition_to_src.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    mip2_transition_to_src.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    mip2_transition_to_src.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    mip2_transition_to_src.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    mip2_transition_to_src.image = image;
+    mip2_transition_to_src.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 2, 1, 0, 1};
+
+    VkBufferImageCopy mip1_copy_dst{};
+    mip1_copy_dst.bufferRowLength = buffer_row_lengths[1];
+    mip1_copy_dst.bufferImageHeight = buffer_row_lengths[1];
+    mip1_copy_dst.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, 1};
+    mip1_copy_dst.imageOffset = {4, 4, 0};
+    mip1_copy_dst.imageExtent = {2, 2, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(mip2_transition_to_src);
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &mip1_copy_dst);
+    m_command_buffer.End();
+}

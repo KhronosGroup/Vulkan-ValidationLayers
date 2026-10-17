@@ -38,13 +38,11 @@ class ImageRangeEncoder : public vvl::SubresourceEncoder {
     struct SubresInfo {
         VkSubresourceLayout layout;
         VkExtent3D extent;
-        SubresInfo(const VkSubresourceLayout& layout_, const VkExtent3D& extent_, const VkExtent3D& texel_extent,
-                   double texel_size);
-        SubresInfo(const SubresInfo&);
-        SubresInfo() = default;
         VkDeviceSize y_step_pitch;
         VkDeviceSize z_step_pitch;
         VkDeviceSize layer_span;
+
+        SubresInfo(const VkSubresourceLayout& layout, const VkExtent3D& extent);
     };
 
     // The default constructor for default iterators
@@ -54,31 +52,27 @@ class ImageRangeEncoder : public vvl::SubresourceEncoder {
     explicit ImageRangeEncoder(const vvl::Image& image);
     ImageRangeEncoder(const ImageRangeEncoder& from) = default;
 
-    inline IndexType Encode2D(const VkSubresourceLayout& layout, uint32_t layer, uint32_t aspect_index,
-                              const VkOffset3D& offset) const;
-    inline IndexType Encode3D(const VkSubresourceLayout& layout, uint32_t aspect_index, const VkOffset3D& offset) const;
-    void Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const;
+    IndexType Encode2D(const VkSubresourceLayout& layout, uint32_t layer, uint32_t aspect_index, const VkOffset3D& offset) const;
+    IndexType Encode3D(const VkSubresourceLayout& layout, uint32_t aspect_index, const VkOffset3D& offset) const;
 
-    inline uint32_t GetSubresourceIndex(uint32_t aspect_index, uint32_t mip_level) const {
+    uint32_t GetSubresourceIndex(uint32_t aspect_index, uint32_t mip_level) const {
         return mip_level + (aspect_index ? (aspect_index * limits_.mipLevel) : 0U);
     }
-    inline const SubresInfo& GetSubresourceInfo(uint32_t index) const { return subres_info_[index]; }
+    const SubresInfo& GetSubresourceInfo(uint32_t index) const { return subres_info_[index]; }
 
-    inline IndexType GetAspectSize(uint32_t aspect_index) const { return aspect_sizes_[aspect_index]; }
-    inline VkExtent2D GetAspectExtentDivisors(uint32_t aspect_index) const { return aspect_extent_divisors_[aspect_index]; }
-    inline const double& TexelSize(int aspect_index) const { return texel_sizes_[aspect_index]; }
-    inline bool IsLinearImage() const { return linear_image_; }
-    inline IndexType TotalSize() const { return total_size_; }
-    inline bool Is3D() const { return is_3_d_; }
-    inline bool IsInterleaveY() const { return y_interleave_; }
-    inline bool IsCompressed() const { return is_compressed_; }
+    IndexType GetAspectSize(uint32_t aspect_index) const { return aspect_sizes_[aspect_index]; }
+    VkExtent2D GetAspectExtentDivisors(uint32_t aspect_index) const { return aspect_extent_divisors_[aspect_index]; }
+    bool IsLinearImage() const { return linear_image_; }
+    IndexType TotalSize() const { return total_size_; }
+    bool Is3D() const { return is_3_d_; }
+    bool IsInterleaveY() const { return y_interleave_; }
     const VkExtent3D& TexelBlockExtent() const { return texel_block_extent_; }
 
-    using SubresInfoVector = std::vector<SubresInfo>;
+    uint32_t TexelBlockSize(uint32_t aspect_index) const { return texel_block_sizes_[aspect_index]; }
 
   private:
-    std::vector<double> texel_sizes_;
-    SubresInfoVector subres_info_;
+    std::vector<uint32_t> texel_block_sizes_;
+    std::vector<SubresInfo> subres_info_;
     small_vector<IndexType, 4, uint32_t> aspect_sizes_;
     small_vector<VkExtent2D, 4, uint32_t> aspect_extent_divisors_;
     IndexType total_size_;
@@ -86,7 +80,6 @@ class ImageRangeEncoder : public vvl::SubresourceEncoder {
     bool is_3_d_;
     bool linear_image_;
     bool y_interleave_;
-    bool is_compressed_;
 };
 
 // Sequence of equally sized segments separated by gaps
