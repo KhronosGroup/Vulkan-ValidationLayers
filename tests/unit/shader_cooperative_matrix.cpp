@@ -804,7 +804,7 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(*m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
