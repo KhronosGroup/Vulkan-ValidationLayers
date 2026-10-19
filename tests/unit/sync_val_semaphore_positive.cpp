@@ -533,6 +533,38 @@ TEST_F(PositiveSyncValTimelineSemaphore, HostWaitEmptyBatch) {
     m_device->Wait();
 }
 
+TEST_F(PositiveSyncValTimelineSemaphore, HostWaitPreservesCrossQueueDependency) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13506");
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    auto [queue_a, queue_b] = GetTwoQueuesFromSameFamily(m_device->QueuesWithTransferCapability());
+    if (!queue_a) {
+        GTEST_SKIP() << "Test requires two queues with transfer capabilities from the same queue family";
+    }
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Semaphore timeline_a(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore timeline_b(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    vkt::CommandPool command_pool(*m_device, queue_a->family_index);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
+
+    command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdFillBuffer(command_buffer, buffer, 0, 256, 0x42);
+    command_buffer.End();
+
+    queue_a->Submit(command_buffer, vkt::TimelineSignal(timeline_a, 1));
+    queue_b->Submit(command_buffer, vkt::TimelineWait(timeline_a, 1), vkt::TimelineSignal(timeline_b, 1));
+
+    // This timeline wait is not needed for correctness, the submit's semaphores correctly synchronize
+    // the A -> B -> A sequence. This host wait must not change this ordering.
+    timeline_b.Wait(1, vvl::kU64Max);
+
+    queue_a->Submit(command_buffer, vkt::TimelineWait(timeline_b, 1));
+    m_device->Wait();
+}
+
 TEST_F(PositiveSyncValTimelineSemaphore, KhronosTimelineSemaphoreExample) {
     TEST_DESCRIPTION("https://www.khronos.org/blog/vulkan-timeline-semaphores");
     RETURN_IF_SKIP(InitTimelineSemaphore());

@@ -104,7 +104,7 @@ SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFl
 
     // ALL_COMMANDS stage includes all operations performed by the gpu, not only operations that run on the stages.
     // BOTTOM_OF_PIPE has no accesses of its own, so does not add to stage_mask_accesses, but in the context of
-    // semaphoer scopes it adds to exec_scope_accesses
+    // semaphore scopes it adds to exec_scope_accesses
     if (stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
         result.stage_mask_accesses |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
     }
