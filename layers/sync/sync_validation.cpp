@@ -153,8 +153,9 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate& update, const BatchContext
                 TimelineHostSyncPoint sync_point;
                 assert(new_signal.first_scope.queue != kQueueIdInvalid);
                 sync_point.queue_id = new_signal.first_scope.queue;
-                sync_point.tag = new_signal.batch->GetTagRange().end - 1;
+                sync_point.tag = new_signal.batch->GetTagRange().end;
                 sync_point.timeline_value = new_signal.timeline_value;
+                sync_point.queue_sync_tags = new_signal.batch->GetQueueSyncTags();
                 host_sync_points.emplace_back(sync_point);
             }
         }
@@ -179,6 +180,8 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate& update, const BatchContext
     EnsureTimelineSignalsLimit(kMaxTimelineSignalsPerQueue);
 }
 
+// TODO: Account for semaphore stage scopes during host-wait cleanup.
+// Using only queue tag limits can discard accesses outside a signal's scope
 void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
                                     const LastSynchronizedPresent& last_synchronized_present,
                                     const std::vector<ResourceUsageTag>& queue_sync_tags) {
@@ -197,7 +200,10 @@ void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
         sync_points.reserve(queue_id_limit_);
         for (const auto [sync_queue, sync_tag] : vvl::enumerate(queue_sync_tags)) {
             if (sync_tag > 0) {
-                sync_points.emplace_back((QueueId)sync_queue, sync_tag);
+                // Queue sync tag is an exclusive limit (the first unsynchronized tag).
+                // The wait predicate is inclusive, so exclude the boundary tag
+                const ResourceUsageTag last_synchronized_tag = sync_tag - 1;
+                sync_points.emplace_back((QueueId)sync_queue, last_synchronized_tag);
             }
         }
     }
@@ -279,8 +285,7 @@ void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value) {
     const TimelineHostSyncPoint& sync_point = *sync_point_it;
     const QueueState& queue_state = GetQueueState(sync_point.queue_id);
 
-    // TODO: specify queue sync tags argument similar to WaitForFence
-    ApplyTaggedWait(sync_point.queue_id, sync_point.tag, queue_state.GetLastSynchronizedPresent(), {});
+    ApplyTaggedWait(sync_point.queue_id, sync_point.tag, queue_state.GetLastSynchronizedPresent(), sync_point.queue_sync_tags);
 
     // Remove signals before the resolving one (keep the resolving signal).
     std::vector<SignalInfo>& signals = timeline_signals_[semaphore];

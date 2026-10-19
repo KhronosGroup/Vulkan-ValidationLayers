@@ -647,10 +647,11 @@ ResourceUsageTag QueueBatchContext::SetupBatchTags(uint32_t tag_count) {
     tag_range_ = sync_state_.ReserveGlobalTagRange(tag_count);
     access_context_.SetStartTag(tag_range_.begin);
 
-    // Needed for ImportSyncTags to pick up the "from" own sync tag.
+    // Needed for ImportTags to pick up the "from" own sync tag.
+    // NOTE: non-queued operations have an invalid queue id
     const QueueId this_q = GetQueueId();
-    if (this_q < queue_sync_tag_.size()) {
-        // If this is a non-queued operation we'll get a "special" value like invalid
+    if (this_q != kQueueIdInvalid) {
+        assert(this_q < queue_sync_tag_.size());
         queue_sync_tag_[this_q] = tag_range_.end;
     }
     return tag_range_.begin;
