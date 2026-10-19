@@ -154,6 +154,11 @@ struct TimelineHostSyncPoint {
     QueueId queue_id = 0;
     ResourceUsageTag tag = 0;
     uint64_t timeline_value = 0;
+
+    // The state of queue_id synchronization with other queues at the
+    // moment this semaphore was specified as signal in submit command.
+    // Check also QueueBatchContext::queue_sync_tag_ documentation.
+    std::vector<ResourceUsageTag> queue_sync_tags;
 };
 
 struct PresentedImageRecord {
@@ -409,9 +414,11 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
 
     BatchAccessLog batch_log_;
 
-    // Indexed by queue id. Each element stores the tag location of the last synchronization
-    // (via semaphores) between this batch's queue and the corresponding queue. Stores zero
-    // if there was no synchronization with that queue.
+    // Indexed by queue id. Each element stores the tag limit of the last synchronization
+    // (via semaphores) between this batch's queue and the corresponding queue. Tags below
+    // the limit are covered by that synchronization and can be cleared by a host wait for
+    // this batch. Tags at or above the limit are considered for async hazard checks.
+    // Stores zero if there was no synchronization with that queue
     std::vector<ResourceUsageTag> queue_sync_tag_;
 };
 
