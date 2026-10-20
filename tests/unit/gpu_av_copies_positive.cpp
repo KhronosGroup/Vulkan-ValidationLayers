@@ -80,13 +80,13 @@ TEST_F(PositiveGpuAVCopies, CopyBufferToImageD32U8) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                kHostVisibleMemProps);
+    vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 64 * 64,
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
 
     auto ptr = static_cast<uint8_t*>(copy_src_buffer.Memory().Map());
     std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.CreateInfo().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
-        auto ptr_float = reinterpret_cast<float*>(ptr + 5 * i);
+        auto ptr_float = reinterpret_cast<float*>(ptr + sizeof(float) * i);
         if (i % 2) {
             *ptr_float = 1.0f;
         } else {
@@ -111,6 +111,34 @@ TEST_F(PositiveGpuAVCopies, CopyBufferToImageD32U8) {
     vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &buffer_image_copy);
 
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    vk::DeviceWaitIdle(*m_device);
+}
+
+TEST_F(PositiveGpuAVCopies, CopyBufferToImageD32U8Packed) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13510");
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::uniformAndStorageBuffer8BitAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 16 * 16,
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
+    float* ptr = static_cast<float*>(copy_src_buffer.Memory().Map());
+    for (size_t i = 0; i < 16 * 16; ++i) {
+        ptr[i] = 0.75f;
+    }
+
+    vkt::Image copy_dst_image(*m_device, 16, 16, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    m_command_buffer.Begin();
+    VkBufferImageCopy region{};
+    region.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    region.imageExtent = {16, 16, 1};
+    vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     vk::DeviceWaitIdle(*m_device);
