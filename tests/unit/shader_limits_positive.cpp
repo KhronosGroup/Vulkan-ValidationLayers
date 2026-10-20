@@ -467,15 +467,16 @@ TEST_F(PositiveShaderLimits, MaxCombinedClipAndCullDistancesInputAndOutput) {
 }
 
 TEST_F(PositiveShaderLimits, ComputeSharedMemoryOtherEntryPoint) {
-    TEST_DESCRIPTION("Workgroup variables used only by another entry point do not count against the limit");
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8678");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
     const uint32_t floats_per_entry = (m_device->Physical().limits_.maxComputeSharedMemorySize / 4) * 3 / 4;
     std::ostringstream cs;
     cs << R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
-               OpEntryPoint GLCompute %main "main"
-               OpEntryPoint GLCompute %main2 "main2"
+               OpEntryPoint GLCompute %main "main" %a
+               OpEntryPoint GLCompute %main2 "main2" %b
                OpExecutionMode %main LocalSize 1 1 1
                OpExecutionMode %main2 LocalSize 1 1 1
        %void = OpTypeVoid
@@ -505,6 +506,6 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryOtherEntryPoint) {
                OpFunctionEnd
     )";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(*m_device, cs.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(*m_device, cs.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }

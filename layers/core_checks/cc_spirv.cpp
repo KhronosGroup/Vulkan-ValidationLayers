@@ -477,10 +477,15 @@ bool CoreChecks::ValidateWorkgroupSharedMemory(const spirv::Module& module_state
 
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         if (total_workgroup_shared_memory > phys_dev_props.limits.maxComputeSharedMemorySize) {
+            constexpr uint32_t spirv_version_1_4 = 0x00010400;
+            const bool hint = (!entrypoint.only_entry_point && module_state.words_[1] < spirv_version_1_4);
             skip |= LogError(
                 "VUID-RuntimeSpirv-Workgroup-06530", module_state.handle(), loc,
-                "shader %s uses %" PRIu32 " bytes of shared memory, which is more than maxComputeSharedMemorySize (%" PRIu32 ").",
-                entrypoint.Describe().c_str(), total_workgroup_shared_memory, phys_dev_props.limits.maxComputeSharedMemorySize);
+                "shader %s uses %" PRIu32 " bytes of shared memory, which is more than maxComputeSharedMemorySize (%" PRIu32 ").%s",
+                entrypoint.Describe().c_str(), total_workgroup_shared_memory, phys_dev_props.limits.maxComputeSharedMemorySize,
+                hint ? "\nHint: Before SPIR-V 1.4, Workgroup variables are not listed in the OpEntryPoint interface, so every "
+                       "Workgroup variable in the module counts toward the limit of each entry point."
+                     : "");
         }
 
         if (enabled_features.cooperativeMatrixWorkgroupScopeNV) {
