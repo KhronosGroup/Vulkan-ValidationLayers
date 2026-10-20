@@ -93,9 +93,10 @@ class HazardResult {
         SyncAccessIndex prior_access_index;
         ResourceUsageTag prior_tag = ResourceUsageTag();
         uint32_t prior_handle_index = vvl::kNoIndex32;
+        QueueId prior_queue = kQueueIdInvalid;
         SyncHazard hazard = NONE;
         HazardState(const AccessState* access_state, const SyncAccessInfo& usage_info, SyncHazard hazard,
-                    SyncAccessIndex prior_access_index, ResourceUsageTagEx tag_ex);
+                    SyncAccessIndex prior_access_index, ResourceUsageTagEx tag_ex, QueueId prior_queue);
     };
 
     static HazardResult HazardVsPriorWrite(const AccessState* access_state, const SyncAccessInfo& usage_info, SyncHazard hazard,
@@ -112,6 +113,10 @@ class HazardResult {
     ResourceUsageTagEx PriorTagEx() const {
         assert(state_);
         return ResourceUsageTagEx{state_->prior_tag, state_->prior_handle_index};
+    }
+    QueueId PriorQueue() const {
+        assert(state_);
+        return state_->prior_queue;
     }
     SyncHazard Hazard() const {
         assert(state_);
@@ -293,8 +298,8 @@ struct PendingBarriers {
     void AddLayoutTransition(AccessState* access_state, uint32_t layout_transition_handle_index,
                              QueueId queue_id = kQueueIdInvalid);
 
-    // Update accesss state with collected barriers
-    void Apply(const ResourceUsageTag exec_tag);
+    // Update access state with collected barriers
+    void Apply(ResourceUsageTag exec_tag, SyncFlags flags = 0);
 };
 
 class AccessState {
@@ -348,7 +353,8 @@ class AccessState {
     // Called after all barrier application results are collected in PendingBarriers.
     void ApplyPendingReadBarrier(const PendingReadBarrier& read_barrier, ResourceUsageTag tag);
     void ApplyPendingWriteBarrier(const PendingWriteBarrier& write_barrier);
-    void ApplyPendingLayoutTransition(const PendingLayoutTransition& layout_transition, ResourceUsageTag layout_transition_tag);
+    void ApplyPendingLayoutTransition(const PendingLayoutTransition& layout_transition, ResourceUsageTag layout_transition_tag,
+                                      SyncFlags flags);
 
     void ApplySemaphore(const SemaphoreScope& signal, const SemaphoreScope& wait);
 

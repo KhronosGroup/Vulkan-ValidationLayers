@@ -974,6 +974,31 @@ void RenderPassAccessContext::RecordNextSubpass(ResourceUsageTag resolve_tag, co
     RecordLoadOperations(load_tag, queue_id);
 }
 
+static bool ExternalDependenciesMissFinalTransition(const vvl::RenderPass& render_pass, uint32_t attachment,
+                                                    uint32_t last_subpass) {
+    // Skip the hint when dependency coverage is uncertain
+    if (render_pass.create_info.pAttachments[attachment].flags & VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT) {
+        return false;
+    }
+    bool found_external = false;
+    for (uint32_t i = 0; i < render_pass.create_info.dependencyCount; ++i) {
+        const auto& dependency = render_pass.create_info.pDependencies[i];
+        if (dependency.dstSubpass == VK_SUBPASS_EXTERNAL) {
+            if (dependency.srcSubpass <= last_subpass) {
+                return false;
+            }
+            // Skip the hint when dependency coverage is uncertain
+            if (dependency.srcSubpass >= render_pass.create_info.subpassCount ||
+                render_pass.create_info.pSubpasses[dependency.srcSubpass].pNext) {
+                return false;
+            }
+            found_external = true;
+        }
+    }
+    // Returns true for a proven miss. False includes uncertain cases
+    return found_external;
+}
+
 void RenderPassAccessContext::RecordEndRenderPass(AccessContext& external_context, const ResourceUsageTag store_tag,
                                                   const ResourceUsageTag transition_tag, QueueId queue_id) {
     const uint32_t view_mask = rp_state_->create_info.pSubpasses[current_subpass_].viewMask;
@@ -1019,7 +1044,12 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext& external_contex
                                                     vvl::kNoIndex32, pending_barriers);
             external_context.UpdateMemoryAccessState(collect_barriers, range_gen);
         }
-        pending_barriers.Apply(transition_tag);
+        SyncFlags flags = 0;
+        if (transition.src_subpass != VK_SUBPASS_EXTERNAL &&
+            ExternalDependenciesMissFinalTransition(*rp_state_, transition.attachment, transition.src_subpass)) {
+            flags |= SyncFlag::kExternalDependenciesMissFinalTransition;
+        }
+        pending_barriers.Apply(transition_tag, flags);
     }
 }
 
