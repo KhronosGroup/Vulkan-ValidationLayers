@@ -1738,14 +1738,30 @@ uint32_t Module::CalculateWorkgroupSharedMemory(const EntryPoint& entrypoint) co
     // In this case we want to find the MAX not ADD the block sizes
     bool find_max_block = false;
 
+    constexpr uint32_t spirv_version_1_4 = 0x00010400;
+    const bool spirv_1_4_or_later = words_[1] >= spirv_version_1_4;
+
     for (const Instruction* insn : static_data_.variable_inst) {
         if (insn->StorageClass() != spv::StorageClassWorkgroup) {
             continue;  // "shared memory" == the Workgroup storage class
         }
 
-        // With multiple entry points, only count the variables this entry point can access
-        if (static_data_.entry_points.size() > 1 && !vvl::Contains(entrypoint.accessible.variables, insn)) {
-            continue;
+        // Starting in SPIR-V 1.4, only the Workgroup variables listed in the OpEntryPoint interface are counted
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8678
+        if (spirv_1_4_or_later) {
+            const Instruction& entry_point = entrypoint.entrypoint_insn;
+            uint32_t word = entry_point.GetEntryPointInterfaceStart();
+            const uint32_t total_words = entrypoint.entrypoint_insn.Length();
+            bool in_interface = false;
+            for (; word < total_words; word++) {
+                if (entry_point.Word(word) == insn->ResultId()) {
+                    in_interface = true;
+                    break;
+                }
+            }
+            if (!in_interface) {
+                continue;
+            }
         }
 
         if (GetDecorationSet(insn->Word(2)).Has(DecorationSet::aliased_bit)) {
