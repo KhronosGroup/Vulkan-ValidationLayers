@@ -1379,27 +1379,30 @@ void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const
 
     if (IsExtEnabled(extensions.vk_ext_descriptor_heap) || IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
         cached_descriptor_size.Init(*this);
-        descriptor_hashing = std::make_unique<DescriptorHashing>(global_settings.descriptor_hashing_total_descriptors);
-        if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
-            descriptor_hashing->heap_all_descriptor_sizes = cached_descriptor_size.GetAllSizes(true);
-            for (VkDeviceSize size : descriptor_hashing->heap_all_descriptor_sizes) {
-                if (size > descriptor_hashing->heap_max_descriptor_size) {
-                    descriptor_hashing->heap_max_descriptor_size = size;
-                }
-            }
-        }
-        if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
-            descriptor_hashing->buffer_all_descriptor_sizes = cached_descriptor_size.GetAllSizes(false);
-            for (VkDeviceSize size : descriptor_hashing->buffer_all_descriptor_sizes) {
-                if (size > descriptor_hashing->buffer_max_descriptor_size) {
-                    descriptor_hashing->buffer_max_descriptor_size = size;
-                }
-            }
-        }
 
-        // |force_on_robustness| marks the "modified" feature so need to check for both
-        if (enabled_features.nullDescriptor || gpuav_settings.force_on_robustness) {
-            descriptor_hashing->null_descriptor_allowed = true;
+        if (global_settings.descriptor_hashing) {
+            descriptor_hashing = std::make_unique<DescriptorHashing>(global_settings.descriptor_hashing_total_descriptors);
+            if (IsExtEnabled(extensions.vk_ext_descriptor_heap)) {
+                descriptor_hashing->heap_all_descriptor_sizes = cached_descriptor_size.GetAllSizes(true);
+                for (VkDeviceSize size : descriptor_hashing->heap_all_descriptor_sizes) {
+                    if (size > descriptor_hashing->heap_max_descriptor_size) {
+                        descriptor_hashing->heap_max_descriptor_size = size;
+                    }
+                }
+            }
+            if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
+                descriptor_hashing->buffer_all_descriptor_sizes = cached_descriptor_size.GetAllSizes(false);
+                for (VkDeviceSize size : descriptor_hashing->buffer_all_descriptor_sizes) {
+                    if (size > descriptor_hashing->buffer_max_descriptor_size) {
+                        descriptor_hashing->buffer_max_descriptor_size = size;
+                    }
+                }
+            }
+
+            // |force_on_robustness| marks the "modified" feature so need to check for both
+            if (enabled_features.nullDescriptor || gpuav_settings.force_on_robustness) {
+                descriptor_hashing->null_descriptor_allowed = true;
+            }
         }
     } else if (global_settings.descriptor_hashing) {
         // In theory this shouldn't need to be turned off, but there are cases where we use
