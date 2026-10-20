@@ -23,6 +23,7 @@
 #include "utils/vk_api_utils.h"
 #include "utils/math_utils.h"
 #include <vulkan/utility/vk_format_utils.h>
+#include <algorithm>
 
 namespace syncval {
 
@@ -151,6 +152,31 @@ static AccessContext* CreateStoreResolveProxyContext(const AccessContext& contex
     return proxy;
 }
 
+static bool ExternalDependenciesMissInitialTransition(const vvl::RenderPass& render_pass, uint32_t attachment) {
+    // Skip the hint when dependency coverage is uncertain
+    if (render_pass.create_info.pAttachments[attachment].flags & VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT) {
+        return false;
+    }
+    const auto& first_subpasses = render_pass.attachment_first_subpass[attachment];
+    const uint32_t first_subpass = *std::min_element(first_subpasses.begin(), first_subpasses.end());
+    bool found_external = false;
+    for (uint32_t i = 0; i < render_pass.create_info.dependencyCount; ++i) {
+        const auto& dependency = render_pass.create_info.pDependencies[i];
+        if (dependency.srcSubpass == VK_SUBPASS_EXTERNAL) {
+            if (dependency.dstSubpass >= first_subpass) {
+                return false;
+            }
+            // Skip the hint when dependency coverage is uncertain
+            if (render_pass.create_info.pSubpasses[dependency.dstSubpass].pNext) {
+                return false;
+            }
+            found_external = true;
+        }
+    }
+    // Returns true for a proven miss. False includes uncertain cases
+    return found_external;
+}
+
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
 bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncEnvironment& env, const AccessContext& access_context,
                                                         const vvl::RenderPass& rp_state, uint32_t render_pass_instance_id,
@@ -210,8 +236,12 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncEnvironment& e
                     transition.src_subpass);
                 skip |= reporter.ReportHazard(hazard, attachment_view->Handle(), objlist, reporter.loc, error);
             } else {
+                const bool external_dependencies_miss_initial_transition =
+                    transition.src_subpass == VK_SUBPASS_EXTERNAL &&
+                    ExternalDependenciesMissInitialTransition(rp_state, transition.attachment);
                 const std::string error = validator.error_messages_.RenderPassLayoutTransitionError(
-                    env, hazard, reporter, resource_description, transition.old_layout, transition.new_layout);
+                    env, hazard, reporter, resource_description, transition.old_layout, transition.new_layout,
+                    external_dependencies_miss_initial_transition);
                 skip |= reporter.ReportHazard(hazard, attachment_view->Handle(), objlist, reporter.loc, error);
             }
         }

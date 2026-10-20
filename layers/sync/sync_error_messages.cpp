@@ -421,7 +421,8 @@ std::string ErrorMessages::RenderPassStoreOpError(const SyncEnvironment& env, co
 
 std::string ErrorMessages::RenderPassLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
                                                            const ErrorReporter& reporter, const std::string& resource_description,
-                                                           VkImageLayout old_layout, VkImageLayout new_layout) const {
+                                                           VkImageLayout old_layout, VkImageLayout new_layout,
+                                                           bool external_dependencies_miss_initial_transition) const {
     const char* old_layout_str = string_VkImageLayout(old_layout);
     const char* new_layout_str = string_VkImageLayout(new_layout);
 
@@ -431,6 +432,11 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const SyncEnvironment
     additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
     additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
     additional_info.access_action = "performs image layout transition";
+    if (hazard.PriorQueue() == env.queue_id && external_dependencies_miss_initial_transition) {
+        additional_info.message_end_text =
+            "\nHint: None of the explicit dependencies from VK_SUBPASS_EXTERNAL targets a subpass that uses this attachment, "
+            "so they do not synchronize its initial layout transition. Check their dstSubpass.";
+    }
     return Error(env, hazard, command, resource_description, "RenderPassLayoutTransitionError", additional_info);
 }
 
