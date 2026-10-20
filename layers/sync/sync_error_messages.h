@@ -115,7 +115,8 @@ class ErrorMessages {
 
     std::string RenderPassLayoutTransitionError(const SyncEnvironment& env, const HazardResult& hazard,
                                                 const ErrorReporter& reporter, const std::string& resource_description,
-                                                VkImageLayout old_layout, VkImageLayout new_layout) const;
+                                                VkImageLayout old_layout, VkImageLayout new_layout,
+                                                bool external_dependencies_miss_initial_transition) const;
     std::string RenderPassLayoutTransitionVsResolveError(const SyncEnvironment& env, const HazardResult& hazard,
                                                          const ErrorReporter& reporter, const std::string& resource_description,
                                                          VulkanTypedHandle render_pass_handle, VkImageLayout old_layout,
