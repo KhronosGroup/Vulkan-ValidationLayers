@@ -303,7 +303,14 @@ def main():
     parser.add_argument('--outdir', action='store', type=str, help='Optional path to output directory root')
     parser.add_argument('--targetenv', action='store', type=str, help='Optional --target-env argument passed down to glslangValidator')
     parser.add_argument('--single-thread', action='store_true', help='Run compilation on a single thread (for debugging)')
+    parser.add_argument('--only-if-edited', action='store_true', help='Do nothing if the shaders match git (used by the build)')
     args = parser.parse_args()
+
+    if args.only_if_edited and shutil.which('git'):
+        git_status = subprocess.run(['git', 'status', '--porcelain', '--', 'layers/gpuav/shaders'],
+                                    cwd=common_ci.PROJECT_SRC_DIR, capture_output=True, text=True)
+        if git_status.returncode == 0 and not git_status.stdout:
+            return
 
     glsl_shaders = []
     slang_shaders = []

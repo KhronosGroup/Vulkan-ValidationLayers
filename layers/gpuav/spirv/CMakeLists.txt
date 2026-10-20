@@ -141,7 +141,7 @@ if (VVL_COMPILE_GPUAV_SHADERS)
           "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv.h"
           "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp"
           "${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_slang.cpp"
-        COMMAND Python3::Interpreter "scripts/generate_spirv.py"
+        COMMAND Python3::Interpreter "scripts/generate_spirv.py" --only-if-edited
         COMMAND ${CMAKE_COMMAND} -E touch "${GPUAV_SHADERS_STAMP}"
         DEPENDS ${GPUAV_SHADERS}
         WORKING_DIRECTORY ${VVL_SOURCE_DIR}
