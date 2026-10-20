@@ -146,7 +146,10 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
 
         auto gpu_regions_u32_ptr = (uint32_t*)copy_src_regions_mem_buffer_range.offset_mapped_ptr;
 
-        // Depth aspect of both VK_FORMAT_D32_SFLOAT and VK_FORMAT_D32_SFLOAT_S8_UINT is tightly packed 32-bit floats in the buffer
+        // Buffer addressing for a depth aspect copy uses the depth aspect format, not the image format
+        // https://docs.vulkan.org/spec/latest/chapters/copies.html#copies-buffers-images-rotation-addressing
+        // So even something like VK_FORMAT_D32_SFLOAT_S8_UINT each texel is 4 bytes in the buffer
+        // no matter how the implementation stores D32S8 in image memory.
         const uint32_t block_size = 4;
         const VkExtent3D image_extent = image_state->GetExtent();
         uint32_t gpu_regions_count = 0;
