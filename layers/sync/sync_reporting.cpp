@@ -519,7 +519,7 @@ std::string FormatErrorMessage(const SyncEnvironment& env, const HazardResult& h
     }
 
     // Synchronization information
-    const bool cross_queue_racing_hazard = hazard_info.IsRacingHazard() && env.queue_id != kQueueIdInvalid;
+    const bool cross_queue_racing_hazard = hazard_info.IsRacingHazard() && hazard.PriorQueue() != env.queue_id;
     ss << "\n";
     if (cross_queue_racing_hazard) {
         ss << "The RACING hazard means the two submissions on different queues are not synchronized with each other, so the order "
@@ -618,6 +618,12 @@ std::string FormatErrorMessage(const SyncEnvironment& env, const HazardResult& h
         }
         ss << ". The source side of the barrier protects layout transition writes from previous accesses, and the destination side "
               "cannot introduce this specific hazard.";
+    }
+
+    if (hazard.PriorQueue() == env.queue_id && prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION &&
+        (hazard.State().access_state->LastWrite().flags & SyncFlag::kExternalDependenciesMissFinalTransition)) {
+        ss << "\nHint: None of the explicit dependencies to VK_SUBPASS_EXTERNAL starts from a subpass that uses this attachment, "
+              "so they do not synchronize its final layout transition. Check their srcSubpass.";
     }
 
     if (!additional_info.message_end_text.empty()) {

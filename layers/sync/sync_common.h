@@ -74,6 +74,7 @@ struct SyncFlag {
     enum : uint8_t {
         kPresent = 0x01,
         kMarker = 0x02,
+        kExternalDependenciesMissFinalTransition = 0x04,
     };
 };
 using SyncFlags = uint8_t;

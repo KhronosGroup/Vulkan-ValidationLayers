@@ -410,7 +410,7 @@ void AccessState::Update(const SyncAccessInfo& usage_info, const AttachmentAcces
 HazardResult HazardResult::HazardVsPriorWrite(const AccessState* access_state, const SyncAccessInfo& usage_info, SyncHazard hazard,
                                               const WriteState& prior_write) {
     HazardResult result;
-    result.state_.emplace(access_state, usage_info, hazard, prior_write.access_index, prior_write.TagEx());
+    result.state_.emplace(access_state, usage_info, hazard, prior_write.access_index, prior_write.TagEx(), prior_write.queue);
     return result;
 }
 
@@ -418,7 +418,7 @@ HazardResult HazardResult::HazardVsPriorRead(const AccessState* access_state, co
                                              const ReadState& prior_read) {
     assert(prior_read.access_index != SYNC_ACCESS_INDEX_NONE);
     HazardResult result;
-    result.state_.emplace(access_state, usage_info, hazard, prior_read.access_index, prior_read.TagEx());
+    result.state_.emplace(access_state, usage_info, hazard, prior_read.access_index, prior_read.TagEx(), prior_read.queue);
     return result;
 }
 
@@ -590,7 +590,7 @@ void PendingBarriers::AddLayoutTransition(AccessState* access_state, uint32_t la
     layout_transition.handle_index = layout_transition_handle_index;
 }
 
-void PendingBarriers::Apply(const ResourceUsageTag exec_tag) {
+void PendingBarriers::Apply(const ResourceUsageTag exec_tag, SyncFlags flags) {
     for (const PendingBarrierInfo& info : infos) {
         if (info.type == PendingBarrierType::ReadAccessBarrier) {
             const PendingReadBarrier& read_barrier = read_barriers[info.index];
@@ -601,7 +601,7 @@ void PendingBarriers::Apply(const ResourceUsageTag exec_tag) {
         } else {
             assert(info.type == PendingBarrierType::LayoutTransition);
             const PendingLayoutTransition& layout_transition = layout_transitions[info.index];
-            info.access_state->ApplyPendingLayoutTransition(layout_transition, exec_tag);
+            info.access_state->ApplyPendingLayoutTransition(layout_transition, exec_tag, flags);
         }
     }
 }
@@ -669,9 +669,10 @@ void AccessState::ApplyPendingWriteBarrier(const PendingWriteBarrier& write_barr
     }
 }
 
-void AccessState::ApplyPendingLayoutTransition(const PendingLayoutTransition& layout_transition, ResourceUsageTag tag) {
+void AccessState::ApplyPendingLayoutTransition(const PendingLayoutTransition& layout_transition, ResourceUsageTag tag,
+                                               SyncFlags flags) {
     const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, layout_transition.handle_index};
-    SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccess::NonAttachment(), tag_ex, 0, layout_transition.queue_id);
+    SetWrite(SYNC_IMAGE_LAYOUT_TRANSITION, AttachmentAccess::NonAttachment(), tag_ex, flags, layout_transition.queue_id);
 }
 
 // Assumes signal queue != wait queue
@@ -886,7 +887,7 @@ void WriteState::Set(SyncAccessIndex access_index, const AttachmentAccess& attac
 
 bool WriteState::operator==(const WriteState& rhs) const {
     return (access_index == rhs.access_index) && (barriers == rhs.barriers) && (tag == rhs.tag) && (queue == rhs.queue) &&
-           (dependency_chain == rhs.dependency_chain);
+           (dependency_chain == rhs.dependency_chain) && (flags == rhs.flags);
 }
 
 bool WriteState::IsWriteHazard(const SyncAccessInfo& usage_info) const { return !barriers[usage_info.access_index]; }
@@ -962,12 +963,13 @@ bool WriteState::InBarrierSourceScope(const BarrierScope& barrier_scope) const {
 }
 
 HazardResult::HazardState::HazardState(const AccessState* access_state_, const SyncAccessInfo& access_info_, SyncHazard hazard_,
-                                       SyncAccessIndex prior_access_index, ResourceUsageTagEx tag_ex)
+                                       SyncAccessIndex prior_access_index, ResourceUsageTagEx tag_ex, QueueId prior_queue)
     : access_state(std::make_unique<const AccessState>(*access_state_)),
       access_index(access_info_.access_index),
       prior_access_index(prior_access_index),
       prior_tag(tag_ex.tag),
       prior_handle_index(tag_ex.handle_index),
+      prior_queue(prior_queue),
       hazard(hazard_) {
     assert(prior_access_index != SYNC_ACCESS_INDEX_NONE);
     // Touchup the hazard to reflect "present as release" semantics
