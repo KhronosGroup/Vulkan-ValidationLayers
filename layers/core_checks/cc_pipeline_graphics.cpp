@@ -3768,11 +3768,17 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound& last_bou
                          FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
     }
 
+    // With rasterization disabled there is no fragment output interface state and the attachment formats in
+    // VkPipelineRenderingCreateInfo are ignored, so |pipeline_rendering_ci| is going to have false zero in it
+    if (!last_bound_state.IsRasterizationDisabled()) {
+        skip |=
+            ValidateDrawPipelineDynamicRenderpassFragmentFormat(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, loc);
+        skip |= ValidateDrawPipelineDynamicRenderpassDepthStencil(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, loc);
+        skip |= ValidateDrawPipelineDynamicRenderpassUnusedAttachments(last_bound_state, pipeline, rp_state, pipeline_rendering_ci,
+                                                                       loc);
+    }
+
     skip |= ValidateDrawPipelineDynamicRenderpassNonInherited(last_bound_state, pipeline, rp_state, loc);
-    skip |= ValidateDrawPipelineDynamicRenderpassFragmentFormat(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, loc);
-    skip |= ValidateDrawPipelineDynamicRenderpassDepthStencil(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, loc);
-    skip |=
-        ValidateDrawPipelineDynamicRenderpassUnusedAttachments(last_bound_state, pipeline, rp_state, pipeline_rendering_ci, loc);
     skip |= ValidateDrawPipelineDynamicRenderpassLegacyDithering(last_bound_state, pipeline, rp_state, loc);
     skip |= ValidateDrawPipelineDynamicRenderpassSampleCount(last_bound_state, pipeline, rp_state, loc);
     skip |= ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(last_bound_state, pipeline, rp_state, loc);
