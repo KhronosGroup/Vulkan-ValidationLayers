@@ -2224,6 +2224,48 @@ TEST_F(PositiveDynamicRendering, RenderAreaMipLevelMultipleLevels) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDynamicRendering, StaticRasterizerDiscardAttachments) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13516");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Image color_image(*m_device, 32, 32, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
+    vkt::Image depth_image(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = color_image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageView = depth_image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDynamicRendering, ResumeAfterUnrelatedFinishedInstance) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
