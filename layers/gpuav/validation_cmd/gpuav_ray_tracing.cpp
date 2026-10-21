@@ -1027,11 +1027,13 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         return;
     }
 
-    valpipe::ComputePipeline<MemcmpShader>& memcmp_pipeline =
-        gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<MemcmpShader>>(
+    valpipe::ComputePipeline<MemcmpShader>* memcmp_pipeline = nullptr;
+    if (gpuav.gpuav_settings.ray_tracing_buffers_consistency) {
+        memcmp_pipeline = &gpuav.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<MemcmpShader>>(
             gpuav, loc, val_cmd_gpuav_state.desc_set_mode.error_logging_desc_set_layout_);
-    if (!memcmp_pipeline.Valid()) {
-        return;
+        if (!memcmp_pipeline->Valid()) {
+            return;
+        }
     }
 
     struct ErrorInfo {
@@ -1182,8 +1184,8 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
                 memcmp_shader_resources.push_constants.geometry_i = geom_i;
                 memcmp_shader_resources.push_constants.error_info_i = error_info_i;
 
-                ASSERT_AND_RETURN(memcmp_pipeline.BindComputePipeline(gpuav, cb_state));
-                ASSERT_AND_RETURN(memcmp_pipeline.BindShaderResources(
+                ASSERT_AND_RETURN(memcmp_pipeline->BindComputePipeline(gpuav, cb_state));
+                ASSERT_AND_RETURN(memcmp_pipeline->BindShaderResources(
                     gpuav, cb_state, memcmp_shader_resources,
                     valpipe::ErrorLogging{cb_state.compute_index, cb_state.GetErrorLoggerIndex()}));
 
@@ -1206,46 +1208,48 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         // Record GPU AS state updates commands
         // ---
 
-        const VkDeviceSize as_geometries_buffer_size =
-            2 * sizeof(uint32_t) + info.geometryCount * sizeof(shader::AccelerationStructureGeometryGPU);
-        if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
-            const vko::BufferRange& as_geometries_dst_as_buffer_range = dst_as_gpu_buffers.buffers.build_cmd_copy;
-            ASSERT_AND_CONTINUE(as_geometries_cb_gpu_buffer.size >= as_geometries_buffer_size);
-            ASSERT_AND_CONTINUE(as_geometries_dst_as_buffer_range.Valid() &&
-                                as_geometries_dst_as_buffer_range.size >= as_geometries_buffer_size);
+        if (gpuav.gpuav_settings.ray_tracing_buffers_consistency) {
+            const VkDeviceSize as_geometries_buffer_size =
+                2 * sizeof(uint32_t) + info.geometryCount * sizeof(shader::AccelerationStructureGeometryGPU);
+            if (info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
+                const vko::BufferRange& as_geometries_dst_as_buffer_range = dst_as_gpu_buffers.buffers.build_cmd_copy;
+                ASSERT_AND_CONTINUE(as_geometries_cb_gpu_buffer.size >= as_geometries_buffer_size);
+                ASSERT_AND_CONTINUE(as_geometries_dst_as_buffer_range.Valid() &&
+                                    as_geometries_dst_as_buffer_range.size >= as_geometries_buffer_size);
 
-            // Deferred so that the copy is recorded *after* the build command it snapshots.
-            cb_state.on_post_call_record_cmd_build_as_functions.emplace_back(
-                [as_geometries_cb_buffer = as_geometries_cb_gpu_buffer.buffer,
-                 as_geometries_cb_buffer_offset = as_geometries_cb_gpu_buffer.offset,
-                 as_geometries_dst_as_buffer = as_geometries_dst_as_buffer_range.buffer,
-                 as_geometries_dst_as_buffer_offset = as_geometries_dst_as_buffer_range.offset, as_geometries_buffer_size,
+                // Deferred so that the copy is recorded *after* the build command it snapshots.
+                cb_state.on_post_call_record_cmd_build_as_functions.emplace_back(
+                    [as_geometries_cb_buffer = as_geometries_cb_gpu_buffer.buffer,
+                     as_geometries_cb_buffer_offset = as_geometries_cb_gpu_buffer.offset,
+                     as_geometries_dst_as_buffer = as_geometries_dst_as_buffer_range.buffer,
+                     as_geometries_dst_as_buffer_offset = as_geometries_dst_as_buffer_range.offset, as_geometries_buffer_size,
 
-                 dst_as_last_build_cmd_ptr_buffer = dst_as_gpuav_state.last_build_cmd_ptr.buffer,
-                 dst_as_last_build_cmd_ptr_offset = dst_as_gpuav_state.last_build_cmd_ptr.offset,
-                 as_geometries_dst_as_buffer_address = as_geometries_dst_as_buffer_range.offset_address
+                     dst_as_last_build_cmd_ptr_buffer = dst_as_gpuav_state.last_build_cmd_ptr.buffer,
+                     dst_as_last_build_cmd_ptr_offset = dst_as_gpuav_state.last_build_cmd_ptr.offset,
+                     as_geometries_dst_as_buffer_address = as_geometries_dst_as_buffer_range.offset_address
 
-            ](Validator&, CommandBufferSubState& cb) {
-                    VkMemoryBarrier barrier = vku::InitStructHelper();
-                    barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                    DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                               0, 1, &barrier, 0, nullptr, 0, nullptr);
+                ](Validator&, CommandBufferSubState& cb) {
+                        VkMemoryBarrier barrier = vku::InitStructHelper();
+                        barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                        DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                                   VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
 
-                    VkBufferCopy region{};
-                    region.srcOffset = as_geometries_cb_buffer_offset;
-                    region.dstOffset = as_geometries_dst_as_buffer_offset;
-                    region.size = as_geometries_buffer_size;
-                    DispatchCmdCopyBuffer(cb.VkHandle(), as_geometries_cb_buffer, as_geometries_dst_as_buffer, 1, &region);
+                        VkBufferCopy region{};
+                        region.srcOffset = as_geometries_cb_buffer_offset;
+                        region.dstOffset = as_geometries_dst_as_buffer_offset;
+                        region.size = as_geometries_buffer_size;
+                        DispatchCmdCopyBuffer(cb.VkHandle(), as_geometries_cb_buffer, as_geometries_dst_as_buffer, 1, &region);
 
-                    DispatchCmdUpdateBuffer(cb.VkHandle(), dst_as_last_build_cmd_ptr_buffer, dst_as_last_build_cmd_ptr_offset,
-                                            sizeof(VkDeviceAddress), &as_geometries_dst_as_buffer_address);
+                        DispatchCmdUpdateBuffer(cb.VkHandle(), dst_as_last_build_cmd_ptr_buffer, dst_as_last_build_cmd_ptr_offset,
+                                                sizeof(VkDeviceAddress), &as_geometries_dst_as_buffer_address);
 
-                    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                    DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                               0, 1, &barrier, 0, nullptr, 0, nullptr);
-                });
+                        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
+                    });
+            }
         }
     }
 

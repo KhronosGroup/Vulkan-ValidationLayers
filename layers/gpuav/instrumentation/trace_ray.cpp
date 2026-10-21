@@ -332,6 +332,10 @@ struct AccelerationStructureGpuStateUpdateShader {
 
 void UpdateAccelerationStructureGpuState(Validator& gpuav, CommandBufferSubState& cb, const Location& loc,
                                          vvl::span<const AccelerationStructureGpuStateUpdate> updates) {
+    if (!gpuav.gpuav_settings.shader_instrumentation.trace_ray && !gpuav.gpuav_settings.validate_acceleration_structures_builds) {
+        return;
+    }
+
     if (updates.empty()) {
         return;
     }
