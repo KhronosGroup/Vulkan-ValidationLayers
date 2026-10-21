@@ -567,6 +567,31 @@ TEST_F(NegativeDeviceAddressCommands, AddressCommandFlagsSync) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDeviceAddressCommands, MemoryRangeBarrierEmptyRange) {
+    TEST_DESCRIPTION("A memory range barrier with a size of 0 is invalid");
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkMemoryRangeBarrierKHR range_barrier = vku::InitStructHelper();
+    range_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    range_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    range_barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    range_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    range_barrier.addressRange = {buffer.Address(), 0};
+
+    VkMemoryRangeBarriersInfoKHR barriers_info = vku::InitStructHelper();
+    barriers_info.memoryRangeBarrierCount = 1u;
+    barriers_info.pMemoryRangeBarriers = &range_barrier;
+    VkDependencyInfo dependency_info = vku::InitStructHelper(&barriers_info);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryRangeBarrierKHR-addressRange-size-zero");
+    m_command_buffer.Barrier(dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDeviceAddressCommands, CmdDrawIndexedIndirectCount2Flags) {
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     AddRequiredFeature(vkt::Feature::drawIndirectCount);

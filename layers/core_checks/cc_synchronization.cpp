@@ -2630,15 +2630,11 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList& objects, const Locat
                                        const vvl::CommandBuffer& cb_state, const BufferBarrier& mem_barrier) const {
     bool skip = false;
 
-    const bool is_memory_range = barrier_loc.structure == vvl::Struct::VkMemoryRangeBarrierKHR;
-
     // Validate buffer barrier queue family indices
     if (auto buffer_state = Get<vvl::Buffer>(mem_barrier.buffer)) {
         auto buf_loc = barrier_loc.dot(Field::buffer);
-        if (!is_memory_range) {
-            const auto& mem_vuid = GetBufferBarrierVUID(buf_loc, vvl::BufferError::kNoMemory);
-            skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), *buffer_state, buf_loc, mem_vuid.c_str());
-        }
+        const auto& mem_vuid = GetBufferBarrierVUID(buf_loc, vvl::BufferError::kNoMemory);
+        skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), *buffer_state, buf_loc, mem_vuid.c_str());
 
         skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, buf_loc, mem_barrier, buffer_state->Handle(),
                                              buffer_state->GetSharingMode(), cb_state.command_pool.queueFamilyIndex);
@@ -2650,7 +2646,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList& objects, const Locat
             skip |=
                 LogError(vuid, objects, offset_loc, "%s has offset 0x%" PRIx64 " which is not less than total size 0x%" PRIx64 ".",
                          FormatHandle(mem_barrier.buffer).c_str(), mem_barrier.offset, buffer_size);
-        } else if (!is_memory_range && mem_barrier.size != VK_WHOLE_SIZE && (mem_barrier.offset + mem_barrier.size > buffer_size)) {
+        } else if (mem_barrier.size != VK_WHOLE_SIZE && (mem_barrier.offset + mem_barrier.size > buffer_size)) {
             auto size_loc = barrier_loc.dot(Field::size);
             const auto& vuid = GetBufferBarrierVUID(size_loc, vvl::BufferError::kSizeOutOfRange);
             skip |=
@@ -2663,6 +2659,27 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList& objects, const Locat
             const auto& vuid = GetBufferBarrierVUID(size_loc, vvl::BufferError::kSizeZero);
             skip |= LogError(vuid, objects, barrier_loc, "%s has a size of 0.", FormatHandle(mem_barrier.buffer).c_str());
         }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateMemoryRangeBarrier(const LogObjectList& objects, const Location& barrier_loc,
+                                            const vvl::CommandBuffer& cb_state, const MemoryRangeBarrier& barrier) const {
+    bool skip = false;
+
+    const Location range_loc = barrier_loc.dot(Field::addressRange);
+    skip |= ValidateDeviceAddressCommands(cb_state.VkHandle(), barrier.addressRange.address, barrier.addressRange.size,
+                                          barrier.addressFlags, range_loc);
+
+    if (barrier.addressRange.size == 0) {
+        // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/5014
+        skip |=
+            LogError("UNASSIGNED-VkMemoryRangeBarrierKHR-addressRange-size-zero", objects, range_loc.dot(Field::size), "is zero.");
+    }
+
+    for (const vvl::Buffer* buffer_state : GetBuffersByAddress(barrier.addressRange.address)) {
+        skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, range_loc, barrier, buffer_state->Handle(),
+                                             buffer_state->GetSharingMode(), cb_state.command_pool.queueFamilyIndex);
     }
     return skip;
 }
@@ -2826,20 +2843,10 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList& objects, const Loca
     if (memory_range_barriers_info) {
         for (uint32_t i = 0; i < memory_range_barriers_info->memoryRangeBarrierCount; ++i) {
             const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryRangeBarrierKHR, Field::pMemoryRangeBarriers, i);
-            const VkMemoryRangeBarrierKHR& memory_range_barrier = memory_range_barriers_info->pMemoryRangeBarriers[i];
-
-            skip |= ValidateDeviceAddressCommands(cb_state.VkHandle(), memory_range_barrier.addressRange.address,
-                                                  memory_range_barrier.addressRange.size, memory_range_barrier.addressFlags,
-                                                  barrier_loc.dot(Field::addressRange));
-
-            // TODO - This not ideal, we should redo BufferBarrier to handle a memory range
-            const auto buffer_states = GetBuffersByAddress(memory_range_barrier.addressRange.address);
-            for (const auto buffer_state : buffer_states) {
-                const BufferBarrier barrier(memory_range_barrier, *buffer_state);
-                const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool.queueFamilyIndex);
-                skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
-                skip |= ValidateBufferBarrier(objects, barrier_loc, cb_state, barrier);
-            }
+            const MemoryRangeBarrier barrier(memory_range_barriers_info->pMemoryRangeBarriers[i]);
+            const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool.queueFamilyIndex);
+            skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
+            skip |= ValidateMemoryRangeBarrier(objects, barrier_loc, cb_state, barrier);
         }
     }
 

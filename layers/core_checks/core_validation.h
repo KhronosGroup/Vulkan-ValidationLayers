@@ -378,6 +378,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                     VkSubpassContents contents, const ErrorObject& error_obj) const;
     bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
                                const BufferBarrier& barrier) const;
+    bool ValidateMemoryRangeBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
+                                    const MemoryRangeBarrier& barrier) const;
 
     bool ValidateImageBarrier(const LogObjectList& objlist, const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                               const Location& barrier_loc, ImageLayoutRegistry& local_layout_registry) const;
