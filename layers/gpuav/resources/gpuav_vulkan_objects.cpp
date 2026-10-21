@@ -580,6 +580,31 @@ void GpuResourcesManager::BufferCache::DestroyBuffers() {
     cached_buffers_blocks_.clear();
 }
 
+GpuResourcesManagerCache::~GpuResourcesManagerCache() {
+    std::lock_guard<std::mutex> guard(lock_);
+    for (auto& manager : managers_) {
+        manager->DestroyResources();
+    }
+    managers_.clear();
+    available_managers_.clear();
+}
+
+GpuResourcesManager* GpuResourcesManagerCache::Get() {
+    std::lock_guard<std::mutex> guard(lock_);
+    if (available_managers_.empty()) {
+        return managers_.emplace_back(std::make_unique<GpuResourcesManager>(gpuav_, false)).get();
+    }
+    GpuResourcesManager* manager = available_managers_.back();
+    available_managers_.pop_back();
+    return manager;
+}
+
+void GpuResourcesManagerCache::Return(GpuResourcesManager* manager) {
+    manager->ReturnResources();
+    std::lock_guard<std::mutex> guard(lock_);
+    available_managers_.emplace_back(manager);
+}
+
 bool StagingBuffer::CanDeviceEverStage(Validator& gpuav) {
     return gpuav.phys_dev_props.deviceType != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 }
