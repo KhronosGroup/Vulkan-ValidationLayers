@@ -98,14 +98,8 @@ void Validator::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreate
     const VkBufferUsageFlags2 in_usage = flags2 ? flags2->usage : pCreateInfo->usage;
 
     if (in_usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-        descriptor_buffer.resource_handles_.emplace(*pBuffer);
         hint_descriptor_buffer_ = true;
     }
-}
-
-void Validator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
-                                           const RecordObject& record_obj) {
-    descriptor_buffer.resource_handles_.erase(buffer);
 }
 
 void Validator::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
@@ -127,36 +121,6 @@ void Validator::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAlloc
     }
 
     chassis_state.allocate_info_copy = chassis_state.modified_allocate_info.ptr();
-}
-
-void Validator::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
-                                        const RecordObject& record_obj) {
-    if (descriptor_buffer.resource_memory_handles_.find(memory) != descriptor_buffer.resource_memory_handles_.end()) {
-        descriptor_buffer.resource_memory_handles_.erase(memory);
-    }
-}
-
-void Validator::BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset, const Location&) {
-    if (descriptor_buffer.resource_handles_.find(buffer) != descriptor_buffer.resource_handles_.end()) {
-        descriptor_buffer.resource_memory_handles_.emplace(memory);
-    }
-}
-
-void Validator::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                               const RecordObject& record_obj) {
-    BindBufferMemory(buffer, memory, memoryOffset, record_obj.location);
-}
-
-void Validator::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
-                                                const RecordObject& record_obj) {
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
-        BindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset, record_obj.location);
-    }
-}
-
-void Validator::PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                   const VkBindBufferMemoryInfo* pBindInfos, const RecordObject& record_obj) {
-    PostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
 }
 
 void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
