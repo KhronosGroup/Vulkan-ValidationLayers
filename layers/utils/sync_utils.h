@@ -27,7 +27,6 @@ struct DeviceExtensions;
 
 namespace vvl {
 class CommandBuffer;
-class Buffer;
 }  // namespace vvl
 
 struct SyncMemoryBarrier {
@@ -145,12 +144,19 @@ struct BufferBarrier : OwnershipTransferBarrier {
 
     explicit BufferBarrier(const VkBufferMemoryBarrier2& barrier)
         : OwnershipTransferBarrier(barrier), buffer(barrier.buffer), offset(barrier.offset), size(barrier.size) {}
-    explicit BufferBarrier(const VkMemoryRangeBarrierKHR& barrier, const vvl::Buffer& buffer);
     BufferBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
         : OwnershipTransferBarrier(barrier, src_stage_mask, dst_stage_mask),
           buffer(barrier.buffer),
           offset(barrier.offset),
           size(barrier.size) {}
+};
+
+struct MemoryRangeBarrier : OwnershipTransferBarrier {
+    VkDeviceAddressRangeKHR addressRange;
+    VkAddressCommandFlagsKHR addressFlags;
+
+    explicit MemoryRangeBarrier(const VkMemoryRangeBarrierKHR& barrier)
+        : OwnershipTransferBarrier(barrier), addressRange(barrier.addressRange), addressFlags(barrier.addressFlags) {}
 };
 
 struct ImageBarrier : OwnershipTransferBarrier {
