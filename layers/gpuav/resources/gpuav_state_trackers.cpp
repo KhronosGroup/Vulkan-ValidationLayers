@@ -700,7 +700,8 @@ AccelerationStructureKHRSubState::LockedBuildStateGpuBuffers AccelerationStructu
     const VkAccelerationStructureBuildRangeInfoKHR* build_range_infos) {
     std::unique_lock<std::mutex> lock(build_state_gpu_mutex);
 
-    if (build_info.mode != VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
+    if (!validator.gpuav_settings.ray_tracing_buffers_consistency ||
+        build_info.mode != VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR) {
         return {std::move(lock), build_state_gpu_buffers};
     }
 
@@ -711,8 +712,7 @@ AccelerationStructureKHRSubState::LockedBuildStateGpuBuffers AccelerationStructu
         build_state_gpu_buffers.build_cmd_copy = validator.gpu_resources_manager_.GetDeviceLocalBufferRange(build_cmd_copy_size);
     }
 
-    if (validator.gpuav_settings.ray_tracing_buffers_consistency &&
-        (build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
+    if ((build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
         build_state_gpu_buffers.geometries_x_component_copies.resize(
             std::max(build_state_gpu_buffers.geometries_x_component_copies.size(), size_t(build_info.geometryCount)));
         build_state_gpu_buffers.index_buffer_copies.resize(
