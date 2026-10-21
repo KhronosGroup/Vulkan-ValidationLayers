@@ -34,6 +34,7 @@
 #include "gpuav/validation_cmd/gpuav_ray_tracing.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/descriptor_mode.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/push_constant_data.h"
@@ -42,12 +43,15 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/tensor_state.h"
-#include "state_tracker/descriptor_mode.h"
 
 struct LastBound;
 
 namespace spirv {
 struct Module;
+}
+
+namespace vko {
+class GpuResourcesManager;
 }
 
 namespace gpuav {
@@ -81,13 +85,18 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
-        stdext::inplace_function<bool(Validator& gpuav, CommandBufferSubState& cb, const vvl::CommandBufferSubmitInfo& cb_info,
+        stdext::inplace_function<bool(Validator& gpuav, CommandBufferSubState& cb, gpuav::QueueSubmission& queue_submission,
+                                      gpuav::CommandBufferSubmission& cb_submission, const vvl::CommandBufferSubmitInfo& cb_info,
                                       const Location& submission_loc),
                                  64>;
     using OnPreCommandBufferSubmission =
-        stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_pre_submission_cb), 48>;
+        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_pre_submission_cb,
+                                      gpuav::QueueSubmission& queue_submission, gpuav::CommandBufferSubmission& cb_submission),
+                                 48>;
     using OnPostCommandBufferSubmission =
-        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_post_submission_cb), 32>;
+        stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_post_submission_cb,
+                                      gpuav::QueueSubmission& queue_submission, gpuav::CommandBufferSubmission& cb_submission),
+                                 32>;
     using OnPostCallRecordCmdBuildAccelerationStructures =
         stdext::inplace_function<void(Validator& gpuav, CommandBufferSubState& cb), 64>;
     std::vector<OnInstrumentationErrorLoggerRegister> on_instrumentation_error_logger_register_functions;
@@ -113,9 +122,12 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
     ~CommandBufferSubState();
 
-    [[nodiscard]] bool PreSubmit(QueueSubState &queue, const Location &loc);
-    [[nodiscard]] bool PostSubmit(QueueSubState &queue, const Location &loc);
-    void OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info, const Location& submission_loc);
+    [[nodiscard]] bool PreSubmit(QueueSubState& queue, const Location& loc, gpuav::QueueSubmission& queue_submission,
+                                 gpuav::CommandBufferSubmission& cb_submission);
+    [[nodiscard]] bool PostSubmit(QueueSubState& queue, const Location& loc, gpuav::QueueSubmission& queue_submission,
+                                  gpuav::CommandBufferSubmission& cb_submission);
+    void OnCompletion(VkQueue queue, gpuav::QueueSubmission& queue_submission, gpuav::CommandBufferSubmission& cb_submission,
+                      const vvl::CommandBufferSubmitInfo& cb_info, const Location& submission_loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
@@ -273,8 +285,9 @@ class QueueSubState : public vvl::QueueSubState {
     Validator &gpuav_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
+    std::vector<std::vector<vvl::CommandBufferSubmitInfo>> retiring_;
+    std::vector<vvl::QueueSubmission::GpuAV> retiring_gpuav_;
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
-    std::deque<std::vector<vvl::CommandBufferSubmitInfo>> retiring_;
     const bool timeline_khr_;
 };
 

@@ -77,15 +77,15 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
             out_update.binding = glsl::kBindingInstPostProcess;
         });
 
-    auto bound_desc_sets_to_pp_buffer_map =
-        std::make_shared<vvl::unordered_map<std::shared_ptr<vvl::DescriptorSet>, vko::StagingBuffer>>();
-    cb.on_pre_cb_submission_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](Validator& gpuav, CommandBufferSubState& cb,
-                                                                                      VkCommandBuffer per_pre_submission_cb) {
+    cb.on_pre_cb_submission_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
+                                                      VkCommandBuffer per_pre_submission_cb,
+                                                      gpuav::QueueSubmission& queue_submission,
+                                                      gpuav::CommandBufferSubmission& cb_submission) {
         VVL_ZoneScoped;
         DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.Get<DescriptorSetBindings>();
 
         for (const DescriptorSetBindings::BindingCommand& desc_binding_cmd : desc_set_bindings.descriptor_set_binding_commands) {
-            vko::BufferRange desc_set_buffer_lut_buffer_range = cb.gpu_resources_manager.GetHostCoherentBufferRange(
+            vko::BufferRange desc_set_buffer_lut_buffer_range = queue_submission.resources_manager->GetHostCoherentBufferRange(
                 32 * sizeof(VkDeviceAddress));  // No driver offers more than 32 descriptor set bindings
 
             // For each unique bound descriptor set in this command buffer,
@@ -103,8 +103,13 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 }
                 DescriptorSetSubState& desc_set_state = SubState(*desc_binding_cmd.bound_descriptor_sets[ds_i]);
 
-                if (auto found = bound_desc_sets_to_pp_buffer_map->find(desc_binding_cmd.bound_descriptor_sets[ds_i]);
-                    found == bound_desc_sets_to_pp_buffer_map->end()) {
+                if (!cb_submission.bound_desc_sets_to_pp_buffer_map) {
+                    cb_submission.bound_desc_sets_to_pp_buffer_map =
+                        std::make_shared<vvl::unordered_map<std::shared_ptr<vvl::DescriptorSet>, vko::StagingBuffer>>();
+                }
+
+                if (auto found = cb_submission.bound_desc_sets_to_pp_buffer_map->find(desc_binding_cmd.bound_descriptor_sets[ds_i]);
+                    found == cb_submission.bound_desc_sets_to_pp_buffer_map->end()) {
                     // DescriptorSetSubState::GetPostProcessBufferSize() used to do a "auto guard = Lock()"
                     // But the lock was only guarding against GPU-AV sub state, not the base state, so
                     // base.GetNonInlineDescriptorCount() access were not fully protected
@@ -115,11 +120,12 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                         continue;
                     }
 
-                    vko::StagingBuffer staging_buffer(cb.gpu_resources_manager, pp_buffer_size, per_pre_submission_cb);
+                    vko::StagingBuffer staging_buffer(*queue_submission.resources_manager, pp_buffer_size, per_pre_submission_cb);
 
                     auto desc_set_buffer_lut_ptr = (VkDeviceAddress*)desc_set_buffer_lut_buffer_range.offset_mapped_ptr;
                     desc_set_buffer_lut_ptr[ds_i] = staging_buffer.GetBufferRange().offset_address;
-                    bound_desc_sets_to_pp_buffer_map->insert({desc_binding_cmd.bound_descriptor_sets[ds_i], staging_buffer});
+                    cb_submission.bound_desc_sets_to_pp_buffer_map->insert(
+                        {desc_binding_cmd.bound_descriptor_sets[ds_i], staging_buffer});
                 } else {
                     auto desc_set_buffer_lut_ptr = (VkDeviceAddress*)desc_set_buffer_lut_buffer_range.offset_mapped_ptr;
                     desc_set_buffer_lut_ptr[ds_i] = found->second.GetBufferRange().offset_address;
@@ -133,25 +139,33 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
     });
 
     if (vko::StagingBuffer::CanDeviceEverStage(gpuav)) {
-        cb.on_post_cb_submission_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](Validator& gpuav,
-                                                                                           CommandBufferSubState& cb,
-                                                                                           VkCommandBuffer per_post_submission_cb) {
-            for (const auto& [desc_set, staging_buffer] : *bound_desc_sets_to_pp_buffer_map) {
+        cb.on_post_cb_submission_functions.emplace_back([](Validator&, CommandBufferSubState&,
+                                                           VkCommandBuffer per_post_submission_cb, gpuav::QueueSubmission&,
+                                                           gpuav::CommandBufferSubmission& cb_submission) {
+            if (!cb_submission.bound_desc_sets_to_pp_buffer_map) {
+                return;
+            }
+            for (const auto& [desc_set, staging_buffer] : *cb_submission.bound_desc_sets_to_pp_buffer_map) {
                 staging_buffer.CmdCopyDeviceToHost(per_post_submission_cb);
             }
         });
     }
 
     // Validate descriptor set accesses done by command buffer submission
-    cb.on_cb_completion_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](Validator& gpuav, CommandBufferSubState& cb,
-                                                                                  const vvl::CommandBufferSubmitInfo& cb_info,
-                                                                                  const Location& submission_loc) {
+    cb.on_cb_completion_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb, gpuav::QueueSubmission&,
+                                                  gpuav::CommandBufferSubmission& cb_submission,
+                                                  const vvl::CommandBufferSubmitInfo& cb_info, const Location& submission_loc) {
         VVL_ZoneScoped;
+
+        if (!cb_submission.bound_desc_sets_to_pp_buffer_map) {
+            return true;
+        }
 
         // We loop each vkCmdBindDescriptorSet, find each VkDescriptorSet that was used in the command buffer, and check
         // its post process buffer for which descriptor was accessed Only check a VkDescriptorSet once, might be bound
         // multiple times in a single command buffer
-        for (auto& [desc_set, staging_buffer] : *bound_desc_sets_to_pp_buffer_map) {
+
+        for (auto& [desc_set, staging_buffer] : *cb_submission.bound_desc_sets_to_pp_buffer_map) {
             // We build once here, but will update the set_index and shader_handle when found
             vvl::DescriptorValidator context(gpuav, cb.base, *desc_set, 0, VK_NULL_HANDLE, nullptr, Location(vvl::Func::Empty));
 

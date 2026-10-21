@@ -161,28 +161,29 @@ void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSub
         out_update.binding = glsl::kBindingInstDescriptorBuffer;
     });
 
-    cb.on_pre_cb_submission_functions.emplace_back(
-        [](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
-            if (!gpuav.global_settings.descriptor_hashing) {
-                return;
-            }
+    cb.on_pre_cb_submission_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,
+                                                      VkCommandBuffer per_submission_cb, gpuav::QueueSubmission& queue_submission,
+                                                      gpuav::CommandBufferSubmission& cb_submission) {
+        if (!gpuav.global_settings.descriptor_hashing) {
+            return;
+        }
 
-            DescriptorChecksBufferHashTable* hash_table_state = cb.shared_resources_cache.TryGet<DescriptorChecksBufferHashTable>();
-            if (!hash_table_state) {
-                return;
-            }
+        DescriptorChecksBufferHashTable* hash_table_state = cb.shared_resources_cache.TryGet<DescriptorChecksBufferHashTable>();
+        if (!hash_table_state) {
+            return;
+        }
 
-            // Same as |descriptor_checks_heap.cpp|
-            vvl::DescriptorHashing& descriptor_hashing = *gpuav.device_state->descriptor_hashing;
-            ReadLockGuard guard(descriptor_hashing.map_lock);
-            const VkDeviceSize table_size = descriptor_hashing.table.Size();
+        // Same as |descriptor_checks_heap.cpp|
+        vvl::DescriptorHashing& descriptor_hashing = *gpuav.device_state->descriptor_hashing;
+        ReadLockGuard guard(descriptor_hashing.map_lock);
+        const VkDeviceSize table_size = descriptor_hashing.table.Size();
 
-            vko::BufferRange staging_buffer = cb.gpu_resources_manager.GetHostCachedBufferRange(table_size);
-            memcpy(staging_buffer.offset_mapped_ptr, descriptor_hashing.table.slots.data(), static_cast<size_t>(table_size));
-            cb.gpu_resources_manager.FlushAllocation(staging_buffer);
+        vko::BufferRange staging_buffer = queue_submission.resources_manager->GetHostCachedBufferRange(table_size);
+        memcpy(staging_buffer.offset_mapped_ptr, descriptor_hashing.table.slots.data(), static_cast<size_t>(table_size));
+        queue_submission.resources_manager->FlushAllocation(staging_buffer);
 
-            vko::CmdSynchronizedCopyBufferRange(per_submission_cb, hash_table_state->buffer_range, staging_buffer);
-        });
+        vko::CmdSynchronizedCopyBufferRange(per_submission_cb, hash_table_state->buffer_range, staging_buffer);
+    });
 
     cb.on_instrumentation_error_logger_register_functions.emplace_back(
         [](Validator& gpuav, CommandBufferSubState& cb, const LastBound& last_bound) {

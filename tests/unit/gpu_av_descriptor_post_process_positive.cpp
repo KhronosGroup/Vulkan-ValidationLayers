@@ -1601,3 +1601,62 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DestroyShaderObjectBeforeSubmitIsProc
     timeline.Signal(2);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorPostProcess, ShareBetweenCommandBuffers) {
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddRequiredFeature(vkt::Feature::shaderStorageBufferArrayDynamicIndexing);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO { uint x; } ssbos[2];
+        layout(push_constant) uniform PushConstants { uint index; };
+        void main() {
+            ssbos[index].x = 1;
+        }
+    )glsl";
+
+    OneOffDescriptorIndexingSet set_a(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr,
+                                                  VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT}});
+    OneOffDescriptorIndexingSet set_b(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr,
+                                                  VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT}});
+    const VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_a.layout_}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    set_a.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    set_a.UpdateDescriptorSets();
+    set_b.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    set_b.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    set_b.UpdateDescriptorSets();
+
+    vkt::CommandBuffer cb_a(*m_device, m_command_pool);
+    vkt::CommandBuffer cb_b(*m_device, m_command_pool);
+
+    cb_a.Begin();
+    const uint32_t index_a = 0;
+    vk::CmdBindPipeline(cb_a, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(cb_a, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &set_a.set_, 0, nullptr);
+    vk::CmdPushConstants(cb_a, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &index_a);
+    vk::CmdDispatch(cb_a, 1, 1, 1);
+    cb_a.End();
+
+    cb_b.Begin();
+    const uint32_t index_b = 1;
+    vk::CmdBindPipeline(cb_b, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(cb_b, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &set_b.set_, 0, nullptr);
+    vk::CmdPushConstants(cb_b, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &index_b);
+    vk::CmdDispatch(cb_b, 1, 1, 1);
+    cb_b.End();
+
+    m_default_queue->SubmitAndWait(cb_a);
+    m_default_queue->SubmitAndWait(cb_b);
+    m_default_queue->SubmitAndWait(cb_a);
+}
