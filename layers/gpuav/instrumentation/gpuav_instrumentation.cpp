@@ -623,7 +623,8 @@ void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferS
 
     // We have a single set of InstrumentationErrorLogger for ALL the instrumented shaders
     // (there is one for each validation_cmd callback)
-    {
+    // Note: DebugPrintf does not write to the error buffer, so only add for shader instrumentation
+    if (gpuav.gpuav_settings.IsShaderInstrumentationEnabled()) {
         // TODO - we could reduce adding the loggers we know will never be called
         std::vector<CommandBufferSubState::InstrumentationErrorLogger> error_loggers = {};
         for (const auto& func : vvl::make_span(cb_state.on_instrumentation_error_logger_register_functions)) {

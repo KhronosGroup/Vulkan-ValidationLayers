@@ -629,12 +629,12 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
         out_update.binding = glsl::kBindingInstDescriptorHeap;
     });
 
+    if (!gpuav.global_settings.descriptor_hashing) {
+        return;
+    }
+
     cb.on_pre_cb_submission_functions.emplace_back(
         [](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
-            if (!gpuav.global_settings.descriptor_hashing) {
-                return;
-            }
-
             DescriptorChecksHeapHashTable* hash_table_state = cb.shared_resources_cache.TryGet<DescriptorChecksHeapHashTable>();
             if (!hash_table_state) {
                 return;

@@ -264,9 +264,12 @@ struct DescriptorEncodingUpdateShader {
 
 void DescriptorSetSubState::PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb, uint32_t write_count,
                                                          const VkWriteDescriptorSet* write_descs) {
-    std::lock_guard guard(state_lock_);
-
     gpuav::CommandBufferSubState& cb_sub_state = gpuav::SubState(cb);
+    if (!cb_sub_state.gpuav_.gpuav_settings.shader_instrumentation.descriptor_checks) {
+        return;
+    }
+
+    std::lock_guard guard(state_lock_);
 
     valpipe::ComputePipeline<DescriptorEncodingUpdateShader>& descriptor_encoding_update_pipeline =
         cb_sub_state.gpuav_.shared_resources_cache.GetOrCreate<valpipe::ComputePipeline<DescriptorEncodingUpdateShader>>(
