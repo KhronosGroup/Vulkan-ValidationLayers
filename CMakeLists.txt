@@ -254,11 +254,19 @@ add_subdirectory(layers)
 if(MSVC AND UPDATE_DEPS)
     set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
     file(GLOB_RECURSE SCRIPTS
+        "${SCRIPTS_DIR}/*.txt"
         "${SCRIPTS_DIR}/*.py"
         "${SCRIPTS_DIR}/*.json"
+        "${SCRIPTS_DIR}/gn/*"
     )
-    add_custom_target(Scripts SOURCES ${SCRIPTS})
+    add_custom_target(Scripts SOURCES ${SCRIPTS} BUILD.gn)
     source_group(TREE ${SCRIPTS_DIR} PREFIX "Scripts" FILES ${SCRIPTS})
+    source_group("Scripts/gn" FILES BUILD.gn)
+
+    set(DOCS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs")
+    file(GLOB_RECURSE DOCS "${DOCS_DIR}/*.md")
+    add_custom_target(Docs SOURCES ${DOCS})
+    source_group(TREE ${DOCS_DIR} PREFIX "Docs" FILES ${DOCS})
 
     set(EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
     file(GLOB_RECURSE EXTERNAL_HEADER_FILES

@@ -555,10 +555,17 @@ target_sources(vvl PRIVATE
     layer_options_validation.h
     profiling/profiling.h
 )
+
 get_target_property(LAYER_SOURCES vvl SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
 
 if(MSVC)
+    target_sources(vvl PRIVATE
+        types.natvis
+        external/parallel_hashmap/natvis/phmap.natvis
+        ${LAYER_NAME}.json.in
+    )
+
     set(GPUAV_SHADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gpuav/shaders")
     file(GLOB_RECURSE GPUAV_SHADERS
         "${GPUAV_SHADERS_DIR}/*.slang"
@@ -581,9 +588,6 @@ set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
 if(MSVC)
     target_link_options(vvl PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
     target_compile_options(vvl PRIVATE /bigobj)
-
-    set(NATVIS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/types.natvis" "${CMAKE_CURRENT_SOURCE_DIR}/external/parallel_hashmap/natvis/phmap.natvis")
-    target_sources(vvl PRIVATE ${NATVIS_FILES})
 elseif(MINGW)
     target_sources(vvl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
     target_compile_options(vvl PRIVATE -Wa,-mbig-obj)
