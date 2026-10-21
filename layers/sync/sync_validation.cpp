@@ -509,7 +509,7 @@ void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, B
         cb_context.AddCommandHandle(tag, buffer_barrier.buffer->Handle());
     }
     for (SyncImageBarrier& image_barrier : barrier_set.image_barriers) {
-        if (image_barrier.layout_transition) {
+        if (image_barrier.IsLayoutTransition()) {
             const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, image_barrier.image->Handle());
             image_barrier.handle_index = tag_ex.handle_index;
         }
@@ -2076,7 +2076,7 @@ void SyncValidator::RecordCmdWaitEvents(CommandBufferContext& cb_context, std::v
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
     for (BarrierSet& barrier_set : barrier_sets) {
         for (SyncImageBarrier& image_barrier : barrier_set.image_barriers) {
-            if (image_barrier.layout_transition) {
+            if (image_barrier.IsLayoutTransition()) {
                 image_barrier.handle_index = cb_context.AddCommandHandle(tag, image_barrier.image->Handle()).handle_index;
             }
         }

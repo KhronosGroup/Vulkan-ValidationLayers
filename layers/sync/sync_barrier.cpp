@@ -345,8 +345,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, const 
             }
 
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
-            const bool layout_transition = barrier.oldLayout != barrier.newLayout;
-            image_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
+            image_barriers.emplace_back(image, sync_barrier, subresource_range, barrier.oldLayout, barrier.newLayout, index);
         }
     }
 }
@@ -368,8 +367,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueu
             }
 
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
-            const bool layout_transition = barrier.oldLayout != barrier.newLayout;
-            image_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
+            image_barriers.emplace_back(image, sync_barrier, subresource_range, barrier.oldLayout, barrier.newLayout, index);
         }
     }
 }
@@ -459,7 +457,7 @@ static void ApplySingleImageBarrier(const DeviceFeatures& features, QueueId queu
                                     ResourceUsageTag tag) {
     const BarrierScope barrier_scope(image_barrier.barrier, queue_id);
     ApplySingleImageBarrierFunctor apply_barrier(access_context, barrier_scope, image_barrier.barrier,
-                                                 image_barrier.layout_transition, image_barrier.handle_index, tag);
+                                                 image_barrier.IsLayoutTransition(), image_barrier.handle_index, tag);
 
     const auto& sub_state = SubState(*image_barrier.image);
     const bool can_transition_depth_slices =
@@ -501,7 +499,7 @@ static void ApplyMultipleBarriers(const DeviceFeatures& features, QueueId queue_
         const bool can_transition_depth_slices =
             CanTransitionDepthSlices(features, sub_state.base.GetImageType(), sub_state.base.create_flags);
         auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
-        ApplyMarkupFunctor markup_action(barrier.layout_transition);
+        ApplyMarkupFunctor markup_action(barrier.IsLayoutTransition());
         access_context.UpdateMemoryAccessState(markup_action, range_gen);
     }
 
@@ -521,7 +519,7 @@ static void ApplyMultipleBarriers(const DeviceFeatures& features, QueueId queue_
     }
     for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
         const BarrierScope barrier_scope(barrier.barrier, queue_id);
-        CollectBarriersFunctor collect_barriers(access_context, barrier_scope, barrier.barrier, barrier.layout_transition,
+        CollectBarriersFunctor collect_barriers(access_context, barrier_scope, barrier.barrier, barrier.IsLayoutTransition(),
                                                 barrier.handle_index, pending_barriers);
 
         const auto& sub_state = SubState(*barrier.image);

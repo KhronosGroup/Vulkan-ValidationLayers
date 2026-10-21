@@ -1020,7 +1020,7 @@ bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& a
     const SyncValidator& validator = env.validator;
 
     for (const auto& image_barrier : barrier_set.image_barriers) {
-        if (!image_barrier.layout_transition) {
+        if (!image_barrier.IsLayoutTransition()) {
             // The only accesses that originate from the pipeline barrier are layout transitions
             continue;
         }

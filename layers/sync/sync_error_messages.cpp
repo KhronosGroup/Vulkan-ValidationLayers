@@ -494,12 +494,21 @@ std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const H
 
     additional_info.access_action = "performs image layout transition on the";
 
+    const auto src_stage_mask = barrier.barrier.src_exec_scope.stage_mask;
+    const auto dst_stage_mask = barrier.barrier.dst_exec_scope.stage_mask;
+    const auto src_access_mask = barrier.barrier.original_src_access;
+    const auto dst_access_mask = barrier.barrier.original_dst_access;
     std::ostringstream ss;
     ss << "\npImageMemoryBarriers[" << barrier.barrier_index << "]: {\n";
-    ss << "  srcStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.src_exec_scope.stage_mask) << ",\n";
-    ss << "  srcAccessMask = " << string_VkAccessFlags2(barrier.barrier.original_src_access) << ",\n";
-    ss << "  dstStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.dst_exec_scope.stage_mask) << ",\n";
-    ss << "  dstAccessMask = " << string_VkAccessFlags2(barrier.barrier.original_dst_access) << ",\n";
+    ss << "  srcStageMask = " << (src_stage_mask ? string_VkPipelineStageFlags2(src_stage_mask) : "VK_PIPELINE_STAGE_2_NONE")
+       << ",\n";
+    ss << "  srcAccessMask = " << (src_access_mask ? string_VkAccessFlags2(src_access_mask) : "VK_ACCESS_2_NONE") << ",\n";
+    ss << "  dstStageMask = " << (dst_stage_mask ? string_VkPipelineStageFlags2(dst_stage_mask) : "VK_PIPELINE_STAGE_2_NONE")
+       << ",\n";
+    ss << "  dstAccessMask = " << (dst_access_mask ? string_VkAccessFlags2(dst_access_mask) : "VK_ACCESS_2_NONE") << ",\n";
+    ss << "  oldLayout = " << string_VkImageLayout(barrier.old_layout) << ",\n";
+    ss << "  newLayout = " << string_VkImageLayout(barrier.new_layout) << ",\n";
+    ss << "  subresourceRange = {" << string_VkImageSubresourceRange(barrier.subresource_range) << "}\n";
     ss << "}\n";
     additional_info.message_end_text += ss.str();
 
