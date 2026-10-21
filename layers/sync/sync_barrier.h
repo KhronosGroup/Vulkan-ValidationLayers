@@ -86,17 +86,22 @@ struct SyncImageBarrier {
     std::shared_ptr<const vvl::Image> image;
     SyncBarrier barrier;
     VkImageSubresourceRange subresource_range;
-    bool layout_transition;
+    VkImageLayout old_layout;
+    VkImageLayout new_layout;
     uint32_t barrier_index;
     uint32_t handle_index = vvl::kNoIndex32;
 
     SyncImageBarrier(const std::shared_ptr<const vvl::Image>& image, const SyncBarrier& barrier,
-                     const VkImageSubresourceRange& subresource_range, bool layout_transition, uint32_t barrier_index)
+                     const VkImageSubresourceRange& subresource_range, VkImageLayout old_layout, VkImageLayout new_layout,
+                     uint32_t barrier_index)
         : image(image),
           barrier(barrier),
           subresource_range(subresource_range),
-          layout_transition(layout_transition),
+          old_layout(old_layout),
+          new_layout(new_layout),
           barrier_index(barrier_index) {}
+
+    bool IsLayoutTransition() const { return old_layout != new_layout; }
 };
 
 struct BarrierSet {
