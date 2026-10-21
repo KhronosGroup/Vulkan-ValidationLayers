@@ -163,6 +163,10 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
                                                          const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                          const RecordObject& record_obj,
                                                          chassis::CmdBindDescriptorBuffers& chassis_state) {
+    if (!gpuav_settings.IsSpirvModified()) {
+        return;  // The extra binding is only used by instrumented shaders
+    }
+
     // Resize here so if using just CoreCheck we don't waste time allocating this
     chassis_state.modified_binding_infos.resize(bufferCount + 1);
     for (uint32_t i = 0; i < bufferCount; ++i) {
@@ -932,6 +936,10 @@ void Validator::PreCallRecordCmdCopyMemoryToImageIndirectKHR(
 void Validator::PreCallRecordCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
                                                      const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
                                                      const RecordObject& record_obj) {
+    if (!gpuav_settings.validate_buffer_copies) {
+        return;
+    }
+
     for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
         // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11879
         const auto buffer_states =

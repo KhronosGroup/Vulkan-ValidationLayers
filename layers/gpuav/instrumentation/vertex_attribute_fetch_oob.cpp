@@ -154,6 +154,8 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
 void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob) {
         return;
+    } else if (gpuav.modified_features.robustBufferAccess) {
+        return;
     }
 
     struct ErrorInfo {

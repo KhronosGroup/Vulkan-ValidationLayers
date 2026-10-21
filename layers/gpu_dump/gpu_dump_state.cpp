@@ -32,6 +32,9 @@ void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Loc
 }
 
 void CommandBufferSubState::RecordPushData(const VkPushDataInfoEXT& push_data_info) {
+    if (!dev_data.gpu_dump_settings.descriptors) {
+        return;
+    }
     if (push_data_value.empty()) {
         push_data_value.resize((size_t)base.dev_data.phys_dev_ext_props.descriptor_heap_props.maxPushDataSize);
     }
