@@ -914,6 +914,31 @@ bool CommandBufferContext::NeedsCommandStorage() const {
     return settings.full_validation || (settings.record_time_validation && cb_state_ && !cb_state_->IsPrimary());
 }
 
+void CommandBufferContext::StoreBarriersForReporting(vvl::span<const BarrierSet> barrier_sets) {
+    vvl::Append(command_data_.barrier_sets, barrier_sets);
+}
+
+const SyncImageBarrier* CommandBufferContext::GetImageBarrier(const ResourceUsageRecord& record, uint32_t handle_index) const {
+    if (!IsValueIn(record.command,
+                   {vvl::Func::vkCmdPipelineBarrier, vvl::Func::vkCmdPipelineBarrier2, vvl::Func::vkCmdPipelineBarrier2KHR,
+                    vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR})) {
+        return nullptr;
+    }
+    if (handle_index >= handles_.size()) {
+        return nullptr;
+    }
+    const uint32_t barrier_set_index = handles_[handle_index].index;
+    if (barrier_set_index >= command_data_.barrier_sets.size()) {
+        return nullptr;
+    }
+    for (const SyncImageBarrier& barrier : command_data_.barrier_sets[barrier_set_index].image_barriers) {
+        if (barrier.handle_index == handle_index) {
+            return &barrier;
+        }
+    }
+    return nullptr;
+}
+
 void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContext& recorded_cb_context) {
     const ResourceUsageTag base_tag = GetTagCount();
 
@@ -1182,9 +1207,9 @@ ResourceUsageTagEx CommandBufferContext::AddCommandHandleIndexed(ResourceUsageTa
     return {tag, handle_index};
 }
 
-void CommandBufferContext::AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle, uint32_t index) {
+void CommandBufferContext::AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle) {
     assert(tag < access_log_->size());
-    const uint32_t handle_index = AddHandle(typed_handle, index);
+    const uint32_t handle_index = AddHandle(typed_handle, vvl::kNoIndex32);
     // TODO: the following range check is not needed. Test and remove.
     if (tag < access_log_->size()) {
         auto& record = (*access_log_)[tag];
@@ -1739,11 +1764,11 @@ void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo* subpass_
 void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer, uint32_t cmd_index,
                                                  const Location& loc) {
     if (cmd_index == 0) {
-        ResourceUsageTag cb_tag = cb_context.NextCommandTag(loc.function, SubCommandType::kIndex);
-        cb_context.AddCommandHandleIndexed(cb_tag, secondary_command_buffer.Handle(), cmd_index);
+        ResourceUsageTag cb_tag = cb_context.NextCommandTag(loc.function);
+        cb_context.AddCommandHandle(cb_tag, secondary_command_buffer.Handle());
     } else {
-        ResourceUsageTag cb_tag = cb_context.NextSubCommandTag(loc.function, SubCommandType::kIndex);
-        cb_context.AddSubcommandHandleIndexed(cb_tag, secondary_command_buffer.Handle(), cmd_index);
+        ResourceUsageTag cb_tag = cb_context.NextSubCommandTag(loc.function, SubCommandType::kNone);
+        cb_context.AddSubcommandHandle(cb_tag, secondary_command_buffer.Handle());
     }
     cb_context.RecordExecutedCommandBuffer(GetCommandBufferContext(secondary_command_buffer));
 }

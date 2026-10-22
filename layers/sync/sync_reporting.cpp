@@ -522,8 +522,8 @@ std::string FormatErrorMessage(const SyncEnvironment& env, const HazardResult& h
     const bool cross_queue_racing_hazard = hazard_info.IsRacingHazard() && hazard.PriorQueue() != env.queue_id;
     ss << "\n";
     if (cross_queue_racing_hazard) {
-        ss << "The RACING hazard means the two submissions on different queues are not synchronized with each other, so the order "
-              "of their accesses is undefined. Synchronize the submissions so that one runs before the other.";
+        ss << "\nThe RACING hazard means the two submissions on different queues are not synchronized with each other, so the "
+              "order of their accesses is undefined. Synchronize the submissions so that one runs before the other.\n";
     } else if (missing_synchronization) {
         const char* access_type = hazard_info.IsWrite() ? "write" : "read";
         const char* prior_access_type = hazard_info.IsPriorWrite() ? "write" : "read";
@@ -701,7 +701,7 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
             const bool valid_handle_index = tag_ex.handle_index < handle_records.size();
             if (valid_handle_index) {
                 info.resource_handle = handle_records[tag_ex.handle_index].TypedHandle();
-                // TODO: also extract optional index or get rid of index
+                info.image_barrier = cb_context.cb_context.GetImageBarrier(record, tag_ex.handle_index);
             }
         }
         // Debug region name. Empty name means that we are not inside any debug region.

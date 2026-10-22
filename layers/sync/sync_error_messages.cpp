@@ -483,22 +483,12 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
                  additional_info);
 }
 
-std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
-                                             const std::string& resource_description, const SyncImageBarrier& barrier) const {
-    AdditionalMessageInfo additional_info;
-    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
-    // Keep ImageBarrierError for event waits during replay for message-type compatibility.
-    if (IsValueIn(command, {vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR})) {
-        additional_info.message_type_override = nullptr;
-    }
+static void FormatImageBarrier(std::ostringstream& ss, const SyncImageBarrier& barrier) {
+    const VkPipelineStageFlags2 src_stage_mask = barrier.barrier.src_exec_scope.stage_mask;
+    const VkPipelineStageFlags2 dst_stage_mask = barrier.barrier.dst_exec_scope.stage_mask;
+    const VkAccessFlags2 src_access_mask = barrier.barrier.original_src_access;
+    const VkAccessFlags2 dst_access_mask = barrier.barrier.original_dst_access;
 
-    additional_info.access_action = "performs image layout transition on the";
-
-    const auto src_stage_mask = barrier.barrier.src_exec_scope.stage_mask;
-    const auto dst_stage_mask = barrier.barrier.dst_exec_scope.stage_mask;
-    const auto src_access_mask = barrier.barrier.original_src_access;
-    const auto dst_access_mask = barrier.barrier.original_dst_access;
-    std::ostringstream ss;
     ss << "\npImageMemoryBarriers[" << barrier.barrier_index << "]: {\n";
     ss << "  srcStageMask = " << (src_stage_mask ? string_VkPipelineStageFlags2(src_stage_mask) : "VK_PIPELINE_STAGE_2_NONE")
        << ",\n";
@@ -510,6 +500,32 @@ std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const H
     ss << "  newLayout = " << string_VkImageLayout(barrier.new_layout) << ",\n";
     ss << "  subresourceRange = {" << string_VkImageSubresourceRange(barrier.subresource_range) << "}\n";
     ss << "}\n";
+}
+
+std::string ErrorMessages::ImageBarrierError(const SyncEnvironment& env, const HazardResult& hazard, const ErrorReporter& reporter,
+                                             const std::string& resource_description, const SyncImageBarrier& barrier) const {
+    AdditionalMessageInfo additional_info;
+    const vvl::Func command = AddReplayInfo(env, hazard, reporter, additional_info);
+    // Keep ImageBarrierError for event waits during replay for message-type compatibility
+    if (IsValueIn(command, {vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR})) {
+        additional_info.message_type_override = nullptr;
+    }
+
+    additional_info.access_action = "performs image layout transition on the";
+
+    const SyncImageBarrier* prior_barrier = nullptr;
+    if (hazard.State().prior_access_index == SYNC_IMAGE_LAYOUT_TRANSITION && hazard.PriorTag() != kInvalidTag) {
+        prior_barrier = env.usage_info_provider.GetResourceUsageInfo(hazard.PriorTagEx()).image_barrier;
+    }
+    std::ostringstream ss;
+    if (prior_barrier) {
+        ss << "\nBarrier for current layout transition:";
+    }
+    FormatImageBarrier(ss, barrier);
+    if (prior_barrier) {
+        ss << "\nBarrier for prior layout transition:";
+        FormatImageBarrier(ss, *prior_barrier);
+    }
     additional_info.message_end_text += ss.str();
 
     return Error(env, hazard, command, resource_description, "ImageBarrierError", additional_info);
