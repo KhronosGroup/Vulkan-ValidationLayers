@@ -220,6 +220,9 @@ TEST_F(NegativeGpuAVDescriptorBuffer, DescriptorHashingNoDescriptor) {
     const VkLayerSettingEXT layer_settings = {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                               &kVkTrue};
     RETURN_IF_SKIP(InitBasicDescriptorBuffer({layer_settings}));
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     vkt::DescriptorSetLayout ds_layout(*m_device, {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -267,6 +270,9 @@ TEST_F(NegativeGpuAVDescriptorBuffer, DescriptorHashingNoDescriptorIndexing) {
     const VkLayerSettingEXT layer_settings = {OBJECT_LAYER_NAME, "descriptor_hashing", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                               &kVkTrue};
     RETURN_IF_SKIP(InitBasicDescriptorBuffer({layer_settings}));
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 8, VK_SHADER_STAGE_ALL, nullptr}};

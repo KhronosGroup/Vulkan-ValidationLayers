@@ -5120,6 +5120,9 @@ TEST_F(NegativeDebugPrintf, DescriptorBuffer) {
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
@@ -5221,6 +5224,9 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferGPL) {
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
@@ -5329,6 +5335,9 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferShaderObject) {
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     vkt::Buffer buffer_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
@@ -5401,6 +5410,12 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferPushConstantOnly) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
 
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
+
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
 
@@ -5450,6 +5465,12 @@ TEST_F(NegativeDebugPrintf, NoPipelineLayout) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     vkt::Buffer descriptor_buffer(*m_device, 1024, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
@@ -5535,6 +5556,12 @@ TEST_F(NegativeDebugPrintf, ShaderObjectUnboundDescriptorBufferSetLayout) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     vkt::Buffer descriptor_buffer(*m_device, 1024, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
@@ -5711,6 +5738,9 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferMixClassic) {
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     const char* cs_source = R"glsl(
         #version 450
@@ -5820,6 +5850,9 @@ TEST_F(NegativeDebugPrintf, DescriptorBufferMultipleCommandBuffers) {
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings < 2) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings is not 2, GPU-AV needs a binding for itself";
+    }
 
     vkt::Buffer buffer1_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     vkt::Buffer buffer2_data(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);

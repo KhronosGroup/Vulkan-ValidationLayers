@@ -1974,7 +1974,7 @@ TEST_F(NegativeDescriptorBuffer, MaxResourceDescriptorBufferBindings) {
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                   vkt::device_address);
 
-    vkt::Buffer buffer_data(*m_device, 32, 0, vkt::device_address);
+    vkt::Buffer buffer_data(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
     VkDescriptorAddressInfoEXT addr_info = vku::InitStructHelper();
     addr_info.address = buffer_data.Address();
     addr_info.range = 32;

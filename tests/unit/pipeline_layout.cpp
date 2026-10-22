@@ -620,7 +620,8 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
         if (max_samplers > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSamplers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
         }
-        if ((dslb_vec[0].descriptorCount + dslb_vec[1].descriptorCount) >
+        // The uniform texel buffer binding also counts as a sampled image
+        if ((dslb_vec[0].descriptorCount + dslb_vec[1].descriptorCount + dslb_vec[2].descriptorCount) >
             descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
         }
