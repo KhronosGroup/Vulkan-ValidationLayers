@@ -208,8 +208,9 @@ class LegacyGenerator(BaseGenerator):
                                 "{command.name} is a legacy command and this {handleName} supports {command.legacy.version.name} (from VkPhysicalDeviceProperties::apiVersion) {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                         }}''')
 
-            for extension in command.legacy.extensions:
-                logic = 'else if' if command.legacy.version else 'if'
+            # If an EXT and KHR both mark something as legacy, we if/else it to not report multiple errors
+            for index, extension in enumerate(command.legacy.extensions):
+                logic = 'else if' if command.legacy.version or index > 0 else 'if'
 
                 if command.legacy.supersededBy:
                     # Currenty the |supersededBy| only has the version
@@ -240,11 +241,13 @@ class LegacyGenerator(BaseGenerator):
                             "{command.name} is a legacy command and this {handleName} supports the {extension} extension {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}");
                     }}''')
 
+            if command.legacy.extensions:
+                extension_names = ' or '.join(command.legacy.extensions)
                 out.append(f'''
                     else if (legacy_detection_settings.always) {{
                         {reportedMember} = true;
                         LogWarning("WARNING-{command.legacy.link}", {objName}, error_obj.location,
-                            "{command.name} is a legacy command and there is now the {extension} extension {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}\\nTo limit warnings by only what the {handleName} currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
+                            "{command.name} is a legacy command and there is now the {extension_names} extension {replacement}.{extra}\\nSee more information about this legacy in the specification: https://docs.vulkan.org/spec/latest/appendices/legacy.html#{command.legacy.link}\\nTo limit warnings by only what the {handleName} currently supports/enables, you can adjust the VK_LAYER_LEGACY_DETECTION_MODE (legacy_detection_mode) setting.");
                     }}''')
 
 
