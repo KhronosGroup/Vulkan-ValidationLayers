@@ -375,3 +375,42 @@ TEST_F(PositiveDeviceAddressCommands, AddressRangeBoundSparseMemoryOffset) {
     vk::CmdFillMemoryKHR(m_command_buffer, &range, VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR, 255u);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDeviceAddressCommands, VertexAttributeAlignmentLegacy) {
+    AddRequiredExtensions(VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::legacyVertexAttributes);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vkt::device_address);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location=0) in float x;
+        void main(){ gl_Position = vec4(x); }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkVertexInputBindingDescription input_binding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetVertexInput(input_binding, attribute);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_FALSE;
+    info.addressRange = buffer.StridedAddressRange();
+    info.addressRange.address += 1;
+    info.addressRange.size -= 1;
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0u, 1u, &info);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

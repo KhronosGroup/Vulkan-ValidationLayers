@@ -4511,6 +4511,39 @@ TEST_F(NegativeDeviceAddressCommands, IndexBufferRangeSize) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDeviceAddressCommands, IndexBufferRangeSizeMultiDraw) {
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    VkBindIndexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.addressRange = buffer.AddressRange();
+    info.addressRange.size = 64u;  // 16 indices
+    info.addressFlags = 0u;
+    info.indexType = VK_INDEX_TYPE_UINT32;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer3KHR(m_command_buffer, &info);
+
+    VkMultiDrawIndexedInfoEXT multi_draw_indices[2] = {{0u, 16u, 0}, {1u, 16u, 0}};
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 1u, multi_draw_indices, 1u, 0u, sizeof(VkMultiDrawIndexedInfoEXT), nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798");
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 2u, multi_draw_indices, 1u, 0u, sizeof(VkMultiDrawIndexedInfoEXT), nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDeviceAddressCommands, VertexAttributeAlignment) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
     InitRenderTarget();
@@ -4545,6 +4578,98 @@ TEST_F(NegativeDeviceAddressCommands, VertexAttributeAlignment) {
 
     info.addressRange.address += 2;
     info.addressRange.size -= 2;
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0u, 1u, &info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-10390");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceAddressCommands, VertexAttributeAlignmentPacked) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    if (!BufferFormatAndFeaturesSupported(Gpu(), VK_FORMAT_A8B8G8R8_UNORM_PACK32, VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
+        GTEST_SKIP() << "Device does not support VK_FORMAT_A8B8G8R8_UNORM_PACK32 vertex buffers";
+    }
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vkt::device_address);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        void main(){ gl_Position = x; }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkVertexInputBindingDescription input_binding = {0, 4u, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_A8B8G8R8_UNORM_PACK32, 0};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetVertexInput(input_binding, attribute);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_FALSE;
+    info.addressRange = buffer.StridedAddressRange();
+    info.addressRange.address += 2;
+    info.addressRange.size -= 2;
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0u, 1u, &info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-10389");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceAddressCommands, VertexAttributeAlignmentLegacy64Bit) {
+    AddRequiredExtensions(VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::legacyVertexAttributes);
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    if (!BufferFormatAndFeaturesSupported(Gpu(), VK_FORMAT_R64_SFLOAT, VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
+        GTEST_SKIP() << "Device does not support VK_FORMAT_R64_SFLOAT vertex buffers";
+    }
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vkt::device_address);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        #extension GL_ARB_gpu_shader_fp64 : enable
+        layout(location=0) in double x;
+        void main(){ gl_Position = vec4(float(x)); }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkVertexInputBindingDescription input_binding = {0, sizeof(double), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R64_SFLOAT, 0};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetVertexInput(input_binding, attribute);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_FALSE;
+    info.addressRange = buffer.StridedAddressRange();
+    info.addressRange.address += 4;
+    info.addressRange.size -= 4;
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0u, 1u, &info);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-10390");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
