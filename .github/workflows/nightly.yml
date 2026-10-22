@@ -1,0 +1,204 @@
+# Copyright (c) 2026 Valve Corporation
+# Copyright (c) 2026 LunarG, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Nightly Binaries
+
+# Builds the tip of main once a day and publishes the Windows/Linux/Android layer to the
+# rolling "nightly" pre-release, so there is a single stable link for users who want the
+# latest validation layer without building it (see README.md).
+#
+# Nothing is tested here, the regular CI in vvl.yml does that.
+# Skips the build if main has not changed since the last nightly.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs at 08:00 UTC every day
+    - cron: '0 8 * * *'
+
+env:
+  CMAKE_GENERATOR: Ninja
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  check:
+    # Scheduled runs only make sense upstream, but still allow a manual run on a fork to try this out
+    if: github.repository == 'KhronosGroup/Vulkan-ValidationLayers' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The release is created with --target <sha>, so the tag points directly at the commit
+          last=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/nightly" --jq .object.sha 2>/dev/null || true)
+          if [ "$last" = "$GITHUB_SHA" ] && [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            echo "main is still at $GITHUB_SHA, nothing new to build"
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+  linux:
+    needs: check
+    if: needs.check.outputs.changed == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: nightly-linux-ccache
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - name: Cache external dependencies
+        id: cache-deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/external
+          key: nightly-linux-dependencies-release-${{ hashfiles('scripts/known_good.json') }}
+      - run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - run: cmake --build build
+      - run: cmake --install build --prefix ${{ github.workspace }}/install --strip
+      - name: Package
+        run: |
+          # The json in the build dir uses a relative library_path, so it works when placed next to the .so
+          mkdir package
+          cp install/lib/libVkLayer_khronos_validation.so build/layers/VkLayer_khronos_validation.json package/
+          tar czf Validation_Layers_Linux_64.tar.gz -C package .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nightly-linux
+          path: Validation_Layers_Linux_64.tar.gz
+          retention-days: 1
+
+  windows:
+    needs: check
+    if: needs.check.outputs.changed == 'true' && github.ref == 'refs/heads/main'
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.10'
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+      - name: Cache known_good.json installations
+        id: cache-deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ github.workspace }}/external/glslang/build/install
+            ${{ github.workspace }}/external/googltest/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/slang/install
+          key: nightly-windows-dependencies-release-amd64-${{ hashfiles('scripts/known_good.json') }}
+      - run: |
+         cmake -S. -B build `
+          -D UPDATE_DEPS=ON `
+          -D CMAKE_BUILD_TYPE=Release `
+          -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON `
+          -D UPDATE_DEPS_DIR=${{ github.workspace }}/external
+      - run: cmake --build build
+      - run: cmake --install build --prefix ${{ github.workspace }}/install
+      - name: Package
+        run: |
+          Compress-Archive `
+            -Path install/bin/VkLayer_khronos_validation.dll, install/bin/VkLayer_khronos_validation.json `
+            -DestinationPath Validation_Layers_Windows_64.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nightly-windows
+          path: Validation_Layers_Windows_64.zip
+          retention-days: 1
+
+  android:
+    needs: check
+    if: needs.check.outputs.changed == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: nightly-android-ccache
+      - name: Configure
+        run: |
+          cmake -S . -B build/ --toolchain $ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+          -D ANDROID_PLATFORM=26 \
+          -D CMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+          -D CMAKE_ANDROID_STL_TYPE=c++_shared \
+          -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO \
+          -D CMAKE_BUILD_TYPE=Release \
+          -D BUILD_TESTS=OFF \
+          -D UPDATE_DEPS=ON
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - run: cmake --build build/
+      - run: cmake --install build/ --prefix ${{ github.workspace }}/install
+      - name: Strip and package
+        run: |
+          $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip install/lib/libVkLayer_khronos_validation.so
+          zip -j Validation_Layers_Android_64.zip install/lib/libVkLayer_khronos_validation.so
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nightly-android
+          path: Validation_Layers_Android_64.zip
+          retention-days: 1
+
+  publish:
+    needs: [linux, windows, android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release and move the nightly tag
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: assets
+          pattern: nightly-*
+          merge-multiple: true
+      - name: Replace the nightly release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The release is recreated (instead of edited) so the tag moves to the new commit
+          if gh release view nightly --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release delete nightly --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+          fi
+          gh release create nightly assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --latest=false \
+            --title "Nightly build $(date -u +%Y-%m-%d)" \
+            --notes "Validation layer built from commit $GITHUB_SHA on main.
+
+          The Android binary can only be used with a device that supports Android API version 26 or higher."

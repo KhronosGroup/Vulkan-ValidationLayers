@@ -241,36 +241,6 @@ jobs:
       - run: cmake --build build
       - run: cmake --install build --prefix /tmp
 
-  linuxUpload:
-    needs: linux
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    name: "linux Upload"
-    steps:
-      - uses: actions/checkout@v7
-      - uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: linux-upload-ccache
-      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Cache external dependencies
-        id: cache-deps
-        uses: actions/cache@v6
-        with:
-          path: |
-            ${{ github.workspace }}/external
-          key: linux-upload-dependencies-release-${{ hashfiles('scripts/known_good.json') }}
-      - run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
-      - run: cmake --build build
-      - run: cmake --install build --prefix /tmp --strip
-        env:
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
-      - uses: actions/upload-artifact@v7
-        with:
-          name: Validation_Layers_Linux_64
-          path: /tmp/lib/libVkLayer_khronos_validation.so
-          retention-days: 3
-
   androidOnLinux:
     needs: check_vvl
     runs-on: ubuntu-24.04
@@ -348,47 +318,6 @@ jobs:
           }
           cmake --install build --config Debug --prefix ${{ github.workspace }}/install/Debug
 
-  windowsUpload:
-    needs: windows
-    if: github.ref == 'refs/heads/main'
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.10'
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: amd64
-      - name: Cache known_good.json installations
-        id: cache-deps
-        uses: actions/cache@v6
-        with:
-          path: |
-            ${{ github.workspace }}/external/glslang/build/install
-            ${{ github.workspace }}/external/googltest/build/install
-            ${{ github.workspace }}/external/mimalloc/build/install
-            ${{ github.workspace }}/external/SPIRV-Headers/build/install
-            ${{ github.workspace }}/external/SPIRV-Tools/build/install
-            ${{ github.workspace }}/external/Vulkan-Headers/build/install
-            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
-            ${{ github.workspace }}/external/slang/install
-          key: windows-dependencies-release-amd64-${{ hashfiles('scripts/known_good.json') }}
-      - run: |
-         cmake -S. -B build `
-          -D BUILD_WERROR=ON `
-          -D UPDATE_DEPS=ON `
-          -D CMAKE_BUILD_TYPE=Release `
-          -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON `
-          -D UPDATE_DEPS_DIR=${{ github.workspace }}/external
-      - run: cmake --build build
-      - run: cmake --install build --prefix ${{ github.workspace }}/install
-      - uses: actions/upload-artifact@v7
-        with:
-          name: Validation_Layers_Windows_64
-          path: ${{ github.workspace }}/install/bin/VkLayer_khronos_validation.dll
-          retention-days: 3
-
   android:
       needs: check_vvl
       runs-on: ubuntu-24.04
@@ -426,40 +355,6 @@ jobs:
         - run: cmake --build build/
         - run: cmake --install build/ --prefix /tmp
         - run: ctest --output-on-failure -C Debug --test-dir build/
-
-  androidUpload:
-      needs: android
-      if: github.ref == 'refs/heads/main'
-      runs-on: ubuntu-24.04
-      steps:
-        - uses: actions/checkout@v7
-        - name: Setup ccache
-          uses: hendrikmuhs/ccache-action@v1.2
-          with:
-            key: android-upload
-        - name: Configure
-          run: |
-            cmake -S . -B build/ --toolchain $ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
-            -D ANDROID_PLATFORM=26 \
-            -D CMAKE_ANDROID_ARCH_ABI=arm64-v8a \
-            -D CMAKE_ANDROID_STL_TYPE=c++_shared \
-            -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO \
-            -D CMAKE_BUILD_TYPE=Release \
-            -D BUILD_TESTS=OFF \
-            -D UPDATE_DEPS=ON \
-            -D BUILD_WERROR=ON
-          env:
-            CMAKE_C_COMPILER_LAUNCHER: ccache
-            CMAKE_CXX_COMPILER_LAUNCHER: ccache
-        - run: cmake --build build/
-        - run: cmake --install build/ --prefix /tmp
-        - name: Strip
-          run: $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip /tmp/lib/libVkLayer_khronos_validation.so
-        - uses: actions/upload-artifact@v7
-          with:
-            name: Validation_Layers_Android_64
-            path: /tmp/lib/libVkLayer_khronos_validation.so
-            retention-days: 3
 
   iOS:
     # iOS is 10x expensive to run on GitHub machines, so only run if we know something else fast/simple passed as well
