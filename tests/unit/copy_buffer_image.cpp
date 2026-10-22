@@ -4699,6 +4699,10 @@ TEST_F(NegativeCopyBufferImage, MemoryToImageIndirectFeature) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectKHR-indirectMemoryToImageCopy-10947");
+    if (!FormatFeatures2AreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                     VK_FORMAT_FEATURE_2_COPY_IMAGE_INDIRECT_DST_BIT_KHR)) {
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-10955");
+    }
     vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
