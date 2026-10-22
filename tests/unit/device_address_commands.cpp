@@ -4481,3 +4481,75 @@ TEST_F(NegativeDeviceAddressCommands, VertexBufferBindingAddressFlags) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDeviceAddressCommands, IndexBufferRangeSize) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    VkBindIndexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.addressRange = buffer.AddressRange();
+    info.addressRange.size = 64u;  // 16 indices
+    info.addressFlags = 0u;
+    info.indexType = VK_INDEX_TYPE_UINT32;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer3KHR(m_command_buffer, &info);
+    vk::CmdDrawIndexed(m_command_buffer, 16u, 1u, 0u, 0, 0u);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-robustBufferAccess2-08798");
+    vk::CmdDrawIndexed(m_command_buffer, 16u, 1u, 1u, 0, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceAddressCommands, VertexAttributeAlignment) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vkt::device_address);
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(location=0) in float x;
+        void main(){ gl_Position = vec4(x); }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkVertexInputBindingDescription input_binding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetVertexInput(input_binding, attribute);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_FALSE;
+    info.addressRange = buffer.StridedAddressRange();
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0u, 1u, &info);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+
+    info.addressRange.address += 2;
+    info.addressRange.size -= 2;
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0u, 1u, &info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-10390");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

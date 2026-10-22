@@ -75,6 +75,7 @@ class VertexBufferBinding {
 
     VkBuffer Buffer() const { return buffer; }
     VkDeviceSize BufferOffset() const { return offset; }
+    VkDeviceAddress Address() const { return address; }
     std::string String(const vvl::DeviceState& device) const;
 
   private:
