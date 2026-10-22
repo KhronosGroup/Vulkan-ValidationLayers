@@ -296,11 +296,6 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_s
         return skip;
     }
 
-    if (cb_state.index_buffer_binding.Buffer() == VK_NULL_HANDLE) {
-        // Missing VU https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5322#note_591426
-        return skip;
-    }
-
     const uint32_t index_size = IndexTypeByteSize(cb_state.index_buffer_binding.index_type);
     // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
     // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
@@ -308,7 +303,9 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_s
     VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount));
     if (end_offset > cb_state.index_buffer_binding.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(cb_state.index_buffer_binding.Buffer());
+        if (const VkBuffer buffer = cb_state.index_buffer_binding.Handle(*device_state)) {
+            objlist.add(buffer);
+        }
         const VkDeviceSize buffer_offset = cb_state.index_buffer_binding.BufferOffset();
         const char* vuid = loc.function == Func::vkCmdDrawMultiIndexedEXT
                                ? "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798"
@@ -2962,11 +2959,13 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
             // No packed format has 64-bit components, so that exception only applies to the non-packed case
             const bool attrib_alignment_required =
                 !enabled_features.legacyVertexAttributes || (!is_packed_format && vkuFormatIs64bit(attr_desc.format));
-            if (attrib_alignment_required && vertex_buffer_handle != VK_NULL_HANDLE) {
+            if (attrib_alignment_required) {
                 const VkDeviceSize vertex_buffer_offset = vertex_buffer_binding->BufferOffset();
+                const VkDeviceSize binding_address =
+                    vertex_buffer_handle != VK_NULL_HANDLE ? vertex_buffer_offset : vertex_buffer_binding->Address();
 
                 // Use 1 as vertex/instance index to use buffer stride as well
-                const VkDeviceSize attrib_address = vertex_buffer_offset + vertex_buffer_binding->stride + attr_desc.offset;
+                const VkDeviceSize attrib_address = binding_address + vertex_buffer_binding->stride + attr_desc.offset;
 
                 VkDeviceSize vtx_attrib_req_alignment = GetVertexInputFormatSize(attr_desc.format);
 
@@ -2976,7 +2975,9 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
 
                 if (!IsPointerAligned(attrib_address, vtx_attrib_req_alignment)) {
                     LogObjectList objlist(last_bound.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS));
-                    objlist.add(vertex_buffer_handle);
+                    if (const VkBuffer buffer = vertex_buffer_binding->Handle(*device_state)) {
+                        objlist.add(buffer);
+                    }
                     const vvl::ActionVUID vuid = is_packed_format ? vvl::ActionVUID::VERTEX_ATTRIBUTE_ALIGNMENT_10389
                                                                   : vvl::ActionVUID::VERTEX_ATTRIBUTE_ALIGNMENT_10390;
 
@@ -2984,11 +2985,17 @@ bool CoreChecks::ValidateDrawVertexBinding(const LastBound& last_bound, const Lo
                     ss << "pVertexAttributeDescriptions[" << attr_index << "] (location = " << attr_desc.location
                        << ", binding = " << attr_desc.binding << ") has format " << string_VkFormat(attr_desc.format) << " whose "
                        << (is_packed_format ? "packed texel block size" : "component size") << " is " << vtx_attrib_req_alignment
-                       << ", so attribAddress must be a multiple of " << vtx_attrib_req_alignment << " but is currently "
-                       << attrib_address << std::dec << " and is misaligned.\n"
-                       << "  bufferBindingAddress = base of " << FormatHandle(vertex_buffer_handle) << " + pOffsets["
-                       << attr_desc.binding << "] (" << vertex_buffer_offset << ")\n"
-                       << "  stride = " << vertex_buffer_binding->stride << "\n"
+                       << ", so attribAddress must be a multiple of " << vtx_attrib_req_alignment << " but is currently ";
+                    if (vertex_buffer_handle != VK_NULL_HANDLE) {
+                        ss << attrib_address << " and is misaligned.\n"
+                           << "  bufferBindingAddress = base of " << FormatHandle(vertex_buffer_handle) << " + pOffsets["
+                           << attr_desc.binding << "] (" << vertex_buffer_offset << ")\n";
+                    } else {
+                        ss << "0x" << std::hex << attrib_address << " and is misaligned.\n"
+                           << "  bufferBindingAddress = 0x" << binding_address << std::dec
+                           << " (from vkCmdBindVertexBuffers3KHR)\n";
+                    }
+                    ss << "  stride = " << vertex_buffer_binding->stride << "\n"
                        << "  attribute offset = " << attr_desc.offset << "\n"
                        << "  attribAddress = bufferBindingAddress + (stride * vertexIndex) + attribute offset\n";
                     if (!enabled_features.legacyVertexAttributes && (is_packed_format || !vkuFormatIs64bit(attr_desc.format))) {
