@@ -505,13 +505,17 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(
 void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, BarrierSet&& barrier_set,
                                              const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+    const uint32_t barrier_set_index = static_cast<uint32_t>(cb_context.GetCommandData().barrier_sets.size());
+    bool has_layout_transition = false;
     for (const SyncBufferBarrier& buffer_barrier : barrier_set.buffer_barriers) {
         cb_context.AddCommandHandle(tag, buffer_barrier.buffer->Handle());
     }
     for (SyncImageBarrier& image_barrier : barrier_set.image_barriers) {
         if (image_barrier.IsLayoutTransition()) {
-            const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, image_barrier.image->Handle());
+            const ResourceUsageTagEx tag_ex =
+                cb_context.AddCommandHandleIndexed(tag, image_barrier.image->Handle(), barrier_set_index);
             image_barrier.handle_index = tag_ex.handle_index;
+            has_layout_transition = true;
         }
     }
     const BarrierCommand command{barrier_set};
@@ -519,7 +523,11 @@ void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, B
         AccessContext& access_context = cb_context.GetCurrentAccessContext();
         command.Apply(cb_context.GetSyncEnvironment(), tag, access_context);
     }
-    cb_context.StoreCommand(tag, command);
+    if (cb_context.NeedsCommandStorage()) {
+        cb_context.StoreCommand(tag, command);
+    } else if (has_layout_transition) {
+        cb_context.StoreBarriersForReporting(vvl::make_span<const BarrierSet>(&barrier_set, 1));
+    }
 }
 
 void SyncValidator::PostCallRecordCmdPipelineBarrier(
@@ -2074,18 +2082,27 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
 void SyncValidator::RecordCmdWaitEvents(CommandBufferContext& cb_context, std::vector<std::shared_ptr<const vvl::Event>>&& events,
                                         std::vector<BarrierSet>&& barrier_sets, const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
+    uint32_t barrier_set_index = static_cast<uint32_t>(cb_context.GetCommandData().barrier_sets.size());
+    bool has_layout_transition = false;
     for (BarrierSet& barrier_set : barrier_sets) {
         for (SyncImageBarrier& image_barrier : barrier_set.image_barriers) {
             if (image_barrier.IsLayoutTransition()) {
-                image_barrier.handle_index = cb_context.AddCommandHandle(tag, image_barrier.image->Handle()).handle_index;
+                image_barrier.handle_index =
+                    cb_context.AddCommandHandleIndexed(tag, image_barrier.image->Handle(), barrier_set_index).handle_index;
+                has_layout_transition = true;
             }
         }
+        ++barrier_set_index;
     }
     const WaitEventsCommand command{events, barrier_sets, loc.function};
     if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
     }
-    cb_context.StoreCommand(tag, command);
+    if (cb_context.NeedsCommandStorage()) {
+        cb_context.StoreCommand(tag, command);
+    } else if (has_layout_transition) {
+        cb_context.StoreBarriersForReporting(barrier_sets);
+    }
 }
 
 void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -2191,9 +2208,9 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     // Make working copies of the access and events contexts
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
         if (cb_index == 0) {
-            proxy_cb_context.NextCommandTag(error_obj.location.function, SubCommandType::kIndex);
+            proxy_cb_context.NextCommandTag(error_obj.location.function);
         } else {
-            proxy_cb_context.NextSubCommandTag(error_obj.location.function, SubCommandType::kIndex);
+            proxy_cb_context.NextSubCommandTag(error_obj.location.function, SubCommandType::kNone);
         }
 
         const auto recorded_cb = Get<vvl::CommandBuffer>(pCommandBuffers[cb_index]);

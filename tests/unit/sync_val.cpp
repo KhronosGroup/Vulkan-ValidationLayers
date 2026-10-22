@@ -7271,6 +7271,53 @@ TEST_F(NegativeSyncVal, RacingHazardBetweenLayoutTransitions) {
     m_device->Wait();
 }
 
+TEST_F(NegativeSyncVal, RacingHazardBetweenLayoutTransitions2) {
+    TEST_DESCRIPTION("Layout transition race between unsynchronized queues");
+    all_queue_count_ = true;
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    auto [queue, queue2] = GetTwoQueuesFromSameFamily(m_device->QueuesWithComputeCapability());
+    if (!queue) {
+        GTEST_SKIP() << "Test requires two queues with compute capabilities from the same queue family";
+    }
+    vkt::CommandPool command_pool(*m_device, queue->family_index);
+    vkt::CommandBuffer cb0(*m_device, command_pool);
+    vkt::CommandBuffer cb1(*m_device, command_pool);
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, usage);
+
+    VkImageMemoryBarrier2 transition0 = vku::InitStructHelper();
+    transition0.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    transition0.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    transition0.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition0.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    transition0.image = image;
+
+    VkImageMemoryBarrier2 transition1 = vku::InitStructHelper();
+    transition1.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    transition1.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    transition1.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    transition1.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    transition1.image = image;
+
+    cb0.Begin();
+    cb0.Barrier(transition0);
+    cb0.End();
+
+    cb1.Begin();
+    cb1.Barrier(transition1);
+    cb1.End();
+
+    queue->Submit2(cb0);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
+    queue2->Submit2(cb1);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
 TEST_F(NegativeSyncVal, WaitEventImageLayoutTransition) {
     TEST_DESCRIPTION("Submit-time validation detects event image layout transition hazard");
     RETURN_IF_SKIP(InitSyncVal());

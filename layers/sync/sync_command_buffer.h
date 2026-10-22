@@ -87,7 +87,7 @@ struct HandleRecord {
     }
 };
 
-enum class SubCommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResolveOp, kIndex };
+enum class SubCommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResolveOp };
 
 // ResourceUsageRecord encodes information about the command that performed the access.
 // It's important to limit the size of this structure. Separate record is stored per access command.
@@ -137,6 +137,7 @@ struct ResourceUsageInfo {
 
     VulkanTypedHandle resource_handle;
     std::string debug_region_name;
+    const SyncImageBarrier* image_barrier = nullptr;
 
     const vvl::CommandBuffer* cb = nullptr;
     uint32_t command_buffer_reset_count = 0;
@@ -304,7 +305,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     // Default subcommand behavior is that it references the same handles as the main command.
     // The following method allows to set subcommand handles independently of the main command.
-    void AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle, uint32_t index);
+    void AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle);
 
     bool NeedsCommandStorage() const;
 
@@ -317,6 +318,8 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
         commands_.push_back({command_data_.Store(storage), tag});
     }
 
+    void StoreBarriersForReporting(vvl::span<const BarrierSet> barrier_sets);
+
     const std::vector<HandleRecord>& GetHandleRecords() const { return handles_; }
 
     std::shared_ptr<const vvl::CommandBuffer> GetCBStateShared() const { return cb_state_->shared_from_this(); }
@@ -327,6 +330,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
     const std::vector<CommandEntry>& GetCommands() const { return commands_; }
     const CommandData& GetCommandData() const { return command_data_; }
+    const SyncImageBarrier* GetImageBarrier(const ResourceUsageRecord& record, uint32_t handle_index) const;
 
     // DebugNameProvider
     std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;
