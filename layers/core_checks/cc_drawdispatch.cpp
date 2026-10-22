@@ -300,24 +300,33 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_s
     // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
     // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
     // BufferBinding::size for vertex buffer bindings (which record the *bound* size, not the size of the bound buffer)
-    VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount));
+    const VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size) * (static_cast<VkDeviceSize>(firstIndex) + indexCount);
     if (end_offset > cb_state.index_buffer_binding.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         if (const VkBuffer buffer = cb_state.index_buffer_binding.Handle(*device_state)) {
             objlist.add(buffer);
         }
-        const VkDeviceSize buffer_offset = cb_state.index_buffer_binding.BufferOffset();
         const char* vuid = loc.function == Func::vkCmdDrawMultiIndexedEXT
                                ? "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798"
                                : "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798";
-        skip |= LogError(vuid, objlist, loc,
-                         "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
-                         ")) "
-                         "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
-                         " bytes, which is greater than the index buffer size (%" PRIuLEAST64
-                         ").\nHint: This can be allowed if the robustBufferAccess2 feature is enabled.",
-                         index_size, firstIndex, indexCount, buffer_offset, end_offset + buffer_offset,
-                         cb_state.index_buffer_binding.size + buffer_offset);
+        if (cb_state.index_buffer_binding.Buffer() != VK_NULL_HANDLE) {
+            const VkDeviceSize buffer_offset = cb_state.index_buffer_binding.BufferOffset();
+            skip |= LogError(vuid, objlist, loc,
+                             "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
+                             ")) "
+                             "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
+                             " bytes, which is greater than the index buffer size (%" PRIuLEAST64
+                             ").\nHint: This can be allowed if the robustBufferAccess2 feature is enabled.",
+                             index_size, firstIndex, indexCount, buffer_offset, end_offset + buffer_offset,
+                             cb_state.index_buffer_binding.size + buffer_offset);
+        } else {
+            skip |= LogError(vuid, objlist, loc,
+                             "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32 ")) = %" PRIuLEAST64
+                             " bytes, which is greater than the index buffer range size (%" PRIuLEAST64 ") at address 0x%" PRIx64
+                             ".\nHint: This can be allowed if the robustBufferAccess2 feature is enabled.",
+                             index_size, firstIndex, indexCount, end_offset, cb_state.index_buffer_binding.size,
+                             cb_state.index_buffer_binding.Address());
+        }
     }
 
     return skip;
