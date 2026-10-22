@@ -457,3 +457,48 @@ TEST_F(PositiveThreading, InternallySynchronizedQueues) {
 
     queue.Wait();
 }
+
+TEST_F(PositiveThreading, CreateDestroyRenderPass) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13535");
+    RETURN_IF_SKIP(Init());
+
+    VkAttachmentDescription attachment = {};
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+    VkAttachmentReference color_ref = {};
+    color_ref.attachment = 0;
+    color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    std::array<VkSubpassDescription, 32> subpasses;
+    for (auto& subpass : subpasses) {
+        subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &color_ref;
+    }
+
+    VkRenderPassCreateInfo rp_ci = vku::InitStructHelper();
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attachment;
+    rp_ci.subpassCount = static_cast<uint32_t>(subpasses.size());
+    rp_ci.pSubpasses = subpasses.data();
+
+    auto thread_func = [this, &rp_ci]() {
+        std::vector<VkRenderPass> render_passes(1500);
+        for (VkRenderPass& render_pass : render_passes) {
+            vk::CreateRenderPass(*m_device, &rp_ci, nullptr, &render_pass);
+        }
+        for (VkRenderPass render_pass : render_passes) {
+            vk::DestroyRenderPass(*m_device, render_pass, nullptr);
+        }
+    };
+    std::array<std::thread, 3> threads = {std::thread(thread_func), std::thread(thread_func), std::thread(thread_func)};
+    for (auto& t : threads) t.join();
+}

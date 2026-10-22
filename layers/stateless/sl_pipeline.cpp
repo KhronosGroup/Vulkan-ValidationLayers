@@ -1592,7 +1592,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             bool uses_color_attachment = false;
             bool uses_depthstencil_attachment = false;
             {
-                std::unique_lock<std::mutex> lock(renderpass_map_mutex);
+                std::lock_guard<std::mutex> lock(renderpass_map_mutex);
                 const auto subpasses_uses_it = renderpasses_states.find(create_info.renderPass);
                 if (subpasses_uses_it != renderpasses_states.end()) {
                     const auto& subpasses_uses = subpasses_uses_it->second;
@@ -1603,7 +1603,6 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                         uses_depthstencil_attachment = true;
                     }
                 }
-                lock.unlock();
             }
 
             if (create_info.pDepthStencilState != nullptr && uses_depthstencil_attachment) {
