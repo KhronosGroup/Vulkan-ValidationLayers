@@ -602,9 +602,8 @@ bool Device::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRe
 }
 
 void Device::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2& create_info) {
-    std::unique_lock<std::mutex> lock(renderpass_map_mutex);
+    std::lock_guard<std::mutex> lock(renderpass_map_mutex);
     auto& renderpass_state = renderpasses_states[renderPass];
-    lock.unlock();
 
     for (uint32_t subpass = 0; subpass < create_info.subpassCount; ++subpass) {
         const VkSubpassDescription2& subpass_desc = create_info.pSubpasses[subpass];
@@ -645,7 +644,7 @@ void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderP
 void Device::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
                                              const RecordObject& record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
-    std::unique_lock<std::mutex> lock(renderpass_map_mutex);
+    std::lock_guard<std::mutex> lock(renderpass_map_mutex);
     renderpasses_states.erase(renderPass);
 }
 
