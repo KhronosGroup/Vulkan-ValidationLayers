@@ -1121,6 +1121,34 @@ TEST_F(PositiveDescriptorHeapEXT, EmbeddedSamplerNoBoundHeap) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveDescriptorHeapEXT, WriteDescriptorsAdjacentRanges) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const size_t sampler_size = static_cast<size_t>(heap_props.samplerDescriptorSize);
+    const size_t buffer_desc_size = static_cast<size_t>(heap_props.bufferDescriptorSize);
+    std::vector<uint8_t> data(std::max(sampler_size, buffer_desc_size) * 3);
+
+    const VkSamplerCreateInfo sampler_cis[3] = {SafeSaneSamplerCreateInfo(), SafeSaneSamplerCreateInfo(),
+                                                SafeSaneSamplerCreateInfo()};
+    VkHostAddressRangeEXT sampler_descriptors[3] = {
+        {data.data() + sampler_size * 2, sampler_size}, {data.data(), sampler_size}, {data.data() + sampler_size, sampler_size}};
+    vk::WriteSamplerDescriptorsEXT(device(), 3u, sampler_cis, sampler_descriptors);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    const VkDeviceAddressRangeEXT address_range = buffer.AddressRange();
+
+    VkResourceDescriptorInfoEXT resource_infos[3];
+    for (VkResourceDescriptorInfoEXT& resource_info : resource_infos) {
+        resource_info = vku::InitStructHelper();
+        resource_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        resource_info.data.pAddressRange = &address_range;
+    }
+    VkHostAddressRangeEXT resource_descriptors[3] = {{data.data() + buffer_desc_size, buffer_desc_size},
+                                                     {data.data() + buffer_desc_size * 2, buffer_desc_size},
+                                                     {data.data(), buffer_desc_size}};
+    vk::WriteResourceDescriptorsEXT(device(), 3u, resource_infos, resource_descriptors);
+}
+
 TEST_F(PositiveDescriptorHeapEXT, MappingSourceHeapWithPushIndex) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
