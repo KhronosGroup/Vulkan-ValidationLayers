@@ -17,18 +17,25 @@
  * limitations under the License.
  */
 #pragma once
+
+#include "error_message/error_location.h"
+#include "gpuav/resources/gpuav_queue_state.h"
 #include "state_tracker/event_state.h"
-#include "state_tracker/state_object.h"
 #include "state_tracker/fence_state.h"
 #include "state_tracker/semaphore_state.h"
-#include "error_message/error_location.h"
+#include "state_tracker/state_object.h"
 #include "vk_layer_config.h"
+
 #include <condition_variable>
 #include <deque>
 #include <future>
 #include <string>
 #include <thread>
 #include <vector>
+
+namespace gpuav {
+struct QueueSubmission;
+}
 
 namespace vvl {
 
@@ -68,6 +75,11 @@ struct QueueSubmission {
     uint32_t perf_submit_pass{0};
     std::promise<void> completed;
     std::shared_future<void> waiter;
+
+    struct GpuAV {
+        gpuav::QueueSubmission queue;
+        std::vector<gpuav::CommandBufferSubmission> cb_submissions;
+    } gpuav;
 
     void AddCommandBuffer(const std::shared_ptr<vvl::CommandBuffer>& cb_state,
                           const std::vector<std::string>& initial_label_stack) {

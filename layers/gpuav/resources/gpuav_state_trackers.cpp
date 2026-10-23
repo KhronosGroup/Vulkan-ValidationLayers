@@ -275,9 +275,25 @@ struct FenceWaiter {
     std::vector<VkFence> fences;
 };
 
-bool CommandBufferSubState::PreSubmit(QueueSubState& queue, const Location& loc) {
+bool CommandBufferSubState::PreSubmit(QueueSubState& queue, const Location& loc, gpuav::QueueSubmission& queue_submission,
+                                      gpuav::CommandBufferSubmission& cb_submission) {
     VVL_ZoneScoped;
     if (!on_pre_cb_submission_functions.empty()) {
+        // Tying submission.gpuav allocation to work to be executed by the
+        // on_pre_cb_submission_functions lambdas is maybe a bit funky,
+        // given on_post_cb_submission_functions and on_cb_completion_functions
+        // also may need to access submission.gpuav
+        // For now in practice it is fine:
+        // Lambdas in on_post_cb_submission_functions and on_cb_completion_functions
+        // assume work previously done in corresponding on_pre_cb_submission_functions
+        // lambdas => they will always see a valid submission.gpuav
+        //
+        // If this assumption is to breack, it will fail loudly anyway
+        if (!queue_submission.resources_manager) {
+            vko::GpuResourcesManagerCache& cache = queue.shared_resources_cache.GetOrCreate<vko::GpuResourcesManagerCache>(gpuav_);
+            queue_submission.resources_manager = cache.Get();
+        }
+
         vko::CommandPool& cb_pool =
             queue.shared_resources_cache.GetOrCreate<vko::CommandPool>(gpuav_, queue.base.queue_family_index, loc);
         auto [per_pre_submission_cb, fence] = cb_pool.GetCommandBuffer();
@@ -289,7 +305,7 @@ bool CommandBufferSubState::PreSubmit(QueueSubState& queue, const Location& loc)
         cb_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         DispatchBeginCommandBuffer(per_pre_submission_cb, &cb_bi);
         for (auto& pre_submission_func : on_pre_cb_submission_functions) {
-            pre_submission_func(gpuav_, *this, per_pre_submission_cb);
+            pre_submission_func(gpuav_, *this, per_pre_submission_cb, queue_submission, cb_submission);
         }
         DispatchEndCommandBuffer(per_pre_submission_cb);
 
@@ -305,7 +321,8 @@ bool CommandBufferSubState::PreSubmit(QueueSubState& queue, const Location& loc)
     return true;
 }
 
-bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc) {
+bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc, gpuav::QueueSubmission& queue_submission,
+                                       gpuav::CommandBufferSubmission& cb_submission) {
     VVL_ZoneScoped;
     if (!on_post_cb_submission_functions.empty()) {
         vko::CommandPool& cb_pool =
@@ -319,7 +336,7 @@ bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc
         cb_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         DispatchBeginCommandBuffer(per_post_submission_cb, &cb_bi);
         for (auto& post_submission_func : on_post_cb_submission_functions) {
-            post_submission_func(gpuav_, *this, per_post_submission_cb);
+            post_submission_func(gpuav_, *this, per_post_submission_cb, queue_submission, cb_submission);
         }
         DispatchEndCommandBuffer(per_post_submission_cb);
 
@@ -342,7 +359,8 @@ bool CommandBufferSubState::PostSubmit(QueueSubState& queue, const Location& loc
 bool CommandBufferSubState::NeedsPostProcess() { return error_output_buffer_range_.buffer != VK_NULL_HANDLE; }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBufferSubmitInfo& cb_info,
+void CommandBufferSubState::OnCompletion(VkQueue queue, gpuav::QueueSubmission& queue_submission,
+                                         gpuav::CommandBufferSubmission& cb_submission, const vvl::CommandBufferSubmitInfo& cb_info,
                                          const Location& submission_loc) {
     VVL_ZoneScoped;
 
@@ -421,7 +439,7 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const vvl::CommandBuffer
 
     bool success = true;
     for (auto& on_cb_completion_func : on_cb_completion_functions) {
-        success = on_cb_completion_func(gpuav_, *this, cb_info, submission_loc);
+        success = on_cb_completion_func(gpuav_, *this, queue_submission, cb_submission, cb_info, submission_loc);
         if (!success) {
             break;
         }
@@ -526,19 +544,26 @@ void QueueSubState::SubmitBarrier(const Location& loc, uint64_t seq) {
 
 void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     bool success = true;
-    for (const auto& submission : submissions) {
+    for (auto& submission : submissions) {
         auto loc = submission.loc.Get();
-        for (auto& cb_info : submission.cb_infos) {
+
+        for (auto [cb_info_i, cb_info] : vvl::enumerate(submission.cb_infos)) {
             auto guard = cb_info.cb->ReadLock();
             auto& gpu_cb = SubState(*cb_info.cb);
-            success = gpu_cb.PreSubmit(*this, loc);
-            if (!success) {
-                return;
+
+            {
+                auto& cb_submission = submission.gpuav.cb_submissions.emplace_back();
+                success = gpu_cb.PreSubmit(*this, loc, submission.gpuav.queue, cb_submission);
+                if (!success) {
+                    return;
+                }
             }
+
             for (auto* secondary_cb : gpu_cb.base.linked_command_buffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
                 auto& secondary_gpu_cb = SubState(*secondary_cb);
-                success = secondary_gpu_cb.PreSubmit(*this, loc);
+                auto& cb_submission = submission.gpuav.cb_submissions.emplace_back();
+                success = secondary_gpu_cb.PreSubmit(*this, loc, submission.gpuav.queue, cb_submission);
                 if (!success) {
                     return;
                 }
@@ -554,16 +579,22 @@ bool QueueSubState::PostSubmit(vvl::QueueSubmission& submission) {
         // must not submit the barrier (the same check as in Retire).
         return true;
     }
-    for (auto& cb_info : submission.cb_infos) {
+    size_t cb_submission_i = 0;
+    for (auto [cb_info_i, cb_info] : vvl::enumerate(submission.cb_infos)) {
         auto guard = cb_info.cb->ReadLock();
         auto& gpu_cb = SubState(*cb_info.cb);
-        if (!gpu_cb.PostSubmit(*this, loc)) {
-            return false;
+
+        {
+            auto& cb_submission = submission.gpuav.cb_submissions[cb_submission_i++];
+            if (!gpu_cb.PostSubmit(*this, loc, submission.gpuav.queue, cb_submission)) {
+                return false;
+            }
         }
         for (auto* secondary_cb : gpu_cb.base.linked_command_buffers) {
             auto secondary_guard = secondary_cb->ReadLock();
             auto& secondary_gpu_cb = SubState(*secondary_cb);
-            if (!secondary_gpu_cb.PostSubmit(*this, loc)) {
+            auto& cb_submission = submission.gpuav.cb_submissions[cb_submission_i++];
+            if (!secondary_gpu_cb.PostSubmit(*this, loc, submission.gpuav.queue, cb_submission)) {
                 return false;
             }
         }
@@ -582,7 +613,9 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
         // that signals barrier_sem_. The following timeline wait must not be called.
         return;
     }
+
     retiring_.emplace_back(submission.cb_infos);
+    retiring_gpuav_.emplace_back(submission.gpuav);
     if (submission.is_last_submission) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
         wait_info.semaphoreCount = 1;
@@ -609,17 +642,28 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
             }
         }
 
-        for (std::vector<vvl::CommandBufferSubmitInfo>& cb_infos : retiring_) {
-            for (vvl::CommandBufferSubmitInfo& cb_info : cb_infos) {
+        for (auto [retiring_i, cb_infos] : vvl::enumerate(retiring_)) {
+            size_t cb_submission_i = 0;
+            for (auto [cb_info_i, cb_info] : vvl::enumerate(cb_infos)) {
                 auto guard = cb_info.cb->WriteLock();
                 auto& gpu_cb = SubState(*cb_info.cb);
                 auto submission_loc = submission.loc.Get();
-                gpu_cb.OnCompletion(VkHandle(), cb_info, submission_loc);
+                {
+                    auto& cb_submission = retiring_gpuav_[retiring_i].cb_submissions[cb_submission_i++];
+                    gpu_cb.OnCompletion(VkHandle(), submission.gpuav.queue, cb_submission, cb_info, submission_loc);
+                }
+
                 for (vvl::CommandBuffer* secondary_cb : gpu_cb.base.linked_command_buffers) {
                     auto secondary_guard = secondary_cb->WriteLock();
                     auto& secondary_gpu_cb = SubState(*secondary_cb);
-                    secondary_gpu_cb.OnCompletion(VkHandle(), cb_info, submission_loc);
+                    auto& cb_submission = retiring_gpuav_[retiring_i].cb_submissions[cb_submission_i++];
+                    secondary_gpu_cb.OnCompletion(VkHandle(), submission.gpuav.queue, cb_submission, cb_info, submission_loc);
                 }
+            }
+
+            if (retiring_gpuav_[retiring_i].queue.resources_manager) {
+                vko::GpuResourcesManagerCache* cache = shared_resources_cache.TryGet<vko::GpuResourcesManagerCache>();
+                cache->Return(retiring_gpuav_[retiring_i].queue.resources_manager);
             }
         }
 
@@ -643,6 +687,7 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
         }
 
         retiring_.clear();
+        retiring_gpuav_.clear();
     } else {
         // The app can already see this batch completed, but its command buffers are only processed with the last batch
         std::lock_guard<std::mutex> lock(gpuav_.held_shader_ids_mutex_);

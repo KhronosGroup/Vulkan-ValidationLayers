@@ -326,7 +326,8 @@ class DummyBLAS {
         blas_address = DispatchGetAccelerationStructureDeviceAddressKHR(gpuav.device, &addr_info);
 
         cb_state.on_pre_cb_submission_functions.emplace_back(
-            [this](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
+            [this](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb, gpuav::QueueSubmission&,
+                   gpuav::CommandBufferSubmission&) {
                 VkAccelerationStructureBuildRangeInfoKHR triangle_build_range{};
                 triangle_build_range.primitiveCount = 1;
                 triangle_build_range.primitiveOffset = 0;
@@ -450,13 +451,14 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         cb_state.gpu_resources_manager.GetDeviceLocalBufferRange(sizeof(shader::AccelerationStructureArraysPtr));
 
     cb_state.on_pre_cb_submission_functions.emplace_back(
-        [as_arrays_ptr_buffer](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb) {
+        [as_arrays_ptr_buffer](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer per_submission_cb,
+                               gpuav::QueueSubmission& queue_submission, gpuav::CommandBufferSubmission& cb_submission) {
             VVL_ZoneScopedN("validate_as_builds_pre_submit");
 
             ReadLockGuard lock(gpuav.device_state->as_with_addresses.array_mutex);
 
             // valid AS addresses buffer
-            vko::BufferRange as_addresses_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
+            vko::BufferRange as_addresses_buffer = queue_submission.resources_manager->GetHostCoherentBufferRange(
                 2 * sizeof(uint32_t) + gpuav.device_state->as_with_addresses.array.size() * sizeof(uint64_t));
             auto accel_struct_addresses_buffer_u32_ptr = (uint32_t*)as_addresses_buffer.offset_mapped_ptr;
 
@@ -465,17 +467,17 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             auto as_addresses_ptr = (uint64_t*)(accel_struct_addresses_buffer_u32_ptr + 2);
 
             // valid AS CPU submit state buffer
-            vko::BufferRange as_cpu_submit_state_buffer = cb.gpu_resources_manager.GetHostCachedBufferRange(
+            vko::BufferRange as_cpu_submit_state_buffer = queue_submission.resources_manager->GetHostCachedBufferRange(
                 gpuav.device_state->as_with_addresses.array.size() * sizeof(uint32_t));
             auto as_cpu_submit_state_ptr = (uint32_t*)as_cpu_submit_state_buffer.offset_mapped_ptr;
 
             // valid AS GPU state
-            vko::BufferRange as_gpu_state_buffer = cb.gpu_resources_manager.GetHostCachedBufferRange(
+            vko::BufferRange as_gpu_state_buffer = queue_submission.resources_manager->GetHostCachedBufferRange(
                 gpuav.device_state->as_with_addresses.array.size() * sizeof(shader::AsGpuStatePtr));
             auto as_gpu_state_ptr = (shader::AsGpuStatePtr*)as_gpu_state_buffer.offset_mapped_ptr;
 
             // valid AS buffer address ranges buffer
-            vko::BufferRange as_buffer_addr_ranges_buffer = cb.gpu_resources_manager.GetHostCoherentBufferRange(
+            vko::BufferRange as_buffer_addr_ranges_buffer = queue_submission.resources_manager->GetHostCoherentBufferRange(
                 gpuav.device_state->as_with_addresses.array.size() * (2 * sizeof(uint64_t)));
             auto as_buffer_addr_ranges_ptr = (uint64_t*)(as_buffer_addr_ranges_buffer.offset_mapped_ptr);
 
@@ -503,12 +505,12 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             }
 
             // Host cached memory is not guaranteed to be host coherent, flush so the GPU sees the writes above
-            cb.gpu_resources_manager.FlushAllocation(as_cpu_submit_state_buffer);
-            cb.gpu_resources_manager.FlushAllocation(as_gpu_state_buffer);
+            queue_submission.resources_manager->FlushAllocation(as_cpu_submit_state_buffer);
+            queue_submission.resources_manager->FlushAllocation(as_gpu_state_buffer);
 
             // Fill a GPU buffer with a pointer to the AS metadata
             vko::BufferRange submit_time_ptr_to_accel_structs_state_buffer =
-                cb.gpu_resources_manager.GetHostCoherentBufferRange(sizeof(shader::AccelerationStructureArraysPtr));
+                queue_submission.resources_manager->GetHostCoherentBufferRange(sizeof(shader::AccelerationStructureArraysPtr));
             auto submit_time_ptr_to_accel_structs_state_buffer_ptr =
                 (shader::AccelerationStructureArraysPtr*)submit_time_ptr_to_accel_structs_state_buffer.offset_mapped_ptr;
 

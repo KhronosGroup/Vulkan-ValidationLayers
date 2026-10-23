@@ -414,6 +414,7 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/shared_memory_data_race.cpp
     gpuav/instrumentation/trace_ray.cpp
     gpuav/instrumentation/vertex_attribute_fetch_oob.cpp
+    gpuav/resources/gpuav_queue_state.h
     gpuav/resources/gpuav_state_trackers.cpp
     gpuav/resources/gpuav_state_trackers.h
     gpuav/resources/gpuav_shader_resources.h

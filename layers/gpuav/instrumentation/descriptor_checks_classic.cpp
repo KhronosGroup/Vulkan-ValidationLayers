@@ -396,7 +396,8 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
 
     // For every descriptor binding command, and for each set bound by this command, update a GPU buffer holding its
     // corresponding descriptor states
-    cb.on_pre_cb_submission_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer) {
+    cb.on_pre_cb_submission_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb, VkCommandBuffer,
+                                                      gpuav::QueueSubmission&, gpuav::CommandBufferSubmission&) {
         DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.Get<DescriptorSetBindings>();
         for (DescriptorSetBindings::BindingCommand& desc_binding_cmd : desc_set_bindings.descriptor_set_binding_commands) {
             auto desc_sets_ssbo_ptr =
