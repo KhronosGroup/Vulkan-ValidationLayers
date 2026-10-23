@@ -175,7 +175,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                 const spirv::HeapMappingStatus* heap_status = nullptr;
                 if (is_untyped) {
                     // TODO - Print some info for untyped pointers
-                } else if (!instrumented_shader || mapping_index_decoded > instrumented_shader->status.heap_mappings.size()) {
+                } else if (!instrumented_shader || mapping_index_decoded >= instrumented_shader->status.heap_mappings.size()) {
                     ss << "(VkDescriptorSetAndBindingMappingEXT not found) ";
                 } else {
                     heap_status = &instrumented_shader->status.heap_mappings[mapping_index_decoded];

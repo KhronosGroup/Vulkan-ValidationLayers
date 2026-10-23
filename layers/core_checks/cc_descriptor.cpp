@@ -5743,7 +5743,7 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDataEXT(VkDevice device, ui
         ASSERT_AND_CONTINUE(image_state);
         if ((image_state->create_flags & VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT) == 0) {
             skip |=
-                LogError("VUID-vkGetImageOpaqueCaptureDataEXT-pImages-11285", pImages[i], error_obj.location.dot(Field::pImage, i),
+                LogError("VUID-vkGetImageOpaqueCaptureDataEXT-pImages-11285", pImages[i], error_obj.location.dot(Field::pImages, i),
                          "was created with %s, but needs to have VK_IMAGE_CREATE_DESCRIPTOR_HEAP_CAPTURE_REPLAY_BIT_EXT.",
                          string_VkImageCreateFlags2KHR(image_state->create_flags).c_str());
         }
@@ -5964,6 +5964,7 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
                 vuid = "VUID-vkCmdPushConstants-commandBuffer-11295";
                 break;
             case Func::vkCmdPushConstants2:
+            case Func::vkCmdPushConstants2KHR:
                 vuid = "VUID-vkCmdPushConstants2-commandBuffer-11295";
                 break;
             case Func::vkCmdBindDescriptorBuffersEXT:
@@ -5985,7 +5986,7 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
                 break;
         }
         const LogObjectList objlist(cb_state.Handle(), cb_state.allocate_info.commandPool);
-        skip |= LogError(vuid, objlist, loc.dot(Field::commandBuffer),
+        skip |= LogError(vuid, objlist, Location(loc.function, Field::commandBuffer),
                          "began with a non-null VkCommandBufferInheritanceDescriptorHeapInfoEXT::pSamplerHeapBindInfo (%s)\nHint: "
                          "By being non-null it acts as if vkCmdBindSamplerHeapEXT was called for this secondary command buffer.",
                          cb_state.descriptor_heap.Describe(true).c_str());
@@ -6020,6 +6021,7 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
                 vuid = "VUID-vkCmdPushConstants-commandBuffer-11296";
                 break;
             case Func::vkCmdPushConstants2:
+            case Func::vkCmdPushConstants2KHR:
                 vuid = "VUID-vkCmdPushConstants2-commandBuffer-11296";
                 break;
             case Func::vkCmdBindDescriptorBuffersEXT:
@@ -6041,7 +6043,7 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
                 break;
         }
         const LogObjectList objlist(cb_state.Handle(), cb_state.allocate_info.commandPool);
-        skip |= LogError(vuid, objlist, loc.dot(Field::commandBuffer),
+        skip |= LogError(vuid, objlist, Location(loc.function, Field::commandBuffer),
                          "began with a non-null VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo (%s)\nHint: "
                          "By being non-null it acts as if vkCmdBindResourceHeapEXT was called for this secondary command buffer.",
                          cb_state.descriptor_heap.Describe(false).c_str());

@@ -3806,3 +3806,42 @@ TEST_F(PositiveDescriptorHeapEXT, InputAttachmentLocalRead) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveDescriptorHeapEXT, EmbeddedSamplerOtherResourceType) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    if (heap_props.minSamplerHeapReservedRangeWithEmbedded <= heap_props.minSamplerHeapReservedRange) {
+        GTEST_SKIP() << "minSamplerHeapReservedRangeWithEmbedded is not greater than minSamplerHeapReservedRange";
+    }
+
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.imageDescriptorSize);
+    desc_heap.CreateSamplerHeap(heap_props.samplerDescriptorSize);
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 1) uniform sampler2D tex;
+        void main() {
+            vec4 color = textureLod(tex, vec2(0.0f), 0.0f);
+        }
+    )glsl";
+
+    VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = MakeSetAndBindingMappingEXT(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT);
+    mappings[0].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mappings[0].sourceData.constantOffset.pEmbeddedSampler = &embedded_sampler;
+    mappings[1] = MakeSetAndBindingMappingEXT(0, 1, 1, VK_SPIRV_RESOURCE_TYPE_COMBINED_SAMPLED_IMAGE_BIT_EXT);
+    mappings[1].source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 2u;
+    mapping_info.pMappings = mappings;
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    desc_heap.BindSamplerHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
+    m_command_buffer.End();
+}

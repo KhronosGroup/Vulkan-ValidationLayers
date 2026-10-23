@@ -469,6 +469,9 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
             // This is not an access of memory, but counts as static usage of the variable
             result.insert(insn.Word(3));
             break;
+        case spv::OpUntypedArrayLengthKHR:
+            result.insert(insn.Word(4));  // ptr
+            break;
         case spv::OpFunctionCall:
             for (uint32_t i = 3; i < insn.Length(); i++) {
                 result.insert(insn.Word(i));  // fn itself, and all args

@@ -1715,3 +1715,44 @@ TEST_F(NegativeSecondaryCommandBuffer, InputAttachmentColorMapping) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSecondaryCommandBuffer, InheritanceDescriptorHeapInfoPushConstants2KHR) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(heap_props);
+    vkt::Buffer heap_buffer(*m_device, heap_props.bufferDescriptorSize, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT,
+                            vkt::device_address);
+    VkPushConstantRange range = {VK_SHADER_STAGE_COMPUTE_BIT, 0u, 4u};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {range});
+
+    VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
+    bind_info.heapRange = heap_buffer.AddressRange();
+    VkCommandBufferInheritanceDescriptorHeapInfoEXT inheritance_heap_info = vku::InitStructHelper();
+    inheritance_heap_info.pResourceHeapBindInfo = &bind_info;
+    inheritance_heap_info.pSamplerHeapBindInfo = &bind_info;
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&inheritance_heap_info);
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin(&begin_info);
+    const uint32_t data = 0u;
+    VkPushConstantsInfo push_info = vku::InitStructHelper();
+    push_info.layout = pipeline_layout;
+    push_info.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    push_info.size = 4u;
+    push_info.pValues = &data;
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants2-commandBuffer-11295");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants2-commandBuffer-11296");
+    vk::CmdPushConstants2KHR(secondary, &push_info);
+    m_errorMonitor->VerifyFound();
+    secondary.End();
+}

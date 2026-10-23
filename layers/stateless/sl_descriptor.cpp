@@ -1490,7 +1490,8 @@ bool Device::manual_PreCallValidateCmdBindSamplerHeapEXT(VkCommandBuffer command
     bool skip = false;
     const auto& error_obj = context.error_obj;
 
-    if (pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize > pBindInfo->heapRange.size) {
+    if (pBindInfo->reservedRangeOffset > pBindInfo->heapRange.size ||
+        pBindInfo->reservedRangeSize > pBindInfo->heapRange.size - pBindInfo->reservedRangeOffset) {
         skip |= LogError("VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11223", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
                          "(%" PRIu64 ") + reservedRangeSize (%" PRIu64 ") is greater than pBindInfo->heapRange.size (%" PRIu64 ").",
@@ -1533,7 +1534,8 @@ bool Device::manual_PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer comman
     bool skip = false;
     const auto& error_obj = context.error_obj;
 
-    if (pBindInfo->reservedRangeOffset + pBindInfo->reservedRangeSize > pBindInfo->heapRange.size) {
+    if (pBindInfo->reservedRangeOffset > pBindInfo->heapRange.size ||
+        pBindInfo->reservedRangeSize > pBindInfo->heapRange.size - pBindInfo->reservedRangeOffset) {
         skip |= LogError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11232", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
                          "(%" PRIu64 ") + reservedRangeSize (%" PRIu64 ") is greater than pBindInfo->heapRange.size (%" PRIu64 ").",

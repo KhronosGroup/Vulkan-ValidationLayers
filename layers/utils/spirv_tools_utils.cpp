@@ -124,8 +124,9 @@ void AdjustValidatorOptions(const DeviceExtensions& device_extensions, const Dev
         if (enabled_features.tensors) {
             ss << " --tensor-descriptor-layout " << phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorSize << ":"
                << phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment;
-            out_options.SetTensorDescriptorLayout((uint32_t)heap_props.samplerDescriptorSize,
-                                                  (uint32_t)heap_props.samplerDescriptorAlignment);
+            out_options.SetTensorDescriptorLayout(
+                (uint32_t)phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorSize,
+                (uint32_t)phys_dev_ext_props.descriptor_heap_tensor_props.tensorDescriptorAlignment);
         }
     }
 
