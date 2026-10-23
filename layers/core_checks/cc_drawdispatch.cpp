@@ -1906,7 +1906,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeap(const LastBound& last_bound_s
                              "using VkCommandBufferInheritanceDescriptorHeapInfoEXT::pResourceHeapBindInfo, therefore making this "
                              "command buffer resource heap invalid.%s%s",
                              entry_point.Describe().c_str(), last_bound_state.DescribeInvalidDescriptorMode().c_str(),
-                             print_used_variables(true).c_str());
+                             print_used_variables(false).c_str());
         } else if (cb_state.IsPrimary()) {
             skip |= LogError(
                 CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_11308),
@@ -1953,13 +1953,7 @@ bool CoreChecks::ValidateActionStateDescriptorHeapSamplers(const vvl::CommandBuf
         }
 
         for (const spirv::ResourceInterfaceVariable& resource_variable : entry_point.resource_interface_variables) {
-            const uint32_t descriptor_set = resource_variable.decorations.set;
-            const uint32_t descriptor_binding = resource_variable.decorations.binding;
-            // bindingCount could be UINT32_MAX
-            const uint64_t last_binding = mapping.firstBinding + uint64_t(mapping.bindingCount);
-
-            if (mapping.descriptorSet != descriptor_set || descriptor_binding < mapping.firstBinding ||
-                descriptor_binding >= last_binding) {
+            if (!IsResourceVariableInMapping(mapping, resource_variable)) {
                 continue;
             }
 

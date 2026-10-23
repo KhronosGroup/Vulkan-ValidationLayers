@@ -6323,3 +6323,60 @@ TEST_F(NegativeDescriptorHeapEXT, InputAttachmentReadOnly) {
     vkt::HeapGraphicsPipelineEXT pipe(*this, stages, 2, nullptr, rp);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorHeapEXT, UntypedArrayLengthOnMappingSourceAddress) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const char* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %b
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %B Block
+               OpMemberDecorate %B 0 Offset 0
+               OpDecorate %b Binding 0
+               OpDecorate %b DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+          %B = OpTypeStruct %_runtimearr_uint
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+          %b = OpUntypedVariableKHR %ptr StorageBuffer %B
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %13 = OpUntypedArrayLengthKHR %uint %B %b 0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkDescriptorSetAndBindingMappingEXT mapping =
+        MakeZeroSetAndBindingMappingEXT(0, 0, VK_DESCRIPTOR_MAPPING_SOURCE_PUSH_ADDRESS_EXT);
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-11378");
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_3, &mapping_info, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorHeapEXT, BindResourceHeapReservedRangeOverflow) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    vkt::Buffer heap_buffer(*m_device, 4096u, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
+    VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
+    bind_info.heapRange = heap_buffer.AddressRange();
+    bind_info.reservedRangeSize = std::max(heap_props.minResourceHeapReservedRange, VkDeviceSize(4096));
+    bind_info.reservedRangeOffset = 0u - bind_info.reservedRangeSize;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-11232");
+    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

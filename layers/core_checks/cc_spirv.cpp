@@ -2825,8 +2825,14 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                            VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT})) {
                 const spirv::Instruction* found_inst = nullptr;
                 for (const spirv::Instruction* array_length_inst : module_state.static_data_.array_length_inst) {
-                    const spirv::Instruction* structure = module_state.FindDef(array_length_inst->Word(3));
-                    if (structure->Opcode() == spv::OpVariable && structure->ResultId() == resource_variable.id) {
+                    // OpUntypedArrayLengthKHR has the Structure type before the Pointer
+                    const uint32_t pointer_word = array_length_inst->Opcode() == spv::OpUntypedArrayLengthKHR ? 4 : 3;
+                    const spirv::Instruction* pointer = module_state.FindDef(array_length_inst->Word(pointer_word));
+                    // The resource can be an array, then the pointer is an access chain into it
+                    while (pointer && pointer->IsAccessChain()) {
+                        pointer = module_state.FindDef(pointer->Word(pointer->IsUntypedAccessChain() ? 4 : 3));
+                    }
+                    if (pointer && pointer->ResultId() == resource_variable.id) {
                         found_inst = array_length_inst;
                         break;
                     }

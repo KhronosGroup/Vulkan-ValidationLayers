@@ -6523,3 +6523,43 @@ TEST_F(NegativeDescriptors, DynamicOffsetRangeCoversWholeBuffer) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDescriptors, OpUntypedArrayLengthStaticallyUsed) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(Init());
+
+    const char* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %b
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %B Block
+               OpMemberDecorate %B 0 Offset 0
+               OpDecorate %b Binding 0
+               OpDecorate %b DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+          %B = OpTypeStruct %_runtimearr_uint
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+          %b = OpUntypedVariableKHR %ptr StorageBuffer %B
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %13 = OpUntypedArrayLengthKHR %uint %B %b 0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.dsl_bindings_ = {};
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07988");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
