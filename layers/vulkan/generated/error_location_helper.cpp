@@ -1296,6 +1296,7 @@ const char* String(Struct structure) {
     {"VkGraphicsPipelineShaderGroupsCreateInfoNV", 43},
     {"VkGraphicsShaderGroupCreateInfoNV", 34},
     {"VkHdrMetadataEXT", 17},
+    {"VkHdrSmpteSt209450GOOGLE", 25},
     {"VkHdrVividDynamicMetadataHUAWEI", 32},
     {"VkHeadlessSurfaceCreateInfoEXT", 31},
     {"VkHostAddressRangeConstEXT", 27},
@@ -1633,6 +1634,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT", 51},
     {"VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT", 53},
     {"VkPhysicalDeviceGroupProperties", 32},
+    {"VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE", 47},
     {"VkPhysicalDeviceHdrVividFeaturesHUAWEI", 39},
     {"VkPhysicalDeviceHostImageCopyFeatures", 38},
     {"VkPhysicalDeviceHostImageCopyProperties", 40},
@@ -2149,6 +2151,7 @@ const char* String(Struct structure) {
     {"VkSurfaceCapabilities2EXT", 26},
     {"VkSurfaceCapabilities2KHR", 26},
     {"VkSurfaceCapabilitiesFullScreenExclusiveEXT", 44},
+    {"VkSurfaceCapabilitiesHdrSmpteSt209450GOOGLE", 44},
     {"VkSurfaceCapabilitiesKHR", 25},
     {"VkSurfaceCapabilitiesPresentBarrierNV", 38},
     {"VkSurfaceCapabilitiesPresentId2KHR", 35},
@@ -3170,6 +3173,8 @@ const char* String(Field field) {
     {"hasStdSPSOverrides", 19},
     {"hasStdVPSOverrides", 19},
     {"hdmi3DSupported", 16},
+    {"hdrSmpteSt209450", 17},
+    {"hdrSmpteSt209450Supported", 26},
     {"hdrVivid", 9},
     {"headerSize", 11},
     {"headerVersion", 14},
@@ -3817,6 +3822,7 @@ const char* String(Field field) {
     {"messageType", 12},
     {"messageTypes", 13},
     {"messenger", 10},
+    {"metadataSize", 13},
     {"micromap", 9},
     {"micromapCaptureReplay", 22},
     {"micromapCount", 14},
@@ -4714,6 +4720,7 @@ const char* String(Field field) {
     {"postMergeIndex", 15},
     {"postMergeSubpassCount", 22},
     {"postSubpassSampleLocationsCount", 32},
+    {"powerPreference", 16},
     {"powerState", 11},
     {"ppBuildRangeInfos", 18},
     {"ppData", 7},
@@ -5820,6 +5827,7 @@ const char* String(Enum value) {
     {"VkGpaDeviceClockModeAMD", 24},
     {"VkGpaPerfBlockAMD", 18},
     {"VkGpaSampleTypeAMD", 19},
+    {"VkHdrSmpteSt209450PowerPreferenceGOOGLE", 40},
     {"VkImageLayout", 14},
     {"VkImageTiling", 14},
     {"VkImageTilingControlEXT", 24},
@@ -6306,6 +6314,7 @@ const char* String(Extension extension) {
     {"VK_GGP_stream_descriptor_surface", 33},
     {"VK_GOOGLE_decorate_string", 26},
     {"VK_GOOGLE_display_timing", 25},
+    {"VK_GOOGLE_hdr_smpte_st_209450_metadata", 39},
     {"VK_GOOGLE_hlsl_functionality1", 30},
     {"VK_GOOGLE_surfaceless_query", 28},
     {"VK_GOOGLE_user_type", 20},
@@ -9713,6 +9722,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceBufferDeviceAddressAllocationAlignmentPropertiesVALVE;
     case VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_ALIGNMENT_ALLOCATE_INFO_VALVE:
        return Struct::VkBufferDeviceAddressAlignmentAllocateInfoVALVE;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_SMPTE_ST_209450_FEATURES_GOOGLE:
+       return Struct::VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE;
+    case VK_STRUCTURE_TYPE_HDR_SMPTE_ST_209450_GOOGLE:
+       return Struct::VkHdrSmpteSt209450GOOGLE;
+    case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_HDR_SMPTE_ST_209450_GOOGLE:
+       return Struct::VkSurfaceCapabilitiesHdrSmpteSt209450GOOGLE;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:

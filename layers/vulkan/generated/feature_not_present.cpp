@@ -1654,6 +1654,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_SMPTE_ST_209450_FEATURES_GOOGLE: {
+                VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE*>(current);
+                if (enabling->hdrSmpteSt209450 && !supported.hdrSmpteSt209450) {
+                    ss << "VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE::hdrSmpteSt209450 is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI: {
                 VkPhysicalDeviceHdrVividFeaturesHUAWEI supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

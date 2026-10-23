@@ -3606,6 +3606,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                     "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary"};
         }
 
+        case Feature::hdrSmpteSt209450: {
+            auto vk_struct = const_cast<VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->hdrSmpteSt209450, "VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE::hdrSmpteSt209450"};
+        }
+
         case Feature::hdrVivid: {
             auto vk_struct = const_cast<VkPhysicalDeviceHdrVividFeaturesHUAWEI*>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceHdrVividFeaturesHUAWEI>(*inout_pnext_chain));

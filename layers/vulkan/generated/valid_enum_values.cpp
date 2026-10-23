@@ -2606,6 +2606,17 @@ ValidValue stateless::Context::IsValidEnumValue(VkImageTilingControlEXT value) c
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkHdrSmpteSt209450PowerPreferenceGOOGLE value) const {
+    switch (value) {
+        case VK_HDR_SMPTE_ST_209450_POWER_PREFERENCE_COLOR_ACCURACY_GOOGLE:
+        case VK_HDR_SMPTE_ST_209450_POWER_PREFERENCE_LOW_POWER_GOOGLE:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const {
     switch (value) {
         case VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR:
@@ -4460,6 +4471,15 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkImageTilingControlEXT va
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkImageTilingControlEXT value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkHdrSmpteSt209450PowerPreferenceGOOGLE value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkHdrSmpteSt209450PowerPreferenceGOOGLE value) const {
     return nullptr;
 }
 

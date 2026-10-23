@@ -3767,6 +3767,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_SMPTE_ST_209450_FEATURES_GOOGLE: {  // Covers
+                                                                                       // VUID-VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE);
+                VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE* structure = (VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::hdrSmpteSt209450), structure->hdrSmpteSt209450);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
@@ -9316,6 +9326,24 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkBufferDeviceAddressAlignmentAllocateInfoVALVE structure members  -- Covers
         // VUID-VkBufferDeviceAddressAlignmentAllocateInfoVALVE-sType-sType
 
+        // Validation code for VkHdrSmpteSt209450GOOGLE structure members
+        case VK_STRUCTURE_TYPE_HDR_SMPTE_ST_209450_GOOGLE: {  // Covers VUID-VkHdrSmpteSt209450GOOGLE-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkHdrSmpteSt209450GOOGLE);
+                VkHdrSmpteSt209450GOOGLE* structure = (VkHdrSmpteSt209450GOOGLE*)header;
+                skip |= ValidateArray(pNext_loc.dot(Field::metadataSize), pNext_loc.dot(Field::pMetadata), structure->metadataSize,
+                                      &structure->pMetadata, true, true, "VUID-VkHdrSmpteSt209450GOOGLE-metadataSize-arraylength",
+                                      "VUID-VkHdrSmpteSt209450GOOGLE-pMetadata-parameter");
+
+                skip |=
+                    ValidateRangedEnum(pNext_loc.dot(Field::powerPreference), vvl::Enum::VkHdrSmpteSt209450PowerPreferenceGOOGLE,
+                                       structure->powerPreference, "VUID-VkHdrSmpteSt209450GOOGLE-powerPreference-parameter");
+            }
+        } break;
+
+        // No Validation code for VkSurfaceCapabilitiesHdrSmpteSt209450GOOGLE structure members  -- Covers
+        // VUID-VkSurfaceCapabilitiesHdrSmpteSt209450GOOGLE-sType-sType
+
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
                                                                                    // VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
@@ -9596,7 +9624,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 289> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 290> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9698,6 +9726,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GPA_FEATURES_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_SMPTE_ST_209450_FEATURES_GOOGLE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
@@ -18958,7 +18987,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysica
                                        "VUID-VkSurfaceCapabilities2KHR-sType-sType");
     if (pSurfaceCapabilities != nullptr) {
         [[maybe_unused]] const Location pSurfaceCapabilities_loc = loc.dot(Field::pSurfaceCapabilities);
-        constexpr std::array<VkStructureType, 14> allowed_structs_VkSurfaceCapabilities2KHR = {
+        constexpr std::array<VkStructureType, 15> allowed_structs_VkSurfaceCapabilities2KHR = {
             VK_STRUCTURE_TYPE_DISPLAY_NATIVE_HDR_SURFACE_CAPABILITIES_AMD,
             VK_STRUCTURE_TYPE_IMAGE_USAGE_FLAGS_2_CREATE_INFO_KHR,
             VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV,
@@ -18966,6 +18995,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysica
             VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_2_KHR,
             VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT,
+            VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_HDR_SMPTE_ST_209450_GOOGLE,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_BARRIER_NV,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_ID_2_KHR,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_WAIT_2_KHR,
@@ -22252,8 +22282,8 @@ bool Device::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint32_t swapchai
     if (pMetadata != nullptr) {
         for (uint32_t swapchainIndex = 0; swapchainIndex < swapchainCount; ++swapchainIndex) {
             [[maybe_unused]] const Location pMetadata_loc = loc.dot(Field::pMetadata, swapchainIndex);
-            constexpr std::array<VkStructureType, 1> allowed_structs_VkHdrMetadataEXT = {
-                VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI};
+            constexpr std::array<VkStructureType, 2> allowed_structs_VkHdrMetadataEXT = {
+                VK_STRUCTURE_TYPE_HDR_SMPTE_ST_209450_GOOGLE, VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI};
 
             skip |=
                 context.ValidateStructPnext(pMetadata_loc, pMetadata[swapchainIndex].pNext, allowed_structs_VkHdrMetadataEXT.size(),
@@ -29584,6 +29614,10 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM
                                                 pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].pNext, 0,
                                                 nullptr, GeneratedVulkanHeaderVersion,
                                                 "VUID-VkQueueFamilyDataGraphPropertiesARM-pNext-pNext", kVUIDUndefined, false);
+
+            [[maybe_unused]] const Location engine_loc = pQueueFamilyDataGraphProperties_loc.dot(Field::engine);
+            skip |= context.ValidateBool32(engine_loc.dot(Field::isForeign),
+                                           pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].engine.isForeign);
         }
     }
     return skip;
@@ -29654,6 +29688,9 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphEngineOperati
         skip |= context.ValidateStructPnext(pQueueFamilyDataGraphProperties_loc, pQueueFamilyDataGraphProperties->pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyDataGraphPropertiesARM-pNext-pNext",
                                             kVUIDUndefined, true);
+
+        [[maybe_unused]] const Location engine_loc = pQueueFamilyDataGraphProperties_loc.dot(Field::engine);
+        skip |= context.ValidateBool32(engine_loc.dot(Field::isForeign), pQueueFamilyDataGraphProperties->engine.isForeign);
     }
     return skip;
 }
@@ -30644,6 +30681,9 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowIm
         skip |= context.ValidateStructPnext(pQueueFamilyDataGraphProperties_loc, pQueueFamilyDataGraphProperties->pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyDataGraphPropertiesARM-pNext-pNext",
                                             kVUIDUndefined, true);
+
+        [[maybe_unused]] const Location engine_loc = pQueueFamilyDataGraphProperties_loc.dot(Field::engine);
+        skip |= context.ValidateBool32(engine_loc.dot(Field::isForeign), pQueueFamilyDataGraphProperties->engine.isForeign);
     }
     skip |= context.ValidateStructType(
         loc.dot(Field::pOpticalFlowImageFormatInfo), pOpticalFlowImageFormatInfo,
