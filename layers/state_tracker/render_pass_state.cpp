@@ -431,6 +431,14 @@ uint32_t RenderPass::GetDynamicRenderingViewMask() const {
     return 0;
 }
 
+uint32_t RenderPass::GetDynamicRenderingLayerCount() const {
+    const VkRenderingInfo& rendering_info = *dynamic_rendering_begin_rendering_info.ptr();
+    if (rendering_info.viewMask != 0) {
+        return static_cast<uint32_t>(MostSignificantBit(rendering_info.viewMask)) + 1;
+    }
+    return rendering_info.layerCount;
+}
+
 VkRenderingFlags RenderPass::GetRenderingFlags() const {
     if (use_dynamic_rendering_inherited) {
         return inheritance_rendering_info.flags;

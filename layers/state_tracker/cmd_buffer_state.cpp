@@ -631,16 +631,20 @@ void CommandBuffer::RecordWriteTimestamp(VkQueryPool queryPool, uint32_t slot, c
         AddChild(pool_state);
     }
 
-    QueryObject query_obj = {queryPool, slot};
-    for (auto& item : sub_states_) {
-        item.second->RecordWriteTimestamp(query_obj, loc);
-    }
+    // With multiview, the timestamp uses N consecutive queries
+    const QueryCount query_count(*this);
+    for (uint32_t i = 0; i < query_count.count; ++i) {
+        QueryObject query_obj = {queryPool, slot + i};
+        for (auto& item : sub_states_) {
+            item.second->RecordWriteTimestamp(query_obj, loc);
+        }
 
-    // Acts like an end query
-    active_queries.erase(query_obj);
-    updated_queries.insert(query_obj);
-    if (query_obj.inside_render_pass) {
-        render_pass_queries.erase(query_obj);
+        // Acts like an end query
+        active_queries.erase(query_obj);
+        updated_queries.insert(query_obj);
+        if (query_obj.inside_render_pass) {
+            render_pass_queries.erase(query_obj);
+        }
     }
 }
 

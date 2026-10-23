@@ -78,7 +78,7 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
-    vk::CmdDraw(m_command_buffer, 1, multiview_props.maxMultiviewInstanceIndex + 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 1, 2, 0, multiview_props.maxMultiviewInstanceIndex);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -1159,17 +1159,17 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    VkRenderingInfo renderingInfo = vku::InitStructHelper();
-    renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
-    renderingInfo.layerCount = 1u;
-    renderingInfo.colorAttachmentCount = 1u;
-    renderingInfo.pColorAttachments = &color_attachment;
-    renderingInfo.viewMask = 0x1;
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {100u, 100u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+    rendering_info.viewMask = 0x1;
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRendering(renderingInfo);
+    m_command_buffer.BeginRendering(rendering_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, multiview_properties.maxMultiviewInstanceIndex);
+    vk::CmdDraw(m_command_buffer, 3u, 2u, 0u, multiview_properties.maxMultiviewInstanceIndex);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 

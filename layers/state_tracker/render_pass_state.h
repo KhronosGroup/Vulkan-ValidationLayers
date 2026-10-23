@@ -137,6 +137,8 @@ class RenderPass : public StateObject {
     // These helpers are because at draw time, we won't know if the values are from VkRenderingInfo or
     // VkCommandBufferInheritanceRenderingInfo
     uint32_t GetDynamicRenderingViewMask() const;
+    // Number of layers rendered to by vkCmdBeginRendering (layerCount is only used when viewMask is 0)
+    uint32_t GetDynamicRenderingLayerCount() const;
     VkRenderingFlags GetRenderingFlags() const;
     const VkMultisampledRenderToSingleSampledInfoEXT *GetMSRTSSInfo(uint32_t subpass) const;
 };
