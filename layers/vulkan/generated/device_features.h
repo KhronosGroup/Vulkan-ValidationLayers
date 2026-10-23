@@ -542,6 +542,8 @@ struct DeviceFeatures {
     bool streamingPerfCounters;
     // VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT
     bool graphicsPipelineLibrary;
+    // VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE
+    bool hdrSmpteSt209450;
     // VkPhysicalDeviceHdrVividFeaturesHUAWEI
     bool hdrVivid;
     // VkPhysicalDeviceHostImageCopyFeatures, VkPhysicalDeviceVulkan14Features

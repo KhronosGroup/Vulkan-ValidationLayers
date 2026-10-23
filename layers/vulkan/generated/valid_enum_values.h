@@ -292,6 +292,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkNeuralAcceleratorStatisticsMod
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkImageTilingControlEXT value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkHdrSmpteSt209450PowerPreferenceGOOGLE value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkShaderGroupShaderKHR value) const;

@@ -536,6 +536,8 @@ enum class Feature {
     streamingPerfCounters,
     // VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT
     graphicsPipelineLibrary,
+    // VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE
+    hdrSmpteSt209450,
     // VkPhysicalDeviceHdrVividFeaturesHUAWEI
     hdrVivid,
     // VkPhysicalDeviceHostImageCopyFeatures, VkPhysicalDeviceVulkan14Features

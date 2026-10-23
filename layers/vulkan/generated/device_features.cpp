@@ -2143,6 +2143,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->bufferDeviceAddressAllocationAlignment |= enabled->bufferDeviceAddressAllocationAlignment == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_SMPTE_ST_209450_FEATURES_GOOGLE: {
+                const VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceHdrSmpteSt209450FeaturesGOOGLE*>(pNext);
+                features->hdrSmpteSt209450 |= enabled->hdrSmpteSt209450 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
                 const VkPhysicalDeviceAccelerationStructureFeaturesKHR* enabled =
                     reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR*>(pNext);
