@@ -26,6 +26,7 @@
 #include "error_message/error_strings.h"
 #include "containers/span.h"
 #include "containers/container_utils.h"
+#include "containers/range.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"
 #include "utils/descriptor_utils.h"
@@ -1668,10 +1669,16 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
                          "descriptorHeap feature was not enabled.");
     }
 
+    // Most calls write 1 descriptor, no real data to know how large the count gets
+    small_vector<std::pair<vvl::range<uintptr_t>, uint32_t>, 1> descriptor_ranges;
+    descriptor_ranges.reserve(resourceCount);
     for (uint32_t i = 0; i < resourceCount; ++i) {
         const VkResourceDescriptorInfoEXT& resource = pResources[i];
         const Location resource_loc = context.error_obj.location.dot(Field::pResources, i);
         const Location data_loc = resource_loc.dot(Field::data);
+
+        const uintptr_t address = reinterpret_cast<uintptr_t>(pDescriptors[i].address);
+        descriptor_ranges.emplace_back(vvl::range<uintptr_t>(address, address + pDescriptors[i].size), i);
 
         if (IsDescriptorHeapImage(resource.type)) {
             if (!resource.data.pImage) {
@@ -1800,6 +1807,20 @@ bool Device::manual_PreCallValidateWriteResourceDescriptorsEXT(VkDevice device, 
         }
     }
 
+    if (resourceCount > 1) {
+        std::sort(descriptor_ranges.begin(), descriptor_ranges.end());
+        for (uint32_t i = 1; i < descriptor_ranges.size(); ++i) {
+            const auto& [prev_range, prev_index] = descriptor_ranges[i - 1];
+            const auto& [range, index] = descriptor_ranges[i];
+            if (prev_range.intersects(range)) {
+                skip |= LogError("VUID-vkWriteResourceDescriptorsEXT-pDescriptors-12532", device,
+                                 context.error_obj.location.dot(Field::pDescriptors, index),
+                                 "%s overlaps with pDescriptors[%" PRIu32 "] %s.", string_range_hex(range).c_str(), prev_index,
+                                 string_range_hex(prev_range).c_str());
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -1814,11 +1835,16 @@ bool Device::manual_PreCallValidateWriteSamplerDescriptorsEXT(VkDevice device, u
                          "descriptorHeap feature was not enabled.");
     }
 
+    // Most calls write 1 descriptor, no real data to know how large the count gets
+    small_vector<std::pair<vvl::range<uintptr_t>, uint32_t>, 1> descriptor_ranges;
+    descriptor_ranges.reserve(samplerCount);
     for (uint32_t i = 0; i < samplerCount; ++i) {
         const VkSamplerCreateInfo& sampler_ci = pSamplers[i];
         const Location sampler_loc = context.error_obj.location.dot(Field::pSamplers, i);
 
         const VkHostAddressRangeEXT& descriptor_range = pDescriptors[i];
+        const uintptr_t address = reinterpret_cast<uintptr_t>(descriptor_range.address);
+        descriptor_ranges.emplace_back(vvl::range<uintptr_t>(address, address + descriptor_range.size), i);
         if (static_cast<VkDeviceSize>(descriptor_range.size) < phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize) {
             skip |= LogError("VUID-vkWriteSamplerDescriptorsEXT-size-11203", device,
                              context.error_obj.location.dot(Field::pDescriptors, i).dot(Field::size),
@@ -1857,6 +1883,20 @@ bool Device::manual_PreCallValidateWriteSamplerDescriptorsEXT(VkDevice device, u
         }
 
         skip |= ValidateSamplerCreateInfo(sampler_ci, sampler_loc, context);
+    }
+
+    if (samplerCount > 1) {
+        std::sort(descriptor_ranges.begin(), descriptor_ranges.end());
+        for (uint32_t i = 1; i < descriptor_ranges.size(); ++i) {
+            const auto& [prev_range, prev_index] = descriptor_ranges[i - 1];
+            const auto& [range, index] = descriptor_ranges[i];
+            if (prev_range.intersects(range)) {
+                skip |= LogError("VUID-vkWriteSamplerDescriptorsEXT-pDescriptors-12531", device,
+                                 context.error_obj.location.dot(Field::pDescriptors, index),
+                                 "%s overlaps with pDescriptors[%" PRIu32 "] %s.", string_range_hex(range).c_str(), prev_index,
+                                 string_range_hex(prev_range).c_str());
+            }
+        }
     }
 
     return skip;

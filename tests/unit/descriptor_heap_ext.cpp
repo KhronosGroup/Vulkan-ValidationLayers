@@ -108,6 +108,54 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerParameterSize) {
     }
 }
 
+TEST_F(NegativeDescriptorHeapEXT, DescriptorsOverlap) {
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    const size_t buffer_desc_size = static_cast<size_t>(heap_props.bufferDescriptorSize);
+    std::vector<uint8_t> r_data(buffer_desc_size * 2);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    const VkDeviceAddressRangeEXT address_range = buffer.AddressRange();
+
+    VkResourceDescriptorInfoEXT resource_infos[2];
+    resource_infos[0] = vku::InitStructHelper();
+    resource_infos[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    resource_infos[0].data.pAddressRange = &address_range;
+    resource_infos[1] = vku::InitStructHelper();
+    resource_infos[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    resource_infos[1].data.pAddressRange = &address_range;
+    {
+        VkHostAddressRangeEXT descriptors[2] = {{r_data.data(), buffer_desc_size}, {r_data.data(), buffer_desc_size}};
+        m_errorMonitor->SetDesiredError("VUID-vkWriteResourceDescriptorsEXT-pDescriptors-12532");
+        vk::WriteResourceDescriptorsEXT(device(), 2u, resource_infos, descriptors);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkHostAddressRangeEXT descriptors[2] = {{r_data.data(), buffer_desc_size},
+                                                {r_data.data() + buffer_desc_size - 1, buffer_desc_size}};
+        m_errorMonitor->SetDesiredError("VUID-vkWriteResourceDescriptorsEXT-pDescriptors-12532");
+        vk::WriteResourceDescriptorsEXT(device(), 2u, resource_infos, descriptors);
+        m_errorMonitor->VerifyFound();
+    }
+
+    const size_t sampler_size = static_cast<size_t>(heap_props.samplerDescriptorSize);
+    std::vector<uint8_t> s_data(sampler_size * 2);
+
+    const VkSamplerCreateInfo sampler_cis[2] = {SafeSaneSamplerCreateInfo(), SafeSaneSamplerCreateInfo()};
+    {
+        VkHostAddressRangeEXT descriptors[2] = {{s_data.data(), sampler_size}, {s_data.data(), sampler_size}};
+        m_errorMonitor->SetDesiredError("VUID-vkWriteSamplerDescriptorsEXT-pDescriptors-12531");
+        vk::WriteSamplerDescriptorsEXT(device(), 2u, sampler_cis, descriptors);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkHostAddressRangeEXT descriptors[2] = {{s_data.data() + sampler_size, sampler_size}, {s_data.data() + 1, sampler_size}};
+        m_errorMonitor->SetDesiredError("VUID-vkWriteSamplerDescriptorsEXT-pDescriptors-12531");
+        vk::WriteSamplerDescriptorsEXT(device(), 2u, sampler_cis, descriptors);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeDescriptorHeapEXT, SamplerParameterYCbCr) {
     TEST_DESCRIPTION("Validate vkWriteSamplerDescriptorsEXT with YCbCr conversion");
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
