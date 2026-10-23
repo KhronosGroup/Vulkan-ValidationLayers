@@ -411,6 +411,24 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     }
 }
 
+TEST_F(PositiveCommand, ClearDepthStencilImageSeparateStencilUsage) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(Init());
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+
+    VkImageStencilUsageCreateInfo stencil_usage_ci = vku::InitStructHelper();
+    stencil_usage_ci.stencilUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image_ci.pNext = &stencil_usage_ci;
+    vkt::Image image(*m_device, image_ci);
+
+    const VkClearDepthStencilValue clear_value = {0.0f, 0u};
+    const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+    m_command_buffer.Begin();
+    vk::CmdClearDepthStencilImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &range);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveCommand, ClearColor64Bit) {
     TEST_DESCRIPTION("Clear with a 64-bit format");
     RETURN_IF_SKIP(Init());
