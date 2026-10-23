@@ -101,7 +101,7 @@ static const char* string_CooperativeMatrixUse(uint32_t use) {
     }
 }
 
-static bool IsSignedIntEnum(const VkComponentTypeKHR component_type) {
+static bool IsSignedIntEnum(VkComponentTypeKHR component_type) {
     switch (component_type) {
         case VK_COMPONENT_TYPE_SINT8_KHR:
         case VK_COMPONENT_TYPE_SINT16_KHR:
@@ -111,6 +111,26 @@ static bool IsSignedIntEnum(const VkComponentTypeKHR component_type) {
         default:
             return false;
     }
+}
+
+// VK_COMPONENT_TYPE_SINT*_KHR and VK_COMPONENT_TYPE_UINT*_KHR both correspond to OpTypeInt with either signedness
+// so when matching an OpTypeCooperativeMatrixKHR type only the integer width matters
+static bool ComponentTypeMatchesType(VkComponentTypeKHR property_type, VkComponentTypeKHR type) {
+    const auto ignore_signedness = [](VkComponentTypeKHR component_type) {
+        switch (component_type) {
+            case VK_COMPONENT_TYPE_SINT8_KHR:
+                return VK_COMPONENT_TYPE_UINT8_KHR;
+            case VK_COMPONENT_TYPE_SINT16_KHR:
+                return VK_COMPONENT_TYPE_UINT16_KHR;
+            case VK_COMPONENT_TYPE_SINT32_KHR:
+                return VK_COMPONENT_TYPE_UINT32_KHR;
+            case VK_COMPONENT_TYPE_SINT64_KHR:
+                return VK_COMPONENT_TYPE_UINT64_KHR;
+            default:
+                return component_type;
+        }
+    };
+    return ignore_signedness(property_type) == ignore_signedness(type);
 }
 
 // Validate SPV_KHR_cooperative_matrix (and SPV_NV_cooperative_matrix) behavior that can't be statically validated in SPIRV-Tools
@@ -428,23 +448,25 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                 bool valid = false;
                 for (uint32_t i = 0; i < device_state->cooperative_matrix_properties_khr.size(); ++i) {
                     const auto& property = device_state->cooperative_matrix_properties_khr[i];
-                    if (property.AType == m.component_type && property.MSize == m.rows && property.KSize == m.cols &&
-                        property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixAKHR) {
+                    if (ComponentTypeMatchesType(property.AType, m.component_type) && property.MSize == m.rows &&
+                        property.KSize == m.cols && property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixAKHR) {
                         valid = true;
                         break;
                     }
-                    if (property.BType == m.component_type && property.KSize == m.rows && property.NSize == m.cols &&
-                        property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixBKHR) {
+                    if (ComponentTypeMatchesType(property.BType, m.component_type) && property.KSize == m.rows &&
+                        property.NSize == m.cols && property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixBKHR) {
                         valid = true;
                         break;
                     }
-                    if (property.CType == m.component_type && property.MSize == m.rows && property.NSize == m.cols &&
-                        property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
+                    if (ComponentTypeMatchesType(property.CType, m.component_type) && property.MSize == m.rows &&
+                        property.NSize == m.cols && property.scope == m.scope &&
+                        m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
                         valid = true;
                         break;
                     }
-                    if (property.ResultType == m.component_type && property.MSize == m.rows && property.NSize == m.cols &&
-                        property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
+                    if (ComponentTypeMatchesType(property.ResultType, m.component_type) && property.MSize == m.rows &&
+                        property.NSize == m.cols && property.scope == m.scope &&
+                        m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
                         valid = true;
                         break;
                     }
@@ -457,25 +479,29 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                             continue;
                         }
 
-                        if (property.AType == m.component_type && IsIntegerMultipleOf(m.rows, property.MGranularity) &&
+                        if (ComponentTypeMatchesType(property.AType, m.component_type) &&
+                            IsIntegerMultipleOf(m.rows, property.MGranularity) &&
                             IsIntegerMultipleOf(m.cols, property.KGranularity) && property.scope == m.scope &&
                             m.use == spv::CooperativeMatrixUseMatrixAKHR) {
                             valid = true;
                             break;
                         }
-                        if (property.BType == m.component_type && IsIntegerMultipleOf(m.rows, property.KGranularity) &&
+                        if (ComponentTypeMatchesType(property.BType, m.component_type) &&
+                            IsIntegerMultipleOf(m.rows, property.KGranularity) &&
                             IsIntegerMultipleOf(m.cols, property.NGranularity) && property.scope == m.scope &&
                             m.use == spv::CooperativeMatrixUseMatrixBKHR) {
                             valid = true;
                             break;
                         }
-                        if (property.CType == m.component_type && IsIntegerMultipleOf(m.rows, property.MGranularity) &&
+                        if (ComponentTypeMatchesType(property.CType, m.component_type) &&
+                            IsIntegerMultipleOf(m.rows, property.MGranularity) &&
                             IsIntegerMultipleOf(m.cols, property.NGranularity) && property.scope == m.scope &&
                             m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
                             valid = true;
                             break;
                         }
-                        if (property.ResultType == m.component_type && IsIntegerMultipleOf(m.rows, property.MGranularity) &&
+                        if (ComponentTypeMatchesType(property.ResultType, m.component_type) &&
+                            IsIntegerMultipleOf(m.rows, property.MGranularity) &&
                             IsIntegerMultipleOf(m.cols, property.NGranularity) && property.scope == m.scope &&
                             m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
                             valid = true;
@@ -497,21 +523,22 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                             break;
                         }
                         for (const auto& property : *properties2) {
-                            if (property.AType == m.component_type &&
+                            if (ComponentTypeMatchesType(property.AType, m.component_type) &&
                                 properties2_dimension_matches(m.rows, property.MGranularity) &&
                                 properties2_dimension_matches(m.cols, property.KGranularity) &&
                                 m.use == spv::CooperativeMatrixUseMatrixAKHR) {
                                 valid = true;
                                 break;
                             }
-                            if (property.BType == m.component_type &&
+                            if (ComponentTypeMatchesType(property.BType, m.component_type) &&
                                 properties2_dimension_matches(m.rows, property.KGranularity) &&
                                 properties2_dimension_matches(m.cols, property.NGranularity) &&
                                 m.use == spv::CooperativeMatrixUseMatrixBKHR) {
                                 valid = true;
                                 break;
                             }
-                            if ((property.CType == m.component_type || property.ResultType == m.component_type) &&
+                            if ((ComponentTypeMatchesType(property.CType, m.component_type) ||
+                                 ComponentTypeMatchesType(property.ResultType, m.component_type)) &&
                                 properties2_dimension_matches(m.rows, property.MGranularity) &&
                                 properties2_dimension_matches(m.cols, property.NGranularity) &&
                                 m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
