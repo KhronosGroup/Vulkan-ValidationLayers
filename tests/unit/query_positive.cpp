@@ -13,6 +13,7 @@
 
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
+#include "render_pass_helper.h"
 
 bool QueryTest::HasZeroTimestampValidBits() {
     return m_device->Physical().queue_properties_[m_device->graphics_queue_node_index_].timestampValidBits == 0;
@@ -842,6 +843,76 @@ TEST_F(PositiveQuery, SubpassQueries) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(PositiveQuery, MultiviewBeginQueryIndexed) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
+
+    uint32_t view_mask = 0x3u;
+    VkRenderPassMultiviewCreateInfo rpmv_ci = vku::InitStructHelper();
+    rpmv_ci.subpassCount = 1;
+    rpmv_ci.pViewMasks = &view_mask;
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.CreateRenderPass(&rpmv_ci);
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = render_pass;
+    framebuffer_ci.width = 32u;
+    framebuffer_ci.height = 32u;
+    framebuffer_ci.layers = 1u;
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    // 2 views -> the query uses queries 0 and 1
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 2);
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, query_pool, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveQuery, MultiviewWriteTimestampCopyAllQueries) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
+    if (HasZeroTimestampValidBits()) {
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0";
+    }
+
+    uint32_t view_mask = 0x3u;
+    VkRenderPassMultiviewCreateInfo rpmv_ci = vku::InitStructHelper();
+    rpmv_ci.subpassCount = 1;
+    rpmv_ci.pViewMasks = &view_mask;
+    RenderPassSingleSubpass render_pass(*this);
+    render_pass.CreateRenderPass(&rpmv_ci);
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = render_pass;
+    framebuffer_ci.width = 32u;
+    framebuffer_ci.height = 32u;
+    framebuffer_ci.layers = 1u;
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
+    vkt::Buffer buffer(*m_device, 2 * sizeof(uint64_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 2);
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    // 2 views -> writes queries 0 and 1
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, query_pool, 0);
+    m_command_buffer.EndRenderPass();
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 2, buffer, 0, sizeof(uint64_t),
+                                VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveQuery, CopyLastQueryResult) {

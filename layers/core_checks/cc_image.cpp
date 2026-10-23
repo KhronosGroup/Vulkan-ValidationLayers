@@ -1225,7 +1225,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
     if (cb_state.IsPrimary()) {
         uint32_t layer_count = 0;
         if (rp_state->UsesDynamicRendering()) {
-            layer_count = rp_state->dynamic_rendering_begin_rendering_info.layerCount;
+            layer_count = rp_state->GetDynamicRenderingLayerCount();
         } else {
             layer_count = cb_state.active_framebuffer.get()->create_info.layers;
         }

@@ -86,6 +86,85 @@ TEST_F(PositiveMultiview, BasicRenderPass) {
     vkt::RenderPass render_pass(*m_device, render_pass_ci);
 }
 
+TEST_F(PositiveMultiview, MaxMultiviewInstanceIndexBoundary) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
+    VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(multiview_props);
+    if (multiview_props.maxMultiviewInstanceIndex == vvl::kU32Max) {
+        GTEST_SKIP() << "maxMultiviewInstanceIndex is too large";
+    }
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.viewMask = 0x1;
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Image image(*m_device, 32, 32, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+    rendering_info.viewMask = 0x1;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    // Only instance index maxMultiviewInstanceIndex is generated
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, multiview_props.maxMultiviewInstanceIndex);
+    // Instance indices [0, maxMultiviewInstanceIndex] are generated
+    vk::CmdDraw(m_command_buffer, 3u, multiview_props.maxMultiviewInstanceIndex + 1u, 0u, 0u);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveMultiview, DynamicRenderingClearAttachmentsLayerCountZero) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 0;  // ignored because viewMask is not 0
+    rendering_info.viewMask = 0x3;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0, {}};
+    VkClearRect clear_rect = {{{0, 0}, {32, 32}}, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveMultiview, PushDescriptor) {
     TEST_DESCRIPTION("Begin render pass with view mask and a push descriptor.");
     SetTargetApiVersion(VK_API_VERSION_1_2);

@@ -5442,7 +5442,7 @@ void DeviceState::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     QueryCount query_count(*cb_state);
 
     for (uint32_t i = 0; i < query_count.count; ++i) {
-        QueryObject query_obj = {queryPool, slot, flags, 0, true, index + i};
+        QueryObject query_obj = {queryPool, slot + i, flags, 0, true, index + i};
         query_obj.inside_render_pass = query_count.inside_render_pass;
         query_obj.subpass = query_count.subpass;
         cb_state->RecordBeginQuery(query_obj, record_obj.location);
@@ -5465,7 +5465,7 @@ void DeviceState::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
     QueryCount query_count(*cb_state);
 
     for (uint32_t i = 0; i < query_count.count; ++i) {
-        QueryObject query_obj = {queryPool, slot, 0, 0, true, index + i};
+        QueryObject query_obj = {queryPool, slot + i, 0, 0, true, index + i};
         query_obj.inside_render_pass = query_count.inside_render_pass;
         query_obj.subpass = query_count.subpass;
         query_obj.end_command_index = cb_state->command_count;  // counting this command
