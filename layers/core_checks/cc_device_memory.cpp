@@ -103,6 +103,8 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList& objlist, cons
         }
     } else if (image_state.IsExternalBuffer()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
+    } else if (image_state.metal_texture_import) {
+        // Treated as bound to the memory of the imported MTLTexture
     } else if (!image_state.sparse) {
         // No need to optimize this since the size will only be 3 at most
         const auto& memory_states = image_state.GetBoundMemoryStates();
@@ -1933,6 +1935,13 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             skip |= ValidateBindImageMemoryResource(bind_info, *image_state, *mem_info, loc);
         }
         skip |= ValidateBindImageMemorySwapchainInfo(bind_info, *image_state, mem_info.get(), loc);
+
+        if (image_state->metal_texture_import) {
+            const char* vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-07460" : "VUID-vkBindImageMemory-image-07460";
+            const LogObjectList objlist(bind_info.image, bind_info.memory);
+            skip |= LogError(vuid, objlist, loc.dot(Field::image),
+                             "was created with VkImportMetalTextureInfoEXT, so it is already bound to the imported MTLTexture.");
+        }
 
         const auto plane_info = vku::FindStructInPNextChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
         if (plane_info) {

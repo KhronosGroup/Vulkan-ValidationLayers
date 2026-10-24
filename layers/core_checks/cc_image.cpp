@@ -970,10 +970,9 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
         return;
     }
 
-    const VkImageCreateFlags2KHR create_flags = GetImageCreateFlags(*pCreateInfo);
-    if ((create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
-        // non-sparse images set up their layout maps when memory is bound
-        if (auto image_state = Get<vvl::Image>(*pImage)) {
+    if (auto image_state = Get<vvl::Image>(*pImage)) {
+        // Other images set up their layout maps when memory is bound
+        if (image_state->sparse || image_state->metal_texture_import) {
             image_state->SetInitialLayoutMap();
         }
     }
