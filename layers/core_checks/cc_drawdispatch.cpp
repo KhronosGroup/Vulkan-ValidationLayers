@@ -96,9 +96,9 @@ bool CoreChecks::ValidateCmdDrawInstance(const LastBound& last_bound_state, uint
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const auto* pipeline_state = last_bound_state.pipeline_state;
 
-    // Verify maxMultiviewInstanceIndex
-    if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled &&
-        ((static_cast<uint64_t>(instanceCount) + static_cast<uint64_t>(firstInstance)) >
+    // Verify maxMultiviewInstanceIndex (the instance indices are firstInstance to firstInstance + instanceCount - 1)
+    if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled && instanceCount > 0 &&
+        ((static_cast<uint64_t>(instanceCount) + static_cast<uint64_t>(firstInstance) - 1) >
          static_cast<uint64_t>(phys_dev_props_core11.maxMultiviewInstanceIndex))) {
         skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::MAX_MULTIVIEW_INSTANCE_INDEX_02688),
                          cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
