@@ -2840,37 +2840,33 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                                                         const Location& create_info_loc) const {
     bool skip = false;
 
-    for (uint32_t attachment_description = 0; attachment_description < create_info.attachmentCount; ++attachment_description) {
-        std::vector<uint32_t> used_as_fragment_shading_rate_attachment;
+    std::vector<std::vector<uint32_t>> fsr_subpasses_per_attachment(create_info.attachmentCount);
 
-        // Prepass to find any use as a fragment shading rate attachment structures and validate them independently
-        for (uint32_t subpass = 0; subpass < create_info.subpassCount; ++subpass) {
-            const auto* fragment_shading_rate_attachment =
-                vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(create_info.pSubpasses[subpass].pNext);
-            if (!fragment_shading_rate_attachment || !fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
-                continue;
-            }
+    for (uint32_t subpass = 0; subpass < create_info.subpassCount; ++subpass) {
+        const auto* fragment_shading_rate_attachment =
+            vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(create_info.pSubpasses[subpass].pNext);
+        if (!fragment_shading_rate_attachment || !fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
+            continue;
+        }
 
-            const Location subpass_loc = create_info_loc.dot(Field::pSubpasses, subpass);
-            const Location fragment_loc =
-                subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::pFragmentShadingRateAttachment);
-            const VkAttachmentReference2& attachment_reference =
-                *(fragment_shading_rate_attachment->pFragmentShadingRateAttachment);
-            if (attachment_reference.attachment == attachment_description) {
-                used_as_fragment_shading_rate_attachment.push_back(subpass);
+        const Location subpass_loc = create_info_loc.dot(Field::pSubpasses, subpass);
+        const Location fragment_loc =
+            subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::pFragmentShadingRateAttachment);
+        const VkAttachmentReference2& attachment_reference = *(fragment_shading_rate_attachment->pFragmentShadingRateAttachment);
+        if (attachment_reference.attachment == VK_ATTACHMENT_UNUSED) {
+            continue;
+        }
 
-                if (create_info.pAttachments[attachment_reference.attachment].loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                    skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-09387", device, fragment_loc.dot(Field::attachment),
-                                     "(%" PRIu32 ") has a loadOp of VK_ATTACHMENT_LOAD_OP_CLEAR", attachment_reference.attachment);
-                }
-            }
+        if (attachment_reference.attachment >= create_info.attachmentCount) {
+            skip |= LogError("VUID-VkRenderPassCreateInfo2-pSubpasses-12529", device, fragment_loc.dot(Field::attachment),
+                             "(%" PRIu32 ") must be less than attachmentCount (%" PRIu32 ").", attachment_reference.attachment,
+                             create_info.attachmentCount);
+        } else {
+            fsr_subpasses_per_attachment[attachment_reference.attachment].push_back(subpass);
 
-            if (attachment_reference.attachment == VK_ATTACHMENT_UNUSED) {
-                continue;
-            }
-            if ((create_info.flags & VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM) != 0) {
-                skip |= LogError("VUID-VkRenderPassCreateInfo2-flags-04521", device, fragment_loc.dot(Field::attachment),
-                                 "is not VK_ATTACHMENT_UNUSED, but render pass includes VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM");
+            if (create_info.pAttachments[attachment_reference.attachment].loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-09387", device, fragment_loc.dot(Field::attachment),
+                                 "(%" PRIu32 ") has a loadOp of VK_ATTACHMENT_LOAD_OP_CLEAR", attachment_reference.attachment);
             }
 
             const VkFormatFeatureFlags2 potential_format_features =
@@ -2884,151 +2880,142 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                                  string_VkFormat(create_info.pAttachments[attachment_reference.attachment].format),
                                  subpass_loc.Fields().c_str(), string_VkFormatFeatureFlags2(potential_format_features).c_str());
             }
+        }
 
-            if (attachment_reference.layout != VK_IMAGE_LAYOUT_GENERAL &&
-                attachment_reference.layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
-                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524", device,
-                                 fragment_loc.dot(Field::layout), "has a layout of %s.",
-                                 string_VkImageLayout(attachment_reference.layout));
-            }
+        if ((create_info.flags & VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM) != 0) {
+            skip |= LogError("VUID-VkRenderPassCreateInfo2-flags-04521", device, fragment_loc.dot(Field::attachment),
+                             "is not VK_ATTACHMENT_UNUSED, but render pass includes VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM");
+        }
 
-            const VkExtent2D texel_size = fragment_shading_rate_attachment->shadingRateAttachmentTexelSize;
-            const Location texel_loc =
-                subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize);
-            if (!IsPowerOfTwo(texel_size.width)) {
-                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525", device,
-                                 texel_loc.dot(Field::width), "(%" PRIu32 ") is a non-power-of-two.", texel_size.width);
-            }
-            if (texel_size.width < phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
-                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527", device,
-                                 texel_loc.dot(Field::width),
-                                 "(%" PRIu32 ") is less than minFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
-                                 texel_size.width,
-                                 phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width);
-            }
-            if (texel_size.width > phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
-                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526", device,
-                                 texel_loc.dot(Field::width),
-                                 "(%" PRIu32 ") is greater than maxFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
-                                 texel_size.width,
-                                 phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width);
-            }
-            if (!IsPowerOfTwo(texel_size.height)) {
-                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528", device,
-                                 texel_loc.dot(Field::height), "(%" PRIu32 ") is a non-power-of-two.", texel_size.height);
-            }
-            if (texel_size.height <
-                phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
-                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530", device,
-                                 texel_loc.dot(Field::height),
-                                 "(%" PRIu32 ") is less than minFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
-                                 texel_size.height,
-                                 phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height);
-            }
-            if (texel_size.height >
-                phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
-                skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529", device,
-                                 texel_loc.dot(Field::height),
-                                 "(%" PRIu32 ") is greater than maxFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
-                                 texel_size.height,
-                                 phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height);
-            }
-            const uint32_t aspect_ratio = static_cast<uint32_t>(SafeDivision(texel_size.width, texel_size.height));
-            if (aspect_ratio >
-                phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
-                skip |=
-                    LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531", device, texel_loc,
+        if (attachment_reference.layout != VK_IMAGE_LAYOUT_GENERAL &&
+            attachment_reference.layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
+            skip |=
+                LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524", device,
+                         fragment_loc.dot(Field::layout), "has a layout of %s.", string_VkImageLayout(attachment_reference.layout));
+        }
+
+        const VkExtent2D texel_size = fragment_shading_rate_attachment->shadingRateAttachmentTexelSize;
+        const Location texel_loc =
+            subpass_loc.pNext(Struct::VkFragmentShadingRateAttachmentInfoKHR, Field::shadingRateAttachmentTexelSize);
+        if (!IsPowerOfTwo(texel_size.width)) {
+            skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04525", device,
+                             texel_loc.dot(Field::width), "(%" PRIu32 ") is a non-power-of-two.", texel_size.width);
+        }
+        if (texel_size.width < phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width) {
+            skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527", device,
+                             texel_loc.dot(Field::width),
+                             "(%" PRIu32 ") is less than minFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                             texel_size.width,
+                             phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width);
+        }
+        if (texel_size.width > phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width) {
+            skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526", device,
+                             texel_loc.dot(Field::width),
+                             "(%" PRIu32 ") is greater than maxFragmentShadingRateAttachmentTexelSize.width (%" PRIu32 ").",
+                             texel_size.width,
+                             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width);
+        }
+        if (!IsPowerOfTwo(texel_size.height)) {
+            skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04528", device,
+                             texel_loc.dot(Field::height), "(%" PRIu32 ") is a non-power-of-two.", texel_size.height);
+        }
+        if (texel_size.height < phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height) {
+            skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530", device,
+                             texel_loc.dot(Field::height),
+                             "(%" PRIu32 ") is less than minFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                             texel_size.height,
+                             phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height);
+        }
+        if (texel_size.height > phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height) {
+            skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529", device,
+                             texel_loc.dot(Field::height),
+                             "(%" PRIu32 ") is greater than maxFragmentShadingRateAttachmentTexelSize.height (%" PRIu32 ").",
+                             texel_size.height,
+                             phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height);
+        }
+        const uint32_t aspect_ratio = static_cast<uint32_t>(SafeDivision(texel_size.width, texel_size.height));
+        if (aspect_ratio > phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+            skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531", device, texel_loc,
                              "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an aspect ratio %" PRIu32
                              ", which is greater than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
                              texel_size.width, texel_size.height, aspect_ratio,
                              phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
-            }
-            const uint32_t inverse_aspect_ratio = static_cast<uint32_t>(SafeDivision(texel_size.height, texel_size.width));
-            if (inverse_aspect_ratio >
-                phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
-                skip |=
-                    LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532", device, texel_loc,
+        }
+        const uint32_t inverse_aspect_ratio = static_cast<uint32_t>(SafeDivision(texel_size.height, texel_size.width));
+        if (inverse_aspect_ratio >
+            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
+            skip |= LogError("VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532", device, texel_loc,
                              "has a texel size of %" PRIu32 " by %" PRIu32 ", which has an inverse aspect ratio of %" PRIu32
                              ", which is greater than maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%" PRIu32 ").",
                              texel_size.width, texel_size.height, inverse_aspect_ratio,
                              phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio);
-            }
+        }
+    }
+
+    for (uint32_t attachment_description = 0; attachment_description < create_info.attachmentCount; ++attachment_description) {
+        const std::vector<uint32_t>& fsr_subpasses = fsr_subpasses_per_attachment[attachment_description];
+        if (fsr_subpasses.empty()) {
+            continue;
         }
 
-        // Lambda function turning a vector of integers into a string
-        auto vector_to_string = [&](std::vector<uint32_t> vector) {
-            std::ostringstream ss;
-            size_t size = vector.size();
-            for (size_t i = 0; i < used_as_fragment_shading_rate_attachment.size(); i++) {
-                if (size == 2 && i == 1) {
-                    ss << " and ";
-                } else if (size > 2 && i == size - 2) {
-                    ss << ", and ";
-                } else if (i != 0) {
-                    ss << ", ";
+        // Turn the subpass indices into a string, e.g. "0, 1, 2"
+        std::ostringstream ss;
+        for (size_t i = 0; i < fsr_subpasses.size(); i++) {
+            ss << (i == 0 ? "" : ", ") << fsr_subpasses[i];
+        }
+        const std::string fsr_attachment_subpasses_string = ss.str();
+
+        for (uint32_t subpass = 0; subpass < create_info.subpassCount; ++subpass) {
+            const Location subpass_loc = create_info_loc.dot(Field::pSubpasses, subpass);
+            const VkSubpassDescription2& subpass_info = create_info.pSubpasses[subpass];
+
+            for (uint32_t attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
+                if (subpass_info.pColorAttachments[attachment].attachment == attachment_description) {
+                    skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
+                                     subpass_loc.dot(Field::pColorAttachments, attachment).dot(Field::attachment),
+                                     "is also used in pAttachments[%" PRIu32
+                                     "] as a fragment shading rate attachment in subpass(es) %s",
+                                     attachment_description, fsr_attachment_subpasses_string.c_str());
                 }
-                ss << vector[i];
             }
-            return ss.str();
-        };
-
-        // Search for other uses of the same attachment
-        if (!used_as_fragment_shading_rate_attachment.empty()) {
-            for (uint32_t subpass = 0; subpass < create_info.subpassCount; ++subpass) {
-                const Location subpass_loc = create_info_loc.dot(Field::pSubpasses, subpass);
-                const VkSubpassDescription2& subpass_info = create_info.pSubpasses[subpass];
-
-                std::string fsr_attachment_subpasses_string = vector_to_string(used_as_fragment_shading_rate_attachment);
-
-                for (uint32_t attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
-                    if (subpass_info.pColorAttachments[attachment].attachment == attachment_description) {
-                        skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
-                                         subpass_loc.dot(Field::pColorAttachments, attachment).dot(Field::attachment),
-                                         "is also used in pAttachments[%" PRIu32
-                                         "] as a fragment shading rate attachment in subpass(es) %s",
-                                         attachment_description, fsr_attachment_subpasses_string.c_str());
-                    }
+            for (uint32_t attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
+                if (subpass_info.pResolveAttachments &&
+                    subpass_info.pResolveAttachments[attachment].attachment == attachment_description) {
+                    skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
+                                     subpass_loc.dot(Field::pResolveAttachments, attachment).dot(Field::attachment),
+                                     "is also used in pAttachments[%" PRIu32
+                                     "] as a fragment shading rate attachment in subpass(es) %s",
+                                     attachment_description, fsr_attachment_subpasses_string.c_str());
                 }
-                for (uint32_t attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
-                    if (subpass_info.pResolveAttachments &&
-                        subpass_info.pResolveAttachments[attachment].attachment == attachment_description) {
-                        skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
-                                         subpass_loc.dot(Field::pResolveAttachments, attachment).dot(Field::attachment),
-                                         "is also used in pAttachments[%" PRIu32
-                                         "] as a fragment shading rate attachment in subpass(es) %s",
-                                         attachment_description, fsr_attachment_subpasses_string.c_str());
-                    }
+            }
+            for (uint32_t attachment = 0; attachment < subpass_info.inputAttachmentCount; ++attachment) {
+                if (subpass_info.pInputAttachments[attachment].attachment == attachment_description) {
+                    skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
+                                     subpass_loc.dot(Field::pInputAttachments, attachment).dot(Field::attachment),
+                                     "is also used in pAttachments[%" PRIu32
+                                     "] as a fragment shading rate attachment in subpass(es) %s",
+                                     attachment_description, fsr_attachment_subpasses_string.c_str());
                 }
-                for (uint32_t attachment = 0; attachment < subpass_info.inputAttachmentCount; ++attachment) {
-                    if (subpass_info.pInputAttachments[attachment].attachment == attachment_description) {
-                        skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
-                                         subpass_loc.dot(Field::pInputAttachments, attachment).dot(Field::attachment),
-                                         "is also used in pAttachments[%" PRIu32
-                                         "] as a fragment shading rate attachment in subpass(es) %s",
-                                         attachment_description, fsr_attachment_subpasses_string.c_str());
-                    }
+            }
+            if (subpass_info.pDepthStencilAttachment) {
+                if (subpass_info.pDepthStencilAttachment->attachment == attachment_description) {
+                    skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
+                                     subpass_loc.dot(Field::pDepthStencilAttachment).dot(Field::attachment),
+                                     "is also used in pAttachments[%" PRIu32
+                                     "] as a fragment shading rate attachment in subpass(es) %s",
+                                     attachment_description, fsr_attachment_subpasses_string.c_str());
                 }
-                if (subpass_info.pDepthStencilAttachment) {
-                    if (subpass_info.pDepthStencilAttachment->attachment == attachment_description) {
-                        skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
-                                         subpass_loc.dot(Field::pDepthStencilAttachment).dot(Field::attachment),
-                                         "is also used in pAttachments[%" PRIu32
-                                         "] as a fragment shading rate attachment in subpass(es) %s",
-                                         attachment_description, fsr_attachment_subpasses_string.c_str());
-                    }
-                }
-                const auto* depth_stencil_resolve_attachment =
-                    vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass_info.pNext);
-                if (depth_stencil_resolve_attachment && depth_stencil_resolve_attachment->pDepthStencilResolveAttachment) {
-                    if (depth_stencil_resolve_attachment->pDepthStencilResolveAttachment->attachment == attachment_description) {
-                        skip |= LogError(
-                            "VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
-                            subpass_loc
-                                .pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::pDepthStencilResolveAttachment)
-                                .dot(Field::attachment),
-                            "is also used in pAttachments[%" PRIu32 "] as a fragment shading rate attachment in subpass(es) %s",
-                            attachment_description, fsr_attachment_subpasses_string.c_str());
-                    }
+            }
+            const auto* depth_stencil_resolve_attachment =
+                vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass_info.pNext);
+            if (depth_stencil_resolve_attachment && depth_stencil_resolve_attachment->pDepthStencilResolveAttachment) {
+                if (depth_stencil_resolve_attachment->pDepthStencilResolveAttachment->attachment == attachment_description) {
+                    skip |= LogError(
+                        "VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
+                        subpass_loc.pNext(Struct::VkSubpassDescriptionDepthStencilResolve, Field::pDepthStencilResolveAttachment)
+                            .dot(Field::attachment),
+                        "is also used in pAttachments[%" PRIu32 "] as a fragment shading rate attachment in subpass(es) %s",
+                        attachment_description, fsr_attachment_subpasses_string.c_str());
                 }
             }
         }
