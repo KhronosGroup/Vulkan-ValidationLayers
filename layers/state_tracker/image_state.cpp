@@ -154,12 +154,17 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
+      metal_texture_import(vku::FindStructInPNextChain<VkImportMetalTextureInfoEXT>(pCreateInfo->pNext) != nullptr),
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(GetSubresourceEncoderRange(dev_data, full_range)),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
-    if (create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+    if (metal_texture_import) {
+        // The imported MTLTexture is already backed by memory
+        tracker_.emplace<BindableNoMemoryTracker>(requirements.data());
+        SetMemoryTracker(&std::get<BindableNoMemoryTracker>(tracker_));
+    } else if (create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
         bool is_resident = (create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0;
         auto& sparse_tracker = tracker_.emplace<std::unique_ptr<BindableSparseMemoryTracker>>(
             std::make_unique<BindableSparseMemoryTracker>(requirements.data(), is_resident));

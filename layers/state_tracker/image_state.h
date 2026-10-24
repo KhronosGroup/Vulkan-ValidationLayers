@@ -117,6 +117,8 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     const bool metal_image_export;
     const bool metal_io_surface_export;
 #endif  // VK_USE_PLATFORM_METAL
+    // Created with VkImportMetalTextureInfoEXT, so treated as bound to the memory of the imported MTLTexture
+    const bool metal_texture_import = false;
 
     const SubresourceEncoder subresource_encoder;                 // Subresource resolution encoder
     const VkDevice store_device_as_workaround;                    // TODO REMOVE WHEN encoder can be const

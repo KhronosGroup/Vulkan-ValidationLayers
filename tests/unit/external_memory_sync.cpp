@@ -2924,6 +2924,56 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
         }
     }
 }
+
+TEST_F(NegativeExternalMemorySync, ImportMetalTexture) {
+    TEST_DESCRIPTION("Bind memory to and track layouts of an image created with VkImportMetalTextureInfoEXT");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Get a MTLTexture to import by exporting the one underlying another image
+    VkExportMetalObjectCreateInfoEXT export_create_info = vku::InitStructHelper();
+    export_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.pNext = &export_create_info;
+    vkt::Image export_image(*m_device, image_ci);
+
+    VkExportMetalTextureInfoEXT texture_info = vku::InitStructHelper();
+    texture_info.image = export_image;
+    texture_info.plane = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    VkExportMetalObjectsInfoEXT objects_info = vku::InitStructHelper(&texture_info);
+    vk::ExportMetalObjectsEXT(device(), &objects_info);
+    ASSERT_TRUE(texture_info.mtlTexture != nullptr);
+
+    VkImportMetalTextureInfoEXT import_info = vku::InitStructHelper();
+    import_info.plane = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    import_info.mtlTexture = texture_info.mtlTexture;
+    image_ci.pNext = &import_info;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    // Layouts are tracked without memory being bound
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VkClearColorValue clear_color = {};
+    VkImageSubresourceRange range = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-imageLayout-00004");
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Memory cannot be bound, the image is already bound to the memory of the imported MTLTexture
+    vkt::DeviceMemory memory(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-07460");
+    vk::BindImageMemory(device(), image, memory, 0);
+    m_errorMonitor->VerifyFound();
+
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper();
+    bind_info.image = image;
+    bind_info.memory = memory;
+    m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-image-07460");
+    vk::BindImageMemory2(device(), 1, &bind_info);
+    m_errorMonitor->VerifyFound();
+}
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 TEST_F(NegativeExternalMemorySync, ZeroInitializeFeature) {

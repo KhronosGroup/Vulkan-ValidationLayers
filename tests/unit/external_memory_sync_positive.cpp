@@ -14,6 +14,8 @@
 #include "layer_validation_tests.h"
 #include "external_memory_sync.h"
 #include "utils/math_utils.h"
+#include "descriptor_helper.h"
+#include "render_pass_helper.h"
 
 class PositiveExternalMemorySync : public ExternalMemorySyncTest {};
 
@@ -473,6 +475,56 @@ TEST_F(PositiveExternalMemorySync, ExportMetalObjects) {
 
         ASSERT_TRUE(eventInfo.mtlSharedEvent != nullptr);
     }
+}
+
+TEST_F(PositiveExternalMemorySync, ImportMetalTexture) {
+    TEST_DESCRIPTION("Use an image created with VkImportMetalTextureInfoEXT, which is treated as bound to memory");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Get a MTLTexture to import by exporting the one underlying another image
+    VkExportMetalObjectCreateInfoEXT export_create_info = vku::InitStructHelper();
+    export_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.pNext = &export_create_info;
+    vkt::Image export_image(*m_device, image_ci);
+
+    VkExportMetalTextureInfoEXT texture_info = vku::InitStructHelper();
+    texture_info.image = export_image;
+    texture_info.plane = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    VkExportMetalObjectsInfoEXT objects_info = vku::InitStructHelper(&texture_info);
+    vk::ExportMetalObjectsEXT(device(), &objects_info);
+    ASSERT_TRUE(texture_info.mtlTexture != nullptr);
+
+    // Not bound with vkBindImageMemory, the imported MTLTexture is already backed by memory
+    VkImportMetalTextureInfoEXT import_info = vku::InitStructHelper();
+    import_info.plane = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    import_info.mtlTexture = texture_info.mtlTexture;
+    image_ci.pNext = &import_info;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+    vkt::ImageView image_view = image.CreateView();
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    m_command_buffer.TransitionLayout(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    VkClearColorValue clear_color = {};
+    VkImageSubresourceRange range = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
