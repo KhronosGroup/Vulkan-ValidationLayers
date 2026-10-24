@@ -582,6 +582,8 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
         case ActionVUID::DESCRIPTOR_08114: suffix = "None-08114"; break;
         // ### VUID-vkCmdDraw-pDescription-09900
         case ActionVUID::TENSOR_09900: suffix = "pDescription-09900"; break;
+        // ### VUID-vkCmdDispatchDataGraphARM-pDescription-09930
+        case ActionVUID::TENSOR_DATA_GRAPH_09930: suffix = "pDescription-09930"; break;
         // ### VUID-vkCmdDraw-dimensionCount-09905
         case ActionVUID::TENSOR_09905: suffix = "dimensionCount-09905"; break;
         // ### VUID-vkCmdDraw-None-10677

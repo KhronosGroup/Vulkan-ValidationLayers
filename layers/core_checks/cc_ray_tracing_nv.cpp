@@ -620,7 +620,7 @@ bool CoreChecks::ValidateClusterAccelerationStructureCommandsInfoNV(
     }
 
     if (command_infos.srcInfosArray.stride < stride_min && command_infos.srcInfosArray.stride != 0) {
-        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosArray-10476", objlist,
+        skip |= LogError("VUID-VkClusterAccelerationStructureCommandsInfoNV-srcInfosArray-12530", objlist,
                          command_infos_loc.dot(Field::srcInfosArray).dot(Field::stride),
                          "(%" PRIu64 ") must be greater than or equal to the size of %s (%" PRIu32 ")",
                          command_infos.srcInfosArray.stride,

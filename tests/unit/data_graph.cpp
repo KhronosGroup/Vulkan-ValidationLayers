@@ -910,9 +910,9 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedUnprotectedCmdBu
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-09800");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-commandBuffer-02707");
     m_errorMonitor->SetDesiredError(
-        "VUID-vkCmdDispatchDataGraphARM-commandBuffer-09800");  // We are using 2 protected resources in this unprotected command
+        "VUID-vkCmdDispatchDataGraphARM-commandBuffer-02707");  // We are using 2 protected resources in this unprotected command
                                                                 // buffer and so need to log the error twice
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
@@ -2319,7 +2319,7 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongTensorUsage) {
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-pDescription-09900");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchDataGraphARM-pDescription-09930");
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

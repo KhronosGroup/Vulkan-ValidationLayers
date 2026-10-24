@@ -1633,13 +1633,13 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
     }
 
-    VkTensorUsageFlagBitsARM usage_flag = (loc.Get().function == Func::vkCmdDispatchDataGraphARM)
-                                              ? VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM
-                                              : VK_TENSOR_USAGE_SHADER_BIT_ARM;
+    const bool is_data_graph = loc.Get().function == Func::vkCmdDispatchDataGraphARM;
+    const VkTensorUsageFlagBitsARM usage_flag = is_data_graph ? VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM : VK_TENSOR_USAGE_SHADER_BIT_ARM;
     if ((tensor_state->create_info.pDescription->usage & usage_flag) == 0) {
         const LogObjectList objlist(cb_state.Handle(), this->objlist, descriptor_set.Handle(), tensor_state->Handle());
-        skip |= LogError(CreateActionVuid(loc.Get().function, vvl::ActionVUID::TENSOR_09900), objlist, loc.Get(),
-                         "the %s is using tensor %s created with usage %s, which doesn't include %s.%s",
+        skip |= LogError(CreateActionVuid(loc.Get().function,
+                                          is_data_graph ? vvl::ActionVUID::TENSOR_DATA_GRAPH_09930 : vvl::ActionVUID::TENSOR_09900),
+                         objlist, loc.Get(), "the %s is using tensor %s created with usage %s, which doesn't include %s.%s",
                          DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                          FormatHandle(tensor_state->Handle()).c_str(),
                          string_VkTensorUsageFlagsARM(tensor_state->create_info.pDescription->usage).c_str(),
