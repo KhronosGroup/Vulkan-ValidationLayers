@@ -184,7 +184,7 @@ bool CoreChecks::ValidateImageTilingControlCreateInfo(const VkImageCreateInfo& c
 
     if (tiling_control_create_info.tilingControl != VK_IMAGE_TILING_CONTROL_DEFAULT_EXT) {
         if (!enabled_features.imageTilingControl) {
-            skip |= LogError("VUID-VkImageTilingControlCreateInfoEXT-imageTiling-12481", device,
+            skip |= LogError("VUID-VkImageTilingControlCreateInfoEXT-tilingControl-12481", device,
                              create_info_loc.pNext(Struct::VkImageTilingControlCreateInfoEXT, Field::tilingControl),
                              "is %s (not VK_IMAGE_TILING_CONTROL_DEFAULT_EXT) but the imageTilingControl feature was not enabled.",
                              string_VkImageTilingControlEXT(tiling_control_create_info.tilingControl));
@@ -192,7 +192,7 @@ bool CoreChecks::ValidateImageTilingControlCreateInfo(const VkImageCreateInfo& c
 
         if (create_info.tiling == VK_IMAGE_TILING_LINEAR) {
             skip |= LogError(
-                "VUID-VkImageTilingControlCreateInfoEXT-imageTiling-12479", device,
+                "VUID-VkImageTilingControlCreateInfoEXT-tilingControl-12479", device,
                 create_info_loc.pNext(Struct::VkImageTilingControlCreateInfoEXT, Field::tilingControl),
                 "is %s (not VK_IMAGE_TILING_CONTROL_DEFAULT_EXT) but the tiling is VK_IMAGE_TILING_LINEAR.\nHint: The goal of "
                 "VK_EXT_image_tiling_control is to control the speed/memory trade off when using VK_IMAGE_TILING_OPTIMAL",

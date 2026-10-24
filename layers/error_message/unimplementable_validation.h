@@ -756,32 +756,32 @@ const char* unimplementable_validation[] = {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5431
     //
     // "must obey any requirements listed for handleType in external ... handle types compatibility"
-    "VkImportMemoryFdInfoKHR-fd-01520",
-    "VkImportFenceFdInfoKHR-fd-01541",
-    "VkImportMemoryWin32HandleInfoKHR-name-01519",
-    "VkImportSemaphoreWin32HandleInfoKHR-name-01543",
-    "VkImportFenceWin32HandleInfoKHR-name-01540",
-    "VkImportSemaphoreFdInfoKHR-fd-01544",
-    "VkImportMemoryWin32HandleInfoKHR-handle-01518",
-    "VkImportSemaphoreWin32HandleInfoKHR-handle-01542",
-    "VkImportFenceWin32HandleInfoKHR-handle-01539",
+    "VUID-VkImportMemoryFdInfoKHR-fd-01520",
+    "VUID-VkImportFenceFdInfoKHR-fd-01541",
+    "VUID-VkImportMemoryWin32HandleInfoKHR-name-01519",
+    "VUID-VkImportSemaphoreWin32HandleInfoKHR-name-01543",
+    "VUID-VkImportFenceWin32HandleInfoKHR-name-01540",
+    "VUID-VkImportSemaphoreFdInfoKHR-fd-01544",
+    "VUID-VkImportMemoryWin32HandleInfoKHR-handle-01518",
+    "VUID-VkImportSemaphoreWin32HandleInfoKHR-handle-01542",
+    "VUID-VkImportFenceWin32HandleInfoKHR-handle-01539",
     // "must have been created on the same underlying physical device / compatible driver"
-    "VkImportMemoryFdInfoKHR-fd-00668",
-    "VkImportMemoryFdInfoKHR-fd-01746",
-    "VkMemoryAllocateInfo-None-00643",
-    "VkMemoryAllocateInfo-None-00644",
+    "VUID-VkImportMemoryFdInfoKHR-fd-00668",
+    "VUID-VkImportMemoryFdInfoKHR-fd-01746",
+    "VUID-VkMemoryAllocateInfo-None-00643",
+    "VUID-VkMemoryAllocateInfo-None-00644",
     // "the value of memoryTypeIndex must be one of those returned by vkGetMemoryFdPropertiesKHR
     // allocationSize must match the size of the D3D12 heap"
-    "VkMemoryAllocateInfo-memoryTypeIndex-00648",
-    "VkMemoryAllocateInfo-allocationSize-00647",
+    "VUID-VkMemoryAllocateInfo-memoryTypeIndex-00648",
+    "VUID-VkMemoryAllocateInfo-allocationSize-00647",
     // VVL would have to have observed the corresponding query and correlated it with this fd,
     // which it cannot do for an fd created outside Vulkan.
     // "pHostPointer must be a pointer to N bytes of host memory / host mapped foreign memory"
-    "VkImportMemoryHostPointerInfoEXT-handleType-01750",
-    "VkImportMemoryHostPointerInfoEXT-handleType-01751",
+    "VUID-VkImportMemoryHostPointerInfoEXT-handleType-01750",
+    "VUID-VkImportMemoryHostPointerInfoEXT-handleType-01751",
     // Cannot validate a raw pointer
-    "vkGetMemoryHostPointerPropertiesEXT-handleType-01754",
-    "vkGetMemoryHostPointerPropertiesEXT-handleType-01755",
+    "VUID-vkGetMemoryHostPointerPropertiesEXT-handleType-01754",
+    "VUID-vkGetMemoryHostPointerPropertiesEXT-handleType-01755",
 
     // We use to have these implemented until we found out (from the issue below) that these were giving false positives.
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11900
