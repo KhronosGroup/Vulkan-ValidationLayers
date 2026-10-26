@@ -4889,6 +4889,158 @@ TEST_F(NegativeCopyBufferImage, MemoryToImageIndirectSubresource) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeCopyBufferImage, MemoryToImageIndirectSubresource3D) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11332");
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryToImageCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    const size_t copy_size = sizeof(VkCopyMemoryToImageIndirectCommandKHR);
+    vkt::Buffer indirect_buffer(*m_device, copy_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    // depth is 4 at mip 0 and 2 at mip 1
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 4};
+    image_ci.mipLevels = 2;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image dst_image(*m_device, image_ci);
+
+    m_command_buffer.Begin();
+
+    VkStridedDeviceAddressRangeKHR copy_address_range = {};
+    copy_address_range.address = indirect_buffer.Address();
+    copy_address_range.stride = copy_size;
+    copy_address_range.size = copy_size;
+
+    VkCopyMemoryToImageIndirectInfoKHR indirect_info = vku::InitStructHelper();
+    indirect_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    indirect_info.copyCount = 1;
+    indirect_info.copyAddressRange = copy_address_range;
+    indirect_info.dstImage = dst_image;
+    indirect_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+    {
+        // 2 + 3 > 4
+        VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 3};
+        indirect_info.pImageSubresources = &res_layer;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12289");
+        vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        // fits in mip 0, but mip 1 only has a depth of 2
+        VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 2};
+        indirect_info.pImageSubresources = &res_layer;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12289");
+        vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        // baseArrayLayer equal to the depth is out of bounds
+        VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 2, VK_REMAINING_ARRAY_LAYERS};
+        indirect_info.pImageSubresources = &res_layer;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12292");
+        vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 3, VK_REMAINING_ARRAY_LAYERS};
+        indirect_info.pImageSubresources = &res_layer;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12292");
+        vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 3, 1};
+        indirect_info.pImageSubresources = &res_layer;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12292");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12289");
+        vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, MemoryToImageIndirectSubresource3DBlockDepth) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11332");
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_TEXTURE_COMPRESSION_ASTC_3D_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryToImageCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::textureCompressionASTC_3D);
+    RETURN_IF_SKIP(Init());
+
+    // Texel block depth is only greater than 1 for the 3D ASTC formats
+    const VkFormat format = VK_FORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT;
+    if (!FormatFeatures2AreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                     VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_2_COPY_IMAGE_INDIRECT_DST_BIT_KHR)) {
+        GTEST_SKIP() << "VK_FORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT does not support indirect copies";
+    }
+
+    const size_t copy_size = sizeof(VkCopyMemoryToImageIndirectCommandKHR);
+    vkt::Buffer indirect_buffer(*m_device, copy_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = format;
+    // depth is not a multiple of the block depth (4), so the last block is partial
+    image_ci.extent = {16, 16, 18};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "3D VK_FORMAT_ASTC_4x4x4_UNORM_BLOCK_EXT image not supported";
+    }
+    vkt::Image dst_image(*m_device, image_ci);
+
+    m_command_buffer.Begin();
+
+    VkStridedDeviceAddressRangeKHR copy_address_range = {};
+    copy_address_range.address = indirect_buffer.Address();
+    copy_address_range.stride = copy_size;
+    copy_address_range.size = copy_size;
+
+    VkCopyMemoryToImageIndirectInfoKHR indirect_info = vku::InitStructHelper();
+    indirect_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    indirect_info.copyCount = 1;
+    indirect_info.copyAddressRange = copy_address_range;
+    indirect_info.dstImage = dst_image;
+    indirect_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+    {
+        VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
+        indirect_info.pImageSubresources = &res_layer;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12291");
+        vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        // 0 + 6 stops short of the depth (18)
+        VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 6};
+        indirect_info.pImageSubresources = &res_layer;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectInfoKHR-dstImage-12290");
+        vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        // 16 + 2 reaches the depth, so a layerCount that is not a multiple is allowed
+        VkImageSubresourceLayers res_layer = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 16, 2};
+        indirect_info.pImageSubresources = &res_layer;
+        vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &indirect_info);
+    }
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeCopyBufferImage, MemoryToImageIndirectLayout) {
     AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::indirectMemoryToImageCopy);

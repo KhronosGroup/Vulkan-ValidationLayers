@@ -1836,6 +1836,51 @@ TEST_F(PositiveCopyBufferImage, MemoryToImageIndirect) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveCopyBufferImage, MemoryToImageIndirect3D) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11332");
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryToImageCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    const size_t copy_size = sizeof(VkCopyMemoryToImageIndirectCommandKHR);
+    vkt::Buffer indirect_buffer(*m_device, copy_size * 3, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    // depth is 4 at mip 0 and 2 at mip 1
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 4};
+    image_ci.mipLevels = 2;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image dst_image(*m_device, image_ci);
+
+    // layerCount is greater than arrayLayers (1), which is fine for a 3D image
+    VkImageSubresourceLayers res_layers[3] = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 4},
+                                              {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 1},
+                                              {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, VK_REMAINING_ARRAY_LAYERS}};
+
+    VkStridedDeviceAddressRangeKHR address_range = {};
+    address_range.address = indirect_buffer.Address();
+    address_range.size = copy_size * 3;
+    address_range.stride = copy_size;
+
+    VkCopyMemoryToImageIndirectInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.copyCount = 3;
+    copy_info.copyAddressRange = address_range;
+    copy_info.srcCopyFlags = VK_ADDRESS_COPY_DEVICE_LOCAL_BIT_KHR;
+    copy_info.dstImage = dst_image;
+    copy_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    copy_info.pImageSubresources = res_layers;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveCopyBufferImage, SinglePlaneYCbCr) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
