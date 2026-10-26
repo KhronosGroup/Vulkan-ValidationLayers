@@ -107,9 +107,20 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const LogObjectList& objlist, cons
         // No need to optimize this since the size will only be 3 at most
         const auto& memory_states = image_state.GetBoundMemoryStates();
         if (memory_states.empty()) {
-            result |=
-                LogError(vuid, objlist, loc, "%s used with no memory bound. Memory should be bound by calling vkBindImageMemory().",
-                         FormatHandle(image_state).c_str());
+            const char* metal_hint = "";
+#ifdef VK_USE_PLATFORM_METAL_EXT
+            if (vku::FindStructInPNextChain<VkImportMetalTextureInfoEXT>(image_state.GetPNext())) {
+                metal_hint =
+                    "\nHint: The image was created with VkImportMetalTextureInfoEXT, which the spec says is treated as bound to a "
+                    "VkDeviceMemory, but this VU does not account for that. This is a spec issue "
+                    "(https://github.com/KhronosGroup/Vulkan-Docs/issues/2843), not a validation layer bug. Use "
+                    "VK_EXT_external_memory_metal instead, which imports the MTLTexture as a VkDeviceMemory that can be bound "
+                    "with vkBindImageMemory().";
+            }
+#endif  // VK_USE_PLATFORM_METAL_EXT
+            result |= LogError(vuid, objlist, loc,
+                               "%s used with no memory bound. Memory should be bound by calling vkBindImageMemory().%s",
+                               FormatHandle(image_state).c_str(), metal_hint);
         } else {
             for (const auto& state : memory_states) {
                 result |= VerifyBoundMemoryIsValid(state.get(), objlist, image_state.Handle(), loc, vuid);
