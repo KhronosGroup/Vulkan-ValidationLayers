@@ -843,12 +843,15 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext& surface_context, vkt::
         surface_context.m_surface_xcb_conn = xcb_connect(nullptr, nullptr);
         int err = xcb_connection_has_error(surface_context.m_surface_xcb_conn);
         if (surface_context.m_surface_xcb_conn && !err) {
-            xcb_window_t window = xcb_generate_id(surface_context.m_surface_xcb_conn);
+            surface_context.m_surface_xcb_window = xcb_generate_id(surface_context.m_surface_xcb_conn);
             VkXcbSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.connection = surface_context.m_surface_xcb_conn;
-            surface_create_info.window = window;
+            surface_create_info.window = surface_context.m_surface_xcb_window;
             return surface.Init(surface_instance, surface_create_info);
         }
+        // xcb_connect() never returns null, on failure it returns an error connection object
+        xcb_disconnect(surface_context.m_surface_xcb_conn);
+        surface_context.m_surface_xcb_conn = nullptr;
     }
 #endif
 
@@ -861,6 +864,48 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext& surface_context, vkt::
             surface_create_info.surface = surface_context.m_wayland_context.surface;
             return surface.Init(surface_instance, surface_create_info);
         }
+    }
+#endif
+
+    return VK_ERROR_UNKNOWN;
+}
+
+VkResult VkRenderFramework::CreateSurfaceFromSameWindow(const SurfaceContext& surface_context, vkt::Surface& surface) {
+    (void)surface_context;
+    (void)surface;
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    if (surface_context.m_win32Window != nullptr) {
+        VkWin32SurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
+        surface_create_info.hinstance = GetModuleHandle(nullptr);
+        surface_create_info.hwnd = surface_context.m_win32Window;
+        return surface.Init(instance(), surface_create_info);
+    }
+#endif
+
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    if (surface_context.m_surface_dpy != nullptr) {
+        VkXlibSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
+        surface_create_info.dpy = surface_context.m_surface_dpy;
+        surface_create_info.window = surface_context.m_surface_window;
+        return surface.Init(instance(), surface_create_info);
+    }
+#endif
+
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    if (surface_context.m_surface_xcb_conn != nullptr) {
+        VkXcbSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
+        surface_create_info.connection = surface_context.m_surface_xcb_conn;
+        surface_create_info.window = surface_context.m_surface_xcb_window;
+        return surface.Init(instance(), surface_create_info);
+    }
+#endif
+
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    if (surface_context.m_wayland_context.surface != nullptr) {
+        VkWaylandSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
+        surface_create_info.display = surface_context.m_wayland_context.display;
+        surface_create_info.surface = surface_context.m_wayland_context.surface;
+        return surface.Init(instance(), surface_create_info);
     }
 #endif
 
@@ -895,6 +940,7 @@ void SurfaceContext::Destroy() {
     if (m_surface_xcb_conn != nullptr) {
         xcb_disconnect(m_surface_xcb_conn);
         m_surface_xcb_conn = nullptr;
+        m_surface_xcb_window = 0;
     }
 #endif
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)

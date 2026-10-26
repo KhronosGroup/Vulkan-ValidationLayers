@@ -326,9 +326,16 @@ bool CoreChecks::IsSameNativeWindow(const VkSurfaceKHR surface_a, const VkSurfac
         return true;
     }
 
-    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112
-    // Need to handle all cases, for now, prevent false positives
-    return true;
+    // Multiple VkSurfaceKHR can be created from the same native window
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112
+    const vvl::SurfaceType type_a = surface_state_a->GetSurfaceType();
+    const vvl::SurfaceType type_b = surface_state_b->GetSurfaceType();
+    if (type_a != type_b) {
+        // Incase you try different types, so handles could be the same
+        return false;
+    }
+
+    return surface_state_a->GetNativeWindow() == surface_state_b->GetNativeWindow();
 }
 
 bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_info, const vvl::Surface* surface_state,

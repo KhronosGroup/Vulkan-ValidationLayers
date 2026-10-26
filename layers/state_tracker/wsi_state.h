@@ -206,9 +206,8 @@ class SwapchainSubState {
 //    vvl::Surface -> nothing
 class Surface : public StateObject {
   public:
-    Surface(VkSurfaceKHR handle, SurfaceType type) : StateObject(handle, kVulkanObjectTypeSurfaceKHR) {
-        type_ = type;
-    }
+    Surface(VkSurfaceKHR handle, SurfaceType type, uint64_t native_window)
+        : StateObject(handle, kVulkanObjectTypeSurfaceKHR), type_(type), native_window_(native_window) {}
 
     ~Surface() {
         if (!Destroyed()) {
@@ -245,7 +244,10 @@ class Surface : public StateObject {
                                                                              VkPresentModeKHR present_mode) const;
     std::vector<VkPresentModeKHR> GetCompatibleModes(VkPhysicalDevice phys_dev, VkPresentModeKHR present_mode) const;
 
-    SurfaceType GetSurfaceType() { return type_; }
+    SurfaceType GetSurfaceType() const { return type_; }
+    // The native window (HWND, X11 Window, wl_surface, etc.) the VkSurface was created from
+    // zero is used if not tracked for the platform
+    uint64_t GetNativeWindow() const { return native_window_; }
 
     vvl::Swapchain *swapchain{nullptr};
 
@@ -287,7 +289,8 @@ class Surface : public StateObject {
     mutable vvl::unordered_map<VkPhysicalDevice, std::vector<vku::safe_VkSurfaceFormat2KHR>> formats_;
 
     vvl::unordered_map<VkPhysicalDevice, PhysDevCache> cache_;
-    SurfaceType type_;
+    const SurfaceType type_;
+    const uint64_t native_window_;
 };
 
 }  // namespace vvl

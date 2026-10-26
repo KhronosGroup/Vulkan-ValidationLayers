@@ -262,7 +262,7 @@ class InstanceState : public vvl::BaseInstance {
                                             const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                             VkDisplayModeKHR* pMode, const RecordObject& record_obj) override;
 
-    void RecordVulkanSurface(VkSurfaceKHR* pSurface, SurfaceType type);
+    void RecordVulkanSurface(VkSurfaceKHR* pSurface, SurfaceType type, uint64_t native_window = 0);
     void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                     const RecordObject& record_obj) override;
