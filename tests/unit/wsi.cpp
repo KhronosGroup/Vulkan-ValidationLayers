@@ -4321,7 +4321,7 @@ TEST_F(NegativeWsi, MissingPresentModesCreateInfoFifoLatestReadyFeature) {
 
     VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper(&present_modes_ci);
     swapchain_ci.surface = m_surface;
-    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
     swapchain_ci.imageFormat = m_surface_formats[0].format;
     swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
     swapchain_ci.imageExtent = GetSwapchainExtent(m_surface_capabilities);
