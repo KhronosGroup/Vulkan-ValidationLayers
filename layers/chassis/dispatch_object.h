@@ -269,9 +269,10 @@ class HandleWrapper : public Logger {
     static bool wrap_handles;
 
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13329
-    // The driver calls the VK_EXT_device_memory_report callback directly, reporting its own handles, which the app could not match
-    // if they were wrapped.
-    // So handles created by a device using it are passed through as they are (as if handle wrapping was disabled).
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6972
+    // The driver calls the VK_EXT_device_memory_report callback (and the debug utils callback, for
+    // VK_EXT_device_address_binding_report) directly, reporting its own handles, which the app could not match if they were
+    // wrapped. So handles created by a device using either are passed through as they are (as if handle wrapping was disabled).
     // Handles wrapped by the instance (VkSurfaceKHR) are still found in |unique_id_mapping|, and everything not found there is one
     // of this device's handles.
     bool passthrough_handles = false;

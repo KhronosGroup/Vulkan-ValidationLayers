@@ -227,3 +227,49 @@ TEST_F(PositiveDebugExtensions, VkDebugUtilsObjectTagInfoEXTExtendsCreateInfo) {
     buffer_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_ci);
 }
+
+TEST_F(PositiveDebugExtensions, DeviceAddressBindingReportObjectHandle) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6972");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::reportAddressBinding);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
+    vkt::DeviceMemory memory(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0));
+    const uint64_t buffer_handle = CastToUint64(buffer.handle());
+
+    bool buffer_reported = false;
+    bool buffer_handle_matched = false;
+    DebugUtilsLabelCheckData callback_data;
+    callback_data.count = 0;
+    callback_data.callback = [&](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, DebugUtilsLabelCheckData*) {
+        if (!vku::FindStructInPNextChain<VkDeviceAddressBindingCallbackDataEXT>(pCallbackData->pNext)) {
+            return;
+        }
+        for (uint32_t i = 0; i < pCallbackData->objectCount; i++) {
+            if (pCallbackData->pObjects[i].objectType == VK_OBJECT_TYPE_BUFFER) {
+                buffer_reported = true;
+                buffer_handle_matched |= pCallbackData->pObjects[i].objectHandle == buffer_handle;
+            }
+        }
+    };
+
+    VkDebugUtilsMessengerCreateInfoEXT callback_create_info = vku::InitStructHelper();
+    callback_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+    callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+    callback_create_info.pfnUserCallback = DebugUtilsCallback;
+    callback_create_info.pUserData = &callback_data;
+    VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
+    vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
+
+    vk::BindBufferMemory(device(), buffer, memory, 0);
+
+    vk::DestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
+
+    if (!buffer_reported) {
+        GTEST_SKIP() << "Driver did not report any VkBuffer address bindings";
+    }
+    // The handle reported by the driver must be the one the app got from vkCreateBuffer
+    ASSERT_TRUE(buffer_handle_matched);
+}
