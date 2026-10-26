@@ -817,6 +817,13 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
             // We need to put any intermittent instructions here so Phi is first in the merge block
             invalid_block.CreateInstruction(spv::OpConvertUToPtr, {phi_type.Id(), null_id, null_constant.Id()});
             module_.AddCapability(spv::CapabilityInt64);
+        } else if (phi_type.spv_type_ == SpvType::kAccelerationStructureKHR) {
+            // Can't create ConstantNull of acceleration structure type either, so convert uvec2 zero (no Int64 needed)
+            const Type& uvec2_type = type_manager_.GetTypeVector(type_manager_.GetTypeInt(32, false), 2);
+            const Constant& null_constant = type_manager_.GetConstantNull(uvec2_type);
+            null_id = module_.TakeNextId();
+            invalid_block.CreateInstruction(spv::OpConvertUToAccelerationStructureKHR,
+                                            {phi_type.Id(), null_id, null_constant.Id()});
         } else {
             if ((phi_type.spv_type_ == SpvType::kInt || phi_type.spv_type_ == SpvType::kFloat) &&
                 phi_type.meta_.scalar.bit_width < 32) {
