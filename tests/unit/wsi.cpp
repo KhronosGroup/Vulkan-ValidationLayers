@@ -4603,9 +4603,7 @@ TEST_F(NegativeWsi, InitSwapchainInvalidImageCount) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112
-// Need to alter test to actually use different native window objects
-TEST_F(NegativeWsi, DISABLED_InitSwapchainInvalidOldSwapchain) {
+TEST_F(NegativeWsi, InitSwapchainInvalidOldSwapchain) {
     TEST_DESCRIPTION("Initialize swapchain with invalid oldSwapchain");
 
     AddSurfaceExtension();
@@ -4637,6 +4635,46 @@ TEST_F(NegativeWsi, DISABLED_InitSwapchainInvalidOldSwapchain) {
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933");
     vkt::Swapchain swapchain3(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, OldSwapchainFromAnotherNativeWindow) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Will leak in ANSN because headless machine uses xvfb, but can only handle a single surface";
+    }
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &surface_caps);
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = surface_caps.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = GetSwapchainExtent(surface_caps);
+    swapchain_ci.imageArrayLayers = 1u;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    vkt::Swapchain swapchain1(*m_device, swapchain_ci);
+
+    SurfaceContext surface_context2;
+    vkt::Surface surface2;
+    VkResult result = CreateSurface(surface_context2, surface2);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "Failed to create surface.";
+    }
+
+    swapchain_ci.oldSwapchain = swapchain1;
+    swapchain_ci.surface = surface2.Handle();
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933");
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
 

@@ -2363,8 +2363,9 @@ TEST_F(PositiveWsi, OldSwapchainFromAnotherSurface) {
     swapchain_ci.presentMode = m_surface_non_shared_present_mode;
     vkt::Swapchain swapchain1(*m_device, swapchain_ci);
 
+    // A different VkSurfaceKHR, but from the same native window
     vkt::Surface surface2{};
-    VkResult result = CreateSurface(m_surface_context, surface2);
+    VkResult result = CreateSurfaceFromSameWindow(m_surface_context, surface2);
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "Failed to create surface.";
     }

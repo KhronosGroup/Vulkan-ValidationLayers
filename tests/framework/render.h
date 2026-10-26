@@ -50,6 +50,7 @@ struct SurfaceContext {
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     xcb_connection_t *m_surface_xcb_conn{};
+    xcb_window_t m_surface_xcb_window{};
 #endif
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
     WaylandContext m_wayland_context{};
@@ -107,6 +108,7 @@ class VkRenderFramework : public VkTestFramework {
 
     // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
     VkResult CreateSurface(SurfaceContext &surface_context, vkt::Surface &surface, VkInstance custom_instance = VK_NULL_HANDLE);
+    VkResult CreateSurfaceFromSameWindow(const SurfaceContext& surface_context, vkt::Surface& surface);
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
     static VkExtent2D GetSwapchainExtent(const VkSurfaceCapabilitiesKHR& surface_caps);
     static VkSwapchainCreateInfoKHR GetDefaultSwapchainCreateInfo(

@@ -4238,7 +4238,7 @@ void InstanceState::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, con
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface, SurfaceType::Win32);
+    RecordVulkanSurface(pSurface, SurfaceType::Win32, CastToUint64(pCreateInfo->hwnd));
 }
 
 void DeviceState::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
@@ -4955,7 +4955,9 @@ void InstanceState::PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfac
     Destroy<Surface>(surface);
 }
 
-void InstanceState::RecordVulkanSurface(VkSurfaceKHR* pSurface, SurfaceType type) { Add(std::make_shared<Surface>(*pSurface, type)); }
+void InstanceState::RecordVulkanSurface(VkSurfaceKHR* pSurface, SurfaceType type, uint64_t native_window) {
+    Add(std::make_shared<Surface>(*pSurface, type, native_window));
+}
 
 void InstanceState::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance,
                                                                const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
@@ -4974,7 +4976,7 @@ void InstanceState::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, c
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface, SurfaceType::Android);
+    RecordVulkanSurface(pSurface, SurfaceType::Android, CastToUint64(pCreateInfo->window));
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -4997,7 +4999,7 @@ void InstanceState::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface, SurfaceType::IOS_MVK);
+    RecordVulkanSurface(pSurface, SurfaceType::IOS_MVK, CastToUint64(pCreateInfo->pView));
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
@@ -5008,7 +5010,7 @@ void InstanceState::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, con
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface, SurfaceType::MacOS_MVK);
+    RecordVulkanSurface(pSurface, SurfaceType::MacOS_MVK, CastToUint64(pCreateInfo->pView));
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
@@ -5019,7 +5021,7 @@ void InstanceState::PostCallRecordCreateMetalSurfaceEXT(VkInstance instance, con
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface, SurfaceType::Metal);
+    RecordVulkanSurface(pSurface, SurfaceType::Metal, CastToUint64(pCreateInfo->pLayer));
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
@@ -5030,7 +5032,7 @@ void InstanceState::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, c
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    RecordVulkanSurface(pSurface, SurfaceType::Wayland);
+    RecordVulkanSurface(pSurface, SurfaceType::Wayland, CastToUint64(pCreateInfo->surface));
 }
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
@@ -5044,7 +5046,7 @@ void InstanceState::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const
 #if defined(DEBUG_CAPTURE_KEYBOARD)
     xcb_connection = (void*)pCreateInfo->connection;
 #endif
-    RecordVulkanSurface(pSurface, SurfaceType::Xcb);
+    RecordVulkanSurface(pSurface, SurfaceType::Xcb, static_cast<uint64_t>(pCreateInfo->window));
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
@@ -5058,7 +5060,7 @@ void InstanceState::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, cons
 #if defined(DEBUG_CAPTURE_KEYBOARD)
     xlib_display = (void*)pCreateInfo->dpy;
 #endif
-    RecordVulkanSurface(pSurface, SurfaceType::Xlib);
+    RecordVulkanSurface(pSurface, SurfaceType::Xlib, static_cast<uint64_t>(pCreateInfo->window));
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
