@@ -1486,7 +1486,7 @@ TEST_F(PositiveDescriptors, WriteMutableDescriptorSet) {
     VkDescriptorSetLayoutBinding dsl_bindings[2]{{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  {2, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_ALL, nullptr}};
 
-    VkDescriptorType types_0[1] = {VK_DESCRIPTOR_TYPE_SAMPLER};
+    VkDescriptorType types_0[1] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
     VkDescriptorType types_2[2] = {
         VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
         VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -1556,7 +1556,7 @@ TEST_F(PositiveDescriptors, WriteMutableDescriptorSet2) {
         VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
     };
     // map to binding 0
-    VkDescriptorType types_1[1] = {VK_DESCRIPTOR_TYPE_SAMPLER};
+    VkDescriptorType types_1[1] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
 
     VkMutableDescriptorTypeListEXT type_list[2] = {
         {2, types_0},
