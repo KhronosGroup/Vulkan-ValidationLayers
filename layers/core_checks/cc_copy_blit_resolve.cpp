@@ -55,29 +55,37 @@ struct ImageRegionIntersection {
     }
 };
 
-// Returns true if source area of first vkImageCopy/vkImageCopy2KHR region intersects dest area of second region
-// It is assumed that these are copy regions within a single image (otherwise no possibility of collision)
-template <typename RegionType>
-static ImageRegionIntersection GetRegionIntersection(const RegionType& region0, const RegionType& region1, VkImageType type,
-                                                     bool is_multiplane) {
+// A region of an image expressed in subresource and texel coordinates
+struct ImageRegionBox {
+    VkImageAspectFlags aspect_mask;
+    uint32_t mip_level;
+    uint32_t base_array_layer;
+    uint32_t layer_count;
+    VkOffset3D offset;
+    VkExtent3D extent;
+};
+
+// It is assumed that both boxes belong to the same image (otherwise no possibility of collision)
+static ImageRegionIntersection GetBoxIntersection(const ImageRegionBox& box0, const ImageRegionBox& box1, VkImageType type) {
     ImageRegionIntersection result = {};
 
-    // Separate planes within a multiplane image cannot intersect
-    if (is_multiplane && (region0.srcSubresource.aspectMask != region1.dstSubresource.aspectMask)) {
+    // Depth, stencil and each plane of a multi-planar image are stored separately, so regions with no
+    // aspect in common cannot share texels
+    const VkImageAspectFlags shared_aspects = box0.aspect_mask & box1.aspect_mask;
+    if (shared_aspects == 0) {
         return result;
     }
-    auto intersection = GetRangeIntersection(region0.srcSubresource.baseArrayLayer, region0.srcSubresource.layerCount,
-                                             region1.dstSubresource.baseArrayLayer, region1.dstSubresource.layerCount);
-    if ((region0.srcSubresource.mipLevel == region1.dstSubresource.mipLevel) && intersection.non_empty()) {
-        result.subresource.aspectMask = region0.srcSubresource.aspectMask;
+
+    auto intersection = GetRangeIntersection(box0.base_array_layer, box0.layer_count, box1.base_array_layer, box1.layer_count);
+    if ((box0.mip_level == box1.mip_level) && intersection.non_empty()) {
+        result.subresource.aspectMask = shared_aspects;
         result.subresource.baseArrayLayer = static_cast<uint32_t>(intersection.begin);
         result.subresource.layerCount = static_cast<uint32_t>(intersection.distance());
-        result.subresource.mipLevel = region0.srcSubresource.mipLevel;
+        result.subresource.mipLevel = box0.mip_level;
         result.has_intersection = true;
         switch (type) {
             case VK_IMAGE_TYPE_3D:
-                intersection =
-                    GetRangeIntersection(region0.srcOffset.z, region0.extent.depth, region1.dstOffset.z, region1.extent.depth);
+                intersection = GetRangeIntersection(box0.offset.z, box0.extent.depth, box1.offset.z, box1.extent.depth);
                 if (intersection.non_empty()) {
                     result.offset.z = static_cast<int32_t>(intersection.begin);
                     result.extent.depth = static_cast<uint32_t>(intersection.distance());
@@ -87,8 +95,7 @@ static ImageRegionIntersection GetRegionIntersection(const RegionType& region0, 
                 }
                 [[fallthrough]];
             case VK_IMAGE_TYPE_2D:
-                intersection =
-                    GetRangeIntersection(region0.srcOffset.y, region0.extent.height, region1.dstOffset.y, region1.extent.height);
+                intersection = GetRangeIntersection(box0.offset.y, box0.extent.height, box1.offset.y, box1.extent.height);
                 if (intersection.non_empty()) {
                     result.offset.y = static_cast<int32_t>(intersection.begin);
                     result.extent.height = static_cast<uint32_t>(intersection.distance());
@@ -98,8 +105,7 @@ static ImageRegionIntersection GetRegionIntersection(const RegionType& region0, 
                 }
                 [[fallthrough]];
             case VK_IMAGE_TYPE_1D:
-                intersection =
-                    GetRangeIntersection(region0.srcOffset.x, region0.extent.width, region1.dstOffset.x, region1.extent.width);
+                intersection = GetRangeIntersection(box0.offset.x, box0.extent.width, box1.offset.x, box1.extent.width);
                 if (intersection.non_empty()) {
                     result.offset.x = static_cast<int32_t>(intersection.begin);
                     result.extent.width = static_cast<uint32_t>(intersection.distance());
@@ -116,19 +122,42 @@ static ImageRegionIntersection GetRegionIntersection(const RegionType& region0, 
     return result;
 }
 
-// Returns true if source area of first vkImageCopy/vkImageCopy2KHR region intersects dest area of second region
+// Returns the intersection of the source area of first vkImageCopy/vkImageCopy2KHR region and the dest area of second region
 // It is assumed that these are copy regions within a single image (otherwise no possibility of collision)
 template <typename RegionType>
-static bool RegionIntersects(const RegionType* region0, const RegionType* region1, VkImageType type, bool is_multiplane) {
-    return GetRegionIntersection(region0, region1, type, is_multiplane).has_instersection;
+static ImageRegionIntersection GetRegionIntersection(const RegionType& region0, const RegionType& region1, VkImageType type) {
+    const ImageRegionBox src_box = {region0.srcSubresource.aspectMask,
+                                    region0.srcSubresource.mipLevel,
+                                    region0.srcSubresource.baseArrayLayer,
+                                    region0.srcSubresource.layerCount,
+                                    region0.srcOffset,
+                                    region0.extent};
+    const ImageRegionBox dst_box = {region1.dstSubresource.aspectMask,
+                                    region1.dstSubresource.mipLevel,
+                                    region1.dstSubresource.baseArrayLayer,
+                                    region1.dstSubresource.layerCount,
+                                    region1.dstOffset,
+                                    region1.extent};
+    return GetBoxIntersection(src_box, dst_box, type);
+}
+
+// Works for the buffer/memory <-> image regions, which all share these image members
+template <typename RegionType>
+static ImageRegionBox GetImageRegionBox(const vvl::Image& image_state, const RegionType& region) {
+    return {region.imageSubresource.aspectMask,
+            region.imageSubresource.mipLevel,
+            region.imageSubresource.baseArrayLayer,
+            image_state.NormalizeLayerCount(region.imageSubresource),
+            region.imageOffset,
+            region.imageExtent};
 }
 
 template <typename RegionType>
-static bool RegionIntersectsBlit(const RegionType* region0, const RegionType* region1, VkImageType type, bool is_multiplane) {
+static bool RegionIntersectsBlit(const RegionType* region0, const RegionType* region1, VkImageType type) {
     bool result = false;
 
-    // Separate planes within a multiplane image cannot intersect
-    if (is_multiplane && (region0->srcSubresource.aspectMask != region1->dstSubresource.aspectMask)) {
+    // Regions with no aspect in common cannot share texels
+    if ((region0->srcSubresource.aspectMask & region1->dstSubresource.aspectMask) == 0) {
         return result;
     }
 
@@ -419,6 +448,15 @@ struct ImageCopyRegion {
         dst_offset = region.dstOffset;
         dst_subresource = region.dstSubresource;
         Init();
+    }
+
+    ImageRegionBox GetDstBox() const {
+        return {dst_subresource.aspectMask,
+                dst_subresource.mipLevel,
+                dst_subresource.baseArrayLayer,
+                normalized_dst_layer_count,
+                dst_offset,
+                dst_adjusted_extent};
     }
 
     std::string DescribeSrcAndDstImage() const {
@@ -1091,6 +1129,28 @@ bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const vvl::Com
     return skip;
 }
 
+// Each memory location accessed by a copy must not be written by more than one destination region
+// Regions of the same image share texels exactly when their subresource and texel boxes intersect
+bool CoreChecks::ValidateImageDstRegionsOverlap(const LogObjectList& objlist, const vvl::Image& image_state,
+                                                const std::vector<ImageRegionBox>& dst_boxes, const Location& loc,
+                                                const char* vuid) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < dst_boxes.size(); i++) {
+        for (uint32_t j = i + 1; j < dst_boxes.size(); j++) {
+            if (const auto intersection = GetBoxIntersection(dst_boxes[i], dst_boxes[j], image_state.GetImageType());
+                intersection.has_intersection) {
+                skip |= LogError(vuid, objlist, loc.dot(Field::pRegions, i),
+                                 "and pRegions[%" PRIu32
+                                 "] both write to the same texels of the destination image (%s). Overlap info:%s\nThis will "
+                                 "cause a write-after-write memory hazard.",
+                                 j, FormatHandle(image_state.Handle()).c_str(), intersection.String().c_str());
+            }
+        }
+    }
+    return skip;
+}
+
 // Validate contents of a VkImageCopy or VkImageCopy2 struct
 bool CoreChecks::ValidateCopyImageRegionCommon(const ImageCopyRegion& region, const Location& region_loc) const {
     bool skip = false;
@@ -1540,6 +1600,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     bool has_stencil_aspect = false;
     bool has_non_stencil_aspect = false;
     const bool same_image = (src_image_state == dst_image_state);
+    std::vector<ImageRegionBox> dst_boxes;
+    dst_boxes.reserve(regionCount);
     for (uint32_t i = 0; i < regionCount; i++) {
         const Location region_loc = loc.dot(Field::pRegions, i);
         const Location src_subresource_loc = region_loc.dot(Field::srcSubresource);
@@ -1547,6 +1609,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         ImageCopyRegion region(*src_image_state, *dst_image_state, pRegions[i], commandBuffer);
         const VkImageSubresourceLayers& src_subresource = region.src_subresource;
         const VkImageSubresourceLayers& dst_subresource = region.dst_subresource;
+        dst_boxes.push_back(region.GetDstBox());
 
         if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
             const uint32_t src_layer_count = region.src_subresource.layerCount;
@@ -1787,7 +1850,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         // so checking for memory overlaps is not possible.
         if (srcImage == dstImage) {
             for (uint32_t j = 0; j < regionCount; j++) {
-                if (auto intersection = GetRegionIntersection(pRegions[i], pRegions[j], src_image_type, is_src_multiplane);
+                if (auto intersection = GetRegionIntersection(pRegions[i], pRegions[j], src_image_type);
                     intersection.has_intersection) {
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
                     skip |= LogError(vuid, all_objlist, loc,
@@ -2005,6 +2068,9 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                              string_VkExtent3D(dst_block_extent).c_str());
         }
     }
+
+    vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-12484" : "VUID-vkCmdCopyImage-pRegions-12484";
+    skip |= ValidateImageDstRegionsOverlap(dst_objlist, *dst_image_state, dst_boxes, loc, vuid);
 
     // Validate that SRC & DST images have correct usage flags set
     if (!IsExtEnabled(extensions.vk_ext_separate_stencil_usage)) {
@@ -2545,10 +2611,13 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     const bool queue_supports_compute = HasRequiredQueueFlags(cb_state, *physical_device_state, VK_QUEUE_COMPUTE_BIT);
     const bool queue_supports_transfer = HasRequiredQueueFlags(cb_state, *physical_device_state, VK_QUEUE_TRANSFER_BIT);
 
+    std::vector<ImageRegionBox> dst_boxes;
+    dst_boxes.reserve(regionCount);
     for (uint32_t i = 0; i < regionCount; ++i) {
         const Location region_loc = loc.dot(Field::pRegions, i);
         const Location subresource_loc = region_loc.dot(Field::imageSubresource);
         const RegionType region = pRegions[i];
+        dst_boxes.push_back(GetImageRegionBox(*dst_image_state, region));
 
         skip |= ValidateBufferImageCopyData(cb_state, region, *dst_image_state, objlist, region_loc);
         skip |= ValidateImageSubresourceLayers(objlist, *dst_image_state, region.imageSubresource, subresource_loc);
@@ -2624,6 +2693,9 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
             }
         }
     }
+
+    vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-pRegions-12483" : "VUID-vkCmdCopyBufferToImage-pRegions-12483";
+    skip |= ValidateImageDstRegionsOverlap(objlist, *dst_image_state, dst_boxes, loc, vuid);
 
     return skip;
 }
@@ -2738,10 +2810,15 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
         from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09112" : "VUID-VkCopyMemoryToImageInfo-dstImage-09112";
     const char* vuid_09113 =
         from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09113" : "VUID-VkCopyMemoryToImageInfo-dstImage-09113";
+    std::vector<ImageRegionBox> dst_boxes;
     for (uint32_t i = 0; i < info_ptr->regionCount; i++) {
         const Location region_loc = loc.dot(Field::pRegions, i);
         const Location subresource_loc = region_loc.dot(Field::imageSubresource);
         const auto region = info_ptr->pRegions[i];
+
+        if (!from_image) {
+            dst_boxes.push_back(GetImageRegionBox(*image_state, region));
+        }
 
         skip |= ValidateHeterogeneousCopyData(region, *image_state, objlist, region_loc);
         skip |= ValidateImageSubresourceLayers(objlist, *image_state, region.imageSubresource, subresource_loc);
@@ -2778,6 +2855,11 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
 
         skip |=
             ValidateHostCopyCurrentLayout(image_layout, region.imageSubresource, *image_state, region_loc.dot(image_layout_field));
+    }
+
+    if (!from_image) {
+        skip |=
+            ValidateImageDstRegionsOverlap(objlist, *image_state, dst_boxes, loc, "VUID-VkCopyMemoryToImageInfo-pRegions-12474");
     }
 
     return skip;
@@ -3010,9 +3092,12 @@ bool CoreChecks::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyIm
     }
 
     const uint32_t region_count = info_ptr->regionCount;
+    std::vector<ImageRegionBox> dst_boxes;
+    dst_boxes.reserve(region_count);
     for (uint32_t i = 0; i < region_count; i++) {
         const Location region_loc = loc.dot(Field::pRegions, i);
         ImageCopyRegion region(*src_image_state, *dst_image_state, info_ptr->pRegions[i]);
+        dst_boxes.push_back(region.GetDstBox());
 
         if (check_memcpy) {
             skip |= ValidateMemcpyExtents(region, region_loc);
@@ -3043,6 +3128,9 @@ bool CoreChecks::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyIm
                                                   region_loc.dot(Field::dstImageLayout));
         }
     }
+
+    skip |= ValidateImageDstRegionsOverlap(LogObjectList(dst_image_state->Handle()), *dst_image_state, dst_boxes, loc,
+                                           "VUID-VkCopyImageToImageInfo-pRegions-12477");
 
     return skip;
 }
@@ -3519,8 +3607,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         // must not overlap in memory
         if (srcImage == dstImage) {
             for (uint32_t j = 0; j < regionCount; j++) {
-                if (RegionIntersectsBlit(&region, &pRegions[j], src_image_state->GetImageType(),
-                                         vkuFormatIsMultiplane(src_format))) {
+                if (RegionIntersectsBlit(&region, &pRegions[j], src_image_state->GetImageType())) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-pRegions-00217" : "VUID-vkCmdBlitImage-pRegions-00217";
                     skip |=
                         LogError(vuid, all_objlist, loc, "pRegion[%" PRIu32 "] src overlaps with pRegions[%" PRIu32 "] dst.", i, j);
@@ -4332,10 +4419,15 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
     skip |= ValidateImageSampleCount(command_buffer, *image_state, VK_SAMPLE_COUNT_1_BIT, image_loc,
                                      "VUID-VkCopyDeviceMemoryImageInfoKHR-image-07973");
 
+    std::vector<ImageRegionBox> dst_boxes;
     for (uint32_t i = 0; i < copy_memory_info.regionCount; ++i) {
         const VkDeviceMemoryImageCopyKHR& region = copy_memory_info.pRegions[i];
         const Location region_loc = info_loc.dot(Field::pRegions, i);
         const Location subresource_loc = region_loc.dot(Field::imageSubresource);
+
+        if (is_memory_to_image) {
+            dst_boxes.push_back(GetImageRegionBox(*image_state, region));
+        }
 
         skip |= ValidateHeterogeneousCopyData(region, *image_state, objlist, region_loc);
         skip |= ValidateImageSubresourceLayers(objlist, *image_state, region.imageSubresource, subresource_loc);
@@ -4462,7 +4554,7 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
                                                "VUID-VkCopyDeviceMemoryImageInfoKHR-imageLayout-13028");
 
         // only the dst can't overlap, the src can (no such thing as a read-after-read hazard)
-        // the image as a dst is a TODO tracked in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10125
+        // the image as a dst is checked after the loop
         if (!is_memory_to_image) {
             vvl::range<VkDeviceAddress> region_range{region.addressRange.address,
                                                      region.addressRange.address + region.addressRange.size};
@@ -4485,6 +4577,11 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
                                               region.addressFlags, region_loc.dot(Field::addressRange));
 
         skip |= ValidateDeviceAddressBufferBounds(cb_state, *image_state, region, region_loc);
+    }
+
+    if (is_memory_to_image) {
+        skip |= ValidateImageDstRegionsOverlap(objlist, *image_state, dst_boxes, info_loc,
+                                               "VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-12473");
     }
 
     return skip;

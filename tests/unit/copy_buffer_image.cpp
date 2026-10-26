@@ -5472,3 +5472,52 @@ TEST_F(NegativeCopyBufferImage, BlitEqualDstOffsets) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeCopyBufferImage, CopyImageOverlapDstRegions) {
+    TEST_DESCRIPTION("Try to copy two overlapping regions into the same destination image.");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image src_image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
+    vkt::Image dst_image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
+
+    VkImageCopy regions[2];
+    regions[0].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    regions[0].srcOffset = {0, 0, 0};
+    regions[0].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    regions[0].dstOffset = {0, 0, 0};
+    regions[0].extent = {32, 32, 1};
+    regions[1] = regions[0];
+    regions[1].srcOffset = {32, 32, 0};
+    regions[1].dstOffset = {16, 16, 0};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-pRegions-12484");
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 2, regions);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, CopyBufferToImageOverlapDstRegions) {
+    TEST_DESCRIPTION("Try to copy two overlapping buffer regions into the same destination image.");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer src_buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image dst_image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
+
+    VkBufferImageCopy regions[2];
+    regions[0].bufferOffset = 0;
+    regions[0].bufferRowLength = 0;
+    regions[0].bufferImageHeight = 0;
+    regions[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    regions[0].imageOffset = {0, 0, 0};
+    regions[0].imageExtent = {32, 32, 1};
+    regions[1] = regions[0];
+    regions[1].bufferOffset = 32 * 32 * 4;
+    regions[1].imageOffset = {31, 31, 0};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-pRegions-12483");
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_GENERAL, 2, regions);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
