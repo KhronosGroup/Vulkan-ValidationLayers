@@ -1866,6 +1866,42 @@ static bool GpuValidateShader(const std::vector<uint32_t>& input, spv_target_env
     return (result == SPV_SUCCESS);
 }
 
+// Useful to have the shader stage in the dump names to filter them
+static const char* ShaderStageDumpName(VkShaderStageFlagBits stage) {
+    switch (stage) {
+        case VK_SHADER_STAGE_VERTEX_BIT:
+            return "vert";
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+            return "tesc";
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+            return "tese";
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+            return "geom";
+        case VK_SHADER_STAGE_FRAGMENT_BIT:
+            return "frag";
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+            return "comp";
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
+            return "task";
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
+            return "mesh";
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+            return "rgen";
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+            return "rahit";
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+            return "rchit";
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+            return "rmiss";
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+            return "rint";
+        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+            return "rcall";
+        default:
+            return "unknown";
+    }
+}
+
 void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& input_spirv,
                                              const spirv::InstrumentationInterface& interface,
                                              spirv::InstrumentationStatus& out_status,
@@ -1885,8 +1921,11 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         return;
     }
 
-    const std::string dump_file_prefix =
-        "dump_" + std::to_string(interface.unique_shader_id) + "_" + std::string(interface.entry_point_name);
+    const std::string dump_file_prefix = gpuav_settings.debug_dump_instrumented_shaders
+                                             ? "dump_" + std::to_string(interface.unique_shader_id) + "_" +
+                                                   ShaderStageDumpName(interface.entry_point_stage) + "_" +
+                                                   std::string(interface.entry_point_name)
+                                             : "";
     if (gpuav_settings.debug_dump_instrumented_shaders) {
         const auto non_instrumented_spirv_file = fs::absolute(dump_file_prefix + "_before.spv");
         DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
