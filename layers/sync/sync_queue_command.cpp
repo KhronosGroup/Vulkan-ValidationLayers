@@ -25,6 +25,56 @@ bool WaitForFenceCommand::Execute(SyncValidator& validator) const {
     return false;
 }
 
+bool WaitForSemaphoreCommand::Execute(SyncValidator& validator) const {
+    validator.WaitForSemaphore(semaphore, value);
+    return false;
+}
+
+bool QueueWaitIdleCommand::Execute(SyncValidator& validator) const {
+    const QueueId waited_queue = validator.GetQueueId(queue);
+    if (waited_queue == kQueueIdInvalid) {
+        return false;
+    }
+    const QueueState& queue_state = validator.GetQueueState(waited_queue);
+    validator.ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex, queue_state.GetLastSynchronizedPresent(), {});
+
+    // For each timeline, remove all signals signaled on the waited queue, except the last one.
+    // The last signal is needed to represent the current timeline state
+    validator.EnsureTimelineSignalsLimit(1, waited_queue);
+
+    // Eliminate host waitable objects from the current queue
+    vvl::EraseIf(validator.waitable_fences_, [waited_queue](const auto& sf) { return sf.second.queue_id == waited_queue; });
+    for (auto& [semaphore, sync_points] : validator.host_waitable_semaphores_) {
+        vvl::EraseIf(sync_points, [waited_queue](const auto& sync_point) { return sync_point.queue_id == waited_queue; });
+    }
+    return false;
+}
+
+bool DeviceWaitIdleCommand::Execute(SyncValidator& validator) const {
+    const auto batches = validator.GetAllQueueBatchContexts();
+
+    // Collect information about last synchronized present over all queues
+    LastSynchronizedPresent global_last_synchronized_present;
+    for (const auto& batch : batches) {
+        global_last_synchronized_present.Merge(batch->last_synchronized_present);
+    }
+
+    // Device wait will preserve unsynchronized present operations
+    for (const auto& batch : batches) {
+        batch->ApplyDeviceWait(global_last_synchronized_present);
+    }
+
+    // For each timeline keep only the last signal per queue.
+    // The last signal is needed to represent the current timeline state
+    validator.EnsureTimelineSignalsLimit(1);
+
+    // Cleanup fence waits associated with queues. Acquire fence waits are preserved
+    auto is_queue_fence = [](const auto& waitable) { return waitable.second.queue_id != kQueueIdInvalid; };
+    vvl::EraseIf(validator.waitable_fences_, is_queue_fence);
+    validator.host_waitable_semaphores_.clear();
+    return false;
+}
+
 bool IsQueueCommandReady(const QueueCommand& command) {
     return std::visit([](const auto& operation) { return operation.IsReady(); }, command);
 }
