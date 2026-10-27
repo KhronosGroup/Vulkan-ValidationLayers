@@ -2281,49 +2281,17 @@ void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t 
 }
 
 void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS || !syncval_settings.full_validation || queue == VK_NULL_HANDLE) {
+    if (!syncval_settings.full_validation) {
         return;
     }
-    const QueueId waited_queue = GetQueueId(queue);
-    if (waited_queue == kQueueIdInvalid) {
+    if (record_obj.result != VK_SUCCESS || queue == VK_NULL_HANDLE) {
         return;
     }
-    const QueueState& queue_state = GetQueueState(waited_queue);
-    ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex, queue_state.GetLastSynchronizedPresent(), {});
-
-    // For each timeline, remove all signals signaled on the waited queue, except the last one.
-    // The last signal is needed to represent the current timeline state.
-    EnsureTimelineSignalsLimit(1, waited_queue);
-
-    // Eliminate host waitable objects from the current queue.
-    vvl::EraseIf(waitable_fences_, [waited_queue](const auto& sf) { return sf.second.queue_id == waited_queue; });
-    for (auto& [semaphore, sync_points] : host_waitable_semaphores_) {
-        vvl::EraseIf(sync_points, [waited_queue](const auto& sync_point) { return sync_point.queue_id == waited_queue; });
-    }
+    ProcessQueueCommand(QueueWaitIdleCommand{queue});
 }
 
 void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject& record_obj) {
-    const auto batches = GetAllQueueBatchContexts();
-
-    // Collect information about last synchronized present over all queues
-    LastSynchronizedPresent global_last_synchronized_present;
-    for (const auto& batch : batches) {
-        global_last_synchronized_present.Merge(batch->last_synchronized_present);
-    }
-
-    // Device wait will preserve unsynchronized present operations.
-    for (const auto& batch : batches) {
-        batch->ApplyDeviceWait(global_last_synchronized_present);
-    }
-
-    // For each timeline keep only the last signal per queue.
-    // The last signal is needed to represent the current timeline state.
-    EnsureTimelineSignalsLimit(1);
-
-    // Cleanup fence waits associated with queues. Acquire fence waits are preserved
-    auto is_queue_fence = [](const auto& waitable) { return waitable.second.queue_id != kQueueIdInvalid; };
-    vvl::EraseIf(waitable_fences_, is_queue_fence);
-    host_waitable_semaphores_.clear();
+    ProcessQueueCommand(DeviceWaitIdleCommand{});
 }
 
 bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
@@ -2774,7 +2742,7 @@ void SyncValidator::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaph
     const bool wait_all = pWaitInfo->semaphoreCount == 1 || (pWaitInfo->flags & VK_SEMAPHORE_WAIT_ANY_BIT) == 0;
     if (record_obj.result == VK_SUCCESS && wait_all) {
         for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
-            WaitForSemaphore(pWaitInfo->pSemaphores[i], pWaitInfo->pValues[i]);
+            ProcessQueueCommand(WaitForSemaphoreCommand{pWaitInfo->pSemaphores[i], pWaitInfo->pValues[i]});
         }
     }
 }
@@ -2790,7 +2758,7 @@ void SyncValidator::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSe
         return;
     }
     if (record_obj.result == VK_SUCCESS) {
-        WaitForSemaphore(semaphore, *pValue);
+        ProcessQueueCommand(WaitForSemaphoreCommand{semaphore, *pValue});
     }
 }
 
