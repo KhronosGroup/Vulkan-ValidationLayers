@@ -392,6 +392,29 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         vo->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj, &modified_create_info);
     }
 
+#if defined(VVL_WORKAROUND_QUALCOMM)
+    // The Adreno driver reads the trailing padding of the VkPhysicalDeviceVulkan1XFeatures structs and returns
+    // VK_ERROR_FEATURE_NOT_PRESENT if it is not zero. The safe struct copies above never write that padding, so it holds
+    // whatever the allocator last had there. (VkPhysicalDeviceVulkan11Features has no padding)
+    // This is fixed in driver version 512.840.0 but CI is only at 512.762.1 and will be awhile until that fix lands
+    const auto zero_trailing_padding = [](void* feature_struct, size_t struct_size, size_t end_of_last_member) {
+        std::memset(static_cast<uint8_t*>(feature_struct) + end_of_last_member, 0, struct_size - end_of_last_member);
+    };
+    void* modified_pnext = const_cast<void*>(modified_create_info.pNext);
+    if (auto* features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_pnext)) {
+        zero_trailing_padding(features, sizeof(*features),
+                              offsetof(VkPhysicalDeviceVulkan12Features, subgroupBroadcastDynamicId) + sizeof(VkBool32));
+    }
+    if (auto* features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(modified_pnext)) {
+        zero_trailing_padding(features, sizeof(*features),
+                              offsetof(VkPhysicalDeviceVulkan13Features, maintenance4) + sizeof(VkBool32));
+    }
+    if (auto* features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan14Features>(modified_pnext)) {
+        zero_trailing_padding(features, sizeof(*features),
+                              offsetof(VkPhysicalDeviceVulkan14Features, pushDescriptor) + sizeof(VkBool32));
+    }
+#endif
+
     VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice);
 
     if (result != VK_SUCCESS) {

@@ -586,6 +586,11 @@ if (BUILD_SELF_VVL)
     target_compile_definitions(vvl PUBLIC BUILD_SELF_VVL)
 endif()
 
+option(VVL_WORKAROUND_QUALCOMM "Work around Qualcomm driver bugs (default: OFF)" OFF)
+if (VVL_WORKAROUND_QUALCOMM)
+    target_compile_definitions(vvl PRIVATE VVL_WORKAROUND_QUALCOMM)
+endif()
+
 set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
 
 if(MSVC)
