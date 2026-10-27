@@ -25,6 +25,7 @@
 #include "sync/sync_validation.h"
 #include "sync/sync_event.h"
 #include "sync/sync_image.h"
+#include "sync/sync_queue_command.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -313,6 +314,24 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
         if (sub_state.IsTiled()) {
             sub_state.SetOpaqueBaseAddress(*device_state);
         }
+    }
+}
+
+bool SyncValidator::ProcessQueueCommand(QueueCommand&& command) {
+    if (retire_mode_) {
+        queue_commands_.push_back(std::move(command));
+        return false;
+    }
+    return ExecuteQueueCommand(command, *this);
+}
+
+void SyncValidator::ExecuteQueueCommands() {
+    while (!queue_commands_.empty()) {
+        if (!IsQueueCommandReady(queue_commands_.front())) {
+            break;
+        }
+        ExecuteQueueCommand(queue_commands_.front(), *this);
+        queue_commands_.pop_front();
     }
 }
 
@@ -624,6 +643,7 @@ void SyncValidator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, con
 
 void SyncValidator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                                const RecordObject& record_obj) {
+    queue_commands_.clear();
     queue_states_.clear();
     binary_signals_.clear();
     timeline_signals_.clear();
@@ -2685,7 +2705,7 @@ void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence,
     }
     if (record_obj.result == VK_SUCCESS) {
         // fence is signalled, mark it as waited for
-        WaitForFence(fence);
+        ProcessQueueCommand(WaitForFenceCommand{fence});
     }
 }
 
@@ -2697,7 +2717,7 @@ void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceC
     if ((record_obj.result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
         // We can only know the pFences have signal if we waited for all of them, or there was only one of them
         for (uint32_t i = 0; i < fenceCount; i++) {
-            WaitForFence(pFences[i]);
+            ProcessQueueCommand(WaitForFenceCommand{pFences[i]});
         }
     }
 }
