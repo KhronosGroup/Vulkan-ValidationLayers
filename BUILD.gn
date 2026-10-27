@@ -426,6 +426,8 @@ vvl_sources = [
   "layers/sync/sync_image.h",
   "layers/sync/sync_image_encoding.cpp",
   "layers/sync/sync_image_encoding.h",
+  "layers/sync/sync_queue_command.cpp",
+  "layers/sync/sync_queue_command.h",
   "layers/sync/sync_render_pass.cpp",
   "layers/sync/sync_render_pass.h",
   "layers/sync/sync_reporting.cpp",

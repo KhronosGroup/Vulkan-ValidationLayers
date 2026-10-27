@@ -240,6 +240,8 @@ target_sources(vvl PRIVATE
     sync/sync_image.h
     sync/sync_image_encoding.cpp
     sync/sync_image_encoding.h
+    sync/sync_queue_command.cpp
+    sync/sync_queue_command.h
     sync/sync_render_pass.cpp
     sync/sync_render_pass.h
     sync/sync_reporting.cpp
