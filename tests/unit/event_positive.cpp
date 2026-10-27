@@ -457,6 +457,12 @@ TEST_F(PositiveEvent, AsymmetricEventNoMemorySubmit) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
+    // Invalid event dependency causes issues in ARM drivers.
+    // We use this setup to check vvl is stable for this invalid usage
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only supported by MockICD";
+    }
+
     VkDependencyInfo dependency_info = vku::InitStructHelper();
     dependency_info.dependencyFlags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
     vkt::Event event(*m_device);
