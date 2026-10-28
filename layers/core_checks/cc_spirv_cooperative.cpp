@@ -1081,7 +1081,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module& module_state, co
                     ptr_type->StorageClass() != spv::StorageClassPhysicalStorageBuffer) {
                     skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorReduceSumAccumulateNV-10092", module_state.handle(), loc,
                                      "shader %s has an unsupported pointer storage class (%s)", entrypoint.Describe().c_str(),
-                                     string_SpvStorageClass(ptr_type->StorageClass()));
+                                     spv::StorageClassToString(ptr_type->StorageClass()));
                 }
 
                 break;
@@ -1149,7 +1149,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module& module_state, co
                     ptr_type->StorageClass() != spv::StorageClassPhysicalStorageBuffer) {
                     skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093", module_state.handle(),
                                      loc, "shader %s has unsupported pointer storage class (%s)", entrypoint.Describe().c_str(),
-                                     string_SpvStorageClass(ptr_type->StorageClass()));
+                                     spv::StorageClassToString(ptr_type->StorageClass()));
                 }
 
                 break;

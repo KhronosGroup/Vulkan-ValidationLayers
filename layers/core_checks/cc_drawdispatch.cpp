@@ -2806,7 +2806,8 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound& last_bound_state, con
                          last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "The subdivision specified in tessellation control shader (%s) does not match the subdivision in "
                          "tessellation evaluation shader (%s).",
-                         string_SpvExecutionMode(tesc_subdivision), string_SpvExecutionMode(tese_subdivision));
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tesc_subdivision)),
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tese_subdivision)));
     }
 
     const uint32_t tesc_orientation = tesc_execution_mode->GetTessellationOrientation();
@@ -2817,7 +2818,8 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound& last_bound_state, con
                          last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "The orientation specified in tessellation control shader (%s) does not match the orientation in "
                          "tessellation evaluation shader (%s).",
-                         string_SpvExecutionMode(tesc_orientation), string_SpvExecutionMode(tese_orientation));
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tesc_orientation)),
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tese_orientation)));
     }
 
     const uint32_t tesc_spacing = tesc_execution_mode->GetTessellationSpacing();
@@ -2827,7 +2829,8 @@ bool CoreChecks::ValidateDrawTessellation(const LastBound& last_bound_state, con
                          last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "The spacing specified in tessellation control shader (%s) does not match the spacing in "
                          "tessellation evaluation shader (%s).",
-                         string_SpvExecutionMode(tesc_spacing), string_SpvExecutionMode(tese_spacing));
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tesc_spacing)),
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tese_spacing)));
     }
     const uint32_t tesc_patch_size = tesc_execution_mode->output_vertices;
     const uint32_t tese_patch_size = tese_execution_mode->output_vertices;

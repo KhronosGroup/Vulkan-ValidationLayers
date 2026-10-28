@@ -682,6 +682,9 @@ endif()
 
 target_include_directories(vvl SYSTEM PRIVATE external)
 
+# Enables the spv::*ToString() helpers in spirv.hpp
+target_compile_definitions(vvl PRIVATE SPV_ENABLE_UTILITY_CODE)
+
 # Found to significantly cut VVL build time
 #
 # Note: If using ccache, see the CCACHE_SLOPPINESS note in tests/CMakeLists.txt

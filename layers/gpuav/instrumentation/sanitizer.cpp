@@ -22,11 +22,11 @@
 
 namespace gpuav {
 
-static std::string GetSpirvSpecLink(const uint32_t opcode) {
+static std::string GetSpirvSpecLink(const spv::Op opcode) {
     // Currently the Working Group decided to not provide "real" VUIDs as it would become duplicating the SPIR-V spec
     // So these are not "UNASSIGNED", but instead are "SPIRV" VUs because we can point to the instruction in the SPIR-V spec
     // (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7853)
-    return "\nSee more at https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#" + std::string(string_SpvOpcode(opcode));
+    return "\nSee more at https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#" + std::string(spv::OpToString(opcode));
 }
 void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.sanitizer) {
@@ -50,10 +50,10 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
                     case kErrorSubCode_Sanitizer_DivideZero: {
-                        const uint32_t opcode = error_record[kInst_LogError_ParameterOffset_0];
+                        const spv::Op opcode = static_cast<spv::Op>(error_record[kInst_LogError_ParameterOffset_0]);
                         const uint32_t vector_size = error_record[kInst_LogError_ParameterOffset_1];
                         const bool is_float = opcode == spv::OpFMod || opcode == spv::OpFRem;
-                        strm << (is_float ? "Float" : "Integer") << " divide by zero. Operand 2 of " << string_SpvOpcode(opcode)
+                        strm << (is_float ? "Float" : "Integer") << " divide by zero. Operand 2 of " << spv::OpToString(opcode)
                              << " is ";
                         if (vector_size == 0) {
                             strm << "zero.";
@@ -122,12 +122,12 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                         out_vuid_msg = "SPIRV-Sanitizer-Fminmax";
                     } break;
                     case kErrorSubCode_Sanitizer_CoopMatAlignment: {
-                        const uint32_t opcode = error_record[kInst_LogError_ParameterOffset_0];
+                        const spv::Op opcode = static_cast<spv::Op>(error_record[kInst_LogError_ParameterOffset_0]);
                         const uint32_t required_alignment = error_record[kInst_LogError_ParameterOffset_1];
                         const uint32_t misaligned_flags = error_record[kInst_LogError_ParameterOffset_2];
                         const bool stride_misaligned = (misaligned_flags & 0x1) != 0;
                         const bool pointer_misaligned = (misaligned_flags & 0x2) != 0;
-                        strm << string_SpvOpcode(opcode) << " has a ";
+                        strm << spv::OpToString(opcode) << " has a ";
                         if (stride_misaligned && pointer_misaligned) {
                             strm << "Pointer and Stride operand that are";
                         } else if (pointer_misaligned) {

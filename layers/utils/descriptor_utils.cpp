@@ -95,7 +95,7 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
         return true;
     }
 
-    const uint32_t opcode = resource_variable.base_type.Opcode();
+    const spv::Op opcode = static_cast<spv::Op>(resource_variable.base_type.Opcode());
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0 && opcode == spv::OpTypeSampler) {
         return true;
     }
@@ -147,23 +147,23 @@ bool ResourceTypeMatchesBinding(VkSpirvResourceTypeFlagsEXT resource_type,
 // Only currently want to report the first mismatch
 std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_type,
                                          const spirv::ResourceInterfaceVariable& resource_variable) {
-    const uint32_t opcode = resource_variable.base_type.Opcode();
+    const spv::Op opcode = static_cast<spv::Op>(resource_variable.base_type.Opcode());
 
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT) != 0 && opcode != spv::OpTypeSampler) {
-        return "base type is " + std::string(string_SpvOpcode(opcode)) + ", not OpTypeSampler";
+        return "base type is " + std::string(spv::OpToString(opcode)) + ", not OpTypeSampler";
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT) != 0) {
         if (opcode == spv::OpTypeSampledImage) {
             return "base type is OpTypeSampledImage, not OpTypeImage (which would need COMBINED_SAMPLED_IMAGE_BIT)";
         } else if (opcode != spv::OpTypeImage) {
-            return "base type is " + std::string(string_SpvOpcode(opcode)) + ", not OpTypeImage";
+            return "base type is " + std::string(spv::OpToString(opcode)) + ", not OpTypeImage";
         } else if (resource_variable.base_type.Word(7) != 1) {
             return "OpTypeImage Sampled is " + std::to_string(resource_variable.base_type.Word(7)) + ", not 1";
         }
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT) != 0) {
         if (opcode != spv::OpTypeImage) {
-            return "base type is " + std::string(string_SpvOpcode(opcode)) + ", not OpTypeImage";
+            return "base type is " + std::string(spv::OpToString(opcode)) + ", not OpTypeImage";
         } else if (resource_variable.base_type.Word(7) != 2) {
             return "OpTypeImage Sampled is " + std::to_string(resource_variable.base_type.Word(7)) + ", not 2";
         } else if (!resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
@@ -181,7 +181,7 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT) != 0) {
         if (opcode != spv::OpTypeImage) {
-            return "base type is " + std::string(string_SpvOpcode(opcode)) + ", not OpTypeImage";
+            return "base type is " + std::string(spv::OpToString(opcode)) + ", not OpTypeImage";
         } else if (resource_variable.base_type.Word(7) != 2) {
             return "OpTypeImage Sampled is " + std::to_string(resource_variable.base_type.Word(7)) + ", not 2";
         } else if (resource_variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
@@ -227,10 +227,10 @@ std::string DescribeResourceTypeMismatch(VkSpirvResourceTypeFlagsEXT resource_ty
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT) != 0 &&
         opcode == spv::OpTypeAccelerationStructureKHR) {
-        return "base type is " + std::string(string_SpvOpcode(opcode)) + ", not OpTypeAccelerationStructureKHR";
+        return "base type is " + std::string(spv::OpToString(opcode)) + ", not OpTypeAccelerationStructureKHR";
     }
     if ((resource_type & VK_SPIRV_RESOURCE_TYPE_TENSOR_BIT_ARM) != 0 && opcode == spv::OpTypeTensorARM) {
-        return "base type is " + std::string(string_SpvOpcode(opcode)) + ", not OpTypeTensorARM";
+        return "base type is " + std::string(spv::OpToString(opcode)) + ", not OpTypeTensorARM";
     }
 
     return "[UNKNOWN]";
