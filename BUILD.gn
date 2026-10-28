@@ -36,7 +36,12 @@ config("generated_layers_config") {
 }
 
 config("vulkan_internal_config") {
-  defines = [ "VK_ENABLE_BETA_EXTENSIONS" ]
+  defines = [
+    "VK_ENABLE_BETA_EXTENSIONS",
+
+    # Enables the spv::*ToString() helpers in spirv.hpp
+    "SPV_ENABLE_UTILITY_CODE",
+  ]
 
   cflags = []
   if (is_clang || !is_win) {

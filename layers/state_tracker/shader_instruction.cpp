@@ -82,7 +82,7 @@ void Instruction::SetResultTypeIndex() {
 
 void Instruction::UpdateDebugInfo() {
 #ifndef NDEBUG
-    d_opcode_ = std::string(string_SpvOpcode(Opcode()));
+    d_opcode_ = std::string(spv::OpToString(static_cast<spv::Op>(Opcode())));
     d_length_ = Length();
     d_result_id_ = ResultId();
     d_type_id_ = TypeId();
@@ -107,7 +107,7 @@ std::string Instruction::Describe() const {
         ss << "%" << (has_type ? Word(2) : Word(1)) << " = ";
     }
 
-    ss << string_SpvOpcode(opcode);
+    ss << spv::OpToString(static_cast<spv::Op>(opcode));
 
     if (has_type) {
         operand_offset++;
@@ -116,7 +116,7 @@ std::string Instruction::Describe() const {
 
     // Exception for some opcode
     if (opcode == spv::OpEntryPoint) {
-        ss << " " << string_SpvExecutionModel(Word(1)) << " %" << Word(2) << " [Unknown]";
+        ss << " " << spv::ExecutionModelToString(static_cast<spv::ExecutionModel>(Word(1))) << " %" << Word(2) << " [Unknown]";
     } else if (opcode == spv::OpNop) {
         ss << "OpNop found, which means something else has gone wrong";
     } else {

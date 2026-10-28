@@ -244,7 +244,8 @@ bool CoreChecks::ValidateCreateShadersTessellation(const vvl::TessellationExecut
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08867", device, loc,
                          "The subdivision specified in tessellation control shader (%s) does not match the subdivision in "
                          "tessellation evaluation shader (%s).",
-                         string_SpvExecutionMode(tesc.subdivision), string_SpvExecutionMode(tese.subdivision));
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tesc.subdivision)),
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tese.subdivision)));
     }
     if (tesc.orientation == spirv::kInvalidValue && tese.orientation == spirv::kInvalidValue) {
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-12224", device, loc,
@@ -254,7 +255,8 @@ bool CoreChecks::ValidateCreateShadersTessellation(const vvl::TessellationExecut
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08868", device, loc,
                          "The orientation specified in tessellation control shader (%s) does not match the orientation in "
                          "tessellation evaluation shader (%s).",
-                         string_SpvExecutionMode(tesc.orientation), string_SpvExecutionMode(tese.orientation));
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tesc.orientation)),
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tese.orientation)));
     }
     if (tesc.spacing == spirv::kInvalidValue && tese.spacing == spirv::kInvalidValue) {
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-12225", device, loc,
@@ -263,7 +265,8 @@ bool CoreChecks::ValidateCreateShadersTessellation(const vvl::TessellationExecut
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08870", device, loc,
                          "The spacing specified in tessellation control shader (%s) does not match the spacing in "
                          "tessellation evaluation shader (%s).",
-                         string_SpvExecutionMode(tesc.spacing), string_SpvExecutionMode(tese.spacing));
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tesc.spacing)),
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tese.spacing)));
     }
     if (tesc.patch_size != spirv::kInvalidValue && tese.patch_size != spirv::kInvalidValue && tesc.patch_size != tese.patch_size) {
         skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08871", device, loc,

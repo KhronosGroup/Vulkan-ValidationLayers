@@ -725,12 +725,12 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
         std::ostringstream msg;
         msg << producer_entrypoint.Describe() << " Output Block {\n";
         for (size_t i = 0; i < output_built_in_block.size(); i++) {
-            msg << '\t' << i << ": " << string_SpvBuiltIn(output_built_in_block[i]) << '\n';
+            msg << '\t' << i << ": " << spv::BuiltInToString(output_built_in_block[i]) << '\n';
         }
         msg << "}\n";
         msg << consumer_entrypoint.Describe() << " Input Block {\n";
         for (size_t i = 0; i < input_built_in_block.size(); i++) {
-            msg << '\t' << i << ": " << string_SpvBuiltIn(input_built_in_block[i]) << '\n';
+            msg << '\t' << i << ": " << spv::BuiltInToString(input_built_in_block[i]) << '\n';
         }
         msg << "}\n";
         const LogObjectList objlist(producer_module.handle(), consumer_module.handle());
@@ -1144,7 +1144,8 @@ bool CoreChecks::ValidatePipelineTessellationStages(const ShaderStageState& tesc
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00733", objlist, create_info_loc,
                          "Subdivision specified in tessellation control shader is %s, but subdivision type specified in "
                          "tessellation evaluation shader is %s",
-                         string_SpvExecutionMode(tesc_subdivision), string_SpvExecutionMode(tese_subdivision));
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tesc_subdivision)),
+                         spv::ExecutionModeToString(static_cast<spv::ExecutionMode>(tese_subdivision)));
     }
     if (tesc_patch_size == spirv::kInvalidValue && tese_patch_size == spirv::kInvalidValue) {
         const LogObjectList objlist(tesc_stage.spirv_state->handle(), tese_stage.spirv_state->handle());

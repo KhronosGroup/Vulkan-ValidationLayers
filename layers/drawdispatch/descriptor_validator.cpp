@@ -658,7 +658,7 @@ bool DescriptorValidator::ValidateSampledImageDescriptor(const spirv::ResourceIn
         const LogObjectList objlist(this->objlist, descriptor_set.Handle(), image_view_state.VkHandle());
         std::ostringstream ss;
         ss << "the " << DescribeDescriptor(resource_variable, index, descriptor_type) << " VkImageViewType is "
-           << string_VkImageViewType(image_view_ci.viewType) << " but the OpTypeImage has (Dim = " << string_SpvDim(dim)
+           << string_VkImageViewType(image_view_ci.viewType) << " but the OpTypeImage has (Dim = " << spv::DimToString(dim)
            << ") and (Arrayed = " << is_image_array << ").\nEither fix in the shader or update the VkImageViewType to "
            << SuggestImageViewType(dim, is_image_array);
         if (((image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY) &&

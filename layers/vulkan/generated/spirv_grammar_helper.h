@@ -30,13 +30,6 @@
 #include <vector>
 #include <spirv/unified1/spirv.hpp>
 
-const char* string_SpvOpcode(uint32_t opcode);
-const char* string_SpvStorageClass(uint32_t storage_class);
-const char* string_SpvExecutionModel(uint32_t execution_model);
-const char* string_SpvExecutionMode(uint32_t execution_mode);
-const char* string_SpvDecoration(uint32_t decoration);
-const char* string_SpvBuiltIn(spv::BuiltIn built_in);
-const char* string_SpvDim(uint32_t dim);
 std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
 std::string string_SpvRayFlagsMask(uint32_t mask);
 const char* string_SpvFPEncoding(spv::FPEncoding value);
@@ -65,6 +58,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpInBoundsAccessChain:
         case spv::OpPtrAccessChain:
         case spv::OpArrayLength:
+        case spv::OpGenericPtrMemSemantics:
         case spv::OpInBoundsPtrAccessChain:
         case spv::OpVectorExtractDynamic:
         case spv::OpVectorInsertDynamic:
@@ -103,6 +97,9 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpQuantizeToF16:
         case spv::OpConvertPtrToU:
         case spv::OpConvertUToPtr:
+        case spv::OpPtrCastToGeneric:
+        case spv::OpGenericCastToPtr:
+        case spv::OpGenericCastToPtrExplicit:
         case spv::OpBitcast:
         case spv::OpSNegate:
         case spv::OpFNegate:
@@ -463,6 +460,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpRayQueryGetIntersectionWorldToObjectKHR:
         case spv::OpAtomicFAddEXT:
         case spv::OpArithmeticFenceEXT:
+        case spv::OpSubgroupBitcastShuffleINTEL:
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
         case spv::OpUntypedVariableLengthArrayINTEL:
@@ -540,6 +538,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpInBoundsAccessChain:
         case spv::OpPtrAccessChain:
         case spv::OpArrayLength:
+        case spv::OpGenericPtrMemSemantics:
         case spv::OpInBoundsPtrAccessChain:
         case spv::OpDecorationGroup:
         case spv::OpVectorExtractDynamic:
@@ -579,6 +578,9 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpQuantizeToF16:
         case spv::OpConvertPtrToU:
         case spv::OpConvertUToPtr:
+        case spv::OpPtrCastToGeneric:
+        case spv::OpGenericCastToPtr:
+        case spv::OpGenericCastToPtrExplicit:
         case spv::OpBitcast:
         case spv::OpSNegate:
         case spv::OpFNegate:
@@ -953,6 +955,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpRayQueryGetIntersectionWorldToObjectKHR:
         case spv::OpAtomicFAddEXT:
         case spv::OpArithmeticFenceEXT:
+        case spv::OpSubgroupBitcastShuffleINTEL:
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
         case spv::OpUntypedVariableLengthArrayINTEL:

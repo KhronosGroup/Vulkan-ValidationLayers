@@ -1509,7 +1509,7 @@ std::string Module::GetDecorations(uint32_t id) const {
         if (insn.Opcode() == spv::OpFunction) {
             break;  // decorations are found before first function block
         } else if (insn.Opcode() == spv::OpDecorate && insn.Word(1) == id) {
-            ss << " " << string_SpvDecoration(insn.Word(2));
+            ss << " " << spv::DecorationToString(static_cast<spv::Decoration>(insn.Word(2)));
         }
     }
     return ss.str();
@@ -1577,7 +1577,7 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
             DescribeTypeInner(ss, insn->Word(2), indent);
             break;
         case spv::OpTypePointer:
-            ss << "pointer to " << string_SpvStorageClass(insn->Word(2)) << " -> ";
+            ss << "pointer to " << spv::StorageClassToString(static_cast<spv::StorageClass>(insn->Word(2))) << " -> ";
             DescribeTypeInner(ss, insn->Word(3), indent);
             break;
         case spv::OpTypeStruct: {
@@ -2133,8 +2133,8 @@ VkFormat Module::GetTensorFormat(const spirv::Instruction& type_inst) const {
 
 std::string InterfaceSlot::Describe() const {
     std::ostringstream msg;
-    msg << "Location = " << Location() << " | Component = " << Component() << " | Type = " << string_SpvOpcode(type) << " "
-        << bit_width << " bits";
+    msg << "Location = " << Location() << " | Component = " << Component()
+        << " | Type = " << spv::OpToString(static_cast<spv::Op>(type)) << " " << bit_width << " bits";
     return msg.str();
 }
 
@@ -2244,7 +2244,7 @@ std::string ResourceInterfaceVariable::DescribeDescriptor() const {
 std::string StageInterfaceVariable::Describe() const {
     assert(!is_built_in);
     std::ostringstream ss;
-    ss << "[" << string_SpvStorageClass(storage_class) << " variable";
+    ss << "[" << spv::StorageClassToString(storage_class) << " variable";
 
     if (type_struct_info) {
         // is a struct where each field has it's own location

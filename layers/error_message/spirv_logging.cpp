@@ -424,7 +424,7 @@ void GetExecutionModelNames(const std::vector<uint32_t>& instructions, std::ostr
                 ss << ", ";
             }
             const uint32_t execution_model = instructions[offset + 1];
-            ss << string_SpvExecutionModel(execution_model);
+            ss << spv::ExecutionModelToString(static_cast<spv::ExecutionModel>(execution_model));
         }
 
         offset += length;

@@ -266,19 +266,6 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('\n')
 
         #
-        # Creates the Enum string helpers for better error messages. Same idea of vk_enum_string_helper.h but for SPIR-V
-        out.append('static inline const char* string_SpvCapability(uint32_t input_value) {\n')
-        out.append('    switch ((spv::Capability)input_value) {\n')
-        for name in self.capabilityList:
-            out.append('#ifdef VK_ENABLE_BETA_EXTENSIONS\n') if name in self.provisionalList else None
-            out.append(f'         case spv::Capability{name}:\n')
-            out.append(f'            return "{name}";\n')
-            out.append('#endif\n') if name in self.provisionalList else None
-        out.append('        default:\n')
-        out.append('            return \"Unhandled OpCapability\";\n')
-        out.append('    };\n')
-        out.append('}\n')
-        #
         # Creates SPIR-V image format helper
         out.append('''
             // Will return the Vulkan format for a given SPIR-V image format value
@@ -390,7 +377,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
                     if (GetSpirvCapabilites().count(insn_capability) == 0) {
                         const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08739" : "VUID-VkShaderCreateInfoEXT-pCode-08739";
                         skip |= LogError(vuid, module_state.handle(), loc,
-                            "SPIR-V has Capability (%s) declared, but this is not supported by Vulkan.", string_SpvCapability(insn_capability));
+                            "SPIR-V has Capability (%s) declared, but this is not supported by Vulkan.", spv::CapabilityToString(static_cast<spv::Capability>(insn_capability)));
                         return skip; // no known capability to validate
                     }
 
@@ -454,7 +441,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
                 if (has_support == false) {
                     const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08740" : "VUID-VkShaderCreateInfoEXT-pCode-08740";
                     skip |= LogError(vuid, module_state.handle(), loc,
-                        "SPIR-V Capability %s was declared, but one of the following requirements must be met (%s).", string_SpvCapability(insn_capability), SpvCapabilityRequirements(insn_capability));
+                        "SPIR-V Capability %s was declared, but one of the following requirements must be met (%s).", spv::CapabilityToString(static_cast<spv::Capability>(insn_capability)), SpvCapabilityRequirements(insn_capability));
                 }
 
                 // Portability checks

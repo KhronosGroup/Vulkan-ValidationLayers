@@ -281,8 +281,8 @@ bool CoreChecks::ValidateVectorTypes(const spirv::Module& module_state, const sp
             skip |= LogError("VUID-RuntimeSpirv-longVector-12296", module_state.handle(), loc,
                              "shader %s has a %s with a Component Count (%" PRIu32 ") which exceeds maxVectorComponents (%" PRIu32
                              ").\n%s\n",
-                             entrypoint.Describe().c_str(), string_SpvOpcode(insn->Opcode()), components, max_vector_components,
-                             module_state.DescribeInstruction(*insn).c_str());
+                             entrypoint.Describe().c_str(), spv::OpToString(static_cast<spv::Op>(insn->Opcode())), components,
+                             max_vector_components, module_state.DescribeInstruction(*insn).c_str());
         }
     }
     return skip;
@@ -2701,7 +2701,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                     std::ostringstream ss;
                     ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
                        << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " with StorageClass "
-                       << string_SpvStorageClass(resource_variable.storage_class);
+                       << spv::StorageClassToString(resource_variable.storage_class);
                     // Prevent more confusion with the cases
                     if (potential_descriptor_type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER && !resource_variable.is_buffer_block) {
                         ss << " (likely " << string_VkDescriptorType(potential_descriptor_type) << ")";
@@ -2778,7 +2778,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                     std::ostringstream ss;
                     ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
                        << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " with StorageClass "
-                       << string_SpvStorageClass(resource_variable.storage_class) << " (likely "
+                       << spv::StorageClassToString(resource_variable.storage_class) << " (likely "
                        << string_VkDescriptorType(resource_variable.GetPotentialDescriptorType())
                        << ") but it must be a Uniform Buffer, Storage Buffer, or Acceleration Structure when using this mapping "
                           "source.\nHint: Did you mean to use VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_PUSH_INDEX_EXT instead?";
@@ -2791,7 +2791,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                     std::ostringstream ss;
                     ss << "(" << string_VkDescriptorMappingSourceEXT(mapping.source) << ") is used to map descriptor "
                        << resource_variable.DescribeDescriptor() << " in " << entrypoint.Describe() << " with StorageClass "
-                       << string_SpvStorageClass(resource_variable.storage_class) << " (likely "
+                       << spv::StorageClassToString(resource_variable.storage_class) << " (likely "
                        << string_VkDescriptorType(resource_variable.GetPotentialDescriptorType())
                        << ") but it is an array.\nDescriptor arrays are not allowed for this mapping as it is not defined where "
                           "each index would get the descriptor from.";
@@ -2844,7 +2844,7 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                                      "(%s) is used to map to descriptor %s in %s but the %s was used to access the length\n%s",
                                      string_VkDescriptorMappingSourceEXT(mapping.source),
                                      resource_variable.DescribeDescriptor().c_str(), entrypoint.Describe().c_str(),
-                                     string_SpvOpcode(found_inst->Opcode()), found_inst->Describe().c_str());
+                                     spv::OpToString(static_cast<spv::Op>(found_inst->Opcode())), found_inst->Describe().c_str());
                 }
             }
 
