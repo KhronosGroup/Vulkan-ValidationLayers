@@ -47,10 +47,10 @@ def BuildVVL(config, cmake_args, build_tests, mock_android):
     cmake_cmd += ' -D CMAKE_INSTALL_LIBDIR=lib'
 
     if cmake_args:
-         cmake_cmd += f' {cmake_args}'
+        cmake_cmd += f' {cmake_args}'
 
     if mock_android:
-         cmake_cmd += ' -DVVL_MOCK_ANDROID=ON'
+        cmake_cmd += ' -DVVL_MOCK_ANDROID=ON'
 
     common_ci.RunShellCmd(cmake_cmd)
 
@@ -141,10 +141,18 @@ def Build(args):
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
         sys.exit(proc_error.returncode)
     except Exception as unknown_error:
-        print('An unknown error occurred: %s', unknown_error)
+        print(f'An unknown error occurred: {unknown_error}')
         sys.exit(1)
 
     sys.exit(0)
+
+#
+# gtest filter format is "POSITIVE_PATTERNS-NEGATIVE_PATTERNS"
+def GTestFilter(positive, negative):
+    patterns = ':'.join(positive)
+    if negative:
+        patterns += '-' + ':'.join(negative)
+    return f'--gtest_filter={patterns}'
 
 #
 # Run the Layer Validation Tests
@@ -190,40 +198,43 @@ def RunVVLTests(args):
 
     lvt_cmd = os.path.join(CI_INSTALL_DIR, 'bin', 'vk_layer_validation_tests')
 
+    positive = []
+    negative = []
+    cmd_prefix = ''
+    run_syncval_without_core = False
+
     if args.mockAndroid:
         # TODO - only reason running this subset, is mockAndoid fails any test that does
         # a manual vkCreateDevice call and need to investigate more why
-        common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*:*AndroidExternalResolve.*", env=lvt_env)
-        return
-    if args.tsan and args.wsi:
-        # Combo of both below
-        common_ci.RunShellCmd(f'xvfb-run --auto-servernum {lvt_cmd} --gtest_filter=*Wsi.*', env=lvt_env)
-        return
-    if args.tsan:
+        positive = ['*AndroidHardwareBuffer.*', '*AndroidExternalResolve.*']
+    elif args.wsi:
+        # Also covers tsan + wsi (same as the tsan and wsi runs combined)
+        # We need to use xvfb to get github action runners to be able to create a surface context
+        # Adding to other tests is a slow, unnecessary, overheader
+        positive = ['*Wsi.*']
+        cmd_prefix = 'xvfb-run --auto-servernum '
+    elif args.tsan:
         # These are tests we have decided are worth using Thread Sanitize as it will take about 9x longer to run a test
         # We have also seen TSAN turn bug out and make each test incrementally take longer
         # (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8931)
-        common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*SyncVal.*:*Threading.*:*SyncObject.*:-*Video*", env=lvt_env)
-        return
-    if args.wsi:
-        # We need to use xvfb to get github action runners to be able to create a surface context
-        # Adding to other tests is a slow, unnecessary, overheader
-        common_ci.RunShellCmd(f'xvfb-run --auto-servernum {lvt_cmd} --gtest_filter=*Wsi.*', env=lvt_env)
-        return
+        positive = ['*SyncVal.*', '*Threading.*', '*SyncObject.*']
+        negative = ['*Video*']
+    else:
+        run_syncval_without_core = True
+        # these will 100% be skipped by default on CI machine, save time filtering them out first
+        negative = [
+            # AHB as it is ran separately
+            '*AndroidHardwareBuffer.*',
+            '*AndroidExternalResolve.*',
+            # WSI as it is ran separately
+            '*Wsi.*'
+        ]
 
-    # these will 100% be skipped by default on CI machine, save time filtering them out first
-    skip_list = [
-        # AHB as it is ran separately
-        '*AndroidHardwareBuffer.*',
-        '*AndroidExternalResolve.*',
-        # WSI as it is ran separately
-        '*Wsi.*'
-    ]
-    # The "default" run
-    common_ci.RunShellCmd(f'{lvt_cmd} --gtest_filter=-{":".join(skip_list)}', env=lvt_env)
+    common_ci.RunShellCmd(f'{cmd_prefix}{lvt_cmd} {GTestFilter(positive, negative)}', env=lvt_env)
 
-    print("Re-Running syncval tests with core validation disabled (--syncval-disable-core)")
-    common_ci.RunShellCmd(lvt_cmd + ' --gtest_filter=*SyncVal* --syncval-disable-core', env=lvt_env)
+    if run_syncval_without_core:
+        print("Re-Running syncval tests with core validation disabled (--syncval-disable-core)")
+        common_ci.RunShellCmd(f'{lvt_cmd} {GTestFilter(["*SyncVal*"], [])} --syncval-disable-core', env=lvt_env)
 
 def Test(args):
     try:
@@ -233,7 +244,7 @@ def Test(args):
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
         sys.exit(proc_error.returncode)
     except Exception as unknown_error:
-        print('An unknown error occurred: %s', unknown_error)
+        print(f'An unknown error occurred: {unknown_error}')
         sys.exit(1)
 
     sys.exit(0)
