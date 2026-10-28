@@ -406,7 +406,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShader) {
         {
             uniform_buffer_ptr[0] = 5;
             SCOPED_TRACE("uninitialized");
-            m_errorMonitor->SetDesiredError("08114", 3);
+            m_errorMonitor->SetDesiredError("08114", 2);
             m_default_queue->SubmitAndWait(m_command_buffer);
             m_errorMonitor->VerifyFound();
         }
@@ -545,7 +545,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShader) {
         {
             uniform_buffer_ptr[0] = 5;
             SCOPED_TRACE("uninitialized");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 2);
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 1);
             m_default_queue->SubmitAndWait(m_command_buffer);
             m_errorMonitor->VerifyFound();
         }
@@ -685,7 +685,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferClosetHitShader) {
         {
             uniform_buffer_ptr[0] = 5;
             SCOPED_TRACE("uninitialized");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 2);
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 1);
             m_default_queue->SubmitAndWait(m_command_buffer);
             m_errorMonitor->VerifyFound();
         }
@@ -844,7 +844,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferTwoClosetHitShader) {
         {
             uniform_buffer_ptr[0] = 5;
             SCOPED_TRACE("uninitialized");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 3);
+            m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-08114", 2);
             m_default_queue->SubmitAndWait(m_command_buffer);
             m_errorMonitor->VerifyFound();
         }
@@ -1010,7 +1010,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferRayGenShaderGPL) {
         {
             uniform_buffer_ptr[0] = 5;
             SCOPED_TRACE("uninitialized");
-            m_errorMonitor->SetDesiredError("08114", 3);
+            m_errorMonitor->SetDesiredError("08114", 2);
             m_default_queue->SubmitAndWait(m_command_buffer);
             m_errorMonitor->VerifyFound();
         }
@@ -1178,7 +1178,7 @@ TEST_F(NegativeGpuAVRayTracing, ArrayOOBBufferMissShaderGPL) {
         {
             uniform_buffer_ptr[0] = 5;
             SCOPED_TRACE("uninitialized");
-            m_errorMonitor->SetDesiredError("08114", 3);
+            m_errorMonitor->SetDesiredError("08114", 2);
             m_default_queue->SubmitAndWait(m_command_buffer);
             m_errorMonitor->VerifyFound();
         }

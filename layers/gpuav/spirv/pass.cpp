@@ -849,13 +849,19 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
 
     // When skipping some instructions, we need something valid to replace it
     if (target_inst.Opcode() == spv::OpRayQueryInitializeKHR) {
-        // Currently assume the RayQuery and AS object were valid already
+        // Currently assume the RayQuery object was valid already
+        // The AS object is not, as it might have been loaded from an invalid descriptor, so use a null one
+        const Type& uvec2_type = type_manager_.GetTypeVector(type_manager_.GetTypeInt(32, false), 2);
+        const Constant& null_constant = type_manager_.GetConstantNull(uvec2_type);
+        const uint32_t null_as_id = module_.TakeNextId();
+        invalid_block.CreateInstruction(spv::OpConvertUToAccelerationStructureKHR,
+                                        {type_manager_.GetTypeAccelerationStructure().Id(), null_as_id, null_constant.Id()});
+
         const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
         const uint32_t float32_0_id = type_manager_.GetConstantZeroFloat32().Id();
         const uint32_t vec3_0_id = type_manager_.GetConstantZeroVec3().Id();
-        invalid_block.CreateInstruction(spv::OpRayQueryInitializeKHR,
-                                        {target_inst.Operand(0), target_inst.Operand(1), uint32_0_id, uint32_0_id, vec3_0_id,
-                                         float32_0_id, vec3_0_id, float32_0_id});
+        invalid_block.CreateInstruction(spv::OpRayQueryInitializeKHR, {target_inst.Operand(0), null_as_id, uint32_0_id, uint32_0_id,
+                                                                       vec3_0_id, float32_0_id, vec3_0_id, float32_0_id});
     }
 
     invalid_block.CreateInstruction(spv::OpBranch, {merge_block_label});

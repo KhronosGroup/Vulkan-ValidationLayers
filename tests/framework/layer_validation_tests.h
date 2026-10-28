@@ -430,7 +430,7 @@ class QueryTest : public VkLayerTest {
 
 class RayTracingTest : public virtual VkLayerTest {
   public:
-    void InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* enabled_features = nullptr);
+    void InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* enabled_features = nullptr, bool safe_mode = true);
 };
 
 class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};

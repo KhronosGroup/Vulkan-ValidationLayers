@@ -499,7 +499,7 @@ const Variable& Module::GetBuiltInVariable(uint32_t built_in) {
 
 const AccessPath* Module::GetAccessPath(const Function& function, const Instruction& inst) {
     // Access path is only for memory accesses
-    if (!inst.IsMemoryAccess()) {
+    if (!inst.IsMemoryAccess() && OpcodeAccelerationStructureAccessPosition(inst.Opcode()) == 0) {
         return nullptr;
     }
 

@@ -32,7 +32,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRays) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -121,7 +121,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDescriptorBuffer) {
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -235,7 +235,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -322,7 +322,7 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -433,7 +433,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -541,7 +541,7 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -654,7 +654,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -863,7 +863,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDeferredBuild) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -951,7 +951,7 @@ TEST_F(PositiveGpuAVRayTracing, TraceRaysInCubes) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -1107,7 +1107,7 @@ TEST_F(PositiveGpuAVRayTracing, TraceRaysInCubesTLASArray) {
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -1278,7 +1278,7 @@ TEST_F(PositiveGpuAVRayTracing, TraceRaysInCubesTLASArrayCallableShader) {
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -1459,7 +1459,7 @@ TEST_F(PositiveGpuAVRayTracing, TraceRaysInCubes2) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -1682,7 +1682,7 @@ TEST_F(PositiveGpuAVRayTracing, OutOfBoundsIndex) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -1742,7 +1742,7 @@ TEST_F(PositiveGpuAVRayTracing, OutOfBoundsIndex2) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -1797,7 +1797,7 @@ TEST_F(PositiveGpuAVRayTracing, IndexBufferUpdate) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -1886,7 +1886,7 @@ TEST_F(PositiveGpuAVRayTracing, VertexBufferUpdateStridedVertices) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -1984,7 +1984,7 @@ TEST_F(PositiveGpuAVRayTracing, AabbStatus) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2058,7 +2058,7 @@ TEST_F(PositiveGpuAVRayTracing, EmptyTlas) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::rayQuery);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2097,7 +2097,7 @@ TEST_F(PositiveGpuAVRayTracing, TlasBuildUsingZeroAsBlasAddress) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2188,7 +2188,7 @@ TEST_F(PositiveGpuAVRayTracing, BlasAddressRecycledFromDestroyedTlas) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2275,7 +2275,7 @@ TEST_F(PositiveGpuAVRayTracing, BlasReference1DescriptorHeap) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2454,7 +2454,7 @@ TEST_F(PositiveGpuAVRayTracing, BuildStateSnapshotFollowsExecutionOrder) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2523,7 +2523,7 @@ TEST_F(PositiveGpuAVRayTracing, VertexBufferUpdateOnlySubmittedBuildsMatter) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2630,7 +2630,7 @@ TEST_F(PositiveGpuAVRayTracing, TlasBuildReferencingClonedBlas) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2674,7 +2674,7 @@ TEST_F(PositiveGpuAVRayTracing, TlasBuildReferencingCompactedBlas) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2717,7 +2717,7 @@ TEST_F(PositiveGpuAVRayTracing, TlasBuildReferencingIndirectBuiltBlas) {
     AddRequiredFeature(vkt::Feature::accelerationStructureIndirectBuild);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2745,7 +2745,7 @@ TEST_F(PositiveGpuAVRayTracing, SerializeAccelerationStructure) {
     AddRequiredFeature(vkt::Feature::accelerationStructureIndirectBuild);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
@@ -2833,7 +2833,7 @@ TEST_F(PositiveGpuAVRayTracing, BuildAccelerationStructureDescriptorBuffer) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }

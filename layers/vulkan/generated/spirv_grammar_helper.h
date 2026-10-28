@@ -1347,6 +1347,37 @@ static constexpr uint32_t OpcodeImageAccessPosition(uint32_t opcode) {
     return position;
 }
 
+// Return operand position of the 'Acceleration Structure' IdRef or zero if there is none.
+static constexpr uint32_t OpcodeAccelerationStructureAccessPosition(uint32_t opcode) {
+    uint32_t position = 0;
+    switch (opcode) {
+        case spv::OpTraceRayKHR:
+        case spv::OpTraceNV:
+        case spv::OpTraceMotionNV:
+        case spv::OpTraceRayMotionNV:
+            return 1;
+        case spv::OpRayQueryInitializeKHR:
+        case spv::OpHitObjectRecordHitMotionNV:
+        case spv::OpHitObjectRecordHitWithIndexMotionNV:
+        case spv::OpHitObjectTraceRayMotionNV:
+        case spv::OpHitObjectTraceRayNV:
+        case spv::OpHitObjectRecordHitNV:
+        case spv::OpHitObjectRecordHitWithIndexNV:
+        case spv::OpHitObjectTraceReorderExecuteEXT:
+        case spv::OpHitObjectTraceMotionReorderExecuteEXT:
+        case spv::OpHitObjectTraceRayEXT:
+        case spv::OpHitObjectTraceRayMotionEXT:
+            return 2;
+        case spv::OpFetchMicroTriangleVertexPositionNV:
+        case spv::OpFetchMicroTriangleVertexBarycentricNV:
+            return 3;
+
+        default:
+            break;
+    }
+    return position;
+}
+
 // All valid OpType*
 enum class SpvType {
     Empty = 0,
