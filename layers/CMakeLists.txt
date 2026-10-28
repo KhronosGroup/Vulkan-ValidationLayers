@@ -764,18 +764,22 @@ add_custom_command(TARGET vvl POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${INTERMEDIATE_FILE} $<TARGET_FILE_DIR:vvl>/${OUTPUT_FILE_FINAL_NAME}
 )
 
-# Auto generate vk_layer_settings.txt upon setting changes
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-add_custom_command(
-    OUTPUT "${VVL_SOURCE_DIR}/layers/vk_layer_settings.txt" "${VVL_SOURCE_DIR}/layers/layer_options_validation.h"
-    COMMAND Python3::Interpreter "scripts/generate_settings.py"
-    DEPENDS "${VVL_SOURCE_DIR}/layers/VkLayer_khronos_validation.json.in"
-    WORKING_DIRECTORY ${VVL_SOURCE_DIR}
-)
-add_custom_target(vvl_generated_setting_files
-    DEPENDS "${VVL_SOURCE_DIR}/layers/vk_layer_settings.txt" "${VVL_SOURCE_DIR}/layers/layer_options_validation.h"
-)
-add_dependencies(vvl vvl_generated_setting_files)
+# Auto generate vk_layer_settings.txt upon setting changes.
+# Like vvl_codegen, this writes into the source tree, so keep it behind VVL_CODEGEN: the
+# generated files are checked in, and sandboxed/package builds have a read-only source tree.
+if (VVL_CODEGEN)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_custom_command(
+        OUTPUT "${VVL_SOURCE_DIR}/layers/vk_layer_settings.txt" "${VVL_SOURCE_DIR}/layers/layer_options_validation.h"
+        COMMAND Python3::Interpreter "scripts/generate_settings.py"
+        DEPENDS "${VVL_SOURCE_DIR}/layers/VkLayer_khronos_validation.json.in"
+        WORKING_DIRECTORY ${VVL_SOURCE_DIR}
+    )
+    add_custom_target(vvl_generated_setting_files
+        DEPENDS "${VVL_SOURCE_DIR}/layers/vk_layer_settings.txt" "${VVL_SOURCE_DIR}/layers/layer_options_validation.h"
+    )
+    add_dependencies(vvl vvl_generated_setting_files)
+endif()
 
 # For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system directories
 # This json isn't used for regular local development, it's used for installation
