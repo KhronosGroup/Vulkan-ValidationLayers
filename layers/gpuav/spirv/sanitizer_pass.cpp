@@ -359,11 +359,27 @@ bool SanitizerPass::IsConstantZero(const Constant& constant) const {
     return false;
 }
 
+// Mainly used because a tad faster than IsValueIn
+static bool IsDivideOrRemainder(uint32_t opcode) {
+    switch (opcode) {
+        case spv::OpUDiv:
+        case spv::OpSDiv:
+        case spv::OpUMod:
+        case spv::OpSMod:
+        case spv::OpSRem:
+        case spv::OpFMod:
+        case spv::OpFRem:
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool SanitizerPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const spv::Op opcode = (spv::Op)inst.Opcode();
     meta.target_instruction = &inst;
 
-    if (IsValueIn(opcode, {spv::OpUDiv, spv::OpSDiv, spv::OpUMod, spv::OpSMod, spv::OpSRem, spv::OpFMod, spv::OpFRem})) {
+    if (IsDivideOrRemainder(opcode)) {
         // Note - It is valid to divide by zero for a float (you get NaN), but invalid for an int.
         if (const Constant* constant = type_manager_.FindConstantById(inst.Word(4))) {
             // If its a constant, no reason to instrument, unless its a constant value of zero,
