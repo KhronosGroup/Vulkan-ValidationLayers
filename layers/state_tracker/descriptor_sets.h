@@ -1004,7 +1004,9 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
 
         DescriptorIterator(DescriptorSet &descriptor_set, uint32_t binding, uint32_t index = 0)
             : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(0) {
-            if (index < (*iter_)->count) {
+            if (AtEnd()) {
+                return;  // to not crash if things are already invalid
+            } else if (index < (*iter_)->count) {
                 index_ = index;
             } else {
                 // This is a consecutive binding updates and need to find first used binding
@@ -1026,7 +1028,9 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
 
         DescriptorIterator(const DescriptorSet &descriptor_set, uint32_t binding, uint32_t index = 0)
             : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(0) {
-            if (index < (*iter_)->count) {
+            if (AtEnd()) {
+                return;  // to not crash if things are already invalid
+            } else if (index < (*iter_)->count) {
                 index_ = index;
             } else {
                 // This is a consecutive binding updates and need to find first used binding
