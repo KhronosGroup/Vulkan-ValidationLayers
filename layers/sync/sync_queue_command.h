@@ -45,6 +45,12 @@ struct SignalSemaphoreCommand {
     bool Execute(SyncValidator& validator) const;
 };
 
+struct HostResetEventCommand {
+    VkEvent event;
+    bool IsReady() const { return true; }
+    bool Execute(SyncValidator& validator) const;
+};
+
 struct QueueWaitIdleCommand {
     VkQueue queue;
     bool IsReady() const { return true; }
@@ -56,8 +62,8 @@ struct DeviceWaitIdleCommand {
     bool Execute(SyncValidator& validator) const;
 };
 
-using QueueCommand =
-    std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, QueueWaitIdleCommand, DeviceWaitIdleCommand>;
+using QueueCommand = std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, HostResetEventCommand,
+                                  QueueWaitIdleCommand, DeviceWaitIdleCommand>;
 using QueueCommandStorage = std::deque<QueueCommand>;
 
 // Whether the command is ready to execute.

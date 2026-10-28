@@ -55,6 +55,22 @@ bool SignalSemaphoreCommand::Execute(SyncValidator& validator) const {
     return skip;
 }
 
+bool HostResetEventCommand::Execute(SyncValidator& validator) const {
+    if (auto event_state = validator.Get<vvl::Event>(event)) {
+        const auto all_batches = validator.GetAllQueueBatchContexts();
+        for (const auto& batch : all_batches) {
+            SyncEventsContext& events_context = batch->GetEventsContext();
+            if (SyncEventState* sync_event = events_context.GetFromShared(event_state)) {
+                sync_event->last_command = vvl::Func::vkResetEvent;
+                sync_event->unsynchronized_set = vvl::Func::Empty;
+                sync_event->ResetFirstScope();
+                sync_event->barriers = 0;
+            }
+        }
+    }
+    return false;
+}
+
 bool QueueWaitIdleCommand::Execute(SyncValidator& validator) const {
     const QueueId waited_queue = validator.GetQueueId(queue);
     if (waited_queue == kQueueIdInvalid) {
