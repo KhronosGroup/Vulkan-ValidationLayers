@@ -141,3 +141,36 @@ TEST_F(UndefinedCore, DescriptorArrayLayoutMismatchDraw) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(UndefinedCore, DescriptorUpdateUndeclaredBinding) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13579");
+    RETURN_IF_SKIP(Init());
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    descriptor_set.WriteDescriptorImageInfo(3, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkWriteDescriptorSet-dstBinding-00315");
+    descriptor_set.UpdateDescriptorSets();
+
+    descriptor_set.Clear();
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkWriteDescriptorSet-dstBinding-00316");
+    descriptor_set.UpdateDescriptorSets();
+
+    VkCopyDescriptorSet copy = vku::InitStructHelper();
+    copy.srcSet = descriptor_set.set_;
+    copy.srcBinding = 1;
+    copy.dstSet = descriptor_set.set_;
+    copy.dstBinding = 2;
+    copy.descriptorCount = 1;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkCopyDescriptorSet-srcBinding-00345");
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy);
+
+    copy.srcBinding = 0;
+    copy.dstBinding = 1;
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkCopyDescriptorSet-dstBinding-00347");
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy);
+}
