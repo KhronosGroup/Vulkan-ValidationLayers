@@ -30,6 +30,31 @@ bool WaitForSemaphoreCommand::Execute(SyncValidator& validator) const {
     return false;
 }
 
+bool SignalSemaphoreCommand::Execute(SyncValidator& validator) const {
+    bool skip = false;
+
+    auto semaphore_state = validator.Get<vvl::Semaphore>(semaphore);
+    if (!semaphore_state) {
+        return skip;
+    }
+
+    SignalsUpdate signals_update(validator);
+    std::vector<SignalInfo>& signals = signals_update.timeline_signals[semaphore];
+
+    // Reject invalid signal
+    if (!signals.empty() && value <= signals.back().timeline_value) {
+        return skip;  // [core validation check]: strictly increasing signal values
+    }
+
+    signals.emplace_back(SignalInfo(semaphore_state, value));
+    skip |= validator.PropagateTimelineSignals(signals_update);
+
+    if (!skip) {
+        validator.ApplySignalsUpdate(signals_update, nullptr);
+    }
+    return skip;
+}
+
 bool QueueWaitIdleCommand::Execute(SyncValidator& validator) const {
     const QueueId waited_queue = validator.GetQueueId(queue);
     if (waited_queue == kQueueIdInvalid) {

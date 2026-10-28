@@ -536,7 +536,6 @@ class SyncValidator : public vvl::DeviceProxy {
                                      uint64_t timeout, const RecordObject& record_obj) override;
     bool PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                         const ErrorObject& error_obj) const override;
-    bool ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo);
     bool PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                            const ErrorObject& error_obj) const override;
     void PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
