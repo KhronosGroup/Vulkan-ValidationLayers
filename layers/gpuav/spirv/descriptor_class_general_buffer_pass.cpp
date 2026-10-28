@@ -85,14 +85,24 @@ void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, Ins
     module_.need_log_error_ = true;
 }
 
+static bool IsBufferAccess(uint32_t opcode) {
+    switch (opcode) {
+        case spv::OpLoad:
+        case spv::OpStore:
+        case spv::OpCooperativeMatrixLoadKHR:
+        case spv::OpCooperativeMatrixStoreKHR:
+            return true;
+        default:
+            return AtomicOperation(opcode);
+    }
+}
+
 bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                                InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
     // Only known way to access a UBO/SSBO
-    if (!IsValueIn(spv::Op(opcode),
-                   {spv::OpLoad, spv::OpStore, spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR}) &&
-        !AtomicOperation(opcode)) {
+    if (!IsBufferAccess(opcode)) {
         return false;
     }
 

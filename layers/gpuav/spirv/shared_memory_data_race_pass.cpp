@@ -167,12 +167,24 @@ void SharedMemoryDataRacePass::CreateFunctionCall(const Function& function, Basi
     }
 }
 
+static bool IsSharedMemoryCandidate(uint32_t opcode) {
+    switch (opcode) {
+        case spv::OpLoad:
+        case spv::OpStore:
+        case spv::OpControlBarrier:
+        case spv::OpCooperativeMatrixLoadKHR:
+        case spv::OpCooperativeMatrixStoreKHR:
+            return true;
+        default:
+            return AtomicOperation(opcode);
+    }
+}
+
 bool SharedMemoryDataRacePass::RequiresInstrumentation(const Function& function, BasicBlock& block, InstructionIt& inst_it,
                                                        const Instruction& inst, InstructionMeta& meta) {
     const spv::Op opcode = (spv::Op)inst.Opcode();
 
-    if (!AtomicOperation(opcode) && !IsValueIn(opcode, {spv::OpLoad, spv::OpStore, spv::OpControlBarrier,
-                                                        spv::OpCooperativeMatrixLoadKHR, spv::OpCooperativeMatrixStoreKHR})) {
+    if (!IsSharedMemoryCandidate(opcode)) {
         return false;
     }
     meta.target_instruction = &inst;
