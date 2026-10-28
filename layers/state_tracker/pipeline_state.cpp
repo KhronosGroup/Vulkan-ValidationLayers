@@ -678,13 +678,12 @@ static bool IgnoreColorAttachments(const DeviceState& state_data, Pipeline& pipe
             }
         }
     }
-    // According to the spec, pAttachments is to be ignored if the pipeline is created with
-    // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
-    // and VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic states set
+    // According to the spec, when VkPipelineColorBlendStateCreateInfo::pAttachments can be ignored
     return pipe_state.ColorBlendState() && (pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
                                             pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
-                                            pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
-                                            pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
+                                            pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
+                                            (!IsExtEnabled(state_data.extensions.vk_ext_blend_operation_advanced) ||
+                                             pipe_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)));
 }
 
 static bool UsesShaderModuleId(const Pipeline& pipe_state) {
