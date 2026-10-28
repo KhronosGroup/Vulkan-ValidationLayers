@@ -19,6 +19,7 @@ import sys
 import os
 import argparse
 import common_ci
+import ci_test_filter
 
 # Where all artifacts will ultimately be placed under
 CI_BUILD_DIR = common_ci.RepoRelative('build-ci')
@@ -149,6 +150,12 @@ def Build(args):
 #
 # Run the Layer Validation Tests
 def RunVVLTests(args):
+    # Skip tests when the PR changes cannot affect any, e.g. only docs/ changed
+    pr_base = ci_test_filter.GetGitHubPRBase()
+    if pr_base and '*' in ci_test_filter.GetExcludedTests(ci_test_filter.GetChangedFiles(pr_base)):
+        print("No test affected by the PR changes, skipping VVL Tests")
+        return
+
     print("Run VVL Tests using Mock ICD")
 
     lvt_env = dict(os.environ)

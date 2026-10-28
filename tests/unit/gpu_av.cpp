@@ -21,7 +21,7 @@ class NegativeGpuAV : public GpuAVTest {};
 
 TEST_F(NegativeGpuAV, ValidationAbort) {
     TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
-    // GPU Shader Instrumentation requires Vulkan 1.1 or later
+    // GPU Shader Instrumentation requires Vulkan 1.1 or later hello tes
     SetTargetApiVersion(VK_API_VERSION_1_0);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFramework(&validation_features));
