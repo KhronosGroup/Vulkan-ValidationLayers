@@ -458,7 +458,11 @@ class GoodRepo(object):
         for retry in range(retries):
             make_or_exist_dirs(self.repo_dir)
             try:
-                command_output(['git', 'clone', self.url, '.'], self.repo_dir)
+                if self._args.shallow:
+                    command_output(['git', 'init'], self.repo_dir)
+                    command_output(['git', 'remote', 'add', 'origin', self.url], self.repo_dir)
+                else:
+                    command_output(['git', 'clone', self.url, '.'], self.repo_dir)
                 # If we get here, we didn't raise an error
                 return
             except RuntimeError as e:
@@ -476,10 +480,22 @@ class GoodRepo(object):
                 print("Failed to clone {} on all retries.".format(self.url))
                 raise e
 
-    def Fetch(self, retries=10, retry_seconds=60):
+    def IsShallow(self):
+        return command_output(['git', 'rev-parse', '--is-shallow-repository'], self.repo_dir).strip() == 'true'
+
+    def Fetch(self, shallow, retries=10, retry_seconds=60):
+        if shallow:
+            # Works for a SHA-1, tag or branch. A remote-tracking name like 'origin/main' needs its prefix dropped.
+            ref = self._args.ref if len(self._args.ref) else self.commit
+            fetch_cmd = ['git', 'fetch', '--depth', '1', 'origin', ref.removeprefix('origin/')]
+        elif self.IsShallow():
+            # Opted out of shallow, so turn a repo from an earlier shallow run into a full one
+            fetch_cmd = ['git', 'fetch', '--unshallow', 'origin']
+        else:
+            fetch_cmd = ['git', 'fetch', 'origin']
         for retry in range(retries):
             try:
-                command_output(['git', 'fetch', 'origin'], self.repo_dir)
+                command_output(fetch_cmd, self.repo_dir)
                 # if we get here, we didn't raise an error, and we're done
                 return
             except RuntimeError as e:
@@ -508,10 +524,16 @@ class GoodRepo(object):
                 if VERBOSE:
                     print('Clearing directory {d}'.format(d=self.repo_dir))
                 shutil.rmtree(self.repo_dir, onerror = on_rm_error)
+        cloned = False
         if not os.path.exists(os.path.join(self.repo_dir, '.git')):
             self.Clone()
-        self.Fetch()
-        if len(self._args.ref):
+            cloned = True
+        # A full clone someone already has is left alone, only new clones and existing shallow ones stay shallow
+        shallow = self._args.shallow and (cloned or self.IsShallow())
+        self.Fetch(shallow)
+        if shallow:
+            command_output(['git', 'checkout', 'FETCH_HEAD'], self.repo_dir)
+        elif len(self._args.ref):
             command_output(['git', 'checkout', self._args.ref], self.repo_dir)
         else:
             command_output(['git', 'checkout', self.commit], self.repo_dir)
@@ -926,6 +948,12 @@ def main():
         action='store_true',
         help="Delete install directory before building",
         default=False)
+    parser.add_argument(
+        '--no-shallow',
+        dest='shallow',
+        action='store_false',
+        help="Clone the full history of each repository instead of only the needed commit (--depth 1)",
+        default=True)
     parser.add_argument(
         '--skip-existing-install',
         dest='skip_existing_install',
