@@ -30,9 +30,8 @@ class TraceRayPass : public Pass {
     void PrintDebugInfo() const final;
 
   private:
-    std::vector<uint32_t> GetTlasValidationFunctionCallInstructions(const Function& function, uint32_t tlas_operand_pos,
-                                                                    uint32_t error_sub_code, BasicBlock& block,
-                                                                    InstructionIt* trace_ray_inst_it);
+    std::vector<uint32_t> GetTlasValidationFunctionCallInstructions(const Function& function, uint32_t error_sub_code,
+                                                                    BasicBlock& block, InstructionIt* trace_ray_inst_it);
     std::vector<uint32_t> GetTraceRayValidationFunctionCallInstructions(InstructionIt* trace_ray_inst_it);
     std::vector<uint32_t> GetRayHitObjectValidationFunctionCallInstructions(InstructionIt* ray_hit_object_inst_it);
     std::vector<uint32_t> GetRayHitObjectSbtIndexValidationFunctionCallInstructions(

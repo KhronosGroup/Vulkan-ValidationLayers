@@ -48,20 +48,13 @@ const static OfflineFunction kReportIntersectionValidationFunction = {"inst_repo
 
 TraceRayPass::TraceRayPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
-std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(const Function& function, uint32_t tlas_operand_pos,
-                                                                              uint32_t error_sub_code, BasicBlock& block,
-                                                                              InstructionIt* trace_ray_inst_it) {
+std::vector<uint32_t> TraceRayPass::GetTlasValidationFunctionCallInstructions(const Function& function, uint32_t error_sub_code,
+                                                                              BasicBlock& block, InstructionIt* trace_ray_inst_it) {
     if (module_.interface_.descriptor_mode != vvl::DescriptorMode::DescriptorModeClassic) {
         return {};
     }
 
-    const uint32_t as_op_load_id = (*trace_ray_inst_it)->get()->Operand(tlas_operand_pos);
-    const Instruction* as_op_load_inst = function.FindInstruction(as_op_load_id);
-    if (!as_op_load_inst) {
-        return {};
-    }
-
-    const AccessPath* access_path = module_.GetAccessPath(function, *as_op_load_inst);
+    const AccessPath* access_path = module_.GetAccessPath(function, *(*trace_ray_inst_it)->get());
     if (!access_path || !access_path->IsValidDescriptor() ||
         access_path->access_type->spv_type_ != SpvType::kAccelerationStructureKHR) {
         return {};
@@ -268,15 +261,15 @@ bool TraceRayPass::Instrument() {
                 };
                 switch (opcode) {
                     case spv::OpRayQueryInitializeKHR: {
-                        add_func_call(GetTlasValidationFunctionCallInstructions(
-                            function, 1, glsl::kErrorSubCode_RayQuery_TlasNotBuilt, current_block, &inst_it));
+                        add_func_call(GetTlasValidationFunctionCallInstructions(function, glsl::kErrorSubCode_RayQuery_TlasNotBuilt,
+                                                                                current_block, &inst_it));
                         add_func_call(GetRayQueryInitializeValidationFunctionCallInstructions(&inst_it));
                         break;
                     }
                     case spv::OpTraceRayKHR: {
                         add_func_call(GetTraceRayValidationFunctionCallInstructions(&inst_it));
-                        add_func_call(GetTlasValidationFunctionCallInstructions(
-                            function, 0, glsl::kErrorSubCode_TraceRay_TlasNotBuilt, current_block, &inst_it));
+                        add_func_call(GetTlasValidationFunctionCallInstructions(function, glsl::kErrorSubCode_TraceRay_TlasNotBuilt,
+                                                                                current_block, &inst_it));
                         break;
                     }
                     case spv::OpHitObjectSetShaderBindingTableRecordIndexEXT: {

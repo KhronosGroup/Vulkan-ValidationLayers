@@ -56,6 +56,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.executionScopePosition = [[] for i in range(4)]
         self.imageOperandsPosition = [[] for i in range(8)]
         self.imageAccessOperand = [[] for i in range(4)]
+        self.accelerationStructureAccessOperand = [[] for i in range(4)]
 
         self.kindId = [] # "category" : "Id"
         self.kindLiteral = [] # "category" : "Literal"
@@ -209,6 +210,9 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                                 self.opcodes[opcode]['imageRefPosition'] = index + 1
                             elif operand['name'] == 'Sampled Image':
                                 self.opcodes[opcode]['sampledImageRefPosition'] = index + 1
+                            # The grammar uses both names, OpConvertUToAccelerationStructureKHR also calls its uint64 input 'Accel'
+                            elif operand['name'] in ['Accel', 'Acceleration Structure'] and opname != 'OpConvertUToAccelerationStructureKHR':
+                                self.accelerationStructureAccessOperand[index + 1].append(opname)
 
                 if re.search(r'OpImage*', opname) is not None:
                     info = self.opcodes[opcode]
@@ -471,6 +475,25 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 switch (opcode) {
             ''')
         for index, opcodes in enumerate(self.imageAccessOperand):
+            for opcode in opcodes:
+                out.append(f'        case spv::{opcode}:\n')
+            if len(opcodes) != 0:
+                out.append(f'            return {index};\n')
+        out.append('''
+                    default:
+                        break;
+                }
+                return position;
+            }
+            ''')
+
+        out.append('''
+            // Return operand position of the 'Acceleration Structure' IdRef or zero if there is none.
+            static constexpr uint32_t OpcodeAccelerationStructureAccessPosition(uint32_t opcode) {
+                uint32_t position = 0;
+                switch (opcode) {
+            ''')
+        for index, opcodes in enumerate(self.accelerationStructureAccessOperand):
             for opcode in opcodes:
                 out.append(f'        case spv::{opcode}:\n')
             if len(opcodes) != 0:

@@ -46,6 +46,8 @@ static const Type* FindAccessType(const TypeManager& type_manager, const Functio
             access_type = type_manager.FindTypeGlobal(function, inst.Operand(2));
         } else if (opcode == spv::OpAtomicStore) {
             access_type = type_manager.FindTypeGlobal(function, inst.Operand(3));
+        } else if (const uint32_t as_position = OpcodeAccelerationStructureAccessPosition(opcode); as_position != 0) {
+            access_type = type_manager.FindTypeGlobal(function, inst.Word(as_position));
         }
     }
     assert(access_type);
@@ -97,20 +99,20 @@ static const Instruction* Unwarp(const Instruction* in_inst, const Function& fun
 // This is the "hide all the ugliness here" function
 // The goal is a new pass can just call this and have everything it needs to know about the memory access
 AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Function& function, const Instruction& inst) {
-    assert(inst.IsMemoryAccess());
+    assert(inst.IsMemoryAccess() || OpcodeAccelerationStructureAccessPosition(inst.Opcode()) != 0);
     const spv::Op opcode = (spv::Op)inst.Opcode();
 
     // Find Access Type
     {
         access_type = FindAccessType(type_manager, function, inst);
 
-        const bool image_sampler_access = access_type->spv_type_ == SpvType::kImage ||
-                                          access_type->spv_type_ == SpvType::kSampledImage ||
-                                          access_type->spv_type_ == SpvType::kSampler;
+        const bool handle_access = access_type->spv_type_ == SpvType::kImage || access_type->spv_type_ == SpvType::kSampledImage ||
+                                   access_type->spv_type_ == SpvType::kSampler ||
+                                   access_type->spv_type_ == SpvType::kAccelerationStructureKHR;
 
-        // This is just loading the image handle, this alone is the not the access.
-        // There will be an access (OpImageWrite, OpImageSampleImplicitLod, etc) later which has the real access information
-        if (opcode == spv::OpLoad && image_sampler_access) {
+        // This is just loading the image (or acceleration structure) handle, this alone is the not the access.
+        // There will be an access (OpImageWrite, OpImageSample*, OpTraceRayKHR, etc) later which has the real access information
+        if (opcode == spv::OpLoad && handle_access) {
             return;
         }
     }
@@ -121,7 +123,14 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
     uint32_t ptr_id = OpcodeImageAccessPosition(opcode);
     const bool is_image_access = ptr_id != 0;
 
-    if (!is_image_access) {
+    const uint32_t as_position = OpcodeAccelerationStructureAccessPosition(opcode);
+    if (as_position != 0) {
+        const Instruction* as_load_inst = Unwarp(function.FindInstruction(inst.Word(as_position)), function);
+        if (!as_load_inst || as_load_inst->Opcode() != spv::OpLoad) {
+            return;  // ex. OpConvertUToAccelerationStructureKHR
+        }
+        ptr_id = as_load_inst->Operand(0);
+    } else if (!is_image_access) {
         ptr_id = inst.Operand(0);  // Standard Store/Load
     } else {
         // Image access path
