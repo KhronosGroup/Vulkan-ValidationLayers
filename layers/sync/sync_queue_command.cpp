@@ -85,8 +85,9 @@ bool QueueWaitIdleCommand::Execute(SyncValidator& validator) const {
 
     // Eliminate host waitable objects from the current queue
     vvl::EraseIf(validator.waitable_fences_, [waited_queue](const auto& sf) { return sf.second.queue_id == waited_queue; });
-    for (auto& [semaphore, sync_points] : validator.host_waitable_semaphores_) {
-        vvl::EraseIf(sync_points, [waited_queue](const auto& sync_point) { return sync_point.queue_id == waited_queue; });
+    for (auto& [semaphore, host_sync_state] : validator.host_waitable_semaphores_) {
+        vvl::EraseIf(host_sync_state.sync_points,
+                     [waited_queue](const auto& sync_point) { return sync_point.queue_id == waited_queue; });
     }
     return false;
 }
@@ -112,7 +113,9 @@ bool DeviceWaitIdleCommand::Execute(SyncValidator& validator) const {
     // Cleanup fence waits associated with queues. Acquire fence waits are preserved
     auto is_queue_fence = [](const auto& waitable) { return waitable.second.queue_id != kQueueIdInvalid; };
     vvl::EraseIf(validator.waitable_fences_, is_queue_fence);
-    validator.host_waitable_semaphores_.clear();
+    for (auto& [semaphore, host_sync_state] : validator.host_waitable_semaphores_) {
+        host_sync_state.sync_points.clear();
+    }
     return false;
 }
 

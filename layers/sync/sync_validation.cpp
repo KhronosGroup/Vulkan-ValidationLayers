@@ -137,7 +137,7 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate& update, const BatchContext
         stats.AddTimelineSignals((uint32_t)new_signals.size());
 
         // Update host sync points
-        std::deque<TimelineHostSyncPoint>& host_sync_points = host_waitable_semaphores_[semaphore];
+        std::deque<TimelineHostSyncPoint>& host_sync_points = host_waitable_semaphores_[semaphore].sync_points;
         for (SignalInfo& new_signal : new_signals) {
             if (new_signal.batch) {
                 // The lifetimes of the semaphore host sync points are managed by vkWaitSemaphores.
@@ -273,13 +273,22 @@ void SyncValidator::WaitForFence(VkFence fence) {
 }
 
 void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value) {
-    std::deque<TimelineHostSyncPoint>* sync_points = vvl::Find(host_waitable_semaphores_, semaphore);
-    if (!sync_points) {
+    TimelineHostSyncState* host_sync_state = vvl::Find(host_waitable_semaphores_, semaphore);
+    if (!host_sync_state) {
         return;
     }
+
+    // An imported payload replaces the value synchronized_value was derived from
+    const auto semaphore_state = Get<vvl::Semaphore>(semaphore);
+    const bool imported = semaphore_state && semaphore_state->ImportedHandleType().has_value();
+
+    if (!imported && value <= host_sync_state->synchronized_value) {
+        return;
+    }
+    auto& sync_points = host_sync_state->sync_points;
     auto matching_sync_point = [value](const TimelineHostSyncPoint& sync_point) { return sync_point.timeline_value >= value; };
-    auto sync_point_it = std::find_if(sync_points->begin(), sync_points->end(), matching_sync_point);
-    if (sync_point_it == sync_points->end()) {
+    auto sync_point_it = std::find_if(sync_points.begin(), sync_points.end(), matching_sync_point);
+    if (sync_point_it == sync_points.end()) {
         return;
     }
 
@@ -296,10 +305,12 @@ void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value) {
     });
     stats.RemoveTimelineSignals(uint32_t(initial_signal_count - signals.size()));
 
-    // We can remove all sync points that are in the scope of current wait.
-    // Subsequent attempts to synchronize on the host with already synchronized
-    // timeline values will result in noop.
-    sync_points->erase(sync_points->begin(), sync_point_it + 1 /* include resolving sync point too*/);
+    // Remember the resolving signal value, which can be greater than the requested wait value
+    host_sync_state->synchronized_value = sync_point.timeline_value;
+
+    // Remove the resolving sync point and all preceding points.
+    // For non-imported semaphores, synchronized_value makes later waits for these values no-ops
+    sync_points.erase(sync_points.begin(), sync_point_it + 1 /* include resolving sync point too*/);
 }
 
 void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo* infos) {
@@ -658,15 +669,20 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
         return;
     }
     assert(!vvl::Contains(timeline_signals_, *pSemaphore));
+
+    if (auto sem_state = Get<vvl::Semaphore>(*pSemaphore); sem_state && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        host_waitable_semaphores_[*pSemaphore].synchronized_value = sem_state->initial_value;
+    }
 }
 
 void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
                                                   const RecordObject& record_obj) {
-    if (auto sem_state = Get<vvl::Semaphore>(semaphore); sem_state && (sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE)) {
+    if (auto sem_state = Get<vvl::Semaphore>(semaphore); sem_state && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
         if (auto it = timeline_signals_.find(semaphore); it != timeline_signals_.end()) {
             stats.RemoveTimelineSignals((uint32_t)it->second.size());
             timeline_signals_.erase(it);
         }
+        host_waitable_semaphores_.erase(semaphore);
     }
 }
 

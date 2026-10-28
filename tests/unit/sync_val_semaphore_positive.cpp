@@ -721,6 +721,49 @@ TEST_F(PositiveSyncValTimelineSemaphore, ExternalSemaphoreWaitAfterSignal) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveSyncValTimelineSemaphore, HostWaitAfterImportWithLowerValue) {
+    TEST_DESCRIPTION("A host wait must synchronize a signal after importing a lower-valued timeline payload");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    if (!SemaphoreExportImportSupported(Gpu(), VK_SEMAPHORE_TYPE_TIMELINE, handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
+    }
+
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_ci);
+    export_info.handleTypes = handle_type;
+    const VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_info);
+    vkt::Semaphore export_semaphore(*m_device, semaphore_ci);
+    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE, 10);
+
+    // Replace the initial value 10 with an imported payload at 0
+    HANDLE win32_handle = nullptr;
+    export_semaphore.ExportHandle(win32_handle, handle_type);
+    timeline.ImportHandle(win32_handle, handle_type);
+    ::CloseHandle(win32_handle);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 256, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(timeline, 20));
+
+    // If we keep the old initial value of 10, it incorrectly skips this wait for 1.
+    // The wait must synchronize with signal 20, otherwise the next write reports a false hazard
+    timeline.Wait(1, kWaitTimeout);
+
+    m_default_queue->Submit2(m_command_buffer);
+    m_device->Wait();
+}
+
 // TODO: create PositiveSyncValSemaphore for binary semaphores
 TEST_F(PositiveSyncValTimelineSemaphore, ExternalBinarySemaphoreWaitAfterSignal) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
