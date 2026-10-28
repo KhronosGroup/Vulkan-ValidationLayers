@@ -72,7 +72,7 @@ class SyncValidator : public vvl::DeviceProxy {
 
     // Host synchronization (vkWaitForFences, vkWaitSemaphores)
     vvl::unordered_map<VkFence, FenceHostSyncPoint> waitable_fences_;
-    vvl::unordered_map<VkSemaphore, std::deque<TimelineHostSyncPoint>> host_waitable_semaphores_;
+    vvl::unordered_map<VkSemaphore, TimelineHostSyncState> host_waitable_semaphores_;
 
     // Run validation after a GPU synchronization point
     const bool retire_mode_ = false;  // placeholder

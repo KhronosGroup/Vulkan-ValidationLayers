@@ -161,6 +161,14 @@ struct TimelineHostSyncPoint {
     std::vector<ResourceUsageTag> queue_sync_tags;
 };
 
+struct TimelineHostSyncState {
+    // The last signal value synchronized with the host.
+    // Initialized to the semaphore's initial value
+    uint64_t synchronized_value = 0;
+
+    std::deque<TimelineHostSyncPoint> sync_points;
+};
+
 struct PresentedImageRecord {
     ResourceUsageTag tag;  // the global tag at presentation
     uint32_t image_index;

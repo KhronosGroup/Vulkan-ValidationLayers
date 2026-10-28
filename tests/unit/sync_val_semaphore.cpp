@@ -385,3 +385,50 @@ TEST_F(NegativeSyncValBinarySemaphore, WaitStageMismatchTwoQueues) {
 
     m_device->Wait();
 }
+
+TEST_F(NegativeSyncValTimelineSemaphore, HostWaitInitialValueDoesNotSyncLargerSignal) {
+    TEST_DESCRIPTION("A host wait for the initial value must not synchronize a later timeline signal");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE, 10);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 256, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(timeline, 20));
+
+    // This is satisfied by the initial value and should not wait for signal=20
+    timeline.Wait(10, kWaitTimeout);
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit2(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
+TEST_F(NegativeSyncValTimelineSemaphore, RepeatedHostWaitDoesNotSyncLargerSignal) {
+    TEST_DESCRIPTION("Repeating a host wait must not synchronize a later timeline signal");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 256, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(timeline, 1));
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(timeline, 2));
+
+    timeline.Wait(1, kWaitTimeout);
+
+    // Waiting for value 1 again must not clear accesses associated with signal 2
+    timeline.Wait(1, kWaitTimeout);
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit2(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
