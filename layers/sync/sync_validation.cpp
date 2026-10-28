@@ -2698,40 +2698,16 @@ bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSema
     }
     // Although SignalSemaphore does not run on the queue, the signalling can resolve
     // previously submitted batches that are waiting for this signal, and this will
-    // initiate validation that touches queue state. That's why queue mutex is used here.
+    // initiate validation that touches queue state. That's why queue mutex is used here
     std::lock_guard lock_guard(queue_mutex_);
-    skip |= const_cast<SyncValidator*>(this)->ProcessSignalSemaphore(device, pSignalInfo);
+    SignalSemaphoreCommand command{pSignalInfo->semaphore, pSignalInfo->value};
+    skip |= const_cast<SyncValidator*>(this)->ProcessQueueCommand(std::move(command));
     return skip;
 }
 
 bool SyncValidator::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                                       const ErrorObject& error_obj) const {
     return PreCallValidateSignalSemaphore(device, pSignalInfo, error_obj);
-}
-
-bool SyncValidator::ProcessSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo) {
-    bool skip = false;
-
-    auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
-    if (!semaphore_state) {
-        return skip;
-    }
-
-    SignalsUpdate signals_update(*this);
-    std::vector<SignalInfo>& signals = signals_update.timeline_signals[pSignalInfo->semaphore];
-
-    // Reject invalid signal
-    if (!signals.empty() && pSignalInfo->value <= signals.back().timeline_value) {
-        return skip;  // [core validation check]: strictly increasing signal values
-    }
-
-    signals.emplace_back(SignalInfo(semaphore_state, pSignalInfo->value));
-    skip |= PropagateTimelineSignals(signals_update);
-
-    if (!skip) {
-        ApplySignalsUpdate(signals_update, nullptr);
-    }
-    return skip;
 }
 
 void SyncValidator::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
