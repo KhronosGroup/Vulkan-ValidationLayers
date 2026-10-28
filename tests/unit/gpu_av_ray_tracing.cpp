@@ -3729,10 +3729,13 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayMultipleTrianglesFlags) {
 
         layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
         layout(location = 0) rayPayloadEXT vec3 hit;
+        layout(binding = 1, set = 0) uniform Uniforms {
+          uint ray_flags;
+        } params;
 
         void main() {
             // Multiple triangles flags, invalid
-            traceRayEXT(tlas, gl_RayFlagsCullBackFacingTrianglesEXT | gl_RayFlagsCullFrontFacingTrianglesEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+            traceRayEXT(tlas, params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
         }
     )glsl";
     pipeline.SetGlslRayGenShader(ray_gen);
@@ -3741,9 +3744,15 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayMultipleTrianglesFlags) {
     pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     pipeline.CreateDescriptorSet();
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+
+    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = 0x10 | 0x20;  // CullBackFacingTrianglesKHR and CullFrontFacingTrianglesKHR
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     pipeline.Build();
@@ -3784,10 +3793,13 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayMultipleOpaqueFlags) {
 
         layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
         layout(location = 0) rayPayloadEXT vec3 hit;
+        layout(binding = 1, set = 0) uniform Uniforms {
+          uint ray_flags;
+        } params;
 
         void main() {
             // Multiple opaque flags, invalid
-            traceRayEXT(tlas, gl_RayFlagsCullOpaqueEXT | gl_RayFlagsCullNoOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+            traceRayEXT(tlas, params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
         }
     )glsl";
     pipeline.SetGlslRayGenShader(ray_gen);
@@ -3796,9 +3808,15 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayMultipleOpaqueFlags) {
     pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     pipeline.CreateDescriptorSet();
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+
+    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = 0x40 | 0x80;  // CullOpaqueKHR and CullNoOpaqueKHR
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     pipeline.Build();
@@ -3836,6 +3854,9 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayMultipleTrianglesFlagsSlang) {
     const char* slang_shader = R"slang(
         [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
 
+        struct Params { uint ray_flags; };
+        [[vk::binding(1, 0)]] ConstantBuffer<Params> params;
+
         struct RayPayload { float hit; };
 
         [shader("raygeneration")]
@@ -3848,7 +3869,7 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayMultipleTrianglesFlagsSlang) {
             ray.TMin = 0.1;
             ray.TMax = 1000.0;
             // Multiple triangles flags, invalid
-            TraceRay(tlas, RAY_FLAG_CULL_BACK_FACING_TRIANGLES | RAY_FLAG_CULL_FRONT_FACING_TRIANGLES, 0xff, 0, 0, 0, ray, ray_payload);
+            TraceRay(tlas, params.ray_flags, 0xff, 0, 0, 0, ray, ray_payload);
         }
 
         [shader("miss")]
@@ -3862,9 +3883,15 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayMultipleTrianglesFlagsSlang) {
     pipeline.AddSlangClosestHitShader(slang_shader, "closestHitShader");
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     pipeline.CreateDescriptorSet();
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+
+    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = 0x10 | 0x20;  // CullBackFacingTrianglesKHR and CullFrontFacingTrianglesKHR
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     pipeline.Build();
@@ -3906,10 +3933,13 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayBothSkipFlags) {
 
         layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
         layout(location = 0) rayPayloadEXT vec3 hit;
+        layout(binding = 1, set = 0) uniform Uniforms {
+          uint ray_flags;
+        } params;
 
         void main() {
             // SkipTrianglesKHR and SkipAABBKHR are mutually exclusive, invalid
-            traceRayEXT(tlas, gl_RayFlagsSkipTrianglesEXT | gl_RayFlagsSkipAABBEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+            traceRayEXT(tlas, params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
         }
     )glsl";
     pipeline.SetGlslRayGenShader(ray_gen);
@@ -3918,9 +3948,15 @@ TEST_F(NegativeGpuAVRayTracing, OpTraceRayBothSkipFlags) {
     pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     pipeline.CreateDescriptorSet();
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+
+    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = 0x100 | 0x200;  // SkipTrianglesKHR and SkipAABBsKHR
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     pipeline.Build();
