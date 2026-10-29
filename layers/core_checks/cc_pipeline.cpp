@@ -738,6 +738,43 @@ bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipel
     return skip;
 }
 
+bool CoreChecks::PreCallValidateGetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize, void* pData,
+                                                     const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto cache_state = Get<vvl::PipelineCache>(pipelineCache);
+
+    if (cache_state && cache_state->is_data_graph_model) {
+        skip |=
+            LogError("VUID-vkGetPipelineCacheData-pipelineCache-11834", pipelineCache, error_obj.location.dot(Field::pipelineCache),
+                     "was initialized with VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM and cannot be retrieved.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
+                                                    const VkPipelineCache* pSrcCaches, const ErrorObject& error_obj) const {
+    bool skip = false;
+    const auto dst_state = Get<vvl::PipelineCache>(dstCache);
+
+    if (dst_state && dst_state->is_data_graph_model) {
+        skip |=
+            LogError("VUID-vkMergePipelineCaches-dstCache-11832", dstCache, error_obj.location.dot(Field::dstCache),
+                     "was initialized with VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM and cannot be a merge destination.");
+    }
+
+    for (uint32_t i = 0; i < srcCacheCount; ++i) {
+        const auto src_state = Get<vvl::PipelineCache>(pSrcCaches[i]);
+        if (src_state && src_state->is_data_graph_model) {
+            skip |= LogError("VUID-vkMergePipelineCaches-headerVersion-11833", pSrcCaches[i],
+                             error_obj.location.dot(Field::pSrcCaches, i),
+                             "was initialized with VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM and cannot be a merge source.");
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
                                                                const VkAllocationCallbacks* pAllocator,
                                                                const ErrorObject& error_obj) const {

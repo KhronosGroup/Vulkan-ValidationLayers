@@ -32,6 +32,22 @@
 
 namespace vvl {
 
+static bool IsDataGraphModelCache(const VkPipelineCacheCreateInfo& create_info) {
+    VkPipelineCacheHeaderVersionDataGraphQCOM header{};
+
+    if (!create_info.pInitialData || create_info.initialDataSize < sizeof(header)) {
+        return false;
+    }
+
+    std::memcpy(&header, create_info.pInitialData, sizeof(header));
+    return header.headerVersion == VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM;
+}
+
+PipelineCache::PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo* pCreateInfo)
+    : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache),
+      create_info(pCreateInfo),
+      is_data_graph_model(IsDataGraphModelCache(*pCreateInfo)) {}
+
 static vku::safe_VkGraphicsPipelineCreateInfo MakeGraphicsCreateInfo(const VkGraphicsPipelineCreateInfo& ci,
                                                                      std::shared_ptr<const vvl::RenderPass> rpstate,
                                                                      const DeviceState& state_data) {
