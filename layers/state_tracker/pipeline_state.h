@@ -50,9 +50,9 @@ namespace vvl {
 class PipelineCache : public StateObject {
   public:
     const vku::safe_VkPipelineCacheCreateInfo create_info;
+    const bool is_data_graph_model;
 
-    PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo)
-        : StateObject(pipeline_cache, kVulkanObjectTypePipelineCache), create_info(pCreateInfo) {}
+    PipelineCache(VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo);
 
     VkPipelineCache VkHandle() const { return handle_.Cast<VkPipelineCache>(); }
 

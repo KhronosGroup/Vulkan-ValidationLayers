@@ -3032,6 +3032,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
                                                    const ErrorObject& error_obj) const override;
 
+    bool PreCallValidateGetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize, void* pData,
+                                             const ErrorObject& error_obj) const override;
+    bool PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
+                                            const VkPipelineCache* pSrcCaches, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
                                           VkPipelineBinaryKeyKHR* pPipelineKey, const ErrorObject& error_obj) const override;
     bool PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,

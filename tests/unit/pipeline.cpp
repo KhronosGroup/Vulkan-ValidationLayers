@@ -4397,3 +4397,73 @@ TEST_F(NegativePipeline, AtomicsSecondCreateInfo) {
         }
     }
 }
+
+TEST_F(NegativePipeline, MergePipelineCachesWithModelDestination) {
+    TEST_DESCRIPTION("Try to merge a pipeline cache into a model cache.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_DATA_GRAPH_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dataGraphModel);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineCacheHeaderVersionDataGraphQCOM header{};
+    header.headerSize = sizeof(header);
+    header.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM;
+    header.cacheType = VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM;
+    VkPipelineCacheCreateInfo create_info = vku::InitStructHelper();
+    const vkt::PipelineCache source(*m_device, create_info);
+    create_info.initialDataSize = sizeof(header);
+    create_info.pInitialData = &header;
+    const vkt::PipelineCache destination(*m_device, create_info);
+    const VkPipelineCache source_cache = source;
+
+    m_errorMonitor->SetDesiredError("VUID-vkMergePipelineCaches-dstCache-11832");
+    vk::MergePipelineCaches(device(), destination, 1, &source_cache);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, MergePipelineCachesWithModelSource) {
+    TEST_DESCRIPTION("Try to merge model caches into an ordinary pipeline cache.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_DATA_GRAPH_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dataGraphModel);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineCacheHeaderVersionDataGraphQCOM header{};
+    header.headerSize = sizeof(header);
+    header.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM;
+    header.cacheType = VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM;
+    VkPipelineCacheCreateInfo create_info = vku::InitStructHelper();
+    const vkt::PipelineCache destination(*m_device, create_info);
+    const vkt::PipelineCache ordinary_source(*m_device, create_info);
+    create_info.initialDataSize = sizeof(header);
+    create_info.pInitialData = &header;
+    const vkt::PipelineCache model_source(*m_device, create_info);
+    const vkt::PipelineCache other_model_source(*m_device, create_info);
+    const VkPipelineCache sources[] = {ordinary_source, model_source, other_model_source};
+
+    m_errorMonitor->SetDesiredError("VUID-vkMergePipelineCaches-headerVersion-11833", 2);
+    vk::MergePipelineCaches(device(), destination, 3, sources);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativePipeline, GetModelPipelineCacheData) {
+    TEST_DESCRIPTION("Try to retrieve data from a model pipeline cache.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_DATA_GRAPH_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dataGraphModel);
+    RETURN_IF_SKIP(Init());
+
+    VkPipelineCacheHeaderVersionDataGraphQCOM header{};
+    header.headerSize = sizeof(header);
+    header.headerVersion = VK_PIPELINE_CACHE_HEADER_VERSION_DATA_GRAPH_QCOM;
+    header.cacheType = VK_DATA_GRAPH_MODEL_CACHE_TYPE_GENERIC_BINARY_QCOM;
+    VkPipelineCacheCreateInfo create_info = vku::InitStructHelper();
+    create_info.initialDataSize = sizeof(header);
+    create_info.pInitialData = &header;
+    const vkt::PipelineCache cache(*m_device, create_info);
+
+    size_t size = 0;
+    m_errorMonitor->SetDesiredError("VUID-vkGetPipelineCacheData-pipelineCache-11834");
+    vk::GetPipelineCacheData(device(), cache, &size, nullptr);
+    m_errorMonitor->VerifyFound();
+}
