@@ -1918,8 +1918,7 @@ TEST_F(NegativeMemory, AllocationCount) {
         GTEST_SKIP() << "maxMemoryAllocationCount is too high";
     }
 
-    std::vector<VkDeviceMemory> mems;
-    mems.reserve(max_mems + 1);
+    std::vector<VkDeviceMemory> mems(max_mems + 1);
 
     m_errorMonitor->SetDesiredError("VUID-vkAllocateMemory-maxMemoryAllocationCount-04101");
 
