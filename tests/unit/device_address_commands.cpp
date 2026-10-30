@@ -4678,3 +4678,36 @@ TEST_F(NegativeDeviceAddressCommands, VertexAttributeAlignmentLegacy64Bit) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDeviceAddressCommands, CopyMemoryToImageOverlapDstRegions) {
+    TEST_DESCRIPTION("Try to copy two overlapping device address regions into the same destination image.");
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer buffer(*m_device, 32u * 32u * 4u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkDeviceMemoryImageCopyKHR regions[2];
+    regions[0] = vku::InitStructHelper();
+    regions[0].addressRange = {buffer.Address(), 16u * 16u * 4u};
+    regions[0].addressFlags = 0u;
+    regions[0].addressRowLength = 0u;
+    regions[0].addressImageHeight = 0u;
+    regions[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    regions[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    regions[0].imageOffset = {0, 0, 0};
+    regions[0].imageExtent = {16u, 16u, 1u};
+    regions[1] = regions[0];
+    regions[1].addressRange = {buffer.Address() + 16u * 16u * 4u, 16u * 16u * 4u};
+    regions[1].imageOffset = {8, 8, 0};
+
+    VkCopyDeviceMemoryImageInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.image = image;
+    copy_memory_info.regionCount = 2u;
+    copy_memory_info.pRegions = regions;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDeviceMemoryImageInfoKHR-pRegions-12473");
+    vk::CmdCopyMemoryToImageKHR(m_command_buffer, &copy_memory_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}

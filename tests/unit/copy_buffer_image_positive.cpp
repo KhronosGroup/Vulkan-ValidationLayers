@@ -1955,3 +1955,56 @@ TEST_F(PositiveCopyBufferImage, CompressedMipLevels) {
     vk::CmdCopyImage(m_command_buffer, image_src, VK_IMAGE_LAYOUT_GENERAL, image_dst, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveCopyBufferImage, CopyImageAdjacentDstRegions) {
+    TEST_DESCRIPTION("Copy regions that touch but do not overlap, and regions of different subresources, into the same image.");
+    RETURN_IF_SKIP(Init());
+
+    const auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 2, 2, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
+    vkt::Image src_image(*m_device, image_ci);
+    vkt::Image dst_image(*m_device, image_ci);
+
+    VkImageCopy regions[4];
+    regions[0].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    regions[0].srcOffset = {0, 0, 0};
+    regions[0].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    regions[0].dstOffset = {0, 0, 0};
+    regions[0].extent = {32, 32, 1};
+    // adjacent in x
+    regions[1] = regions[0];
+    regions[1].dstOffset = {32, 0, 0};
+    // same texels, different array layer
+    regions[2] = regions[0];
+    regions[2].dstSubresource.baseArrayLayer = 1;
+    // same texels, different mip level
+    regions[3] = regions[0];
+    regions[3].dstSubresource.mipLevel = 1;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 4, regions);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyBufferToImageDepthAndStencilDstRegions) {
+    TEST_DESCRIPTION("Copy the depth and stencil aspects to the same texels of a destination image with separate regions.");
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat format = FindSupportedDepthStencilFormat(Gpu());
+    vkt::Image dst_image(*m_device, 32, 32, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer src_buffer(*m_device, 32 * 32 * 8, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy regions[2];
+    regions[0].bufferOffset = 0;
+    regions[0].bufferRowLength = 0;
+    regions[0].bufferImageHeight = 0;
+    regions[0].imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    regions[0].imageOffset = {0, 0, 0};
+    regions[0].imageExtent = {32, 32, 1};
+    regions[1] = regions[0];
+    regions[1].bufferOffset = 32 * 32 * 4;
+    regions[1].imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_GENERAL, 2, regions);
+    m_command_buffer.End();
+}
