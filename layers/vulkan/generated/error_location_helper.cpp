@@ -1679,6 +1679,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceMaintenance10FeaturesKHR", 41},
     {"VkPhysicalDeviceMaintenance10PropertiesKHR", 43},
     {"VkPhysicalDeviceMaintenance11FeaturesKHR", 41},
+    {"VkPhysicalDeviceMaintenance12FeaturesKHR", 41},
+    {"VkPhysicalDeviceMaintenance12PropertiesKHR", 43},
     {"VkPhysicalDeviceMaintenance3Properties", 39},
     {"VkPhysicalDeviceMaintenance4Features", 37},
     {"VkPhysicalDeviceMaintenance4Properties", 39},
@@ -3423,6 +3425,7 @@ const char* String(Field field) {
     {"magFilter", 10},
     {"maintenance10", 14},
     {"maintenance11", 14},
+    {"maintenance12", 14},
     {"maintenance4", 13},
     {"maintenance5", 13},
     {"maintenance6", 13},
@@ -3585,6 +3588,7 @@ const char* String(Field field) {
     {"maxInlineUniformBlockBindings", 30},
     {"maxInlineUniformBlockSize", 26},
     {"maxInlineUniformTotalSize", 26},
+    {"maxInputAttachmentIndex", 24},
     {"maxInstanceCount", 17},
     {"maxInstanceInGlobalPartitionCount", 34},
     {"maxInstancePerPartitionCount", 29},
@@ -6387,6 +6391,7 @@ const char* String(Extension extension) {
     {"VK_KHR_maintenance1", 20},
     {"VK_KHR_maintenance10", 21},
     {"VK_KHR_maintenance11", 21},
+    {"VK_KHR_maintenance12", 21},
     {"VK_KHR_maintenance2", 20},
     {"VK_KHR_maintenance3", 20},
     {"VK_KHR_maintenance4", 20},
@@ -8368,6 +8373,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkImageStencilUsage2CreateInfoKHR;
     case VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_2_KHR:
        return Struct::VkSharedPresentSurfaceCapabilities2KHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceMaintenance12FeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_PROPERTIES_KHR:
+       return Struct::VkPhysicalDeviceMaintenance12PropertiesKHR;
     case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
        return Struct::VkDebugReportCallbackCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD:
