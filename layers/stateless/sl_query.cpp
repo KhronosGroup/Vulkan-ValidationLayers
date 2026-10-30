@@ -63,8 +63,7 @@ bool Device::manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandB
 
     if (queryResultFlags & VK_QUERY_RESULT_64_BIT) {
         if (queryCount > 1 && !IsIntegerMultipleOf(pDstRange->stride, 8)) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8664
-            skip |= LogError("UNASSIGNED-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-stride-8", objlist,
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-12541", objlist,
                              error_obj.location.dot(Field::pDstRange).dot(Field::stride),
                              "(%" PRIu64 ") is not a multiple of 8 (queryCount is %" PRIu32 ").", pDstRange->stride, queryCount);
         }
@@ -75,8 +74,7 @@ bool Device::manual_PreCallValidateCmdCopyQueryPoolResultsToMemoryKHR(VkCommandB
         }
     } else {
         if (queryCount > 1 && !IsIntegerMultipleOf(pDstRange->stride, 4)) {
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8664
-            skip |= LogError("UNASSIGNED-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-stride-4", objlist,
+            skip |= LogError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-12540", objlist,
                              error_obj.location.dot(Field::pDstRange).dot(Field::stride),
                              "(%" PRIu64 ") is not a multiple of 4 (queryCount is %" PRIu32 ").", pDstRange->stride, queryCount);
         }

@@ -2073,7 +2073,7 @@ TEST_F(NegativeDynamicState, ColorBlendAdvancedBasicBlendOp) {
 
     m_command_buffer.Begin();
     const VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_ADD, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkColorBlendAdvancedEXT-advancedBlendOp");
+    m_errorMonitor->SetDesiredError("VUID-VkColorBlendAdvancedEXT-advancedBlendOp-12536");
     vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 0u, 1u, &advanced);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

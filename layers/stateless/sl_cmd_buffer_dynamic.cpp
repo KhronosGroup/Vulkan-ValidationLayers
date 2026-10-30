@@ -389,8 +389,7 @@ bool Device::manual_PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer c
     for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
         VkColorBlendAdvancedEXT const& advanced = pColorBlendAdvanced[attachment];
         if (!IsAdvanceBlendOperation(advanced.advancedBlendOp)) {
-            // VUID being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8658
-            skip |= LogError("UNASSIGNED-VkColorBlendAdvancedEXT-advancedBlendOp", commandBuffer,
+            skip |= LogError("VUID-VkColorBlendAdvancedEXT-advancedBlendOp-12536", commandBuffer,
                              error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::advancedBlendOp),
                              "is %s, which is not an advanced blend operation.", string_VkBlendOp(advanced.advancedBlendOp));
         }

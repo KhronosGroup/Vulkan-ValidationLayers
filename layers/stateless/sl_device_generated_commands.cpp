@@ -197,8 +197,7 @@ bool Device::ValidateIndirectCommandsPushConstantToken(const Context& context,
         if (enabled_features.descriptorHeap) {
             const uint64_t range_end = (uint64_t)push_constant_token.updateRange.offset + push_constant_token.updateRange.size;
             if (range_end > phys_dev_ext_props.descriptor_heap_props.maxPushDataSize) {
-                // VUID being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8662
-                skip |= LogError("UNASSIGNED-VkIndirectCommandsPushConstantTokenEXT-updateRange-maxPushDataSize", device,
+                skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-offset-12548", device,
                                  push_constant_token_loc.dot(Field::updateRange),
                                  "offset (%" PRIu32 ") + size (%" PRIu32 ") is %" PRIu64
                                  ", but must be less than or equal to "

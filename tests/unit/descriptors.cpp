@@ -5026,7 +5026,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptorZeroCountBinding) {
     copy.dstSet = zero_set.set_;
     copy.dstBinding = 1;
     copy.descriptorCount = 1;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkCopyDescriptorSet-dstBinding-zero-descriptorCount");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstBinding-12534");
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy);
     m_errorMonitor->VerifyFound();
 
@@ -5034,7 +5034,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptorZeroCountBinding) {
     copy.srcBinding = 1;
     copy.dstSet = other_set.set_;
     copy.dstBinding = 0;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkCopyDescriptorSet-srcBinding-zero-descriptorCount");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcBinding-12533");
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy);
     m_errorMonitor->VerifyFound();
 }
