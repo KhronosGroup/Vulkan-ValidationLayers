@@ -9,6 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "generated/vk_function_pointers.h"
 #include "pipeline_helper.h"
 
 class UndefinedCore : public VkLayerTest {};
@@ -173,4 +174,86 @@ TEST_F(UndefinedCore, DescriptorUpdateUndeclaredBinding) {
     copy.dstBinding = 1;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkCopyDescriptorSet-dstBinding-00347");
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy);
+}
+
+TEST_F(UndefinedCore, DescriptorCopyUpdateDescriptorCountOverrunsLayout) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13595");
+    RETURN_IF_SKIP(Init());
+    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_SAMPLER, 4};
+    VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper();
+    pool_ci.maxSets = 1;
+    pool_ci.poolSizeCount = 1;
+    pool_ci.pPoolSizes = &pool_size;
+    vkt::DescriptorPool pool(*m_device, pool_ci);
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo layout_ci = vku::InitStructHelper();
+    layout_ci.bindingCount = 1;
+    layout_ci.pBindings = &binding;
+    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+    vk::CreateDescriptorSetLayout(device(), &layout_ci, nullptr, &ds_layout);
+
+    VkDescriptorSetAllocateInfo alloc_ci = vku::InitStructHelper();
+    alloc_ci.descriptorPool = pool.handle();
+    alloc_ci.descriptorSetCount = 1;
+    alloc_ci.pSetLayouts = &ds_layout;
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    vk::AllocateDescriptorSets(device(), &alloc_ci, &ds);
+
+    VkCopyDescriptorSet copy = vku::InitStructHelper();
+    copy.srcSet = ds;
+    copy.srcBinding = 0;
+    copy.dstSet = ds;
+    copy.dstBinding = 0;
+    copy.descriptorCount = 2;  // binding 0 declares exactly one descriptor
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkCopyDescriptorSet-srcArrayElement-00346");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkCopyDescriptorSet-dstArrayElement-00348");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkCopyDescriptorSet-srcSet-00349");
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
+}
+
+TEST_F(UndefinedCore, VariableDescriptorCountImmutableSamplerOverrun) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13596");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    VkSampler immutable_sampler = sampler.handle();
+
+    VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo binding_flags_ci = vku::InitStructHelper();
+    binding_flags_ci.bindingCount = 1;
+    binding_flags_ci.pBindingFlags = &binding_flags;
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL,
+                                            &immutable_sampler};
+    VkDescriptorSetLayoutCreateInfo layout_ci = vku::InitStructHelper(&binding_flags_ci);
+    layout_ci.bindingCount = 1;
+    layout_ci.pBindings = &binding;
+    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+    vk::CreateDescriptorSetLayout(device(), &layout_ci, nullptr, &ds_layout);
+
+    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8};
+    VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper();
+    pool_ci.maxSets = 1;
+    pool_ci.poolSizeCount = 1;
+    pool_ci.pPoolSizes = &pool_size;
+    vkt::DescriptorPool pool(*m_device, pool_ci);
+
+    uint32_t variable_count = 8;  // layout declared descriptorCount of 1
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count_ci = vku::InitStructHelper();
+    variable_count_ci.descriptorSetCount = 1;
+    variable_count_ci.pDescriptorCounts = &variable_count;
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorSetAllocateInfo-pSetLayouts-09380");
+    VkDescriptorSetAllocateInfo alloc_ci = vku::InitStructHelper(&variable_count_ci);
+    alloc_ci.descriptorPool = pool.handle();
+    alloc_ci.descriptorSetCount = 1;
+    alloc_ci.pSetLayouts = &ds_layout;
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    vk::AllocateDescriptorSets(device(), &alloc_ci, &ds);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
 }
