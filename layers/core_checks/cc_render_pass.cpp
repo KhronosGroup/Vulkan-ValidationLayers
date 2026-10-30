@@ -703,7 +703,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
         uint32_t layer_or_view_count = 0;
         if (rp_state->has_multiview_enabled) {
             for (uint32_t i = 0; i < rp_state->create_info.subpassCount; ++i) {
-                uint32_t highest_view_bits = MostSignificantBit(rp_state->create_info.pSubpasses[i].viewMask);
+                uint32_t highest_view_bits = MostSignificantBit(rp_state->create_info.pSubpasses[i].viewMask) + 1;
                 if (highest_view_bits > layer_or_view_count) {
                     layer_or_view_count = highest_view_bits;
                 }
@@ -4167,7 +4167,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
         const LogObjectList objlist(cb_state->Handle());
         uint32_t layer_or_view_count = 0;
         if (pRenderingInfo->viewMask != 0) {
-            layer_or_view_count = MostSignificantBit(pRenderingInfo->viewMask);
+            layer_or_view_count = MostSignificantBit(pRenderingInfo->viewMask) + 1;
         } else {
             layer_or_view_count = pRenderingInfo->layerCount;
         }
