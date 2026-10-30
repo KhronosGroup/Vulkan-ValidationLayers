@@ -1490,3 +1490,59 @@ TEST_F(PositiveImageLayout, UnusedAttachmentAcrossCommandBuffers) {
     m_default_queue->Submit({cb1, cb2});
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveImageLayout, DescriptorArrayConstantIndex) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8407");
+    RETURN_IF_SKIP(Init());
+
+    // Only img[1] and tex[0] are accessed, the other elements are in a different layout
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_samplerless_texture_functions : require
+        layout(local_size_x = 1) in;
+        layout(set = 0, binding = 0) uniform texture2D tex[2];
+        layout(set = 0, binding = 1, rgba8) uniform image2D img[2];
+        void main() {
+            imageStore(img[1], ivec2(0), texelFetch(tex[0], ivec2(0), 0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.CreateComputePipeline();
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 2, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, image_ci);
+    vkt::ImageView mip0 = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1);
+    vkt::ImageView mip1 = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 1, 1);
+    for (uint32_t i = 0; i < 2; ++i) {
+        const VkImageView view = i == 0 ? mip0 : mip1;
+        pipe.descriptor_set_.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, i);
+        pipe.descriptor_set_.WriteDescriptorImageInfo(1, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                      VK_IMAGE_LAYOUT_GENERAL, i);
+    }
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.image = image;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 1};
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

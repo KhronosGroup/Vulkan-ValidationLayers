@@ -1157,7 +1157,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             ValidateSampledImageDescriptor(resource_variable, index, descriptor_type, image_insn, *image_view_state, *image_state);
     }
 
-    if (!dev_proxy.disabled[image_layout_validation]) {
+    if (!dev_proxy.disabled[image_layout_validation] && resource_variable.IsImageAtIndexStaticallyAccessed(index)) {
         if (const auto image_layout_map = cb_state.GetImageLayoutMap(image_state->VkHandle())) {
             auto describe_descriptor_callback = [this, &resource_variable, index, descriptor_type]() {
                 std::ostringstream ss;
