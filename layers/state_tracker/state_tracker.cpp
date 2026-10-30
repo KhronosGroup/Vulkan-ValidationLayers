@@ -4813,18 +4813,31 @@ void DeviceState::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAc
 }
 
 void DeviceState::RecordWaitForPresent(VkDevice device, VkSwapchainKHR swapchain, uint64_t present_id, const Location& location) {
+    Swapchain::PresentIdInfo present_id_info{};
+    bool found = false;
+
+    // Find the smallest registered present id >= the given present id
     if (auto swapchain_state = Get<Swapchain>(swapchain)) {
-        // Find the smallest registered present id >= the given present id,
-        // and ensure that the queue has progressed to the corresponding seq location
+        std::lock_guard lock(swapchain_state->present_id_mutex);
         const uint32_t present_id_info_count = swapchain_state->GetPresentIdInfoCount();
         for (uint32_t i = 0; i < present_id_info_count; i++) {
-            const Swapchain::PresentIdInfo present_id_info = swapchain_state->GetPresentIdInfo(i);
+            present_id_info = swapchain_state->GetPresentIdInfo(i);
             if (present_id_info.present_id >= present_id) {
-                present_id_info.present_submission_ref.queue->NotifyAndWait(location, present_id_info.present_submission_ref.seq);
+                found = true;
                 break;
             }
         }
     }
+    if (!found) {
+        return;
+    }
+    // Retire the batches that signal its wait semaphores, then the present batches up to this present.
+    // Other batches on the present queue are not covered by the present wait.
+    for (const vvl::SubmissionReference& signal_ref : present_id_info.signal_submission_refs) {
+        signal_ref.queue->NotifyAndWait(location, signal_ref.seq);
+    }
+    const vvl::SubmissionReference& present_ref = present_id_info.present_submission_ref;
+    present_ref.queue->NotifyAndWaitForPresent(location, present_ref.seq);
 }
 
 void DeviceState::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,

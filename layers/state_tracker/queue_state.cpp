@@ -145,7 +145,7 @@ void vvl::Queue::PostSubmit() {
         }
         // Wait on the external fence because we may not be able to track when it's signaled
         QueueSubmission& submission = submissions_.back();
-        if (submission.has_external_fence) {
+        if (submission.fence && submission.has_external_fence) {
             submission.fence->NotifyAndWait(submission.loc.Get());
         }
     }
@@ -193,6 +193,43 @@ void vvl::Queue::Wait(const Location& loc, uint64_t until_seq) {
 void vvl::Queue::NotifyAndWait(const Location& loc, uint64_t until_seq) {
     Notify(until_seq);
     Wait(loc, until_seq);
+}
+
+void vvl::Queue::NotifyAndWaitForPresent(const Location& loc, uint64_t until_seq) {
+    // Collect semaphore waits of the covered presents
+    small_vector<SemaphoreInfo, 1> waits;
+    {
+        auto guard = Lock();
+        for (const QueueSubmission& submission : submissions_) {
+            if (submission.swapchain && submission.seq <= until_seq) {
+                for (const SemaphoreInfo& wait : submission.wait_semaphores) {
+                    waits.emplace_back(wait);
+                }
+            }
+        }
+    }
+
+    // Retire semaphore waits on the main thread.
+    // If we did this from the queue thread, it could block waiting
+    // for a signal from a submission it still needs to retire
+    for (const SemaphoreInfo& wait : waits) {
+        wait.semaphore->RetireWait(this, wait.payload, loc, false);
+    }
+
+    // Send request to the queue thread to retire present resources
+    // but to keep present submissions for in-order retirement
+    RetirePresentResourcesRequest request{until_seq, {}};
+    auto waiter = request.completed.get_future();
+    {
+        auto guard = Lock();
+        present_requests_.emplace_back(std::move(request));
+        cond_.notify_one();
+    }
+    if (waiter.wait_until(GetCondWaitTimeout()) != std::future_status::ready) {
+        device_state_.LogInternalError("INTERNAL-ERROR-VkQueue-state-timeout", Handle(), loc,
+                                       "The Validation Layers hit a timeout waiting for present state to update. until=%" PRIu64,
+                                       until_seq);
+    }
 }
 
 std::optional<vvl::SemaphoreInfo> vvl::Queue::FindTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const {
@@ -318,25 +355,29 @@ void vvl::Queue::Destroy() {
     StateObject::Destroy();
 }
 
-vvl::QueueSubmission* vvl::Queue::NextSubmission() {
-    QueueSubmission* result = nullptr;
-    // Find if the next submission is ready so that the thread function doesn't need to worry
-    // about locking.
+std::optional<vvl::Queue::RetirementWork> vvl::Queue::NextWork() {
     auto guard = Lock();
-    while (!exit_thread_ && (submissions_.empty() || request_seq_ < submissions_.front().seq)) {
-        // The queue thread must wait forever if nothing is happening, until we tell it to exit
-        cond_.wait(guard);
+    cond_.wait(guard, [this] {
+        return exit_thread_ || !present_requests_.empty() || (!submissions_.empty() && submissions_.front().seq <= request_seq_);
+    });
+    if (exit_thread_) {
+        return {};
     }
-    if (!exit_thread_) {
-        result = &submissions_.front();
-        // NOTE: the submission must remain on the dequeue until we're done processing it so that
-        // anyone waiting for it can find the correct waiter
+    RetirementWork work;
+    if (!submissions_.empty() && submissions_.front().seq <= request_seq_) {
+        work.submission = &submissions_.front();
     }
-    return result;
+    if (!present_requests_.empty()) {
+        work.present_request.emplace(std::move(present_requests_.front()));
+        present_requests_.pop_front();
+    }
+    return work;
 }
 
 void vvl::Queue::Retire(QueueSubmission& submission) {
-    submission.EndUse();
+    if (!submission.present_use_released) {
+        submission.EndUse();
+    }
     for (auto& wait : submission.wait_semaphores) {
         wait.semaphore->RetireWait(this, wait.payload, submission.loc.Get(), true);
         timeline_wait_count_.fetch_sub((wait.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) ? 1 : 0);
@@ -354,43 +395,67 @@ void vvl::Queue::Retire(QueueSubmission& submission) {
     for (auto& signal : submission.signal_semaphores) {
         signal.semaphore->RetireSignal(signal.payload);
     }
+
+    std::shared_ptr<Fence> fence;
+    std::promise<void> completed;
+    {
+        auto guard = Lock();
+        last_removed_seq_ = submission.seq;
+        last_removed_waiter_ = submission.waiter;
+        fence = std::move(submission.fence);
+        completed = std::move(submission.completed);
+        submissions_.pop_front();
+    }
+
+    // Retire the fence only after the submission left the queue (submissions_.pop_front).
+    // This ensures the completed QueueSubmission is not visible after vkWaitForFences.
+    // For example, vkResetEvent after vkWaitForFences would report the event wait command
+    // as still pending
+    if (fence) {
+        fence->Retire();
+    }
+
+    // Unblock waiting QueueWaitIdle/DeviceWaitIdle
+    completed.set_value();
+}
+
+void vvl::Queue::RetirePresentResources(uint64_t until_seq) {
+    small_vector<std::shared_ptr<Fence>, 1> fences;
+    {
+        auto guard = Lock();
+        for (QueueSubmission& submission : submissions_) {
+            if (submission.seq > until_seq) {
+                break;
+            }
+            if (!submission.swapchain || submission.present_use_released) {
+                continue;
+            }
+            submission.EndUse();
+            submission.present_use_released = true;
+
+            // In-order retirement must not retire this fence since the app can reuse
+            // it after this function
+            if (submission.fence) {
+                fences.emplace_back(std::move(submission.fence));
+            }
+        }
+    }
+    // Not under the queue lock.
+    // Fence::NotifyAndWait holds the fence lock while it notifies the queue
+    for (const auto& fence : fences) {
+        fence->Retire();
+    }
 }
 
 void vvl::Queue::ThreadFunc() {
     VVL_TracySetThreadName(__FUNCTION__);
-
-    QueueSubmission* submission = nullptr;
-
-    // Roll this queue forward, one submission at a time.
-    while (true) {
-        submission = NextSubmission();
-        if (submission == nullptr) {
-            break;
+    while (auto work = NextWork()) {
+        if (work->present_request) {
+            RetirePresentResources(work->present_request->until_seq);
+            work->present_request->completed.set_value();
         }
-        Retire(*submission);
-        // wake up anyone waiting for this submission to be retired
-        {
-            std::shared_ptr<Fence> fence;
-            std::promise<void> completed;
-            {
-                auto guard = Lock();
-                last_removed_seq_ = submission->seq;
-                last_removed_waiter_ = submission->waiter;
-                fence = std::move(submission->fence);
-                completed = std::move(submission->completed);
-                submissions_.pop_front();
-            }
-
-            // Retire the fence only after the submission left the queue (submissions_.pop_front).
-            // This ensures the completed QueueSubmission is not visible after vkWaitForFences.
-            // For example, vkResetEvent after vkWaitForFences would report the event wait command
-            // as still pending
-            if (fence) {
-                fence->Retire();
-            }
-
-            // Unblock waiting QueueWaitIdle/DeviceWaitIdle
-            completed.set_value();
+        if (work->submission) {
+            Retire(*work->submission);
         }
     }
 }

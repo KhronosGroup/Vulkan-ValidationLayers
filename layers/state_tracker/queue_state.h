@@ -29,6 +29,7 @@
 #include <condition_variable>
 #include <deque>
 #include <future>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -67,6 +68,9 @@ struct QueueSubmission {
     // Swapchain is not null if this submission represents QueuePresent request
     std::shared_ptr<Swapchain> swapchain;
 
+    // RetirePresentResources called EndUse before in-order retirement
+    bool present_use_released = false;
+
     // Pending event waits for host reset validation
     EventWaitCommandMap event_wait_commands;
 
@@ -96,8 +100,8 @@ struct QueueSubmission {
 
     void AddFence(std::shared_ptr<Fence> &&fence_state) { fence = std::move(fence_state); }
 
-    void EndUse();
     void BeginUse();
+    void EndUse();
 };
 
 // This timeout is for all queue threads to update their state after we know
@@ -167,6 +171,12 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     // Helper that combines Notify and Wait
     void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
 
+    // Retire present semaphore waits on the calling thread.
+    // Ask the queue thread to retire presentation resources (but not the
+    // entire present batches) through until_seq and wait for completion.
+    // Presentation batches themselves are retired in order
+    void NotifyAndWaitForPresent(const Location& loc, uint64_t until_seq);
+
     // Find a timeline wait that does not have a resolving signal submitted yet.
     // Check submissions up to and including until_seq.
     std::optional<SemaphoreInfo> FindTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const;
@@ -207,21 +217,37 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
 
     const std::deque<QueueSubmission> &Submissions() { return submissions_; }
 
-  protected:
-    // called when the worker thread decides a submissions has finished executing
-    void Retire(QueueSubmission &submission);
-
   private:
     DeviceState& device_state_;
     const VkQueueFamilyProperties queue_family_properties_;
 
+    struct RetirePresentResourcesRequest {
+        uint64_t until_seq;
+        std::promise<void> completed;
+    };
+
+    struct RetirementWork {
+        QueueSubmission* submission = nullptr;
+        std::optional<RetirePresentResourcesRequest> present_request;
+    };
+
+    std::optional<RetirementWork> NextWork();
+
+    // Called when the queue thread decides a submissions has finished executing.
+    // Removes the front submission and invalidates its reference
+    void Retire(QueueSubmission& submission);
+
+    // Called by the queue thread. Retires present resources up to and including until_seq,
+    // leaving submissions queued for in-order retirement
+    void RetirePresentResources(uint64_t until_seq);
+
     void ThreadFunc();
-    QueueSubmission *NextSubmission();
 
     // state related to submitting to the queue, all data members must
     // be accessed with lock_ held
     std::unique_ptr<std::thread> thread_;
     std::deque<QueueSubmission> submissions_;
+    std::deque<RetirePresentResourcesRequest> present_requests_;
     std::atomic<uint64_t> seq_{0};
     uint64_t request_seq_{0};
     uint64_t first_seq_to_post_process_{0};
