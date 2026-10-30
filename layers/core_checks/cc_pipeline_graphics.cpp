@@ -1515,11 +1515,12 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolve(const vvl::Pipeli
         return skip;
     }
     const uint64_t external_format = GetExternalFormat(rp_state.create_info.pAttachments[attachment].pNext);
-    if (external_format == 0) {
+    // All the VUs here only apply if the pipeline requires fragment output interface state
+    if (external_format == 0 || !pipeline.OwnsLibState(pipeline.fragment_output_state)) {
         return skip;
     }
 
-    if (pipeline.OwnsLibState(pipeline.pre_raster_state) && pipeline.fragment_output_state) {
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state)) {
         const ShaderStageState* stage_state = pipeline.GetShaderStageState(pipeline.pre_raster_state->last_stage);
         if (stage_state && stage_state->HasSpirv() && stage_state->entrypoint->written_built_in_primitive_shading_rate_khr) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09317", stage_state->module_state->Handle(),
@@ -1581,7 +1582,8 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(c
 
     const uint64_t external_format = GetExternalFormat(pipeline.GetCreateInfoPNext());
     const auto* rendering_struct = pipeline.rendering_create_info;
-    if (external_format == 0 || !rendering_struct) {
+    // All the VUs here only apply if the pipeline requires fragment output interface state
+    if (external_format == 0 || !rendering_struct || !pipeline.OwnsLibState(pipeline.fragment_output_state)) {
         return skip;
     }
 
@@ -1610,7 +1612,7 @@ bool CoreChecks::ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(c
         }
     }
 
-    if (pipeline.OwnsLibState(pipeline.pre_raster_state) && pipeline.fragment_output_state) {
+    if (pipeline.OwnsLibState(pipeline.pre_raster_state)) {
         const ShaderStageState* stage_state = pipeline.GetShaderStageState(pipeline.pre_raster_state->last_stage);
         if (stage_state && stage_state->HasSpirv() && stage_state->entrypoint->written_built_in_primitive_shading_rate_khr) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-externalFormatResolve-09308", stage_state->module_state->Handle(),
