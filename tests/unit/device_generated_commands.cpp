@@ -2712,7 +2712,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteMeshTokenVertexPipeline) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdExecuteGeneratedCommandsEXT-MeshDrawToken");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-12549");
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
@@ -2777,7 +2777,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteDrawTokenMeshShaderObject) {
         vk::CmdBindShadersEXT(m_command_buffer, 1u, &null_stage, &null_shader);
     }
     SetDefaultDynamicStatesAllEXT(m_command_buffer);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdExecuteGeneratedCommandsEXT-NonMeshDrawToken");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-12550");
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
@@ -3092,13 +3092,13 @@ TEST_F(NegativeDeviceGeneratedCommands, IndirectCommandPushDataMaxPushDataSize) 
 
     token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_EXT;
     pc_token.updateRange = {VK_SHADER_STAGE_ALL, max_push_data_size - 4, 8};
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkIndirectCommandsPushConstantTokenEXT-updateRange-maxPushDataSize");
+    m_errorMonitor->SetDesiredError("VUID-VkIndirectCommandsPushConstantTokenEXT-offset-12548");
     vk::CreateIndirectCommandsLayoutEXT(device(), &command_layout_ci, nullptr, &command_layout);
     m_errorMonitor->VerifyFound();
 
     token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_DATA_SEQUENCE_INDEX_EXT;
     pc_token.updateRange = {VK_SHADER_STAGE_ALL, max_push_data_size, 4};
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkIndirectCommandsPushConstantTokenEXT-updateRange-maxPushDataSize");
+    m_errorMonitor->SetDesiredError("VUID-VkIndirectCommandsPushConstantTokenEXT-offset-12548");
     vk::CreateIndirectCommandsLayoutEXT(device(), &command_layout_ci, nullptr, &command_layout);
     m_errorMonitor->VerifyFound();
 }

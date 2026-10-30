@@ -431,8 +431,7 @@ bool CoreChecks::ValidateDedicatedAllocationExportBuffer(const vvl::Buffer& buff
         if (!GetExternalMemoryPropertiesBuffer(buffer, flag, properties) ||
             (properties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
             all_exportable = false;
-            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8602
-            skip |= LogError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-buffer-export", buffer.Handle(), handle_types_loc,
+            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-12538", buffer.Handle(), handle_types_loc,
                              "(%s) includes %s, which is not reported as exportable for the dedicated %s.",
                              string_VkExternalMemoryHandleTypeFlags(handle_types).c_str(),
                              string_VkExternalMemoryHandleTypeFlagBits(flag), FormatHandle(buffer).c_str());
@@ -443,8 +442,7 @@ bool CoreChecks::ValidateDedicatedAllocationExportBuffer(const vvl::Buffer& buff
 
     // Compatibility only matters once every handle type can be exported
     if (all_exportable && compatible_types != handle_types) {
-        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8602
-        skip |= LogError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-buffer-export", buffer.Handle(), handle_types_loc,
+        skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-12538", buffer.Handle(), handle_types_loc,
                          "(%s) are not all reported as compatible with each other for the dedicated %s (only %s are).",
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str(), FormatHandle(buffer).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(compatible_types).c_str());
@@ -476,8 +474,7 @@ bool CoreChecks::ValidateDedicatedAllocationExportImage(const vvl::Image& image,
         if (!GetExternalMemoryPropertiesImage(image, flag, properties) ||
             (properties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
             all_exportable = false;
-            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8602
-            skip |= LogError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-image-export", image.Handle(), handle_types_loc,
+            skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-12539", image.Handle(), handle_types_loc,
                              "(%s) includes %s, which is not reported as exportable for the dedicated %s.",
                              string_VkExternalMemoryHandleTypeFlags(handle_types).c_str(),
                              string_VkExternalMemoryHandleTypeFlagBits(flag), FormatHandle(image).c_str());
@@ -488,8 +485,7 @@ bool CoreChecks::ValidateDedicatedAllocationExportImage(const vvl::Image& image,
 
     // Compatibility only matters once every handle type can be exported
     if (all_exportable && compatible_types != handle_types) {
-        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8602
-        skip |= LogError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-image-export", image.Handle(), handle_types_loc,
+        skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-12539", image.Handle(), handle_types_loc,
                          "(%s) are not all reported as compatible with each other for the dedicated %s (only %s are).",
                          string_VkExternalMemoryHandleTypeFlags(handle_types).c_str(), FormatHandle(image).c_str(),
                          string_VkExternalMemoryHandleTypeFlags(compatible_types).c_str());

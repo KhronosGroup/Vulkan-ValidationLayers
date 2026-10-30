@@ -1055,9 +1055,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet& update, const Loc
                             "(%" PRIu32 ") does not exist in %s.", update.srcBinding, FormatHandle(src_set->Handle()).c_str());
         } else if (src_layout.GetDescriptorCountFromBinding(update.srcBinding) == 0) {
             const LogObjectList objlist(update.srcSet, src_layout.Handle());
-            // VUID being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8657
-            return LogError("UNASSIGNED-VkCopyDescriptorSet-srcBinding-zero-descriptorCount", objlist,
-                            copy_loc.dot(Field::srcBinding),
+            return LogError("VUID-VkCopyDescriptorSet-srcBinding-12533", objlist, copy_loc.dot(Field::srcBinding),
                             "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.", update.srcBinding,
                             FormatHandle(src_layout.Handle()).c_str());
         }
@@ -1087,9 +1085,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet& update, const Loc
                             "(%" PRIu32 ") does not exist in %s.", update.dstBinding, FormatHandle(dst_set->Handle()).c_str());
         } else if (dst_layout.GetDescriptorCountFromBinding(update.dstBinding) == 0) {
             const LogObjectList objlist(update.dstSet, dst_layout.Handle());
-            // VUID being added https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8657
-            return LogError("UNASSIGNED-VkCopyDescriptorSet-dstBinding-zero-descriptorCount", objlist,
-                            copy_loc.dot(Field::dstBinding),
+            return LogError("VUID-VkCopyDescriptorSet-dstBinding-12534", objlist, copy_loc.dot(Field::dstBinding),
                             "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.", update.dstBinding,
                             FormatHandle(dst_layout.Handle()).c_str());
         }

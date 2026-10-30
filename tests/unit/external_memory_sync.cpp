@@ -259,7 +259,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
         const auto dedicated_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(
             *m_device, buffer.MemoryRequirements(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
         VkDeviceMemory memory = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-buffer-export");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-12538");
         vk::AllocateMemory(device(), &dedicated_alloc_info, nullptr, &memory);
         m_errorMonitor->VerifyFound();
         return;
@@ -319,7 +319,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
         const auto dedicated_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(
             *m_device, buffer.MemoryRequirements(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
         VkDeviceMemory memory = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-buffer-export");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-12538");
         vk::AllocateMemory(device(), &dedicated_alloc_info, nullptr, &memory);
         m_errorMonitor->VerifyFound();
         return;
@@ -392,7 +392,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
         const auto dedicated_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(
             *m_device, image.MemoryRequirements(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
         VkDeviceMemory memory = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-image-export");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-12539");
         vk::AllocateMemory(device(), &dedicated_alloc_info, nullptr, &memory);
         m_errorMonitor->VerifyFound();
         return;
@@ -457,7 +457,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
         const auto dedicated_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(
             *m_device, image.MemoryRequirements(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
         VkDeviceMemory memory = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-image-export");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-12539");
         vk::AllocateMemory(device(), &dedicated_alloc_info, nullptr, &memory);
         m_errorMonitor->VerifyFound();
         return;
@@ -496,7 +496,7 @@ TEST_F(NegativeExternalMemorySync, DedicatedBufferExportUnsupportedHandleType) {
                                                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
 
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-buffer-export");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-12538");
     vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
     m_errorMonitor->VerifyFound();
 }
@@ -531,7 +531,7 @@ TEST_F(NegativeExternalMemorySync, DedicatedImageExportUnsupportedHandleType) {
                                                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
 
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryAllocateInfo-pNext-dedicated-image-export");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-12539");
     vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
     m_errorMonitor->VerifyFound();
 }

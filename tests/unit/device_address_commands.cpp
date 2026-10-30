@@ -1007,7 +1007,7 @@ TEST_F(NegativeDeviceAddressCommands, QueryResultsStride) {
 
     range.address = buffer.Address();
     range.stride = 9;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-stride-4");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-12540");
     vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 2u, &range, 0u, 0u);
     m_errorMonitor->VerifyFound();
 
@@ -1043,7 +1043,7 @@ TEST_F(NegativeDeviceAddressCommands, QueryResults64Stride) {
 
     range.address = buffer.Address();
     range.stride = 9;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-stride-8");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-queryCount-12541");
     vk::CmdCopyQueryPoolResultsToMemoryKHR(m_command_buffer, query_pool, 0u, 2u, &range, 0u, VK_QUERY_RESULT_64_BIT);
     m_errorMonitor->VerifyFound();
 
