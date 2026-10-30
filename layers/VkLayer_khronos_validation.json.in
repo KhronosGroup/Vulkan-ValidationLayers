@@ -1064,58 +1064,48 @@
                                     }
                                 },
                                 {
-                                    "key": "gpuav_scoped",
-                                    "label": "Scoped GPU-AV",
-                                    "description": "Reduce the scope of GPU-AV allowing it to be must faster.",
-                                    "type": "GROUP",
-                                    "expanded": false,
-                                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
-                                    "settings": [
-                                        {
-                                            "key": "gpuav_select_instrumented_shaders",
-                                            "label": "Selective Instrument Shaders",
-                                            "description": "When turned on, shaders are NOT instrumented unless selected. This can be done by:\n- passing a VkValidationFeaturesEXT struct in the pNext of VkShaderModuleCreateInfo/VkPipelineShaderStageCreateInfo/vkCreateShadersEXT pNext\n- using a pattern matching a shader/pipeline debug name.\n- Providing a CDL dump file to parse the debug names from it.",
-                                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_scoped.md",
-                                            "type": "BOOL",
-                                            "default": false,
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    { "key": "gpuav_enable", "value": true }
-                                                ]
-                                            },
-                                            "settings": [
-                                                {
-                                                    "key": "gpuav_shaders_to_instrument",
-                                                    "label": "Shader/pipeline name patterns",
-                                                    "description": "Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed pattern will be instrumented when creating pipelines with those shaders or libraries. In a pattern, '*' matches any sequence of characters (including none), every other character is matched literally. For instance `foo` will only match for `foo`, `foo*` with every name starting with `foo`. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this name selection system. In this case, consider naming pipeline libraries instead.",
-                                                    "type": "LIST",
-                                                    "default": [],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            { "key": "gpuav_enable", "value": true },
-                                                            { "key": "gpuav_select_instrumented_shaders", "value": true }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_cdl_dump_path",
-                                                    "label": "CDL dump file",
-                                                    "description": "Path to a Crash Diagnostic Layer (CDL) dump file. Pipeline names found in this file will be selected for instrumentation.",
-                                                    "type": "LOAD_FILE",
-                                                    "default": "",
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            { "key": "gpuav_enable", "value": true },
-                                                            { "key": "gpuav_select_instrumented_shaders", "value": true }
-                                                        ]
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    ]
+                                 "key": "gpuav_select_instrumented_shaders",
+                                 "label": "Scoped GPU-AV",
+                                 "description": "When turned on, only selected shaders will be instrumented. Shader selection can be done by:\n- passing a VkValidationFeaturesEXT struct in the pNext of VkShaderModuleCreateInfo/VkPipelineShaderStageCreateInfo/vkCreateShadersEXT pNext\n- using a pattern matching a shader/pipeline debug name.\n- Providing a CDL dump file to parse the debug names from it.",
+                                 "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_scoped.md",
+                                 "type": "BOOL",
+                                 "default": false,
+                                 "dependence": {
+                                     "mode": "ALL",
+                                     "settings": [
+                                         { "key": "gpuav_enable", "value": true }
+                                     ]
+                                 },
+                                 "settings": [
+                                     {
+                                         "key": "gpuav_shaders_to_instrument",
+                                         "label": "Shader/pipeline name patterns",
+                                         "description": "Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed pattern will be instrumented when creating pipelines with those shaders or libraries. In a pattern, '*' matches any sequence of characters (including none), every other character is matched literally. For instance `foo` will only match for `foo`, `foo*` with every name starting with `foo`, `*foo*` every name containing `foo`. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this name selection system. In this case, consider naming pipeline libraries instead.",
+                                         "type": "LIST",
+                                         "default": [],
+                                         "dependence": {
+                                             "mode": "ALL",
+                                             "settings": [
+                                                 { "key": "gpuav_enable", "value": true },
+                                                 { "key": "gpuav_select_instrumented_shaders", "value": true }
+                                             ]
+                                         }
+                                     },
+                                     {
+                                         "key": "gpuav_cdl_dump_path",
+                                         "label": "CDL dump file",
+                                         "description": "Path to a Crash Diagnostic Layer (CDL) dump file. Pipeline names found in this file will be selected for instrumentation.",
+                                         "type": "LOAD_FILE",
+                                         "default": "",
+                                         "dependence": {
+                                             "mode": "ALL",
+                                             "settings": [
+                                                 { "key": "gpuav_enable", "value": true },
+                                                 { "key": "gpuav_select_instrumented_shaders", "value": true }
+                                             ]
+                                         }
+                                     }
+                                 ]
                                 },
                                 {
                                     "key": "gpuav_debug_settings",

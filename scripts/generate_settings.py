@@ -22,13 +22,15 @@ import common_ci
 import glob
 import json
 import os
+import re
 import subprocess
 import sys
 
 # We store the schema in VUL, which should be in some external folder somewhere
 def FindSchema():
     for pattern in ['*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json',
-                    '*/*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json']:
+                    '*/*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json',
+                    '*/*/*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json']:
         found = glob.glob(common_ci.RepoRelative(pattern))
         if found:
             return found[0]
@@ -57,6 +59,30 @@ def FormatPath(error):
     for part in error.absolute_path:
         path += f'[{part}]' if isinstance(part, int) else f'.{part}'
     return path if path else '<root>'
+
+# json.load drops error positions, so build it
+# Useful to be able to jump to error in an IDE
+def FindLocation(text, path):
+    decoder = json.JSONDecoder()
+    separators = re.compile(r'[\s,:]*')
+    # Start of the value after the one at pos
+    def Next(pos):
+        return separators.match(text, decoder.raw_decode(text, pos)[1]).end()
+
+    pos = separators.match(text).end()
+    for part in path:
+        # Step into '{' or '['
+        pos = separators.match(text, pos + 1).end()
+        if isinstance(part, int):
+            for _ in range(part):
+                pos = Next(pos)
+        else:
+            # Step over key/value pairs, then over the matching key
+            while decoder.raw_decode(text, pos)[0] != part:
+                pos = Next(Next(pos))
+            pos = Next(pos)
+
+    return text.count('\n', 0, pos) + 1, pos - text.rfind('\n', 0, pos)
 
 # Uncommitted git changes. No git or no repo (e.g. package builds) means unmodified
 # "git status" fails outside a repo, "git diff" would wrongly report a change
@@ -101,14 +127,17 @@ def ValidateSchema(manifest, json_input):
     reported = []
     for error in jsonschema.Draft7Validator(schema).iter_errors(manifest):
         for leaf in LeafErrors(error):
-            entry = (FormatPath(leaf), leaf.message)
+            entry = (FormatPath(leaf), leaf.message, list(leaf.absolute_path))
             if entry not in reported:
                 reported.append(entry)
     if not reported:
         return
 
-    for path, message in sorted(reported):
-        print(f'{json_input}: error: {path}: {message}', file=sys.stderr)
+    with open(json_input, 'r') as file:
+        text = file.read()
+    for path, message, parts in sorted(reported, key=lambda entry: FindLocation(text, entry[2])):
+        line, column = FindLocation(text, parts)
+        print(f'{json_input}({line},{column}): error: {path}: {message}', file=sys.stderr)
     sys.exit(f'{len(reported)} error(s) validating against {schema_input}')
 
 def IsDebugSetting(setting):

@@ -150,9 +150,9 @@ khronos_validation.gpuav_ray_tracing_buffers_consistency = false
 # Will have GPU-AV try and prevent crashes, but will be much slower to validate. If using Safe Mode, consider using selective shader instrumentation, to only instrument the shaders/pipelines causing issues.
 khronos_validation.gpuav_safe_mode = false
 
-# Selective Instrument Shaders
+# Scoped GPU-AV
 # =====================
-# When turned on, shaders are NOT instrumented unless selected. This can be done by:
+# When turned on, only selected shaders will be instrumented. Shader selection can be done by:
 - passing a VkValidationFeaturesEXT struct in the pNext of VkShaderModuleCreateInfo/VkPipelineShaderStageCreateInfo/vkCreateShadersEXT pNext
 - using a pattern matching a shader/pipeline debug name.
 - Providing a CDL dump file to parse the debug names from it.
@@ -170,7 +170,7 @@ khronos_validation.gpuav_shader_sanitizer = true
 
 # Shader/pipeline name patterns
 # =====================
-# Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed pattern will be instrumented when creating pipelines with those shaders or libraries. In a pattern, '*' matches any sequence of characters (including none), every other character is matched literally. For instance `foo` will only match for `foo`, `foo*` with every name starting with `foo`. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this name selection system. In this case, consider naming pipeline libraries instead.
+# Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed pattern will be instrumented when creating pipelines with those shaders or libraries. In a pattern, '*' matches any sequence of characters (including none), every other character is matched literally. For instance `foo` will only match for `foo`, `foo*` with every name starting with `foo`, `*foo*` every name containing `foo`. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this name selection system. In this case, consider naming pipeline libraries instead.
 khronos_validation.gpuav_shaders_to_instrument =
 
 # Shared Memory Data Race Detection
