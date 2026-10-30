@@ -35,3 +35,30 @@ We register our own `atexit()` handler on the first `vkCreateInstance()` call to
 Because `atexit()` handlers run in the reverse order of registration, an application handler registered **before** the first `vkCreateInstance()` will run **after** the layer has cleaned up, and any Vulkan call made from it will abort (with a message saying the `VkDevice` dispatch handle was not found).
 If the application needs to make Vulkan calls in its `atexit()` handler, it must register it **after** the first `vkCreateInstance()`.
 
+## Re-validating later in validation
+
+Once the Validation Layers report an error, treat everything after it as **undefined behavior**. The application is in a bad state, and the layers do not promise to survive it.
+
+The layers do not re-validate the same thing at every stage. Once an earlier stage has reported an error, the later stages assume the input is valid and are free to crash on it. For example, if `vkCreateImageView` reports an error and the app keeps going, a later crash in `vkCreateFramebuffer` when it uses that bad `VkImageView` is **not a bug** in the layers.
+
+The Validation Layers make a **best effort** to remain stable after an error is reported, but this is **not guaranteed**. Handling every such case would add runtime cost and code complexity, and we do not sacrifice performance or maintainability to do so.
+
+The **Stateless validation** catches basic issues (such as a null pointer, or an invalid enum or flag). This means thing such as `CoreChecks` should not need to redo these validation checks.
+
+**CoreChecks** catches things that are invalid based on state. Things such as **GPU-AV** and **SyncVal** come next. They do not try redo these done previously, so in case of an error before in the validation stack, they may work on invalid input.
+
+The Validation Layers for API command looks like:
+
+1. Validate
+2. Call the driver
+3. State tracking
+
+Sometimes there is no `VkResult` and a invalid call to the driver might not crash, but is still in a undefined behavior state. The state tracking here will not attempt to handle every invalid case that was already caught in the validation stage.
+
+### Reporting these crashes
+
+If a real world application hits one of these crashes, we are much more likely to look into a fix. Please report it, and tell us what the app was doing!
+
+Crashes found only by scanning, fuzzing, or an ASAN sweep, where the usage is just theoretical, are a slippery slope. There is an unbounded number of these cases, and we do not plan to handle them. This is common with AI generated issues and PRs, so to avoid re-validating the same things over and over, we ignore these reports.
+
+To report a crash, provide a test that reproduces it **without** `SetAllowedFailureMsg`. If the test needs `SetAllowedFailureMsg` to get to the crash, validation has already caught the invalid usage and the crash is expected.

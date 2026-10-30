@@ -663,7 +663,9 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
             case DescriptorClass::PlainSampler: {
                 auto binding = MakeBinding<SamplerBinding>(free_binding++, *create_info, descriptor_count, flags);
                 if (auto immutable_sampler_handles = layout_->GetImmutableSamplerPtrFromIndex(i)) {
-                    for (uint32_t di = 0; di < descriptor_count; ++di) {
+                    // pImmutableSamplers only has the layout's descriptorCount entries so variable_count may be larger
+                    const uint32_t immutable_sampler_count = std::min(descriptor_count, create_info->descriptorCount);
+                    for (uint32_t di = 0; di < immutable_sampler_count; ++di) {
                         auto sampler = state_data->GetConstCastShared<vvl::Sampler>(immutable_sampler_handles[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
@@ -678,7 +680,9 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
             case DescriptorClass::ImageSampler: {
                 auto binding = MakeBinding<ImageSamplerBinding>(free_binding++, *create_info, descriptor_count, flags);
                 if (auto immutable_sampler_handles = layout_->GetImmutableSamplerPtrFromIndex(i)) {
-                    for (uint32_t di = 0; di < descriptor_count; ++di) {
+                    // pImmutableSamplers only has the layout's descriptorCount entries so variable_count may be larger
+                    const uint32_t immutable_sampler_count = std::min(descriptor_count, create_info->descriptorCount);
+                    for (uint32_t di = 0; di < immutable_sampler_count; ++di) {
                         auto sampler = state_data->GetConstCastShared<vvl::Sampler>(immutable_sampler_handles[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
@@ -852,10 +856,13 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet& update, co
     auto src_iter = src_set.FindDescriptor(update.srcBinding, update.srcArrayElement);
     auto dst_iter = FindDescriptor(update.dstBinding, update.dstArrayElement);
     if (!src_iter.IsValid() || !dst_iter.IsValid()) {
-        return;  // to not crash if things are already invalid
+        return;  // to not crash in PostCallRecord
     }
     // Update parameters all look good so perform update
     for (uint32_t i = 0; i < update.descriptorCount; ++i, ++src_iter, ++dst_iter) {
+        if (src_iter.AtEnd() || dst_iter.AtEnd()) {
+            break;  // to not crash in PostCallRecord
+        }
         auto& src = *src_iter;
         auto& dst = *dst_iter;
         if (src_iter.updated()) {

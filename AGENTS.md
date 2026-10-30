@@ -32,9 +32,11 @@ Use the `Bug report` issue template. First work out where the issue belongs.
 - The VUID in the spec that should have caught it.
 - A **negative test** in `tests/unit/` that shows the error that should have been reported.
 
-**Crash or assert**
+**Crash or assert or ASAN**
 
 - A **positive test** that reproduces it **without** `SetAllowedFailureMsg`.
+  - IMPORTANT! - See docs/limitations.md - If you are needing to use `SetAllowedFailureMsg` this is likely NOT
+    an issue and you should ensure the user is aware before they waste the time of the maintainers.
 - If validation already reports an error earlier (e.g. an invalid image from `vkCreateImage` that is later
   used while recording a command buffer), that earlier error has to be fixed first. The layers do not
   re-validate every object at every use. Quick checks such as a null pointer may still be accepted.
