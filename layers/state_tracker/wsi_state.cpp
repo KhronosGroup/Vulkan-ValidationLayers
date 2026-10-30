@@ -191,11 +191,19 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const Su
         max_present_id.store(present_id);
     }
     if (present_id > 0) {
+        small_vector<SubmissionReference, 1> signal_submission_refs;
+        for (const auto& semaphore : present_wait_semaphores) {
+            if (auto signal = semaphore->GetPendingBinarySignalSubmission()) {
+                signal_submission_refs.emplace_back(*signal);
+            }
+        }
+        std::lock_guard lock(present_id_mutex);
         // the present id ring buffer is allocated only when the application uses present ids
         if (present_id_ring_buffer.empty()) {
             present_id_ring_buffer.resize(present_id_ring_buffer_size);
         }
-        present_id_ring_buffer[present_id_request_count % present_id_ring_buffer_size] = {present_id, present_submission_ref};
+        present_id_ring_buffer[present_id_request_count % present_id_ring_buffer_size] = {present_id, present_submission_ref,
+                                                                                          std::move(signal_submission_refs)};
         present_id_request_count++;
     }
 }

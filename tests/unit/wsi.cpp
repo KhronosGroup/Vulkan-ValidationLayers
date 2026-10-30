@@ -1896,6 +1896,45 @@ TEST_F(NegativeWsi, PresentIdWait) {
     swapchain3.Destroy();
 }
 
+TEST_F(NegativeWsi, PresentWaitUnrelatedSubmission) {
+    TEST_DESCRIPTION("Waiting for presentation must not retire unrelated work on the presentation queue");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentId);
+    AddRequiredFeature(vkt::Feature::presentWait);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    if (!m_swapchain.TryTransitionToPresentLayout(*m_device, *m_default_queue, m_command_pool)) {
+        GTEST_SKIP() << "Failed to pre-transition swapchain images";
+    }
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    vkt::Semaphore present_semaphore(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
+
+    // The present semaphore does not cover this later submission
+    vkt::Fence fence(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, fence);
+
+    const uint64_t present_id_value = 1;
+
+    VkPresentIdKHR present_id = vku::InitStructHelper();
+    present_id.swapchainCount = 1;
+    present_id.pPresentIds = &present_id_value;
+
+    m_default_queue->Present(m_swapchain, image_index, present_semaphore, &present_id);
+    vk::WaitForPresentKHR(*m_device, m_swapchain, present_id_value, kWaitTimeout);
+
+    m_errorMonitor->SetDesiredError("VUID-vkResetFences-pFences-01123");
+    fence.Reset();
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeWsi, PresentIdWaitFeatures) {
     TEST_DESCRIPTION("Test present wait extension");
     SetTargetApiVersion(VK_API_VERSION_1_1);
