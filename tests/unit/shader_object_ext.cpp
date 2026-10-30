@@ -2143,6 +2143,31 @@ TEST_F(NegativeShaderObjectEXT, MissingCmdSetProvokingVertexModeEXT) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeShaderObjectEXT, MissingCmdSetProvokingVertexModeEXTMesh) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8644");
+    AddRequiredExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
+    InitDynamicRenderTarget();
+    CreateMinimalShaders();
+
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
+    VkShaderCreateInfoEXT mesh_create_info =
+        ShaderCreateInfoFlagEXT(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT);
+    const vkt::ShaderEXT mesh_shader(*m_device, mesh_create_info);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExcludeEXT();
+    m_command_buffer.BindMeshShadersEXT(mesh_shader, m_frag_shader);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-None-07636");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeShaderObjectEXT, MissingPolygonModeCmdSetLineRasterizationModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineRasterizationModeEXT.");
 

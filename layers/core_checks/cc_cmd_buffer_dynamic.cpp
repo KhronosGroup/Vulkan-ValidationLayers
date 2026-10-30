@@ -359,11 +359,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT, loc);
         }
 
-        if (enabled_features.alphaToOne) {
-            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT, loc);
-        }
-        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT, loc);
-
         if (IsExtEnabled(extensions.vk_ext_conservative_rasterization)) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
                                               CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT, loc);
@@ -446,14 +441,16 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             }
         }
 
-        if (vertex_shader_bound) {
-            if (IsExtEnabled(extensions.vk_ext_provoking_vertex)) {
-                skip |=
-                    ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT, loc);
-            }
+        if (IsExtEnabled(extensions.vk_ext_provoking_vertex)) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT, loc);
         }
 
         if (fragment_shader_bound) {
+            skip |=
+                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT, loc);
+            if (enabled_features.alphaToOne) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT, loc);
+            }
             if (enabled_features.logicOp) {
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT, loc);
             }
