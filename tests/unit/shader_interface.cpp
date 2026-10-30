@@ -2553,6 +2553,133 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndexShaderObject) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderInterface, InputAttachmentIndexMaxPerStage) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(Init());
+
+    const uint32_t max_per_stage = m_device->Physical().limits_.maxPerStageDescriptorInputAttachments;
+    if (max_per_stage == vvl::kU32Max) {
+        GTEST_SKIP() << "maxPerStageDescriptorInputAttachments is uint32_t max";
+    }
+
+    // layout(input_attachment_index=<limit>, set=0, binding=0) uniform subpassInput xs;
+    // layout(location=0) out vec4 color;
+    // void main() {
+    //     color = subpassLoad(xs);
+    // }
+    const std::string fs_source = R"(
+               OpCapability Shader
+               OpCapability InputAttachment
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %color Location 0
+               OpDecorate %xs DescriptorSet 0
+               OpDecorate %xs Binding 0
+               OpDecorate %xs InputAttachmentIndex )" +
+                                  std::to_string(max_per_stage) + R"(
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+         %10 = OpTypeImage %float SubpassData 0 0 0 2 Unknown
+%_ptr_UniformConstant_10 = OpTypePointer UniformConstant %10
+         %xs = OpVariable %_ptr_UniformConstant_10 UniformConstant
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %v2int = OpTypeVector %int 2
+         %17 = OpConstantComposite %v2int %int_0 %int_0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %10 %xs
+         %18 = OpImageRead %v4float %13 %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+    )";
+    std::vector<uint32_t> spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, fs_source.c_str(), spv);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-12551");
+    const vkt::ShaderEXT frag_shader(*m_device,
+                                     ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, &descriptor_set.layout_.handle()));
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderInterface, InputAttachmentIndexMaxInputAttachmentIndex) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_12_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::maintenance12);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceMaintenance12PropertiesKHR maintenance12_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance12_props);
+    const uint32_t max_index = maintenance12_props.maxInputAttachmentIndex;
+    if (max_index == vvl::kU32Max) {
+        GTEST_SKIP() << "maxInputAttachmentIndex is uint32_t max";
+    }
+
+    // layout(input_attachment_index=<limit>, set=0, binding=0) uniform subpassInput xs;
+    // layout(location=0) out vec4 color;
+    // void main() {
+    //     color = subpassLoad(xs);
+    // }
+    const std::string fs_source = R"(
+               OpCapability Shader
+               OpCapability InputAttachment
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %color Location 0
+               OpDecorate %xs DescriptorSet 0
+               OpDecorate %xs Binding 0
+               OpDecorate %xs InputAttachmentIndex )" +
+                                  std::to_string(max_index) + R"(
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+         %10 = OpTypeImage %float SubpassData 0 0 0 2 Unknown
+%_ptr_UniformConstant_10 = OpTypePointer UniformConstant %10
+         %xs = OpVariable %_ptr_UniformConstant_10 UniformConstant
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %v2int = OpTypeVector %int 2
+         %17 = OpConstantComposite %v2int %int_0 %int_0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %10 %xs
+         %18 = OpImageRead %v4float %13 %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+    )";
+    std::vector<uint32_t> spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, fs_source.c_str(), spv);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxInputAttachmentIndex-12552");
+    const vkt::ShaderEXT frag_shader(*m_device,
+                                     ShaderCreateInfoEXT(spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, &descriptor_set.layout_.handle()));
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderInterface, PhysicalStorageBufferArray) {
     TEST_DESCRIPTION("Details found in https://gitlab.khronos.org/spirv/SPIR-V/-/issues/779");
     SetTargetApiVersion(VK_API_VERSION_1_2);

@@ -1327,6 +1327,44 @@ TEST_F(NegativeDynamicRenderingLocalRead, MaxPerStageDescriptorInputAttachments)
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicRenderingLocalRead, MaxInputAttachmentIndex) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_12_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance12);
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+
+    VkPhysicalDeviceMaintenance12PropertiesKHR maintenance12_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance12_props);
+    const uint32_t max_index = maintenance12_props.maxInputAttachmentIndex;
+    if (max_index == vvl::kU32Max) {
+        GTEST_SKIP() << "maxInputAttachmentIndex is uint32_t max";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({VK_FORMAT_R8G8B8A8_UNORM});
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfo color_attachments[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 2;
+    rendering_info.pColorAttachments = &color_attachments[0];
+    m_command_buffer.BeginRendering(rendering_info);
+
+    uint32_t indices[2] = {0, max_index};
+    VkRenderingInputAttachmentIndexInfo input_info = vku::InitStructHelper();
+    input_info.pColorAttachmentInputIndices = indices;
+    input_info.colorAttachmentCount = 2;
+
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12537");
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer, &input_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentLocationsColorAttachmentCount) {
     TEST_DESCRIPTION("colorAttachmentCount must be equal to the value used to begin the current render pass instance");
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());

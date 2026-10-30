@@ -6080,6 +6080,10 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
                                                          const LogObjectList objlist, const Location& loc_info) const {
     bool skip = false;
 
+    const bool maintenance12 = enabled_features.maintenance12;
+    const uint32_t max_index = maintenance12 ? phys_dev_ext_props.maintenance12_props.maxInputAttachmentIndex
+                                             : phys_dev_props.limits.maxPerStageDescriptorInputAttachments;
+
     vvl::unordered_map<uint32_t, uint32_t> unique;
     if (index_info.pColorAttachmentInputIndices) {
         for (uint32_t i = 0; i < index_info.colorAttachmentCount; ++i) {
@@ -6101,11 +6105,15 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
                 unique[color_index] = i;
             }
 
-            if (color_index >= phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
-                skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274", objlist,
-                                 loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pColorAttachmentInputIndices, i),
-                                 "(%" PRIu32 ") is not less than maxPerStageDescriptorInputAttachments (%" PRIu32 ").", color_index,
-                                 phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
+            if (color_index >= max_index) {
+                const char* vuid = maintenance12 ? "VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12537"
+                                                 : "VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274";
+                skip |=
+                    LogError(vuid, objlist,
+                             loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pColorAttachmentInputIndices, i),
+                             "(%" PRIu32 ") is not less than %s (%" PRIu32 ").%s", color_index,
+                             maintenance12 ? "maxInputAttachmentIndex" : "maxPerStageDescriptorInputAttachments", max_index,
+                             maintenance12 ? "" : "\nHint: This can be allowed in some cases if maintenance12 feature is enabled.");
             }
         }
     }
@@ -6125,11 +6133,14 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
                              depth_index, unique[depth_index], index_info.pColorAttachmentInputIndices[unique[depth_index]]);
         }
 
-        if (depth_index >= phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
-            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274", objlist,
+        if (depth_index >= max_index) {
+            const char* vuid = maintenance12 ? "VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12537"
+                                             : "VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274";
+            skip |= LogError(vuid, objlist,
                              loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex),
-                             "(%" PRIu32 ") is not less than maxPerStageDescriptorInputAttachments (%" PRIu32 ").", depth_index,
-                             phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
+                             "(%" PRIu32 ") is not less than %s (%" PRIu32 ").%s", depth_index,
+                             maintenance12 ? "maxInputAttachmentIndex" : "maxPerStageDescriptorInputAttachments", max_index,
+                             maintenance12 ? "" : "\nHint: This can be allowed in some cases if maintenance12 feature is enabled.");
         }
     }
 
@@ -6148,11 +6159,14 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
                              stencil_index, unique[stencil_index], index_info.pColorAttachmentInputIndices[unique[stencil_index]]);
         }
 
-        if (stencil_index >= phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
-            skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274", objlist,
+        if (stencil_index >= max_index) {
+            const char* vuid = maintenance12 ? "VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12537"
+                                             : "VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-12274";
+            skip |= LogError(vuid, objlist,
                              loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex),
-                             "(%" PRIu32 ") is not less than maxPerStageDescriptorInputAttachments (%" PRIu32 ").", stencil_index,
-                             phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
+                             "(%" PRIu32 ") is not less than %s (%" PRIu32 ").%s", stencil_index,
+                             maintenance12 ? "maxInputAttachmentIndex" : "maxPerStageDescriptorInputAttachments", max_index,
+                             maintenance12 ? "" : "\nHint: This can be allowed in some cases if maintenance12 feature is enabled.");
         }
     }
 

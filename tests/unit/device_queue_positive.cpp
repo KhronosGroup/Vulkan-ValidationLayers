@@ -43,6 +43,27 @@ TEST_F(PositiveDeviceQueue, NoQueues) {
     vk::DestroyPipeline(device, pipeline, nullptr);
 }
 
+TEST_F(PositiveDeviceQueue, QueuePrioritiesNullMaintenance12) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_12_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance12);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
+    device_queue_ci.queueFamilyIndex = 0;
+    device_queue_ci.queueCount = 1;
+    device_queue_ci.pQueuePriorities = nullptr;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.pNext = requested_features_.GetEnabledFeatures2();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vkt::Device device(gpu_, device_ci);
+}
+
 TEST_F(PositiveDeviceQueue, QueueFamilyIndexDifferentCreateFlags) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_INTERNALLY_SYNCHRONIZED_QUEUES_EXTENSION_NAME);

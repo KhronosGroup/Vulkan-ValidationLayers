@@ -252,6 +252,9 @@
                 "VkPhysicalDeviceMaintenance11FeaturesKHR": {
                     "maintenance11": true
                 },
+                "VkPhysicalDeviceMaintenance12FeaturesKHR": {
+                    "maintenance12": true
+                },
                 "VkPhysicalDeviceShaderDrawParametersFeatures": {
                     "shaderDrawParameters": true
                 },
@@ -2450,6 +2453,9 @@
                     "resolveSrgbFormatAppliesTransferFunction": true,
                     "resolveSrgbFormatSupportsTransferFunctionControl": false
                 },
+                "VkPhysicalDeviceMaintenance12PropertiesKHR": {
+                    "maxInputAttachmentIndex": 2097152
+                },
                 "VkPhysicalDeviceSchedulingControlsPropertiesARM": {
                     "schedulingControlsFlags": [
                         "VK_PHYSICAL_DEVICE_SCHEDULING_CONTROLS_SHADER_CORE_COUNT_ARM",
@@ -2734,6 +2740,7 @@
                 "VK_KHR_maintenance9": 1,
                 "VK_KHR_maintenance10": 1,
                 "VK_KHR_maintenance11": 1,
+                "VK_KHR_maintenance12": 1,
                 "VK_KHR_multiview": 1,
                 "VK_KHR_performance_query": 1,
                 "VK_KHR_pipeline_binary": 1,

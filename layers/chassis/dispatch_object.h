@@ -120,6 +120,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
     VkPhysicalDeviceMaintenance9PropertiesKHR maintenance9_props;
     VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props;
+    VkPhysicalDeviceMaintenance12PropertiesKHR maintenance12_props;
     VkPhysicalDeviceTensorPropertiesARM tensor_properties;
     VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR copy_memory_indirect_props;
     VkPhysicalDeviceOpacityMicromapPropertiesKHR micromap_props;
