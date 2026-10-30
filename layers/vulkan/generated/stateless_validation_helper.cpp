@@ -1474,6 +1474,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceMaintenance12FeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_FEATURES_KHR: {  // Covers
+                                                                               // VUID-VkPhysicalDeviceMaintenance12FeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMaintenance12FeaturesKHR);
+                VkPhysicalDeviceMaintenance12FeaturesKHR* structure = (VkPhysicalDeviceMaintenance12FeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::maintenance12), structure->maintenance12);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceTransformFeedbackFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceTransformFeedbackFeaturesEXT-sType-sType
@@ -9624,7 +9634,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 290> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 291> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9753,6 +9763,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES,
@@ -9952,7 +9963,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                 skip |= context.ValidateArray(pQueueCreateInfos_loc.dot(Field::queueCount),
                                               pQueueCreateInfos_loc.dot(Field::pQueuePriorities),
                                               pCreateInfo->pQueueCreateInfos[queueCreateInfoIndex].queueCount,
-                                              &pCreateInfo->pQueueCreateInfos[queueCreateInfoIndex].pQueuePriorities, true, true,
+                                              &pCreateInfo->pQueueCreateInfos[queueCreateInfoIndex].pQueuePriorities, true, false,
                                               "VUID-VkDeviceQueueCreateInfo-queueCount-arraylength",
                                               "VUID-VkDeviceQueueCreateInfo-pQueuePriorities-parameter");
             }
@@ -13139,7 +13150,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
                                        "VUID-VkPhysicalDeviceProperties2-sType-sType");
     if (pProperties != nullptr) {
         [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties);
-        constexpr std::array<VkStructureType, 127> allowed_structs_VkPhysicalDeviceProperties2 = {
+        constexpr std::array<VkStructureType, 128> allowed_structs_VkPhysicalDeviceProperties2 = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_ALLOCATION_ALIGNMENT_PROPERTIES_VALVE,
@@ -13196,6 +13207,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_VERTEX_ATTRIBUTES_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_PROPERTIES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_PROPERTIES,
@@ -21299,10 +21311,10 @@ bool Device::PreCallValidateGetDeviceFaultReportsKHR(VkDevice device, uint64_t t
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_khr_device_fault)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_fault});
-    skip |= context.ValidateStructTypeArray(
-        loc.dot(Field::pFaultCounts), loc.dot(Field::pFaultInfo), pFaultCounts, pFaultInfo, VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_KHR,
-        true, true, false, "VUID-VkDeviceFaultInfoKHR-sType-sType", kVUIDUndefined,
-        "VUID-vkGetDeviceFaultReportsKHR-pFaultCounts-parameter", "VUID-vkGetDeviceFaultReportsKHR-pFaultCounts-arraylength");
+    skip |= context.ValidateStructTypeArray(loc.dot(Field::pFaultCounts), loc.dot(Field::pFaultInfo), pFaultCounts, pFaultInfo,
+                                            VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_KHR, true, false, false,
+                                            "VUID-VkDeviceFaultInfoKHR-sType-sType", kVUIDUndefined,
+                                            "VUID-vkGetDeviceFaultReportsKHR-pFaultCounts-parameter", kVUIDUndefined);
     if (pFaultInfo != nullptr) {
         for (uint32_t pFaultIndexs = 0; pFaultIndexs < *pFaultCounts; ++pFaultIndexs) {
             [[maybe_unused]] const Location pFaultInfo_loc = loc.dot(Field::pFaultInfo, pFaultIndexs);

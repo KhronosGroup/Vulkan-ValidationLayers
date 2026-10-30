@@ -1988,6 +1988,17 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_FEATURES_KHR: {
+                VkPhysicalDeviceMaintenance12FeaturesKHR supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceMaintenance12FeaturesKHR* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance12FeaturesKHR*>(current);
+                if (enabling->maintenance12 && !supported.maintenance12) {
+                    ss << "VkPhysicalDeviceMaintenance12FeaturesKHR::maintenance12 is not supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES: {
                 VkPhysicalDeviceMaintenance4Features supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

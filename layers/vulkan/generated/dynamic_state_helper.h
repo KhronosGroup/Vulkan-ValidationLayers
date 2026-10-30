@@ -123,7 +123,9 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
 // All state is only tied to VK_SHADER_STAGE_FRAGMENT_BIT
 const CBDynamicFlags kFragmentDynamicState =
     CBDynamicFlags(1) << CB_DYNAMIC_STATE_BLEND_CONSTANTS | CBDynamicFlags(1) << CB_DYNAMIC_STATE_LOGIC_OP_EXT |
-    CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT | CBDynamicFlags(1) << CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT |
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT | CBDynamicFlags(1) << CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT |
     CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT | CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT |
     CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT | CBDynamicFlags(1) << CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT |
     CBDynamicFlags(1) << CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV |
@@ -141,10 +143,7 @@ const CBDynamicFlags kTessEvalDynamicState = CBDynamicFlags(1) << CB_DYNAMIC_STA
 // All state is only tied to VK_SHADER_STAGE_VERTEX_BIT
 const CBDynamicFlags kVertexDynamicState =
     CBDynamicFlags(1) << CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY | CBDynamicFlags(1) << CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE |
-    CBDynamicFlags(1) << CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE | CBDynamicFlags(1) << CB_DYNAMIC_STATE_VERTEX_INPUT_EXT |
-    CBDynamicFlags(1) << CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT |
-    CBDynamicFlags(1) << CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT |
-    CBDynamicFlags(1) << CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT;
+    CBDynamicFlags(1) << CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE | CBDynamicFlags(1) << CB_DYNAMIC_STATE_VERTEX_INPUT_EXT;
 
 // Some extra const also used, not sure where to put these otherwise
 //

@@ -4354,6 +4354,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             return {&vk_struct->maintenance11, "VkPhysicalDeviceMaintenance11FeaturesKHR::maintenance11"};
         }
 
+        case Feature::maintenance12: {
+            auto vk_struct = const_cast<VkPhysicalDeviceMaintenance12FeaturesKHR*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceMaintenance12FeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceMaintenance12FeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->maintenance12, "VkPhysicalDeviceMaintenance12FeaturesKHR::maintenance12"};
+        }
+
         case Feature::maintenance4:
             if (api_version >= VK_API_VERSION_1_3) {
                 auto vk_struct = const_cast<VkPhysicalDeviceVulkan13Features*>(

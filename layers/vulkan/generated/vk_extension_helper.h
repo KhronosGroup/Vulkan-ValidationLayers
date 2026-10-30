@@ -289,6 +289,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_pipeline_library_group_handles{kNotSupported};
     ExtEnabled vk_khr_maintenance11{kNotSupported};
     ExtEnabled vk_khr_extended_flags{kNotSupported};
+    ExtEnabled vk_khr_maintenance12{kNotSupported};
     ExtEnabled vk_nv_glsl_shader{kNotSupported};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotSupported};
     ExtEnabled vk_img_filter_cubic{kNotSupported};
@@ -807,6 +808,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_pipeline_library_group_handles:
         case vvl::Extension::_VK_KHR_maintenance11:
         case vvl::Extension::_VK_KHR_extended_flags:
+        case vvl::Extension::_VK_KHR_maintenance12:
         case vvl::Extension::_VK_NV_glsl_shader:
         case vvl::Extension::_VK_EXT_depth_range_unrestricted:
         case vvl::Extension::_VK_IMG_filter_cubic:

@@ -892,6 +892,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->extendedFlags |= enabled->extendedFlags == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_12_FEATURES_KHR: {
+                const VkPhysicalDeviceMaintenance12FeaturesKHR* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance12FeaturesKHR*>(pNext);
+                features->maintenance12 |= enabled->maintenance12 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {
                 const VkPhysicalDeviceTransformFeedbackFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceTransformFeedbackFeaturesEXT*>(pNext);
