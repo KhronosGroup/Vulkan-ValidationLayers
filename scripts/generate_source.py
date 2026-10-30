@@ -19,6 +19,7 @@
 
 import argparse
 import filecmp
+import importlib.util
 import os
 import re
 import shutil
@@ -62,6 +63,10 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             print(f'Found {reg_path}, but failed to import it:')
             print(f'{type(e).__name__}: {e}')
         sys.exit(1) # Return without call stack so easy to spot error
+
+    # Used by the Vulkan-Headers dependencyBNF, fail with a clear message instead of a call stack
+    if importlib.util.find_spec('pyparsing') is None:
+        sys.exit('error: the python "pyparsing" module is not installed (pip install pyparsing)')
 
     from base_generator import BaseGeneratorOptions
     from generators.thread_safety_generator import ThreadSafetyOutputGenerator

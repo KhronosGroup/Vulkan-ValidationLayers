@@ -22,12 +22,15 @@ import common_ci
 import glob
 import json
 import os
+import re
+import subprocess
 import sys
 
 # We store the schema in VUL, which should be in some external folder somewhere
 def FindSchema():
     for pattern in ['*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json',
-                    '*/*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json']:
+                    '*/*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json',
+                    '*/*/*/Vulkan-Utility-Libraries/docs/layers_settings_schema.json']:
         found = glob.glob(common_ci.RepoRelative(pattern))
         if found:
             return found[0]
@@ -57,13 +60,58 @@ def FormatPath(error):
         path += f'[{part}]' if isinstance(part, int) else f'.{part}'
     return path if path else '<root>'
 
+# json.load drops error positions, so build it
+# Useful to be able to jump to error in an IDE
+def FindLocation(text, path):
+    decoder = json.JSONDecoder()
+    separators = re.compile(r'[\s,:]*')
+    # Start of the value after the one at pos
+    def Next(pos):
+        return separators.match(text, decoder.raw_decode(text, pos)[1]).end()
+
+    pos = separators.match(text).end()
+    for part in path:
+        # Step into '{' or '['
+        pos = separators.match(text, pos + 1).end()
+        if isinstance(part, int):
+            for _ in range(part):
+                pos = Next(pos)
+        else:
+            # Step over key/value pairs, then over the matching key
+            while decoder.raw_decode(text, pos)[0] != part:
+                pos = Next(Next(pos))
+            pos = Next(pos)
+
+    return text.count('\n', 0, pos) + 1, pos - text.rfind('\n', 0, pos)
+
+# Uncommitted git changes. No git or no repo (e.g. package builds) means unmodified
+# "git status" fails outside a repo, "git diff" would wrongly report a change
+def IsModified(*paths):
+    try:
+        result = subprocess.run(['git', 'status', '--porcelain', '--untracked-files=no', '--', *paths],
+                                cwd=os.path.dirname(paths[0]), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    except FileNotFoundError:
+        return False
+    return result.returncode == 0 and result.stdout != b''
+
+# Keep the timestamp of identical files, otherwise every build recompiles layer_options.cpp and relinks
+def WriteIfChanged(path, content):
+    with open(path, 'r') as file:
+        if file.read() == content:
+            return
+
+    with open(path, 'w') as file:
+        file.write(content)
+
 def ValidateSchema(manifest, json_input):
     try:
         import jsonschema
     except ImportError:
-        print('WARNING: the python "jsonschema" module is not installed, skipping validation of '
-              f'{os.path.basename(json_input)} (pip install jsonschema)')
-        return
+        # Also reached when only this script changed, json.in then needs no validation
+        if not IsModified(json_input):
+            return
+        sys.exit(f'{json_input}: error: modified file but the python "jsonschema" module is not installed '
+                 'to validate it (pip install jsonschema)')
     schema_input = FindSchema()
     if schema_input is None:
         print('WARNING: layers_settings_schema.json was not found in the Vulkan-Utility-Libraries '
@@ -79,14 +127,17 @@ def ValidateSchema(manifest, json_input):
     reported = []
     for error in jsonschema.Draft7Validator(schema).iter_errors(manifest):
         for leaf in LeafErrors(error):
-            entry = (FormatPath(leaf), leaf.message)
+            entry = (FormatPath(leaf), leaf.message, list(leaf.absolute_path))
             if entry not in reported:
                 reported.append(entry)
     if not reported:
         return
 
-    for path, message in sorted(reported):
-        print(f'{json_input}: error: {path}: {message}', file=sys.stderr)
+    with open(json_input, 'r') as file:
+        text = file.read()
+    for path, message, parts in sorted(reported, key=lambda entry: FindLocation(text, entry[2])):
+        line, column = FindLocation(text, parts)
+        print(f'{json_input}({line},{column}): error: {path}: {message}', file=sys.stderr)
     sys.exit(f'{len(reported)} error(s) validating against {schema_input}')
 
 def IsDebugSetting(setting):
@@ -124,9 +175,7 @@ def GenerateTextFile(all_settings):
         out.append(f'# {setting["description"]}')
         out.append(f'khronos_validation.{setting["key"]} ={default}\n')
 
-    text_output = common_ci.RepoRelative('layers/vk_layer_settings.txt')
-    with open(text_output, 'w') as file:
-        file.write('\n'.join(out))
+    WriteIfChanged(common_ci.RepoRelative('layers/vk_layer_settings.txt'), '\n'.join(out))
 
 def GenerateValidation(all_settings):
     out = []
@@ -215,14 +264,22 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT &la
 // clang-format on
 ''')
 
-    text_output = common_ci.RepoRelative('layers/layer_options_validation.h')
-    with open(text_output, 'w') as file:
-        file.write('\n'.join(out))
+    WriteIfChanged(common_ci.RepoRelative('layers/layer_options_validation.h'), '\n'.join(out))
 
 if __name__ == '__main__':
     json_input = common_ci.RepoRelative('layers/VkLayer_khronos_validation.json.in')
+
+    # Checked-in outputs already match the committed inputs. Package builds stop here: no write to their
+    # read-only source tree, no jsonschema needed
+    if not IsModified(json_input, os.path.abspath(__file__)):
+        sys.exit(0)
+
     with open(json_input, 'r') as file:
-        manifest = json.load(file)
+        try:
+            manifest = json.load(file)
+        except json.JSONDecodeError as error:
+            # Same "file(line): error:" format as compilers, so IDEs can jump to it
+            sys.exit(f'{json_input}({error.lineno},{error.colno}): error: {error.msg}')
     json_settings = manifest['layer']['features']['settings']
 
     ValidateSchema(manifest, json_input)
