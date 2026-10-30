@@ -2484,6 +2484,46 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetInvalidCount) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetLayeredCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMapOffset);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMapLayered);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_create_info = BasicFragmentDensityMapImage();
+    image_create_info.arrayLayers = 2u;
+    vkt::Image image(*m_device, image_create_info);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
+
+    VkRenderingFragmentDensityMapAttachmentInfoEXT fdm_attachment_info = vku::InitStructHelper();
+    fdm_attachment_info.imageView = image_view;
+    fdm_attachment_info.imageLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper(&fdm_attachment_info);
+    rendering_info.flags = VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 2u;
+
+    VkOffset2D offset = {0, 0};
+    VkRenderPassFragmentDensityMapOffsetEndInfoEXT fdm_offset_end_info = vku::InitStructHelper();
+    fdm_offset_end_info.fragmentDensityOffsetCount = 1u;
+    fdm_offset_end_info.pFragmentDensityOffsets = &offset;
+    VkRenderingEndInfoEXT rendering_end_info = vku::InitStructHelper(&fdm_offset_end_info);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-12542");
+    vk::CmdEndRendering2EXT(m_command_buffer, &rendering_end_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetWidthGranularity) {
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);

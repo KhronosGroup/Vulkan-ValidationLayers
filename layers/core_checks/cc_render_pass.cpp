@@ -902,6 +902,36 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer& c
         }
     }
 
+    if (cb_state.GetViewMask() == 0) {
+        const bool dynamic_rendering = rp_state.UsesDynamicRendering();
+        const bool per_layer_fdm =
+            dynamic_rendering ? (rp_state.GetRenderingFlags() & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) != 0
+                              : (rp_state.create_info.flags & VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) != 0;
+        if (!per_layer_fdm) {
+            if (fdm_offset_end_info.fragmentDensityOffsetCount != 1) {
+                const LogObjectList objlist(cb_state.Handle(), rp_state.Handle());
+                skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-06511", objlist,
+                                 end_info_loc.dot(Field::fragmentDensityOffsetCount),
+                                 "(%" PRIu32 ") should only be 1 when the multiview feature is not enabled.",
+                                 fdm_offset_end_info.fragmentDensityOffsetCount);
+            }
+        } else {
+            const uint32_t layer_count = dynamic_rendering ? rp_state.dynamic_rendering_begin_rendering_info.layerCount
+                                                           : cb_state.active_framebuffer->create_info.layers;
+            if (fdm_offset_end_info.fragmentDensityOffsetCount != layer_count) {
+                const LogObjectList objlist(cb_state.Handle(), rp_state.Handle());
+                skip |= LogError(
+                    "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-12542", objlist,
+                    end_info_loc.dot(Field::fragmentDensityOffsetCount), "(%" PRIu32 ") is not equal to %s (%" PRIu32 ") but %s.",
+                    fdm_offset_end_info.fragmentDensityOffsetCount,
+                    dynamic_rendering ? "VkRenderingInfo::layerCount" : "VkFramebufferCreateInfo::layers", layer_count,
+                    dynamic_rendering
+                        ? "VkRenderingInfo::flags contains VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE"
+                        : "the render pass was created with VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE");
+            }
+        }
+    }
+
     for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
         const AttachmentInfo& attachment_info = cb_state.active_attachments[i];
         const vvl::ImageView* attachment = attachment_info.image_view;
@@ -981,15 +1011,8 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer& c
             if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED &&
                 fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
                 const uint32_t view_mask = cb_state.GetViewMask();
-                if (view_mask == 0) {
-                    if (fdm_offset_end_info.fragmentDensityOffsetCount != 1) {
-                        const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), attachment->Handle());
-                        skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-06511",
-                                         objlist, end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                                         "(%" PRIu32 ") should only be 1 when the multiview feature is not enabled.",
-                                         fdm_offset_end_info.fragmentDensityOffsetCount);
-                    }
-                } else if (attachment->normalized_subresource_range.layerCount != fdm_offset_end_info.fragmentDensityOffsetCount) {
+                if (view_mask != 0 &&
+                    attachment->normalized_subresource_range.layerCount != fdm_offset_end_info.fragmentDensityOffsetCount) {
                     const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), attachment->Handle());
                     skip |= LogError(
                         "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-06510", objlist,
@@ -3542,10 +3565,14 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                          ") equal to 1.\nHint: This can be allowed in some cases if the multiview feature is enabled.",
                          layer_count);
     }
-    if ((rendering_info.viewMask == 0) && (layer_count != 1)) {
+    if ((rendering_info.viewMask == 0) && (layer_count != 1) &&
+        (rendering_info.flags & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) == 0) {
         const LogObjectList objlist(commandBuffer, fdm_attachment_info.imageView);
         skip |= LogError("VUID-VkRenderingInfo-imageView-06109", objlist, view_loc,
-                         "must have a layerCount (%" PRId32 ") equal to 1 when viewMask is equal to 0", layer_count);
+                         "must have a layerCount (%" PRId32
+                         ") equal to 1 when viewMask is equal to 0 and flags does not contain "
+                         "VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE",
+                         layer_count);
     }
 
     if ((rendering_info.viewMask != 0) && (layer_count <= MostSignificantBit(rendering_info.viewMask))) {
@@ -5223,6 +5250,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
     bool skip = false;
 
     const VkImageView* image_views = create_info.pAttachments;
+    const bool per_layer_fdm = (rpci.flags & VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) != 0;
     for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
         const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
         auto view_state = Get<vvl::ImageView>(image_views[i]);
@@ -5375,7 +5403,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
                 }
             }
 
-            if (enabled_features.fragmentDensityMap && api_version >= VK_API_VERSION_1_1) {
+            if (enabled_features.fragmentDensityMap && api_version >= VK_API_VERSION_1_1 && !per_layer_fdm) {
                 const auto* fdm_attachment = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci.pNext);
 
                 if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
@@ -5453,7 +5481,8 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& c
                                          "height: %" PRIu32 ", the ceiling value: %" PRIu32 "\n",
                                          subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
                     }
-                    if (view_state->normalized_subresource_range.layerCount != 1 && !IsExtEnabled(extensions.vk_khr_multiview)) {
+                    if (!per_layer_fdm && view_state->normalized_subresource_range.layerCount != 1 &&
+                        !IsExtEnabled(extensions.vk_khr_multiview)) {
                         LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
                         skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
                                          "is referenced by "
