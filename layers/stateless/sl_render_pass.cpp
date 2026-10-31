@@ -475,11 +475,20 @@ bool Device::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_info
                              phys_dev_props.limits.maxColorAttachments);
         }
 
-        if (subpass_desc.inputAttachmentCount > phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
+        if (enabled_features.maintenance12) {
+            if (subpass_desc.inputAttachmentCount > phys_dev_ext_props.maintenance12_props.maxInputAttachmentIndex) {
+                vuid = use_rp2 ? "VUID-VkSubpassDescription2-inputAttachmentCount-12547"
+                               : "VUID-VkSubpassDescription-inputAttachmentCount-12547";
+                skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i).dot(Field::inputAttachmentCount),
+                                 "(%" PRIu32 ") is greater than maxInputAttachmentIndex (%" PRIu32 ").",
+                                 subpass_desc.inputAttachmentCount, phys_dev_ext_props.maintenance12_props.maxInputAttachmentIndex);
+            }
+        } else if (subpass_desc.inputAttachmentCount > phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-inputAttachmentCount-12293"
                            : "VUID-VkSubpassDescription-inputAttachmentCount-12293";
             skip |= LogError(vuid, device, create_info_loc.dot(Field::pSubpasses, i).dot(Field::inputAttachmentCount),
-                             "(%" PRIu32 ") is greater than maxPerStageDescriptorInputAttachments (%" PRIu32 ").",
+                             "(%" PRIu32 ") is greater than maxPerStageDescriptorInputAttachments (%" PRIu32
+                             ").\nHint: This can be allowed in some cases if maintenance12 feature is enabled.",
                              subpass_desc.inputAttachmentCount, phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
         }
 

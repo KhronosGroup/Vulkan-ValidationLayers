@@ -569,7 +569,26 @@ bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module& module_sta
         }
     }
 
-    if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit) && variable.info.image_dim == spv::DimSubpassData) {
+    if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
+        const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start;
+        if (enabled_features.maintenance12) {
+            if (input_attachment_index >= phys_dev_ext_props.maintenance12_props.maxInputAttachmentIndex) {
+                skip |=
+                    LogError("VUID-RuntimeSpirv-maxInputAttachmentIndex-12552", module_state.handle(), loc,
+                             "shader %s has a variable decorated with InputAttachmentIndex %" PRIu32
+                             ", which is not less than maxInputAttachmentIndex (%" PRIu32 ").\n%s\n",
+                             entrypoint.Describe().c_str(), input_attachment_index,
+                             phys_dev_ext_props.maintenance12_props.maxInputAttachmentIndex, variable.base_type.Describe().c_str());
+            }
+        } else if (input_attachment_index >= phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
+            skip |= LogError("VUID-RuntimeSpirv-None-12551", module_state.handle(), loc,
+                             "shader %s has a variable decorated with InputAttachmentIndex %" PRIu32
+                             ", which is not less than maxPerStageDescriptorInputAttachments (%" PRIu32
+                             ").\n%s\nHint: This can be allowed in some cases if maintenance12 feature is enabled.",
+                             entrypoint.Describe().c_str(), input_attachment_index,
+                             phys_dev_props.limits.maxPerStageDescriptorInputAttachments, variable.base_type.Describe().c_str());
+        }
+    } else if (variable.info.image_dim == spv::DimSubpassData) {
         if (variable.IsArray()) {
             skip |=
                 LogError("VUID-RuntimeSpirv-OpTypeImage-09644", module_state.handle(), loc,

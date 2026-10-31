@@ -3186,27 +3186,45 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
     if (vkuFormatIsColor(src_format) && vkuFormatIsColor(dst_format)) {
         if (vkuFormatIsUINT(src_format) != vkuFormatIsUINT(dst_format)) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00230" : "VUID-vkCmdBlitImage-srcImage-00230";
-            skip |= LogError(vuid, all_objlist, loc,
-                             "srcImage format %s is different than dstImage format %s (if one is UINT, both must be UINT).",
+            skip |= LogError(vuid, all_objlist, src_image_loc,
+                             "was created with %s which is different than dstImage format %s (if one is UINT, both must be UINT).",
                              string_VkFormat(src_format), string_VkFormat(dst_format));
         }
     }
 
     if (vkuFormatIsSINT(src_format) != vkuFormatIsSINT(dst_format)) {
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00229" : "VUID-vkCmdBlitImage-srcImage-00229";
-        skip |= LogError(vuid, all_objlist, loc,
-                         "srcImage format %s is different than dstImage format %s (if one is SINT, both must be SINT).",
+        skip |= LogError(vuid, all_objlist, src_image_loc,
+                         "was created with %s which is different than dstImage format %s (if one is SINT, both must be SINT).",
                          string_VkFormat(src_format), string_VkFormat(dst_format));
     }
 
-    if (vkuFormatIsDepthOrStencil(src_format) || vkuFormatIsDepthOrStencil(dst_format)) {
+    const bool depth_mismatch = vkuFormatHasDepth(src_format) && vkuFormatHasDepth(dst_format) &&
+                                (vkuFormatDepthSize(src_format) != vkuFormatDepthSize(dst_format) ||
+                                 vkuFormatDepthNumericalType(src_format) != vkuFormatDepthNumericalType(dst_format));
+    if (!enabled_features.maintenance12 && (vkuFormatIsDepthOrStencil(src_format) || vkuFormatIsDepthOrStencil(dst_format))) {
         if (src_format != dst_format) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00231" : "VUID-vkCmdBlitImage-srcImage-00231";
-            skip |= LogError(vuid, all_objlist, loc,
-                             "srcImage format %s is different than dstImage format %s (if one is DepthStencil, both must be exact "
-                             "same DepthStencil).",
-                             string_VkFormat(src_format), string_VkFormat(dst_format));
+            skip |= LogError(
+                vuid, all_objlist, src_image_loc,
+                "was created with %s which is different than dstImage format %s (if one is DepthStencil, both must be exact "
+                "same DepthStencil).%s",
+                string_VkFormat(src_format), string_VkFormat(dst_format),
+                (vkuFormatIsDepthOrStencil(src_format) && vkuFormatIsDepthOrStencil(dst_format) && !depth_mismatch)
+                    ? "\nHint: This can be allowed in some cases if maintenance12 feature is enabled."
+                    : "");
         }
+    }
+    if (depth_mismatch) {
+        vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-12544" : "VUID-vkCmdBlitImage-srcImage-12544";
+        skip |= LogError(vuid, all_objlist, src_image_loc,
+                         "was created with %s but dstImage was created with %s, and the depth components must match exactly\n"
+                         "srcImage depth is %" PRIu32 " bits, dstImage depth is %" PRIu32 " bits%s",
+                         string_VkFormat(src_format), string_VkFormat(dst_format), vkuFormatDepthSize(src_format),
+                         vkuFormatDepthSize(dst_format),
+                         vkuFormatDepthNumericalType(src_format) != vkuFormatDepthNumericalType(dst_format)
+                             ? ", and the numerical type (UNORM, SFLOAT, etc) is different"
+                             : "");
     }
 
     const bool same_image = (src_image_state == dst_image_state);
@@ -3656,10 +3674,40 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         }
     }
 
-    if (src_image_state->GetFormat() != dst_image_state->GetFormat()) {
-        vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-01386" : "VUID-vkCmdResolveImage-srcImage-01386";
-        skip |= LogError(vuid, all_objlist, src_image_loc, "was created with format %s but dstImage format is %s.",
-                         string_VkFormat(src_image_state->GetFormat()), string_VkFormat(dst_image_state->GetFormat()));
+    const VkFormat src_format = src_image_state->GetFormat();
+    const VkFormat dst_format = dst_image_state->GetFormat();
+    if (src_format != dst_format) {
+        const bool depth_mismatch = vkuFormatHasDepth(src_format) && vkuFormatHasDepth(dst_format) &&
+                                    (vkuFormatDepthSize(src_format) != vkuFormatDepthSize(dst_format) ||
+                                     vkuFormatDepthNumericalType(src_format) != vkuFormatDepthNumericalType(dst_format));
+        if (vkuFormatIsDepthOrStencil(src_format) || vkuFormatIsDepthOrStencil(dst_format)) {
+            if (!enabled_features.maintenance12) {
+                vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-01386" : "VUID-vkCmdResolveImage-srcImage-01386";
+                skip |= LogError(vuid, all_objlist, src_image_loc,
+                                 "was created with %s but dstImage was created with %s (if one is DepthStencil, both must be "
+                                 "exact same DepthStencil).%s",
+                                 string_VkFormat(src_format), string_VkFormat(dst_format),
+                                 (vkuFormatIsDepthOrStencil(src_format) && vkuFormatIsDepthOrStencil(dst_format) && !depth_mismatch)
+                                     ? "\nHint: This can be allowed in some cases if maintenance12 feature is enabled."
+                                     : "");
+            }
+        } else {
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-12546" : "VUID-vkCmdResolveImage-srcImage-12546";
+            skip |= LogError(vuid, all_objlist, src_image_loc,
+                             "was created with %s but dstImage was created with %s (color formats must match exactly).",
+                             string_VkFormat(src_format), string_VkFormat(dst_format));
+        }
+        if (depth_mismatch) {
+            vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-12545" : "VUID-vkCmdResolveImage-srcImage-12545";
+            skip |= LogError(vuid, all_objlist, src_image_loc,
+                             "was created with %s but dstImage was created with %s, and the depth components must match exactly\n"
+                             "srcImage depth is %" PRIu32 " bits, dstImage depth is %" PRIu32 " bits%s",
+                             string_VkFormat(src_format), string_VkFormat(dst_format), vkuFormatDepthSize(src_format),
+                             vkuFormatDepthSize(dst_format),
+                             vkuFormatDepthNumericalType(src_format) != vkuFormatDepthNumericalType(dst_format)
+                                 ? ", and the numerical type (UNORM, SFLOAT, etc) is different"
+                                 : "");
+        }
     }
 
     // For each region, the number of layers in the image subresource should not be zero

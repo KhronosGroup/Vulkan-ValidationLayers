@@ -5145,6 +5145,42 @@ TEST_F(NegativeRenderPass, MaxPerStageDescriptorInputAttachments) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRenderPass, MaxInputAttachmentIndex) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_12_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance12);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceMaintenance12PropertiesKHR maintenance12_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance12_props);
+    const uint32_t max_index = maintenance12_props.maxInputAttachmentIndex;
+    if (max_index == vvl::kU32Max) {
+        GTEST_SKIP() << "maxInputAttachmentIndex is uint32_t max";
+    }
+
+    std::vector<VkAttachmentReference> references(max_index + 1, VkAttachmentReference{0, VK_IMAGE_LAYOUT_GENERAL});
+    VkSubpassDescription subpasses = {
+        0,      VK_PIPELINE_BIND_POINT_GRAPHICS, (uint32_t)references.size(), references.data(), 0, nullptr, nullptr, nullptr, 0,
+        nullptr};
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpasses;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription-inputAttachmentCount-12547");
+    vkt::RenderPass rp(*m_device, rpci);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRenderPass, DynamicAndLegacy) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);

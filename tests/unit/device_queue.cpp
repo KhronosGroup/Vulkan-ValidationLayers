@@ -305,6 +305,26 @@ TEST_F(NegativeDeviceQueue, QueuePriorities) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDeviceQueue, QueuePrioritiesNull) {
+    RETURN_IF_SKIP(InitFramework());
+
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
+    device_queue_ci.queueFamilyIndex = 0;
+    device_queue_ci.queueCount = 1;
+    device_queue_ci.pQueuePriorities = nullptr;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    VkDevice device = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceQueueCreateInfo-maintenance12-12535");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDeviceQueue, BindPipeline) {
     TEST_DESCRIPTION("vkCmdPipelineBarrier with command pool with wrong queues");
     RETURN_IF_SKIP(Init());

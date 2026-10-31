@@ -683,7 +683,15 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
                                  "is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.");
             }
 
-            if (queue_create_info.pQueuePriorities != nullptr) {
+            if (queue_create_info.pQueuePriorities == nullptr) {
+                const auto* maintenance12_features =
+                    vku::FindStructInPNextChain<VkPhysicalDeviceMaintenance12FeaturesKHR>(pCreateInfo->pNext);
+                if (!maintenance12_features || !maintenance12_features->maintenance12) {
+                    skip |= LogError("VUID-VkDeviceQueueCreateInfo-maintenance12-12535", physicalDevice,
+                                     create_info_loc.dot(Field::pQueueCreateInfos, i).dot(Field::pQueuePriorities),
+                                     "is NULL, but the maintenance12 feature is not enabled.");
+                }
+            } else {
                 for (uint32_t j = 0; j < queue_create_info.queueCount; ++j) {
                     const float queue_priority = queue_create_info.pQueuePriorities[j];
                     if (!(queue_priority >= 0.f) || !(queue_priority <= 1.f)) {
