@@ -226,6 +226,9 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     uint64_t request_seq_{0};
     uint64_t first_seq_to_post_process_{0};
     bool exit_thread_{false};
+    // Keep the last removed submission waitable while its fence is retired outside lock_
+    uint64_t last_removed_seq_{0};
+    std::shared_future<void> last_removed_waiter_;
     mutable std::mutex lock_;
     // condition to wake up the queue's thread
     std::condition_variable cond_;
