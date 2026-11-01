@@ -998,6 +998,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
     vkt::ImageView colorImageView = colorImage.CreateView();
 
     vkt::Image depthStencilImage(*m_device, 32, 32, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    const vkt::ImageView depth_view(*m_device, depthStencilImage.BasicViewCreatInfo(VK_IMAGE_ASPECT_DEPTH_BIT));
+    const vkt::ImageView stencil_view(*m_device, depthStencilImage.BasicViewCreatInfo(VK_IMAGE_ASPECT_STENCIL_BIT));
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1038,7 +1040,6 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
         m_command_buffer.EndRendering();
 
         // Matching depth format
-        const vkt::ImageView depth_view(*m_device, depthStencilImage.BasicViewCreatInfo(VK_IMAGE_ASPECT_DEPTH_BIT));
         depth_stencil_attachment.imageView = depth_view;
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth);
@@ -1057,7 +1058,6 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
         m_command_buffer.EndRendering();
 
         // Matching stencil format
-        const vkt::ImageView stencil_view(*m_device, depthStencilImage.BasicViewCreatInfo(VK_IMAGE_ASPECT_STENCIL_BIT));
         depth_stencil_attachment.imageView = stencil_view;
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil);

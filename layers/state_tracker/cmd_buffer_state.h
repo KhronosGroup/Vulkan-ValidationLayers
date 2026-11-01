@@ -869,6 +869,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
   protected:
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
+    vvl::ImageView* GetAttachmentViewState(VkImageView image_view);
     void RecordVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
     void RecordVideoEncodeQuantizationMap(const VkVideoEncodeQuantizationMapInfoKHR &quant_map_info);
     void UnbindResources(Func command);

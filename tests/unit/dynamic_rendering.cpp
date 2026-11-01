@@ -8641,3 +8641,35 @@ TEST_F(NegativeDynamicRendering, NextSubpassInDynamicRendering) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicRendering, ViewDestroyedDuringRecording) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13614");
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo begin_rendering_info = GetSimpleRenderingInfo();
+    begin_rendering_info.renderArea.extent = {32, 32};
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+
+    image_view.Destroy();  // command buffer is in invalid state now
+
+    VkClearAttachment clear_attachment = {};
+    clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    VkClearRect clear_rect = {};
+    clear_rect.rect.extent = {32, 32};
+    clear_rect.layerCount = 1;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-commandBuffer-recording");
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+}

@@ -479,6 +479,15 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList& invalid_nodes,
                         image_layout_registry.erase(obj->Handle().Cast<VkImage>());
                     }
                     break;
+                case kVulkanObjectTypeImageView:
+                    if (unlink) {
+                        for (auto& attachment : active_attachments) {
+                            if (attachment.image_view == obj.get()) {
+                                attachment.image_view = nullptr;
+                            }
+                        }
+                    }
+                    break;
                 case kVulkanObjectTypeInternalDeviceRange:
                     if (unlink) {
                         const auto* internal_device_range = obj->Handle().Cast<vvl::InternalDeviceRange*>();
@@ -827,6 +836,17 @@ void CommandBuffer::UpdateSubpassAttachments() {
     }
 }
 
+// The |active_attachments| hold raw pointers which in Vulkan 1.0 the VkFramebuffer owned
+// For Dynamic Rendering are handed the views directly, so their lifetime is tied to the command buffer.
+// Destroying a view while recording is legal, it will just invalidates the command buffer
+vvl::ImageView* CommandBuffer::GetAttachmentViewState(VkImageView image_view) {
+    auto view_state = dev_data.Get<vvl::ImageView>(image_view);
+    if (view_state) {
+        AddChild(view_state);
+    }
+    return view_state.get();
+}
+
 // For non Dynamic Renderpass we update the attachments
 void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo* pRenderPassBegin) {
     const bool imageless = (active_framebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
@@ -837,7 +857,7 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo* pRenderPa
     for (uint32_t i = 0; i < active_attachments.size(); ++i) {
         if (imageless) {
             if (attachment_info_struct && i < attachment_info_struct->attachmentCount) {
-                active_attachments[i].image_view = dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]).get();
+                active_attachments[i].image_view = GetAttachmentViewState(attachment_info_struct->pAttachments[i]);
             }
         } else {
             active_attachments[i].image_view = active_framebuffer->attachments_view_state[i].get();
@@ -1019,7 +1039,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
         const auto& rendering_attachment = rendering_info.pColorAttachments[i];
         if (rendering_attachment.imageView != VK_NULL_HANDLE) {
             auto& color_attachment = active_attachments[GetDynamicRenderingColorAttachmentIndex(i)];
-            color_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_attachment.imageView).get();
+            color_attachment.image_view = GetAttachmentViewState(rendering_attachment.imageView);
             color_attachment.type = AttachmentInfo::Type::Color;
             color_attachment.layout = rendering_attachment.imageLayout;
             color_attachment.type_index = i;
@@ -1031,7 +1051,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
             if (rendering_attachment.resolveMode != VK_RESOLVE_MODE_NONE &&
                 rendering_attachment.resolveImageView != VK_NULL_HANDLE) {
                 auto& resolve_attachment = active_attachments[GetDynamicRenderingColorResolveAttachmentIndex(i)];
-                resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_attachment.resolveImageView).get();
+                resolve_attachment.image_view = GetAttachmentViewState(rendering_attachment.resolveImageView);
                 resolve_attachment.type = AttachmentInfo::Type::ColorResolve;
                 resolve_attachment.layout = rendering_attachment.resolveImageLayout;
                 resolve_attachment.type_index = i;
@@ -1041,7 +1061,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
 
     if (rendering_info.pDepthAttachment && rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
         auto& depth_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth)];
-        depth_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView).get();
+        depth_attachment.image_view = GetAttachmentViewState(rendering_info.pDepthAttachment->imageView);
         depth_attachment.type = AttachmentInfo::Type::Depth;
         depth_attachment.layout = rendering_info.pDepthAttachment->imageLayout;
         if (depth_attachment.image_view) {
@@ -1051,7 +1071,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
         if (rendering_info.pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             rendering_info.pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
             auto& resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::DepthResolve)];
-            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pDepthAttachment->resolveImageView).get();
+            resolve_attachment.image_view = GetAttachmentViewState(rendering_info.pDepthAttachment->resolveImageView);
             resolve_attachment.type = AttachmentInfo::Type::DepthResolve;
             resolve_attachment.layout = rendering_info.pDepthAttachment->resolveImageLayout;
         }
@@ -1059,7 +1079,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
 
     if (rendering_info.pStencilAttachment && rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
         auto& stencil_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil)];
-        stencil_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView).get();
+        stencil_attachment.image_view = GetAttachmentViewState(rendering_info.pStencilAttachment->imageView);
         stencil_attachment.type = AttachmentInfo::Type::Stencil;
         stencil_attachment.layout = rendering_info.pStencilAttachment->imageLayout;
         if (stencil_attachment.image_view) {
@@ -1069,7 +1089,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
         if (rendering_info.pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             rendering_info.pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
             auto& resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::StencilResolve)];
-            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pStencilAttachment->resolveImageView).get();
+            resolve_attachment.image_view = GetAttachmentViewState(rendering_info.pStencilAttachment->resolveImageView);
             resolve_attachment.type = AttachmentInfo::Type::StencilResolve;
             resolve_attachment.layout = rendering_info.pStencilAttachment->resolveImageLayout;
         }
@@ -1078,7 +1098,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
     if (auto fragment_density_map_info =
             vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext)) {
         auto& fdm_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::FragmentDensityMap)];
-        fdm_attachment.image_view = dev_data.Get<vvl::ImageView>(fragment_density_map_info->imageView).get();
+        fdm_attachment.image_view = GetAttachmentViewState(fragment_density_map_info->imageView);
         fdm_attachment.type = AttachmentInfo::Type::FragmentDensityMap;
         fdm_attachment.layout = fragment_density_map_info->imageLayout;
         if (fdm_attachment.image_view) {
@@ -1090,7 +1110,7 @@ void CommandBuffer::RecordBeginRendering(const VkRenderingInfo& rendering_info, 
     if (auto fsr_attachment_info =
             vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext)) {
         auto& fsr_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::FragmentShadingRate)];
-        fsr_attachment.image_view = dev_data.Get<vvl::ImageView>(fsr_attachment_info->imageView).get();
+        fsr_attachment.image_view = GetAttachmentViewState(fsr_attachment_info->imageView);
         fsr_attachment.type = AttachmentInfo::Type::FragmentShadingRate;
         fsr_attachment.layout = fsr_attachment_info->imageLayout;
         if (fsr_attachment.image_view) {
