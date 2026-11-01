@@ -586,7 +586,7 @@ TEST_F(NegativeDeviceAddressCommands, MemoryRangeBarrierEmptyRange) {
     VkDependencyInfo dependency_info = vku::InitStructHelper(&barriers_info);
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryRangeBarrierKHR-addressRange-size-zero");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryRangeBarrierKHR-addressRange-12543");
     m_command_buffer.Barrier(dependency_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

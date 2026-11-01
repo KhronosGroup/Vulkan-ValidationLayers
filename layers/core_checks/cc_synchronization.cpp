@@ -2672,9 +2672,7 @@ bool CoreChecks::ValidateMemoryRangeBarrier(const LogObjectList& objects, const 
                                           barrier.addressFlags, range_loc);
 
     if (barrier.addressRange.size == 0) {
-        // https://gitlab.khronos.org/vulkan/vulkan/-/work_items/5014
-        skip |=
-            LogError("UNASSIGNED-VkMemoryRangeBarrierKHR-addressRange-size-zero", objects, range_loc.dot(Field::size), "is zero.");
+        skip |= LogError("VUID-VkMemoryRangeBarrierKHR-addressRange-12543", objects, range_loc.dot(Field::size), "is zero.");
     }
 
     for (const vvl::Buffer* buffer_state : GetBuffersByAddress(barrier.addressRange.address)) {
