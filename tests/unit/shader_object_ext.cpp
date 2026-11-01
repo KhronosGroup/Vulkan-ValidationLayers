@@ -464,6 +464,40 @@ TEST_F(NegativeShaderObjectEXT, BindVertexAndTaskShaders) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeShaderObjectEXT, NullSetLayouts) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13613");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance11);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    create_info.setLayoutCount = 1;
+    create_info.pSetLayouts = nullptr;
+
+    {
+        VkShaderEXT shader;
+        m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13359");
+        vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
+        m_errorMonitor->VerifyFound();
+    }
+
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    {
+        VkShaderEXT shader;
+        m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13360");
+        vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
+        m_errorMonitor->VerifyFound();
+    }
+
+    const VkDescriptorSetLayout invalid_set_layout = CastToHandle<VkDescriptorSetLayout>(0xdeadbeef);
+    create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &invalid_set_layout);
+    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13360");
+    const vkt::ShaderEXT vert_shader(*m_device, create_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderObjectEXT, BindVertexAndMeshShaders) {
     TEST_DESCRIPTION("Bind vertex and mesh shaders in the same call.");
 
@@ -8504,22 +8538,6 @@ TEST_F(NegativeShaderObjectEXT, NoIndependentSetFlagAndNullSetLayout) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &null_set_layout);
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13359");
-    const vkt::ShaderEXT vert_shader(*m_device, create_info);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeShaderObjectEXT, NoIndependentSetFlagAndInvalidSetLayout) {
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::maintenance11);
-    RETURN_IF_SKIP(InitBasicShaderObject());
-    InitDynamicRenderTarget();
-
-    const VkDescriptorSetLayout invalid_set_layout = CastToHandle<VkDescriptorSetLayout>(0xdeadbeef);
-    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, &invalid_set_layout);
-    create_info.flags = VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR;
-
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-setLayoutCount-13360");
     const vkt::ShaderEXT vert_shader(*m_device, create_info);
     m_errorMonitor->VerifyFound();
 }
