@@ -170,12 +170,16 @@ void vvl::Queue::Wait(const Location& loc, uint64_t until_seq) {
         if (until_seq == kU64Max) {
             until_seq = seq_.load();
         }
-        if (submissions_.empty() || until_seq < submissions_.begin()->seq) {
-            return;
+        if (!submissions_.empty() && until_seq >= submissions_.front().seq) {
+            const uint64_t index = until_seq - submissions_.front().seq;
+            assert(index < submissions_.size());
+            waiter = submissions_[static_cast<size_t>(index)].waiter;
+        } else if (until_seq == last_removed_seq_ && last_removed_waiter_.valid()) {
+            // Removed from the queue, but retirement may not be finished
+            waiter = last_removed_waiter_;
+        } else {
+            return;  // retired
         }
-        uint64_t index = until_seq - submissions_.begin()->seq;
-        assert(index < submissions_.size());
-        waiter = submissions_[static_cast<size_t>(index)].waiter;
     }
     auto wait_status = waiter.wait_until(GetCondWaitTimeout());
     if (wait_status != std::future_status::ready) {
@@ -370,13 +374,17 @@ void vvl::Queue::ThreadFunc() {
             std::promise<void> completed;
             {
                 auto guard = Lock();
+                last_removed_seq_ = submission->seq;
+                last_removed_waiter_ = submission->waiter;
                 fence = std::move(submission->fence);
                 completed = std::move(submission->completed);
                 submissions_.pop_front();
             }
 
-            // Retire the fence after removing the submission from the queue (submissions_.pop_front).
-            // This ensures the completed QueueSubmission is not visible after vkWaitForFences
+            // Retire the fence only after the submission left the queue (submissions_.pop_front).
+            // This ensures the completed QueueSubmission is not visible after vkWaitForFences.
+            // For example, vkResetEvent after vkWaitForFences would report the event wait command
+            // as still pending
             if (fence) {
                 fence->Retire();
             }
