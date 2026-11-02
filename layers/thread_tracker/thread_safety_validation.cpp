@@ -959,6 +959,18 @@ void Device::PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR sw
     FinishReadObjectParentInstance(device, record_obj.location);
 }
 
+void Device::PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                             const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    // VK_NV_low_latency2 allows the swapchain to be used concurrently by any command except vkDestroySwapchainKHR.
+    // Do not track the swapchain, for the same reason as PreCallRecordWaitForPresentKHR.
+}
+
+void Device::PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
+                                              const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
 void Device::PreCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator,
                                                     VkPipelineBinaryHandlesInfoKHR* pBinaries, const RecordObject& record_obj) {
