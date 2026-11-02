@@ -736,6 +736,7 @@ TEST_F(PositiveRayTracingMicromap, WriteMicromapsProperties) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::micromapHostCommands);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());

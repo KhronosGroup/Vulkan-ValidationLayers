@@ -70,6 +70,54 @@ TEST_F(NegativeRayTracingMicromap, DestroyMicromapEXTFeatureDisable) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracingMicromap, MicromapCreateInfoEXTBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddOptionalFeature(vkt::Feature::sparseBinding);
+    AddOptionalFeature(vkt::Feature::sparseResidencyBuffer);
+    RETURN_IF_SKIP(Init());
+
+    VkMicromapEXT micromap;
+    VkMicromapCreateInfoEXT mm_ci = vku::InitStructHelper();
+    mm_ci.size = 256;
+    mm_ci.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+
+    {
+        vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        mm_ci.buffer = buffer;
+        m_errorMonitor->SetDesiredError("VUID-VkMicromapCreateInfoEXT-buffer-07435");
+        vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
+        mm_ci.buffer = buffer;
+        mm_ci.offset = 3840;
+        mm_ci.size = 512;
+        m_errorMonitor->SetDesiredError("VUID-VkMicromapCreateInfoEXT-offset-07437");
+        vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+        m_errorMonitor->VerifyFound();
+        mm_ci.offset = 0;
+        mm_ci.size = 256;
+    }
+
+    if (m_device->Physical().Features().sparseBinding && m_device->Physical().Features().sparseResidencyBuffer) {
+        VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+        buffer_ci.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT | VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT;
+        buffer_ci.size = 4096;
+        buffer_ci.usage = VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT;
+        vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+        mm_ci.buffer = buffer;
+        m_errorMonitor->SetDesiredError("VUID-VkMicromapCreateInfoEXT-buffer-07436");
+        vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeRayTracingMicromap, GetMicromapBuildSizesEXTFeatureDisable) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -92,6 +140,56 @@ TEST_F(NegativeRayTracingMicromap, GetMicromapBuildSizesEXTFeatureDisable) {
     m_errorMonitor->SetDesiredError("VUID-vkGetMicromapBuildSizesEXT-micromap-11618");
     vk::GetMicromapBuildSizesEXT(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info, &size_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingMicromap, CmdBuildMicromapsEXTBufferUsage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer micromap_buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
+    VkMicromapCreateInfoEXT mm_ci = vku::InitStructHelper();
+    mm_ci.buffer = micromap_buffer;
+    mm_ci.size = 4096;
+    mm_ci.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    VkMicromapEXT micromap = VK_NULL_HANDLE;
+    vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+
+    vkt::Buffer input_buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT, vkt::device_address);
+    vkt::Buffer storage_buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    VkMicromapBuildInfoEXT build_info = vku::InitStructHelper();
+    build_info.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    build_info.mode = VK_BUILD_MICROMAP_MODE_BUILD_EXT;
+    build_info.dstMicromap = micromap;
+    build_info.data.deviceAddress = storage_buffer.Address();
+    build_info.triangleArray.deviceAddress = input_buffer.Address();
+    build_info.scratchData.deviceAddress = storage_buffer.Address();
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildMicromapsEXT-data-07510");
+    vk::CmdBuildMicromapsEXT(m_command_buffer, 1, &build_info);
+    m_errorMonitor->VerifyFound();
+
+    build_info.data.deviceAddress = input_buffer.Address();
+    build_info.triangleArray.deviceAddress = storage_buffer.Address();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildMicromapsEXT-data-07510");
+    vk::CmdBuildMicromapsEXT(m_command_buffer, 1, &build_info);
+    m_errorMonitor->VerifyFound();
+
+    build_info.triangleArray.deviceAddress = input_buffer.Address();
+    build_info.scratchData.deviceAddress = input_buffer.Address();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildMicromapsEXT-pInfos-07511");
+    vk::CmdBuildMicromapsEXT(m_command_buffer, 1, &build_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    vk::DestroyMicromapEXT(device(), micromap, nullptr);
 }
 
 TEST_F(NegativeRayTracingMicromap, CmdBuildMicromapsEXTFeatureDisable) {
@@ -136,6 +234,33 @@ TEST_F(NegativeRayTracingMicromap, CaptureReplayFeatureDisableEXT) {
     mm_ci.deviceAddress = 0ull;
 
     m_errorMonitor->SetDesiredError("VUID-VkMicromapCreateInfoEXT-micromapCaptureReplay-11616");
+    vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingMicromap, MicromapCreateInfoEXT) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
+
+    VkMicromapEXT micromap;
+    VkMicromapCreateInfoEXT mm_ci = vku::InitStructHelper();
+    mm_ci.buffer = buffer;
+    mm_ci.size = 256;
+    mm_ci.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    mm_ci.deviceAddress = 0x1000;
+    m_errorMonitor->SetDesiredError("VUID-VkMicromapCreateInfoEXT-deviceAddress-07433");
+    vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+    m_errorMonitor->VerifyFound();
+
+    mm_ci.deviceAddress = 0;
+    mm_ci.offset = 128;
+    m_errorMonitor->SetDesiredError("VUID-VkMicromapCreateInfoEXT-offset-07438");
     vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
     m_errorMonitor->VerifyFound();
 }
@@ -2365,6 +2490,44 @@ TEST_F(NegativeRayTracingMicromap, MicromapBuildInfoInvalidFormat) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracingMicromap, MicromapBuildInfoSubdivisionLevel) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceOpacityMicromapPropertiesEXT micromap_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(micromap_props);
+    if (micromap_props.maxOpacity2StateSubdivisionLevel == vvl::kU32Max ||
+        micromap_props.maxOpacity4StateSubdivisionLevel == vvl::kU32Max) {
+        GTEST_SKIP() << "maxOpacity2StateSubdivisionLevel/maxOpacity4StateSubdivisionLevel are max value";
+    }
+
+    VkMicromapUsageEXT usage = {};
+    usage.count = 1;
+    usage.subdivisionLevel = micromap_props.maxOpacity2StateSubdivisionLevel + 1;
+    usage.format = VK_OPACITY_MICROMAP_FORMAT_2_STATE_EXT;
+
+    VkMicromapBuildInfoEXT build_info = vku::InitStructHelper();
+    build_info.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    build_info.usageCountsCount = 1;
+    build_info.pUsageCounts = &usage;
+
+    VkMicromapBuildSizesInfoEXT size_info = vku::InitStructHelper();
+
+    m_errorMonitor->SetDesiredError("VUID-VkMicromapBuildInfoEXT-subdivisionLevel-11654");
+    vk::GetMicromapBuildSizesEXT(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info, &size_info);
+    m_errorMonitor->VerifyFound();
+
+    usage.subdivisionLevel = micromap_props.maxOpacity4StateSubdivisionLevel + 1;
+    usage.format = VK_OPACITY_MICROMAP_FORMAT_4_STATE_EXT;
+    m_errorMonitor->SetDesiredError("VUID-VkMicromapBuildInfoEXT-subdivisionLevel-11655");
+    vk::GetMicromapBuildSizesEXT(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info, &size_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracingMicromap, TrianglesOpacityMicromapEXTInvalidFormat) {
     TEST_DESCRIPTION("Test VkAccelerationStructureTrianglesOpacityMicromapEXT with invalid format");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2434,6 +2597,41 @@ TEST_F(NegativeRayTracingMicromap, TrianglesOpacityMicromapEXTInvalidFormat) {
     vk::CmdBuildAccelerationStructuresKHR(m_command_buffer, 1, &build_info, &range_info_ptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+
+    vk::DestroyMicromapEXT(device(), micromap, nullptr);
+}
+
+TEST_F(NegativeRayTracingMicromap, WriteMicromapsPropertiesHost) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::micromapEXT);
+    AddRequiredFeature(vkt::Feature::micromapHostCommands);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT, kHostVisibleMemProps);
+    VkMicromapCreateInfoEXT mm_ci = vku::InitStructHelper();
+    mm_ci.buffer = buffer;
+    mm_ci.size = 4096;
+    mm_ci.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
+    VkMicromapEXT micromap = VK_NULL_HANDLE;
+    vk::CreateMicromapEXT(device(), &mm_ci, nullptr, &micromap);
+
+    VkDeviceSize data[2] = {};
+
+    m_errorMonitor->SetDesiredError("VUID-vkWriteMicromapsPropertiesEXT-dataSize-07576");
+    vk::WriteMicromapsPropertiesEXT(device(), 1, &micromap, VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT, sizeof(VkDeviceSize),
+                                    data, 2 * sizeof(VkDeviceSize));
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkWriteMicromapsPropertiesEXT-queryType-10071");
+    vk::WriteMicromapsPropertiesEXT(device(), 1, &micromap, VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT, sizeof(data), data, 12);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkWriteMicromapsPropertiesEXT-queryType-10072");
+    vk::WriteMicromapsPropertiesEXT(device(), 1, &micromap, VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT, 4, data, 0);
+    m_errorMonitor->VerifyFound();
 
     vk::DestroyMicromapEXT(device(), micromap, nullptr);
 }

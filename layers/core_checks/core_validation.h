@@ -1917,6 +1917,24 @@ class CoreChecks : public vvl::DeviceProxy {
                                                         const VkAllocationCallbacks* pAllocator,
                                                         const ErrorObject& error_obj) const override;
 
+    bool PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap,
+                                          const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetMicromapBuildSizesEXT(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
+                                                 const VkMicromapBuildInfoEXT* pBuildInfo, VkMicromapBuildSizesInfoEXT* pSizeInfo,
+                                                 const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                             const VkMicromapBuildInfoEXT* pInfos, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapInfoEXT* pInfo,
+                                           const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapToMemoryInfoEXT* pInfo,
+                                                   const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMemoryToMicromapInfoEXT* pInfo,
+                                                   const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount,
+                                                       const VkMicromapEXT* pMicromaps, VkQueryType queryType,
+                                                       VkQueryPool queryPool, uint32_t firstQuery,
+                                                       const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                         const VkCopyMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
