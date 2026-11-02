@@ -783,6 +783,8 @@ const char* unimplementable_validation[] = {
     // Cannot validate a raw pointer
     "VUID-vkGetMemoryHostPointerPropertiesEXT-handleType-01754",
     "VUID-vkGetMemoryHostPointerPropertiesEXT-handleType-01755",
+    // "scratchData.hostAddress + N - 1 must be valid host memory"
+    "VUID-vkBuildMicromapsEXT-pInfos-07556",
 
     // We use to have these implemented until we found out (from the issue below) that these were giving false positives.
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11900
@@ -1113,6 +1115,50 @@ const char* deprecated_validation[] = {
     // No one wants to own VK_EXT_opacity_micromap with the KHR coming out
     // ... sad
     "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-micromap-parameter",
+    // There is no state object for VkMicromapEXT, and adding one only for these is not worth it.
+    // The micromap -> buffer -> memory checks
+    "VUID-vkCmdBuildMicromapsEXT-pInfos-07508",
+    "VUID-vkCmdCopyMicromapEXT-buffer-07529",
+    "VUID-vkCmdCopyMicromapEXT-buffer-07530",
+    "VUID-vkCmdCopyMicromapToMemoryEXT-buffer-07539",
+    "VUID-vkCmdCopyMemoryToMicromapEXT-buffer-07546",
+    "VUID-vkCmdWriteMicromapsPropertiesEXT-buffer-07527",
+    "VUID-vkBuildMicromapsEXT-pInfos-07552",
+    "VUID-vkCopyMicromapEXT-buffer-07558",
+    "VUID-vkCopyMicromapEXT-buffer-07559",
+    "VUID-vkCopyMemoryToMicromapEXT-buffer-07565",
+    "VUID-vkCopyMicromapToMemoryEXT-buffer-07568",
+    "VUID-vkWriteMicromapsPropertiesEXT-buffer-07577",
+    "VUID-vkBuildMicromapsEXT-pInfos-07557",
+    "VUID-vkCopyMicromapEXT-buffer-07561",
+    "VUID-vkCopyMicromapEXT-buffer-07562",
+    "VUID-vkCopyMemoryToMicromapEXT-buffer-07567",
+    "VUID-vkCopyMicromapToMemoryEXT-buffer-07572",
+    "VUID-vkWriteMicromapsPropertiesEXT-buffer-07579",
+    // The VkMicromapCreateInfoEXT::type and lifetime checks
+    "VUID-vkBuildMicromapsEXT-pInfos-07464",
+    "VUID-vkCmdBuildMicromapsEXT-pInfos-07464",
+    "VUID-vkDestroyMicromapEXT-micromap-07441",
+    // These also need the sizes from vkGetMicromapBuildSizesEXT
+    "VUID-vkBuildMicromapsEXT-pInfos-07461",
+    "VUID-vkCmdBuildMicromapsEXT-pInfos-07461",
+    "VUID-vkCmdBuildMicromapsEXT-pInfos-07509",
+    "VUID-vkCmdBuildMicromapsEXT-pInfos-07512",
+    // These depend on how (or if) the micromap was built, and the build can be recorded in
+    // another command buffer, so it is not known until the GPU executes it
+    "VUID-VkCopyMicromapInfoEXT-mode-07533",
+    "VUID-vkCmdWriteMicromapsPropertiesEXT-pMicromaps-07502",
+    "VUID-vkWriteMicromapsPropertiesEXT-pMicromaps-07502",
+    "VUID-VkCopyMicromapToMemoryInfoEXT-src-07540",
+    "VUID-vkCmdCopyMicromapEXT-src-07532",
+    "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-subdivisionLevel-11680",
+    "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-subdivisionLevel-11681",
+    // These need to read the serialized data, would require GPU-AV
+    "VUID-VkCopyMemoryToMicromapInfoEXT-src-07547",
+    "VUID-VkCopyMemoryToMicromapInfoEXT-src-07549",
+    "VUID-VkCopyMemoryToMicromapInfoEXT-dst-07550",
+    // Same as 03561
+    "VUID-VkCopyMicromapToMemoryInfoEXT-dst-07541",
 
     // VK_NV_per_stage_descriptor_set now deprecated for VK_EXT_descriptor_heap
     "VUID-VkDescriptorSetLayoutCreateInfo-flags-09463",

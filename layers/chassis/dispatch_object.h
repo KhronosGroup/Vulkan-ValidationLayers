@@ -124,6 +124,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceTensorPropertiesARM tensor_properties;
     VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR copy_memory_indirect_props;
     VkPhysicalDeviceOpacityMicromapPropertiesKHR micromap_props;
+    VkPhysicalDeviceOpacityMicromapPropertiesEXT micromap_ext_props;
     VkPhysicalDeviceTileMemoryHeapPropertiesQCOM tile_memory_heap_props;
     VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_props;
     VkPhysicalDeviceDescriptorHeapTensorPropertiesARM descriptor_heap_tensor_props;

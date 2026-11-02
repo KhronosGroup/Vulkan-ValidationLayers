@@ -44,6 +44,22 @@ bool Device::ValidateMicromapBuildInfo(const Context& context, const VkMicromapB
             skip |= context.ValidateRangedEnum(
                 build_info_loc.dot(usage_field, usage_i).dot(Field::format), vvl::Enum::VkOpacityMicromapFormatKHR,
                 static_cast<VkOpacityMicromapFormatKHR>(usage.format), "VUID-VkMicromapBuildInfoEXT-format-11652");
+
+            if (usage.format == VK_OPACITY_MICROMAP_FORMAT_2_STATE_EXT &&
+                usage.subdivisionLevel > phys_dev_ext_props.micromap_ext_props.maxOpacity2StateSubdivisionLevel) {
+                skip |= LogError("VUID-VkMicromapBuildInfoEXT-subdivisionLevel-11654", device,
+                                 build_info_loc.dot(usage_field, usage_i).dot(Field::subdivisionLevel),
+                                 "(%" PRIu32 ") is greater than maxOpacity2StateSubdivisionLevel (%" PRIu32
+                                 ") for VK_OPACITY_MICROMAP_FORMAT_2_STATE_EXT.",
+                                 usage.subdivisionLevel, phys_dev_ext_props.micromap_ext_props.maxOpacity2StateSubdivisionLevel);
+            } else if (usage.format == VK_OPACITY_MICROMAP_FORMAT_4_STATE_EXT &&
+                       usage.subdivisionLevel > phys_dev_ext_props.micromap_ext_props.maxOpacity4StateSubdivisionLevel) {
+                skip |= LogError("VUID-VkMicromapBuildInfoEXT-subdivisionLevel-11655", device,
+                                 build_info_loc.dot(usage_field, usage_i).dot(Field::subdivisionLevel),
+                                 "(%" PRIu32 ") is greater than maxOpacity4StateSubdivisionLevel (%" PRIu32
+                                 ") for VK_OPACITY_MICROMAP_FORMAT_4_STATE_EXT.",
+                                 usage.subdivisionLevel, phys_dev_ext_props.micromap_ext_props.maxOpacity4StateSubdivisionLevel);
+            }
         }
     }
 
@@ -66,6 +82,21 @@ bool Device::manual_PreCallValidateCreateMicromapEXT(VkDevice device, const VkMi
                          error_obj.location.dot(Field::pCreateInfo).dot(Field::createFlags),
                          "includes VK_MICROMAP_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT, but the micromapCaptureReplay "
                          "feature was not enabled.");
+    }
+
+    if (pCreateInfo->deviceAddress != 0 &&
+        (pCreateInfo->createFlags & VK_MICROMAP_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT) == 0) {
+        skip |= LogError("VUID-VkMicromapCreateInfoEXT-deviceAddress-07433", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::deviceAddress),
+                         "is 0x%" PRIx64
+                         ", but createFlags (%s) does not include VK_MICROMAP_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT.",
+                         pCreateInfo->deviceAddress, string_VkMicromapCreateFlagsEXT(pCreateInfo->createFlags).c_str());
+    }
+
+    if (!IsIntegerMultipleOf(pCreateInfo->offset, 256)) {
+        skip |= LogError("VUID-VkMicromapCreateInfoEXT-offset-07438", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::offset), "(%" PRIu64 ") must be a multiple of 256.",
+                         pCreateInfo->offset);
     }
 
     return skip;
@@ -240,9 +271,30 @@ bool Device::manual_PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, 
     bool skip = false;
     const auto& error_obj = context.error_obj;
 
+    if (!enabled_features.micromapHostCommandsEXT) {
+        skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-micromapHostCommands-07578", device, error_obj.location,
+                         "micromapHostCommands feature was not enabled.");
+    }
+
+    if (dataSize < micromapCount * stride) {
+        skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-dataSize-07576", device, error_obj.location.dot(Field::dataSize),
+                         "(%zu) is less than micromapCount (%" PRIu32 ") x stride (%zu).", dataSize, micromapCount, stride);
+    }
+
     if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT && queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
         skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-queryType-07503", device, error_obj.location.dot(Field::queryType),
                          "is %s.", string_VkQueryType(queryType));
+    } else {
+        if (!IsIntegerMultipleOf(stride, sizeof(VkDeviceSize))) {
+            skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-queryType-10071", device, error_obj.location.dot(Field::queryType),
+                             "is %s, but stride (%zu) is not a multiple of the size of VkDeviceSize (%zu).",
+                             string_VkQueryType(queryType), stride, sizeof(VkDeviceSize));
+        }
+        if (dataSize < sizeof(VkDeviceSize)) {
+            skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-queryType-10072", device, error_obj.location.dot(Field::queryType),
+                             "is %s, but dataSize (%zu) is less than the size of VkDeviceSize (%zu).",
+                             string_VkQueryType(queryType), dataSize, sizeof(VkDeviceSize));
+        }
     }
 
     return skip;
