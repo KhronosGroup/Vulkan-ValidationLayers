@@ -34,6 +34,8 @@
 #include <spirv/unified1/spirv.hpp>
 #include "containers/limits.h"
 
+struct CachedDescriptorSize;
+
 namespace vvl {
 class Pipeline;
 }  // namespace vvl
@@ -98,8 +100,8 @@ struct DecorationBase {
     // the caller needs to handle which one it is
     bool is_offset_id = false;
     bool is_array_stride_id = false;
-    uint32_t GetOffset(const Module& module_state, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) const;
-    uint32_t GetArrayStride(const Module& module_state, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) const;
+    uint32_t GetOffset(const Module& module_state, const CachedDescriptorSize& descriptor_sizes) const;
+    uint32_t GetArrayStride(const Module& module_state, const CachedDescriptorSize& descriptor_sizes) const;
 
     // A given object can only have a single BuiltIn OpDecoration
     spv::BuiltIn built_in = kInvalidBuiltIn;
@@ -752,7 +754,7 @@ struct Module {
         std::vector<const Instruction *> cooperative_matrix_inst;
         std::vector<const Instruction *> cooperative_vector_inst;
         std::vector<const Instruction *> emit_mesh_tasks_inst;
-        std::vector<const Instruction*> constant_size_of_inst;
+        std::vector<const Instruction*> constant_heap_inst;
         std::vector<const Instruction *> array_length_inst;
         std::vector<const Instruction *> vector_type_inst;
 
@@ -865,10 +867,10 @@ struct Module {
 
     uint32_t CalculateWorkgroupSharedMemory(const EntryPoint& entrypoint) const;
 
-    uint32_t ResolveConstantSizeOf(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, const spirv::Instruction& inst) const;
-    uint32_t ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
+    uint32_t ResolveDescriptorConstant(const CachedDescriptorSize& descriptor_sizes, const spirv::Instruction& inst) const;
+    uint32_t ResolveConstantFoldHeaps(const CachedDescriptorSize& descriptor_sizes,
                                       const spirv::Instruction& spec_constant_op) const;
-    uint32_t GetHeapUntypedSize(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props, const spirv::Instruction& inst) const;
+    uint32_t GetHeapUntypedSize(const CachedDescriptorSize& descriptor_sizes, const spirv::Instruction& inst) const;
 
     const Instruction *GetAnyConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;

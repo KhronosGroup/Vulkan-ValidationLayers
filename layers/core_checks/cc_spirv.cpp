@@ -254,8 +254,8 @@ bool CoreChecks::ValidateShader64BitIndexing(const spirv::Module& module_state, 
                              module_state.DescribeInstruction(insn).c_str());
         }
     }
-    for (const spirv::Instruction* constant_size_of_inst : module_state.static_data_.constant_size_of_inst) {
-        const spirv::Instruction& insn = *constant_size_of_inst;
+    for (const spirv::Instruction* constant_heap_inst : module_state.static_data_.constant_heap_inst) {
+        const spirv::Instruction& insn = *constant_heap_inst;
         if (check(insn.TypeId())) {
             skip |= LogError("VUID-RuntimeSpirv-OpConstantSizeOfEXT-11475", module_state.handle(), loc,
                              "shader %s contains 64-bit OpConstantSizeOfEXT return type\n%s\n", entrypoint.Describe().c_str(),
@@ -3056,8 +3056,6 @@ bool CoreChecks::ValidateDescriptorHeapStructs(const spirv::Module& module_state
         return skip;
     }
 
-    const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props = phys_dev_ext_props.descriptor_heap_props;
-
     // There are to ways to set the offset with decorations
     //  - classic Offset
     //  - using new OffsetIdEXT, which is designed to be used with a spec constant
@@ -3074,7 +3072,7 @@ bool CoreChecks::ValidateDescriptorHeapStructs(const spirv::Module& module_state
             }
 
             // If using the old, hardcoded Offset
-            uint32_t offset_value = member.decorations->GetOffset(module_state, props);
+            uint32_t offset_value = member.decorations->GetOffset(module_state, device_state->cached_descriptor_size);
             ASSERT_AND_CONTINUE(offset_value != spirv::kInvalidValue);
 
             const spv::Op opcode = (spv::Op)member.insn->Opcode();

@@ -26,6 +26,7 @@
 #include "generated/error_location_helper.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/vk_extension_helper.h"
+#include "utils/math_utils.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/state_tracker.h"
 
@@ -297,6 +298,11 @@ bool HasCombinedImageSamplerIndex(const VkDescriptorSetAndBindingMappingEXT& map
 void CachedDescriptorSize::Init(const vvl::DeviceState& device_state) {
     const VkPhysicalDevice gpu = device_state.physical_device;
     if (IsExtEnabled(device_state.extensions.vk_ext_descriptor_heap)) {
+        const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props = device_state.phys_dev_ext_props.descriptor_heap_props;
+        sampler_size_of_ = Align(props.samplerDescriptorSize, props.samplerDescriptorAlignment);
+        image_size_of_ = Align(props.imageDescriptorSize, props.imageDescriptorAlignment);
+        buffer_size_of_ = Align(props.bufferDescriptorSize, props.bufferDescriptorAlignment);
+
         heap_size_[0] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLER);
         heap_size_[2] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
         heap_size_[3] = DispatchGetPhysicalDeviceDescriptorSizeEXT(gpu, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
@@ -350,7 +356,7 @@ void CachedDescriptorSize::Init(const vvl::DeviceState& device_state) {
     }
 }
 
-VkDeviceSize CachedDescriptorSize::GetSize(VkDescriptorType type, bool use_heap) const {
+uint32_t CachedDescriptorSize::GetIndex(VkDescriptorType type) {
     uint32_t index = (uint32_t)type;
     if (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
         // takes VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER value at index 1
@@ -367,15 +373,36 @@ VkDeviceSize CachedDescriptorSize::GetSize(VkDescriptorType type, bool use_heap)
         index = 12;
     } else if (type == VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM) {
         index = 13;
-    } else if (type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-        return 0;  // there is not size (allowed for descriptor buffers)
     } else {
         assert(IsValueIn(
             type, {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                    VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT}));
     }
+    return index;
+}
+
+VkDeviceSize CachedDescriptorSize::GetSize(VkDescriptorType type, bool use_heap) const {
+    if (type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+        return 0;  // there is not size (allowed for descriptor buffers)
+    }
+    const uint32_t index = GetIndex(type);
     return use_heap ? heap_size_[index] : buffer_size_[index];
+}
+
+VkDeviceSize CachedDescriptorSize::GetConstantSizeOf(VkDescriptorType type) const {
+    switch (type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return sampler_size_of_;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            return buffer_size_of_;
+        default:
+            return image_size_of_;
+    }
 }
 
 std::vector<VkDeviceSize> CachedDescriptorSize::GetAllSizes(bool use_heap) const {

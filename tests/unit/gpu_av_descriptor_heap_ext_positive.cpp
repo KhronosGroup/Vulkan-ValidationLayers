@@ -2228,3 +2228,104 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, BufferValidationMixComputeGraphics) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorHeapEXT, ConstantSizeOfArrayLength) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    RETURN_IF_SKIP(InitGpuAVDescriptorHeap({}, false));
+
+    const VkDeviceSize size = Align(heap_props.bufferDescriptorSize, heap_props.bufferDescriptorAlignment);
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(size * 4u);
+
+    vkt::Buffer out_buffer(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer buffer_b(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::Buffer buffer_c(*m_device, 64, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    desc_heap.WriteBufferDescriptorAtOffset(out_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_b, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, size);
+    desc_heap.WriteBufferDescriptorAtOffset(buffer_c, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, size * 2u);
+
+    const char* cs_source = R"(
+               OpCapability Shader
+               OpCapability UntypedPointersKHR
+               OpCapability DescriptorHeapEXT
+               OpExtension "SPV_EXT_descriptor_heap"
+               OpExtension "SPV_KHR_untyped_pointers"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %resource_heap
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %resource_heap BuiltIn ResourceHeapEXT
+               OpDecorate %rta ArrayStride 4
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %heap_layout 0 Offset 0
+               OpMemberDecorateIdEXT %heap_layout 1 OffsetIdEXT %aligned
+               OpDecorateId %heap_array ArrayStrideIdEXT %aligned
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+     %uint_4 = OpConstant %uint 4
+     %uint_7 = OpConstant %uint 7
+    %uint_44 = OpConstant %uint 44
+    %uint_45 = OpConstant %uint 45
+        %rta = OpTypeRuntimeArray %uint
+       %SSBO = OpTypeStruct %rta
+%_ptr_UniformConstant = OpTypeUntypedPointerKHR UniformConstant
+%_ptr_StorageBuffer = OpTypeUntypedPointerKHR StorageBuffer
+%resource_heap = OpUntypedVariableKHR %_ptr_UniformConstant UniformConstant
+%buffer_type = OpTypeBufferEXT StorageBuffer
+       %size = OpConstantSizeOfEXT %uint %buffer_type
+       %am1 = OpSpecConstantOp %uint ISub %uint_4 %uint_1
+        %sum = OpSpecConstantOp %uint IAdd %size %am1
+       %mask = OpSpecConstantOp %uint Not %am1
+    %aligned = OpSpecConstantOp %uint BitwiseAnd %sum %mask
+        %arr = OpTypeArray %uint %size
+%_ptr_Function_arr = OpTypePointer Function %arr
+%_ptr_Function_uint = OpTypePointer Function %uint
+%heap_layout = OpTypeStruct %buffer_type %buffer_type
+ %heap_array = OpTypeArray %buffer_type %uint_4
+       %main = OpFunction %void None %void_fn
+      %label = OpLabel
+      %local = OpVariable %_ptr_Function_arr Function
+       %last = OpISub %uint %size %uint_1
+   %elem_ptr = OpAccessChain %_ptr_Function_uint %local %last
+               OpStore %elem_ptr %uint_7
+       %elem = OpLoad %uint %elem_ptr
+   %out_heap = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %uint_0
+   %out_data = OpBufferPointerEXT %_ptr_StorageBuffer %out_heap
+       %out0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %out_data %uint_0 %uint_0
+               OpStore %out0 %size
+       %out1 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %out_data %uint_0 %uint_1
+               OpStore %out1 %elem
+       %out2 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %out_data %uint_0 %uint_2
+               OpStore %out2 %aligned
+     %b_heap = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_layout %resource_heap %uint_1
+     %b_data = OpBufferPointerEXT %_ptr_StorageBuffer %b_heap
+        %b_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %b_data %uint_0 %uint_0
+               OpStore %b_0 %uint_44
+     %c_heap = OpUntypedAccessChainKHR %_ptr_UniformConstant %heap_array %resource_heap %uint_2
+     %c_data = OpBufferPointerEXT %_ptr_StorageBuffer %c_heap
+        %c_0 = OpUntypedAccessChainKHR %_ptr_StorageBuffer %SSBO %c_data %uint_0 %uint_0
+               OpStore %c_0 %uint_45
+               OpReturn
+               OpFunctionEnd
+    )";
+    vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
+
+    m_command_buffer.Begin();
+    desc_heap.BindResourceHeap(m_command_buffer);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t* out = static_cast<uint32_t*>(out_buffer.Memory().Map());
+    ASSERT_EQ(out[0], (uint32_t)size);
+    ASSERT_EQ(out[1], 7u);
+    ASSERT_EQ(out[2], (uint32_t)size);
+    ASSERT_EQ(44u, *static_cast<uint32_t*>(buffer_b.Memory().Map()));
+    ASSERT_EQ(45u, *static_cast<uint32_t*>(buffer_c.Memory().Map()));
+}

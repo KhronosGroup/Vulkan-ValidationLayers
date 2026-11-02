@@ -142,7 +142,7 @@ class Module {
     bool ConstantFoldVectorShuffle(Instruction* inst, const Type& type);
     bool ConstantFoldCompositeExtract(Instruction* inst, const Type& type);
     bool ConstantFoldCompositeInsert(Instruction* inst, const Type& type);
-    uint32_t ResolveConstantSizeOf(const Instruction& inst);
+    uint32_t ResolveDescriptorConstant(const Instruction& inst);
 
     vvl::unordered_map<const Instruction*, std::unique_ptr<AccessPath>> access_path_cache_;
 };

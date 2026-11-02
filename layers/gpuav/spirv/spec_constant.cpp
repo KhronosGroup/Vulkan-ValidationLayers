@@ -19,6 +19,7 @@
 #include "containers/small_vector.h"
 #include "generated/spirv_grammar_helper.h"
 #include "module.h"
+#include "utils/descriptor_utils.h"
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -357,21 +358,36 @@ bool Module::ConstantFoldCompositeInsert(Instruction* inst, const Type& result_t
     return true;
 }
 
-uint32_t Module::ResolveConstantSizeOf(const Instruction& inst) {
-    assert(inst.Opcode() == spv::OpConstantSizeOfEXT);
-    const Type* descriptor_type = type_manager_.FindTypeById(inst.Word(3));
-    assert(descriptor_type);
+uint32_t Module::ResolveDescriptorConstant(const Instruction& inst) {
+    const Type* type = type_manager_.FindTypeById(inst.Word(3));
+    assert(type);
 
-    if (descriptor_type->spv_type_ == SpvType::kSampler) {
-        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.samplerDescriptorSize;
-    } else if (descriptor_type->spv_type_ == SpvType::kBufferEXT ||
-               descriptor_type->spv_type_ == SpvType::kAccelerationStructureKHR) {
-        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.bufferDescriptorSize;
-    } else if (descriptor_type->spv_type_ == SpvType::kImage) {
-        return (uint32_t)settings_.phys_dev_ext_props->descriptor_heap_props.imageDescriptorSize;
+    VkDescriptorType descriptor_type;
+    if (type->spv_type_ == SpvType::kSampler) {
+        descriptor_type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    } else if (type->spv_type_ == SpvType::kBufferEXT) {
+        descriptor_type =
+            type->inst_.Word(2) == spv::StorageClassUniform ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    } else if (type->spv_type_ == SpvType::kAccelerationStructureKHR) {
+        descriptor_type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    } else if (type->spv_type_ == SpvType::kTensorARM) {
+        descriptor_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+    } else if (type->spv_type_ == SpvType::kImage) {
+        const uint32_t dim = type->inst_.Word(3);
+        if (type->inst_.Word(7) == 2) {
+            descriptor_type = dim == spv::DimSubpassData ? VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+                              : dim == spv::DimBuffer    ? VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+                                                         : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        } else {
+            descriptor_type = dim == spv::DimBuffer ? VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        }
+    } else {
+        assert(false);
+        return 0;
     }
-    assert(false);
-    return 0;
+
+    assert(inst.Opcode() == spv::OpConstantSizeOfEXT);
+    return static_cast<uint32_t>(settings_.cached_descriptor_size->GetConstantSizeOf(descriptor_type));
 }
 
 bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
@@ -436,8 +452,6 @@ bool Module::ConstantFold(Instruction* inst, const Type& result_type) {
             }
             if (lane_constant->inst_.Opcode() == spv::OpConstantNull) {
                 args[arg_count++] = 0ul;
-            } else if (lane_constant->inst_.Opcode() == spv::OpConstantSizeOfEXT) {
-                args[arg_count++] = ResolveConstantSizeOf(lane_constant->inst_);
             } else if (lane_constant->type_.spv_type_ == SpvType::kBool) {
                 if (lane_constant->inst_.Opcode() == spv::OpConstantTrue) {
                     args[arg_count++] = 1ul;
