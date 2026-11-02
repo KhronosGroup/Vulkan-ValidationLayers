@@ -8878,6 +8878,34 @@
                             "depth": 1
                         }
                     }
+                },
+                {
+                    "VkQueueFamilyProperties": {
+                        "queueFlags": [
+                            "VK_QUEUE_DATA_GRAPH_BIT_ARM"
+                        ],
+                        "queueCount": 1,
+                        "timestampValidBits": 16,
+                        "minImageTransferGranularity": {
+                            "width": 1,
+                            "height": 1,
+                            "depth": 1
+                        }
+                    }
+                },
+                {
+                    "VkQueueFamilyProperties": {
+                        "queueFlags": [
+                            "VK_QUEUE_DATA_GRAPH_BIT_ARM"
+                        ],
+                        "queueCount": 1,
+                        "timestampValidBits": 16,
+                        "minImageTransferGranularity": {
+                            "width": 1,
+                            "height": 1,
+                            "depth": 1
+                        }
+                    }
                 }
             ],
             "videoProfiles": [

@@ -468,6 +468,9 @@ class TensorTest : public VkLayerTest {
 class DataGraphTest : public VkLayerTest {
   public:
     void InitBasicDataGraph(bool optical_flow = false);
+    void InitDataGraphModel();
+    uint32_t model_queue_family_index_ = 0;
+    std::vector<VkQueueFamilyDataGraphPropertiesARM> model_properties_;
     static std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> InitSessionBindInfo(const vkt::DataGraphPipelineSession& session, const std::vector<vkt::DeviceMemory>& device_mem);
     static VkTensorDescriptionARM DefaultDesc();
     static VkTensorDescriptionARM DefaultConstantTensorDesc();

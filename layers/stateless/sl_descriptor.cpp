@@ -1003,6 +1003,13 @@ bool Device::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const V
                          "VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT and VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT");
     }
 
+    if (enabled_features.dataGraph) {
+        if (const auto* dg_engine_ci = vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(pCreateInfo->pNext)) {
+            skip |= ValidateDataGraphProcessingEngineCreateInfo(
+                *dg_engine_ci, create_info_loc.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM));
+        }
+    }
+
     return skip;
 }
 

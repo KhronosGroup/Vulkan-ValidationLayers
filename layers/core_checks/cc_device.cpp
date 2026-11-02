@@ -758,6 +758,9 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     skip |= ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, create_info_loc.dot(Field::queueFamilyIndex),
                                       "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
+    if (enabled_features.dataGraphModel) {
+        skip |= ValidateDataGraphCommandPoolCreateInfo(*pCreateInfo, create_info_loc);
+    }
     if ((enabled_features.protectedMemory == VK_FALSE) && ((pCreateInfo->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) != 0)) {
         skip |= LogError("VUID-VkCommandPoolCreateInfo-flags-02860", device, create_info_loc.dot(Field::flags),
                          "includes VK_COMMAND_POOL_CREATE_PROTECTED_BIT, but the protectedMemory feature was not enabled.");

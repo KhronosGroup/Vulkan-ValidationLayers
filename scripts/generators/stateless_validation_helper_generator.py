@@ -87,6 +87,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCreateSemaphore',
             'vkCreateEvent',
             'vkCreateTensorARM',
+            'vkCreateCommandPool',
             'vkFreeDescriptorSets',
             'vkUpdateDescriptorSets',
             'vkBeginCommandBuffer',

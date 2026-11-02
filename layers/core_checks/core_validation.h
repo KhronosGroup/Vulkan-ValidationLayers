@@ -1112,6 +1112,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
                                          const ErrorObject& error_obj) const override;
 
+    bool ValidateDataGraphCommandPoolCreateInfo(const VkCommandPoolCreateInfo& create_info, const Location& create_info_loc) const;
     bool ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
                                              const Location& create_info_loc, const vvl::Pipeline& pipeline) const;
     bool ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
