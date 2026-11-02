@@ -420,6 +420,9 @@ class OutputDatabase:
             'VALVE' : ['10918', '10919', '10920', '10921', '10922', '10923', '10924']
         }
 
+        # VK_AMDX_shader_enqueue (aka WorkGraphs are maninly where all these come from, so list them all)
+        self.amdx_shader_enqueue_vuids = ['02878', '03365', '03366', '03367', '03368', '03369', '03370', '03576', '04475', '04945', '06976', '07288', '07368', '07369', '07984', '07985', '07986', '07987', '07988', '07990', '07991', '08119', '09007', '09008', '09124', '09125', '09126', '09127', '09128', '09130', '09131', '09132', '09133', '09134', '09135', '09136', '09137', '09138', '09139', '09140', '09141', '09142', '09144', '09145', '09146', '09147', '09148', '09149', '09150', '09151', '09152', '09153', '09154', '09155', '09156', '09157', '09158', '09159', '09160', '09161', '09162', '09163', '09164', '09165', '09166', '09167', '09168', '09169', '09170', '09171', '09172', '09173', '09174', '09175', '09176', '09178', '09181', '09182', '09184', '09186', '09187', '09188', '09191', '09192', '09193', '09194', '09195', '09196', '09197', '09217', '09497', '09617', '10069', '10181', '10182', '10183', '10184', '10185', '10186', '10187', '10188', '10189', '10190', '10191', '10192', '10193', '10194', '10195', '10391', '11007', '11271', '11272', '11311', '11312', '11363', '11372', '11373', '11374', '11397', '11398', '11414', '11429', '11437', '11438', '11439', '11450', '11455', '11456', '11485', '11636', '11637', '11638', '11639', '11798', '12334', '12462', '12463']
+
         self.topic_vuid_map = {
             'VK_EXT_graphics_pipeline_library' : ['06611', '06616', '06617', '06618', '06619', '06623', '06684'],
             'VK_EXT_opacity_micromap' : ['07334', '07335', '07432', '07433', '07434', '07435', '07436', '07437', '07438', '07440', '07441', '07461', '07462', '07463', '07464', '07465', '07466', '07467', '07501', '07502', '07508', '07509', '07510', '07511', '07512', '07517', '07518', '07519', '07520', '07521', '07522', '07523', '07524', '07525', '07526', '07527', '07528', '07529', '07530', '07532', '07533', '07534', '07535', '07538', '07539', '07540', '07541', '07545', '07546', '07547', '07549', '07550', '07552', '07556', '07557', '07558', '07559', '07561', '07562', '07565', '07567', '07568', '07572', '07576', '07577', '07578', '07579', '08704', '08705', '08706', '08707', '08708', '08709', '09180', '10071', '10072', '10719', '10722', '10723', '10904', '11821',  '11654', '11655', '11680', '11681', '11617'],
@@ -477,6 +480,7 @@ class OutputDatabase:
         total_count = 0
         vendor_count = 0
         vendor_counts = {} # < Vendor : count >
+        amdx_shader_enqueue_count = 0
         micro_map_count = 0
         rtx_count = 0
         wsi_count = 0
@@ -498,20 +502,16 @@ class OutputDatabase:
             table.append(f'<th>{self.vj.vuid_db[vuid][0]["type"]}</th>')
 
             vendor = IsVendor(vuid)
-            if vendor is not None:
-                vendor_count += 1
-                vendor_counts[vendor] = vendor_counts.get(vendor, 0) + 1
-                table.append(f'<th>{vendor} vendor extension</th></tr>')
-                continue
-
-            vendor = None
-            for key, list_of_vuids in self.vendor_map.items():
-                if vuid[-5:] in list_of_vuids:
-                    vendor = key
-                    break
+            if vendor is None:
+                for key, list_of_vuids in self.vendor_map.items():
+                    if vuid[-5:] in list_of_vuids:
+                        vendor = key
+                        break
             if vendor:
                 vendor_count += 1
                 vendor_counts[vendor] = vendor_counts.get(vendor, 0) + 1
+                if vendor == 'AMDX' and vuid[-5:] in self.amdx_shader_enqueue_vuids:
+                    amdx_shader_enqueue_count += 1
                 table.append(f'<th>{vendor} vendor extension</th></tr>')
                 continue
 
@@ -587,6 +587,8 @@ class OutputDatabase:
         stats.append('<ul>')
         for vendor, count in sorted(vendor_counts.items(), key=lambda item: (-item[1], item[0])):
             stats.append(f'<li><b>{vendor}</b>: {count} ({(count / vendor_count):.1%})</li>')
+            if vendor == 'AMDX':
+                stats.append(f'<ul><li><b>VK_AMDX_shader_enqueue</b>: {amdx_shader_enqueue_count} ({(amdx_shader_enqueue_count / count):.1%})</li></ul>')
         stats.append('</ul></li>')
         stats.append(f'<li><b>VK_EXT_opacity_micromap/VK_KHR_opacity_micromap</b>: {micro_map_count} ({(micro_map_count / total_count):.1%})</li>')
         stats.append(f'<li><b>External Memory/Sync</b>: {external_count} ({(external_count / total_count):.1%})</li>')
