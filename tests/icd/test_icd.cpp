@@ -1501,11 +1501,31 @@ static constexpr VkPhysicalDeviceDataGraphOperationSupportARM tosa_operation{
     VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM, "TOSA.001000.1", 0};
 static constexpr VkPhysicalDeviceDataGraphOperationSupportARM optical_flow_operation{
     VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_OPTICAL_FLOW_ARM, "OpticalFlow", 1};
+static constexpr VkPhysicalDeviceDataGraphOperationSupportARM neural_model_operation{
+    VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_NEURAL_MODEL_QCOM, "Generic QNN", 0};
+static constexpr VkPhysicalDeviceDataGraphOperationSupportARM compute_model_operation{
+    VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_NEURAL_MODEL_QCOM, "Generic QNN GPU (compute)", 0};
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
     VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
     // TODO: Need a way for test to decide to support or not support various engines
+    // NOTE: q4 and q5 are the data graph only queue families from max_profile
+    if (queueFamilyIndex == 4 || queueFamilyIndex == 5) {
+        if (pQueueFamilyDataGraphProperties) {
+            if (queueFamilyIndex == 4) {
+                pQueueFamilyDataGraphProperties[0].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM,
+                                                             VK_TRUE};
+                pQueueFamilyDataGraphProperties[0].operation = neural_model_operation;
+            } else {
+                pQueueFamilyDataGraphProperties[0].engine = {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM,
+                                                             VK_TRUE};
+                pQueueFamilyDataGraphProperties[0].operation = compute_model_operation;
+            }
+        }
+        *pQueueFamilyDataGraphPropertyCount = 1;
+        return VK_SUCCESS;
+    }
 
     // NOTE: queue 0 supports both properties, q1 only tosa, q2 only opt flow, q > 2 neither
     if (pQueueFamilyDataGraphProperties == nullptr) {

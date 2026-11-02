@@ -33,6 +33,42 @@ void DataGraphTest::InitBasicDataGraph(bool optical_flow) {
     RETURN_IF_SKIP(Init());
 }
 
+void DataGraphTest::InitDataGraphModel() {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_QCOM_DATA_GRAPH_MODEL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dataGraph);
+    AddRequiredFeature(vkt::Feature::dataGraphModel);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    RETURN_IF_SKIP(Init());
+
+    const auto& queue_family_properties = m_device->Physical().queue_properties_;
+    for (uint32_t i = 0; i < queue_family_properties.size(); ++i) {
+        if (!(queue_family_properties[i].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM)) {
+            continue;
+        }
+
+        uint32_t count = 0;
+        vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), i, &count, nullptr);
+        std::vector<VkQueueFamilyDataGraphPropertiesARM> properties(count, vku::InitStruct<VkQueueFamilyDataGraphPropertiesARM>());
+        vk::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(Gpu(), i, &count, properties.data());
+
+        for (const auto& property : properties) {
+            if (property.engine.isForeign &&
+                (property.engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM ||
+                 property.engine.type == VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM)) {
+                if (model_properties_.empty()) {
+                    model_queue_family_index_ = i;
+                }
+                model_properties_.push_back(property);
+            }
+        }
+    }
+
+    if (model_properties_.empty()) {
+        GTEST_SKIP() << "No queue family enumerates a foreign data graph model engine, skipping test.";
+    }
+}
+
 const VkTensorDescriptionARM DataGraphTest::defaultConstantTensorDesc{DefaultConstantTensorDesc()};
 
 std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> DataGraphTest::InitSessionBindInfo(
@@ -561,4 +597,37 @@ TEST_F(PositiveDataGraph, NeuralStatistics) {
     VkDataGraphPipelineDispatchInfoARM disp_info = vku::InitStructHelper();
     vk::CmdDispatchDataGraphARM(m_command_buffer, session, &disp_info);
     m_command_buffer.End();
+}
+
+TEST_F(PositiveDataGraph, BindForeignModelPipeline) {
+    TEST_DESCRIPTION("Bind a builtin model pipeline and its descriptor set for a foreign model engine.");
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(InitDataGraphModel());
+
+    VkDataGraphProcessingEngineCreateInfoARM engine_ci = vku::InitStructHelper();
+    engine_ci.processingEngineCount = 1;
+    engine_ci.pProcessingEngines = &model_properties_[0].engine;
+
+    OneOffDescriptorSet descriptor_set{
+        m_device, {{0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr}}, 0, nullptr, 0, nullptr, &engine_ci};
+    vkt::PipelineLayout layout{*m_device, {&descriptor_set.layout_}};
+
+    VkDataGraphPipelineBuiltinModelCreateInfoQCOM model_ci = vku::InitStructHelper(&engine_ci);
+    model_ci.pOperation = &model_properties_[0].operation;
+    VkDataGraphPipelineCreateInfoARM pipeline_ci = vku::InitStructHelper(&model_ci);
+    pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipeline_ci.layout = layout;
+    vkt::Pipeline pipeline{*m_device, pipeline_ci};
+
+    VkCommandPoolCreateInfo command_pool_ci = vku::InitStructHelper(&engine_ci);
+    command_pool_ci.queueFamilyIndex = model_queue_family_index_;
+    vkt::CommandPool command_pool{*m_device, command_pool_ci};
+    vkt::CommandBuffer command_buffer{*m_device, command_pool};
+
+    command_buffer.Begin();
+    vk::CmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    command_buffer.End();
 }

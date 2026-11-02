@@ -10932,6 +10932,7 @@ bool Device::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPo
     }
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pCommandPool), pCommandPool,
                                             "VUID-vkCreateCommandPool-pCommandPool-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, context);
     return skip;
 }
 

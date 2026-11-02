@@ -615,6 +615,11 @@ class Device : public vvl::BaseDevice {
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                       const Context &context) const;
 
+    bool ValidateDataGraphProcessingEngineCreateInfo(const VkDataGraphProcessingEngineCreateInfoARM& dg_engine_ci,
+                                                     const Location& dg_engine_ci_loc) const;
+    bool manual_PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
+                                                 const Context& context) const;
     bool ValidateCreateDataGraphPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const;
     bool manual_PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                            VkPipelineCache pipelineCache, uint32_t createInfoCount,

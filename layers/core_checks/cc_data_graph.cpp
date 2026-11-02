@@ -16,6 +16,7 @@
  */
 
 #include "core_validation.h"
+#include "containers/container_utils.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "generated/dispatch_functions.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -26,6 +27,55 @@
 #include "state_tracker/pipeline_state.h"
 #include "utils/math_utils.h"
 #include "error_message/error_strings.h"
+
+bool CoreChecks::ValidateDataGraphCommandPoolCreateInfo(const VkCommandPoolCreateInfo& create_info,
+                                                        const Location& create_info_loc) const {
+    bool skip = false;
+    const auto* properties = vvl::Find(physical_device_state->data_graph.queue_family_properties, create_info.queueFamilyIndex);
+
+    if (!properties ||
+        !(physical_device_state->queue_family_properties[create_info.queueFamilyIndex].queueFlags & VK_QUEUE_DATA_GRAPH_BIT_ARM)) {
+        return skip;
+    }
+
+    bool has_foreign_model_engine = false;
+    for (const auto& property : *properties) {
+        if (property.engine.isForeign &&
+            IsValueIn(property.engine.type, {VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_NEURAL_QCOM,
+                                             VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_COMPUTE_QCOM})) {
+            has_foreign_model_engine = true;
+            break;
+        }
+    }
+
+    if (!has_foreign_model_engine) {
+        return skip;
+    }
+
+    const auto* engine_ci = vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(create_info.pNext);
+    if (!engine_ci) {
+        skip |=
+            LogError("VUID-VkCommandPoolCreateInfo-queueFamilyIndex-11830", device, create_info_loc.dot(Field::queueFamilyIndex),
+                     "(%" PRIu32
+                     ") enumerates a foreign QCOM processing engine, but pNext chain does not include "
+                     "VkDataGraphProcessingEngineCreateInfoARM.\n%s",
+                     create_info.queueFamilyIndex, PrintPNextChain(Struct::VkCommandPoolCreateInfo, create_info.pNext).c_str());
+    } else {
+        for (uint32_t i = 0; i < engine_ci->processingEngineCount; ++i) {
+            if (!engine_ci->pProcessingEngines[i].isForeign) {
+                skip |= LogError("VUID-VkCommandPoolCreateInfo-queueFamilyIndex-11830", device,
+                                 create_info_loc.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM)
+                                     .dot(Field::pProcessingEngines, i)
+                                     .dot(Field::isForeign),
+                                 "is VK_FALSE, but queueFamilyIndex (%" PRIu32 ") enumerates a foreign QCOM processing engine.",
+                                 create_info.queueFamilyIndex);
+                break;  // only report once
+            }
+        }
+    }
+
+    return skip;
+}
 
 bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
                                                                  const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,

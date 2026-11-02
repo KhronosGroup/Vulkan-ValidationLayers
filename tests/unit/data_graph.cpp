@@ -3242,3 +3242,82 @@ TEST_F(NegativeDataGraph, QueryNeuralStatisticsAllowedFalse) {
     vk::GetDataGraphPipelinePropertiesARM(m_device->handle(), &pipeline_info, prop_count, &query_result);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDataGraph, CreateCommandPoolWithoutModelEngine) {
+    TEST_DESCRIPTION("Try to create a foreign model command pool without a processing engine.");
+    RETURN_IF_SKIP(InitDataGraphModel());
+
+    m_errorMonitor->SetDesiredError("VUID-VkCommandPoolCreateInfo-queueFamilyIndex-11830");
+    vkt::CommandPool command_pool{*m_device, model_queue_family_index_};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, CreateDescriptorPoolWithMultipleForeignModelEngines) {
+    TEST_DESCRIPTION("Try to select multiple foreign model engines for a descriptor pool.");
+    RETURN_IF_SKIP(InitDataGraphModel());
+
+    if (model_properties_.size() < 2) {
+        GTEST_SKIP() << "Two foreign model engines are required, skipping test.";
+    }
+
+    VkPhysicalDeviceDataGraphProcessingEngineARM engines[] = {model_properties_[0].engine, model_properties_[1].engine};
+    VkDataGraphProcessingEngineCreateInfoARM engine_ci = vku::InitStructHelper();
+    engine_ci.processingEngineCount = size32(engines);
+    engine_ci.pProcessingEngines = engines;
+    VkDescriptorPoolCreateInfo descriptor_pool_ci = vku::InitStructHelper(&engine_ci);
+    descriptor_pool_ci.maxSets = 1;
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11843");
+    vkt::DescriptorPool descriptor_pool{*m_device, descriptor_pool_ci};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, CreatePipelineWithMultipleForeignModelEngines) {
+    TEST_DESCRIPTION("Try to select multiple foreign model engines for a data graph pipeline.");
+    RETURN_IF_SKIP(InitDataGraphModel());
+
+    if (model_properties_.size() < 2) {
+        GTEST_SKIP() << "Two foreign model engines are required, skipping test.";
+    }
+
+    VkPhysicalDeviceDataGraphProcessingEngineARM engines[] = {model_properties_[0].engine, model_properties_[1].engine};
+    VkDataGraphProcessingEngineCreateInfoARM engine_ci = vku::InitStructHelper();
+    engine_ci.processingEngineCount = size32(engines);
+    engine_ci.pProcessingEngines = engines;
+    VkDataGraphPipelineBuiltinModelCreateInfoQCOM model_ci = vku::InitStructHelper(&engine_ci);
+    model_ci.pOperation = &model_properties_[0].operation;
+    vkt::PipelineLayout layout(*m_device, {});
+    VkDataGraphPipelineCreateInfoARM pipeline_ci = vku::InitStructHelper(&model_ci);
+    pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipeline_ci.layout = layout;
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11843");
+    vkt::Pipeline pipeline{*m_device, pipeline_ci};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, CreateDescriptorPoolButModelFeatureNotEnabled) {
+    TEST_DESCRIPTION("Try to select a model engine for a descriptor pool on a device without the model feature.");
+    RETURN_IF_SKIP(InitDataGraphModel());
+
+    const float priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
+    queue_ci.queueFamilyIndex = m_default_queue->family_index;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = &priority;
+    VkPhysicalDeviceDataGraphFeaturesARM graph_features = vku::InitStructHelper();
+    graph_features.dataGraph = VK_TRUE;
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&graph_features);
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+    vkt::Device device{Gpu(), device_ci};
+
+    VkDataGraphProcessingEngineCreateInfoARM engine_ci = vku::InitStructHelper();
+    engine_ci.processingEngineCount = 1;
+    engine_ci.pProcessingEngines = &model_properties_[0].engine;
+    VkDescriptorPoolCreateInfo descriptor_pool_ci = vku::InitStructHelper(&engine_ci);
+    descriptor_pool_ci.maxSets = 1;
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-11844");
+    vkt::DescriptorPool descriptor_pool{device, descriptor_pool_ci};
+    m_errorMonitor->VerifyFound();
+}
