@@ -1302,7 +1302,7 @@ uint32_t UntypedContext::GetUntypedHeapOffset(const uint32_t struct_id, uint32_t
     for (const auto& type_struct : module.static_data_.type_structs) {
         if (type_struct->id == struct_id) {
             const auto& member = type_struct->members[struct_member_index];
-            return member.decorations->GetOffset(module, props);
+            return member.decorations->GetOffset(module, device_state.cached_descriptor_size);
         }
     }
     assert(false);
@@ -1311,7 +1311,7 @@ uint32_t UntypedContext::GetUntypedHeapOffset(const uint32_t struct_id, uint32_t
 
 uint32_t UntypedContext::GetUntypedArrayStride(uint32_t type_array_id) {
     const auto decoration_set = module.GetDecorationSet(type_array_id);
-    return decoration_set.GetArrayStride(module, props);
+    return decoration_set.GetArrayStride(module, device_state.cached_descriptor_size);
 }
 
 // This is a quick, low effort attempt to see if we can detect the index into the descriptor is a push data value

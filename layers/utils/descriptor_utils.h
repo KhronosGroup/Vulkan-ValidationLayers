@@ -89,13 +89,20 @@ struct DeviceExtensions;
 struct CachedDescriptorSize {
     void Init(const vvl::DeviceState& device_state);
     VkDeviceSize GetSize(VkDescriptorType type, bool use_heap = true) const;
+    VkDeviceSize GetConstantSizeOf(VkDescriptorType type) const;
     std::vector<VkDeviceSize> GetAllSizes(bool use_heap) const;
 
   private:
+    static uint32_t GetIndex(VkDescriptorType type);
+
     // The number of valid descriptors that can be queried is known in the spec
     // (see VU 11362)
     VkDeviceSize heap_size_[14];    // VK_EXT_descriptor_heap
     VkDeviceSize buffer_size_[14];  // VK_EXT_descriptor_buffer
+
+    VkDeviceSize sampler_size_of_ = 0;
+    VkDeviceSize image_size_of_ = 0;
+    VkDeviceSize buffer_size_of_ = 0;
 };
 
 // We need a way to compress the VkDescriptorType enum to cover all the "real" types

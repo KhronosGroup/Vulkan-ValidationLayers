@@ -30,6 +30,7 @@
 #include "utils/assert_utils.h"
 #include "utils/hash_util.h"
 #include "utils/shader_utils.h"
+#include "utils/descriptor_utils.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/spirv_validation_helper.h"
 
@@ -120,23 +121,22 @@ void DecorationBase::AddId(uint32_t decoration, uint32_t id) {
     }
 }
 
-uint32_t DecorationBase::GetOffset(const Module& module_state, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) const {
+uint32_t DecorationBase::GetOffset(const Module& module_state, const CachedDescriptorSize& descriptor_sizes) const {
     if (!is_offset_id) {
         return offset;  // Offset
     }
     // Using OffsetIdEXT
     const spirv::Instruction* inst = module_state.FindDef(offset);
-    return module_state.GetHeapUntypedSize(props, *inst);
+    return module_state.GetHeapUntypedSize(descriptor_sizes, *inst);
 }
 
-uint32_t DecorationBase::GetArrayStride(const Module& module_state,
-                                        const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) const {
+uint32_t DecorationBase::GetArrayStride(const Module& module_state, const CachedDescriptorSize& descriptor_sizes) const {
     if (!is_array_stride_id) {
         return array_stride;  // ArrayStride
     }
     // Using ArrayStrideIdEXT
     const spirv::Instruction* inst = module_state.FindDef(array_stride);
-    return module_state.GetHeapUntypedSize(props, *inst);
+    return module_state.GetHeapUntypedSize(descriptor_sizes, *inst);
 }
 
 // Some decorations are only avaiable for variables, so can't be in OpMemberDecorate
@@ -1278,7 +1278,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 emit_mesh_tasks_inst.push_back(&insn);
                 break;
             case spv::OpConstantSizeOfEXT:
-                constant_size_of_inst.push_back(&insn);
+                constant_heap_inst.push_back(&insn);
                 break;
 
             case spv::OpExtInst: {
@@ -1787,29 +1787,44 @@ uint32_t Module::CalculateWorkgroupSharedMemory(const EntryPoint& entrypoint) co
 }
 
 // See https://gitlab.khronos.org/vulkan/vulkan/-/issues/4858
-// When we hit a OpConstantSizeOfEXT, we get the <Type ID> and use this function to map it to the correct prop
-uint32_t Module::ResolveConstantSizeOf(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
-                                       const spirv::Instruction& inst) const {
-    assert(inst.Opcode() == spv::OpConstantSizeOfEXT);
+// When we hit a OpConstantSizeOfEXT, we get the <Type ID> and use this function to map it to the correct value
+uint32_t Module::ResolveDescriptorConstant(const CachedDescriptorSize& descriptor_sizes, const spirv::Instruction& inst) const {
     const spirv::Instruction* type_inst = FindDef(inst.Word(3));
-    const spv::Op opcode = (spv::Op)type_inst->Opcode();
-
-    if (opcode == spv::OpTypeSampler) {
-        return (uint32_t)props.samplerDescriptorSize;
-    } else if (opcode == spv::OpTypeBufferEXT || opcode == spv::OpTypeAccelerationStructureKHR) {
-        return (uint32_t)props.bufferDescriptorSize;
-    } else if (opcode == spv::OpTypeImage) {
-        return (uint32_t)props.imageDescriptorSize;
+    VkDescriptorType descriptor_type;
+    switch (type_inst->Opcode()) {
+        case spv::OpTypeSampler:
+            descriptor_type = VK_DESCRIPTOR_TYPE_SAMPLER;
+            break;
+        case spv::OpTypeImage:
+            descriptor_type = type_inst->GetImageType();
+            break;
+        case spv::OpTypeBufferEXT:
+            descriptor_type = type_inst->Word(2) == spv::StorageClassUniform ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                                                                             : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            break;
+        case spv::OpTypeAccelerationStructureKHR:
+            descriptor_type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+            break;
+        case spv::OpTypeTensorARM:
+            descriptor_type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
+            break;
+        default:
+            assert(false);  // spirv-val checks it is a descriptor type
+            return 0;
     }
-    assert(false);
-    return 0;
+
+    assert(inst.Opcode() == spv::OpConstantSizeOfEXT);
+    return static_cast<uint32_t>(descriptor_sizes.GetConstantSizeOf(descriptor_type));
 }
 
-static uint32_t ResolveConstantFoldOperand(const Module& module, const Instruction& operand_inst, const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props) {
-    if (operand_inst.Opcode() == spv::OpConstantSizeOfEXT) {
-        return module.ResolveConstantSizeOf(props, operand_inst);
+static bool IsDescriptorConstant(uint32_t opcode) { return opcode == spv::OpConstantSizeOfEXT; }
+
+static uint32_t ResolveConstantFoldOperand(const Module& module, const Instruction& operand_inst,
+                                           const CachedDescriptorSize& descriptor_sizes) {
+    if (IsDescriptorConstant(operand_inst.Opcode())) {
+        return module.ResolveDescriptorConstant(descriptor_sizes, operand_inst);
     } else if (operand_inst.Opcode() == spv::OpSpecConstantOp) {
-        return module.ResolveConstantFoldHeaps(props, operand_inst);
+        return module.ResolveConstantFoldHeaps(descriptor_sizes, operand_inst);
     }
     return operand_inst.GetConstantValue();
 }
@@ -1819,23 +1834,24 @@ static uint32_t ResolveConstantFoldOperand(const Module& module, const Instructi
 // ... for now lets make assumption only thing people will use here is IMul/IAdd/Isub and just do some folding
 //
 // Slang with -spirv-unified-descriptor-heap-stride will do a OpSelect/OpUGreaterThan to get a max(buffer, image)
-uint32_t Module::ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
+uint32_t Module::ResolveConstantFoldHeaps(const CachedDescriptorSize& descriptor_sizes,
                                           const spirv::Instruction& spec_constant_op) const {
     assert(spec_constant_op.Opcode() == spv::OpSpecConstantOp);
     const uint32_t spec_op = spec_constant_op.Word(3);
-    if (!IsValueIn((spv::Op)spec_op, {spv::OpIMul, spv::OpIAdd, spv::OpISub, spv::OpUMod, spv::OpUGreaterThan,
-                                      spv::OpUGreaterThanEqual, spv::OpULessThan, spv::OpULessThanEqual, spv::OpSelect})) {
+    if (!IsValueIn((spv::Op)spec_op, {spv::OpIMul, spv::OpIAdd, spv::OpISub, spv::OpUDiv, spv::OpUMod, spv::OpNot,
+                                      spv::OpBitwiseAnd, spv::OpBitwiseOr, spv::OpUGreaterThan, spv::OpUGreaterThanEqual,
+                                      spv::OpULessThan, spv::OpULessThanEqual, spv::OpSelect})) {
         assert(false);  // hit another case
         return 0;
     }
 
     const spirv::Instruction* operand_0_inst = FindDef(spec_constant_op.Word(4));
-    const spirv::Instruction* operand_1_inst = FindDef(spec_constant_op.Word(5));
+    const spirv::Instruction* operand_1_inst = spec_constant_op.Length() > 5 ? FindDef(spec_constant_op.Word(5)) : nullptr;
     const spirv::Instruction* operand_2_inst = spec_constant_op.Length() > 6 ? FindDef(spec_constant_op.Word(6)) : nullptr;
 
-    const uint32_t operand_0 = ResolveConstantFoldOperand(*this, *operand_0_inst, props);
-    const uint32_t operand_1 = ResolveConstantFoldOperand(*this, *operand_1_inst, props);
-    const uint32_t operand_2 = operand_2_inst ? ResolveConstantFoldOperand(*this, *operand_2_inst, props) : 0;
+    const uint32_t operand_0 = ResolveConstantFoldOperand(*this, *operand_0_inst, descriptor_sizes);
+    const uint32_t operand_1 = operand_1_inst ? ResolveConstantFoldOperand(*this, *operand_1_inst, descriptor_sizes) : 0;
+    const uint32_t operand_2 = operand_2_inst ? ResolveConstantFoldOperand(*this, *operand_2_inst, descriptor_sizes) : 0;
 
     if (spec_op == spv::OpIMul) {
         return operand_0 * operand_1;
@@ -1843,8 +1859,16 @@ uint32_t Module::ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPr
         return operand_0 + operand_1;
     } else if (spec_op == spv::OpISub) {
         return operand_0 - operand_1;
+    } else if (spec_op == spv::OpUDiv) {
+        return operand_1 != 0 ? operand_0 / operand_1 : 0;
     } else if (spec_op == spv::OpUMod) {
-        return operand_0 % operand_1;
+        return operand_1 != 0 ? operand_0 % operand_1 : 0;
+    } else if (spec_op == spv::OpNot) {
+        return ~operand_0;
+    } else if (spec_op == spv::OpBitwiseAnd) {
+        return operand_0 & operand_1;
+    } else if (spec_op == spv::OpBitwiseOr) {
+        return operand_0 | operand_1;
     } else if (spec_op == spv::OpUGreaterThan) {
         return operand_0 > operand_1;
     } else if (spec_op == spv::OpUGreaterThanEqual) {
@@ -1860,15 +1884,14 @@ uint32_t Module::ResolveConstantFoldHeaps(const VkPhysicalDeviceDescriptorHeapPr
     return 0;
 }
 
-uint32_t Module::GetHeapUntypedSize(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& props,
-                                    const spirv::Instruction& inst) const {
+uint32_t Module::GetHeapUntypedSize(const CachedDescriptorSize& descriptor_sizes, const spirv::Instruction& inst) const {
     const spv::Op opcode = (spv::Op)inst.Opcode();
-    if (opcode == spv::OpConstantSizeOfEXT) {
-        return ResolveConstantSizeOf(props, inst);
+    if (IsDescriptorConstant(opcode)) {
+        return ResolveDescriptorConstant(descriptor_sizes, inst);
     } else if (opcode == spv::OpConstant) {
         return inst.GetConstantValue();
     } else if (opcode == spv::OpSpecConstantOp) {
-        return ResolveConstantFoldHeaps(props, inst);
+        return ResolveConstantFoldHeaps(descriptor_sizes, inst);
     }
     assert(false);  // assumptions
     return 0;

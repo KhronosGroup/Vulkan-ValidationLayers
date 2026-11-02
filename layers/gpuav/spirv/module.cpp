@@ -158,13 +158,18 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             case spv::OpSpecConstantComposite:
             case spv::OpConstant:
             case spv::OpConstantNull:
-            case spv::OpConstantComposite:
-            case spv::OpConstantSizeOfEXT: {
+            case spv::OpConstantComposite: {
                 const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
                 if (opcode == spv::OpSpecConstant || opcode == spv::OpSpecConstantComposite) {
                     SetSpecConstantValue(new_inst.get(), *type, id_to_spec_id);
                 }
                 type_manager_.AddConstant(std::move(new_inst), *type);
+                break;
+            }
+            case spv::OpConstantSizeOfEXT: {
+                // We know the value, so replace it with a OpConstant and the rest of GPU-AV only needs to handle that
+                const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
+                type_manager_.CreateConstantScalar(ResolveDescriptorConstant(*new_inst), *type, new_inst->ResultId());
                 break;
             }
             case spv::OpVariable:
