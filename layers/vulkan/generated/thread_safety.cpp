@@ -8859,18 +8859,6 @@ void Device::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapch
     FinishReadObject(swapchain, record_obj.location);
 }
 
-void Device::PreCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                             const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
-    StartReadObjectParentInstance(device, record_obj.location);
-    StartReadObject(swapchain, record_obj.location);
-}
-
-void Device::PostCallRecordSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                              const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
-    FinishReadObjectParentInstance(device, record_obj.location);
-    FinishReadObject(swapchain, record_obj.location);
-}
-
 void Device::PreCallRecordGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
                                               VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);

@@ -70,6 +70,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
             'vkQueuePresentKHR',
             'vkWaitForPresentKHR',
             'vkWaitForPresent2KHR',
+            'vkSetLatencyMarkerNV',
             'vkCreatePipelineBinariesKHR',
         ]
 
