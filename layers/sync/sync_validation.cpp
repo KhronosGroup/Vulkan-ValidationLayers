@@ -2285,87 +2285,15 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     if (!syncval_settings.full_validation) {
         return skip;
     }
-    std::lock_guard lock_guard(queue_mutex_);
-    skip |= const_cast<SyncValidator*>(this)->ProcessQueuePresent(queue, pPresentInfo, error_obj);
-    return skip;
-}
-
-bool SyncValidator::ProcessQueuePresent(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, const ErrorObject& error_obj) {
-    bool skip = false;
-
     const QueueId queue_id = GetQueueId(queue);
     if (queue_id == kQueueIdInvalid) {
         return skip;
     }
-    QueueState& queue_state = GetQueueState(queue_id);
-    const uint64_t submit_id = queue_state.ReserveSubmitId();
-
-    BatchContextPtr last_batch = queue_state.LastBatch();
-    BatchContextPtr batch(std::make_shared<QueueBatchContext>(*this, queue_state));
-
-    const auto wait_semaphores = vvl::make_span(pPresentInfo->pWaitSemaphores, pPresentInfo->waitSemaphoreCount);
-    const auto swapchains = vvl::make_span(pPresentInfo->pSwapchains, pPresentInfo->swapchainCount);
-
-    PresentedImages presented_images = SetupPresentInfo(*pPresentInfo, batch);
-
-    SignalsUpdate signals_update(*this);
-    auto resolved_batches = batch->ResolvePresentWaits(wait_semaphores, presented_images, signals_update);
-
-    // Import the previous batch information
-    if (last_batch && !vvl::Contains(resolved_batches, last_batch)) {
-        batch->ResolveLastBatch(last_batch);
-        resolved_batches.emplace_back(std::move(last_batch));
-    }
-
-    // The purpose of keeping return value is to ensure async batches are alive during validation.
-    // Validation accesses raw pointer to async contexts stored in AsyncReference.
-    const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
-
-    // Convert present tags to global range
-    const ResourceUsageTag global_range_start = batch->SetupBatchTags(uint32_t(presented_images.size()));
-    for (PresentedImage& presented : presented_images) {
-        presented.tag += global_range_start;
-    }
-
-    skip |= batch->DoQueuePresentValidate(error_obj.location, swapchains, presented_images);
-    batch->DoPresentOperations(presented_images);
-    batch->LogPresentOperations(presented_images, submit_id);
-
-    // Update state if there are no validation errors
-    if (!skip) {
-        stats.UpdateAccessStats(*this);
-        stats.UpdateMemoryStats();
-        queue_state.SetLastBatch(std::move(batch));
-        ApplySignalsUpdate(signals_update, queue_state.LastBatch());
-        for (auto& presented : presented_images) {
-            auto swapchain = Get<vvl::Swapchain>(swapchains[presented.swapchain_index]);
-            if (!vvl::StateObject::Invalid(swapchain)) {
-                SubState(*swapchain).RecordPresentedImage(std::move(presented));
-            }
-        }
-    }
+    std::lock_guard lock_guard(queue_mutex_);
+    SyncValidator& validator = *const_cast<SyncValidator*>(this);
+    QueuePresentCommand command(validator, queue_id, *pPresentInfo);
+    skip |= validator.ProcessQueueCommand(std::move(command));
     return skip;
-}
-
-PresentedImages SyncValidator::SetupPresentInfo(const VkPresentInfoKHR& present_info, const BatchContextPtr& batch) {
-    PresentedImages presented_images;
-    presented_images.reserve(present_info.swapchainCount);
-
-    for (uint32_t i = 0; i < present_info.swapchainCount; i++) {
-        auto swapchain = Get<vvl::Swapchain>(present_info.pSwapchains[i]);
-        if (vvl::StateObject::Invalid(swapchain)) {
-            continue;
-        }
-        // Allocate a tag per presented image because acquire wait operations identify
-        // present write by exact tag. These initial tags will be offset by the global tag
-        const ResourceUsageTag tag = presented_images.size();
-
-        PresentedImage presented(*swapchain, batch, present_info.pImageIndices[i], i, tag);
-        if (presented.image) {
-            presented_images.emplace_back(std::move(presented));
-        }
-    }
-    return presented_images;
 }
 
 void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
