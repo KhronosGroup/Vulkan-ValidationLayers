@@ -227,7 +227,10 @@ def RunVVLTests(args):
             '*AndroidHardwareBuffer.*',
             '*AndroidExternalResolve.*',
             # WSI as it is ran separately
-            '*Wsi.*'
+            '*Wsi.*',
+            # GPU-AV and DebugPrintf tests are skipped on the Mock ICD
+            '*GpuAV*',
+            '*DebugPrintf*'
         ]
 
     common_ci.RunShellCmd(f'{cmd_prefix}{lvt_cmd} {GTestFilter(positive, negative)}', env=lvt_env)
