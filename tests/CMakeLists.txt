@@ -327,6 +327,7 @@ set(TEST_SOURCES
     unit/video_encode_feedback2_positive.cpp
     unit/video_encode_quantization_map.cpp
     unit/video_encode_quantization_map_positive.cpp
+    unit/video_encode_rgb_conversion.cpp
     unit/viewport_inheritance.cpp
     unit/wsi.cpp
     unit/wsi_positive.cpp

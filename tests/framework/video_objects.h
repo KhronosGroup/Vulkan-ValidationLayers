@@ -105,7 +105,9 @@ class VideoConfig {
 
     VkVideoCapabilitiesKHR* Caps() { return caps_.ptr(); }
     const VkVideoCapabilitiesKHR* Caps() const { return caps_.ptr(); }
-    const VkVideoDecodeCapabilitiesKHR* DecodeCaps() const { return vku::FindStructInPNextChain<VkVideoDecodeCapabilitiesKHR>(caps_.pNext); }
+    const VkVideoDecodeCapabilitiesKHR* DecodeCaps() const {
+        return vku::FindStructInPNextChain<VkVideoDecodeCapabilitiesKHR>(caps_.pNext);
+    }
     const VkVideoDecodeH264CapabilitiesKHR* DecodeCapsH264() const {
         assert(profile_.videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR);
         return vku::FindStructInPNextChain<VkVideoDecodeH264CapabilitiesKHR>(caps_.pNext);
@@ -141,6 +143,9 @@ class VideoConfig {
     }
     const VkVideoEncodeFeedback2CapabilitiesKHR* EncodeFeedback2Caps() const {
         return vku::FindStructInPNextChain<VkVideoEncodeFeedback2CapabilitiesKHR>(caps_.pNext);
+    }
+    const VkVideoEncodeRgbConversionCapabilitiesVALVE* EncodeRgbConversionCaps() const {
+        return vku::FindStructInPNextChain<VkVideoEncodeRgbConversionCapabilitiesVALVE>(caps_.pNext);
     }
 
     const VkVideoEncodeAV1CapabilitiesKHR* EncodeCapsAV1() const {
@@ -259,6 +264,36 @@ class VideoConfig {
     }
 
     VkVideoEncodeIntraRefreshModeFlagBitsKHR GetVideoEncodeIntraRefreshMode() const { return intra_refresh_mode_; }
+
+    bool PerformsEncodeRgbConversion() const {
+        auto rgb_profile = vku::FindStructInPNextChain<VkVideoEncodeProfileRgbConversionInfoVALVE>(profile_.pNext);
+        return rgb_profile && rgb_profile->performEncodeRgbConversion;
+    }
+
+    void SetEncodeRgbConversionProfile() {
+        auto rgb_profile = new vku::safe_VkVideoEncodeProfileRgbConversionInfoVALVE();
+        rgb_profile->performEncodeRgbConversion = VK_TRUE;
+        SetCodecProfile(rgb_profile);
+    }
+
+    void SetEncodeRgbConversionSession() {
+        const auto* rgb_caps = EncodeRgbConversionCaps();
+        assert(rgb_caps != nullptr);
+        auto rgb_session_info = new vku::safe_VkVideoEncodeSessionRgbConversionCreateInfoVALVE();
+        rgb_session_info->rgbModel = static_cast<VkVideoEncodeRgbModelConversionFlagBitsVALVE>(LowestBit(rgb_caps->rgbModels));
+        rgb_session_info->rgbRange = static_cast<VkVideoEncodeRgbRangeCompressionFlagBitsVALVE>(LowestBit(rgb_caps->rgbRanges));
+        rgb_session_info->xChromaOffset =
+            static_cast<VkVideoEncodeRgbChromaOffsetFlagBitsVALVE>(LowestBit(rgb_caps->xChromaOffsets));
+        rgb_session_info->yChromaOffset =
+            static_cast<VkVideoEncodeRgbChromaOffsetFlagBitsVALVE>(LowestBit(rgb_caps->yChromaOffsets));
+        rgb_session_info->pNext = session_create_info_.pNext;
+        session_create_info_.pNext = rgb_session_info;
+    }
+
+    VkVideoEncodeSessionRgbConversionCreateInfoVALVE* EncodeRgbConversionSessionInfo() {
+        return const_cast<VkVideoEncodeSessionRgbConversionCreateInfoVALVE*>(
+            vku::FindStructInPNextChain<VkVideoEncodeSessionRgbConversionCreateInfoVALVE>(session_create_info_.pNext));
+    }
 
     void SetCodecCapsChain(void* codec_chain) {
         assert(caps_.pNext == nullptr);
@@ -509,6 +544,8 @@ class VideoConfig {
     std::vector<vku::safe_VkVideoFormatPropertiesKHR> quant_delta_map_format_props_{};
     std::vector<vku::safe_VkVideoFormatPropertiesKHR> emphasis_map_format_props_{};
     VkVideoEncodeIntraRefreshModeFlagBitsKHR intra_refresh_mode_{VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_NONE_KHR};
+
+    static uint32_t LowestBit(uint32_t mask) { return mask & (~mask + 1); }
 
     static bool IsTestableVideoFormat(const VkVideoFormatPropertiesKHR& format) {
         return format.imageTiling == VK_IMAGE_TILING_LINEAR || format.imageTiling == VK_IMAGE_TILING_OPTIMAL;
@@ -1411,7 +1448,8 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_h264.std_setup_reference_info = {};
 
-                codec_info_.decode_h264.dpb_slot_info.resize(references_.size(), vku::InitStruct<VkVideoDecodeH264DpbSlotInfoKHR>());
+                codec_info_.decode_h264.dpb_slot_info.resize(references_.size(),
+                                                             vku::InitStruct<VkVideoDecodeH264DpbSlotInfoKHR>());
                 codec_info_.decode_h264.std_reference_info.resize(references_.size(), {});
 
                 for (size_t i = 0; i < references_.size(); ++i) {
@@ -1441,7 +1479,8 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_h265.std_setup_reference_info = {};
 
-                codec_info_.decode_h265.dpb_slot_info.resize(references_.size(), vku::InitStruct<VkVideoDecodeH265DpbSlotInfoKHR>());
+                codec_info_.decode_h265.dpb_slot_info.resize(references_.size(),
+                                                             vku::InitStruct<VkVideoDecodeH265DpbSlotInfoKHR>());
                 codec_info_.decode_h265.std_reference_info.resize(references_.size(), {});
 
                 for (size_t i = 0; i < references_.size(); ++i) {
@@ -3168,6 +3207,7 @@ class VkVideoLayerTest : public VkLayerTest {
         AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_AV1_EXTENSION_NAME);
 
         AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_FEEDBACK_2_EXTENSION_NAME);
+        AddOptionalExtensions(VK_VALVE_VIDEO_ENCODE_RGB_CONVERSION_EXTENSION_NAME);
 
         for (auto feature : required_features_) {
             VkLayerTest::AddRequiredFeature(feature);
@@ -3238,6 +3278,8 @@ class VkVideoLayerTest : public VkLayerTest {
     const VideoConfig& GetConfigEncodeH265() const { return GetConfig(configs_encode_h265_); }
     const std::vector<VideoConfig>& GetConfigsEncodeAV1() const { return configs_encode_av1_; }
     const VideoConfig& GetConfigEncodeAV1() const { return GetConfig(configs_encode_av1_); }
+    const std::vector<VideoConfig>& GetConfigsEncodeRgbConversion() const { return configs_encode_rgb_conversion_; }
+    const VideoConfig& GetConfigEncodeRgbConversion() const { return GetConfig(configs_encode_rgb_conversion_); }
 
     const VideoConfig& GetConfig(const std::vector<VideoConfig>& configs) const {
         return configs.empty() ? default_config_ : configs[0];
@@ -3637,6 +3679,39 @@ class VkVideoLayerTest : public VkLayerTest {
         auto encode_feedback2_caps = new vku::safe_VkVideoEncodeFeedback2CapabilitiesKHR();
         encode_feedback2_caps->pNext = encode_caps->pNext;
         encode_caps->pNext = encode_feedback2_caps;
+
+        if (IsExtensionsEnabled(VK_VALVE_VIDEO_ENCODE_RGB_CONVERSION_EXTENSION_NAME)) {
+            auto encode_rgb_conversion_caps = new vku::safe_VkVideoEncodeRgbConversionCapabilitiesVALVE();
+            encode_rgb_conversion_caps->pNext = encode_caps->pNext;
+            encode_caps->pNext = encode_rgb_conversion_caps;
+        }
+    }
+
+    bool IsEncodeRgbConversionFeatureEnabled() {
+        if (!IsExtensionsEnabled(VK_VALVE_VIDEO_ENCODE_RGB_CONVERSION_EXTENSION_NAME)) {
+            return false;
+        }
+        VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE rgb_features = vku::InitStructHelper();
+        VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&rgb_features);
+        vk::GetPhysicalDeviceFeatures2(Gpu(), &features2);
+        return rgb_features.videoEncodeRgbConversion == VK_TRUE;
+    }
+
+    void InitEncodeRgbConversionConfigs() {
+        if (!IsEncodeRgbConversionFeatureEnabled()) {
+            return;
+        }
+
+        for (const auto* encode_configs : {&configs_encode_h264_, &configs_encode_h265_, &configs_encode_av1_}) {
+            for (const auto& config : *encode_configs) {
+                VideoConfig rgb_config = config;
+                rgb_config.SetEncodeRgbConversionProfile();
+                if (GetCodecCapabilities(rgb_config) && rgb_config.EncodeRgbConversionCaps() && GetCodecFormats(rgb_config)) {
+                    rgb_config.SetEncodeRgbConversionSession();
+                    configs_encode_rgb_conversion_.push_back(rgb_config);
+                }
+            }
+        }
     }
 
     void InitDecodeH264Configs(uint32_t queueFamilyIndex) {
@@ -4062,6 +4137,8 @@ class VkVideoLayerTest : public VkLayerTest {
             InitEncodeAV1Configs(qfi);
         }
 
+        InitEncodeRgbConversionConfigs();
+
         InitInvalidConfigs();
     }
 
@@ -4076,7 +4153,7 @@ class VkVideoLayerTest : public VkLayerTest {
     bool protected_no_fault_supported_{false};
     std::unordered_set<vkt::Feature> required_features_{vkt::Feature::synchronization2};
     std::unordered_set<vkt::Feature> optional_features_{vkt::Feature::videoEncodeAV1, vkt::Feature::videoDecodeVP9,
-                                                        vkt::Feature::videoEncodeFeedback2};
+                                                        vkt::Feature::videoEncodeFeedback2, vkt::Feature::videoEncodeRgbConversion};
 
     VideoConfig default_config_{};
     VideoConfig config_invalid_{};
@@ -4097,6 +4174,7 @@ class VkVideoLayerTest : public VkLayerTest {
     std::vector<VideoConfig> configs_encode_h264_{};
     std::vector<VideoConfig> configs_encode_h265_{};
     std::vector<VideoConfig> configs_encode_av1_{};
+    std::vector<VideoConfig> configs_encode_rgb_conversion_{};
 };
 
 class VkVideoSyncLayerTest : public VkVideoLayerTest {
