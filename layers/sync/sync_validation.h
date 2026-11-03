@@ -17,10 +17,6 @@
 
 #pragma once
 
-#include <memory>
-#include <vulkan/vulkan.h>
-
-#include "state_tracker/state_tracker.h"
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_command_buffer.h"
@@ -29,6 +25,8 @@
 #include "sync/sync_stats.h"
 #include "sync/sync_submit.h"
 #include "containers/limits.h"
+#include "state_tracker/state_tracker.h"
+#include <memory>
 
 namespace syncval {
 // sync validation has no instance-level functionality
@@ -114,7 +112,14 @@ class SyncValidator : public vvl::DeviceProxy {
 
     void UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo* infos);
 
-    bool ProcessQueueCommand(QueueCommand&& command);
+    template <typename Command>
+    bool ProcessQueueCommand(Command&& command) {
+        if (retire_mode_) {
+            queue_commands_.emplace_back(std::forward<Command>(command));
+            return false;
+        }
+        return command.Execute(*this);
+    }
     void ExecuteQueueCommands();
 
     QueueId GetQueueId(VkQueue queue) const;

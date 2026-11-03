@@ -17,9 +17,10 @@
 
 #pragma once
 
+#include "sync/sync_common.h"
+#include "containers/small_vector.h"
 #include <deque>
 #include <variant>
-#include <vulkan/vulkan.h>
 
 namespace syncval {
 
@@ -62,8 +63,14 @@ struct DeviceWaitIdleCommand {
     bool Execute(SyncValidator& validator) const;
 };
 
+struct ResourceDestroyedCommand {
+    small_vector<AccessRange, 1> ranges;
+    bool IsReady() const { return true; }
+    bool Execute(SyncValidator& validator) const;
+};
+
 using QueueCommand = std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, HostResetEventCommand,
-                                  QueueWaitIdleCommand, DeviceWaitIdleCommand>;
+                                  QueueWaitIdleCommand, DeviceWaitIdleCommand, ResourceDestroyedCommand>;
 using QueueCommandStorage = std::deque<QueueCommand>;
 
 // Whether the command is ready to execute.

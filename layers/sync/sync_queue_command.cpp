@@ -119,6 +119,16 @@ bool DeviceWaitIdleCommand::Execute(SyncValidator& validator) const {
     return false;
 }
 
+bool ResourceDestroyedCommand::Execute(SyncValidator& validator) const {
+    for (const auto& batch : validator.GetAllQueueBatchContexts()) {
+        for (const AccessRange& range : ranges) {
+            batch->OnResourceDestroyed(range);
+        }
+        batch->Trim();
+    }
+    return false;
+}
+
 bool IsQueueCommandReady(const QueueCommand& command) {
     return std::visit([](const auto& operation) { return operation.IsReady(); }, command);
 }
