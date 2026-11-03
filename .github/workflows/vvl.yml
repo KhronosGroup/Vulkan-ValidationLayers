@@ -128,14 +128,6 @@ jobs:
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
-      - name: Test Max Core
-        run: python scripts/tests.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_core.json
-      - name: Test Min Core
-        run: python scripts/tests.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
       - name: Test WSI
         run: python scripts/tests.py --test --wsi
         env:
@@ -213,6 +205,16 @@ jobs:
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
+      # The reason we have Max Core and Min Core is to catch issues with Vulkan 1.x vs Vulkan 1.y version issues.
+      # This does not need Address Sanitize on top, so only run it here.
+      - name: Test Max Core
+        run: python scripts/tests.py --test
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_core.json
+      - name: Test Min Core
+        run: python scripts/tests.py --test
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
 
   # Ensure we can build on an older Ubuntu distro with an older version of CMake.
   linux_back_compat:
