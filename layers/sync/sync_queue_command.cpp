@@ -129,6 +129,22 @@ bool ResourceDestroyedCommand::Execute(SyncValidator& validator) const {
     return false;
 }
 
+bool SemaphoreDestroyedCommand::Execute(SyncValidator& validator) const {
+    if (auto it = validator.timeline_signals_.find(semaphore); it != validator.timeline_signals_.end()) {
+        validator.stats.RemoveTimelineSignals((uint32_t)it->second.size());
+        validator.timeline_signals_.erase(it);
+    }
+    validator.host_waitable_semaphores_.erase(semaphore);
+    return false;
+}
+
+bool SwapchainDestroyedCommand::Execute(SyncValidator& validator) const {
+    for (const auto& batch : validator.GetAllQueueBatchContexts()) {
+        batch->last_synchronized_present.OnDestroySwapchain(swapchain);
+    }
+    return false;
+}
+
 bool IsQueueCommandReady(const QueueCommand& command) {
     return std::visit([](const auto& operation) { return operation.IsReady(); }, command);
 }

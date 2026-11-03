@@ -69,8 +69,21 @@ struct ResourceDestroyedCommand {
     bool Execute(SyncValidator& validator) const;
 };
 
-using QueueCommand = std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, HostResetEventCommand,
-                                  QueueWaitIdleCommand, DeviceWaitIdleCommand, ResourceDestroyedCommand>;
+struct SemaphoreDestroyedCommand {
+    VkSemaphore semaphore;
+    bool IsReady() const { return true; }
+    bool Execute(SyncValidator& validator) const;
+};
+
+struct SwapchainDestroyedCommand {
+    VkSwapchainKHR swapchain;
+    bool IsReady() const { return true; }
+    bool Execute(SyncValidator& validator) const;
+};
+
+using QueueCommand =
+    std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, HostResetEventCommand, QueueWaitIdleCommand,
+                 DeviceWaitIdleCommand, ResourceDestroyedCommand, SemaphoreDestroyedCommand, SwapchainDestroyedCommand>;
 using QueueCommandStorage = std::deque<QueueCommand>;
 
 // Whether the command is ready to execute.

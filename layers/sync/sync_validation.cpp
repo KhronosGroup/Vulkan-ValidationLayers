@@ -388,9 +388,7 @@ void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, co
 
 void SyncValidator::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                      const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
-    for (const auto& batch : GetAllQueueBatchContexts()) {
-        batch->last_synchronized_present.OnDestroySwapchain(swapchain);
-    }
+    ProcessQueueCommand(SwapchainDestroyedCommand{swapchain});
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -664,11 +662,7 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
 void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
                                                   const RecordObject& record_obj) {
     if (auto sem_state = Get<vvl::Semaphore>(semaphore); sem_state && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-        if (auto it = timeline_signals_.find(semaphore); it != timeline_signals_.end()) {
-            stats.RemoveTimelineSignals((uint32_t)it->second.size());
-            timeline_signals_.erase(it);
-        }
-        host_waitable_semaphores_.erase(semaphore);
+        ProcessQueueCommand(SemaphoreDestroyedCommand{semaphore});
     }
 }
 
