@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <vulkan/vulkan.h>
 #include "sync/sync_image_encoding.h"
 #include "containers/range.h"
 #include "generated/sync_validation_types.h"

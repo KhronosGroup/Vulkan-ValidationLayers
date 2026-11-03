@@ -328,14 +328,6 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
     }
 }
 
-bool SyncValidator::ProcessQueueCommand(QueueCommand&& command) {
-    if (retire_mode_) {
-        queue_commands_.push_back(std::move(command));
-        return false;
-    }
-    return ExecuteQueueCommand(command, *this);
-}
-
 void SyncValidator::ExecuteQueueCommands() {
     while (!queue_commands_.empty()) {
         if (!IsQueueCommandReady(queue_commands_.front())) {
@@ -378,25 +370,19 @@ void SyncValidator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer,
     if (const auto buffer_state = Get<vvl::Buffer>(buffer)) {
         const VkDeviceSize base_address = ResourceBaseAddress(*buffer_state);
         const AccessRange buffer_range(base_address, base_address + buffer_state->GetSize());
-        for (const auto& batch : GetAllQueueBatchContexts()) {
-            batch->OnResourceDestroyed(buffer_range);
-            batch->Trim();
-        }
+        ProcessQueueCommand(ResourceDestroyedCommand{{buffer_range}});
     }
 }
 
 void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
                                               const RecordObject& record_obj) {
     if (const auto image_state = Get<vvl::Image>(image)) {
-        for (const auto& batch : GetAllQueueBatchContexts()) {
-            const auto& sub_state = SubState(*image_state);
-            ImageRangeGen range_gen = sub_state.MakeImageRangeGen(image_state->full_range, false);
-            for (; range_gen->non_empty(); ++range_gen) {
-                const AccessRange subresource_range = *range_gen;
-                batch->OnResourceDestroyed(subresource_range);
-            }
-            batch->Trim();
+        ResourceDestroyedCommand command;
+        ImageRangeGen range_gen = SubState(*image_state).MakeImageRangeGen(image_state->full_range, false);
+        for (; range_gen->non_empty(); ++range_gen) {
+            command.ranges.emplace_back(*range_gen);
         }
+        ProcessQueueCommand(std::move(command));
     }
 }
 

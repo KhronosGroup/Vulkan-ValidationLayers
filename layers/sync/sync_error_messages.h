@@ -20,7 +20,6 @@
 #include "sync/sync_common.h"
 #include "sync/sync_reporting.h"
 #include "generated/vk_object_types.h"
-#include <vulkan/vulkan.h>
 #include <string>
 
 struct Location;
