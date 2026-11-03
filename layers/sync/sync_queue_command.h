@@ -22,6 +22,10 @@
 #include <deque>
 #include <variant>
 
+namespace vvl {
+class Swapchain;
+}  // namespace vvl
+
 namespace syncval {
 
 class SyncValidator;
@@ -81,9 +85,25 @@ struct SwapchainDestroyedCommand {
     bool Execute(SyncValidator& validator) const;
 };
 
-using QueueCommand =
-    std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, HostResetEventCommand, QueueWaitIdleCommand,
-                 DeviceWaitIdleCommand, ResourceDestroyedCommand, SemaphoreDestroyedCommand, SwapchainDestroyedCommand>;
+struct QueuePresentCommand {
+    struct ImageInfo {
+        std::shared_ptr<vvl::Swapchain> swapchain;
+        std::shared_ptr<const vvl::Image> image;
+        uint32_t swapchain_index;
+        uint32_t image_index;
+    };
+    QueueId queue_id;
+    small_vector<VkSemaphore, 1> wait_semaphores;
+    small_vector<ImageInfo, 1> images;  // per swapchain
+
+    QueuePresentCommand(SyncValidator& validator, QueueId queue_id, const VkPresentInfoKHR& present_info);
+    bool IsReady() const { return true; }
+    bool Execute(SyncValidator& validator) const;
+};
+
+using QueueCommand = std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, HostResetEventCommand,
+                                  QueueWaitIdleCommand, DeviceWaitIdleCommand, ResourceDestroyedCommand, SemaphoreDestroyedCommand,
+                                  SwapchainDestroyedCommand, QueuePresentCommand>;
 using QueueCommandStorage = std::deque<QueueCommand>;
 
 // Whether the command is ready to execute.

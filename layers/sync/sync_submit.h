@@ -171,21 +171,19 @@ struct TimelineHostSyncState {
 
 struct PresentedImageRecord {
     ResourceUsageTag tag;  // the global tag at presentation
-    uint32_t image_index;
     uint32_t swapchain_index;
+    uint32_t image_index;
     std::shared_ptr<const vvl::Image> image;
 };
 
 struct PresentedImage : public PresentedImageRecord {
     std::shared_ptr<QueueBatchContext> batch;
+    VkSwapchainKHR swapchain;
     ImageRangeGen range_gen;
 
     PresentedImage() = default;
-    PresentedImage(const vvl::Swapchain& swapchain, std::shared_ptr<QueueBatchContext> batch, uint32_t image_index,
-                   uint32_t swapchain_index, ResourceUsageTag present_tag);
     PresentedImage(const vvl::Swapchain& swapchain, uint32_t at_index);
 
-    void SetImage(const vvl::Swapchain& swapchain, uint32_t at_index);
     void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context, SyncFlags flags = 0) const;
 };
 using PresentedImages = std::vector<PresentedImage>;
@@ -378,8 +376,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
     // For Present
     std::vector<BatchContextPtr> ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores,
                                                      const PresentedImages& presented_images, SignalsUpdate& signals_update);
-    bool DoQueuePresentValidate(const Location& loc, vvl::span<const VkSwapchainKHR> swapchains,
-                                const PresentedImages& presented_images);
+    bool DoQueuePresentValidate(const PresentedImages& presented_images);
     void DoPresentOperations(const PresentedImages& presented_images);
     void LogPresentOperations(const PresentedImages& presented_images, uint64_t submit_index);
 

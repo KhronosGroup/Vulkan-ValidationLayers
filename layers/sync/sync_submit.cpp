@@ -541,15 +541,14 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolvePresentWaits(vvl::span<co
     return batches_resolved;
 }
 
-bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, vvl::span<const VkSwapchainKHR> swapchains,
-                                               const PresentedImages& presented_images) {
+bool QueueBatchContext::DoQueuePresentValidate(const PresentedImages& presented_images) {
     bool skip = false;
-    // Tag the presented images so record doesn't have to know the tagging scheme
+
     for (const PresentedImage& presented : presented_images) {
         ImageRangeGen range_gen = presented.range_gen;
         HazardResult hazard = access_context_.DetectHazard(range_gen, SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
         if (hazard.IsHazard()) {
-            const VulkanTypedHandle swapchain_handle(swapchains[presented.swapchain_index], kVulkanObjectTypeSwapchainKHR);
+            const VulkanTypedHandle swapchain_handle(presented.swapchain, kVulkanObjectTypeSwapchainKHR);
             const VulkanTypedHandle image_handle = vvl::StateObject::Handle(presented.image);
 
             LogObjectList objlist(queue_state_->GetQueue()->Handle(), swapchain_handle, image_handle);
@@ -562,7 +561,7 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, vvl::span<co
 
             const std::string error = sync_state_.error_messages_.PresentError(hazard, *this, vvl::Func::vkQueuePresentKHR,
                                                                                resource_description, presented.swapchain_index);
-            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, vvl::Func::vkQueuePresentKHR, error);
             if (skip) {
                 break;
             }
@@ -899,18 +898,8 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const Command
                                          const std::vector<std::string>& initial_label_stack)
     : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
 
-PresentedImage::PresentedImage(const vvl::Swapchain& swapchain, BatchContextPtr batch, uint32_t image_index,
-                               uint32_t swapchain_index, ResourceUsageTag tag)
-    : PresentedImageRecord{tag, image_index, swapchain_index, {}}, batch(std::move(batch)) {
-    SetImage(swapchain, image_index);
-}
-
 PresentedImage::PresentedImage(const vvl::Swapchain& swapchain, uint32_t at_index) : PresentedImage() {
     tag = kInvalidTag;
-    SetImage(swapchain, at_index);
-}
-
-void PresentedImage::SetImage(const vvl::Swapchain& swapchain, uint32_t at_index) {
     image_index = at_index;
     if (swapchain.Destroyed()) {
         return;

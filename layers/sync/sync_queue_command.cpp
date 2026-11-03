@@ -16,6 +16,7 @@
  */
 
 #include "sync/sync_queue_command.h"
+#include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 
 namespace syncval {
@@ -143,6 +144,90 @@ bool SwapchainDestroyedCommand::Execute(SyncValidator& validator) const {
         batch->last_synchronized_present.OnDestroySwapchain(swapchain);
     }
     return false;
+}
+
+QueuePresentCommand::QueuePresentCommand(SyncValidator& validator, QueueId queue_id, const VkPresentInfoKHR& present_info)
+    : queue_id(queue_id) {
+    assert(queue_id != kQueueIdInvalid);
+
+    wait_semaphores.reserve(present_info.waitSemaphoreCount);
+    for (VkSemaphore semaphore : vvl::make_span(present_info.pWaitSemaphores, present_info.waitSemaphoreCount)) {
+        wait_semaphores.emplace_back(semaphore);
+    }
+    images.reserve(present_info.swapchainCount);
+    for (uint32_t i = 0; i < present_info.swapchainCount; ++i) {
+        auto swapchain = validator.Get<vvl::Swapchain>(present_info.pSwapchains[i]);
+        if (!swapchain) {
+            continue;
+        }
+        const uint32_t image_index = present_info.pImageIndices[i];
+        auto image = swapchain->GetSwapChainImageShared(image_index);
+        if (!image) {
+            continue;
+        }
+        images.emplace_back(ImageInfo{std::move(swapchain), std::move(image), i, image_index});
+    }
+}
+
+bool QueuePresentCommand::Execute(SyncValidator& validator) const {
+    bool skip = false;
+    QueueState& queue_state = validator.GetQueueState(queue_id);
+    const uint64_t submit_id = queue_state.ReserveSubmitId();
+
+    BatchContextPtr last_batch = queue_state.LastBatch();
+    BatchContextPtr batch(std::make_shared<QueueBatchContext>(validator, queue_state));
+
+    PresentedImages presented_images(images.size());
+    for (uint32_t i = 0; i < images.size(); i++) {
+        const ImageInfo& image_info = images[i];
+        PresentedImage& presented = presented_images[i];
+
+        // A tag per presented image. Acquire waits identify presents by the tag.
+        // This local tag will be offset by the global tag
+        presented.tag = i;
+
+        presented.swapchain_index = image_info.swapchain_index;
+        presented.image_index = image_info.image_index;
+        presented.image = image_info.image;
+        presented.batch = batch;
+        presented.swapchain = image_info.swapchain->VkHandle();
+        presented.range_gen = SubState(*image_info.image).MakeImageRangeGen(image_info.image->full_range, false);
+    }
+
+    SignalsUpdate signals_update(validator);
+    auto resolved_batches = batch->ResolvePresentWaits(vvl::make_span(wait_semaphores), presented_images, signals_update);
+
+    // Import the previous batch information
+    if (last_batch && !vvl::Contains(resolved_batches, last_batch)) {
+        batch->ResolveLastBatch(last_batch);
+        resolved_batches.emplace_back(std::move(last_batch));
+    }
+
+    // Keep async batches alive while validation uses their contexts
+    // through raw pointers (AsyncReference::context_)
+    const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
+
+    // Convert present tags to global range
+    const ResourceUsageTag global_range_start = batch->SetupBatchTags(uint32_t(presented_images.size()));
+    for (PresentedImage& presented : presented_images) {
+        presented.tag += global_range_start;
+    }
+
+    skip |= batch->DoQueuePresentValidate(presented_images);
+    batch->DoPresentOperations(presented_images);
+    batch->LogPresentOperations(presented_images, submit_id);
+
+    // Update state if there are no validation errors
+    if (!skip) {
+        validator.stats.UpdateAccessStats(validator);
+        validator.stats.UpdateMemoryStats();
+        queue_state.SetLastBatch(std::move(batch));
+        validator.ApplySignalsUpdate(signals_update, queue_state.LastBatch());
+        for (uint32_t i = 0; i < images.size(); ++i) {
+            SubState(*images[i].swapchain).RecordPresentedImage(std::move(presented_images[i]));
+        }
+    }
+    return skip;
 }
 
 bool IsQueueCommandReady(const QueueCommand& command) {
