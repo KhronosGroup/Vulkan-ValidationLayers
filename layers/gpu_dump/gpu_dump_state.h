@@ -61,8 +61,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void DumpDescriptorHeapIndirectIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                          const VkDescriptorMappingSourceIndirectIndexEXT& map_data) const;
     void DumpDescriptorHeapIndirectIndexHeap(std::ostringstream& ss, WarnInfo& warn, const HeapView& heap, uint32_t push_offset,
-                                             uint32_t address_offset, uint32_t heap_offset, uint32_t index_stride,
-                                             uint32_t array_stride) const;
+                                             uint32_t push_address_offset, uint32_t address_offset, uint32_t heap_offset,
+                                             uint32_t index_stride, uint32_t array_stride) const;
     void DumpDescriptorHeapIndirectIndexArray(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                               const VkDescriptorMappingSourceIndirectIndexArrayEXT& map_data) const;
     void DumpDescriptorHeapIndirectIndexArrayHeap(std::ostringstream& ss, WarnInfo& warn, const HeapView& heap,
@@ -71,6 +71,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void DumpDescriptorHeapHeapData(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                     const VkDescriptorMappingSourceHeapDataEXT& map_data) const;
     void DumpDescriptorHeapPushAddress(std::ostringstream& ss, WarnInfo& warn, uint32_t pushAddressOffset) const;
+    void DumpDescriptorHeapResourceAddress(std::ostringstream& ss, WarnInfo& warn, VkDeviceAddress resource_address,
+                                           uint32_t index) const;
     void DumpDescriptorHeapIndirectAddress(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
                                            const VkDescriptorMappingSourceIndirectAddressEXT& map_data) const;
     void DumpDescriptorHeapShaderRecordIndex(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,

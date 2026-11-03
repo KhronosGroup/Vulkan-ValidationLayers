@@ -181,7 +181,7 @@ struct WarnInfo {
     void IndirectUniformUsage(VkDeviceAddress address);
     void ResourceBufferUsage(VkDeviceAddress address);
     void AlignmentHeapUBO(VkDeviceAddress address);
-    void AlignmentIndirectAddress(VkDeviceAddress address);
+    void AlignmentIndirectAddress(VkDeviceAddress address, uint32_t index);
     void AlignmentDescriptor(const HeapView& heap, VkDeviceAddress address);
     void ArrayStride(const HeapView& heap, uint32_t array_stride);
     void IndexOOB(VkDeviceSize first_oob_index);
@@ -279,7 +279,7 @@ void WarnInfo::AlignmentHeapUBO(VkDeviceAddress address) {
     }
 };
 
-void WarnInfo::AlignmentIndirectAddress(VkDeviceAddress address) {
+void WarnInfo::AlignmentIndirectAddress(VkDeviceAddress address, uint32_t index) {
     VkDeviceSize alignment = 0;
     const char* alignment_name = nullptr;
     if (dump.resource_variable.is_uniform_buffer) {
@@ -295,7 +295,11 @@ void WarnInfo::AlignmentIndirectAddress(VkDeviceAddress address) {
 
     if (alignment != 0 && !IsPointerAligned(address, alignment)) {
         found = true;
-        ss << new_bullet_line << "[WARNING] MISALIGNED - the resource address is not aligned to ";
+        ss << new_bullet_line << "[WARNING] MISALIGNED - the resource address ";
+        if (index != vvl::kNoIndex32) {
+            ss << "[" << index << "] ";
+        }
+        ss << "is not aligned to ";
         if (alignment_name) {
             ss << alignment_name << " ";
         }
@@ -708,7 +712,8 @@ void CommandBufferSubState::DumpDescriptorHeapPushIndex(std::ostringstream& ss, 
 }
 
 void CommandBufferSubState::DumpDescriptorHeapIndirectIndexHeap(std::ostringstream& ss, WarnInfo& warn, const HeapView& heap,
-                                                                uint32_t push_offset, uint32_t address_offset, uint32_t heap_offset,
+                                                                uint32_t push_offset, uint32_t push_address_offset,
+                                                                uint32_t address_offset, uint32_t heap_offset,
                                                                 uint32_t index_stride, uint32_t array_stride) const {
     const DumpInfo& dump = warn.dump;
     const bool using_combined_index = dump.combined_index && heap.is_combined_sampler;
@@ -717,11 +722,33 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndexHeap(std::ostringstre
         ss << " (using pushOffset)";
     }
 
-    const VkDeviceAddress final_indirect_address = push_indirect_address + address_offset;
+    int32_t extra_address_offset = 0;
+    const bool has_extra_address_offset = push_address_offset != vvl::kNoIndex32;
+    if (has_extra_address_offset) {
+        extra_address_offset = (int32_t)GetPushData(ss, warn, push_address_offset, 4);
+        if (extra_address_offset < 0) {
+            ss << " (" << extra_address_offset << " as an int32_t)";
+        }
+        if (using_combined_index) {
+            ss << " (using pushAddressOffset)";
+        }
+    }
+
+    const int64_t byte_offset = (int64_t)address_offset + extra_address_offset;
+    const int64_t index_byte_offset = (byte_offset / 4) * 4;
+    const VkDeviceAddress final_indirect_address = push_indirect_address + index_byte_offset;
     ss << new_bullet_line << "indirectAddress: " << Hex(final_indirect_address) << " (" << Hex(push_indirect_address) << " + "
-       << Hex(address_offset) << ")";
+       << Hex(address_offset);
+    if (has_extra_address_offset) {
+        ss << (extra_address_offset < 0 ? " - " : " + ") << std::abs((int64_t)extra_address_offset);
+    }
+    ss << ")";
     if (using_combined_index) {
         ss << " (using addressOffset)";
+    }
+    if (byte_offset != index_byte_offset) {
+        ss << new_sub_line << "(addressOffset + extraAddressOffset) is " << byte_offset
+           << ", which is not a multiple of 4, so the uint32_t at offset " << index_byte_offset << " is read";
     }
 
     warn.AlignmentScalarIndirect(final_indirect_address, 4);
@@ -761,8 +788,8 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
     ss << "pushOffset: " << map_data.pushOffset << ", addressOffset: " << Hex(map_data.addressOffset)
        << ", heapOffset: " << Hex(map_data.heapOffset) << ", heapIndexStride: " << map_data.heapIndexStride
        << ", heapArrayStride: " << map_data.heapArrayStride;
-    DumpDescriptorHeapIndirectIndexHeap(ss, warn, dump.heap, map_data.pushOffset, map_data.addressOffset, map_data.heapOffset,
-                                        map_data.heapIndexStride, map_data.heapArrayStride);
+    DumpDescriptorHeapIndirectIndexHeap(ss, warn, dump.heap, map_data.pushOffset, vvl::kNoIndex32, map_data.addressOffset,
+                                        map_data.heapOffset, map_data.heapIndexStride, map_data.heapArrayStride);
 
     if (dump.inspect_sampler) {
         ss << new_bullet_line << "samplerPushOffset: " << map_data.samplerPushOffset
@@ -772,7 +799,7 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectIndex(std::ostringstream& 
            << ", samplerHeapArrayStride: " << map_data.samplerHeapArrayStride
            << ", useCombinedImageSamplerIndex: " << (map_data.useCombinedImageSamplerIndex ? "true" : "false");
         DumpDescriptorHeapIndirectIndexHeap(
-            ss, warn, dump.sampler_heap, dump.combined_index ? map_data.pushOffset : map_data.samplerPushOffset,
+            ss, warn, dump.sampler_heap, dump.combined_index ? map_data.pushOffset : map_data.samplerPushOffset, vvl::kNoIndex32,
             dump.combined_index ? map_data.addressOffset : map_data.samplerAddressOffset, map_data.samplerHeapOffset,
             map_data.samplerHeapIndexStride, map_data.samplerHeapArrayStride);
     }
@@ -936,19 +963,23 @@ void CommandBufferSubState::DumpDescriptorHeapHeapData(std::ostringstream& ss, D
     warn.FindReservedIndexes(dump.heap, final_address, 0, 1);
 }
 
+void CommandBufferSubState::DumpDescriptorHeapResourceAddress(std::ostringstream& ss, WarnInfo& warn,
+                                                              VkDeviceAddress resource_address, uint32_t index) const {
+    warn.AlignmentIndirectAddress(resource_address, index);
+
+    if (warn.dump.resource_variable.is_acceleration_structure) {
+        warn.found |= dev_data.ListAccelerationStructures(ss, resource_address, 3, true);
+    } else {
+        warn.ResourceBufferUsage(resource_address);
+        warn.found |= dev_data.ListBuffers(ss, resource_address, 3, true);
+    }
+}
+
 void CommandBufferSubState::DumpDescriptorHeapPushAddress(std::ostringstream& ss, WarnInfo& warn,
                                                           uint32_t pushAddressOffset) const {
     ss << "pushAddressOffset: " << pushAddressOffset;
     VkDeviceSize indirect_address = GetPushData(ss, warn, pushAddressOffset, 8);
-
-    warn.AlignmentIndirectAddress(indirect_address);
-
-    if (warn.dump.resource_variable.is_acceleration_structure) {
-        warn.found |= dev_data.ListAccelerationStructures(ss, indirect_address, 3, true);
-    } else {
-        warn.ResourceBufferUsage(indirect_address);
-        warn.found |= dev_data.ListBuffers(ss, indirect_address, 3, true);
-    }
+    DumpDescriptorHeapResourceAddress(ss, warn, indirect_address, vvl::kNoIndex32);
 }
 
 void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream& ss, DumpInfo& dump, WarnInfo& warn,
@@ -956,28 +987,58 @@ void CommandBufferSubState::DumpDescriptorHeapIndirectAddress(std::ostringstream
     ss << "pushOffset: " << map_data.pushOffset << ", addressOffset: " << Hex(map_data.addressOffset);
     VkDeviceSize push_indirect_address = GetPushData(ss, warn, map_data.pushOffset, 8);
 
-    VkDeviceAddress final_indirect_address = push_indirect_address + map_data.addressOffset;
+    const VkDeviceSize address_offset = AddBindingOffset(ss, dump, map_data.addressOffset, sizeof(VkDeviceAddress));
+    VkDeviceAddress final_indirect_address = push_indirect_address + address_offset;
 
     ss << new_bullet_line << "indirectAddress: " << Hex(final_indirect_address) << " (" << Hex(push_indirect_address) << " + "
-       << Hex(map_data.addressOffset) << ")";
+       << Hex(address_offset) << ")";
+    if (dump.is_array) {
+        ss << " + (descriptor_index * sizeof(VkDeviceAddress))";
+    }
 
     warn.AlignmentScalarIndirect(final_indirect_address, 8);
     warn.IndirectUniformUsage(final_indirect_address);
     warn.found |= dev_data.ListBuffers(ss, final_indirect_address, 3, true);
 
-    std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
-    if (!indirect_address_data.empty()) {
-        const VkDeviceAddress resource_address = *((VkDeviceAddress*)indirect_address_data.data());
-        ss << new_bullet_line << "Resource address: " << Hex(resource_address);
-
-        warn.AlignmentIndirectAddress(resource_address);
-
-        if (warn.dump.resource_variable.is_acceleration_structure) {
-            warn.found |= dev_data.ListAccelerationStructures(ss, resource_address, 3, true);
-        } else {
-            warn.ResourceBufferUsage(resource_address);
-            warn.found |= dev_data.ListBuffers(ss, resource_address, 3, true);
+    if (!dump.is_array) {
+        std::vector<uint8_t> indirect_address_data = dev_data.CopyDataFromMemory(final_indirect_address, 8);
+        if (!indirect_address_data.empty()) {
+            const VkDeviceAddress resource_address = *((VkDeviceAddress*)indirect_address_data.data());
+            ss << new_bullet_line << "Resource address: " << Hex(resource_address);
+            DumpDescriptorHeapResourceAddress(ss, warn, resource_address, vvl::kNoIndex32);
         }
+        return;
+    }
+
+    const vvl::Buffer* buffer_state = GetLargestBuffer(dev_data, final_indirect_address);
+    if (!buffer_state) {
+        assert(warn.found);
+        return;
+    }
+
+    const uint32_t available_slots =
+        (uint32_t)((buffer_state->DeviceAddressRange().end - final_indirect_address) / sizeof(VkDeviceAddress));
+    if (dump.is_runtime_array) {
+        ss << new_sub_line << "Any descriptor index starting at [" << available_slots
+           << "] will be invalid as there are no more resource addresses inside " << dev_data.FormatHandle(buffer_state->Handle());
+        return;
+    }
+
+    uint32_t search_slots = dump.array_length;
+    if (dump.array_length > available_slots) {
+        warn.IndexOOB(available_slots);
+        search_slots = available_slots;
+    }
+
+    std::vector<uint8_t> indirect_address_data =
+        dev_data.CopyDataFromMemory(final_indirect_address, search_slots * sizeof(VkDeviceAddress));
+    if (indirect_address_data.empty()) {
+        return;
+    }
+    const VkDeviceAddress* resource_addresses = (VkDeviceAddress*)indirect_address_data.data();
+    for (uint32_t i = 0; i < search_slots; i++) {
+        ss << new_bullet_line << "Resource address [" << i << "]: " << Hex(resource_addresses[i]);
+        DumpDescriptorHeapResourceAddress(ss, warn, resource_addresses[i], i);
     }
 }
 
@@ -1786,7 +1847,7 @@ bool CommandBufferSubState::DumpDescriptorHeap(std::ostringstream& ss, const Las
             continue;
         } else if (mapping_info_map.empty() && has_non_heap) {
             // Still want to print the untyped heap accesses below
-            ss << "    - No VkDescriptorSetAndBindingMappingEXT found for this shader\n";
+            ss << "    - No descriptor mappings found for this shader\n";
         }
 
         for (auto& [set_index, mapping_info_list] : mapping_info_map) {
