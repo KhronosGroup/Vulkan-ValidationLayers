@@ -45,6 +45,9 @@ target_sources(android_glue PRIVATE
     ${native_app_glue_dir}/android_native_app_glue.h
 )
 
+# Required for ALooper, AConfiguration, AInputQueue, ANativeActivity, etc.
+target_link_libraries(android_glue PUBLIC android)
+
 # vk_test_framework needs this because that is where we have #include <android_native_app_glue.h>
 #
 # Because vk_test_framework is a static library, we still need vk_layer_validation_tests to have it order to resolve the symbols

@@ -731,7 +731,9 @@ if (ANDROID)
     target_link_libraries(VkLayer_utils PUBLIC log)
 
     # Required for AHardwareBuffer_describe. Marking as PUBLIC since the tests use AHardwareBuffer_describe as well.
-    target_link_libraries(VkLayer_utils PUBLIC android)
+    # Use libnativewindow rather than libandroid, since libandroid pulls in many Android framework libraries
+    # which can fail to load in some processes.
+    target_link_libraries(VkLayer_utils PUBLIC nativewindow)
 
     install(TARGETS vvl DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
