@@ -70,6 +70,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
             VkVideoDecodeUsageInfoKHR decode_usage;
             VkVideoEncodeUsageInfoKHR encode_usage;
         };
+        VkVideoEncodeProfileRgbConversionInfoVALVE encode_rgb_conversion;
         union {
             VkVideoDecodeH264ProfileInfoKHR decode_h264;
             VkVideoDecodeH265ProfileInfoKHR decode_h265;
@@ -104,6 +105,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
                 VkVideoEncodeQuantizationMapCapabilitiesKHR quantization_map;
                 VkVideoEncodeIntraRefreshCapabilitiesKHR intra_refresh;
                 VkVideoEncodeFeedback2CapabilitiesKHR feedback2;
+                VkVideoEncodeRgbConversionCapabilitiesVALVE rgb_conversion;
             } encode_ext;
         };
     };
@@ -163,7 +165,9 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
             if (match && lhs->profile_.is_encode) {
                 match = match && lhs->profile_.encode_usage.videoUsageHints == rhs->profile_.encode_usage.videoUsageHints &&
                         lhs->profile_.encode_usage.videoContentHints == rhs->profile_.encode_usage.videoContentHints &&
-                        lhs->profile_.encode_usage.tuningMode == rhs->profile_.encode_usage.tuningMode;
+                        lhs->profile_.encode_usage.tuningMode == rhs->profile_.encode_usage.tuningMode &&
+                        lhs->profile_.encode_rgb_conversion.performEncodeRgbConversion ==
+                            rhs->profile_.encode_rgb_conversion.performEncodeRgbConversion;
             }
 
             if (match) {
@@ -220,7 +224,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
 
             if (desc->profile_.is_encode) {
                 hc << desc->profile_.encode_usage.videoUsageHints << desc->profile_.encode_usage.videoContentHints
-                   << desc->profile_.encode_usage.tuningMode;
+                   << desc->profile_.encode_usage.tuningMode << desc->profile_.encode_rgb_conversion.performEncodeRgbConversion;
             }
 
             switch (desc->profile_.base.videoCodecOperation) {

@@ -174,6 +174,15 @@ bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const* profile) {
             } else {
                 profile_.encode_usage = vku::InitStructHelper();
             }
+
+            auto rgb_conversion = vku::FindStructInPNextChain<VkVideoEncodeProfileRgbConversionInfoVALVE>(profile->pNext);
+            if (rgb_conversion) {
+                profile_.encode_rgb_conversion = *rgb_conversion;
+                profile_.encode_rgb_conversion.pNext = profile_.base.pNext;
+                profile_.base.pNext = &profile_.encode_rgb_conversion;
+            } else {
+                profile_.encode_rgb_conversion = vku::InitStructHelper();
+            }
         }
     } else {
         profile_.valid = false;
@@ -248,6 +257,9 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
 
         capabilities_.encode_ext.feedback2 = vku::InitStructHelper(capabilities_.base.pNext);
         capabilities_.base.pNext = &capabilities_.encode_ext.feedback2;
+
+        capabilities_.encode_ext.rgb_conversion = vku::InitStructHelper(capabilities_.base.pNext);
+        capabilities_.base.pNext = &capabilities_.encode_ext.rgb_conversion;
     }
 
     VkResult result = DispatchGetPhysicalDeviceVideoCapabilitiesKHR(physical_device, &profile_.base, &capabilities_.base);

@@ -1085,6 +1085,36 @@ bool core::ValidateVideoProfileInfo(const StateObject& state, const VkVideoProfi
             break;
     }
 
+    if constexpr (std::is_same_v<StateObject, CoreChecks>) {
+        using Func = vvl::Func;
+        if (vku::FindStructInPNextChain<VkVideoEncodeProfileRgbConversionInfoVALVE>(profile->pNext) &&
+            !state.enabled_features.videoEncodeRgbConversion) {
+            const char* vuid = kVUIDUndefined;
+            switch (loc.function) {
+                case Func::vkCreateVideoSessionKHR:
+                    vuid = "VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-10923";
+                    break;
+                case Func::vkCreateImage:
+                    vuid = "VUID-VkImageCreateInfo-pNext-10920";
+                    break;
+                case Func::vkCreateBuffer:
+                    vuid = "VUID-VkBufferCreateInfo-pNext-10919";
+                    break;
+                case Func::vkCreateQueryPool:
+                    vuid = "VUID-VkQueryPoolCreateInfo-pNext-10918";
+                    break;
+                default:
+                    // Unhandled call site
+                    assert(false);
+                    break;
+            }
+            skip |= state.LogError(vuid, error_obj.objlist, loc.dot(Field::pNext),
+                                   "chain contains a VkVideoEncodeProfileRgbConversionInfoVALVE structure but the "
+                                   "videoEncodeRgbConversion device feature is not enabled.\n%s",
+                                   PrintPNextChain(vvl::Struct::VkVideoProfileInfoKHR, profile->pNext).c_str());
+        }
+    }
+
     return skip;
 }
 template bool core::ValidateVideoProfileInfo<core::Instance>(const core::Instance& state, const VkVideoProfileInfoKHR* profile,
@@ -3806,6 +3836,13 @@ bool CoreChecks::ValidateReferencePictureUseCount(const vvl::CommandBuffer& cb_s
     return skip;
 }
 
+bool core::Instance::IsVideoEncodeRgbConversionSupported(VkPhysicalDevice physicalDevice) const {
+    VkPhysicalDeviceVideoEncodeRgbConversionFeaturesVALVE rgb_conversion_features = vku::InitStructHelper();
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&rgb_conversion_features);
+    DispatchGetPhysicalDeviceFeatures2Helper(api_version, physicalDevice, &features2);
+    return rgb_conversion_features.videoEncodeRgbConversion == VK_TRUE;
+}
+
 bool core::Instance::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
                                                                           const VkVideoProfileInfoKHR* pVideoProfile,
                                                                           VkVideoCapabilitiesKHR* pCapabilities,
@@ -3892,6 +3929,15 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhys
                          caps_pnext_msg, "VkVideoEncodeCapabilitiesKHR");
     }
 
+    if (vku::FindStructInPNextChain<VkVideoEncodeProfileRgbConversionInfoVALVE>(pVideoProfile->pNext) &&
+        !IsVideoEncodeRgbConversionSupported(physicalDevice)) {
+        skip |= LogError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pNext-10921", physicalDevice,
+                         error_obj.location.dot(Field::pVideoProfile).dot(Field::pNext),
+                         "chain contains a VkVideoEncodeProfileRgbConversionInfoVALVE structure but the "
+                         "videoEncodeRgbConversion feature is not supported by the physical device.\n%s",
+                         PrintPNextChain(Struct::VkVideoProfileInfoKHR, pVideoProfile->pNext).c_str());
+    }
+
     return skip;
 }
 
@@ -3906,6 +3952,22 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
             ValidateVideoProfileListInfo(*this, video_profiles, error_obj,
                                          error_obj.location.dot(Field::pVideoFormatInfo).pNext(Struct::VkVideoProfileListInfoKHR),
                                          false, nullptr, false, nullptr);
+
+        if (!IsVideoEncodeRgbConversionSupported(physicalDevice)) {
+            for (uint32_t i = 0; i < video_profiles->profileCount; ++i) {
+                if (vku::FindStructInPNextChain<VkVideoEncodeProfileRgbConversionInfoVALVE>(video_profiles->pProfiles[i].pNext)) {
+                    skip |= LogError("VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pNext-10922", physicalDevice,
+                                     error_obj.location.dot(Field::pVideoFormatInfo)
+                                         .pNext(Struct::VkVideoProfileListInfoKHR)
+                                         .dot(Field::pProfiles, i)
+                                         .dot(Field::pNext),
+                                     "chain contains a VkVideoEncodeProfileRgbConversionInfoVALVE structure but the "
+                                     "videoEncodeRgbConversion feature is not supported by the physical device.\n%s",
+                                     PrintPNextChain(Struct::VkVideoProfileInfoKHR, video_profiles->pProfiles[i].pNext).c_str());
+                    break;
+                }
+            }
+        }
     } else {
         const char* msg = video_profiles ? "profileCount is zero in the VkVideoProfileListInfoKHR structure included in the "
                                            "pNext chain of pVideoFormatInfo."
@@ -4243,10 +4305,66 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
                     }
                 }
             }
+
+            if (const auto* rgb_conversion_info =
+                    vku::FindStructInPNextChain<VkVideoEncodeSessionRgbConversionCreateInfoVALVE>(pCreateInfo->pNext)) {
+                const auto& rgb_caps = profile_caps.encode_ext.rgb_conversion;
+
+                if ((rgb_conversion_info->rgbModel & rgb_caps.rgbModels) == 0) {
+                    skip |= LogError(
+                        "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-rgbModel-10930", device,
+                        create_info_loc.pNext(Struct::VkVideoEncodeSessionRgbConversionCreateInfoVALVE).dot(Field::rgbModel),
+                        "is %s but the video profile (%s) only supports rgbModels %s.",
+                        string_VkVideoEncodeRgbModelConversionFlagBitsVALVE(rgb_conversion_info->rgbModel),
+                        string_VideoProfileDesc(profile_desc).c_str(),
+                        string_VkVideoEncodeRgbModelConversionFlagsVALVE(rgb_caps.rgbModels).c_str());
+                }
+
+                if ((rgb_conversion_info->rgbRange & rgb_caps.rgbRanges) == 0) {
+                    skip |= LogError(
+                        "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-rgbRange-10931", device,
+                        create_info_loc.pNext(Struct::VkVideoEncodeSessionRgbConversionCreateInfoVALVE).dot(Field::rgbRange),
+                        "is %s but the video profile (%s) only supports rgbRanges %s.",
+                        string_VkVideoEncodeRgbRangeCompressionFlagBitsVALVE(rgb_conversion_info->rgbRange),
+                        string_VideoProfileDesc(profile_desc).c_str(),
+                        string_VkVideoEncodeRgbRangeCompressionFlagsVALVE(rgb_caps.rgbRanges).c_str());
+                }
+
+                if ((rgb_conversion_info->xChromaOffset & rgb_caps.xChromaOffsets) == 0) {
+                    skip |= LogError(
+                        "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-xChromaOffset-10932", device,
+                        create_info_loc.pNext(Struct::VkVideoEncodeSessionRgbConversionCreateInfoVALVE).dot(Field::xChromaOffset),
+                        "is %s but the video profile (%s) only supports xChromaOffsets %s.",
+                        string_VkVideoEncodeRgbChromaOffsetFlagBitsVALVE(rgb_conversion_info->xChromaOffset),
+                        string_VideoProfileDesc(profile_desc).c_str(),
+                        string_VkVideoEncodeRgbChromaOffsetFlagsVALVE(rgb_caps.xChromaOffsets).c_str());
+                }
+
+                if ((rgb_conversion_info->yChromaOffset & rgb_caps.yChromaOffsets) == 0) {
+                    skip |= LogError(
+                        "VUID-VkVideoEncodeSessionRgbConversionCreateInfoVALVE-yChromaOffset-10933", device,
+                        create_info_loc.pNext(Struct::VkVideoEncodeSessionRgbConversionCreateInfoVALVE).dot(Field::yChromaOffset),
+                        "is %s but the video profile (%s) only supports yChromaOffsets %s.",
+                        string_VkVideoEncodeRgbChromaOffsetFlagBitsVALVE(rgb_conversion_info->yChromaOffset),
+                        string_VideoProfileDesc(profile_desc).c_str(),
+                        string_VkVideoEncodeRgbChromaOffsetFlagsVALVE(rgb_caps.yChromaOffsets).c_str());
+                }
+            }
         }
     } else {
         skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-04845", device, create_info_loc.dot(Field::pVideoProfile),
                          "is not supported.");
+    }
+
+    const auto* rgb_conversion_profile =
+        vku::FindStructInPNextChain<VkVideoEncodeProfileRgbConversionInfoVALVE>(pCreateInfo->pVideoProfile->pNext);
+    if (rgb_conversion_profile && rgb_conversion_profile->performEncodeRgbConversion &&
+        !vku::FindStructInPNextChain<VkVideoEncodeSessionRgbConversionCreateInfoVALVE>(pCreateInfo->pNext)) {
+        skip |= LogError("VUID-VkVideoSessionCreateInfoKHR-pNext-10924", device, create_info_loc.dot(Field::pNext),
+                         "chain does not contain a VkVideoEncodeSessionRgbConversionCreateInfoVALVE structure but "
+                         "performEncodeRgbConversion is VK_TRUE in the VkVideoEncodeProfileRgbConversionInfoVALVE structure "
+                         "included in the pNext chain of pVideoProfile.\n%s",
+                         PrintPNextChain(Struct::VkVideoSessionCreateInfoKHR, pCreateInfo->pNext).c_str());
     }
 
     return skip;
