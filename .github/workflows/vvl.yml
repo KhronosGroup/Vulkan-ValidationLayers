@@ -40,11 +40,16 @@ on:
     #
     # Not having a |push| (like |pull_request| above prevents doing it automatically on PR merging
     #
-    # Runs at 00:00 UTC every Sunday
-    - cron: '0 0 * * 0'
+    # Runs at 00:00 UTC every day
+    #
+    # PR runs can only restore caches (ccache, dependencies) saved from main, so these runs
+    # also keep those warm. Otherwise PRs fall back to a cold build of everything.
+    - cron: '0 0 * * *'
 
 env:
   CMAKE_GENERATOR: Ninja
+  # The tests/layers use a precompiled header, ccache treats those as uncacheable without this
+  CCACHE_SLOPPINESS: pch_defines,time_macros
 
 permissions:
   contents: read
