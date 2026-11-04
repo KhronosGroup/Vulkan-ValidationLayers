@@ -183,7 +183,10 @@ def RunVVLTests(args):
     # lvt_env['VK_LAYER_TESTS_PRINT_DRIVER'] = '1'
 
     lvt_env['VK_INSTANCE_LAYERS'] = 'VK_LAYER_KHRONOS_validation' + os.pathsep + 'VK_LAYER_KHRONOS_profiles'
-    lvt_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = 'SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT,SIMULATE_VIDEO_CAPABILITIES_BIT,SIMULATE_VIDEO_FORMATS_BIT'
+    # Simulating video profiles is a big part of the time to create a device, so only the Video tests use it (see below)
+    capabilities = 'SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT'
+    video_capabilities = capabilities + ',SIMULATE_VIDEO_CAPABILITIES_BIT,SIMULATE_VIDEO_FORMATS_BIT'
+    lvt_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = capabilities
 
     # By default use the max_profile.json
     if "VK_KHRONOS_PROFILES_PROFILE_FILE" not in os.environ:
@@ -202,6 +205,7 @@ def RunVVLTests(args):
     negative = []
     cmd_prefix = ''
     run_syncval_without_core = False
+    run_video = False
 
     if args.mockAndroid:
         # TODO - only reason running this subset, is mockAndoid fails any test that does
@@ -221,6 +225,7 @@ def RunVVLTests(args):
         negative = ['*Video*']
     else:
         run_syncval_without_core = True
+        run_video = True
         # these will 100% be skipped by default on CI machine, save time filtering them out first
         negative = [
             # AHB as it is ran separately
@@ -230,14 +235,23 @@ def RunVVLTests(args):
             '*Wsi.*',
             # GPU-AV and DebugPrintf tests are skipped on the Mock ICD
             '*GpuAV*',
-            '*DebugPrintf*'
+            '*DebugPrintf*',
+            # Video is ran separately, with video profile simulation
+            '*Video*'
         ]
 
     common_ci.RunShellCmd(f'{cmd_prefix}{lvt_cmd} {GTestFilter(positive, negative)}', env=lvt_env)
 
     if run_syncval_without_core:
         print("Re-Running syncval tests with core validation disabled (--syncval-disable-core)")
-        common_ci.RunShellCmd(f'{lvt_cmd} {GTestFilter(["*SyncVal*"], [])} --syncval-disable-core', env=lvt_env)
+        common_ci.RunShellCmd(f'{lvt_cmd} {GTestFilter(["*SyncVal*"], ["*Video*"])} --syncval-disable-core', env=lvt_env)
+
+    if run_video:
+        print("Running Video tests with video profile simulation")
+        video_env = dict(lvt_env)
+        video_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = video_capabilities
+        common_ci.RunShellCmd(f'{lvt_cmd} {GTestFilter(["*Video*"], [])}', env=video_env)
+        common_ci.RunShellCmd(f'{lvt_cmd} {GTestFilter(["*SyncValVideo*"], [])} --syncval-disable-core', env=video_env)
 
 def Test(args):
     try:
