@@ -18,6 +18,7 @@ import subprocess
 import sys
 import os
 import argparse
+import tempfile
 import common_ci
 
 # Where all artifacts will ultimately be placed under
@@ -155,6 +156,43 @@ def GTestFilter(positive, negative):
     return f'--gtest_filter={patterns}'
 
 #
+# gtest runs everything in a single process, one test at a time. The tests are independent of each other (each creates
+# its own instance/device on the Mock ICD), so we split them across processes using gtest's built in sharding.
+# Each shard's output is buffered and printed once it finishes so the CI log doesn't interleave.
+def RunGTest(cmd, env, shards):
+    if shards <= 1:
+        common_ci.RunShellCmd(cmd, env=env)
+        return
+
+    print(f'Running {cmd} in {shards} shards')
+    sys.stdout.flush()
+
+    procs = []
+    for index in range(shards):
+        shard_env = dict(env)
+        shard_env['GTEST_TOTAL_SHARDS'] = str(shards)
+        shard_env['GTEST_SHARD_INDEX'] = str(index)
+        output = tempfile.TemporaryFile(mode='w+', encoding='utf-8', errors='replace')
+        proc = subprocess.Popen(cmd.split(' '), cwd=common_ci.PROJECT_SRC_DIR, env=shard_env, stdout=output, stderr=subprocess.STDOUT)
+        procs.append((proc, output))
+
+    failed_code = 0
+    for index, (proc, output) in enumerate(procs):
+        proc.wait()
+        output.seek(0)
+        print(f'{"::group::" if common_ci.IsGHA() else ""}Shard {index + 1}/{shards} (exit code {proc.returncode})')
+        sys.stdout.write(output.read())
+        if common_ci.IsGHA():
+            print('::endgroup::')
+        output.close()
+        if proc.returncode != 0 and failed_code == 0:
+            failed_code = proc.returncode
+    sys.stdout.flush()
+
+    if failed_code != 0:
+        raise subprocess.CalledProcessError(failed_code, cmd.split(' '))
+
+#
 # Run the Layer Validation Tests
 def RunVVLTests(args):
     print("Run VVL Tests using Mock ICD")
@@ -240,18 +278,21 @@ def RunVVLTests(args):
             '*Video*'
         ]
 
-    common_ci.RunShellCmd(f'{cmd_prefix}{lvt_cmd} {GTestFilter(positive, negative)}', env=lvt_env)
+    # WSI needs xvfb and is tiny, and the Android subset is tiny too, so only shard the big runs
+    shards = 1 if (args.wsi or args.mockAndroid) else args.shards
+
+    RunGTest(f'{cmd_prefix}{lvt_cmd} {GTestFilter(positive, negative)}', lvt_env, shards)
 
     if run_syncval_without_core:
         print("Re-Running syncval tests with core validation disabled (--syncval-disable-core)")
-        common_ci.RunShellCmd(f'{lvt_cmd} {GTestFilter(["*SyncVal*"], ["*Video*"])} --syncval-disable-core', env=lvt_env)
+        RunGTest(f'{lvt_cmd} {GTestFilter(["*SyncVal*"], ["*Video*"])} --syncval-disable-core', lvt_env, shards)
 
     if run_video:
         print("Running Video tests with video profile simulation")
         video_env = dict(lvt_env)
         video_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = video_capabilities
-        common_ci.RunShellCmd(f'{lvt_cmd} {GTestFilter(["*Video*"], [])}', env=video_env)
-        common_ci.RunShellCmd(f'{lvt_cmd} {GTestFilter(["*SyncValVideo*"], [])} --syncval-disable-core', env=video_env)
+        RunGTest(f'{lvt_cmd} {GTestFilter(["*Video*"], [])}', video_env, shards)
+        RunGTest(f'{lvt_cmd} {GTestFilter(["*SyncValVideo*"], [])} --syncval-disable-core', video_env, shards)
 
 def Test(args):
     try:
@@ -296,6 +337,11 @@ if __name__ == '__main__':
     parser.add_argument(
         '--wsi', dest='wsi',
         action='store_true', help='Filter out tests for WSI (which uses xvfb and will slow down other tests)')
+
+    parser.add_argument(
+        '--shards', dest='shards',
+        metavar='N', type=int, default=min(4, os.cpu_count() or 1),
+        help='Number of processes to split the Layer Validation Tests across (defaults to the CPU count, max 4). Use 1 to run in a single process')
 
     args = parser.parse_args()
 
