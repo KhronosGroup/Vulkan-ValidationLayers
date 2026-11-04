@@ -108,20 +108,50 @@ jobs:
       - uses: actions/checkout@v7
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
+          save: ${{ github.ref == 'refs/heads/main' }}
           key: ${{ matrix.config }}-address-${{matrix.custom_hash_map}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev xvfb
+      # Only install dirs are cached for update_deps.py (skipped via UPDATE_DEPS_SKIP_EXISTING_INSTALL), plus Loader/Profiles
+      # which scripts/tests.py builds itself so they have no install dir to skip on.
       - name: Cache external dependencies
         id: cache-deps
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: |
-            ${{ github.workspace }}/build-ci/external
+            ${{ github.workspace }}/build-ci/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/build-ci/external/mimalloc/build/install
+            ${{ github.workspace }}/build-ci/external/googletest/build/install
+            ${{ github.workspace }}/build-ci/external/glslang/build/install
+            ${{ github.workspace }}/build-ci/external/slang/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Loader
+            ${{ github.workspace }}/build-ci/external/Vulkan-Profiles
           key: linux-asan-dependencies-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       # Only VVL is built with address sanitizer, the dependencies (and Loader/Profiles layer) don't need it and it makes them slow
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DVVL_ENABLE_ASAN=ON -DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      # Only main saves caches. PR caches can't be restored by other PRs, and they fill the 10 GB repo quota
+      # which evicts the caches saved from main.
+      - name: Save external dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ github.workspace }}/build-ci/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/build-ci/external/mimalloc/build/install
+            ${{ github.workspace }}/build-ci/external/googletest/build/install
+            ${{ github.workspace }}/build-ci/external/glslang/build/install
+            ${{ github.workspace }}/build-ci/external/slang/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Loader
+            ${{ github.workspace }}/build-ci/external/Vulkan-Profiles
+          key: linux-asan-dependencies-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Test Max Profile
         run: python scripts/tests.py --test
         env:
@@ -147,14 +177,26 @@ jobs:
       - uses: actions/checkout@v7
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
+          save: ${{ github.ref == 'refs/heads/main' }}
           key: ${{ matrix.config }}-thread-${{matrix.custom_hash_map}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev xvfb
+      # Only install dirs are cached for update_deps.py (skipped via UPDATE_DEPS_SKIP_EXISTING_INSTALL), plus Loader/Profiles
+      # which scripts/tests.py builds itself so they have no install dir to skip on.
       - name: Cache external dependencies
         id: cache-deps
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: |
-            ${{ github.workspace }}/build-ci/external
+            ${{ github.workspace }}/build-ci/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/build-ci/external/mimalloc/build/install
+            ${{ github.workspace }}/build-ci/external/googletest/build/install
+            ${{ github.workspace }}/build-ci/external/glslang/build/install
+            ${{ github.workspace }}/build-ci/external/slang/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Loader
+            ${{ github.workspace }}/build-ci/external/Vulkan-Profiles
           key: linux-tsan-dependencies-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
         env:
@@ -163,6 +205,24 @@ jobs:
           LDFLAGS: -fsanitize=thread
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      # Only main saves caches. PR caches can't be restored by other PRs, and they fill the 10 GB repo quota
+      # which evicts the caches saved from main.
+      - name: Save external dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ github.workspace }}/build-ci/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/build-ci/external/mimalloc/build/install
+            ${{ github.workspace }}/build-ci/external/googletest/build/install
+            ${{ github.workspace }}/build-ci/external/glslang/build/install
+            ${{ github.workspace }}/build-ci/external/slang/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Loader
+            ${{ github.workspace }}/build-ci/external/Vulkan-Profiles
+          key: linux-tsan-dependencies-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       # Thread Sanitize will take about 9x longer to run than Address Sanitize.
       # The main reason we have Max Core and Min Core is to catch issues with Vulkan 1.x vs Vulkan 1.y version issues.
       # In effort to reduce the bottle neck time in testing, skipping these for Thread Sanitize.
@@ -186,19 +246,49 @@ jobs:
       - uses: actions/checkout@v7
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
+          save: ${{ github.ref == 'refs/heads/main' }}
           key: linux-ubsan
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      # Only install dirs are cached for update_deps.py (skipped via UPDATE_DEPS_SKIP_EXISTING_INSTALL), plus Loader/Profiles
+      # which scripts/tests.py builds itself so they have no install dir to skip on.
       - name: Cache external dependencies
         id: cache-deps
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: |
-            ${{ github.workspace }}/build-ci/external
+            ${{ github.workspace }}/build-ci/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/build-ci/external/mimalloc/build/install
+            ${{ github.workspace }}/build-ci/external/googletest/build/install
+            ${{ github.workspace }}/build-ci/external/glslang/build/install
+            ${{ github.workspace }}/build-ci/external/slang/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Loader
+            ${{ github.workspace }}/build-ci/external/Vulkan-Profiles
           key: linux-ubsan-dependencies-debug-${{ hashfiles('scripts/known_good.json') }}
       - run: python scripts/tests.py --build --config debug --cmake='-DVVL_ENABLE_UBSAN=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      # Only main saves caches. PR caches can't be restored by other PRs, and they fill the 10 GB repo quota
+      # which evicts the caches saved from main.
+      - name: Save external dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ github.workspace }}/build-ci/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/build-ci/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/build-ci/external/mimalloc/build/install
+            ${{ github.workspace }}/build-ci/external/googletest/build/install
+            ${{ github.workspace }}/build-ci/external/glslang/build/install
+            ${{ github.workspace }}/build-ci/external/slang/install
+            ${{ github.workspace }}/build-ci/external/Vulkan-Loader
+            ${{ github.workspace }}/build-ci/external/Vulkan-Profiles
+          key: linux-ubsan-dependencies-debug-${{ hashfiles('scripts/known_good.json') }}
       - name: Test Max Profile
         run: python scripts/tests.py --test
         env:
@@ -228,14 +318,22 @@ jobs:
           cmakeVersion: 3.22.1
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
+          save: ${{ github.ref == 'refs/heads/main' }}
           key: linux_back_compat
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Cache external dependencies
         id: cache-deps
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: |
-            ${{ github.workspace }}/external
+            ${{ github.workspace }}/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/googletest/build/install
+            ${{ github.workspace }}/external/glslang/build/install
+            ${{ github.workspace }}/external/slang/install
           key: linux-backcompat-dependencies-debug-${{ hashfiles('scripts/known_good.json') }}
       - run: cmake -S . -B build/ -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
         env:
@@ -243,6 +341,22 @@ jobs:
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
           # Linker warnings as errors
           LDFLAGS: -Wl,--fatal-warnings
+      # Only main saves caches. PR caches can't be restored by other PRs, and they fill the 10 GB repo quota
+      # which evicts the caches saved from main.
+      - name: Save external dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ github.workspace }}/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/googletest/build/install
+            ${{ github.workspace }}/external/glslang/build/install
+            ${{ github.workspace }}/external/slang/install
+          key: linux-backcompat-dependencies-debug-${{ hashfiles('scripts/known_good.json') }}
       - run: cmake --build build
       - run: cmake --install build --prefix /tmp
 
@@ -257,6 +371,7 @@ jobs:
           python-version: '3.10'
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
+          save: ${{ github.ref == 'refs/heads/main' }}
           key: androidOnLinux-ccache
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - name: Build
@@ -292,16 +407,16 @@ jobs:
           arch: ${{ matrix.arch }}
       - name: Cache known_good.json installations
         id: cache-deps
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: |
-            ${{ github.workspace }}/external/glslang/build/install
-            ${{ github.workspace }}/external/googltest/build/install
-            ${{ github.workspace }}/external/mimalloc/build/install
-            ${{ github.workspace }}/external/SPIRV-Headers/build/install
-            ${{ github.workspace }}/external/SPIRV-Tools/build/install
             ${{ github.workspace }}/external/Vulkan-Headers/build/install
             ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/googletest/build/install
+            ${{ github.workspace }}/external/glslang/build/install
             ${{ github.workspace }}/external/slang/install
           key: windows-dependencies-multi-config-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Configure (once, for every --config used below)
@@ -312,6 +427,22 @@ jobs:
          -D BUILD_TESTS=ON `
          -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON `
          -D UPDATE_DEPS_DIR=${{ github.workspace }}/external
+      # Only main saves caches. PR caches can't be restored by other PRs, and they fill the 10 GB repo quota
+      # which evicts the caches saved from main.
+      - name: Save external dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ github.workspace }}/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/googletest/build/install
+            ${{ github.workspace }}/external/glslang/build/install
+            ${{ github.workspace }}/external/slang/install
+          key: windows-dependencies-multi-config-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build and install Debug without reconfiguring
         run: |
           # Only do Debug, release is done inside internal CI and this is really a "smoketest"
@@ -342,6 +473,7 @@ jobs:
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
+            save: ${{ github.ref == 'refs/heads/main' }}
             key: android-${{ matrix.abi }}-${{ matrix.build_tests }}-${{ matrix.stl_type }}
         - name: Configure
           run: |
@@ -375,13 +507,21 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
+          save: ${{ github.ref == 'refs/heads/main' }}
           key: iOS-cache
       - name: Cache external dependencies
         id: cache-deps
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: |
-            ${{ github.workspace }}/external
+            ${{ github.workspace }}/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/googletest/build/install
+            ${{ github.workspace }}/external/glslang/build/install
+            ${{ github.workspace }}/external/slang/install
           key: macos-dependencies-${{ hashfiles('scripts/known_good.json') }}
       - name: Configure for iOS
         run: |
@@ -396,6 +536,22 @@ jobs:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
           LDFLAGS: -Wl,-fatal_warnings
+      # Only main saves caches. PR caches can't be restored by other PRs, and they fill the 10 GB repo quota
+      # which evicts the caches saved from main.
+      - name: Save external dependencies
+        if: github.ref == 'refs/heads/main' && steps.cache-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ github.workspace }}/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/googletest/build/install
+            ${{ github.workspace }}/external/glslang/build/install
+            ${{ github.workspace }}/external/slang/install
+          key: macos-dependencies-${{ hashfiles('scripts/known_good.json') }}
       - run: cmake --build build
       - run: cmake --install build --prefix /tmp
       # Helps verify install location and prints the exported symbols.
@@ -415,6 +571,7 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
+          save: ${{ github.ref == 'refs/heads/main' }}
           key: mingw-ccache
       - uses: actions/setup-python@v7
         with:
