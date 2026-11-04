@@ -190,7 +190,6 @@ class BatchAccessLog {
         const QueueState* queue_state = nullptr;
         uint64_t submit_index = 0;
         uint32_t batch_index = 0;
-        uint32_t cb_index = 0;
         ResourceUsageTag base_tag = 0;
     };
 
@@ -365,7 +364,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
                                                     std::vector<VkSemaphoreSubmitInfo>& unresolved_waits,
                                                     SignalsUpdate& signals_update);
 
-    bool ValidateSubmit(const std::vector<CommandBufferConstPtr>& command_buffers, uint64_t submit_index, uint32_t batch_index,
+    bool ValidateSubmit(vvl::span<const CommandBufferConstPtr> command_buffers, uint64_t submit_index, uint32_t batch_index,
                         std::vector<std::string>& current_label_stack, const Location& submit_loc);
 
     // For Present

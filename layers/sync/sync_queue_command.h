@@ -19,10 +19,12 @@
 
 #include "sync/sync_common.h"
 #include "containers/small_vector.h"
+#include "containers/span.h"
 #include <deque>
 #include <variant>
 
 namespace vvl {
+class CommandBuffer;
 class Swapchain;
 enum class Func;
 }  // namespace vvl
@@ -114,9 +116,27 @@ struct AcquireNextImageCommand {
     bool Execute(SyncValidator& validator) const;
 };
 
+struct QueueSubmitCommand {
+    struct SubmitBatch {
+        small_vector<VkSemaphoreSubmitInfo, 1> waits;
+        small_vector<std::shared_ptr<const vvl::CommandBuffer>, 1> command_buffers;
+        small_vector<VkSemaphoreSubmitInfo, 1> signals;
+    };
+    QueueId queue_id;
+    VkFence fence;
+    vvl::Func submit_func;
+    std::vector<std::string> initial_label_stack;
+    std::vector<SubmitBatch> batches;
+
+    QueueSubmitCommand(SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits, VkFence fence,
+                       vvl::Func submit_func);
+    bool IsReady() const { return true; }
+    bool Execute(SyncValidator& validator) const;
+};
+
 using QueueCommand = std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, HostResetEventCommand,
                                   QueueWaitIdleCommand, DeviceWaitIdleCommand, ResourceDestroyedCommand, SemaphoreDestroyedCommand,
-                                  SwapchainDestroyedCommand, QueuePresentCommand, AcquireNextImageCommand>;
+                                  SwapchainDestroyedCommand, QueuePresentCommand, AcquireNextImageCommand, QueueSubmitCommand>;
 using QueueCommandStorage = std::deque<QueueCommand>;
 
 // Whether the command is ready to execute.
