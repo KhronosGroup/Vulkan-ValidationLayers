@@ -67,6 +67,7 @@ struct SemaphoreSubmitState;
 struct LastBound;
 struct ShaderStageState;
 struct ImageCopyRegion;
+struct ImageRegionBox;
 class ValidationCache;
 
 namespace core {
@@ -1268,6 +1269,8 @@ class CoreChecks : public vvl::DeviceProxy {
     void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
 
     bool ValidateCopyImageRegionCommon(const ImageCopyRegion& region, const Location& region_loc) const;
+    bool ValidateImageDstRegionsOverlap(const LogObjectList& objlist, const vvl::Image& image_state,
+                                        const std::vector<ImageRegionBox>& dst_boxes, const Location& loc, const char* vuid) const;
 
     template <typename HandleT>
     bool ValidateCopyImageCommon(HandleT handle, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
