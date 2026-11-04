@@ -116,12 +116,10 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/build-ci/external
-          key: linux-dependencies-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
-      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+          key: linux-asan-dependencies-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      # Only VVL is built with address sanitizer, the dependencies (and Loader/Profiles layer) don't need it and it makes them slow
+      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DVVL_ENABLE_ASAN=ON -DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
         env:
-          CFLAGS: -fsanitize=address
-          CXXFLAGS: -fsanitize=address
-          LDFLAGS: -fsanitize=address
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Max Profile
