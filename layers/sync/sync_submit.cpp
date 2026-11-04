@@ -708,7 +708,7 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<con
     return resolved_batches;
 }
 
-bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>& command_buffers, uint64_t submit_index,
+bool QueueBatchContext::ValidateSubmit(vvl::span<const CommandBufferConstPtr> command_buffers, uint64_t submit_index,
                                        uint32_t batch_index, std::vector<std::string>& current_label_stack,
                                        const Location& submit_loc) {
     bool skip = false;
@@ -722,6 +722,9 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
     batch.base_tag = SetupBatchTags(tag_count);
 
     for (uint32_t index = 0; index < (uint32_t)command_buffers.size(); index++) {
+        if (!command_buffers[index]) {
+            continue;
+        }
         const auto& cb = SubState(*command_buffers[index]);
         const CommandBufferContext& cb_context = cb.cb_context;
 
@@ -739,7 +742,6 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
         }
         // Apply debug label commands
         vvl::CommandBuffer::ReplayLabelCommands(cb.base.GetLabelCommands(), current_label_stack);
-        batch.cb_index++;
     }
     return skip;
 }

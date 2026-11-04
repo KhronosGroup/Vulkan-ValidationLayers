@@ -2366,117 +2366,17 @@ bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submi
     return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
-static std::vector<CommandBufferConstPtr> GetCommandBuffers(const vvl::DeviceState& device_state,
-                                                            const VkSubmitInfo2& submit_info) {
-    // Collected command buffers have the same indexing as in the input VkSubmitInfo2 for reporting purposes.
-    // If Get query returns null, it is stored in the result array to keep original indexing.
-    std::vector<CommandBufferConstPtr> command_buffers;
-    command_buffers.reserve(submit_info.commandBufferInfoCount);
-    for (const auto& cb_info : vvl::make_span(submit_info.pCommandBufferInfos, submit_info.commandBufferInfoCount)) {
-        command_buffers.emplace_back(device_state.Get<vvl::CommandBuffer>(cb_info.commandBuffer));
-    }
-    return command_buffers;
-}
-
 bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                        const ErrorObject& error_obj) {
-    bool skip = false;
-
     const QueueId queue_id = GetQueueId(queue);
     if (queue_id == kQueueIdInvalid) {
-        return skip;
+        return false;
     }
-
-    QueueState& queue_state = GetQueueState(queue_id);
-    SignalsUpdate signals_update(*this);
-
-    // The submit id is a mutable automic which is not recoverable on a skip == true condition
-    uint64_t submit_id = queue_state.ReserveSubmitId();
-
-    // Update label stack as we progress through batches and command buffers
-    auto current_label_stack = queue_state.GetQueue()->cmdbuf_label_stack;
-
-    BatchContextPtr last_batch = queue_state.LastBatch();
-    bool has_unresolved_batches = !queue_state.UnresolvedBatches().empty();
-
-    BatchContextPtr new_last_batch;
-    std::vector<UnresolvedBatch> new_unresolved_batches;
-    bool new_timeline_signals = false;
-
-    for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
-        const VkSubmitInfo2& submit = pSubmits[batch_idx];
-        auto batch = std::make_shared<QueueBatchContext>(*this, queue_state);
-
-        const auto wait_semaphores = vvl::make_span(submit.pWaitSemaphoreInfos, submit.waitSemaphoreInfoCount);
-        std::vector<VkSemaphoreSubmitInfo> unresolved_waits;
-        auto resolved_batches = batch->ResolveSubmitWaits(wait_semaphores, unresolved_waits, signals_update);
-
-        // Add unresolved batch
-        if (has_unresolved_batches || !unresolved_waits.empty()) {
-            UnresolvedBatch unresolved_batch;
-            unresolved_batch.batch = std::move(batch);
-            unresolved_batch.submit_func = error_obj.location.function;
-            unresolved_batch.submit_index = submit_id;
-            unresolved_batch.batch_index = batch_idx;
-            unresolved_batch.command_buffers = GetCommandBuffers(*device_state, submit);
-            unresolved_batch.unresolved_waits = std::move(unresolved_waits);
-            unresolved_batch.resolved_dependencies = std::move(resolved_batches);
-            if (submit.pSignalSemaphoreInfos && submit.signalSemaphoreInfoCount) {
-                const auto last_info = submit.pSignalSemaphoreInfos + submit.signalSemaphoreInfoCount;
-                unresolved_batch.signals.assign(submit.pSignalSemaphoreInfos, last_info);
-            }
-            unresolved_batch.label_stack = current_label_stack;
-            new_unresolved_batches.emplace_back(std::move(unresolved_batch));
-            has_unresolved_batches = true;
-            stats.AddUnresolvedBatch();
-            continue;
-        }
-        new_last_batch = batch;
-
-        batch->ResolveLastBatch(std::move(last_batch), resolved_batches);
-
-        // The purpose of keeping return value is to ensure async batches are alive during validation.
-        // Validation accesses raw pointer to async contexts stored in AsyncReference.
-        // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case.
-        const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
-
-        const auto command_buffers = GetCommandBuffers(*device_state, submit);
-        skip |= batch->ValidateSubmit(command_buffers, submit_id, batch_idx, current_label_stack, error_obj.location);
-
-        const auto submit_signals = vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount);
-        new_timeline_signals |= signals_update.RegisterSignals(batch, submit_signals);
-
-        // Unless the previous batch was referenced by a signal it will self destruct
-        // in the record phase when the last batch is updated.
-        last_batch = batch;
+    if (fence != VK_NULL_HANDLE && !Get<vvl::Fence>(fence)) {
+        fence = VK_NULL_HANDLE;
     }
-
-    if (new_last_batch && !skip) {
-        queue_state.SetLastBatch(std::move(new_last_batch));
-    }
-    if (!new_unresolved_batches.empty() && !skip) {
-        vvl::Append(queue_state.UnresolvedBatches(), new_unresolved_batches);
-    }
-
-    // Check if timeline signals resolve existing wait-before-signal dependencies
-    if (new_timeline_signals) {
-        skip |= PropagateTimelineSignals(signals_update);
-    }
-
-    if (!skip) {
-        stats.UpdateMemoryStats();
-        ApplySignalsUpdate(signals_update, queue_state.LastBatch());
-        FenceHostSyncPoint sync_point;
-        sync_point.queue_id = queue_state.GetQueueId();
-        sync_point.tag = ReserveGlobalTagRange(1).begin;
-        if (queue_state.LastBatch()) {
-            sync_point.queue_sync_tags = queue_state.LastBatch()->GetQueueSyncTags();
-        }
-        if (Get<vvl::Fence>(fence)) {
-            waitable_fences_[fence] = std::move(sync_point);
-        }
-    }
-    return skip;
+    QueueSubmitCommand command(*this, queue_id, vvl::make_span(pSubmits, submitCount), fence, error_obj.location.function);
+    return ProcessQueueCommand(std::move(command));
 }
 
 bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {

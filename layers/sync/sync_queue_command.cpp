@@ -248,6 +248,123 @@ bool AcquireNextImageCommand::Execute(SyncValidator& validator) const {
     return false;
 }
 
+QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits,
+                                       VkFence fence, vvl::Func submit_func)
+    : queue_id(queue_id),
+      fence(fence),
+      submit_func(submit_func),
+      initial_label_stack(validator.GetQueueState(queue_id).GetQueue()->cmdbuf_label_stack) {
+    batches.reserve(submits.size());
+    for (const VkSubmitInfo2& submit : submits) {
+        SubmitBatch& batch = batches.emplace_back();
+
+        batch.waits.reserve(submit.waitSemaphoreInfoCount);
+        for (const auto& wait : vvl::make_span(submit.pWaitSemaphoreInfos, submit.waitSemaphoreInfoCount)) {
+            batch.waits.emplace_back(wait);
+        }
+
+        batch.command_buffers.reserve(submit.commandBufferInfoCount);
+        for (const auto& cb_info : vvl::make_span(submit.pCommandBufferInfos, submit.commandBufferInfoCount)) {
+            // Append even a null lookup result so later command buffers are reported at their original indices
+            batch.command_buffers.emplace_back(validator.Get<vvl::CommandBuffer>(cb_info.commandBuffer));
+        }
+
+        batch.signals.reserve(submit.signalSemaphoreInfoCount);
+        for (const auto& signal : vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount)) {
+            batch.signals.emplace_back(signal);
+        }
+    }
+}
+
+bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
+    bool skip = false;
+
+    QueueState& queue_state = validator.GetQueueState(queue_id);
+    SignalsUpdate signals_update(validator);
+
+    const uint64_t submit_id = queue_state.ReserveSubmitId();
+    const Location submit_loc(submit_func);
+
+    // Update label stack as we progress through batches and command buffers
+    auto current_label_stack = initial_label_stack;
+
+    BatchContextPtr last_batch = queue_state.LastBatch();
+    bool has_unresolved_batches = !queue_state.UnresolvedBatches().empty();
+
+    BatchContextPtr new_last_batch;
+    std::vector<UnresolvedBatch> new_unresolved_batches;
+    bool new_timeline_signals = false;
+
+    for (uint32_t batch_idx = 0; batch_idx < batches.size(); batch_idx++) {
+        const SubmitBatch& submit = batches[batch_idx];
+        auto batch = std::make_shared<QueueBatchContext>(validator, queue_state);
+
+        std::vector<VkSemaphoreSubmitInfo> unresolved_waits;
+        auto resolved_batches = batch->ResolveSubmitWaits(submit.waits, unresolved_waits, signals_update);
+
+        // Add unresolved batch
+        if (has_unresolved_batches || !unresolved_waits.empty()) {
+            UnresolvedBatch& unresolved_batch = new_unresolved_batches.emplace_back();
+            unresolved_batch.batch = std::move(batch);
+            unresolved_batch.submit_func = submit_func;
+            unresolved_batch.submit_index = submit_id;
+            unresolved_batch.batch_index = batch_idx;
+            unresolved_batch.command_buffers.assign(submit.command_buffers.begin(), submit.command_buffers.end());
+            unresolved_batch.unresolved_waits = std::move(unresolved_waits);
+            unresolved_batch.resolved_dependencies = std::move(resolved_batches);
+            unresolved_batch.signals.assign(submit.signals.begin(), submit.signals.end());
+            unresolved_batch.label_stack = current_label_stack;
+
+            has_unresolved_batches = true;
+            validator.stats.AddUnresolvedBatch();
+            continue;
+        }
+        new_last_batch = batch;
+
+        batch->ResolveLastBatch(std::move(last_batch), resolved_batches);
+
+        // Keep async batches alive while validation uses their contexts
+        // through raw pointers (AsyncReference::context_)
+        // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case
+        const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
+
+        skip |= batch->ValidateSubmit(submit.command_buffers, submit_id, batch_idx, current_label_stack, submit_loc);
+
+        new_timeline_signals |= signals_update.RegisterSignals(batch, submit.signals);
+
+        // Unless the previous batch was referenced by a signal it will self destruct
+        // in the record phase when the last batch is updated.
+        last_batch = batch;
+    }
+
+    if (new_last_batch && !skip) {
+        queue_state.SetLastBatch(std::move(new_last_batch));
+    }
+    if (!new_unresolved_batches.empty() && !skip) {
+        vvl::Append(queue_state.UnresolvedBatches(), new_unresolved_batches);
+    }
+
+    // Check if timeline signals resolve existing wait-before-signal dependencies
+    if (new_timeline_signals) {
+        skip |= validator.PropagateTimelineSignals(signals_update);
+    }
+
+    if (!skip) {
+        validator.stats.UpdateMemoryStats();
+        validator.ApplySignalsUpdate(signals_update, queue_state.LastBatch());
+        FenceHostSyncPoint sync_point;
+        sync_point.queue_id = queue_id;
+        sync_point.tag = validator.ReserveGlobalTagRange(1).begin;
+        if (queue_state.LastBatch()) {
+            sync_point.queue_sync_tags = queue_state.LastBatch()->GetQueueSyncTags();
+        }
+        if (fence != VK_NULL_HANDLE) {
+            validator.waitable_fences_[fence] = std::move(sync_point);
+        }
+    }
+    return skip;
+}
+
 bool IsQueueCommandReady(const QueueCommand& command) {
     return std::visit([](const auto& operation) { return operation.IsReady(); }, command);
 }
