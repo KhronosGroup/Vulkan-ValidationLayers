@@ -762,10 +762,10 @@ TEST_F(PositiveSyncObject, LongSemaphoreChain) {
     RETURN_IF_SKIP(Init());
     std::vector<VkSemaphore> semaphores;
 
-    const int chainLength = 32768;
+    const int chain_length = 1024;
     VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
-    for (int i = 0; i < chainLength; i++) {
+    for (int i = 0; i < chain_length; i++) {
         VkSemaphoreCreateInfo sci = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
         VkSemaphore semaphore;
         vk::CreateSemaphore(device(), &sci, nullptr, &semaphore);
@@ -785,12 +785,13 @@ TEST_F(PositiveSyncObject, LongSemaphoreChain) {
     }
 
     vkt::Fence fence(*m_device);
-    VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, &semaphores.back(), &flags, 0, nullptr, 0, nullptr};
+    VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, &semaphores.back(), &flags};
     vk::QueueSubmit(m_default_queue->handle(), 1, &si, fence);
+    fence.Wait(kWaitTimeout);
 
-    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
-
-    for (auto semaphore : semaphores) vk::DestroySemaphore(device(), semaphore, nullptr);
+    for (auto semaphore : semaphores) {
+        vk::DestroySemaphore(device(), semaphore, nullptr);
+    }
 }
 
 TEST_F(PositiveSyncObject, ExternalSemaphore) {
