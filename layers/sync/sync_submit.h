@@ -388,7 +388,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
     void OnResourceDestroyed(const AccessRange& resource_range);
 
     [[nodiscard]] std::vector<BatchContextPtr> RegisterAsyncContexts(const std::vector<BatchContextPtr>& batches_resolved);
-    void ResolveLastBatch(const BatchContextPtr& last_batch);
+    void ResolveLastBatch(BatchContextPtr last_batch, std::vector<BatchContextPtr>& resolved_batches);
 
     void ResolveSubmitSemaphoreWait(const SignalInfo& signal_info, VkPipelineStageFlags2 wait_mask);
     void ImportTags(const QueueBatchContext& from);

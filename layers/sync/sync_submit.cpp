@@ -492,7 +492,11 @@ void QueueBatchContext::ResolveSubmitSemaphoreWait(const SignalInfo& signal_info
     }
 }
 
-void QueueBatchContext::ResolveLastBatch(const BatchContextPtr& last_batch) {
+void QueueBatchContext::ResolveLastBatch(BatchContextPtr last_batch, std::vector<BatchContextPtr>& resolved_batches) {
+    if (!last_batch || vvl::Contains(resolved_batches, last_batch)) {
+        return;
+    }
+
     // Copy in the event state from the previous batch (on this queue)
     events_context_.DeepCopy(last_batch->events_context_);
 
@@ -502,6 +506,7 @@ void QueueBatchContext::ResolveLastBatch(const BatchContextPtr& last_batch) {
     ImportTags(*last_batch);
 
     last_synchronized_present.Merge(last_batch->last_synchronized_present);
+    resolved_batches.emplace_back(std::move(last_batch));
 }
 
 void QueueBatchContext::ImportTags(const QueueBatchContext& from) {
