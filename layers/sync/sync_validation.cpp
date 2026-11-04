@@ -2302,7 +2302,7 @@ void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapcha
     if (!syncval_settings.full_validation) {
         return;
     }
-    RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
+    RecordAcquireNextImageState(swapchain, semaphore, fence, pImageIndex, record_obj);
 }
 
 void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
@@ -2310,12 +2310,11 @@ void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const Vk
     if (!syncval_settings.full_validation) {
         return;
     }
-    RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
-                                pAcquireInfo->fence, pImageIndex, record_obj);
+    RecordAcquireNextImageState(pAcquireInfo->swapchain, pAcquireInfo->semaphore, pAcquireInfo->fence, pImageIndex, record_obj);
 }
 
-void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                                VkFence fence, uint32_t* pImageIndex, const RecordObject& record_obj) {
+void SyncValidator::RecordAcquireNextImageState(VkSwapchainKHR swapchain, VkSemaphore semaphore, VkFence fence,
+                                                uint32_t* pImageIndex, const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS && record_obj.result != VK_SUBOPTIMAL_KHR) {
         return;
     }
@@ -2323,43 +2322,24 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
         return;  // [core validation check]: both sync primitives are missing
     }
     auto swapchain_state = Get<vvl::Swapchain>(swapchain);
-    if (vvl::StateObject::Invalid(swapchain_state)) {
+    if (!swapchain_state) {
         return;
     }
-    SwapchainSubState& swapchain_substate = SubState(*swapchain_state);
-    PresentedImage presented = swapchain_substate.MovePresentedImage(*pImageIndex);
-    if (!presented.image) {
+    auto image = swapchain_state->GetSwapChainImageShared(*pImageIndex);
+    if (!image) {
         return;
     }
-
-    // We create a queue-less QBC for the Semaphore and fences to wait on
-    // NOTE: this is a heavyweight way to deal with the fact that all operation logs live in the
-    // QueueBatchContext. Acquire doesn't happen on a queue, but we need a place to put the acquire
-    // operation access record
-    auto batch = std::make_shared<QueueBatchContext>(*this);
-    batch->SetupAccessContext(presented);
-    const ResourceUsageTag acquire_tag = batch->SetupBatchTags(1);
-    batch->DoAcquireOperation(presented);
-    batch->LogAcquireOperation(presented, record_obj.location.function);
-
-    // Now swap out the present queue batch with the acquired one.
-    // Note that fence and signal will read the acquire batch from presented, so this needs to be done before
-    // setting up the synchronization
-    presented.batch = std::move(batch);
-
-    if (semaphore != VK_NULL_HANDLE) {
-        if (auto sem_state = Get<vvl::Semaphore>(semaphore)) {
-            // This will ignore any duplicated signal (emplace does not update existing entry),
-            // and the core validation reports and error in this case.
-            binary_signals_.emplace(sem_state->VkHandle(), SignalInfo(sem_state, presented, acquire_tag));
-        }
+    // Don't validate invalid semaphores or fences
+    if (semaphore != VK_NULL_HANDLE && !Get<vvl::Semaphore>(semaphore)) {
+        semaphore = VK_NULL_HANDLE;
     }
-    if (fence != VK_NULL_HANDLE) {
-        FenceHostSyncPoint sync_point;
-        sync_point.tag = acquire_tag;
-        sync_point.acquired = AcquiredImage(presented, acquire_tag);
-        UpdateFenceHostSyncPoint(fence, std::move(sync_point));
+    if (fence != VK_NULL_HANDLE && !Get<vvl::Fence>(fence)) {
+        fence = VK_NULL_HANDLE;
     }
+
+    AcquireNextImageCommand command{std::move(swapchain_state),   std::move(image), *pImageIndex,
+                                    record_obj.location.function, semaphore,        fence};
+    ProcessQueueCommand(std::move(command));
 }
 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
@@ -2607,6 +2587,9 @@ bool SyncValidator::PreCallValidateSignalSemaphore(VkDevice device, const VkSema
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
     if (!syncval_settings.full_validation) {
+        return skip;
+    }
+    if (!Get<vvl::Semaphore>(pSignalInfo->semaphore)) {
         return skip;
     }
     // Although SignalSemaphore does not run on the queue, the signalling can resolve

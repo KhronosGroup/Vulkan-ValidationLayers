@@ -34,11 +34,6 @@ bool WaitForSemaphoreCommand::Execute(SyncValidator& validator) const {
 bool SignalSemaphoreCommand::Execute(SyncValidator& validator) const {
     bool skip = false;
 
-    auto semaphore_state = validator.Get<vvl::Semaphore>(semaphore);
-    if (!semaphore_state) {
-        return skip;
-    }
-
     SignalsUpdate signals_update(validator);
     std::vector<SignalInfo>& signals = signals_update.timeline_signals[semaphore];
 
@@ -47,7 +42,7 @@ bool SignalSemaphoreCommand::Execute(SyncValidator& validator) const {
         return skip;  // [core validation check]: strictly increasing signal values
     }
 
-    signals.emplace_back(SignalInfo(semaphore_state, value));
+    signals.emplace_back(SignalInfo(value));
     skip |= validator.PropagateTimelineSignals(signals_update);
 
     if (!skip) {
@@ -228,6 +223,34 @@ bool QueuePresentCommand::Execute(SyncValidator& validator) const {
         }
     }
     return skip;
+}
+
+bool AcquireNextImageCommand::Execute(SyncValidator& validator) const {
+    // Consume the present record after earlier present commands have executed
+    const PresentedImage presented = SubState(*swapchain).MovePresentedImage(image_index, image);
+
+    // We create a queue-less QBC for the semaphore and fence to wait on.
+    // NOTE: this is a heavyweight way to deal with the fact that all operation
+    // logs live in the QueueBatchContext. Acquire doesn't happen on a queue,
+    // but we need a place to put the acquire operation access record
+    auto batch = std::make_shared<QueueBatchContext>(validator);
+    batch->SetupAccessContext(presented);
+    const ResourceUsageTag acquire_tag = batch->SetupBatchTags(1);
+    batch->DoAcquireOperation(presented);
+    batch->LogAcquireOperation(presented, command);
+
+    if (semaphore != VK_NULL_HANDLE) {
+        // Keep the existing signal if the semaphore is signaled twice.
+        // NOTE: core validation reports the duplicate
+        validator.binary_signals_.emplace(semaphore, SignalInfo(batch, presented, acquire_tag));
+    }
+    if (fence != VK_NULL_HANDLE) {
+        FenceHostSyncPoint sync_point;
+        sync_point.tag = acquire_tag;
+        sync_point.acquired = AcquiredImage(presented, acquire_tag);
+        validator.waitable_fences_[fence] = std::move(sync_point);
+    }
+    return false;
 }
 
 bool IsQueueCommandReady(const QueueCommand& command) {

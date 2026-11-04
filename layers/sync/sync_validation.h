@@ -524,8 +524,8 @@ class SyncValidator : public vvl::DeviceProxy {
                                            VkFence fence, uint32_t* pImageIndex, const RecordObject& record_obj) override;
     void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex,
                                             const RecordObject& record_obj) override;
-    void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                     VkFence fence, uint32_t* pImageIndex, const RecordObject& record_obj);
+    void RecordAcquireNextImageState(VkSwapchainKHR swapchain, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
+                                     const RecordObject& record_obj);
     bool ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                             const ErrorObject& error_obj);
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
