@@ -2433,11 +2433,7 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
         }
         new_last_batch = batch;
 
-        // Import the previous batch information
-        if (last_batch && !vvl::Contains(resolved_batches, last_batch)) {
-            batch->ResolveLastBatch(last_batch);
-            resolved_batches.emplace_back(std::move(last_batch));
-        }
+        batch->ResolveLastBatch(std::move(last_batch), resolved_batches);
 
         // The purpose of keeping return value is to ensure async batches are alive during validation.
         // Validation accesses raw pointer to async contexts stored in AsyncReference.
@@ -2526,11 +2522,7 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {
             while (!unresolved_batches.empty() && unresolved_batches.front().unresolved_waits.empty()) {
                 UnresolvedBatch& ready_batch = unresolved_batches.front();
 
-                // Import the previous batch information
-                if (last_batch && !vvl::Contains(ready_batch.resolved_dependencies, last_batch)) {
-                    ready_batch.batch->ResolveLastBatch(last_batch);
-                    ready_batch.resolved_dependencies.emplace_back(std::move(last_batch));
-                }
+                ready_batch.batch->ResolveLastBatch(std::move(last_batch), ready_batch.resolved_dependencies);
 
                 const auto async_batches = ready_batch.batch->RegisterAsyncContexts(ready_batch.resolved_dependencies);
 

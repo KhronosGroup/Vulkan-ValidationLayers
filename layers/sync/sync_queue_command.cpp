@@ -169,7 +169,6 @@ bool QueuePresentCommand::Execute(SyncValidator& validator) const {
     QueueState& queue_state = validator.GetQueueState(queue_id);
     const uint64_t submit_id = queue_state.ReserveSubmitId();
 
-    BatchContextPtr last_batch = queue_state.LastBatch();
     BatchContextPtr batch(std::make_shared<QueueBatchContext>(validator, queue_state));
 
     PresentedImages presented_images(images.size());
@@ -192,11 +191,7 @@ bool QueuePresentCommand::Execute(SyncValidator& validator) const {
     SignalsUpdate signals_update(validator);
     auto resolved_batches = batch->ResolvePresentWaits(vvl::make_span(wait_semaphores), presented_images, signals_update);
 
-    // Import the previous batch information
-    if (last_batch && !vvl::Contains(resolved_batches, last_batch)) {
-        batch->ResolveLastBatch(last_batch);
-        resolved_batches.emplace_back(std::move(last_batch));
-    }
+    batch->ResolveLastBatch(queue_state.LastBatch(), resolved_batches);
 
     // Keep async batches alive while validation uses their contexts
     // through raw pointers (AsyncReference::context_)
