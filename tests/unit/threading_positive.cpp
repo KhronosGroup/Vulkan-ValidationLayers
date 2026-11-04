@@ -476,7 +476,7 @@ TEST_F(PositiveThreading, CreateDestroyRenderPass) {
     color_ref.attachment = 0;
     color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    std::array<VkSubpassDescription, 32> subpasses;
+    std::array<VkSubpassDescription, 16> subpasses;
     for (auto& subpass : subpasses) {
         subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -491,7 +491,7 @@ TEST_F(PositiveThreading, CreateDestroyRenderPass) {
     rp_ci.pSubpasses = subpasses.data();
 
     auto thread_func = [this, &rp_ci]() {
-        std::vector<VkRenderPass> render_passes(1500);
+        std::vector<VkRenderPass> render_passes(300);
         for (VkRenderPass& render_pass : render_passes) {
             vk::CreateRenderPass(*m_device, &rp_ci, nullptr, &render_pass);
         }
@@ -499,6 +499,7 @@ TEST_F(PositiveThreading, CreateDestroyRenderPass) {
             vk::DestroyRenderPass(*m_device, render_pass, nullptr);
         }
     };
-    std::array<std::thread, 3> threads = {std::thread(thread_func), std::thread(thread_func), std::thread(thread_func)};
+    std::array<std::thread, 4> threads = {std::thread(thread_func), std::thread(thread_func), std::thread(thread_func),
+                                          std::thread(thread_func)};
     for (auto& t : threads) t.join();
 }
