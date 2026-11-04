@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
+/* Copyright (c) 2015-2026 The Khronos Group Inc.
+ * Copyright (c) 2015-2026 Valve Corporation
+ * Copyright (c) 2015-2026 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -67,10 +67,6 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
 
     // returns true if this vulkan object or any it uses have been destroyed
     virtual bool Invalid() const { return Destroyed(); }
-
-    // Save the tedium of two part testing...
-    static bool Invalid(const StateObject *node) { return !node || node->Destroyed(); }
-    static bool Invalid(const std::shared_ptr<const StateObject> &node) { return !node || node->Destroyed(); }
 
     using TypedHandleWrapper::Handle;
     static VulkanTypedHandle Handle(const StateObject *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
