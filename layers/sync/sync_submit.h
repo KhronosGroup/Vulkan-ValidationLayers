@@ -54,18 +54,13 @@ struct AcquiredImage {
 // Information associated with a semaphore signal
 struct SignalInfo {
     // QueueSubmit signal
-    SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const BatchContextPtr& batch,
-               const SyncExecScope& exec_scope, uint64_t timeline_value);
+    SignalInfo(const BatchContextPtr& batch, const SyncExecScope& exec_scope, uint64_t timeline_value);
 
     // SignalSemaphore signal
-    SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, uint64_t timeline_value);
+    explicit SignalInfo(uint64_t timeline_value);
 
     // AcquireNextImage signal
-    SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const PresentedImage& presented,
-               ResourceUsageTag acquire_tag);
-
-    // Signaled semaphore. Not null.
-    std::shared_ptr<const vvl::Semaphore> semaphore_state;
+    SignalInfo(const BatchContextPtr& acquire_batch, const PresentedImage& presented, ResourceUsageTag acquire_tag);
 
     // Batch from the signal's first scope. It is null for a host signal (vkSignalSemaphore)
     std::shared_ptr<QueueBatchContext> batch;
@@ -78,7 +73,8 @@ struct SignalInfo {
     uint64_t timeline_value = 0;
 
     // Swapchain specific signal info.
-    // Batch field is the batch of the last present for the acquired image.
+    // For an acquire signal, batch points to the queue-less acquire batch.
+    // It imports the access history from the image's last present, if any.
     // The AcquiredImage further limits the scope of the resolve operation, and the "barrier" will also
     // be special case (updating "PRESENTED" write with "ACQUIRE" read, as well as setting the barrier).
     //
@@ -126,11 +122,10 @@ struct SignalsUpdate {
     SignalsUpdate(const SyncValidator& sync_validator) : sync_validator_(sync_validator) {}
 
   private:
-    void OnBinarySignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
-                        const VkSemaphoreSubmitInfo& submit_signal);
-    // Return false if signal is invalid (non-increasing value)
-    bool OnTimelineSignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
-                          const VkSemaphoreSubmitInfo& submit_signal);
+    void OnBinarySignal(const BatchContextPtr& batch, const VkSemaphoreSubmitInfo& submit_signal);
+
+    // Return false if the signal is invalid (non-increasing value)
+    bool OnTimelineSignal(const BatchContextPtr& batch, const VkSemaphoreSubmitInfo& submit_signal);
 
   private:
     const SyncValidator& sync_validator_;
@@ -182,7 +177,7 @@ struct PresentedImage : public PresentedImageRecord {
     ImageRangeGen range_gen;
 
     PresentedImage() = default;
-    PresentedImage(const vvl::Swapchain& swapchain, uint32_t at_index);
+    PresentedImage(const std::shared_ptr<const vvl::Image>& image_state, uint32_t at_index);
 
     void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context, SyncFlags flags = 0) const;
 };

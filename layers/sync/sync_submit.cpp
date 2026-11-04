@@ -25,26 +25,17 @@ namespace syncval {
 AcquiredImage::AcquiredImage(const PresentedImage& presented, ResourceUsageTag acq_tag)
     : image(presented.image), generator(presented.range_gen), acquire_tag(acq_tag), present_tag(presented.tag) {}
 
-SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const BatchContextPtr& batch,
-                       const SyncExecScope& exec_scope, uint64_t timeline_value)
-    : semaphore_state(semaphore_state),
-      batch(batch),
-      first_scope({batch->GetQueueId(), exec_scope}),
-      timeline_value(timeline_value) {}
+SignalInfo::SignalInfo(const BatchContextPtr& batch, const SyncExecScope& exec_scope, uint64_t timeline_value)
+    : batch(batch), first_scope({batch->GetQueueId(), exec_scope}), timeline_value(timeline_value) {}
 
-SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, uint64_t timeline_value)
-    : semaphore_state(semaphore_state), first_scope(kQueueIdInvalid, SyncExecScope{}), timeline_value(timeline_value) {}
+SignalInfo::SignalInfo(uint64_t timeline_value) : first_scope(kQueueIdInvalid, SyncExecScope{}), timeline_value(timeline_value) {}
 
-SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const PresentedImage& presented,
-                       ResourceUsageTag acquire_tag)
-    : semaphore_state(semaphore_state),
-      batch(presented.batch),
-      first_scope(),
-      acquired_image(std::make_shared<AcquiredImage>(presented, acquire_tag)) {}
+SignalInfo::SignalInfo(const BatchContextPtr& acquire_batch, const PresentedImage& presented, ResourceUsageTag acquire_tag)
+    : batch(acquire_batch), first_scope(), acquired_image(std::make_shared<AcquiredImage>(presented, acquire_tag)) {}
 
-void SignalsUpdate::OnBinarySignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
-                                   const VkSemaphoreSubmitInfo& submit_signal) {
-    const VkSemaphore semaphore = semaphore_state.VkHandle();
+void SignalsUpdate::OnBinarySignal(const BatchContextPtr& batch, const VkSemaphoreSubmitInfo& submit_signal) {
+    const VkSemaphore semaphore = submit_signal.semaphore;
+
     // Signal can't be registered in both lists at the same time.
     assert(!vvl::Contains(binary_signal_requests, semaphore) || !vvl::Contains(binary_unsignal_requests, semaphore));
 
@@ -60,12 +51,11 @@ void SignalsUpdate::OnBinarySignal(const vvl::Semaphore& semaphore_state, const 
     // Register signal
     const VkQueueFlags queue_flags = batch->GetQueueFlags();
     const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
-    binary_signal_requests.emplace(semaphore, SignalInfo(semaphore_state.shared_from_this(), batch, exec_scope, 0));
+    binary_signal_requests.emplace(semaphore, SignalInfo(batch, exec_scope, 0));
 }
 
-bool SignalsUpdate::OnTimelineSignal(const vvl::Semaphore& semaphore_state, const BatchContextPtr& batch,
-                                     const VkSemaphoreSubmitInfo& submit_signal) {
-    const VkSemaphore semaphore = semaphore_state.VkHandle();
+bool SignalsUpdate::OnTimelineSignal(const BatchContextPtr& batch, const VkSemaphoreSubmitInfo& submit_signal) {
+    const VkSemaphore semaphore = submit_signal.semaphore;
     std::vector<SignalInfo>& signals = timeline_signals[semaphore];
 
     // Reject invalid signal
@@ -76,7 +66,7 @@ bool SignalsUpdate::OnTimelineSignal(const vvl::Semaphore& semaphore_state, cons
     // Register signal
     const VkQueueFlags queue_flags = batch->GetQueueFlags();
     const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
-    signals.emplace_back(SignalInfo(semaphore_state.shared_from_this(), batch, exec_scope, submit_signal.value));
+    signals.emplace_back(SignalInfo(batch, exec_scope, submit_signal.value));
     return true;
 }
 
@@ -85,9 +75,9 @@ bool SignalsUpdate::RegisterSignals(const BatchContextPtr& batch, const vvl::spa
     for (const auto& submit_signal : submit_signals) {
         if (auto semaphore_state = sync_validator_.Get<vvl::Semaphore>(submit_signal.semaphore)) {
             if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY) {
-                OnBinarySignal(*semaphore_state, batch, submit_signal);
+                OnBinarySignal(batch, submit_signal);
             } else {
-                registered_timeline_signal |= OnTimelineSignal(*semaphore_state, batch, submit_signal);
+                registered_timeline_signal |= OnTimelineSignal(batch, submit_signal);
             }
         }
     }
@@ -162,7 +152,7 @@ void SwapchainSubState::RecordPresentedImage(PresentedImage&& presented_image) {
 }
 
 // We move from the presented images array 1) so we don't copy shared_ptr, and 2) to mark it acquired
-PresentedImage SwapchainSubState::MovePresentedImage(uint32_t image_index) {
+PresentedImage SwapchainSubState::MovePresentedImage(uint32_t image_index, const std::shared_ptr<const vvl::Image>& image) {
     if (presented.size() <= image_index) {
         presented.resize(image_index + 1);
     }
@@ -170,7 +160,7 @@ PresentedImage SwapchainSubState::MovePresentedImage(uint32_t image_index) {
     if (!ret_val.image) {
         // If this is the first time the image has been acquired then it has no present record and we create one
         // NOTE: It's also possible this is an invalid acquire but this is reported by core checks
-        ret_val = PresentedImage(base, image_index);
+        ret_val = PresentedImage(image, image_index);
     }
     return ret_val;
 }
@@ -898,19 +888,11 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const Command
                                          const std::vector<std::string>& initial_label_stack)
     : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
 
-PresentedImage::PresentedImage(const vvl::Swapchain& swapchain, uint32_t at_index) : PresentedImage() {
+PresentedImage::PresentedImage(const std::shared_ptr<const vvl::Image>& image_state, uint32_t at_index) : PresentedImage() {
     tag = kInvalidTag;
     image_index = at_index;
-    if (swapchain.Destroyed()) {
-        return;
-    }
-    image = swapchain.GetSwapChainImageShared(image_index);
-    if (image) {
-        const ImageSubState& image_substate = SubState(*image);
-        range_gen = image_substate.MakeImageRangeGen(image->full_range, false);
-    } else {
-        range_gen = ImageRangeGen();
-    }
+    image = image_state;
+    range_gen = SubState(*image).MakeImageRangeGen(image->full_range, false);
 }
 
 void PresentedImage::UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context,

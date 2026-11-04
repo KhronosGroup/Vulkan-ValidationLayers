@@ -24,6 +24,7 @@
 
 namespace vvl {
 class Swapchain;
+enum class Func;
 }  // namespace vvl
 
 namespace syncval {
@@ -101,9 +102,21 @@ struct QueuePresentCommand {
     bool Execute(SyncValidator& validator) const;
 };
 
+struct AcquireNextImageCommand {
+    std::shared_ptr<vvl::Swapchain> swapchain;
+    std::shared_ptr<const vvl::Image> image;
+    uint32_t image_index;
+    vvl::Func command;
+    VkSemaphore semaphore;
+    VkFence fence;
+
+    bool IsReady() const { return true; }
+    bool Execute(SyncValidator& validator) const;
+};
+
 using QueueCommand = std::variant<WaitForFenceCommand, WaitForSemaphoreCommand, SignalSemaphoreCommand, HostResetEventCommand,
                                   QueueWaitIdleCommand, DeviceWaitIdleCommand, ResourceDestroyedCommand, SemaphoreDestroyedCommand,
-                                  SwapchainDestroyedCommand, QueuePresentCommand>;
+                                  SwapchainDestroyedCommand, QueuePresentCommand, AcquireNextImageCommand>;
 using QueueCommandStorage = std::deque<QueueCommand>;
 
 // Whether the command is ready to execute.

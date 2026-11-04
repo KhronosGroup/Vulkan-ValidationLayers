@@ -65,7 +65,7 @@ class SwapchainSubState : public vvl::SwapchainSubState {
     SwapchainSubState(vvl::Swapchain& swapchain) : vvl::SwapchainSubState(swapchain) {}
     ~SwapchainSubState() { Destroy(); }
     void RecordPresentedImage(PresentedImage&& presented_images);
-    PresentedImage MovePresentedImage(uint32_t image_index);
+    PresentedImage MovePresentedImage(uint32_t image_index, const std::shared_ptr<const vvl::Image>& image);
     void GetPresentBatches(std::vector<BatchContextPtr>& batches) const;
 
   private:
