@@ -252,20 +252,13 @@ std::vector<BatchContextPtr> SyncValidator::GetAllQueueBatchContexts() {
     return batch_contexts;
 }
 
-void SyncValidator::UpdateFenceHostSyncPoint(VkFence fence, FenceHostSyncPoint&& sync_point) {
-    std::shared_ptr<const vvl::Fence> fence_state = Get<vvl::Fence>(fence);
-    if (!vvl::StateObject::Invalid(fence_state)) {
-        waitable_fences_[fence_state->VkHandle()] = std::move(sync_point);
-    }
-}
-
 void SyncValidator::WaitForFence(VkFence fence) {
     if (auto fence_it = waitable_fences_.find(fence); fence_it != waitable_fences_.end()) {
         FenceHostSyncPoint& wait_for = fence_it->second;
         if (wait_for.queue_id != kQueueIdInvalid) {
             const QueueState& queue_state = GetQueueState(wait_for.queue_id);
             ApplyTaggedWait(wait_for.queue_id, wait_for.tag, queue_state.GetLastSynchronizedPresent(), wait_for.queue_sync_tags);
-        } else if (!vvl::StateObject::Invalid(wait_for.acquired.image)) {
+        } else if (!wait_for.acquired.image->Destroyed()) {
             ApplyAcquireWait(wait_for.acquired);
         }
         waitable_fences_.erase(fence_it);
@@ -2483,7 +2476,9 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
         if (queue_state.LastBatch()) {
             sync_point.queue_sync_tags = queue_state.LastBatch()->GetQueueSyncTags();
         }
-        UpdateFenceHostSyncPoint(fence, std::move(sync_point));
+        if (Get<vvl::Fence>(fence)) {
+            waitable_fences_[fence] = std::move(sync_point);
+        }
     }
     return skip;
 }

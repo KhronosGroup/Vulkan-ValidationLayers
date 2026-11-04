@@ -105,8 +105,6 @@ class SyncValidator : public vvl::DeviceProxy {
 
     std::vector<BatchContextPtr> GetAllQueueBatchContexts();
 
-    void UpdateFenceHostSyncPoint(VkFence fence, FenceHostSyncPoint&& sync_point);
-
     void WaitForFence(VkFence fence);
     void WaitForSemaphore(VkSemaphore semaphore, uint64_t value);
 
