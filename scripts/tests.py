@@ -226,6 +226,9 @@ def RunVVLTests(args):
     video_capabilities = capabilities + ',SIMULATE_VIDEO_CAPABILITIES_BIT,SIMULATE_VIDEO_FORMATS_BIT'
     lvt_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = capabilities
 
+    # https://github.com/KhronosGroup/Vulkan-Profiles/pull/1095
+    lvt_env['VK_KHRONOS_PROFILES_PROFILE_CACHE'] = 'true'
+
     # By default use the max_profile.json
     if "VK_KHRONOS_PROFILES_PROFILE_FILE" not in os.environ:
         lvt_env['VK_KHRONOS_PROFILES_PROFILE_FILE'] = common_ci.RepoRelative('tests/device_profiles/max_profile.json')
