@@ -744,7 +744,10 @@ std::pair<VkCommandBuffer, VkFence> CommandPool::GetCommandBuffer() {
     const size_t cb_i = cmd_buffer_ring_head_++ % cmd_buffers_.size();
 
     VkResult result = DispatchWaitForFences(gpuav_.device, 1, &fences_[cb_i], VK_TRUE, UINT64_MAX);
-    if (result != VK_SUCCESS) {
+    if (result == VK_ERROR_DEVICE_LOST) {
+        gpuav_.PublishDeviceLost(Location(vvl::Func::vkWaitForFences));
+        return {VK_NULL_HANDLE, VK_NULL_HANDLE};
+    } else if (result != VK_SUCCESS) {
         gpuav_.InternalError(fences_[cb_i], Location(vvl::Func::Empty), "Failed to wait for fence");
         return {VK_NULL_HANDLE, VK_NULL_HANDLE};
     }

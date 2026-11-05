@@ -91,6 +91,11 @@ class Validator : public GpuShaderInstrumentor {
     // gpuav_record.cpp
     // --------------
   public:
+    void OnDeviceLost() final;
+    // Publishes loss without scanning command buffers or acquiring the state tracker's record lock
+    void PublishDeviceLost(const Location& loc);
+    // Requires the state tracker's record lock and no command-buffer lock
+    void ReportDeviceLostErrors() const;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) final;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) final;

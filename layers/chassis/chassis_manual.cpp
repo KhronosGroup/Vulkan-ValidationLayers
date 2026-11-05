@@ -1259,15 +1259,14 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
     record_obj.result = result;
     {
         VVL_ZoneScopedN("PostCallRecord_QueuePresentKHR");
+        if (result == VK_ERROR_DEVICE_LOST) {
+            device_dispatch->DeviceLost();
+        }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueuePresentKHR]) {
             if (!vo) {
                 continue;
             }
             auto lock = vo->WriteLock();
-
-            if (result == VK_ERROR_DEVICE_LOST) {
-                vo->is_device_lost = true;
-            }
             vo->PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
         }
     }

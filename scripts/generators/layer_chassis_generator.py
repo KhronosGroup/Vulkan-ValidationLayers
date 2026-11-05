@@ -444,14 +444,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_PostCallRecord{command.name}", post_call_record_gpu_zone);
                 ''')
 
-            # Because each intercept is a copy of vvl::BaseDevice, we need to update it for each,
-            # even if they don't intercept this command.
             if not command.instance and command.errorCodes and 'VK_ERROR_DEVICE_LOST' in command.errorCodes:
                 out.append(f'''
                     if (result == VK_ERROR_DEVICE_LOST) {{
-                       for (auto& vo : {dispatch}->object_dispatch) {{
-                            vo->is_device_lost = true;
-                        }}
+                        {dispatch}->DeviceLost();
                     }}
                 ''')
 

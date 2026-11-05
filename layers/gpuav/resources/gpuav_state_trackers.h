@@ -59,6 +59,7 @@ namespace gpuav {
 class Validator;
 class QueueSubState;
 struct InstrumentedShader;
+struct GpuError;
 
 // Unify data needed Classic/Buffer/Heap descriptor mode for on_instrumention callbacks
 struct CommonDescriptorUpdate {
@@ -122,12 +123,14 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
     ~CommandBufferSubState();
 
-    [[nodiscard]] bool PreSubmit(QueueSubState& queue, const Location& loc, gpuav::QueueSubmission& queue_submission,
-                                 gpuav::CommandBufferSubmitInfo& cb_submit_info);
+    [[nodiscard]] bool PreSubmit(QueueSubState& queue, uint64_t seq, const Location& loc, gpuav::QueueSubmission& queue_submission,
+                                 gpuav::CommandBufferSubmitInfo& cb_submit_info, const vvl::CommandBufferSubmitInfo& cb_info);
     [[nodiscard]] bool PostSubmit(QueueSubState& queue, const Location& loc, gpuav::QueueSubmission& queue_submission,
                                   gpuav::CommandBufferSubmitInfo& cb_submit_info);
     void OnCompletion(VkQueue queue, gpuav::QueueSubmission& queue_submission, gpuav::CommandBufferSubmitInfo& cb_submit_info,
                       const vvl::CommandBufferSubmitInfo& cb_info, const Location& submission_loc);
+    // Device loss path, requires this command buffer's lock
+    void CompleteAllSubmissions();
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
@@ -167,18 +170,23 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     vko::GpuResourcesManager gpu_resources_manager;
 
+    struct ErrorLoggerContext {
+        const uint32_t* error_record;
+        const Location& loc_with_debug_region;
+        const LogObjectList& objlist;
+        const GpuError& gpu_error;
+    };
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(const uint32_t* error_record, const Location& loc_with_debug_region,
-                                      const LogObjectList& objlist),
+        stdext::inplace_function<bool(const ErrorLoggerContext& context),
                                  88 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     struct CommandErrorLogger {
         vvl::LocationCapture loc;
         LogObjectList objlist;
-        ErrorLoggerFunc error_logger_func;
+        ErrorLoggerFunc func;
         uint32_t label_cmd_i;
     };
-    void AddCommandErrorLogger(const Location &loc, const LastBound *last_bound, ErrorLoggerFunc error_logger_func);
+    void AddCommandErrorLogger(const Location& loc, const LastBound* last_bound, ErrorLoggerFunc func);
     uint32_t GetErrorLoggerIndex() { return (uint32_t)command_error_loggers_.size(); }
     const CommandErrorLogger &GetErrorLogger(uint32_t i) { return command_error_loggers_[i]; }
 
@@ -198,10 +206,23 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     Validator& gpuav_;
 
+    struct SubmissionInfo {
+        VkQueue queue;
+        uint64_t seq;
+        vvl::LocationCapture loc;
+        gpuav::QueueSubmission queue_submission;
+        gpuav::CommandBufferSubmitInfo cb_submit_info;
+        vvl::CommandBufferSubmitInfo cb_info;
+    };
+    // Only completed from here on device loss, QueueSubState::Retire drops the ones it completes
+    std::vector<SubmissionInfo> pending_submissions_;
+
   private:
-    void AllocateResources(const Location &loc);
+    void AllocateResources(const Location& loc);
     void ResetCBState(bool should_destroy);
-    bool NeedsPostProcess();
+    // Requires this command buffer's write lock
+    void AddSubmissionCompletion(VkQueue queue, uint64_t seq, const Location& loc, const gpuav::QueueSubmission& queue_submission,
+                                 const gpuav::CommandBufferSubmitInfo& cb_submit_info, const vvl::CommandBufferSubmitInfo& cb_info);
 
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
     std::vector<CommandErrorLogger> command_error_loggers_;
@@ -281,13 +302,16 @@ class QueueSubState : public vvl::QueueSubState {
     vko::SharedResourcesCache<true> shared_resources_cache;
 
   protected:
-    void SubmitBarrier(const Location &loc, uint64_t seq);
+    void PreSubmitCommandBuffers(std::vector<vvl::QueueSubmission>& submissions);
+    bool PostSubmitCommandBuffers(vvl::QueueSubmission& submission);
+    void SubmitBarrier(const Location& loc, uint64_t seq);
 
-    Validator &gpuav_;
+    Validator& gpuav_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     std::vector<std::vector<vvl::CommandBufferSubmitInfo>> retiring_;
     std::vector<vvl::QueueSubmission::GpuAV> retiring_gpuav_;
+    std::vector<uint64_t> retiring_seqs_;
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
     const bool timeline_khr_;
 };
