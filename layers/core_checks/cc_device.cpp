@@ -772,7 +772,7 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
     bool skip = false;
-    if (is_device_lost) {
+    if (device_state->dispatch_device_->is_device_lost) {
         return skip;  // In case of DEVICE_LOST, all execution is considered over
     }
 
@@ -805,7 +805,9 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
             const LogObjectList objlist(cb_state->Handle(), commandPool);
             skip |= LogError("VUID-vkResetCommandPool-commandPool-00040", objlist, error_obj.location, "(%s) is in use.%s",
                              FormatHandle(cb_state->Handle()).c_str(),
-                             is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command pool must be destroyed)" : "");
+                             device_state->dispatch_device_->is_device_lost
+                                 ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command pool must be destroyed)"
+                                 : "");
         }
     }
     return skip;
@@ -884,7 +886,7 @@ bool CoreChecks::ValidateObjectNotInUse(const vvl::StateObject* obj_node, const 
     if (disabled[object_in_use]) {
         return skip;
     }
-    if (is_device_lost) {
+    if (device_state->dispatch_device_->is_device_lost) {
         return skip;  // In case of DEVICE_LOST, all execution is considered over
     }
     const VulkanTypedHandle* user_handle = obj_node->InUse();
@@ -1062,7 +1064,7 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location& loc) const {
 bool CoreChecks::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts,
                                                       VkDeviceFaultInfoEXT* pFaultInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!is_device_lost) {
+    if (!device_state->dispatch_device_->is_device_lost) {
         skip |= LogError("VUID-vkGetDeviceFaultInfoEXT-device-07336", device, error_obj.location,
                          "device has not been found to be in a lost state.");
     }
@@ -1072,7 +1074,7 @@ bool CoreChecks::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceF
 bool CoreChecks::PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDeviceFaultDebugInfoKHR* pDebugInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    if (!is_device_lost) {
+    if (!device_state->dispatch_device_->is_device_lost) {
         skip |= LogError("VUID-vkGetDeviceFaultDebugInfoKHR-device-12383", device, error_obj.location,
                          "device has not been found to be in a lost state.");
     }

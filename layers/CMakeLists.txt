@@ -198,6 +198,7 @@ target_sources(vvl_core PRIVATE
     chassis/chassis_manual.cpp
     chassis/dispatch_object_manual.cpp
     chassis/dispatch_object.h
+    chassis/validation_object.h
     containers/range.h
     containers/range_map.h
     core_checks/cc_android.cpp

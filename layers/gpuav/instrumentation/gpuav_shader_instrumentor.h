@@ -73,6 +73,10 @@ struct InstrumentedShader {
     gpuav::spirv::InstrumentationStatus::Device status;
 };
 
+struct GpuError {
+    const char* error_msg_prefix = nullptr;
+};
+
 // Historically this was an common interface to both GPU-AV and DebugPrintf before the were merged together.
 // We still keep this as encapsulates the complex code around shader instrumentation.
 // Handles shader instrumentation (reserve a descriptor slot, create descriptor
@@ -171,6 +175,9 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     void AdjustmentWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     void InternalInfo(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
 
+    bool DECORATE_PRINTF(6, 7) LogGpuError(const GpuError& gpu_error, std::string_view vuid_text, const LogObjectList& objlist,
+                                           const Location& loc, const char* format, ...) const;
+
     bool IsSelectiveInstrumentationEnabled(const void *pNext);
 
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const uint32_t* error_record,
@@ -225,7 +232,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     // If we are deep into a call stack, we can use this to return up to the chassis call.
     // It should only be used after calls that might abort, not to be used for guarding a function (unless a case is found that make
     // sense too)
-    mutable bool aborted_ = false;
+    mutable std::atomic<bool> aborted_ = false;
 
     // Some errors/warnings only want to report once for the lifetime of the app
     bool reported_code_type_binary_ = false;

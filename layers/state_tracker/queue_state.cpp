@@ -386,7 +386,7 @@ void vvl::Queue::Retire(QueueSubmission& submission) {
     // When device is lost skip updating substates which might access destroyed/garbage objects.
     // NOTE: we still need to run semaphore/fence retire routines which do not work with Vulkan
     // handles but ensure correct invariants (for example, Fence::Retire sets its std::promise)
-    if (!device_state_.is_device_lost) {
+    if (!device_state_.dispatch_device_->is_device_lost) {
         for (auto& item : sub_states_) {
             item.second->Retire(submission);
         }

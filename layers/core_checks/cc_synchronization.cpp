@@ -969,7 +969,9 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
         if (fence_state->Scope() == vvl::Fence::kInternal && fence_state->State() == vvl::Fence::kInflight) {
             skip |= LogError("VUID-vkResetFences-pFences-01123", pFences[i], error_obj.location.dot(Field::pFences, i),
                              "(%s) is in use.%s", FormatHandle(pFences[i]).c_str(),
-                             is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the fence must be destroyed)" : "");
+                             device_state->dispatch_device_->is_device_lost
+                                 ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the fence must be destroyed)"
+                                 : "");
         }
     }
     return skip;
