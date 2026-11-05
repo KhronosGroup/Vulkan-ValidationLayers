@@ -2515,6 +2515,15 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {
                 skip |= ready_batch.batch->ValidateSubmit(ready_batch.recordings, ready_batch.submit_index, ready_batch.batch_index,
                                                           ready_batch.label_stack, Location(ready_batch.submit_func));
 
+                // ValidateSubmit() has assigned the batch tags
+                for (VkFence fence : ready_batch.fences) {
+                    FenceHostSyncPoint sync_point;
+                    sync_point.queue_id = queue_state.GetQueueId();
+                    sync_point.tag = ready_batch.batch->GetTagRange().end;
+                    sync_point.queue_sync_tags = ready_batch.batch->GetQueueSyncTags();
+                    waitable_fences_[fence] = std::move(sync_point);
+                }
+
                 // Process signals. New timeline signals can resolve more batches on the next iteration
                 const auto submit_signals = vvl::make_span(ready_batch.signals.data(), ready_batch.signals.size());
                 new_timeline_signals |= signals_update.RegisterSignals(ready_batch.batch, submit_signals);
