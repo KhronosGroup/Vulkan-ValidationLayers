@@ -1114,6 +1114,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                          const ErrorObject& error_obj) const override;
 
     bool ValidateDataGraphCommandPoolCreateInfo(const VkCommandPoolCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateDataGraphPipelineBuiltinModelCreateInfo(const VkDataGraphPipelineCreateInfoARM& create_info,
+                                                         const VkPhysicalDeviceDataGraphOperationSupportARM& operation,
+                                                         const Location& create_info_loc) const;
     bool ValidateDataGraphPipelineCreateInfo(VkDevice device, const VkDataGraphPipelineCreateInfoARM& create_info,
                                              const Location& create_info_loc, const vvl::Pipeline& pipeline) const;
     bool ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,

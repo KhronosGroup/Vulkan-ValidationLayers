@@ -3321,3 +3321,72 @@ TEST_F(NegativeDataGraph, CreateDescriptorPoolButModelFeatureNotEnabled) {
     vkt::DescriptorPool descriptor_pool{device, descriptor_pool_ci};
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDataGraph, CreateBuiltinModelPipelineWithoutModelEngine) {
+    TEST_DESCRIPTION("Try to create a builtin model pipeline without selecting a processing engine.");
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(InitDataGraphModel());
+
+    vkt::DescriptorSetLayout descriptor_set_layout{*m_device, {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    vkt::PipelineLayout layout{*m_device, {&descriptor_set_layout}};
+
+    VkDataGraphPipelineBuiltinModelCreateInfoQCOM model_ci = vku::InitStructHelper();
+    model_ci.pOperation = &model_properties_[0].operation;
+    VkDataGraphPipelineCreateInfoARM pipeline_ci = vku::InitStructHelper(&model_ci);
+    pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipeline_ci.layout = layout;
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842");
+    vkt::Pipeline pipeline{*m_device, pipeline_ci};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, CreateBuiltinModelPipelineWithOperationOfOtherEngine) {
+    TEST_DESCRIPTION("Try to create a builtin model pipeline with an operation enumerated for another engine.");
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(InitDataGraphModel());
+
+    if (model_properties_.size() < 2) {
+        GTEST_SKIP() << "Two foreign model engines are required, skipping test.";
+    }
+
+    vkt::DescriptorSetLayout descriptor_set_layout{*m_device, {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    vkt::PipelineLayout layout{*m_device, {&descriptor_set_layout}};
+
+    VkDataGraphProcessingEngineCreateInfoARM engine_ci = vku::InitStructHelper();
+    engine_ci.processingEngineCount = 1;
+    engine_ci.pProcessingEngines = &model_properties_[1].engine;
+    VkDataGraphPipelineBuiltinModelCreateInfoQCOM model_ci = vku::InitStructHelper(&engine_ci);
+    model_ci.pOperation = &model_properties_[0].operation;
+    VkDataGraphPipelineCreateInfoARM pipeline_ci = vku::InitStructHelper(&model_ci);
+    pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipeline_ci.layout = layout;
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842");
+    vkt::Pipeline pipeline{*m_device, pipeline_ci};
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDataGraph, CreateBuiltinModelPipelineWithUnsupportedOperation) {
+    TEST_DESCRIPTION("Try to create a builtin model pipeline with a builtin model the device does not provide.");
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(InitDataGraphModel());
+
+    vkt::DescriptorSetLayout descriptor_set_layout{*m_device, {0, VK_DESCRIPTOR_TYPE_TENSOR_ARM, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    vkt::PipelineLayout layout{*m_device, {&descriptor_set_layout}};
+
+    const VkPhysicalDeviceDataGraphOperationSupportARM operation{VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_BUILTIN_MODEL_QCOM,
+                                                                 "UnsupportedModel", 0};
+    VkDataGraphProcessingEngineCreateInfoARM engine_ci = vku::InitStructHelper();
+    engine_ci.processingEngineCount = 1;
+    engine_ci.pProcessingEngines = &model_properties_[0].engine;
+    VkDataGraphPipelineBuiltinModelCreateInfoQCOM model_ci = vku::InitStructHelper(&engine_ci);
+    model_ci.pOperation = &operation;
+    VkDataGraphPipelineCreateInfoARM pipeline_ci = vku::InitStructHelper(&model_ci);
+    pipeline_ci.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipeline_ci.layout = layout;
+    m_errorMonitor->SetDesiredError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842");
+    vkt::Pipeline pipeline{*m_device, pipeline_ci};
+    m_errorMonitor->VerifyFound();
+}

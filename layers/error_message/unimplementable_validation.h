@@ -99,6 +99,13 @@ const char* unimplementable_validation[] = {
     "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerSize-07340",
     "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerVersion-07341",
     "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneKHR-headerVersion-parameter",
+    // Same as above, struct is returned by the driver
+    "VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-None-11835",
+    "VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-cacheType-parameter",
+    "VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11836",
+    "VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerSize-11838",
+    "VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-11837",
+    "VUID-VkPipelineCacheHeaderVersionDataGraphQCOM-headerVersion-parameter",
 
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7958
     // These are useless VUs and nothing to do
