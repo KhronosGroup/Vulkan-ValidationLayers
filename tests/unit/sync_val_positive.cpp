@@ -4135,6 +4135,18 @@ TEST_F(PositiveSyncVal, FenceWaitSynchronizesAnotherQueue3) {
     m_device->Wait();
 }
 
+TEST_F(PositiveSyncVal, FenceWaitForFenceOnlySubmit) {
+    TEST_DESCRIPTION("Wait for the fence of a submit without batches");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    m_command_buffer.Begin();
+    m_command_buffer.End();
+    vkt::Fence fence(*m_device);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Submit(vkt::no_cmd, fence);
+    fence.Wait(kWaitTimeout);
+}
+
 TEST_F(PositiveSyncVal, ExampleShaderAccessesHeuristicCausesFalsePositive) {
     // This test passes with shader_accesses_heuristic enabled (which is true for VVL tests).
     // But with heuristic option disabled (use vkconfig), which is a default value, we get can

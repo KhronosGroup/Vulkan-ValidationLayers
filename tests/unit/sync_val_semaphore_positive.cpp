@@ -977,6 +977,27 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitBeforeSinglaBlocksAnotherSubmit) {
     m_device->Wait();
 }
 
+TEST_F(PositiveSyncValTimelineSemaphore, FenceWaitForWaitBeforeSignal) {
+    TEST_DESCRIPTION("Wait for the fence of a submit whose timeline wait is signaled later from the host");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 256, 1);
+    m_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Fence fence(*m_device);
+
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1), fence);
+    semaphore.Signal(1);
+    fence.Wait(kWaitTimeout);
+
+    // The fence wait synchronizes the first fill
+    m_default_queue->Submit2(m_command_buffer);
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveSyncValBinarySemaphore, SemaphoreScopeIncludesAllAccesses) {
     TEST_DESCRIPTION("Semaphore access scopes include all device accesses, not only accesses supported by the stage mask");
     SetTargetApiVersion(VK_API_VERSION_1_3);
