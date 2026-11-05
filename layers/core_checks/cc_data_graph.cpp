@@ -77,6 +77,56 @@ bool CoreChecks::ValidateDataGraphCommandPoolCreateInfo(const VkCommandPoolCreat
     return skip;
 }
 
+bool CoreChecks::ValidateDataGraphPipelineBuiltinModelCreateInfo(const VkDataGraphPipelineCreateInfoARM& create_info,
+                                                                 const VkPhysicalDeviceDataGraphOperationSupportARM& operation,
+                                                                 const Location& create_info_loc) const {
+    bool skip = false;
+    const auto* engine_ci = vku::FindStructInPNextChain<VkDataGraphProcessingEngineCreateInfoARM>(create_info.pNext);
+
+    if (!engine_ci) {
+        skip |= LogError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842", device,
+                         create_info_loc.pNext(Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM, Field::pOperation),
+                         "is %s, but no processing engine is selected because pNext chain does not include "
+                         "VkDataGraphProcessingEngineCreateInfoARM.\n%s",
+                         string_VkPhysicalDeviceDataGraphOperationSupportARM(operation).c_str(),
+                         PrintPNextChain(Struct::VkDataGraphPipelineCreateInfoARM, create_info.pNext).c_str());
+        return skip;
+    }
+
+    const VkPhysicalDeviceDataGraphProcessingEngineARM* paired_engine = nullptr;
+    for (const auto& entry : physical_device_state->data_graph.queue_family_properties) {
+        for (const auto& property : entry.second) {
+            if (property.operation.operationType != operation.operationType || property.operation.version != operation.version ||
+                strcmp(property.operation.name, operation.name) != 0) {
+                continue;
+            }
+            for (const auto& engine : vvl::make_span(engine_ci->pProcessingEngines, engine_ci->processingEngineCount)) {
+                if (engine.type == property.engine.type && engine.isForeign == property.engine.isForeign) {
+                    return skip;
+                }
+            }
+            paired_engine = &property.engine;
+        }
+    }
+
+    std::ostringstream ss{};
+    ss << "is " << string_VkPhysicalDeviceDataGraphOperationSupportARM(operation);
+    if (paired_engine) {
+        ss << ", which is supported with processing engine " << string_VkPhysicalDeviceDataGraphProcessingEngineARM(*paired_engine)
+           << ", but VkDataGraphProcessingEngineCreateInfoARM::pProcessingEngines[0] is "
+           << string_VkPhysicalDeviceDataGraphProcessingEngineARM(engine_ci->pProcessingEngines[0]) << " (processingEngineCount is "
+           << engine_ci->processingEngineCount << ").";
+    } else {
+        ss << ", but no processing engine of the physical device supports it.";
+    }
+
+    skip |= LogError("VUID-VkDataGraphPipelineBuiltinModelCreateInfoQCOM-pOperation-11842", device,
+                     create_info_loc.pNext(Struct::VkDataGraphPipelineBuiltinModelCreateInfoQCOM, Field::pOperation), "%s",
+                     ss.str().c_str());
+
+    return skip;
+}
+
 bool CoreChecks::ValidateDataGraphPipelineShaderModuleCreateInfo(VkDevice device,
                                                                  const VkDataGraphPipelineShaderModuleCreateInfoARM& dg_shader_ci,
                                                                  const Location& dg_shader_ci_loc,
@@ -594,7 +644,7 @@ bool CoreChecks::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkD
         } else if (dg_pipeline_identifier_ci) {
             // TODO: add here validation for datagraph defined as cache object
         } else if (qcom_model_ci) {
-            // TODO: add here validation for datagraph defined as QCOM model object
+            skip |= ValidateDataGraphPipelineBuiltinModelCreateInfo(create_info, *qcom_model_ci->pOperation, create_info_loc);
         } else if (single_node_ci) {
             const auto* optical_flow_ci =
                 vku::FindStructInPNextChain<VkDataGraphPipelineOpticalFlowCreateInfoARM>(create_info.pNext);
