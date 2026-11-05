@@ -581,7 +581,9 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location& loc, const
 
         skip |= LogError(vuid, cb_state.Handle(), loc, "%s is already in use and is not marked for simultaneous use.%s",
                          FormatHandle(cb_state).c_str(),
-                         is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)" : "");
+                         device_state->dispatch_device_->is_device_lost
+                             ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)"
+                             : "");
     }
     return skip;
 }

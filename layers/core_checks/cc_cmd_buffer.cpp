@@ -165,7 +165,7 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer& cb_state, 
 bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                    const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
-    if (is_device_lost) {
+    if (device_state->dispatch_device_->is_device_lost) {
         return skip;  // In case of DEVICE_LOST, all execution is considered over
     }
 
@@ -193,7 +193,9 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                      "%s is still in use (pending state) and you may not begin again before it has completed. You must check the "
                      "command buffer fence before this call.%s",
                      FormatHandle(commandBuffer).c_str(),
-                     is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)" : "");
+                     device_state->dispatch_device_->is_device_lost
+                         ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)"
+                         : "");
     }
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
     if (cb_state->IsPrimary()) {
@@ -605,7 +607,9 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
         const LogObjectList objlist(commandBuffer, cmd_pool);
         skip |= LogError("VUID-vkResetCommandBuffer-commandBuffer-00045", objlist, error_obj.location,
                          "(%s) is in use (pending state).%s", FormatHandle(commandBuffer).c_str(),
-                         is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffers must be freed)" : "");
+                         device_state->dispatch_device_->is_device_lost
+                             ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffers must be freed)"
+                             : "");
     }
 
     return skip;
@@ -1568,7 +1572,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                  "(%s) is pending and can't execute again because it was not recorded with "
                                  "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT.%s",
                                  FormatHandle(secondary_cb).c_str(),
-                                 is_device_lost ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)" : "");
+                                 device_state->dispatch_device_->is_device_lost
+                                     ? "\n(a VK_ERROR_DEVICE_LOST has occurred, the command buffer must be freed)"
+                                     : "");
             }
             // We use an const_cast, because one cannot query a container keyed on a non-const pointer using a const pointer
             if (cb_state.linked_command_buffers.count(const_cast<vvl::CommandBuffer*>(&secondary_cb_state))) {

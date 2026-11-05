@@ -346,6 +346,8 @@ class DispatchDevice : public HandleWrapper {
     void InitValidationObjects();
     void ReleaseValidationObject(LayerObjectTypeId type_id) const;
     BaseDevice* GetValidationObject(LayerObjectTypeId object_type) const;
+    // Called when a function dispatched by the app encounters a device loss
+    void DeviceLost();
 
     bool IsSecondary(VkCommandBuffer cb) const;
 
@@ -372,6 +374,7 @@ class DispatchDevice : public HandleWrapper {
 
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
+    std::atomic<bool> is_device_lost = false;
     VkLayerDispatchTable device_dispatch_table;
 
     // We need to get the format feature all over across multiple calls.
