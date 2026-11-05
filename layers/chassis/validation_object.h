@@ -172,7 +172,7 @@ class BaseDevice : public Logger {
 
     const LayerObjectTypeId container_type;
 
-    bool is_device_lost = false;
+    std::atomic<bool> is_device_lost = false;
 
     mutable std::shared_mutex validation_object_mutex;
     // If the Record phase calls a function that blocks, we might need to release
@@ -250,6 +250,8 @@ class BaseDevice : public Logger {
             record_guard->lock();
         }
     }
+
+    virtual void OnDeviceLost() {}
 
     virtual void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                                     const VkAllocationCallbacks* pAllocator) {}

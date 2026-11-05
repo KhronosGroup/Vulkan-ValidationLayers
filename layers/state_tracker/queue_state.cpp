@@ -195,6 +195,26 @@ void vvl::Queue::NotifyAndWait(const Location& loc, uint64_t until_seq) {
     Wait(loc, until_seq);
 }
 
+void vvl::Queue::OnDeviceLost(bool lock_held) {
+    LockGuard guard(lock_, std::defer_lock);
+    if (!lock_held) {
+        guard.lock();
+    }
+    std::vector<const QueueSubmission*> submissions;
+    for (const QueueSubmission& submission : submissions_) {
+        // Submission that have been through the Queue::PreSubmit step but not fully through Queue::PostSubmit will hit this.
+        // When can it happen? When a GPU-AV internal device lost is hit in its QueueSubState::PostSubmit
+        const bool not_yet_submitted = first_seq_to_post_process_ != 0 && submission.seq >= first_seq_to_post_process_;
+        if (not_yet_submitted) {
+            break;
+        }
+        submissions.emplace_back(&submission);
+    }
+    for (auto& item : sub_states_) {
+        item.second->OnDeviceLost(submissions);
+    }
+}
+
 void vvl::Queue::NotifyAndWaitForPresent(const Location& loc, uint64_t until_seq) {
     // Collect semaphore waits of the covered presents
     small_vector<SemaphoreInfo, 1> waits;
@@ -341,7 +361,7 @@ void vvl::Queue::Destroy() {
     std::unique_ptr<std::thread> dead_thread;
     {
         auto guard = Lock();
-        exit_thread_ = true;
+        exit_thread_.store(true);
         cond_.notify_all();
         dead_thread = std::move(thread_);
     }
@@ -358,9 +378,10 @@ void vvl::Queue::Destroy() {
 std::optional<vvl::Queue::RetirementWork> vvl::Queue::NextWork() {
     auto guard = Lock();
     cond_.wait(guard, [this] {
-        return exit_thread_ || !present_requests_.empty() || (!submissions_.empty() && submissions_.front().seq <= request_seq_);
+        return exit_thread_.load() || !present_requests_.empty() ||
+               (!submissions_.empty() && submissions_.front().seq <= request_seq_);
     });
-    if (exit_thread_) {
+    if (exit_thread_.load()) {
         return {};
     }
     RetirementWork work;
@@ -383,13 +404,12 @@ void vvl::Queue::Retire(QueueSubmission& submission) {
         timeline_wait_count_.fetch_sub((wait.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) ? 1 : 0);
     }
 
-    // When device is lost skip updating substates which might access destroyed/garbage objects.
+    // Substates decide themselves what is safe to do on device lost, since they might otherwise access
+    // destroyed/garbage objects.
     // NOTE: we still need to run semaphore/fence retire routines which do not work with Vulkan
     // handles but ensure correct invariants (for example, Fence::Retire sets its std::promise)
-    if (!device_state_.is_device_lost) {
-        for (auto& item : sub_states_) {
-            item.second->Retire(submission);
-        }
+    for (auto& item : sub_states_) {
+        item.second->Retire(submission, device_state_.is_device_lost);
     }
 
     for (auto& signal : submission.signal_semaphores) {

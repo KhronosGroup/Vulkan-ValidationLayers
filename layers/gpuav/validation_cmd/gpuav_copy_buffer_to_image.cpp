@@ -221,29 +221,29 @@ void CopyBufferToImage(Validator& gpuav, const Location& loc, CommandBufferSubSt
     }
 
     CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, src_buffer = copy_buffer_to_img_info->srcBuffer](
-                                                              const uint32_t* error_record, const Location& loc_with_debug_region,
-                                                              const LogObjectList& objlist) {
+                                                              const CommandBufferSubState::ErrorLoggerContext& context) {
         bool skip = false;
         using namespace glsl;
 
-        if (GetErrorGroup(error_record) != kErrorGroup_GpuCopyBufferToImage) {
+        if (GetErrorGroup(context.error_record) != kErrorGroup_GpuCopyBufferToImage) {
             return skip;
         }
 
-        const uint32_t error_sub_code = GetSubError(error_record);
+        const uint32_t error_sub_code = GetSubError(context.error_record);
         switch (error_sub_code) {
             case kErrorSubCodePreCopyBufferToImageBufferTexel: {
-                const uint32_t texel_offset = error_record[kValCmd_ErrorPayloadDword_0];
-                LogObjectList objlist_and_src_buffer = objlist;
+                const uint32_t texel_offset = context.error_record[kValCmd_ErrorPayloadDword_0];
+                LogObjectList objlist_and_src_buffer = context.objlist;
                 objlist_and_src_buffer.add(src_buffer);
-                const char* vuid = loc_with_debug_region.function == vvl::Func::vkCmdCopyMemoryToImageKHR
+                const char* vuid = context.loc_with_debug_region.function == vvl::Func::vkCmdCopyMemoryToImageKHR
                                        ? "VUID-vkCmdCopyMemoryToImageKHR-None-13022"
-                                   : loc_with_debug_region.function == vvl::Func::vkCmdCopyBufferToImage
+                                   : context.loc_with_debug_region.function == vvl::Func::vkCmdCopyBufferToImage
                                        ? "VUID-vkCmdCopyBufferToImage-pRegions-07931"
                                        : "VUID-VkCopyBufferToImageInfo2-pRegions-07931";
-                skip |= gpuav.LogError(vuid, objlist_and_src_buffer, loc_with_debug_region,
-                                       "Source buffer %s has a float value at offset %" PRIu32 " that is not in the range [0, 1].",
-                                       gpuav.FormatHandle(src_buffer).c_str(), texel_offset);
+                skip |=
+                    gpuav.LogGpuError(context.gpu_error, vuid, objlist_and_src_buffer, context.loc_with_debug_region,
+                                      "Source buffer %s has a float value at offset %" PRIu32 " that is not in the range [0, 1].",
+                                      gpuav.FormatHandle(src_buffer).c_str(), texel_offset);
 
                 break;
             }

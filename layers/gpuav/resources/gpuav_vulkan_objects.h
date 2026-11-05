@@ -29,6 +29,10 @@
 
 struct Location;
 
+namespace vvl {
+class Queue;
+}
+
 namespace gpuav {
 class Validator;
 
@@ -105,7 +109,7 @@ void CmdSynchronizedCopyBufferRange(VkCommandBuffer cb, const vko::BufferRange& 
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
 class GpuResourcesManager {
   public:
-    explicit GpuResourcesManager(Validator &gpuav, bool thread_safe_buffer_caches);
+    explicit GpuResourcesManager(Validator& gpuav, bool thread_safe_buffer_caches);
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
@@ -243,11 +247,12 @@ class StagingBuffer {
 // Used to allocate and submit GPU-AV's own command buffers
 class CommandPool {
   public:
-    CommandPool(Validator &gpuav, uint32_t queue_family_i, const Location &loc);
+    // locked_queue: the queue whose lock the caller holds, if any
+    CommandPool(Validator& gpuav, uint32_t queue_family_i, const Location& loc, const vvl::Queue* locked_queue);
     ~CommandPool();
     // Returned command buffer is ready to be used,
     // corresponding fence has been waited upon.
-    std::pair<VkCommandBuffer, VkFence> GetCommandBuffer();
+    std::pair<VkCommandBuffer, VkFence> GetCommandBuffer(const vvl::Queue* locked_queue);
 
   private:
     Validator &gpuav_;

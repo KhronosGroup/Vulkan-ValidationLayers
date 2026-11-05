@@ -29,6 +29,7 @@
 #include <condition_variable>
 #include <deque>
 #include <future>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <thread>
@@ -43,7 +44,6 @@ namespace vvl {
 class CommandBuffer;
 class DeviceState;
 class QueueSubState;
-struct QueueSubmission;
 
 struct CommandBufferSubmitInfo {
     std::shared_ptr<vvl::CommandBuffer> cb;
@@ -171,6 +171,9 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     // Helper that combines Notify and Wait
     void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
 
+    // Set lock_held to `true` if the caller already holds this queue's lock
+    void OnDeviceLost(bool lock_held);
+
     // Retire present semaphore waits on the calling thread.
     // Ask the queue thread to retire presentation resources (but not the
     // entire present batches) through until_seq and wait for completion.
@@ -251,7 +254,7 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     std::atomic<uint64_t> seq_{0};
     uint64_t request_seq_{0};
     uint64_t first_seq_to_post_process_{0};
-    bool exit_thread_{false};
+    std::atomic<bool> exit_thread_{false};
     // Keep the last removed submission waitable while its fence is retired outside lock_
     uint64_t last_removed_seq_{0};
     std::shared_future<void> last_removed_waiter_;
@@ -281,7 +284,11 @@ class QueueSubState {
     // Return false in case of failure to stop processing the remaining batches from the same submit
     virtual bool PostSubmit(QueueSubmission& submission) { return true; }
 
-    virtual void Retire(QueueSubmission& submission) {}
+    // When is_device_lost is true, objects referenced by the submission might be destroyed/garbage
+    virtual void Retire(QueueSubmission& submission, bool is_device_lost) {}
+
+    // Called with the queue lock held, on the submissions that went through PostSubmit and are not retired yet
+    virtual void OnDeviceLost(const std::vector<const QueueSubmission*>& submissions) {}
 
     VulkanTypedHandle Handle() const { return base.Handle(); }
     VkQueue VkHandle() const { return base.VkHandle(); }

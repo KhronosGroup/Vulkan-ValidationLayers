@@ -346,6 +346,7 @@ class DispatchDevice : public HandleWrapper {
     void InitValidationObjects();
     void ReleaseValidationObject(LayerObjectTypeId type_id) const;
     BaseDevice* GetValidationObject(LayerObjectTypeId object_type) const;
+    void DeviceLost();
 
     bool IsSecondary(VkCommandBuffer cb) const;
 

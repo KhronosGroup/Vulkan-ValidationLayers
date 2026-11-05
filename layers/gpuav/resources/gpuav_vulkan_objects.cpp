@@ -697,13 +697,14 @@ void StagingBuffer::CmdCopyDeviceToHost(VkCommandBuffer cb) const {
     // => will wait for cb's fence before reading.
 }
 
-CommandPool::CommandPool(Validator& gpuav, uint32_t queue_family_i, const Location& loc) : gpuav_(gpuav) {
+CommandPool::CommandPool(Validator& gpuav, uint32_t queue_family_i, const Location& loc, const vvl::Queue* locked_queue)
+    : gpuav_(gpuav) {
     VkCommandPoolCreateInfo cmd_pool_ci = vku::InitStructHelper();
     cmd_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     cmd_pool_ci.queueFamilyIndex = queue_family_i;
     VkResult result = DispatchCreateCommandPool(gpuav_.device, &cmd_pool_ci, nullptr, &cmd_pool_);
     if (result != VK_SUCCESS) {
-        gpuav_.InternalError(LogObjectList(), loc, "Failed to create command buffer pool");
+        gpuav_.InternalError(LogObjectList(), loc, "Failed to create command buffer pool", locked_queue);
     }
 
     VkCommandBufferAllocateInfo cmd_buf_ai = vku::InitStructHelper();
@@ -714,7 +715,7 @@ CommandPool::CommandPool(Validator& gpuav, uint32_t queue_family_i, const Locati
     cmd_buffers_.resize(cmd_buf_ai.commandBufferCount);
     result = DispatchAllocateCommandBuffers(gpuav_.device, &cmd_buf_ai, cmd_buffers_.data());
     if (result != VK_SUCCESS) {
-        gpuav_.InternalError(LogObjectList(), loc, "Failed to create command buffers");
+        gpuav_.InternalError(LogObjectList(), loc, "Failed to create command buffers", locked_queue);
     }
 
     for (VkCommandBuffer cb : cmd_buffers_) {
@@ -727,7 +728,7 @@ CommandPool::CommandPool(Validator& gpuav, uint32_t queue_family_i, const Locati
         fence_ci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
         result = DispatchCreateFence(gpuav_.device, &fence_ci, nullptr, &fence);
         if (result != VK_SUCCESS) {
-            gpuav_.InternalError(LogObjectList(), loc, "Failed to create fences");
+            gpuav_.InternalError(LogObjectList(), loc, "Failed to create fences", locked_queue);
         }
     }
 }
@@ -739,13 +740,16 @@ CommandPool::~CommandPool() {
     }
 }
 
-std::pair<VkCommandBuffer, VkFence> CommandPool::GetCommandBuffer() {
+std::pair<VkCommandBuffer, VkFence> CommandPool::GetCommandBuffer(const vvl::Queue* locked_queue) {
     VVL_ZoneScoped;
     const size_t cb_i = cmd_buffer_ring_head_++ % cmd_buffers_.size();
 
     VkResult result = DispatchWaitForFences(gpuav_.device, 1, &fences_[cb_i], VK_TRUE, UINT64_MAX);
-    if (result != VK_SUCCESS) {
-        gpuav_.InternalError(fences_[cb_i], Location(vvl::Func::Empty), "Failed to wait for fence");
+    if (result == VK_ERROR_DEVICE_LOST) {
+        gpuav_.OnInternalDeviceLost(Location(vvl::Func::vkWaitForFences), locked_queue);
+        return {VK_NULL_HANDLE, VK_NULL_HANDLE};
+    } else if (result != VK_SUCCESS) {
+        gpuav_.InternalError(fences_[cb_i], Location(vvl::Func::Empty), "Failed to wait for fence", locked_queue);
         return {VK_NULL_HANDLE, VK_NULL_HANDLE};
     }
 

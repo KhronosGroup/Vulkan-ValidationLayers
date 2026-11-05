@@ -91,6 +91,9 @@ class Validator : public GpuShaderInstrumentor {
     // gpuav_record.cpp
     // --------------
   public:
+    void OnDeviceLost() final;
+    // locked_queue: the queue whose lock the caller holds, if any
+    void OnInternalDeviceLost(const Location& loc, const vvl::Queue* locked_queue);
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) final;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) final;

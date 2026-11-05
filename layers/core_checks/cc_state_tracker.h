@@ -284,7 +284,7 @@ class QueueSubState : public vvl::QueueSubState {
     void PreSubmit(std::vector<vvl::QueueSubmission>& submissions) override;
 
     // Override Retire to validate submissions in the order defined by synchronization
-    void Retire(vvl::QueueSubmission&) override;
+    void Retire(vvl::QueueSubmission&, bool is_device_lost) override;
 
     vvl::SubmitTimeTracker* submit_time_tracker = nullptr;
 };

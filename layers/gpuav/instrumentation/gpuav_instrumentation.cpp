@@ -285,7 +285,7 @@ static bool WasInstrumented(const LastBound& last_bound) {
 //
 bool LogInstrumentationError(Validator& gpuav, const VkCommandBuffer cb_handle, const LogObjectList& objlist,
                              const CommonInstrumentationErrorInfo& error_info, const uint32_t* error_record,
-                             const Location& loc_with_debug_region,
+                             const Location& loc_with_debug_region, const GpuError& gpu_error,
                              const std::vector<CommandBufferSubState::InstrumentationErrorLogger>& error_loggers) {
     // The second word in the debug output buffer is the number of words that would have
     // been written by the shader instrumentation, if there was enough room in the buffer we provided.
@@ -323,7 +323,8 @@ bool LogInstrumentationError(Validator& gpuav, const VkCommandBuffer cb_handle, 
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
             cb_handle, error_record, instrumented_shader, error_info.pipeline_bind_point, error_info.action_command_index);
 
-        gpuav.LogError(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
+        gpuav.LogGpuError(gpu_error, vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(),
+                          debug_info_message.c_str());
     }
 
     return error_found;
@@ -633,11 +634,11 @@ void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferS
 
         const VkCommandBuffer cb_handle = cb_state.VkHandle();
         CommandBufferSubState::ErrorLoggerFunc error_logger =
-            [&gpuav, cb_handle, common_error_info, error_loggers = std::move(error_loggers)](
-                const uint32_t* error_record, const Location& loc_with_debug_region, const LogObjectList& objlist) {
+            [&gpuav, cb_handle, common_error_info,
+             error_loggers = std::move(error_loggers)](const CommandBufferSubState::ErrorLoggerContext& context) {
                 bool skip = false;
-                skip |= LogInstrumentationError(gpuav, cb_handle, objlist, common_error_info, error_record, loc_with_debug_region,
-                                                error_loggers);
+                skip |= LogInstrumentationError(gpuav, cb_handle, context.objlist, common_error_info, context.error_record,
+                                                context.loc_with_debug_region, context.gpu_error, error_loggers);
                 return skip;
             };
 

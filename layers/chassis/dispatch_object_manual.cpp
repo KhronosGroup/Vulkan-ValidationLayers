@@ -1011,6 +1011,21 @@ void DispatchDevice::ReleaseValidationObject(LayerObjectTypeId type_id) const {
     }
 }
 
+void DispatchDevice::DeviceLost() {
+    for (auto& vo : object_dispatch) {
+        if (vo) {
+            vo->is_device_lost = true;
+        }
+    }
+
+    for (auto& vo : object_dispatch) {
+        if (vo) {
+            auto lock = vo->WriteLock();
+            vo->OnDeviceLost();
+        }
+    }
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // The vkExportMetalObjects extension returns data from the driver -- we've created a copy of the pNext chain, so
 // copy the returned data to the caller

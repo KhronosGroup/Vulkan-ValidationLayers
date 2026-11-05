@@ -29,6 +29,7 @@
 #include "utils/shader_utils.h"
 #include "utils/spirv_tools_utils.h"
 #include "utils/math_utils.h"
+#include "utils/text_utils.h"
 
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
@@ -2073,7 +2074,8 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
     out_status.host.is_instrumented = true;
 }
 
-void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location& loc, const char* const specific_message) const {
+void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location& loc, const char* const specific_message,
+                                          const vvl::Queue* locked_queue) const {
     aborted_ = true;
     std::string error_message = specific_message;
 
@@ -2082,10 +2084,28 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location&
 
     LogError(vuid, objlist, loc, "Internal Error, %s is being disabled. Details:\n%s", layer_name, error_message.c_str());
 
+    // Right before releasing GPU-AV
+    ReportSubmittedCommandBufferErrorsNow(locked_queue);
+
     // Once we encounter an internal issue disconnect everything.
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).
     dispatch_device_->ReleaseValidationObject(LayerObjectTypeGpuAssisted);
+}
+
+void GpuShaderInstrumentor::ReportSubmittedCommandBufferErrorsNow(const vvl::Queue* locked_queue) const {
+    device_state->ForEachShared<vvl::Queue>(
+        [=](const std::shared_ptr<vvl::Queue>& queue) { queue->OnDeviceLost(queue.get() == locked_queue); });
+}
+
+bool GpuShaderInstrumentor::LogGpuError(const GpuError& gpu_error, std::string_view vuid_text, const LogObjectList& objlist,
+                                        const Location& loc, const char* format, ...) const {
+    std::string error_msg = gpu_error.error_msg_prefix ? gpu_error.error_msg_prefix : "";
+    va_list argptr;
+    va_start(argptr, format);
+    error_msg += text::VFormat(format, argptr);
+    va_end(argptr);
+    return debug_report->LogMessage(kErrorBit, vuid_text, objlist, loc, error_msg);
 }
 
 // Dedicated warning VUID that likely can be ignored.

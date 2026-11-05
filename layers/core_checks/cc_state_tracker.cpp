@@ -1419,7 +1419,11 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     }
 }
 
-void QueueSubState::Retire(vvl::QueueSubmission& submission) {
+void QueueSubState::Retire(vvl::QueueSubmission& submission, bool is_device_lost) {
+    if (is_device_lost) {
+        return;
+    }
+
     // Create snapshot of submission related information for queries (locks queue)
     // before locking command buffers below. This is to avoid lock inversion with
     // Queue::PostSubmit which also locks queue and then command buffers.

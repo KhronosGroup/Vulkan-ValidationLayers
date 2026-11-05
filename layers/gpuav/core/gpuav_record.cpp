@@ -40,6 +40,29 @@
 
 namespace gpuav {
 
+void Validator::OnDeviceLost() {
+    assert(is_device_lost);
+    ReportSubmittedCommandBufferErrorsNow(nullptr);
+}
+
+void Validator::OnInternalDeviceLost(const Location& loc, const vvl::Queue* locked_queue) {
+    const bool is_internal_device_lost = !is_device_lost;
+
+    // When getting here, a device lost could have been reported
+    // by an app issued command.
+    // => GPU-AV errors have already been reported, nothing to do
+    if (!is_internal_device_lost) {
+        return;
+    }
+
+    for (auto& vo : dispatch_device_->object_dispatch) {
+        vo->is_device_lost = true;
+    }
+
+    InternalWarning(device, loc, "VK_ERROR_DEVICE_LOST was returned to a command GPU-AV issued internally.");
+    ReportSubmittedCommandBufferErrorsNow(locked_queue);
+}
+
 void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
                                           const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) {
