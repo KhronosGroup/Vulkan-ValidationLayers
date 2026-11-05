@@ -30,6 +30,7 @@ namespace syncval {
 class SyncValidator;
 class ErrorMessages;
 struct AccessStats;
+struct CommandBufferRecording;
 
 class AlternateResourceUsage {
   public:
@@ -94,37 +95,35 @@ enum class SubCommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResol
 struct ResourceUsageRecord {
     static constexpr auto kMaxIndex = std::numeric_limits<ResourceUsageTag>::max();
 
-    ResourceUsageRecord(vvl::Func command, uint32_t seq_num, SubCommandType sub_type, const vvl::CommandBuffer* cb_state,
-                        uint32_t reset_count, uint32_t subpass = vvl::kNoIndex32)
-        : command(command),
-          seq_num(seq_num),
+    ResourceUsageRecord(const CommandBufferRecording* recording, vvl::Func command, SubCommandType sub_type, uint32_t seq_num,
+                        uint32_t reset_count, uint32_t subpass)
+        : recording(recording),
+          command(command),
           sub_command_type(sub_type),
-          subpass(subpass),
-          cb_state(cb_state),
-          reset_count(reset_count) {}
+          seq_num(seq_num),
+          reset_count(reset_count),
+          subpass(subpass) {}
     ResourceUsageRecord(const AlternateResourceUsage& other) : alt_usage(other) {}
 
+    // This command buffer's recording, or the recording for imported secondary records.
+    // Kept alive by the context or batch access log
+    const CommandBufferRecording* recording = nullptr;
+
+    AlternateResourceUsage alt_usage;
+
     vvl::Func command = vvl::Func::Empty;
+    SubCommandType sub_command_type = SubCommandType::kNone;
 
     // TODO: this value should be relplaced by correct index of the Vulkan API command. Then it will be more useful.
     // Currently this indexes only the commands that initiate memory accesses (so are of interest to syncval).
     uint32_t seq_num = 0;
-
-    SubCommandType sub_command_type = SubCommandType::kNone;
-
-    uint32_t subpass = vvl::kNoIndex32;
-
-    // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
-    // from different command buffers and resets.
-    // plain pointer as a shared pointer is held by the context storing this record
-    const vvl::CommandBuffer* cb_state = nullptr;
     uint32_t reset_count = 0;
+
+    uint32_t label_command_index = vvl::kNoIndex32;
+    uint32_t subpass = vvl::kNoIndex32;
 
     uint32_t first_handle_index = vvl::kNoIndex32;
     uint32_t handle_count = 0;
-
-    uint32_t label_command_index = vvl::kNoIndex32;
-    AlternateResourceUsage alt_usage;
 };
 
 // ResourceUsageInfo is similar to ResourceUsageRecord but prioritizes accessibility over memory efficiency.
@@ -219,6 +218,31 @@ struct ErrorReporter {
     void Collect(ReportedHazard report) const;
 };
 
+// Commands and reporting data.
+// Can outlive a reset when still needed for replay or error reporting
+struct CommandBufferRecording {
+    const vvl::CommandBuffer* cb_state = nullptr;
+
+    std::vector<CommandEntry> commands;
+    CommandData command_data;
+
+    // Per-tag records and the data they index
+    std::shared_ptr<AccessLog> access_log = std::make_shared<AccessLog>();
+    std::vector<HandleRecord> handles;
+    std::vector<vvl::LabelCommand> label_commands;
+
+    // Keeps recordings of executed secondaries alive
+    std::vector<std::shared_ptr<const CommandBufferRecording>> secondary_recordings;
+
+    // Reports collected during recording, used to suppress duplicates during replay
+    // The mutex protects the reports against invalid concurrent recording
+    std::mutex reported_hazards_mutex;
+    std::vector<ReportedHazard> reported_hazards;
+
+    void Reset();
+    const SyncImageBarrier* GetImageBarrier(const ResourceUsageRecord& record, uint32_t handle_index) const;
+};
+
 class CommandBufferContext final : public ResourceUsageInfoProvider, public DebugNameProvider {
   public:
     struct AsProxyContext {};
@@ -251,7 +275,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     const SyncEnvironment& GetSyncEnvironment() const { return environment_; }
 
     void RecordReportedHazards(const std::vector<ReportedHazard>& new_hazards) const;
-    void FinalizeReportedHazards();
+    void FinalizeRecording();
     bool HasReportedHazard(const ReportedHazard& report) const;
 
     // The command buffer's own access context. Subpass contexts exist only inside a vkCmdBeginRenderPass
@@ -294,7 +318,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     void RecordExecutedCommandBuffer(const CommandBufferContext& recorded_context);
 
-    size_t GetTagCount() const { return access_log_->size(); }
+    size_t GetTagCount() const { return recording_->access_log->size(); }
 
     ResourceUsageTag NextCommandTag(vvl::Func command, SubCommandType subcommand = SubCommandType::kNone,
                                     uint32_t subpass = vvl::kNoIndex32);
@@ -314,23 +338,20 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
         if (!NeedsCommandStorage()) {
             return;
         }
-        const auto storage = command.MakeStorage(command_data_);
-        commands_.push_back({command_data_.Store(storage), tag});
+        const auto storage = command.MakeStorage(recording_->command_data);
+        recording_->commands.push_back({recording_->command_data.Store(storage), tag});
     }
 
     void StoreBarriersForReporting(vvl::span<const BarrierSet> barrier_sets);
 
-    const std::vector<HandleRecord>& GetHandleRecords() const { return handles_; }
-
-    std::shared_ptr<const vvl::CommandBuffer> GetCBStateShared() const { return cb_state_->shared_from_this(); }
     const vvl::CommandBuffer& GetCBState() const { return *cb_state_; }
 
-    std::shared_ptr<AccessLog> GetAccessLogShared() const { return access_log_; }
+    std::shared_ptr<const CommandBufferRecording> GetRecordingShared() const { return recording_; }
+    std::shared_ptr<AccessLog> GetAccessLogShared() const { return recording_->access_log; }
     std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
-    const std::vector<CommandEntry>& GetCommands() const { return commands_; }
-    const CommandData& GetCommandData() const { return command_data_; }
-    const SyncImageBarrier* GetImageBarrier(const ResourceUsageRecord& record, uint32_t handle_index) const;
+    const std::vector<CommandEntry>& GetCommands() const { return recording_->commands; }
+    const CommandData& GetCommandData() const { return recording_->command_data; }
 
     // DebugNameProvider
     std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;
@@ -358,13 +379,9 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     // a reference count is not needed here.
     vvl::CommandBuffer* cb_state_ = nullptr;
 
-    std::shared_ptr<AccessLog> access_log_;
     std::shared_ptr<CommandBufferSet> cbs_referenced_;
     uint32_t command_number_;
     uint32_t reset_count_;
-
-    // Handles referenced by the tagged commands
-    std::vector<HandleRecord> handles_;
 
     // Location of the current command in the access log (it's not always the last element, there might be
     // subcommands that follow). The subcommands by default reference the same handles as the main command.
@@ -378,14 +395,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     std::unique_ptr<RenderPassAccessContext> current_renderpass_context_;
 
-    std::vector<CommandEntry> commands_;
-    CommandData command_data_;
-
-    // Reports used to suppress duplicates during replay. Mutable because reports are collected during
-    // validation and must be stored in a const CommandBufferContext. Command buffer access requires external
-    // synchronization. The mutex is still needed to prevent invalid concurrent recording from corrupting the reports.
-    mutable std::mutex reported_hazards_mutex_;
-    mutable std::vector<ReportedHazard> reported_hazards_;
+    std::shared_ptr<CommandBufferRecording> recording_;
 
     // Dynamic rendering state
     std::vector<RenderingAttachment> rendering_attachments_;

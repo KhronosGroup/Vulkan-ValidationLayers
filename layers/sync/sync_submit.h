@@ -217,21 +217,25 @@ class BatchAccessLog {
 
       private:
         BatchRecord batch_;
-        std::shared_ptr<const CommandBufferSet> cbs_;
         std::shared_ptr<const AccessLog> log_;
-        // label stack at the point when command buffer is submitted to the queue
+
+        // Recording the log records point into. Null for present/acquire logs
+        std::shared_ptr<const CommandBufferRecording> recording_;
+
+        // Label stack at the point when command buffer is submitted to the queue
         std::vector<std::string> initial_label_stack_;
+
+        // Keeps the command buffer states referenced by the recordings alive for error reporting
+        std::shared_ptr<const CommandBufferSet> cbs_;
     };
 
     void Import(const BatchRecord& batch, const CommandBufferContext& cb_context,
                 const std::vector<std::string>& initial_label_stack);
     void Import(const BatchAccessLog& other);
     void Insert(const BatchRecord& batch, const ResourceUsageRange& range, std::shared_ptr<const AccessLog> log);
-
     void Trim(const ResourceUsageTagSet& used);
-    // AccessRecord lookup is based on global tags
-    AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
-    BatchAccessLog() {}
+
+    AccessRecord GetAccessRecord(ResourceUsageTag global_tag) const;
 
   private:
     using CBSubmitLogRangeMap = sparse_container::range_map<ResourceUsageTag, CBSubmitLog>;
