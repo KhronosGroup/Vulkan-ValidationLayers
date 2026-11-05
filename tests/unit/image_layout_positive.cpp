@@ -1461,6 +1461,6 @@ TEST_F(PositiveImageLayout, UnusedAttachmentAcrossCommandBuffers) {
     cb2.EndRenderPass();
     cb2.End();
 
-    m_default_queue->Submit({cb1.handle(), cb2.handle()});
+    m_default_queue->Submit({cb1, cb2});
     m_default_queue->Wait();
 }
