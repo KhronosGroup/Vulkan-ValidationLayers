@@ -862,18 +862,17 @@ void BatchAccessLog::Trim(const ResourceUsageTagSet& used_tags) {
     }
 }
 
-BatchAccessLog::AccessRecord BatchAccessLog::GetAccessRecord(ResourceUsageTag tag) const {
-    auto found_log = log_map_.find(tag);
+BatchAccessLog::AccessRecord BatchAccessLog::GetAccessRecord(ResourceUsageTag global_tag) const {
+    auto found_log = log_map_.find(global_tag);
     if (found_log != log_map_.cend()) {
-        return found_log->second.GetAccessRecord(tag);
+        return found_log->second.GetAccessRecord(global_tag);
     }
-    // tag not found
     assert(false);
-    return AccessRecord();
+    return {};
 }
 
 std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageRecord& record) const {
-    const auto& label_commands = (*cbs_)[0]->GetLabelCommands();
+    const auto& label_commands = recording_->label_commands;
     return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index, initial_label_stack_);
 }
 
@@ -889,11 +888,15 @@ BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(Resour
 
 BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const CommandBufferSet> cbs,
                                          std::shared_ptr<const AccessLog> log)
-    : batch_(batch), cbs_(cbs), log_(log) {}
+    : batch_(batch), log_(log), cbs_(cbs) {}
 
 BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb,
                                          const std::vector<std::string>& initial_label_stack)
-    : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
+    : batch_(batch),
+      log_(cb.GetAccessLogShared()),
+      recording_(cb.GetRecordingShared()),
+      initial_label_stack_(initial_label_stack),
+      cbs_(cb.GetCBReferencesShared()) {}
 
 PresentedImage::PresentedImage(const std::shared_ptr<const vvl::Image>& image_state, uint32_t at_index) : PresentedImage() {
     tag = kInvalidTag;

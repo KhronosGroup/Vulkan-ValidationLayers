@@ -690,18 +690,18 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
         info.sub_command_type = record.sub_command_type;
         info.subpass = record.subpass;
         info.command_buffer_reset_count = record.reset_count;
+        info.cb = record.recording->cb_state;
 
         // Associated resource
         if (tag_ex.handle_index != vvl::kNoIndex32) {
-            auto& cb_context = SubState(*record.cb_state);
-            const auto& handle_records = cb_context.cb_context.GetHandleRecords();
+            const auto& handle_records = record.recording->handles;
 
             // Command buffer can be in inconsistent state due to unhandled core validation error (core validation is disabled).
             // In this case the goal is not to crash, no guarantees that reported information (handle index) makes sense.
             const bool valid_handle_index = tag_ex.handle_index < handle_records.size();
             if (valid_handle_index) {
                 info.resource_handle = handle_records[tag_ex.handle_index].TypedHandle();
-                info.image_barrier = cb_context.cb_context.GetImageBarrier(record, tag_ex.handle_index);
+                info.image_barrier = record.recording->GetImageBarrier(record, tag_ex.handle_index);
             }
         }
         // Debug region name. Empty name means that we are not inside any debug region.
@@ -709,12 +709,11 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
             info.debug_region_name = debug_name_provider->GetDebugRegionName(record);
         }
     }
-    info.cb = record.cb_state;
     return info;
 }
 
 ResourceUsageInfo CommandBufferContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
-    const ResourceUsageRecord& record = (*access_log_)[tag_ex.tag];
+    const ResourceUsageRecord& record = (*recording_->access_log)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kNoIndex32) ? nullptr : this;
     return GetResourceUsageInfoFromRecord(tag_ex, record, debug_name_provider);
 }
