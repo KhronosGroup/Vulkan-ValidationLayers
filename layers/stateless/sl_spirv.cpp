@@ -107,7 +107,7 @@ bool SpirvValidator::Validate(const spirv::Module& module_state, const spirv::St
     skip |= ValidateShaderClock(module_state, stateless_data, loc);
     skip |= ValidateAtomicsTypes(module_state, stateless_data, loc);
     skip |= ValidateFma(module_state, stateless_data, loc);
-    skip |= ValidateVariables(module_state, loc);
+    skip |= ValidateVariables(module_state, stateless_data, loc);
 
     skip |= ValidateTransformFeedbackDecorations(module_state, loc);
     skip |= ValidateRelaxedExtendedInstruction(module_state, stateless_data, loc);
@@ -424,10 +424,11 @@ bool SpirvValidator::ValidateFma(const spirv::Module& module_state, const spirv:
     return skip;
 }
 
-bool SpirvValidator::ValidateVariables(const spirv::Module& module_state, const Location& loc) const {
+bool SpirvValidator::ValidateVariables(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                       const Location& loc) const {
     bool skip = false;
 
-    for (const spirv::Instruction* insn : module_state.static_data_.explicit_memory_inst) {
+    for (const spirv::Instruction* insn : stateless_data.explicit_memory_inst) {
         const uint32_t opcode = insn->Opcode();
         if (opcode == spv::OpVariable || opcode == spv::OpUntypedVariableKHR) {
             const uint32_t storage_class = insn->StorageClass();

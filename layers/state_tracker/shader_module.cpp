@@ -1206,14 +1206,6 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             case spv::OpInBoundsPtrAccessChain: {
                 const uint32_t base_id = insn.Word(3);
                 parsed.access_chain_map[base_id].push_back(&insn);
-
-                // some builtins, like Position, can have empty access chains
-                if (insn.Length() > 4) {
-                    const Instruction* const_def = module_state.GetAnyConstantDef(insn.Word(4));
-                    if (const_def && const_def->Opcode() == spv::OpSpecConstant) {
-                        descriptor_indexing_spec_const_ac_inst.emplace_back(&insn);
-                    }
-                }
                 break;
             }
             case spv::OpImageTexelPointer: {
@@ -1374,27 +1366,26 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 break;
         }
 
-        if (opcode == spv::OpVariable || module_state.UsesStorageCapabilityStorageClass(insn)) {
+        if (stateless_data && (opcode == spv::OpVariable || module_state.UsesStorageCapabilityStorageClass(insn))) {
             // Capture non-explicit layout variables here too.
-            explicit_memory_inst.push_back(&insn);
+            stateless_data->explicit_memory_inst.push_back(&insn);
         }
     }
 
     FuncParameterMap func_parameter_map;
     const uint32_t first_arg_word = 4;
-    for (const auto& func_def : func_parameter_list) {
-        const uint32_t func_id = func_def.first;
-        for (const Instruction* func_call : func_call_instructions) {
-            if (func_call->Word(3) != func_id) {
-                continue;
-            }
-            // guaranteed number of args/params is same
-            const uint32_t arg_count = (func_call->Length() - first_arg_word);
-            for (uint32_t i = 0; i < arg_count; i++) {
-                const uint32_t arg = func_call->Word(first_arg_word + i);
-                const uint32_t param = func_def.second[i];
-                func_parameter_map[param].push_back(arg);
-            }
+
+    for (const Instruction* func_call : func_call_instructions) {
+        const auto func_def = func_parameter_list.find(func_call->Word(3));
+        if (func_def == func_parameter_list.end()) {
+            continue;  // spirv-val should guarantees the callee exists, but being safe
+        }
+        // guaranteed number of args/params is same
+        const uint32_t arg_count = (func_call->Length() - first_arg_word);
+        for (uint32_t i = 0; i < arg_count && i < func_def->second.size(); i++) {
+            const uint32_t arg = func_call->Word(first_arg_word + i);
+            const uint32_t param = func_def->second[i];
+            func_parameter_map[param].push_back(arg);
         }
     }
 
@@ -2877,20 +2868,24 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
         is_acceleration_structure = true;
     }
 
-    for (const Instruction* pointer : entrypoint.accessible.access_chains) {
-        const spirv::Instruction* base = module_state.FindDef(pointer->Word(3));
-        if (base->Opcode() == spv::OpVariable && base->ResultId() == id) {
-            const spirv::Instruction* base_pointer = module_state.FindDef(base->Word(1));
-            const spirv::Instruction* base_type = module_state.FindDef(base_pointer->Word(3));
-            if (base_type->IsArray()) {
-                // Taking only the first index (word 4) as that one is used to access arrays of descriptors
-                const spirv::Instruction* access_op = module_state.FindDef(pointer->Word(4));
-                const auto access_opcode = (spv::Op)access_op->Opcode();
-                if (!IsValueIn(access_opcode, {spv::OpConstant, spv::OpSpecConstant, spv::OpConstantComposite})) {
-                    all_constant_integral_expressions = false;
-                    non_constant_id = pointer->ResultId();
-                    break;
-                }
+    // "constant integral expressions" only matters for arrays of descriptors
+    // |access_chain_map| is keyed by the variable the access chain is rooted at
+    // only looks at the access chains for this variable instead of every access chain in the entry point
+    const auto access_chain_it = parsed.access_chain_map.find(id);
+    if (IsArray() && access_chain_it != parsed.access_chain_map.end()) {
+        for (const Instruction* pointer : access_chain_it->second) {
+            if (pointer->Length() < 5) {
+                continue;  // Empty access chain with no indexes
+            } else if (entrypoint.accessible.access_chains.find(pointer) == entrypoint.accessible.access_chains.end()) {
+                continue;  // not reachable from this entry point
+            }
+            // Taking only the first index (word 4) as that one is used to access arrays of descriptors
+            const spirv::Instruction* access_op = module_state.FindDef(pointer->Word(4));
+            const auto access_opcode = (spv::Op)access_op->Opcode();
+            if (!IsValueIn(access_opcode, {spv::OpConstant, spv::OpSpecConstant, spv::OpConstantComposite})) {
+                all_constant_integral_expressions = false;
+                non_constant_id = pointer->ResultId();
+                break;
             }
         }
     }
@@ -3052,14 +3047,10 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
         // ArrayStride is only between element, not applied on the end of last element
         // Things like Private variable don't have explicit layout and can use element size
         uint32_t array_stride = element_width;
-        for (const spirv::Instruction* decoration_inst : static_data_.decoration_inst) {
-            if (decoration_inst->Word(1) == insn->ResultId()) {
-                if (decoration_inst->Word(2) == spv::DecorationArrayStride) {
-                    // Need to represent as bits here
-                    array_stride = decoration_inst->Word(3) * 8;
-                    break;
-                }
-            }
+        const DecorationSet& array_decorations = GetDecorationSet(insn->ResultId());
+        if (array_decorations.array_stride != kInvalidValue && !array_decorations.is_array_stride_id) {
+            // Need to represent as bits here
+            array_stride = array_decorations.array_stride * 8;
         }
 
         bit_size = ((length - 1) * array_stride) + element_width;
