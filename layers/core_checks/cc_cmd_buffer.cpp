@@ -2918,10 +2918,11 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer command
         const VkBindVertexBuffer3InfoKHR& info = pBindingInfos[i];
         const VkStridedDeviceAddressRangeKHR& address_range = info.addressRange;
 
-        skip |=
-            ValidateDeviceAddressRange(address_range.address, address_range.size, true, binding_info_loc.dot(Field::addressRange),
-                                       LogObjectList(commandBuffer), VK_BUFFER_USAGE_2_VERTEX_BUFFER_BIT,
-                                       "VUID-VkBindVertexBuffer3InfoKHR-addressRange-13074");
+        // VK_EXT_vertex_address_binding_unrestricted is a special case allowing an OOB address
+        skip |= ValidateDeviceAddressRange(
+            address_range.address, address_range.size, true, binding_info_loc.dot(Field::addressRange),
+            LogObjectList(commandBuffer), VK_BUFFER_USAGE_2_VERTEX_BUFFER_BIT, "VUID-VkBindVertexBuffer3InfoKHR-addressRange-13074",
+            enabled_features.vertexAddressBindingUnrestricted);
 
         skip |= ValidateDeviceAddressCommands(commandBuffer, info.addressRange.address, info.addressRange.size, info.addressFlags,
                                               error_obj.location.dot(Field::addressRange));

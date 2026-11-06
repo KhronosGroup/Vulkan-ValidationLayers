@@ -136,6 +136,9 @@
                 "VkPhysicalDeviceDeviceAddressCommandsFeaturesKHR": {
                     "deviceAddressCommands": true
                 },
+                "VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT": {
+                    "vertexAddressBindingUnrestricted": true
+                },
                 "VkPhysicalDevicePresentIdFeaturesKHR": {
                     "presentId": true
                 },
@@ -2657,6 +2660,7 @@
                 "VK_EXT_vertex_attribute_divisor": 1,
                 "VK_EXT_vertex_input_dynamic_state": 1,
                 "VK_EXT_vertex_attribute_robustness": 1,
+                "VK_EXT_vertex_address_binding_unrestricted": 1,
                 "VK_EXT_ycbcr_2plane_444_formats": 1,
                 "VK_EXT_ycbcr_image_arrays": 1,
                 "VK_EXT_zero_initialize_device_memory": 1,

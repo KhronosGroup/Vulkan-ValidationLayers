@@ -1462,6 +1462,30 @@ TEST_F(NegativeDeviceAddressCommands, VertexBufferUsage) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDeviceAddressCommands, VertexAddressBindingUnrestrictedStillChecksKnownBuffer) {
+    AddRequiredExtensions(VK_EXT_VERTEX_ADDRESS_BINDING_UNRESTRICTED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAddressBindingUnrestricted);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, vkt::device_address);
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_FALSE;
+    info.addressRange = buffer.StridedAddressRange();
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBindVertexBuffer3InfoKHR-addressRange-13074");
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0, 1u, &info);
+    m_errorMonitor->VerifyFound();
+
+    info.addressRange.address = 0u;
+    m_errorMonitor->SetDesiredError("VUID-VkStridedDeviceAddressRangeKHR-size-11411");
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0, 1u, &info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDeviceAddressCommands, VertexBufferSizeZero) {
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());

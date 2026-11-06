@@ -197,6 +197,10 @@ const char* unimplementable_validation[] = {
     "VUID-VkMicromapCreateInfoEXT-deviceAddress-parameter",
     "VUID-VkStridedDeviceAddressRegionKHR-deviceAddress-parameter",
     "VUID-VkDeviceAddressRangeKHR-address-parameter",
+    // VUID-VkDeviceAddress-size-11364 is our funnel for all "address are invalid"
+    // but VK_EXT_vertex_address_binding_unrestricted was an exception
+    // this VU is just a duplicate of 11364 but needed to make the spec work
+    "VUID-VkBindVertexBuffer3InfoKHR-None-12553",
 
     // These were added as a fix for https://gitlab.khronos.org/vulkan/vulkan/-/issues/4544
     // But really the "real" fix is banning it earlier https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7858
