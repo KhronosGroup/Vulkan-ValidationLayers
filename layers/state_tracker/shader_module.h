@@ -693,6 +693,8 @@ struct StatelessData {
     std::vector<const Instruction *> tensor_inst;
     std::vector<const Instruction *> image_texel_pointer_inst;
     std::vector<const Instruction *> loop_merge_inst;
+    // Both variables and instruction explicitly accessing untyped variables
+    std::vector<const Instruction*> explicit_memory_inst;
 
     // simpler to just track all OpExecutionModeId and parse things needed later
     std::vector<const Instruction *> execution_mode_id_inst;
@@ -736,8 +738,6 @@ struct Module {
         std::vector<const Instruction*> decoration_inst;
         // Find all variable instructions to build faster LUT
         std::vector<const Instruction*> variable_inst;
-        // Both variables and instruction explicitly accessing untyped variables
-        std::vector<const Instruction *> explicit_memory_inst;
         // For shader tile image - OpDepthAttachmentReadEXT/OpStencilAttachmentReadEXT/OpColorAttachmentReadEXT
         bool has_shader_tile_image_depth_read{false};
         bool has_shader_tile_image_stencil_read{false};
@@ -757,13 +757,6 @@ struct Module {
         std::vector<const Instruction*> constant_heap_inst;
         std::vector<const Instruction *> array_length_inst;
         std::vector<const Instruction *> vector_type_inst;
-
-        // For descriptor indexing there are 3 situations
-        //  1. OpConstant is used, we will find later
-        //  2. The value is dynamic, caught in GPU-AV
-        //  3. OpSpecConstant, which we can detect, but not until we have the values
-        // We only need to check index 1, since you can't have double array of descriptors
-        std::vector<const Instruction*> descriptor_indexing_spec_const_ac_inst;
 
         vvl::unordered_set<spv::Capability> capability_list;
 
