@@ -774,7 +774,8 @@ bool CoreChecks::ValidateShaderInterfaceVariableDSL(const spirv::Module& module_
                          "shader %s uses a runtime descriptor array %s with a VkDescriptorSetLayoutBinding::descriptorCount of 0 "
                          "but requires at least 1 descriptor.\n(VkDescriptorSetLayout from %s)",
                          entrypoint.Describe().c_str(), variable.DescribeDescriptor().c_str(), print_dsl_info().c_str());
-    } else if (!variable.IsRuntimeArray() && binding->descriptorCount < variable.array_length) {
+    } else if (!variable.IsRuntimeArray() && variable.array_length != spirv::kSpecConstant &&
+               binding->descriptorCount < variable.array_length) {
         skip |= LogError(GetSpirvInterfaceVariableVUID(loc, vvl::SpirvInterfaceVariableError::DescriptorCount_07991), objlist, loc,
                          "shader %s uses descriptor %s which has an array size of %" PRIu32
                          " in the SPIR-V but VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32

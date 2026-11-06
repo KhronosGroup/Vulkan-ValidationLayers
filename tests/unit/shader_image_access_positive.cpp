@@ -585,3 +585,42 @@ TEST_F(PositiveShaderImageAccess, AliasImageBinding) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveShaderImageAccess, AccessChainWithoutIndexes) {
+    TEST_DESCRIPTION("OpAccessChain with to have zero indexes");
+    RETURN_IF_SKIP(Init());
+
+    const char* cs_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %tex DescriptorSet 0
+               OpDecorate %tex Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v2float = OpTypeVector %float 2
+    %v4float = OpTypeVector %float 4
+      %image = OpTypeImage %float 2D 0 0 0 1 Unknown
+    %sampled = OpTypeSampledImage %image
+     %ptr_uc = OpTypePointer UniformConstant %sampled
+        %tex = OpVariable %ptr_uc UniformConstant
+    %float_0 = OpConstant %float 0
+      %coord = OpConstantComposite %v2float %float_0 %float_0
+       %main = OpFunction %void None %func
+      %label = OpLabel
+         %ac = OpAccessChain %ptr_uc %tex
+         %ld = OpLoad %sampled %ac
+     %sample = OpImageSampleExplicitLod %v4float %ld %coord Lod %float_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}

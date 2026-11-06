@@ -812,8 +812,9 @@ StaticImageAccess::StaticImageAccess(const Module& module_state, const Instructi
                 case spv::OpPtrAccessChain:
                 case spv::OpInBoundsPtrAccessChain: {
                     // If Image is an array (but not descriptor indexing), then need to get the index if possible.
-                    const Instruction* const_def = module_state.GetAnyConstantDef(find_insn->Word(4));
-                    if (const_def->IsConstant()) {
+                    const Instruction* const_def =
+                        (find_insn->Length() > 4) ? module_state.GetAnyConstantDef(find_insn->Word(4)) : nullptr;
+                    if (const_def && const_def->IsConstant()) {
                         const bool spec_const = const_def->IsSpecConstant();
                         if (sampler) {
                             sampler_access_chain_index = spec_const ? kSpecConstant : const_def->GetConstantValue();
@@ -1037,6 +1038,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             case spv::OpSpecConstant:
             case spv::OpSpecConstantComposite:
             case spv::OpSpecConstantOp:
+            case spv::OpSpecConstantDataKHR:
                 has_specialization_constants = true;
                 break;
 
@@ -1912,19 +1914,35 @@ const Instruction* Module::GetAnyConstantDef(uint32_t id) const {
 }
 
 // Returns the constant value described by the instruction at |id|
-// Caller ensures there can't be a runtime array or specialization constants
+//
+// If the id is a OpSpecConstant (or OpSpecConstantTrue/False) the default value in the SPIR-V is returned. This is only hit when
+// looking at a module that has not been specialized yet (vkCreateShaderModule time), once a pipeline/shader object applies the
+// VkSpecializationInfo the module is re-parsed with the real values (see CoreChecks::ValidateShaderStage).
+//
+// A OpSpecConstantOp/OpSpecConstantComposite can't be resolved here and returns 1 as a "safe" value, callers that care should check
+// Instruction::IsSpecConstant() on the definition first (see ResourceInterfaceVariable::FindBaseType).
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6293
 uint32_t Module::GetConstantValueById(uint32_t id) const {
     const Instruction* value = GetAnyConstantDef(id);
 
-    // If this hit, most likley a runtime array (probably from VK_EXT_descriptor_indexing)
-    // or unhandled specialization constants
-    if (!value || value->Opcode() != spv::OpConstant) {
-        // TODO - still not fixed
-        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6293
-        return 1;
+    if (!value) {
+        return 1;  // not a valid id, spirv-val will catch
     }
 
-    return value->GetConstantValue();
+    switch (value->Opcode()) {
+        case spv::OpConstant:
+        case spv::OpConstantNull:
+            return value->GetConstantValue();
+        case spv::OpSpecConstant:
+            return value->Word(3);  // default value
+        case spv::OpSpecConstantTrue:
+            return 1;
+        case spv::OpSpecConstantFalse:
+            return 0;
+        default:
+            // Most likely a runtime array (probably from VK_EXT_descriptor_indexing) or a OpSpecConstantOp
+            return 1;
+    }
 }
 
 bool Module::GetBoolIfConstant(const spirv::Instruction& insn, bool* value) const {
@@ -2627,7 +2645,13 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     while (type->IsArray() || type->Opcode() == spv::OpTypePointer) {
         // currently just tracks 1D arrays
         if (type->Opcode() == spv::OpTypeArray && variable.array_length == 0) {
-            variable.array_length = module_state.GetConstantValueById(type->Word(3));
+            const Instruction* length_def = module_state.GetAnyConstantDef(type->Word(3));
+            if (length_def && length_def->IsSpecConstant()) {
+                // The real length is only known once the pipeline/shader object has applied the VkSpecializationInfo
+                variable.array_length = spirv::kSpecConstant;
+            } else {
+                variable.array_length = module_state.GetConstantValueById(type->Word(3));
+            }
             type = module_state.FindDef(type->Word(2));  // Element type
         } else if (type->Opcode() == spv::OpTypeRuntimeArray) {
             variable.array_length = spirv::kRuntimeArray;
@@ -3045,9 +3069,9 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
     } else if (opcode == spv::OpTypeArray) {
         const Instruction* element_type = FindDef(insn->Word(2));
         const uint32_t element_width = GetTypeBitsSize(element_type);
-        const Instruction* length_type = FindDef(insn->Word(3));
-        // If a spec constant is used to size the array, use a safe value, it will get reevaluated later
-        const uint32_t length = length_type->Opcode() == spv::OpConstant ? length_type->GetConstantValue() : 1;
+
+        // If a spec constant is used to size the array, the default value is used, it will get reevaluated once specialized
+        const uint32_t length = GetConstantValueById(insn->Word(3));
 
         // ArrayStride is only between element, not applied on the end of last element
         // Things like Private variable don't have explicit layout and can use element size

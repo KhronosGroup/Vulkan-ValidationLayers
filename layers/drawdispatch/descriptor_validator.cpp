@@ -160,7 +160,9 @@ bool DescriptorValidator::ValidateDescriptorsStatic(const spirv::ResourceInterfa
     // the pipeline layout more info https://gitlab.khronos.org/vulkan/vulkan/-/issues/4383
     uint32_t count = binding.count;
     // if using VARIABLE_DESCRIPTOR_COUNT, we will still use binding.count as that will be the adjusted value
-    if (resource_variable.IsArray() && descriptor_set.GetVariableDescriptorCount() == 0) {
+    // if the array is sized by a specialization constant we don't know the size so fall back to the whole binding
+    if (resource_variable.IsArray() && resource_variable.array_length != spirv::kSpecConstant &&
+        descriptor_set.GetVariableDescriptorCount() == 0) {
         count = resource_variable.array_length;
     }
 
