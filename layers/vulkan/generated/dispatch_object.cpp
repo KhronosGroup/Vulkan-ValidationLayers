@@ -9878,6 +9878,22 @@ VkBool32 DispatchInstance::GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysical
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC
 
+void DispatchInstance::GetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle) {
+    instance_dispatch_table.GetPhysicalDeviceInternalHandleNV(physicalDevice, pHandle);
+}
+
+void DispatchDevice::GetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle) {
+    device_dispatch_table.GetDeviceInternalHandleNV(device, pHandle);
+}
+
+void DispatchDevice::GetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle) {
+    device_dispatch_table.GetQueueInternalHandleNV(queue, pHandle);
+}
+
+void DispatchDevice::GetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle) {
+    device_dispatch_table.GetCommandBufferInternalHandleNV(commandBuffer, pHandle);
+}
+
 void DispatchDevice::CmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex) {
     device_dispatch_table.CmdSetPrimitiveRestartIndexEXT(commandBuffer, primitiveRestartIndex);
 }

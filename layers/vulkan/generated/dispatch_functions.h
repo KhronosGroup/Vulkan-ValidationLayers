@@ -4980,6 +4980,26 @@ static inline VkBool32 DispatchGetPhysicalDeviceUbmPresentationSupportSEC(VkPhys
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC
 
+static inline void DispatchGetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle) {
+    auto dispatch = vvl::GetDispatchInstance(physicalDevice);
+    dispatch->GetPhysicalDeviceInternalHandleNV(physicalDevice, pHandle);
+}
+
+static inline void DispatchGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle) {
+    auto dispatch = vvl::GetDispatchDevice(device);
+    dispatch->GetDeviceInternalHandleNV(device, pHandle);
+}
+
+static inline void DispatchGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle) {
+    auto dispatch = vvl::GetDispatchDevice(queue);
+    dispatch->GetQueueInternalHandleNV(queue, pHandle);
+}
+
+static inline void DispatchGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle) {
+    auto dispatch = vvl::GetDispatchDevice(commandBuffer);
+    dispatch->GetCommandBufferInternalHandleNV(commandBuffer, pHandle);
+}
+
 static inline void DispatchCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex) {
     auto dispatch = vvl::GetDispatchDevice(commandBuffer);
     dispatch->CmdSetPrimitiveRestartIndexEXT(commandBuffer, primitiveRestartIndex);

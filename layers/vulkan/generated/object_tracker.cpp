@@ -9259,6 +9259,18 @@ void Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUb
 
 #endif  // VK_USE_PLATFORM_UBM_SEC
 
+// vkGetPhysicalDeviceInternalHandleNV:
+// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceInternalHandleNV-physicalDevice-parameter"
+
+// vkGetDeviceInternalHandleNV:
+// Checked by chassis: device: "VUID-vkGetDeviceInternalHandleNV-device-parameter"
+
+// vkGetQueueInternalHandleNV:
+// Checked by chassis: queue: "VUID-vkGetQueueInternalHandleNV-queue-parameter"
+
+// vkGetCommandBufferInternalHandleNV:
+// Checked by chassis: commandBuffer: "VUID-vkGetCommandBufferInternalHandleNV-commandBuffer-parameter"
+
 // vkCmdSetPrimitiveRestartIndexEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetPrimitiveRestartIndexEXT-commandBuffer-parameter"
 

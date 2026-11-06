@@ -2125,6 +2125,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->primitiveRestartIndex |= enabled->primitiveRestartIndex == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ADDRESS_BINDING_UNRESTRICTED_FEATURES_EXT: {
+                const VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT*>(pNext);
+                features->vertexAddressBindingUnrestricted |= enabled->vertexAddressBindingUnrestricted == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT: {
                 const VkPhysicalDeviceImageTilingControlFeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceImageTilingControlFeaturesEXT*>(pNext);

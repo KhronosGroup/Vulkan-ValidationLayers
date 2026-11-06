@@ -565,6 +565,7 @@ const char* String(Func func) {
     {"vkGetCalibratedTimestampsEXT", 29},
     {"vkGetCalibratedTimestampsKHR", 29},
     {"vkGetClusterAccelerationStructureBuildSizesNV", 46},
+    {"vkGetCommandBufferInternalHandleNV", 35},
     {"vkGetCudaModuleCacheNV", 23},
     {"vkGetDataGraphPipelineAvailablePropertiesARM", 45},
     {"vkGetDataGraphPipelinePropertiesARM", 36},
@@ -597,6 +598,7 @@ const char* String(Func func) {
     {"vkGetDeviceImageSparseMemoryRequirementsKHR", 44},
     {"vkGetDeviceImageSubresourceLayout", 34},
     {"vkGetDeviceImageSubresourceLayoutKHR", 37},
+    {"vkGetDeviceInternalHandleNV", 28},
     {"vkGetDeviceMemoryCommitment", 28},
     {"vkGetDeviceMemoryOpaqueCaptureAddress", 38},
     {"vkGetDeviceMemoryOpaqueCaptureAddressKHR", 41},
@@ -697,6 +699,7 @@ const char* String(Func func) {
     {"vkGetPhysicalDeviceImageFormatProperties", 41},
     {"vkGetPhysicalDeviceImageFormatProperties2", 42},
     {"vkGetPhysicalDeviceImageFormatProperties2KHR", 45},
+    {"vkGetPhysicalDeviceInternalHandleNV", 36},
     {"vkGetPhysicalDeviceMemoryProperties", 36},
     {"vkGetPhysicalDeviceMemoryProperties2", 37},
     {"vkGetPhysicalDeviceMemoryProperties2KHR", 40},
@@ -751,6 +754,7 @@ const char* String(Func func) {
     {"vkGetQueryPoolResults", 22},
     {"vkGetQueueCheckpointData2NV", 28},
     {"vkGetQueueCheckpointDataNV", 27},
+    {"vkGetQueueInternalHandleNV", 27},
     {"vkGetRandROutputDisplayEXT", 27},
     {"vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", 50},
     {"vkGetRayTracingShaderGroupHandlesKHR", 37},
@@ -1894,6 +1898,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR", 47},
     {"VkPhysicalDeviceUniformBufferStandardLayoutFeatures", 52},
     {"VkPhysicalDeviceVariablePointersFeatures", 41},
+    {"VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT", 60},
     {"VkPhysicalDeviceVertexAttributeDivisorFeatures", 47},
     {"VkPhysicalDeviceVertexAttributeDivisorProperties", 49},
     {"VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT", 52},
@@ -5653,6 +5658,7 @@ const char* String(Field field) {
     {"vendorInfo", 11},
     {"vendorInfoCount", 16},
     {"version", 8},
+    {"vertexAddressBindingUnrestricted", 33},
     {"vertexAttributeAccessBeyondStride", 34},
     {"vertexAttributeDescriptionCount", 32},
     {"vertexAttributeInstanceRateDivisor", 35},
@@ -6304,6 +6310,7 @@ const char* String(Extension extension) {
     {"VK_EXT_validation_cache", 24},
     {"VK_EXT_validation_features", 27},
     {"VK_EXT_validation_flags", 24},
+    {"VK_EXT_vertex_address_binding_unrestricted", 43},
     {"VK_EXT_vertex_attribute_divisor", 32},
     {"VK_EXT_vertex_attribute_robustness", 35},
     {"VK_EXT_vertex_input_dynamic_state", 34},
@@ -6530,6 +6537,7 @@ const char* String(Extension extension) {
     {"VK_NV_geometry_shader_passthrough", 34},
     {"VK_NV_glsl_shader", 18},
     {"VK_NV_inherited_viewport_scissor", 33},
+    {"VK_NV_internal_handle", 22},
     {"VK_NV_linear_color_attachment", 30},
     {"VK_NV_low_latency", 18},
     {"VK_NV_low_latency2", 19},
@@ -9715,6 +9723,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDataGraphPipelineSessionNeuralStatisticsCreateInfoARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_RESTART_INDEX_FEATURES_EXT:
        return Struct::VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ADDRESS_BINDING_UNRESTRICTED_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT:
        return Struct::VkPhysicalDeviceImageTilingControlFeaturesEXT;
     case VK_STRUCTURE_TYPE_IMAGE_TILING_CONTROL_CREATE_INFO_EXT:

@@ -417,5 +417,7 @@ bool PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice 
                                                                struct ubm_device* device,
                                                                const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_UBM_SEC
+bool PreCallValidateGetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle,
+                                                      const ErrorObject& error_obj) const override;
 
 // NOLINTEND

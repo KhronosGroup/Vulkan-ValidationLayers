@@ -315,5 +315,6 @@ VkResult CreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSE
 VkBool32 GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                     struct ubm_device* device);
 #endif  // VK_USE_PLATFORM_UBM_SEC
+void GetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle);
 
 // NOLINTEND

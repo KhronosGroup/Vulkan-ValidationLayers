@@ -37206,6 +37206,181 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(VkPhys
 }
 
 #endif  // VK_USE_PLATFORM_UBM_SEC
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::GetDispatchInstance(physicalDevice);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceInternalHandleNV,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetPhysicalDeviceInternalHandleNV");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateGetPhysicalDeviceInternalHandleNV(physicalDevice, pHandle, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceInternalHandleNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetPhysicalDeviceInternalHandleNV");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordGetPhysicalDeviceInternalHandleNV(physicalDevice, pHandle, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetPhysicalDeviceInternalHandleNV");
+        instance_dispatch->GetPhysicalDeviceInternalHandleNV(physicalDevice, pHandle);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetPhysicalDeviceInternalHandleNV");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordGetPhysicalDeviceInternalHandleNV(physicalDevice, pHandle, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetDeviceInternalHandleNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetDeviceInternalHandleNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetDeviceInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetDeviceInternalHandleNV(device, pHandle, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetDeviceInternalHandleNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetDeviceInternalHandleNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetDeviceInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetDeviceInternalHandleNV(device, pHandle, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetDeviceInternalHandleNV");
+        device_dispatch->GetDeviceInternalHandleNV(device, pHandle);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetDeviceInternalHandleNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetDeviceInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetDeviceInternalHandleNV(device, pHandle, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(queue);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetQueueInternalHandleNV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetQueueInternalHandleNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetQueueInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetQueueInternalHandleNV(queue, pHandle, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetQueueInternalHandleNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetQueueInternalHandleNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetQueueInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetQueueInternalHandleNV(queue, pHandle, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetQueueInternalHandleNV");
+        device_dispatch->GetQueueInternalHandleNV(queue, pHandle);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetQueueInternalHandleNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetQueueInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetQueueInternalHandleNV(queue, pHandle, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::GetDispatchDevice(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetCommandBufferInternalHandleNV,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetCommandBufferInternalHandleNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetCommandBufferInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetCommandBufferInternalHandleNV(commandBuffer, pHandle, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetCommandBufferInternalHandleNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetCommandBufferInternalHandleNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetCommandBufferInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetCommandBufferInternalHandleNV(commandBuffer, pHandle, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetCommandBufferInternalHandleNV");
+        device_dispatch->GetCommandBufferInternalHandleNV(commandBuffer, pHandle);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetCommandBufferInternalHandleNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetCommandBufferInternalHandleNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetCommandBufferInternalHandleNV(commandBuffer, pHandle, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex) {
     VVL_ZoneScoped;
 
@@ -39358,6 +39533,10 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkCreateUbmSurfaceSEC", {kFuncTypeInst, (void*)CreateUbmSurfaceSEC}},
         {"vkGetPhysicalDeviceUbmPresentationSupportSEC", {kFuncTypePdev, (void*)GetPhysicalDeviceUbmPresentationSupportSEC}},
 #endif  // VK_USE_PLATFORM_UBM_SEC
+        {"vkGetPhysicalDeviceInternalHandleNV", {kFuncTypePdev, (void*)GetPhysicalDeviceInternalHandleNV}},
+        {"vkGetDeviceInternalHandleNV", {kFuncTypeDev, (void*)GetDeviceInternalHandleNV}},
+        {"vkGetQueueInternalHandleNV", {kFuncTypeDev, (void*)GetQueueInternalHandleNV}},
+        {"vkGetCommandBufferInternalHandleNV", {kFuncTypeDev, (void*)GetCommandBufferInternalHandleNV}},
         {"vkCmdSetPrimitiveRestartIndexEXT", {kFuncTypeDev, (void*)CmdSetPrimitiveRestartIndexEXT}},
         {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
         {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},

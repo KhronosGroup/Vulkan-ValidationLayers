@@ -573,12 +573,14 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_NV_COMPUTE_OCCUPANCY_PRIORITY_EXTENSION_NAME, VK_NV_COMPUTE_OCCUPANCY_PRIORITY_SPEC_VERSION},
     {VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_EXTENSION_NAME, VK_EXT_COOPERATIVE_MATRIX_MAINTENANCE_1_SPEC_VERSION},
     {VK_EXT_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, VK_EXT_SHADER_SUBGROUP_PARTITIONED_SPEC_VERSION},
+    {VK_NV_INTERNAL_HANDLE_EXTENSION_NAME, VK_NV_INTERNAL_HANDLE_SPEC_VERSION},
     {VK_ARM_COOPERATIVE_MATRIX_LAYOUTS_EXTENSION_NAME, VK_ARM_COOPERATIVE_MATRIX_LAYOUTS_SPEC_VERSION},
     {VK_EXT_SHADER_OCP_MICROSCALING_TYPES_EXTENSION_NAME, VK_EXT_SHADER_OCP_MICROSCALING_TYPES_SPEC_VERSION},
     {VK_VALVE_SHADER_MIXED_FLOAT_DOT_PRODUCT_EXTENSION_NAME, VK_VALVE_SHADER_MIXED_FLOAT_DOT_PRODUCT_SPEC_VERSION},
     {VK_SEC_THROTTLE_HINT_EXTENSION_NAME, VK_SEC_THROTTLE_HINT_SPEC_VERSION},
     {VK_ARM_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_EXTENSION_NAME, VK_ARM_DATA_GRAPH_NEURAL_ACCELERATOR_STATISTICS_SPEC_VERSION},
     {VK_EXT_PRIMITIVE_RESTART_INDEX_EXTENSION_NAME, VK_EXT_PRIMITIVE_RESTART_INDEX_SPEC_VERSION},
+    {VK_EXT_VERTEX_ADDRESS_BINDING_UNRESTRICTED_EXTENSION_NAME, VK_EXT_VERTEX_ADDRESS_BINDING_UNRESTRICTED_SPEC_VERSION},
     {VK_EXT_IMAGE_TILING_CONTROL_EXTENSION_NAME, VK_EXT_IMAGE_TILING_CONTROL_SPEC_VERSION},
     {VK_NV_COOPERATIVE_MATRIX_DECODE_VECTOR_EXTENSION_NAME, VK_NV_COOPERATIVE_MATRIX_DECODE_VECTOR_SPEC_VERSION},
     {VK_NV_PRIVATE_DATA_BASE_HANDLE_EXTENSION_NAME, VK_NV_PRIVATE_DATA_BASE_HANDLE_SPEC_VERSION},
@@ -2370,6 +2372,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC
                                                                                  uint32_t queueFamilyIndex,
                                                                                  struct ubm_device* device);
 #endif  // VK_USE_PLATFORM_UBM_SEC
+static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle);
+static VKAPI_ATTR void VKAPI_CALL GetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle);
+static VKAPI_ATTR void VKAPI_CALL GetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle);
+static VKAPI_ATTR void VKAPI_CALL GetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle);
 static VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex);
 static VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                                      const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -3331,6 +3337,10 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkCreateUbmSurfaceSEC", (void*)CreateUbmSurfaceSEC},
     {"vkGetPhysicalDeviceUbmPresentationSupportSEC", (void*)GetPhysicalDeviceUbmPresentationSupportSEC},
 #endif  // VK_USE_PLATFORM_UBM_SEC
+    {"vkGetPhysicalDeviceInternalHandleNV", (void*)GetPhysicalDeviceInternalHandleNV},
+    {"vkGetDeviceInternalHandleNV", (void*)GetDeviceInternalHandleNV},
+    {"vkGetQueueInternalHandleNV", (void*)GetQueueInternalHandleNV},
+    {"vkGetCommandBufferInternalHandleNV", (void*)GetCommandBufferInternalHandleNV},
     {"vkCmdSetPrimitiveRestartIndexEXT", (void*)CmdSetPrimitiveRestartIndexEXT},
     {"vkCreateAccelerationStructureKHR", (void*)CreateAccelerationStructureKHR},
     {"vkDestroyAccelerationStructureKHR", (void*)DestroyAccelerationStructureKHR},
@@ -6476,6 +6486,14 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC
 }
 
 #endif  // VK_USE_PLATFORM_UBM_SEC
+static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle) {}
+
+static VKAPI_ATTR void VKAPI_CALL GetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle) {}
+
+static VKAPI_ATTR void VKAPI_CALL GetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle) {}
+
+static VKAPI_ATTR void VKAPI_CALL GetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle) {}
+
 static VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex) {}
 
 static VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,

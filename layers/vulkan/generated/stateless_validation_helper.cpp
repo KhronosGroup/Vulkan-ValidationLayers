@@ -3730,6 +3730,19 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ADDRESS_BINDING_UNRESTRICTED_FEATURES_EXT: {  // Covers
+                                                                                                    // VUID-VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT);
+                VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT* structure =
+                    (VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::vertexAddressBindingUnrestricted),
+                                       structure->vertexAddressBindingUnrestricted);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceImageTilingControlFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_TILING_CONTROL_FEATURES_EXT: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceImageTilingControlFeaturesEXT-sType-sType
@@ -9634,7 +9647,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 291> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 292> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9902,6 +9915,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ADDRESS_BINDING_UNRESTRICTED_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT,
@@ -30836,6 +30850,52 @@ bool Instance::PreCallValidateGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysi
     return skip;
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC
+
+bool Instance::PreCallValidateGetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle,
+                                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle,
+                                            "VUID-vkGetPhysicalDeviceInternalHandleNV-pHandle-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle,
+                                                      const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_internal_handle))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_internal_handle});
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle, "VUID-vkGetDeviceInternalHandleNV-pHandle-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle,
+                                                     const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_internal_handle))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_internal_handle});
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle, "VUID-vkGetQueueInternalHandleNV-pHandle-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_internal_handle))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_internal_handle});
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle,
+                                            "VUID-vkGetCommandBufferInternalHandleNV-pHandle-parameter");
+    return skip;
+}
 
 bool Device::PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
                                                            const ErrorObject& error_obj) const {

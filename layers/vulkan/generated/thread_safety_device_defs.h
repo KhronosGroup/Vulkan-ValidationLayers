@@ -4870,6 +4870,20 @@ void PostCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffe
                                                     const VkComputeOccupancyPriorityParametersNV* pParameters,
                                                     const RecordObject& record_obj) override;
 
+void PreCallRecordGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle, const RecordObject& record_obj) override;
+
+void PostCallRecordGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle, const RecordObject& record_obj) override;
+
+void PreCallRecordGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle, const RecordObject& record_obj) override;
+
+void PostCallRecordGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle, const RecordObject& record_obj) override;
+
+void PreCallRecordGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                   const RecordObject& record_obj) override;
+
+void PostCallRecordGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                    const RecordObject& record_obj) override;
+
 void PreCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
                                                  const RecordObject& record_obj) override;
 

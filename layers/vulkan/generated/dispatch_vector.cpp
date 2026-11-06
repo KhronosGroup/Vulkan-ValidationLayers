@@ -2200,6 +2200,15 @@ void DispatchDevice::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetComputeOccupancyPriorityNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetComputeOccupancyPriorityNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetComputeOccupancyPriorityNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceInternalHandleNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceInternalHandleNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceInternalHandleNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetQueueInternalHandleNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetQueueInternalHandleNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetQueueInternalHandleNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetCommandBufferInternalHandleNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetCommandBufferInternalHandleNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetCommandBufferInternalHandleNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetPrimitiveRestartIndexEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetPrimitiveRestartIndexEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetPrimitiveRestartIndexEXT);

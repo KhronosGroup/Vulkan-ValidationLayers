@@ -145,6 +145,13 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
     const auto& item = GetNameToFuncPtrMap().find(name);
     if (item != GetNameToFuncPtrMap().end()) {
         if (item->second.function_type != kFuncTypeDev) {
+            // TEMPORARY workaround: NVIDIA driver 615.78.08 returns vkGetPhysicalDeviceInternalHandleNV from
+            // vk_icdGetInstanceProcAddr but not from vk_icdGetPhysicalDeviceProcAddr. Loaders older than 1.4.368 then treat it
+            // as an unknown device command and query it here during vkCreateDevice, which is not an application error.
+            // Remove once fixed drivers or updated loaders are available.
+            if (name == "vkGetPhysicalDeviceInternalHandleNV") {
+                return nullptr;
+            }
             Location loc(vvl::Func::vkGetDeviceProcAddr);
             // Was discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6583
             // This has "valid" behavior to return null, but still worth warning users for this unqiue function

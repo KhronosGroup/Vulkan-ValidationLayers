@@ -1752,6 +1752,12 @@ bool PreCallValidateCmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
 bool PreCallValidateCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                      const VkComputeOccupancyPriorityParametersNV* pParameters,
                                                      const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle,
+                                              const ErrorObject& error_obj) const override;
+bool PreCallValidateGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle,
+                                             const ErrorObject& error_obj) const override;
+bool PreCallValidateGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                     const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
                                                    const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

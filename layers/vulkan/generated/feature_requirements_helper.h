@@ -1104,6 +1104,8 @@ enum class Feature {
     variablePointers,
     // VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVulkan11Features
     variablePointersStorageBuffer,
+    // VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT
+    vertexAddressBindingUnrestricted,
     // VkPhysicalDeviceVertexAttributeDivisorFeatures, VkPhysicalDeviceVulkan14Features
     vertexAttributeInstanceRateDivisor,
     // VkPhysicalDeviceVertexAttributeDivisorFeatures, VkPhysicalDeviceVulkan14Features
