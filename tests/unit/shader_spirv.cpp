@@ -3079,6 +3079,47 @@ TEST_F(NegativeShaderSpirv, UntypedPointerInHeapsWithNoFeature) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderSpirv, SpecializationConstantDataFixedLength) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderConstantData);
+    RETURN_IF_SKIP(Init());
+    const char* cs_src = R"(
+               OpCapability Shader
+               OpCapability ConstantDataKHR
+               OpExtension "SPV_KHR_constant_data"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %data SpecId 2
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+     %length = OpConstant %uint 2
+ %array_length = OpTypeArray %uint %length
+       %data = OpSpecConstantDataKHR %array_length 1 2
+  %void_func = OpTypeFunction %void
+       %main = OpFunction %void None %void_func
+ %main_label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    uint32_t data[4] = {6, 6, 8, 8};
+
+    // {id, offset, size} - size should be 8 (2 x uint32_t)
+    VkSpecializationMapEntry entry = {2, 0, 16};
+    VkSpecializationInfo specialization_info = {1, &entry, 16, data};
+
+    // spirv-val also catches the mismatch once the specialization is applied
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
+    m_errorMonitor->SetDesiredError("VUID-VkSpecializationMapEntry-constantID-00776");
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, &specialization_info);
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderSpirv, SpecializationConstantMismatchLength) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME);

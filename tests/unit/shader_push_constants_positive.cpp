@@ -760,6 +760,36 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
     pipe.CreateComputePipeline();
 }
 
+TEST_F(PositiveShaderPushConstants, SpecConstantSizeOp) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4065");
+    RETURN_IF_SKIP(Init());
+
+    const char* cs_source = R"glsl(
+        #version 460
+        layout (constant_id = 0) const int num_vars = 1;
+        layout (push_constant) uniform my_buf {
+            float my_array[num_vars + 1];
+        } pc;
+
+        void main() {
+            float a = pc.my_array[0];
+        }
+    )glsl";
+
+    // 3 + 1 == 4 floats == 16 bytes
+    uint32_t data = 3;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 16};
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(PositiveShaderPushConstants, Storage8BitPointers) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9364");
     SetTargetApiVersion(VK_API_VERSION_1_2);
