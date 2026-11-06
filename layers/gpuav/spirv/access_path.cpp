@@ -178,14 +178,34 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
 
     // Will be null if already found |variable|
     const Instruction* root_ptr_inst = function.FindInstruction(ptr_id);
+
+    // PhysicalStorageBuffer (BDA) pointers never originate from an OpVariable.
+    // If the pointer being accessed is BDA, handle and return immediately.
+    if (!variable && root_ptr_inst) {
+        const Type* type_pointer = type_manager.FindTypeById(root_ptr_inst->TypeId());
+        if (type_pointer && type_pointer->IsBDA()) {
+            is_bda = true;
+
+            uint32_t accessed_type_id = type_pointer->inst_.Operand(1);
+            // The original |access_type| is likely a forward pointer
+            access_type = type_manager.FindTypeById(accessed_type_id);
+            assert(access_type);
+
+            bda_alignment = GetPhysicalStorageBufferAlignment(inst);
+            if (bda_alignment != 0) {
+                // These accesses are different as they don't have a |variable|
+                is_valid = true;
+            }
+
+            return;
+        }
+    }
+
     const Instruction* next_inst = root_ptr_inst;
 
     // If not a direct access, walk the access chains
     // We might find the |variable| while walking it
     if (!variable) {
-        root_ptr_inst = function.FindInstruction(ptr_id);
-        next_inst = root_ptr_inst;
-
         while (next_inst) {
             if (next_inst->IsAccessChain()) {
                 // inserting in front allows us to walk over the loop from the front
@@ -216,27 +236,6 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
         assert(next_inst);
         if (next_inst->Opcode() == spv::OpFunctionParameter) {
             // TODO - Need to handle walking all function callers
-            return;
-        }
-
-        // check for PhysicalStorageBuffer (BDA)
-        const Type* type_pointer = type_manager.FindTypeById(root_ptr_inst->TypeId());
-        if (type_pointer && type_pointer->IsBDA()) {
-            // While the Pointer Id might not be an OpAccessChain (can be OpLoad, OpCopyObject, etc), we can just examine its result
-            // type to see if it is a PhysicalStorageBuffer pointer or not
-            is_bda = true;
-
-            uint32_t accessed_type_id = type_pointer->inst_.Operand(1);
-            // The original |access_type| is likely a forward pointer
-            access_type = type_manager.FindTypeById(accessed_type_id);
-            assert(access_type);
-
-            bda_alignment = GetPhysicalStorageBufferAlignment(inst);
-            if (bda_alignment != 0) {
-                // These accesses are different as they don't have a |variable|
-                is_valid = true;
-            }
-
             return;
         }
 
