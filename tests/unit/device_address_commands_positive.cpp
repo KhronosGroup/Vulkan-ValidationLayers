@@ -376,6 +376,23 @@ TEST_F(PositiveDeviceAddressCommands, AddressRangeBoundSparseMemoryOffset) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDeviceAddressCommands, VertexAddressBindingUnrestricted) {
+    AddRequiredExtensions(VK_EXT_VERTEX_ADDRESS_BINDING_UNRESTRICTED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAddressBindingUnrestricted);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    VkBindVertexBuffer3InfoKHR info = vku::InitStructHelper();
+    info.setStride = VK_FALSE;
+    info.addressRange.address = CastToHandle<VkDeviceAddress, uintptr_t>(0xbaadbee0);
+    info.addressRange.size = 256u;
+    info.addressRange.stride = 0u;
+    info.addressFlags = 0u;
+
+    m_command_buffer.Begin();
+    vk::CmdBindVertexBuffers3KHR(m_command_buffer, 0, 1u, &info);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDeviceAddressCommands, VertexAttributeAlignmentLegacy) {
     AddRequiredExtensions(VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::legacyVertexAttributes);

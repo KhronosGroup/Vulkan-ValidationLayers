@@ -134,7 +134,8 @@ class BufferAddressValidation {
     // |range_size| and |range_vuid| are passed when caller has a range and wants to do the "does it fit" check
     [[nodiscard]] bool ValidateDeviceAddress(const vvl::DeviceProxy& validator, const Location& device_address_loc,
                                              const LogObjectList& objlist, VkDeviceAddress device_address,
-                                             VkDeviceSize range_size = 0, std::string_view range_vuid = {}) noexcept {
+                                             VkDeviceSize range_size = 0, std::string_view range_vuid = {},
+                                             bool allow_no_buffer = false) noexcept {
         bool skip = false;
         // There will be an implicit VU like "must be a valid VkDeviceAddress value" and if can't be zero, stateless validation
         // should have caught this already
@@ -144,6 +145,9 @@ class BufferAddressValidation {
 
         vvl::span<vvl::Buffer* const> buffer_list = validator.GetBuffersByAddress(device_address);
         if (buffer_list.empty()) {
+            if (allow_no_buffer) {
+                return skip;  // VK_EXT_vertex_address_binding_unrestricted allows skipping this check
+            }
             NearestBufferResult nearest = validator.GetNearestBuffersByAddress(device_address);
             std::ostringstream ss;
             ss << "(0x" << std::hex << device_address

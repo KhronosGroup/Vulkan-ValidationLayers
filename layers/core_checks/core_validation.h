@@ -550,7 +550,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDeviceAddress(const Location& device_address_loc, const LogObjectList& objlist,
                                VkDeviceAddress device_address) const;
     bool ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSize size, bool strided, const Location& loc,
-                                    const LogObjectList& objlist, VkBufferUsageFlags2 usage, const char* usage_vuid) const;
+                                    const LogObjectList& objlist, VkBufferUsageFlags2 usage, const char* usage_vuid,
+                                    bool allow_no_buffer = false) const;
 
     bool ValidateMemoryIsBoundToBuffer(LogObjectList objlist, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                        const char* vuid) const;

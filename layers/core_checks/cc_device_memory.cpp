@@ -3088,7 +3088,8 @@ bool CoreChecks::ValidateDeviceAddress(const Location& device_address_loc, const
 
 // Was added so VkDeviceAddressRangeEXT and VkStridedDeviceAddressRangeKHR could share 2 VUs
 bool CoreChecks::ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSize size, bool strided, const Location& loc,
-                                            const LogObjectList& objlist, VkBufferUsageFlags2 usage, const char* usage_vuid) const {
+                                            const LogObjectList& objlist, VkBufferUsageFlags2 usage, const char* usage_vuid,
+                                            bool allow_no_buffer) const {
     bool skip = false;
 
     const char* vuid = kVUIDUndefined;
@@ -3103,7 +3104,8 @@ bool CoreChecks::ValidateDeviceAddressRange(VkDeviceAddress address, VkDeviceSiz
            [usage]() { return std::string("The following buffers are missing ") + string_VkBufferUsageFlags2(usage); },
            ErrorMsgBuffer::Usage}}}};
 
-    skip |= buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::address), objlist, address, size, vuid);
+    skip |= buffer_address_validator.ValidateDeviceAddress(*this, loc.dot(Field::address), objlist, address, size, vuid,
+                                                           allow_no_buffer);
 
     return skip;
 }

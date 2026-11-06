@@ -1269,6 +1269,11 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         props_13->uniformTexelBufferOffsetAlignmentBytes = 16;
     }
 
+    auto* props_14 = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan14Properties>(pProperties->pNext);
+    if (props_14) {
+        props_14->maxCombinedImageSamplerDescriptorCount = 1073741824;
+    }
+
     auto* protected_memory_props = vku::FindStructInPNextChain<VkPhysicalDeviceProtectedMemoryProperties>(pProperties->pNext);
     if (protected_memory_props) {
         protected_memory_props->protectedNoFault = VK_FALSE;
@@ -1326,6 +1331,13 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         mesh_shader_props->prefersLocalInvocationPrimitiveOutput = VK_TRUE;
         mesh_shader_props->prefersCompactVertexOutput = VK_TRUE;
         mesh_shader_props->prefersCompactPrimitiveOutput = VK_TRUE;
+        mesh_shader_props->maxPreferredTaskWorkGroupInvocations = 16;
+        mesh_shader_props->maxPreferredMeshWorkGroupInvocations = 16;
+    }
+
+    auto* maintenance6_props = vku::FindStructInPNextChain<VkPhysicalDeviceMaintenance6PropertiesKHR>(pProperties->pNext);
+    if (maintenance6_props) {
+        maintenance6_props->maxCombinedImageSamplerDescriptorCount = 1073741824;
     }
 
     auto* descriptor_heap_props = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorHeapPropertiesEXT>(pProperties->pNext);
@@ -2240,8 +2252,8 @@ GetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFla
 
 static VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                                 VkDeviceSize* pLayoutSizeInBytes) {
-    // Need to give something non-zero
-    *pLayoutSizeInBytes = 4;
+    // Needs to be non-zero and a multiple of descriptorBufferOffsetAlignment (see GetPhysicalDeviceProperties2)
+    *pLayoutSizeInBytes = 256;
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
