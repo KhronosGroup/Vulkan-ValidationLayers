@@ -361,7 +361,6 @@ void CommandBufferRecording::Reset() {
 CommandBufferContext::CommandBufferContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags, VulkanTypedHandle handle)
     : sync_state_(sync_validator),
       error_messages_(sync_validator.error_messages_),
-      cbs_referenced_(std::make_shared<CommandBufferSet>()),
       command_number_(0),
       reset_count_(0),
       cb_access_context_(sync_validator),
@@ -369,12 +368,13 @@ CommandBufferContext::CommandBufferContext(const SyncValidator& sync_validator, 
       events_context_(),
       environment_(sync_validator, queue_flags, kQueueIdInvalid, handle, events_context_, *this),
       current_renderpass_context_(),
-      recording_(std::make_shared<CommandBufferRecording>()) {}
+      recording_(std::make_shared<CommandBufferRecording>()) {
+    recording_->cb_handle = handle;
+}
 
 CommandBufferContext::CommandBufferContext(SyncValidator& sync_validator, vvl::CommandBuffer* cb_state)
     : CommandBufferContext(sync_validator, cb_state->GetQueueFlags(), cb_state->Handle()) {
     cb_state_ = cb_state;
-    recording_->cb_state = cb_state;
     sync_state_.stats.AddCommandBufferContext();
 }
 
@@ -383,7 +383,6 @@ CommandBufferContext::CommandBufferContext(const CommandBufferContext& from, AsP
     : CommandBufferContext(from.sync_state_, from.cb_state_->GetQueueFlags(), from.cb_state_->Handle()) {
     // Copy only the needed fields out of from for a temporary, proxy command buffer context
     cb_state_ = from.cb_state_;
-    recording_->cb_state = cb_state_;
     *recording_->access_log = *from.recording_->access_log;
     command_number_ = from.command_number_;
     reset_count_ = from.reset_count_;
@@ -410,21 +409,15 @@ CommandBufferContext::~CommandBufferContext() {
 }
 
 void CommandBufferContext::Reset() {
-    cbs_referenced_ = std::make_shared<CommandBufferSet>();
-    if (cb_state_) {
-        cbs_referenced_->push_back(cb_state_->shared_from_this());
-    }
     sync_state_.stats.RemoveHandleRecord((uint32_t)recording_->handles.size());
     if (recording_.use_count() == 1) {
         recording_->Reset();
     } else {
         recording_ = std::make_shared<CommandBufferRecording>();
+        recording_->cb_handle = cb_state_->Handle();
     }
-    recording_->cb_state = cb_state_;
-
     command_number_ = 0;
     reset_count_++;
-
     current_command_tag_ = vvl::kNoIndex32;
     cb_access_context_.Reset();
     current_context_ = &cb_access_context_;
@@ -925,7 +918,7 @@ void CommandBufferContext::RecordDestroyEvent(vvl::Event* event_state) { events_
 
 bool CommandBufferContext::NeedsCommandStorage() const {
     const auto& settings = sync_state_.syncval_settings;
-    return settings.full_validation || (settings.record_time_validation && cb_state_ && !cb_state_->IsPrimary());
+    return settings.full_validation || (settings.record_time_validation && !cb_state_->IsPrimary());
 }
 
 void CommandBufferContext::StoreBarriersForReporting(vvl::span<const BarrierSet> barrier_sets) {
@@ -1145,7 +1138,6 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
 }
 
 void CommandBufferContext::ImportRecordedAccessLog(const CommandBufferContext& recorded_context) {
-    vvl::Append(*cbs_referenced_, *recorded_context.cbs_referenced_);
     recording_->secondary_recordings.emplace_back(recorded_context.recording_);
     vvl::Append(*recording_->access_log, *recorded_context.recording_->access_log);
 
@@ -1319,9 +1311,7 @@ void CommandBufferContext::UpdateStats(AccessStats& access_stats) const {
 }
 
 CommandBufferSubState::CommandBufferSubState(SyncValidator& dev, vvl::CommandBuffer& cb)
-    : vvl::CommandBufferSubState(cb), cb_context(dev, &cb) {
-    cb_context.SetSelfReference();
-}
+    : vvl::CommandBufferSubState(cb), cb_context(dev, &cb) {}
 
 void CommandBufferSubState::End() {
     cb_context.FinalizeRecording();
@@ -1329,10 +1319,6 @@ void CommandBufferSubState::End() {
     // For threads that are dedicated to recording command buffers but do not submit themselves,
     // the end of recording is a logical point to update memory stats
     cb_context.GetSyncState().stats.UpdateMemoryStats();
-}
-
-void CommandBufferSubState::Destroy() {
-    cb_context.Destroy();  // must be first to clean up self references correctly.
 }
 
 void CommandBufferSubState::Reset(const Location& loc) { cb_context.Reset(); }

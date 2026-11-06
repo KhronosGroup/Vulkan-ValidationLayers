@@ -138,7 +138,7 @@ struct ResourceUsageInfo {
     std::string debug_region_name;
     const SyncImageBarrier* image_barrier = nullptr;
 
-    const vvl::CommandBuffer* cb = nullptr;
+    VulkanTypedHandle cb_handle;
     uint32_t command_buffer_reset_count = 0;
 
     const vvl::Queue* queue = nullptr;
@@ -158,7 +158,6 @@ struct ResourceUsageInfoProvider {
 };
 
 using AccessLog = std::vector<ResourceUsageRecord>;
-using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
 
 struct SyncEnvironment {
     SyncEnvironment(const SyncValidator& validator, VkQueueFlags queue_flags, QueueId queue_id, VulkanTypedHandle handle,
@@ -221,7 +220,7 @@ struct ErrorReporter {
 // Commands and reporting data.
 // Can outlive a reset when still needed for replay or error reporting
 struct CommandBufferRecording {
-    const vvl::CommandBuffer* cb_state = nullptr;
+    VulkanTypedHandle cb_handle;
 
     std::vector<CommandEntry> commands;
     CommandData command_data;
@@ -250,16 +249,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     CommandBufferContext(SyncValidator& sync_validator, vvl::CommandBuffer* cb_state);
     CommandBufferContext(const CommandBufferContext& real_context, AsProxyContext dummy);
     ~CommandBufferContext();
-
-    // NOTE: because this class is encapsulated in syncval::CommandBuffer, it isn't safe
-    // to use shared_from_this from the constructor.
-    void SetSelfReference() { cbs_referenced_->push_back(cb_state_->shared_from_this()); }
-
-    void Destroy() {
-        // the cb self reference must be cleared or the command buffer reference count will never go to 0
-        cbs_referenced_.reset();
-        cb_state_ = nullptr;
-    }
 
     void Reset();
 
@@ -348,7 +337,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     std::shared_ptr<const CommandBufferRecording> GetRecordingShared() const { return recording_; }
     std::shared_ptr<AccessLog> GetAccessLogShared() const { return recording_->access_log; }
-    std::shared_ptr<CommandBufferSet> GetCBReferencesShared() const { return cbs_referenced_; }
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
     const std::vector<CommandEntry>& GetCommands() const { return recording_->commands; }
     const CommandData& GetCommandData() const { return recording_->command_data; }
@@ -379,7 +367,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     // a reference count is not needed here.
     vvl::CommandBuffer* cb_state_ = nullptr;
 
-    std::shared_ptr<CommandBufferSet> cbs_referenced_;
     uint32_t command_number_;
     uint32_t reset_count_;
 
@@ -423,7 +410,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void NotifyInvalidate(const vvl::StateObject::NodeList& invalid_nodes, bool unlink) override;
 
     void End() override;
-    void Destroy() override;
     void Reset(const Location& loc) override;
 
     void RecordCopyBuffer(vvl::Buffer& src_buffer_state, vvl::Buffer& dst_buffer_state, uint32_t region_count,

@@ -207,7 +207,7 @@ class BatchAccessLog {
         CBSubmitLog(CBSubmitLog&& other) = default;
         CBSubmitLog& operator=(const CBSubmitLog& other) = default;
         CBSubmitLog& operator=(CBSubmitLog&& other) = default;
-        CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const CommandBufferSet> cbs, std::shared_ptr<const AccessLog> log);
+        CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const AccessLog> log);
         CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb, const std::vector<std::string>& initial_label_stack);
         size_t Size() const { return log_->size(); }
         AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
@@ -224,9 +224,6 @@ class BatchAccessLog {
 
         // Label stack at the point when command buffer is submitted to the queue
         std::vector<std::string> initial_label_stack_;
-
-        // Keeps the command buffer states referenced by the recordings alive for error reporting
-        std::shared_ptr<const CommandBufferSet> cbs_;
     };
 
     void Import(const BatchRecord& batch, const CommandBufferContext& cb_context,

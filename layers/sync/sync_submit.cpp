@@ -804,7 +804,7 @@ void BatchAccessLog::Import(const BatchAccessLog& other) {
 }
 
 void BatchAccessLog::Insert(const BatchRecord& batch, const ResourceUsageRange& range, std::shared_ptr<const AccessLog> log) {
-    log_map_.insert(std::make_pair(range, CBSubmitLog(batch, nullptr, std::move(log))));
+    log_map_.insert(std::make_pair(range, CBSubmitLog(batch, std::move(log))));
 }
 
 // Trim: Remove any unreferenced AccessLog ranges from a BatchAccessLog
@@ -886,17 +886,15 @@ BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(Resour
     return AccessRecord{&batch_, record, debug_name_provider};
 }
 
-BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const CommandBufferSet> cbs,
-                                         std::shared_ptr<const AccessLog> log)
-    : batch_(batch), log_(log), cbs_(cbs) {}
+BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const AccessLog> log)
+    : batch_(batch), log_(log) {}
 
 BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb,
                                          const std::vector<std::string>& initial_label_stack)
     : batch_(batch),
       log_(cb.GetAccessLogShared()),
       recording_(cb.GetRecordingShared()),
-      initial_label_stack_(initial_label_stack),
-      cbs_(cb.GetCBReferencesShared()) {}
+      initial_label_stack_(initial_label_stack) {}
 
 PresentedImage::PresentedImage(const std::shared_ptr<const vvl::Image>& image_state, uint32_t at_index) : PresentedImage() {
     tag = kInvalidTag;
