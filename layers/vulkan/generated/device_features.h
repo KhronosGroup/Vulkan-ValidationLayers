@@ -1110,6 +1110,8 @@ struct DeviceFeatures {
     bool variablePointers;
     // VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVulkan11Features
     bool variablePointersStorageBuffer;
+    // VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT
+    bool vertexAddressBindingUnrestricted;
     // VkPhysicalDeviceVertexAttributeDivisorFeatures, VkPhysicalDeviceVulkan14Features
     bool vertexAttributeInstanceRateDivisor;
     // VkPhysicalDeviceVertexAttributeDivisorFeatures, VkPhysicalDeviceVulkan14Features

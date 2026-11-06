@@ -3883,6 +3883,18 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ADDRESS_BINDING_UNRESTRICTED_FEATURES_EXT: {
+                VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT*>(current);
+                if (enabling->vertexAddressBindingUnrestricted && !supported.vertexAddressBindingUnrestricted) {
+                    ss << "VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT::vertexAddressBindingUnrestricted is not "
+                          "supported\n";
+                }
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES: {
                 VkPhysicalDeviceVertexAttributeDivisorFeatures supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

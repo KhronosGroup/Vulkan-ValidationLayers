@@ -9519,6 +9519,36 @@ void Instance::PostCallRecordCreateUbmSurfaceSEC(VkInstance instance, const VkUb
 }
 
 #endif  // VK_USE_PLATFORM_UBM_SEC
+void Device::PreCallRecordGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle, const RecordObject& record_obj) {
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        StartWriteObject(queue, record_obj.location);
+    }
+}
+
+void Device::PostCallRecordGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle, const RecordObject& record_obj) {
+    if (!vvl::Contains(internally_synchronized_queues, queue)) {
+        FinishWriteObject(queue, record_obj.location);
+    }
+}
+
+void Device::PreCallRecordGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                           const RecordObject& record_obj) {
+    StartReadObject(commandBuffer, record_obj.location);
+}
+
+void Device::PostCallRecordGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                            const RecordObject& record_obj) {
+    FinishReadObject(commandBuffer, record_obj.location);
+}
+
 void Device::PreCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
                                                          const RecordObject& record_obj) {
     StartWriteObject(commandBuffer, record_obj.location);

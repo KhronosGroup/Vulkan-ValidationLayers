@@ -6645,6 +6645,27 @@ virtual void PreCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer comma
 virtual void PostCallRecordCmdSetComputeOccupancyPriorityNV(VkCommandBuffer commandBuffer,
                                                             const VkComputeOccupancyPriorityParametersNV* pParameters,
                                                             const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle,
+                                                      const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetDeviceInternalHandleNV(VkDevice device, VkInternalHandleNV* pHandle, const RecordObject& record_obj) {
+}
+virtual bool PreCallValidateGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle,
+                                                     const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetQueueInternalHandleNV(VkQueue queue, VkInternalHandleNV* pHandle, const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordGetCommandBufferInternalHandleNV(VkCommandBuffer commandBuffer, VkInternalHandleNV* pHandle,
+                                                            const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
                                                            const ErrorObject& error_obj) const {
     return false;

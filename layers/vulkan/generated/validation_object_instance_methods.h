@@ -1435,5 +1435,13 @@ virtual void PreCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalD
 virtual void PostCallRecordGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                       struct ubm_device* device, const RecordObject& record_obj) {}
 #endif  // VK_USE_PLATFORM_UBM_SEC
+virtual bool PreCallValidateGetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle,
+                                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle,
+                                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordGetPhysicalDeviceInternalHandleNV(VkPhysicalDevice physicalDevice, VkInternalHandleNV* pHandle,
+                                                             const RecordObject& record_obj) {}
 
 // NOLINTEND

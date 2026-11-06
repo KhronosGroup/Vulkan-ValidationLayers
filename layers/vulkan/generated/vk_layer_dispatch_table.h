@@ -195,6 +195,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
     PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;
 #endif  // VK_USE_PLATFORM_UBM_SEC
+    PFN_vkGetPhysicalDeviceInternalHandleNV GetPhysicalDeviceInternalHandleNV;
 } VkLayerInstanceDispatchTable;
 
 // Device function pointer dispatch table
@@ -918,6 +919,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
     PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT;
     PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
+    PFN_vkGetDeviceInternalHandleNV GetDeviceInternalHandleNV;
+    PFN_vkGetQueueInternalHandleNV GetQueueInternalHandleNV;
+    PFN_vkGetCommandBufferInternalHandleNV GetCommandBufferInternalHandleNV;
     PFN_vkCmdSetPrimitiveRestartIndexEXT CmdSetPrimitiveRestartIndexEXT;
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;

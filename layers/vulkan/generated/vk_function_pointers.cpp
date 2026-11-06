@@ -952,6 +952,10 @@ PFN_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT GetPhysicalDeviceCooperat
 PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
 PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;
 #endif  // VK_USE_PLATFORM_UBM_SEC
+PFN_vkGetPhysicalDeviceInternalHandleNV GetPhysicalDeviceInternalHandleNV;
+PFN_vkGetDeviceInternalHandleNV GetDeviceInternalHandleNV;
+PFN_vkGetQueueInternalHandleNV GetQueueInternalHandleNV;
+PFN_vkGetCommandBufferInternalHandleNV GetCommandBufferInternalHandleNV;
 PFN_vkCmdSetPrimitiveRestartIndexEXT CmdSetPrimitiveRestartIndexEXT;
 PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
 PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
@@ -2951,6 +2955,14 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_NV_internal_handle", [](VkInstance instance, VkDevice device) {
+                GetDeviceInternalHandleNV = reinterpret_cast<PFN_vkGetDeviceInternalHandleNV>(GetDeviceProcAddr(device, "vkGetDeviceInternalHandleNV"));
+                GetQueueInternalHandleNV = reinterpret_cast<PFN_vkGetQueueInternalHandleNV>(GetDeviceProcAddr(device, "vkGetQueueInternalHandleNV"));
+                GetCommandBufferInternalHandleNV = reinterpret_cast<PFN_vkGetCommandBufferInternalHandleNV>(GetDeviceProcAddr(device, "vkGetCommandBufferInternalHandleNV"));
+                GetPhysicalDeviceInternalHandleNV = reinterpret_cast<PFN_vkGetPhysicalDeviceInternalHandleNV>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceInternalHandleNV"));
+            }
+        },
+        {
             "VK_EXT_primitive_restart_index", [](VkInstance , VkDevice device) {
                 CmdSetPrimitiveRestartIndexEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartIndexEXT>(GetDeviceProcAddr(device, "vkCmdSetPrimitiveRestartIndexEXT"));
             }
@@ -3642,6 +3654,10 @@ void ResetAllExtensions() {
     CreateUbmSurfaceSEC = nullptr;
     GetPhysicalDeviceUbmPresentationSupportSEC = nullptr;
 #endif  // VK_USE_PLATFORM_UBM_SEC
+    GetPhysicalDeviceInternalHandleNV = nullptr;
+    GetDeviceInternalHandleNV = nullptr;
+    GetQueueInternalHandleNV = nullptr;
+    GetCommandBufferInternalHandleNV = nullptr;
     CmdSetPrimitiveRestartIndexEXT = nullptr;
     CreateAccelerationStructureKHR = nullptr;
     DestroyAccelerationStructureKHR = nullptr;

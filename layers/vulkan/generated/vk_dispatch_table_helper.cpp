@@ -1617,6 +1617,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL StubGetPhysicalDeviceUbmPresentationSuppor
     return VK_FALSE;
 }
 #endif  // VK_USE_PLATFORM_UBM_SEC
+static VKAPI_ATTR void VKAPI_CALL StubGetPhysicalDeviceInternalHandleNV(VkPhysicalDevice, VkInternalHandleNV*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetDeviceInternalHandleNV(VkDevice, VkInternalHandleNV*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetQueueInternalHandleNV(VkQueue, VkInternalHandleNV*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetCommandBufferInternalHandleNV(VkCommandBuffer, VkInternalHandleNV*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer, uint32_t) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateAccelerationStructureKHR(VkDevice, const VkAccelerationStructureCreateInfoKHR*,
                                                                          const VkAllocationCallbacks*,
@@ -2303,6 +2307,9 @@ const auto& GetApiExtensionMap() {
         {"vkCmdEndRendering2EXT", {vvl::Extension::_VK_EXT_fragment_density_map_offset}},
         {"vkCmdBeginCustomResolveEXT", {vvl::Extension::_VK_EXT_custom_resolve}},
         {"vkCmdSetComputeOccupancyPriorityNV", {vvl::Extension::_VK_NV_compute_occupancy_priority}},
+        {"vkGetDeviceInternalHandleNV", {vvl::Extension::_VK_NV_internal_handle}},
+        {"vkGetQueueInternalHandleNV", {vvl::Extension::_VK_NV_internal_handle}},
+        {"vkGetCommandBufferInternalHandleNV", {vvl::Extension::_VK_NV_internal_handle}},
         {"vkCmdSetPrimitiveRestartIndexEXT", {vvl::Extension::_VK_EXT_primitive_restart_index}},
         {"vkCreateAccelerationStructureKHR", {vvl::Extension::_VK_KHR_acceleration_structure}},
         {"vkDestroyAccelerationStructureKHR", {vvl::Extension::_VK_KHR_acceleration_structure}},
@@ -5063,6 +5070,19 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->CmdSetComputeOccupancyPriorityNV == nullptr) {
         table->CmdSetComputeOccupancyPriorityNV = (PFN_vkCmdSetComputeOccupancyPriorityNV)StubCmdSetComputeOccupancyPriorityNV;
     }
+    table->GetDeviceInternalHandleNV = (PFN_vkGetDeviceInternalHandleNV)gpa(device, "vkGetDeviceInternalHandleNV");
+    if (table->GetDeviceInternalHandleNV == nullptr) {
+        table->GetDeviceInternalHandleNV = (PFN_vkGetDeviceInternalHandleNV)StubGetDeviceInternalHandleNV;
+    }
+    table->GetQueueInternalHandleNV = (PFN_vkGetQueueInternalHandleNV)gpa(device, "vkGetQueueInternalHandleNV");
+    if (table->GetQueueInternalHandleNV == nullptr) {
+        table->GetQueueInternalHandleNV = (PFN_vkGetQueueInternalHandleNV)StubGetQueueInternalHandleNV;
+    }
+    table->GetCommandBufferInternalHandleNV =
+        (PFN_vkGetCommandBufferInternalHandleNV)gpa(device, "vkGetCommandBufferInternalHandleNV");
+    if (table->GetCommandBufferInternalHandleNV == nullptr) {
+        table->GetCommandBufferInternalHandleNV = (PFN_vkGetCommandBufferInternalHandleNV)StubGetCommandBufferInternalHandleNV;
+    }
     table->CmdSetPrimitiveRestartIndexEXT = (PFN_vkCmdSetPrimitiveRestartIndexEXT)gpa(device, "vkCmdSetPrimitiveRestartIndexEXT");
     if (table->CmdSetPrimitiveRestartIndexEXT == nullptr) {
         table->CmdSetPrimitiveRestartIndexEXT = (PFN_vkCmdSetPrimitiveRestartIndexEXT)StubCmdSetPrimitiveRestartIndexEXT;
@@ -5828,6 +5848,11 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
             (PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC)StubGetPhysicalDeviceUbmPresentationSupportSEC;
     }
 #endif  // VK_USE_PLATFORM_UBM_SEC
+    table->GetPhysicalDeviceInternalHandleNV =
+        (PFN_vkGetPhysicalDeviceInternalHandleNV)gpa(instance, "vkGetPhysicalDeviceInternalHandleNV");
+    if (table->GetPhysicalDeviceInternalHandleNV == nullptr) {
+        table->GetPhysicalDeviceInternalHandleNV = (PFN_vkGetPhysicalDeviceInternalHandleNV)StubGetPhysicalDeviceInternalHandleNV;
+    }
 }
 
 // NOLINTEND

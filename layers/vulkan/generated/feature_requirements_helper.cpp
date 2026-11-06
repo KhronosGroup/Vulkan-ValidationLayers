@@ -8654,6 +8654,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
                 return {&vk_struct->variablePointersStorageBuffer,
                         "VkPhysicalDeviceVariablePointersFeatures::variablePointersStorageBuffer"};
             }
+        case Feature::vertexAddressBindingUnrestricted: {
+            auto vk_struct = const_cast<VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->vertexAddressBindingUnrestricted,
+                    "VkPhysicalDeviceVertexAddressBindingUnrestrictedFeaturesEXT::vertexAddressBindingUnrestricted"};
+        }
+
         case Feature::vertexAttributeInstanceRateDivisor:
             if (api_version >= VK_API_VERSION_1_4) {
                 auto vk_struct = const_cast<VkPhysicalDeviceVulkan14Features*>(
