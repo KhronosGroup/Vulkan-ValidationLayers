@@ -913,3 +913,48 @@ TEST_F(PositiveGpuAVSpirv, MultiEntrypointVulkan11) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveGpuAVSpirv, BitcastSpecConstantPhysicalStorageBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* spv_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %spec_lsb SpecId 0
+               OpDecorate %spec_msb SpecId 1
+               OpDecorate %runtime_arr ArrayStride 16
+               OpMemberDecorate %rawVB 0 Offset 0
+               OpDecorate %rawVB Block
+       %void = OpTypeVoid
+    %void_fn = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %v2uint = OpTypeVector %uint 2
+     %v4uint = OpTypeVector %uint 4
+%runtime_arr = OpTypeRuntimeArray %v4uint
+      %rawVB = OpTypeStruct %runtime_arr
+  %ptr_rawVB = OpTypePointer PhysicalStorageBuffer %rawVB
+ %ptr_v4uint = OpTypePointer PhysicalStorageBuffer %v4uint
+     %uint_0 = OpConstant %uint 0
+   %spec_lsb = OpSpecConstant %uint 0
+   %spec_msb = OpSpecConstant %uint 0
+  %spec_addr = OpSpecConstantComposite %v2uint %spec_lsb %spec_msb
+       %main = OpFunction %void None %void_fn
+      %entry = OpLabel
+        %buf = OpBitcast %ptr_rawVB %spec_addr
+      %chain = OpAccessChain %ptr_v4uint %buf %uint_0 %uint_0
+        %val = OpLoad %v4uint %chain Aligned 4
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
