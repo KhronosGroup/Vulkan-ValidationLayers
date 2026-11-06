@@ -61,16 +61,16 @@ vvl::Func ErrorMessages::AddReplayInfo(const SyncEnvironment& env, const HazardR
         const ResourceUsageInfo prior_usage_info = env.usage_info_provider.GetResourceUsageInfo(prior_tag_ex);
         std::ostringstream ss2;
         if (prior_usage_info.queue) {
-            if (prior_usage_info.cb) {
-                ss2 << "(from " << validator_.FormatHandle(prior_usage_info.cb->Handle());
+            if (prior_usage_info.cb_handle != NullVulkanTypedHandle) {
+                ss2 << "(from " << validator_.FormatHandle(prior_usage_info.cb_handle);
                 ss2 << " submitted on " << validator_.FormatHandle(prior_usage_info.queue->Handle()) << ")";
             } else {  // QueuePresent case (not recorded into command buffer)
                 ss2 << "(submitted on " << validator_.FormatHandle(prior_usage_info.queue->Handle()) << ")";
             }
-        } else if (prior_usage_info.cb) {
+        } else if (prior_usage_info.cb_handle != NullVulkanTypedHandle) {
             // TODO: distinuish between "native" primary command buffer commands and
             // command recorded from the secondary command buffers.
-            ss2 << "(from the primary " << validator_.FormatHandle(prior_usage_info.cb->Handle()) << ")";
+            ss2 << "(from the primary " << validator_.FormatHandle(prior_usage_info.cb_handle) << ")";
         }
         additional_info.brief_description_end_text = ss2.str();
     }

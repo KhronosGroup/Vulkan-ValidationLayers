@@ -690,7 +690,7 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
         info.sub_command_type = record.sub_command_type;
         info.subpass = record.subpass;
         info.command_buffer_reset_count = record.reset_count;
-        info.cb = record.recording->cb_state;
+        info.cb_handle = record.recording->cb_handle;
 
         // Associated resource
         if (tag_ex.handle_index != vvl::kNoIndex32) {
