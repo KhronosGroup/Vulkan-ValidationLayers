@@ -712,7 +712,7 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
 }
 
 ResourceUsageInfo CommandBufferContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
-    const ResourceUsageRecord& record = (*recording_->access_log)[tag_ex.tag];
+    const ResourceUsageRecord& record = recording_->access_log[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kNoIndex32) ? nullptr : this;
     return GetResourceUsageInfoFromRecord(tag_ex, record, debug_name_provider);
 }

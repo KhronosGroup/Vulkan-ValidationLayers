@@ -24,8 +24,6 @@
 
 #include <mutex>
 
-struct RecordObject;
-
 namespace syncval {
 class SyncValidator;
 class ErrorMessages;
@@ -189,7 +187,7 @@ struct CommandBufferRecording {
     CommandData command_data;
 
     // Per-tag records and the data they index
-    std::shared_ptr<AccessLog> access_log = std::make_shared<AccessLog>();
+    AccessLog access_log;
     std::vector<HandleRecord> handles;
     std::vector<vvl::LabelCommand> label_commands;
 
@@ -270,7 +268,7 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     void RecordExecutedCommandBuffer(const CommandBufferContext& recorded_context);
 
-    size_t GetTagCount() const { return recording_->access_log->size(); }
+    size_t GetTagCount() const { return recording_->access_log.size(); }
 
     ResourceUsageTag NextCommandTag(vvl::Func command, SubCommandType subcommand = SubCommandType::kNone,
                                     uint32_t subpass = vvl::kNoIndex32);
