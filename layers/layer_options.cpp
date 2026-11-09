@@ -41,12 +41,6 @@
 #include "utils/math_utils.h"
 #include "vk_layer_config.h"
 
-// Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
-// part of the VVL but not the layer utils library.
-#if defined(USE_MIMALLOC) && defined(_WIN64)
-#include "mimalloc-new-delete.h"
-#endif
-
 const auto& VkValFeatureDisableLookup() {
     static const vvl::unordered_map<std::string, VkValidationFeatureDisableEXT> vk_val_feature_disable_lookup = {
         {"VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT},

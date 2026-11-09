@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-// Tracy code that must exist once per process: the memory profiling replacements of the global operator new/delete, and
-// starting the profiler when the layer is loaded.
+// Tracy code that must exist once per process, so it is only compiled into the layer library (vvl), not into vvl_core:
+// the memory profiling replacements of the global operator new/delete, and starting the profiler when the layer is loaded.
 
 #if defined(TRACY_ENABLE)
 

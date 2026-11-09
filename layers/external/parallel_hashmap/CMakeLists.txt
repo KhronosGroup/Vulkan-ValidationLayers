@@ -1,4 +1,4 @@
-target_sources(VkLayer_utils PRIVATE
+target_sources(vvl_core PRIVATE
     btree.h
     meminfo.h
     phmap_base.h
