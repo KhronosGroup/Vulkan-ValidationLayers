@@ -26,14 +26,20 @@ void vvl::StateObject::Destroy() {
 }
 
 const VulkanTypedHandle* vvl::StateObject::InUse() const {
-    // NOTE: for performance reasons, this method calls up the tree
-    // with the read lock held.
+    // Keep parents alive until after releasing the read lock.
+    // Another thread may release all other references to a parent. When we release ours,
+    // its destructor may call RemoveParent and deadlock on WriteLockTree because we still
+    // hold the ReadLockTree
+    NodeList parents;
+
     auto guard = ReadLockTree();
-    for (auto& item : parent_nodes_) {
-        auto parent = item.second.lock();
-        if (!parent) {
-            continue;
+    for (const auto& item : parent_nodes_) {
+        if (auto parent = item.second.lock()) {
+            parents.emplace_back(std::move(parent));
         }
+    }
+
+    for (const auto& parent : parents) {
         if (auto grandparent_handle = parent->InUse()) {
             // Detect internal set used by the push descriptors. There is no real descriptor set to
             // report in the error message. Return parent of the direct parent as the owner.
