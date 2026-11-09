@@ -293,10 +293,7 @@ void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSync
     access_context_.EraseIf([this, &last_synchronized_present, &predicate](AccessState& access_state) {
         // Tell EraseIf to remove present accesses that are already synchronized according to LastSynchronizedPresent
         if (access_state.HasWriteOp() && access_state.LastWrite().IsPresent()) {
-            const ResourceUsageRecord& usage_record = *batch_log_.GetAccessRecord(access_state.LastWriteTag()).record;
-            assert(usage_record.alt_usage);
-            assert(usage_record.alt_usage.GetCommand() == vvl::Func::vkQueuePresentKHR);
-            const VkSwapchainKHR swapchain = usage_record.alt_usage.GetSwapchainHandle();
+            const VkSwapchainKHR swapchain = batch_log_.GetPresentSwapchain(access_state.LastWriteTag());
             for (const auto& [synchronized_swapchain, synchronized_present_tag] : last_synchronized_present.per_swapchain) {
                 // NOTE: it is important to check that access belongs to a specific swapchain and not only
                 // compare the tag values. It is possible to have accesses from a different swapchain that
@@ -576,16 +573,15 @@ void QueueBatchContext::DoPresentOperations(const PresentedImages& presented_ima
 
 void QueueBatchContext::LogPresentOperations(const PresentedImages& presented_images, uint64_t submit_index) {
     if (tag_range_.size()) {
-        auto access_log = std::make_shared<AccessLog>();
-        BatchAccessLog::BatchRecord batch{queue_state_};
-        batch.submit_index = submit_index;
-        batch.base_tag = tag_range_.begin;
-        batch_log_.Insert(batch, tag_range_, access_log);
-        access_log->reserve(tag_range_.size());
         assert(tag_range_.size() == presented_images.size());
-        for (const auto& presented : presented_images) {
-            access_log->emplace_back(PresentResourceRecord(static_cast<const PresentedImageRecord>(presented)));
+        BatchAccessLog::SwapchainOpLog log;
+        log.batch.queue_state = queue_state_;
+        log.batch.submit_index = submit_index;
+        log.batch.base_tag = tag_range_.begin;
+        for (const PresentedImage& presented : presented_images) {
+            log.ops.emplace_back(BatchAccessLog::SwapchainOp{vvl::Func::vkQueuePresentKHR, presented.swapchain});
         }
+        batch_log_.Insert(tag_range_, std::move(log));
     }
 }
 
@@ -595,11 +591,11 @@ void QueueBatchContext::DoAcquireOperation(const PresentedImage& presented) {
 }
 
 void QueueBatchContext::LogAcquireOperation(const PresentedImage& presented, vvl::Func command) {
-    auto access_log = std::make_shared<AccessLog>();
-    BatchAccessLog::BatchRecord batch{queue_state_};
-    batch.base_tag = tag_range_.begin;
-    batch_log_.Insert(batch, tag_range_, access_log);
-    access_log->emplace_back(AcquireResourceRecord(presented, tag_range_.begin, command));
+    BatchAccessLog::SwapchainOpLog log;
+    log.batch.queue_state = queue_state_;
+    log.batch.base_tag = tag_range_.begin;
+    log.ops.emplace_back(BatchAccessLog::SwapchainOp{command, presented.swapchain});
+    batch_log_.Insert(tag_range_, std::move(log));
 }
 
 void QueueBatchContext::SetupAccessContext(const PresentedImage& presented) {
@@ -746,22 +742,6 @@ bool QueueBatchContext::ValidateSubmit(vvl::span<const CommandBufferConstPtr> co
     return skip;
 }
 
-QueueBatchContext::PresentResourceRecord::Base_::Record QueueBatchContext::PresentResourceRecord::MakeRecord() const {
-    return std::make_unique<PresentResourceRecord>(presented_);
-}
-
-VkSwapchainKHR QueueBatchContext::PresentResourceRecord::GetSwapchainHandle() const {
-    return presented_.image->create_from_swapchain;
-}
-
-QueueBatchContext::AcquireResourceRecord::Base_::Record QueueBatchContext::AcquireResourceRecord::MakeRecord() const {
-    return std::make_unique<AcquireResourceRecord>(presented_, acquire_tag_, command_);
-}
-
-VkSwapchainKHR QueueBatchContext::AcquireResourceRecord::GetSwapchainHandle() const {
-    return presented_.image->create_from_swapchain;
-}
-
 std::vector<BatchContextPtr> SyncValidator::GetLastBatches(std::function<bool(const BatchContextPtr&)> filter) const {
     std::vector<BatchContextPtr> snapshot;
     for (const QueueState& queue_state : queue_states_) {
@@ -794,7 +774,7 @@ void QueueState::SetLastBatch(BatchContextPtr&& last) {
 void BatchAccessLog::Import(const BatchRecord& batch, const CommandBufferContext& cb_context,
                             const std::vector<std::string>& initial_label_stack) {
     ResourceUsageRange import_range = {batch.base_tag, batch.base_tag + cb_context.GetTagCount()};
-    log_map_.insert(std::make_pair(import_range, CBSubmitLog(batch, cb_context, initial_label_stack)));
+    log_map_.insert(std::make_pair(import_range, LogEntry(CBSubmitLog(batch, cb_context, initial_label_stack))));
 }
 
 void BatchAccessLog::Import(const BatchAccessLog& other) {
@@ -803,8 +783,8 @@ void BatchAccessLog::Import(const BatchAccessLog& other) {
     }
 }
 
-void BatchAccessLog::Insert(const BatchRecord& batch, const ResourceUsageRange& range, std::shared_ptr<const AccessLog> log) {
-    log_map_.insert(std::make_pair(range, CBSubmitLog(batch, std::move(log))));
+void BatchAccessLog::Insert(const ResourceUsageRange& range, SwapchainOpLog&& log) {
+    log_map_.insert(std::make_pair(range, LogEntry(std::move(log))));
 }
 
 // Trim: Remove any unreferenced AccessLog ranges from a BatchAccessLog
@@ -862,13 +842,17 @@ void BatchAccessLog::Trim(const ResourceUsageTagSet& used_tags) {
     }
 }
 
-BatchAccessLog::AccessRecord BatchAccessLog::GetAccessRecord(ResourceUsageTag global_tag) const {
-    auto found_log = log_map_.find(global_tag);
-    if (found_log != log_map_.cend()) {
-        return found_log->second.GetAccessRecord(global_tag);
-    }
-    assert(false);
-    return {};
+VkSwapchainKHR BatchAccessLog::GetPresentSwapchain(ResourceUsageTag tag) const {
+    auto found_log = log_map_.find(tag);
+    assert(found_log != log_map_.cend());
+
+    const SwapchainOpLog* swapchain_log = std::get_if<SwapchainOpLog>(&found_log->second);
+    assert(swapchain_log);
+
+    const uint32_t index = static_cast<uint32_t>(tag - swapchain_log->batch.base_tag);
+    const SwapchainOp& op = swapchain_log->ops[index];
+    assert(op.command == vvl::Func::vkQueuePresentKHR);
+    return op.swapchain;
 }
 
 std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageRecord& record) const {
@@ -879,27 +863,22 @@ std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageR
 BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(ResourceUsageTag tag) const {
     assert(tag >= batch_.base_tag);
     const size_t index = tag - batch_.base_tag;
-    assert(log_);
-    assert(index < log_->size());
-    const ResourceUsageRecord* record = &(*log_)[index];
-    const auto debug_name_provider = (record->label_command_index == vvl::kNoIndex32) ? nullptr : this;
-    return AccessRecord{&batch_, record, debug_name_provider};
+    const AccessLog& access_log = *recording_->access_log;
+    assert(index < access_log.size());
+    const ResourceUsageRecord& record = access_log[index];
+    const auto debug_name_provider = (record.label_command_index == vvl::kNoIndex32) ? nullptr : this;
+    return AccessRecord{&batch_, &record, debug_name_provider};
 }
-
-BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const AccessLog> log)
-    : batch_(batch), log_(log) {}
 
 BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb,
                                          const std::vector<std::string>& initial_label_stack)
-    : batch_(batch),
-      log_(cb.GetAccessLogShared()),
-      recording_(cb.GetRecordingShared()),
-      initial_label_stack_(initial_label_stack) {}
+    : batch_(batch), recording_(cb.GetRecordingShared()), initial_label_stack_(initial_label_stack) {}
 
 PresentedImage::PresentedImage(const std::shared_ptr<const vvl::Image>& image_state, uint32_t at_index) : PresentedImage() {
     tag = kInvalidTag;
     image_index = at_index;
     image = image_state;
+    swapchain = image_state->create_from_swapchain;
     range_gen = SubState(*image).MakeImageRangeGen(image->full_range, false);
 }
 
