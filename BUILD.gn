@@ -552,6 +552,7 @@ vvl_sources = [
   "layers/vulkan/generated/vk_object_types.h",
   "layers/vulkan/generated/vk_validation_error_messages.cpp",
   "layers/vulkan/generated/vk_validation_error_messages.h",
+  "layers/vvl.cpp",
 ]
 
 if (is_fuchsia) {
