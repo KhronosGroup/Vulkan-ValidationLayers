@@ -38,10 +38,8 @@ struct HandleRecord {
     VulkanObjectType type = kVulkanObjectTypeUnknown;
     uint32_t index = vvl::kNoIndex32;
 
-    HandleRecord() = default;
-    explicit HandleRecord(const VulkanTypedHandle& typed_handle, uint32_t index = vvl::kNoIndex32)
+    HandleRecord(const VulkanTypedHandle& typed_handle, uint32_t index)
         : handle(typed_handle.handle), type(typed_handle.type), index(index) {}
-    bool IsIndexed() const { return index != vvl::kNoIndex32; }
 
     VulkanTypedHandle TypedHandle() const {
         VulkanTypedHandle typed_handle;
@@ -293,8 +291,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     }
 
     void StoreBarriersForReporting(vvl::span<const BarrierSet> barrier_sets);
-
-    const vvl::CommandBuffer& GetCBState() const { return *cb_state_; }
 
     std::shared_ptr<const CommandBufferRecording> GetRecordingShared() const { return recording_; }
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);

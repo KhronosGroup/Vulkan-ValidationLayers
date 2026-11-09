@@ -360,7 +360,7 @@ static void ReportAcquireImageSynchronizationInsight(std::ostringstream& ss) {
 
 LogObjectList BaseObjectList(const SyncEnvironment& env, const ErrorReporter& reporter, const VulkanTypedHandle& resource) {
     LogObjectList objlist;
-    const VulkanTypedHandle& cb_handle = reporter.cb_context.GetCBState().Handle();
+    const VulkanTypedHandle cb_handle = reporter.cb_context.GetRecordingShared()->cb_handle;
 
     // During recording, env.handle is the command buffer handle. Skip to avoid duplication.
     if (env.handle != cb_handle) {
@@ -717,16 +717,20 @@ ResourceUsageInfo CommandBufferContext::GetResourceUsageInfo(ResourceUsageTagEx 
     return GetResourceUsageInfoFromRecord(tag_ex, record, debug_name_provider);
 }
 
-ResourceUsageInfo BatchAccessLog::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
+ResourceUsageInfo BatchLog::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
     auto found_log = log_map_.find(tag_ex.tag);
     assert(found_log != log_map_.cend());
 
     ResourceUsageInfo info;
-    const BatchRecord* batch = nullptr;
-    if (const CBSubmitLog* cb_log = std::get_if<CBSubmitLog>(&found_log->second)) {
-        const AccessRecord access = cb_log->GetAccessRecord(tag_ex.tag);
-        info = GetResourceUsageInfoFromRecord(tag_ex, *access.record, access.debug_name_provider);
-        batch = access.batch;
+    const BatchInfo* batch = nullptr;
+    if (const CommandBufferLog* cb_log = std::get_if<CommandBufferLog>(&found_log->second)) {
+        assert(tag_ex.tag >= cb_log->batch.base_tag);
+        const size_t index = tag_ex.tag - cb_log->batch.base_tag;
+        const AccessLog& access_log = cb_log->recording->access_log;
+        const ResourceUsageRecord& record = access_log[index];
+        const DebugNameProvider* debug_name_provider = (record.label_command_index == vvl::kNoIndex32) ? nullptr : cb_log;
+        info = GetResourceUsageInfoFromRecord(tag_ex, record, debug_name_provider);
+        batch = &cb_log->batch;
     } else {
         const SwapchainOpLog& swapchain_log = *std::get_if<SwapchainOpLog>(&found_log->second);
         const uint32_t index = static_cast<uint32_t>(tag_ex.tag - swapchain_log.batch.base_tag);
