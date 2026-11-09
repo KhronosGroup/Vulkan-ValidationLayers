@@ -238,10 +238,18 @@ class TestIcdGenerator(BaseGenerator):
                 out.append(f'{returnName}{command.alias[2:]}({params});')
             elif 'vkCreate' in command.name or 'vkAllocate' in command.name:
                 last_param = command.params[-1]
+                # Some commands report a per-element VkResult with the handle
+                # array as the second-to-last param
+                results_param = None
+                if last_param.type == 'VkResult':
+                    results_param = last_param
+                    last_param = command.params[-2]
                 out.append('unique_lock_t lock(global_lock);\n')
                 if (last_param.length):
                     out.append(f'for (uint32_t i = 0; i < {last_param.length}; ++i) {{\n')
                     out.append(f'{last_param.name}[i] = ({last_param.type})global_unique_handle++;\n')
+                    if results_param:
+                        out.append(f'{results_param.name}[i] = VK_SUCCESS;\n')
                     out.append('}\n')
                 else:
                     out.append(f'*{last_param.name} = ({last_param.type})global_unique_handle++;\n')
