@@ -11,6 +11,8 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 
+#include <thread>
+
 class PositiveDeviceAddressCommands : public DeviceAddressCommands {};
 
 TEST_F(PositiveDeviceAddressCommands, CopyMemoryToImage) {
@@ -430,4 +432,42 @@ TEST_F(PositiveDeviceAddressCommands, VertexAttributeAlignmentLegacy) {
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(PositiveDeviceAddressCommands, DestroyBufferWhileResettingCommandBuffer) {
+    TEST_DESCRIPTION("Destroy a buffer while another thread resets an unsubmitted command buffer that recorded a buffer copy");
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    constexpr uint32_t kIterations = 300;
+    std::atomic<uint32_t> handed{0};
+
+    vkt::Buffer buffer;
+
+    std::thread destroyer([&] {
+        for (uint32_t i = 1; i <= kIterations; ++i) {
+            while (handed.load() != i);
+            buffer.Destroy();
+            handed.store(0);
+        }
+    });
+    for (uint32_t i = 1; i <= kIterations; ++i) {
+        const VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        buffer = vkt::Buffer(*m_device, 256u, usage, vkt::device_address);
+
+        VkDeviceMemoryCopyKHR region = vku::InitStructHelper();
+        region.srcRange = {buffer.Address(), 128u};
+        region.dstRange = {region.srcRange.address + 128u, 128u};
+        VkCopyDeviceMemoryInfoKHR copy_memory_info = vku::InitStructHelper();
+        copy_memory_info.regionCount = 1u;
+        copy_memory_info.pRegions = &region;
+
+        m_command_buffer.Begin();
+        vk::CmdCopyMemoryKHR(m_command_buffer, &copy_memory_info);
+        m_command_buffer.End();
+
+        handed.store(i);
+        m_command_buffer.Reset(0);
+        while (handed.load() != 0);
+    }
+    destroyer.join();
 }
