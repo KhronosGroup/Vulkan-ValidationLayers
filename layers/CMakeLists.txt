@@ -677,6 +677,7 @@ if (VVL_ENABLE_TRACY)
     target_sources(vvl PRIVATE
         profiling/profiling.h
         profiling/profiling.cpp
+        profiling/profiling_layer.cpp
     )
     target_link_libraries(vvl PRIVATE TracyClient)
 endif()
