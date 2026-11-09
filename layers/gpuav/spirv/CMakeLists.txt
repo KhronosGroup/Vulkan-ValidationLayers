@@ -14,8 +14,9 @@
 # limitations under the License.
 # ~~~
 
-add_library(gpu_av_spirv STATIC)
-target_sources(gpu_av_spirv PRIVATE
+# The SPIR-V instrumentation passes are layer code that calls into the rest of the layer and is called by it, so they are
+# built into vvl_core rather than a separate library (which would make the two libraries depend on each other)
+set(GPU_AV_SPIRV_SOURCES
     # Passes
     descriptor_indexing_oob_pass.h
     descriptor_indexing_oob_pass.cpp
@@ -68,53 +69,11 @@ target_sources(gpu_av_spirv PRIVATE
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_glsl.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/gpuav_offline_spirv_slang.cpp
 )
+target_sources(vvl_core PRIVATE ${GPU_AV_SPIRV_SOURCES})
 
-target_include_directories(gpu_av_spirv PRIVATE .
-    ${VVL_SOURCE_DIR}/layers
-    ${VVL_SOURCE_DIR}/layers/external
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}
-)
-
-target_link_libraries(gpu_av_spirv PRIVATE
-    SPIRV-Headers::SPIRV-Headers
-    VkLayer_utils # To pull in compile_definitions
-)
-
-if (VVL_ENABLE_TRACY)
-    target_link_libraries(gpu_av_spirv PRIVATE TracyClient)
-endif()
-
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    target_compile_options(gpu_av_spirv PRIVATE
-        -Wno-sign-conversion
-        -Wno-implicit-int-conversion
-    )
-elseif(MSVC)
-    target_compile_options(gpu_av_spirv PRIVATE
-        /wd4324 # padding
-        /wd4458 # hiding class member
-        /wd4457 # hiding function parameter
-        /wd4702 # unreachable code
-        /wd4389 # signed/unsigned mismatch
-    )
-endif()
-
-# Found to significantly cut VVL build time
-#
-# Note: If using ccache, see the CCACHE_SLOPPINESS note in tests/CMakeLists.txt
-target_precompile_headers(gpu_av_spirv PRIVATE
-    <algorithm>
-    <functional>
-    <list>
-    <memory>
-    <mutex>
-    <string>
-    <vector>
-    <vulkan/vulkan.h>
-    <spirv/unified1/spirv.hpp>
-    # Included by almost all TUs in library
-    module.h
-)
+# vvl_core suppresses unused parameter warnings, which these files never needed: keep them checked
+set_source_files_properties(${GPU_AV_SPIRV_SOURCES} TARGET_DIRECTORY vvl_core PROPERTIES
+    COMPILE_OPTIONS "$<IF:$<CXX_COMPILER_ID:MSVC>,/w44100,-Wunused-parameter>")
 
 # Auto generate Shaders' SPIR-V code upon GLSL changes
 set(GPUAV_SHADERS_DIR "${VVL_SOURCE_DIR}/layers/gpuav/shaders")
@@ -148,7 +107,7 @@ if (VVL_COMPILE_GPUAV_SHADERS)
         VERBATIM
     )
     add_custom_target(vvl_gpu_av_shaders_spirv DEPENDS "${GPUAV_SHADERS_STAMP}")
-    add_dependencies(gpu_av_spirv vvl_gpu_av_shaders_spirv)
+    add_dependencies(vvl_core vvl_gpu_av_shaders_spirv)
 else()
     # The checked in generated files would not match edited shaders, so fail instead of using them.
     # Editing a shader re-runs CMake so this is checked again.

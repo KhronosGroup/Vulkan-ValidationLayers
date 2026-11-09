@@ -17,7 +17,9 @@
  * limitations under the License.
  ****************************************************************************/
 
-// The entry points the loader looks up by name
+// The layer library itself is only this file (plus the Tracy hooks in profiling_layer.cpp). Everything else is in the vvl_core
+// static library, so that tests can link the layer internals directly. Because nothing else in the layer library references
+// vvl_core, these exports are what pull the rest of the layer in at link time.
 
 #include <cassert>
 
@@ -25,6 +27,12 @@
 #include <vulkan/vk_layer.h>
 
 #include "chassis/chassis.h"
+
+// Include new / delete overrides if using mimalloc. This needs to be included exactly once, in a file that is part of the
+// layer library but not vvl_core. Otherwise anything linking vvl_core, like the tests, would also replace its new / delete.
+#if defined(USE_MIMALLOC) && defined(_WIN64)
+#include "mimalloc-new-delete.h"
+#endif
 
 #if defined(__GNUC__) && __GNUC__ >= 4
 #define VVL_EXPORT __attribute__((visibility("default")))
