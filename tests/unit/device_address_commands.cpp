@@ -2881,6 +2881,39 @@ TEST_F(NegativeDeviceAddressCommands, CopyMemoryDstUsage) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDeviceAddressCommands, CopyMemoryBufferDestroyed) {
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer src_buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    vkt::Buffer dst_buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+
+    VkDeviceMemoryCopyKHR region = vku::InitStructHelper();
+    region.srcRange = src_buffer.AddressRange();
+    region.dstRange = dst_buffer.AddressRange();
+    VkCopyDeviceMemoryInfoKHR copy_memory_info = vku::InitStructHelper();
+    copy_memory_info.regionCount = 1u;
+    copy_memory_info.pRegions = &region;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryKHR(m_command_buffer, &copy_memory_info);
+    src_buffer.Destroy();
+
+    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
+    vk::EndCommandBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    src_buffer = vkt::Buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, vkt::device_address);
+    region.srcRange = src_buffer.AddressRange();
+
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryKHR(m_command_buffer, &copy_memory_info);
+    dst_buffer.Destroy();
+
+    m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
+    vk::EndCommandBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDeviceAddressCommands, CopyDepthStencilAddress) {
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
 

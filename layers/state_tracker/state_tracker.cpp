@@ -1053,8 +1053,10 @@ void DeviceState::PostCallRecordCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCopyMemory(pCopyMemoryInfo->regionCount, pCopyMemoryInfo->pRegions, record_obj.location);
     for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
+        TrackDeviceAddressRange(*cb_state, pCopyMemoryInfo->pRegions[i].srcRange.address,
+                                pCopyMemoryInfo->pRegions[i].srcRange.size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT);
         TrackDeviceAddressRange(*cb_state, pCopyMemoryInfo->pRegions[i].dstRange.address,
-                                pCopyMemoryInfo->pRegions[i].dstRange.size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT);
+                                pCopyMemoryInfo->pRegions[i].dstRange.size, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT);
     }
 }
 
