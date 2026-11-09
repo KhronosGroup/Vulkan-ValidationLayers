@@ -6698,7 +6698,7 @@ TEST_F(NegativeSyncVal, WriteSameLocationFromTwoSubmits) {
 }
 
 TEST_F(NegativeSyncVal, ResourceHandleIndexStability) {
-    TEST_DESCRIPTION("Test that stale handle indices (inconsistent state after core validation error) are handled correctly");
+    TEST_DESCRIPTION("Re-recording a pending command buffer keeps the handles of the submitted recording");
     RETURN_IF_SKIP(InitSyncVal());
 
     if (!IsPlatformMockICD()) {
@@ -6718,10 +6718,7 @@ TEST_F(NegativeSyncVal, ResourceHandleIndexStability) {
     m_default_queue->Submit(m_command_buffer);
 
     // Intentional violation of core validation. Begin command buffer while previous one is still pending.
-    // The command buffer's Reset call clears HandleRecord array. Due to missing synchronization, the
-    // access context still contains references to already remove handles. This core validation error
-    // leads to inconsistent command buffer state, but syncval should handle this gracefully and do not
-    // crash/assert (although no guarantees about validity of syncval reporting from this moment).
+    // The pending submit keeps the previous recording, so the hazard below still finds the prior access's handle
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkBeginCommandBuffer-commandBuffer-00049");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkQueueSubmit-pCommandBuffers-00071");
 
@@ -6730,8 +6727,6 @@ TEST_F(NegativeSyncVal, ResourceHandleIndexStability) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    // Hazard prior access refers to "buffer" (handle 3) but handles array is cleared
-    // (does not happen under normal circumstances). This should not cause out of bounds array access.
     m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
 

@@ -46,13 +46,14 @@ vvl::Func ErrorMessages::AddReplayInfo(const SyncEnvironment& env, const HazardR
     if (!recorded_usage_info.debug_region_name.empty()) {
         ss << "[" << recorded_usage_info.debug_region_name << "]";
     }
+    const VulkanTypedHandle cb_handle = reporter.cb_context.GetRecordingShared()->cb_handle;
     if (env.handle.type == kVulkanObjectTypeQueue) {
-        ss << " (from " << validator_.FormatHandle(reporter.cb_context.GetCBState().Handle());
+        ss << " (from " << validator_.FormatHandle(cb_handle);
         ss << " submitted on the current ";
         ss << validator_.FormatHandle(env.handle) << ")";
     } else {  // primary command buffer executes secondary one
         assert(env.handle.type == kVulkanObjectTypeCommandBuffer);
-        ss << " (from the secondary " << validator_.FormatHandle(reporter.cb_context.GetCBState().Handle()) << ")";
+        ss << " (from the secondary " << validator_.FormatHandle(cb_handle) << ")";
     }
     additional_info.access_initiator = ss.str();
 

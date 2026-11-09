@@ -185,54 +185,43 @@ struct PresentedImage : public PresentedImageRecord {
 };
 using PresentedImages = std::vector<PresentedImage>;
 
+struct BatchInfo {
+    const QueueState* queue_state = nullptr;
+    uint64_t submit_index = 0;
+    uint32_t batch_index = 0;
+    ResourceUsageTag base_tag = 0;
+};
+
+struct CommandBufferLog final : DebugNameProvider {
+    BatchInfo batch;
+    std::shared_ptr<const CommandBufferRecording> recording;
+
+    // Label stack at the point when command buffer is submitted to the queue
+    std::vector<std::string> initial_label_stack;
+
+    // DebugNameProvider
+    std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;
+};
+
+struct SwapchainOp {
+    vvl::Func command;
+    VkSwapchainKHR swapchain;
+};
+
+// Present or acquire operations of the batch, one per tag.
+// An acquire has a single operation, a present has one per swapchain
+struct SwapchainOpLog {
+    BatchInfo batch;
+    small_vector<SwapchainOp, 1> ops;
+};
+
 // Maps global tags to information about the command that performed the access.
 // Hazard reports use it to describe the prior access
-class BatchAccessLog {
+class BatchLog {
   public:
-    struct BatchRecord {
-        const QueueState* queue_state = nullptr;
-        uint64_t submit_index = 0;
-        uint32_t batch_index = 0;
-        ResourceUsageTag base_tag = 0;
-    };
-
-    struct AccessRecord {
-        const BatchRecord* batch;
-        const ResourceUsageRecord* record;
-        const DebugNameProvider* debug_name_provider;
-    };
-
-    struct CBSubmitLog final : DebugNameProvider {
-      public:
-        CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb, const std::vector<std::string>& initial_label_stack);
-        AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
-
-        // DebugNameProvider
-        std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;
-
-      private:
-        BatchRecord batch_;
-        std::shared_ptr<const CommandBufferRecording> recording_;
-
-        // Label stack at the point when command buffer is submitted to the queue
-        std::vector<std::string> initial_label_stack_;
-    };
-
-    struct SwapchainOp {
-        vvl::Func command;
-        VkSwapchainKHR swapchain;
-    };
-
-    // Present or acquire operations of the batch, one per tag.
-    // An acquire has a single operation, a present has one per swapchain
-    struct SwapchainOpLog {
-        BatchRecord batch;
-        small_vector<SwapchainOp, 1> ops;
-    };
-
-    void Import(const BatchRecord& batch, const CommandBufferContext& cb_context,
+    void Import(const BatchInfo& batch, const CommandBufferContext& cb_context,
                 const std::vector<std::string>& initial_label_stack);
-    void Import(const BatchAccessLog& other);
+    void Import(const BatchLog& other);
     void Insert(const ResourceUsageRange& range, SwapchainOpLog&& log);
     void Trim(const ResourceUsageTagSet& used);
 
@@ -240,7 +229,7 @@ class BatchAccessLog {
     VkSwapchainKHR GetPresentSwapchain(ResourceUsageTag tag) const;
 
   private:
-    using LogEntry = std::variant<CBSubmitLog, SwapchainOpLog>;
+    using LogEntry = std::variant<CommandBufferLog, SwapchainOpLog>;
     using LogRangeMap = sparse_container::range_map<ResourceUsageTag, LogEntry>;
     LogRangeMap log_map_;
 };
@@ -390,7 +379,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
     SyncEventsContext events_context_;
     SyncEnvironment environment_;
 
-    BatchAccessLog batch_log_;
+    BatchLog batch_log_;
 
     // Indexed by queue id. Each element stores the tag limit of the last synchronization
     // (via semaphores) between this batch's queue and the corresponding queue. Tags below
