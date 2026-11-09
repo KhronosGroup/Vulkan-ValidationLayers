@@ -557,6 +557,7 @@ target_sources(vvl PRIVATE
     layer_options.h
     layer_options_validation.h
     profiling/profiling.h
+    vvl.cpp
 )
 
 get_target_property(LAYER_SOURCES vvl SOURCES)
