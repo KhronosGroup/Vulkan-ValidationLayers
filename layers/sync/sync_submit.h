@@ -21,6 +21,8 @@
 #include "containers/small_vector.h"
 #include "containers/range_map.h"
 
+#include <variant>
+
 namespace vvl {
 class CommandBuffer;
 class Semaphore;
@@ -183,7 +185,8 @@ struct PresentedImage : public PresentedImageRecord {
 };
 using PresentedImages = std::vector<PresentedImage>;
 
-// Store references to ResourceUsageRecords with global tag range within a batch
+// Maps global tags to information about the command that performed the access.
+// Hazard reports use it to describe the prior access
 class BatchAccessLog {
   public:
     struct BatchRecord {
@@ -197,19 +200,11 @@ class BatchAccessLog {
         const BatchRecord* batch;
         const ResourceUsageRecord* record;
         const DebugNameProvider* debug_name_provider;
-        bool IsValid() const { return batch && record; }
     };
 
-    struct CBSubmitLog : DebugNameProvider {
+    struct CBSubmitLog final : DebugNameProvider {
       public:
-        CBSubmitLog() = default;
-        CBSubmitLog(const CBSubmitLog& batch) = default;
-        CBSubmitLog(CBSubmitLog&& other) = default;
-        CBSubmitLog& operator=(const CBSubmitLog& other) = default;
-        CBSubmitLog& operator=(CBSubmitLog&& other) = default;
-        CBSubmitLog(const BatchRecord& batch, std::shared_ptr<const AccessLog> log);
         CBSubmitLog(const BatchRecord& batch, const CommandBufferContext& cb, const std::vector<std::string>& initial_label_stack);
-        size_t Size() const { return log_->size(); }
         AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
 
         // DebugNameProvider
@@ -217,26 +212,37 @@ class BatchAccessLog {
 
       private:
         BatchRecord batch_;
-        std::shared_ptr<const AccessLog> log_;
-
-        // Recording the log records point into. Null for present/acquire logs
         std::shared_ptr<const CommandBufferRecording> recording_;
 
         // Label stack at the point when command buffer is submitted to the queue
         std::vector<std::string> initial_label_stack_;
     };
 
+    struct SwapchainOp {
+        vvl::Func command;
+        VkSwapchainKHR swapchain;
+    };
+
+    // Present or acquire operations of the batch, one per tag.
+    // An acquire has a single operation, a present has one per swapchain
+    struct SwapchainOpLog {
+        BatchRecord batch;
+        small_vector<SwapchainOp, 1> ops;
+    };
+
     void Import(const BatchRecord& batch, const CommandBufferContext& cb_context,
                 const std::vector<std::string>& initial_label_stack);
     void Import(const BatchAccessLog& other);
-    void Insert(const BatchRecord& batch, const ResourceUsageRange& range, std::shared_ptr<const AccessLog> log);
+    void Insert(const ResourceUsageRange& range, SwapchainOpLog&& log);
     void Trim(const ResourceUsageTagSet& used);
 
-    AccessRecord GetAccessRecord(ResourceUsageTag global_tag) const;
+    ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const;
+    VkSwapchainKHR GetPresentSwapchain(ResourceUsageTag tag) const;
 
   private:
-    using CBSubmitLogRangeMap = sparse_container::range_map<ResourceUsageTag, CBSubmitLog>;
-    CBSubmitLogRangeMap log_map_;
+    using LogEntry = std::variant<CBSubmitLog, SwapchainOpLog>;
+    using LogRangeMap = sparse_container::range_map<ResourceUsageTag, LogEntry>;
+    LogRangeMap log_map_;
 };
 
 // Batch that has wait-before-signal dependencies.
@@ -312,34 +318,6 @@ class QueueState {
 
 class QueueBatchContext final : public ResourceUsageInfoProvider, public std::enable_shared_from_this<QueueBatchContext> {
   public:
-    class PresentResourceRecord : public AlternateResourceUsage::RecordBase {
-      public:
-        using Base_ = AlternateResourceUsage::RecordBase;
-        Base_::Record MakeRecord() const override;
-        ~PresentResourceRecord() override {}
-        PresentResourceRecord(const PresentedImageRecord& presented) : presented_(presented) {}
-        vvl::Func GetCommand() const override { return vvl::Func::vkQueuePresentKHR; }
-        VkSwapchainKHR GetSwapchainHandle() const override;
-
-      private:
-        PresentedImageRecord presented_;
-    };
-
-    class AcquireResourceRecord : public AlternateResourceUsage::RecordBase {
-      public:
-        using Base_ = AlternateResourceUsage::RecordBase;
-        Base_::Record MakeRecord() const override;
-        AcquireResourceRecord(const PresentedImageRecord& presented, ResourceUsageTag tag, vvl::Func command)
-            : presented_(presented), acquire_tag_(tag), command_(command) {}
-        vvl::Func GetCommand() const override { return command_; }
-        VkSwapchainKHR GetSwapchainHandle() const override;
-
-      private:
-        PresentedImageRecord presented_;
-        ResourceUsageTag acquire_tag_;
-        vvl::Func command_;
-    };
-
     QueueBatchContext(const SyncValidator& sync_state, const QueueState& queue_state);
     QueueBatchContext(const SyncValidator& sync_state);
     QueueBatchContext() = delete;

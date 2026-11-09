@@ -32,41 +32,6 @@ class ErrorMessages;
 struct AccessStats;
 struct CommandBufferRecording;
 
-class AlternateResourceUsage {
-  public:
-    struct RecordBase;
-    struct RecordBase {
-        using Record = std::unique_ptr<RecordBase>;
-        virtual Record MakeRecord() const = 0;
-        virtual vvl::Func GetCommand() const = 0;
-        virtual VkSwapchainKHR GetSwapchainHandle() const = 0;
-        virtual ~RecordBase() {}
-    };
-
-    vvl::Func GetCommand() const { return record_->GetCommand(); }
-    VkSwapchainKHR GetSwapchainHandle() const { return record_->GetSwapchainHandle(); }
-    AlternateResourceUsage() = default;
-    AlternateResourceUsage(const RecordBase& record) : record_(record.MakeRecord()) {}
-    AlternateResourceUsage(const AlternateResourceUsage& other) : record_() {
-        if (bool(other.record_)) {
-            record_ = other.record_->MakeRecord();
-        }
-    }
-    AlternateResourceUsage& operator=(const AlternateResourceUsage& other) {
-        if (bool(other.record_)) {
-            record_ = other.record_->MakeRecord();
-        } else {
-            record_.reset();
-        }
-        return *this;
-    }
-
-    operator bool() const { return bool(record_); }
-
-  private:
-    RecordBase::Record record_;
-};
-
 // Vulkan handle and associated information.
 // Command buffer context stores array of handles that are referenced by the tagged commands.
 // VulkanTypedHandle is stored in unpacked form to avoid structure padding gaps.
@@ -103,13 +68,11 @@ struct ResourceUsageRecord {
           seq_num(seq_num),
           reset_count(reset_count),
           subpass(subpass) {}
-    ResourceUsageRecord(const AlternateResourceUsage& other) : alt_usage(other) {}
 
-    // This command buffer's recording, or the recording for imported secondary records.
+    // Recording this record comes from.
+    // For imported records, it is the secondary command buffer recording.
     // Kept alive by the context or batch access log
     const CommandBufferRecording* recording = nullptr;
-
-    AlternateResourceUsage alt_usage;
 
     vvl::Func command = vvl::Func::Empty;
     SubCommandType sub_command_type = SubCommandType::kNone;
@@ -336,7 +299,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
     const vvl::CommandBuffer& GetCBState() const { return *cb_state_; }
 
     std::shared_ptr<const CommandBufferRecording> GetRecordingShared() const { return recording_; }
-    std::shared_ptr<AccessLog> GetAccessLogShared() const { return recording_->access_log; }
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
     const std::vector<CommandEntry>& GetCommands() const { return recording_->commands; }
     const CommandData& GetCommandData() const { return recording_->command_data; }
