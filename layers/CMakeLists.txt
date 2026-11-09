@@ -21,87 +21,25 @@
 # based on the target API variant (e.g. Vulkan SC)
 set(LAYER_NAME "VkLayer_khronos_validation")
 
-add_library(VkLayer_utils STATIC)
-target_sources(VkLayer_utils PRIVATE
-    containers/container_utils.h
-    containers/custom_containers.h
-    containers/limits.h
-    containers/small_container.h
-    containers/array_range_map.h
-    containers/small_range_map.h
-    containers/small_vector.h
-    containers/span.h
-    error_message/logging.h
-    error_message/logging.cpp
-    error_message/error_location.cpp
-    error_message/error_location.h
-    error_message/record_object.h
-    error_message/log_message_type.h
-    external/xxhash.h
-    external/inplace_function.h
-    ${API_TYPE}/generated/error_location_helper.cpp
-    ${API_TYPE}/generated/error_location_helper.h
-    ${API_TYPE}/generated/feature_requirements_helper.cpp
-    ${API_TYPE}/generated/feature_requirements_helper.h
-    ${API_TYPE}/generated/test_icd_helper.h
-    ${API_TYPE}/generated/pnext_chain_extraction.cpp
-    ${API_TYPE}/generated/pnext_chain_extraction.h
-    ${API_TYPE}/generated/vk_function_pointers.cpp
-    ${API_TYPE}/generated/vk_function_pointers.h
-    ${API_TYPE}/generated/vk_validation_error_messages.cpp
-    ${API_TYPE}/generated/vk_validation_error_messages.h
-    ${API_TYPE}/generated/vk_layer_dispatch_table.h
-    ${API_TYPE}/generated/vk_dispatch_table_helper.h
-    ${API_TYPE}/generated/vk_dispatch_table_helper.cpp
-    ${API_TYPE}/generated/vk_object_types.h
-    ${API_TYPE}/generated/vk_object_types.cpp
-    ${API_TYPE}/generated/vk_api_version.h
-    ${API_TYPE}/generated/vk_extension_helper.h
-    ${API_TYPE}/generated/vk_extension_helper.cpp
-    utils/action_command_utils.h
-    utils/assert_utils.h
-    utils/cast_utils.h
-    utils/convert_utils.cpp
-    utils/convert_utils.h
-    utils/dispatch_utils.cpp
-    utils/dispatch_utils.h
-    utils/file_system_utils.cpp
-    utils/file_system_utils.h
-    utils/hash_util.h
-    utils/hash_util.cpp
-    utils/hash_vk_types.h
-    utils/image_utils.h
-    utils/image_utils.cpp
-    utils/image_layout_utils.h
-    utils/image_layout_utils.cpp
-    utils/lock_utils.h
-    utils/math_utils.h
-    utils/vk_layer_extension_utils.cpp
-    utils/vk_layer_extension_utils.h
-    utils/keyboard.cpp
-    utils/keyboard.h
-    utils/ray_tracing_utils.cpp
-    utils/ray_tracing_utils.h
-    utils/sync_utils.cpp
-    utils/sync_utils.h
-    utils/text_utils.cpp
-    utils/text_utils.h
-    utils/vk_struct_compare.cpp
-    utils/vk_struct_compare.h
-    utils/vk_api_utils.h
-    vk_layer_config.h
-    vk_layer_config.cpp
-)
+# vvl_core: everything but the exported entry points, so unit tests can call layer internals directly instead of through a
+# driver. Code that must exist once per process (exported entry points, DllMain, operator new/delete replacements) belongs in
+# vvl instead.
+add_library(vvl_core STATIC)
 
-target_link_libraries(VkLayer_utils PUBLIC
+target_link_libraries(vvl_core PUBLIC
     Vulkan::Headers
     Vulkan::LayerSettings
     Vulkan::SafeStruct
     Vulkan::UtilityHeaders
+    SPIRV-Headers::SPIRV-Headers
+    SPIRV-Tools-opt
     ${CMAKE_DL_LIBS}
 )
-target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
-target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
+target_include_directories(vvl_core SYSTEM PRIVATE external)
+target_include_directories(vvl_core PRIVATE . ${API_TYPE})
+# Other targets (e.g. tests calling layer internals) see these as system headers: the layer headers are checked with
+# vvl_core's own warning settings when vvl_core builds, so other targets' stricter warnings don't apply to them
+target_include_directories(vvl_core SYSTEM INTERFACE . ${API_TYPE})
 
 option(USE_CUSTOM_HASH_MAP "Use a custom hashing library that is faster than std::unordered_map and std::unordered_set (default: ON)" ON)
 
@@ -112,12 +50,12 @@ endif()
 
 if (USE_CUSTOM_HASH_MAP)
     message(STATUS "Using parallel_hashmap as custom hash maps")
-    target_compile_definitions(VkLayer_utils PUBLIC USE_CUSTOM_HASH_MAP)
+    target_compile_definitions(vvl_core PUBLIC USE_CUSTOM_HASH_MAP)
     # Prefer using a locally installed parallel-hashmap package before using the in-tree sources.
     # This approach supports installation with package managers such as conan
     find_package(phmap CONFIG)
     if (TARGET phmap)
-        target_link_libraries(VkLayer_utils PRIVATE phmap)
+        target_link_libraries(vvl_core PRIVATE phmap)
     else()
         add_subdirectory(external/parallel_hashmap)
     endif()
@@ -132,20 +70,20 @@ if (WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
    find_package(mimalloc CONFIG)
    option(USE_MIMALLOC "Use mimalloc, a fast malloc/free replacement library" ${mimalloc_FOUND})
    if (USE_MIMALLOC)
-      target_compile_definitions(VkLayer_utils PUBLIC USE_MIMALLOC)
-      target_link_libraries(VkLayer_utils PUBLIC mimalloc-static)
+      target_compile_definitions(vvl_core PUBLIC USE_MIMALLOC)
+      target_link_libraries(vvl_core PUBLIC mimalloc-static)
    endif()
 endif()
 
-target_compile_options(VkLayer_utils PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
+target_compile_options(vvl_core PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    target_compile_options(VkLayer_utils PRIVATE
+    target_compile_options(vvl_core PRIVATE
         -Wno-sign-conversion
         -Wno-implicit-int-conversion
     )
 elseif(MSVC)
-    target_compile_options(VkLayer_utils PRIVATE
+    target_compile_options(vvl_core PRIVATE
         /wd4324 # padding
         /wd4458 # hiding class member
         /wd4457 # hiding function parameter
@@ -157,56 +95,34 @@ endif()
 if(APPLE)
     # Github runners recently updated from Apple Clang 17 to 21
     # This caused issues with the current custom hash solution
-    target_compile_options(VkLayer_utils PUBLIC
+    target_compile_options(vvl_core PUBLIC
         -Wno-deprecated-declarations
     )
 endif()
 
 option(DEBUG_CAPTURE_KEYBOARD "Every QueueSubmit if F1 is pressed, a DebugCapture function will be called and a custom action can be done (default: OFF)" OFF)
 if (DEBUG_CAPTURE_KEYBOARD)
-    target_compile_definitions(VkLayer_utils PUBLIC DEBUG_CAPTURE_KEYBOARD)
+    target_compile_definitions(vvl_core PUBLIC DEBUG_CAPTURE_KEYBOARD)
     if(WIN32)
     else()
         # needed for XQueryKeymap
         find_package(X11 REQUIRED)
-        target_link_libraries(VkLayer_utils PRIVATE ${X11_LIBRARIES})
-        target_include_directories(VkLayer_utils PRIVATE ${X11_INCLUDE_DIR})
+        target_link_libraries(vvl_core PRIVATE ${X11_LIBRARIES})
+        target_include_directories(vvl_core PRIVATE ${X11_INCLUDE_DIR})
 
         # needed for xcb_key_symbols_alloc
         find_library(XCB_LIB xcb REQUIRED)
         find_path(XCB_INCLUDE_DIR xcb/xcb.h REQUIRED)
         find_library(XCB_KEYSYMS_LIB xcb-keysyms REQUIRED)
         find_path(XCB_KEYSYMS_INCLUDE_DIR xcb/xcb_keysyms.h REQUIRED)
-        target_link_libraries(VkLayer_utils PRIVATE ${XCB_LIB} ${XCB_KEYSYMS_LIB})
-        target_include_directories(VkLayer_utils PRIVATE ${XCB_INCLUDE_DIR} ${XCB_KEYSYMS_INCLUDE_DIR})
+        target_link_libraries(vvl_core PRIVATE ${XCB_LIB} ${XCB_KEYSYMS_LIB})
+        target_include_directories(vvl_core PRIVATE ${XCB_INCLUDE_DIR} ${XCB_KEYSYMS_INCLUDE_DIR})
     endif()
 endif()
 
-# Found to significantly cut VVL build time
-#
-# Note: If using ccache, see the CCACHE_SLOPPINESS note in tests/CMakeLists.txt
-target_precompile_headers(VkLayer_utils PRIVATE
-    <algorithm>
-    <functional>
-    <memory>
-    <mutex>
-    <sstream>
-    <string>
-    <unordered_map>
-    <vector>
-    <vulkan/vulkan.h>
-    containers/custom_containers.h
-)
-
 add_subdirectory(gpuav/spirv)
 
-if(IOS)
-    add_library(vvl SHARED)
-else()
-    add_library(vvl MODULE)
-endif()
-
-target_sources(vvl PRIVATE
+target_sources(vvl_core PRIVATE
     # Slowest files to compile come first,
     # having them near the end could introduce needless waits
     ${API_TYPE}/generated/dispatch_vector.cpp
@@ -557,11 +473,93 @@ target_sources(vvl PRIVATE
     layer_options.h
     layer_options_validation.h
     profiling/profiling.h
-    vvl.cpp
+    containers/container_utils.h
+    containers/custom_containers.h
+    containers/limits.h
+    containers/small_container.h
+    containers/array_range_map.h
+    containers/small_range_map.h
+    containers/small_vector.h
+    containers/span.h
+    error_message/logging.h
+    error_message/logging.cpp
+    error_message/error_location.cpp
+    error_message/error_location.h
+    error_message/record_object.h
+    error_message/log_message_type.h
+    external/xxhash.h
+    external/inplace_function.h
+    ${API_TYPE}/generated/error_location_helper.cpp
+    ${API_TYPE}/generated/error_location_helper.h
+    ${API_TYPE}/generated/feature_requirements_helper.cpp
+    ${API_TYPE}/generated/feature_requirements_helper.h
+    ${API_TYPE}/generated/test_icd_helper.h
+    ${API_TYPE}/generated/pnext_chain_extraction.cpp
+    ${API_TYPE}/generated/pnext_chain_extraction.h
+    ${API_TYPE}/generated/vk_function_pointers.cpp
+    ${API_TYPE}/generated/vk_function_pointers.h
+    ${API_TYPE}/generated/vk_validation_error_messages.cpp
+    ${API_TYPE}/generated/vk_validation_error_messages.h
+    ${API_TYPE}/generated/vk_layer_dispatch_table.h
+    ${API_TYPE}/generated/vk_dispatch_table_helper.h
+    ${API_TYPE}/generated/vk_dispatch_table_helper.cpp
+    ${API_TYPE}/generated/vk_object_types.h
+    ${API_TYPE}/generated/vk_object_types.cpp
+    ${API_TYPE}/generated/vk_api_version.h
+    ${API_TYPE}/generated/vk_extension_helper.h
+    ${API_TYPE}/generated/vk_extension_helper.cpp
+    utils/action_command_utils.h
+    utils/assert_utils.h
+    utils/cast_utils.h
+    utils/convert_utils.cpp
+    utils/convert_utils.h
+    utils/dispatch_utils.cpp
+    utils/dispatch_utils.h
+    utils/file_system_utils.cpp
+    utils/file_system_utils.h
+    utils/hash_util.h
+    utils/hash_util.cpp
+    utils/hash_vk_types.h
+    utils/image_utils.h
+    utils/image_utils.cpp
+    utils/image_layout_utils.h
+    utils/image_layout_utils.cpp
+    utils/lock_utils.h
+    utils/math_utils.h
+    utils/vk_layer_extension_utils.cpp
+    utils/vk_layer_extension_utils.h
+    utils/keyboard.cpp
+    utils/keyboard.h
+    utils/ray_tracing_utils.cpp
+    utils/ray_tracing_utils.h
+    utils/sync_utils.cpp
+    utils/sync_utils.h
+    utils/text_utils.cpp
+    utils/text_utils.h
+    utils/vk_struct_compare.cpp
+    utils/vk_struct_compare.h
+    utils/vk_api_utils.h
+    vk_layer_config.h
+    vk_layer_config.cpp
 )
 
-get_target_property(LAYER_SOURCES vvl SOURCES)
+get_target_property(LAYER_SOURCES vvl_core SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
+
+# Vulkan Layers are typically built as MODULEs, except on iOS where they are SHARED libraries
+# From the CMake docs: "A Module Library: a plugin that may not be linked by other targets, but may be dynamically loaded at runtime using dlopen-like functionality."
+# This exactly describes a Vulkan layer. In particular, it is a plugin that is dynamically loaded by the Vulkan loader at runtime and is not linked by other targets.
+# On WIN32 when installing the layers specifying libraries as MODULE avoids installing the import library (.lib) that would be generated for SHARED libraries.
+set(VK_LAYER_TYPE "MODULE")
+if (IOS)
+    # "Apple's App store rules require dynamic libraries be packaged as Frameworks for iOS.
+    # This requirement is not applied for macOS, so all iOS libraries should be packaged as Frameworks moving forward to comply with Apple's policy."
+    set(VK_LAYER_TYPE "SHARED")
+endif()
+add_library(vvl ${VK_LAYER_TYPE})
+
+# The layer library itself: only the entry points the loader looks up by name
+target_sources(vvl PRIVATE vvl.cpp)
 
 if(MSVC)
     target_sources(vvl PRIVATE
@@ -583,23 +581,23 @@ endif()
 
 option(BUILD_SELF_VVL "Setup a VVL build that will be used for self validation" FALSE)
 if (BUILD_SELF_VVL)
-    target_compile_definitions(VkLayer_utils PUBLIC BUILD_SELF_VVL)
+    target_compile_definitions(vvl_core PUBLIC BUILD_SELF_VVL)
     target_compile_definitions(vvl PUBLIC BUILD_SELF_VVL)
 endif()
 
 option(VVL_WORKAROUND_QUALCOMM "Work around Qualcomm driver bugs (default: OFF)" OFF)
 if (VVL_WORKAROUND_QUALCOMM)
-    target_compile_definitions(vvl PRIVATE VVL_WORKAROUND_QUALCOMM)
+    target_compile_definitions(vvl_core PRIVATE VVL_WORKAROUND_QUALCOMM)
 endif()
 
 set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
 
 if(MSVC)
     target_link_options(vvl PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
-    target_compile_options(vvl PRIVATE /bigobj)
+    target_compile_options(vvl_core PRIVATE /bigobj)
 elseif(MINGW)
     target_sources(vvl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
-    target_compile_options(vvl PRIVATE -Wa,-mbig-obj)
+    target_compile_options(vvl_core PRIVATE -Wa,-mbig-obj)
     set_target_properties(vvl PROPERTIES PREFIX "") # remove the prefix "lib" so the manifest json "library_path" matches
 elseif(WIN32)
     # A GNU-frontend clang targeting *-windows-msvc (i.e. clang/clang++, not
@@ -652,14 +650,7 @@ elseif(MSVC)
     )
 endif()
 
-# Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
-# Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
-target_link_libraries(vvl PRIVATE
-    SPIRV-Headers::SPIRV-Headers
-    SPIRV-Tools-opt
-    gpu_av_spirv
-    VkLayer_utils
-)
+target_link_libraries(vvl PRIVATE vvl_core)
 
 if (VVL_ENABLE_TRACY)
     # Rely on FetchContent to get Tracy, it is simple
@@ -674,23 +665,24 @@ if (VVL_ENABLE_TRACY)
 
     FetchContent_MakeAvailable(tracy)
 
-    target_sources(vvl PRIVATE
+    target_sources(vvl_core PRIVATE
         profiling/profiling.h
         profiling/profiling.cpp
-        profiling/profiling_layer.cpp
     )
-    target_link_libraries(vvl PRIVATE TracyClient)
+    target_link_libraries(vvl_core PUBLIC TracyClient)
+
+    target_sources(vvl PRIVATE profiling/profiling_layer.cpp)
 endif()
 
 target_include_directories(vvl SYSTEM PRIVATE external)
 
 # Enables the spv::*ToString() helpers in spirv.hpp
-target_compile_definitions(vvl PRIVATE SPV_ENABLE_UTILITY_CODE)
+target_compile_definitions(vvl_core PRIVATE SPV_ENABLE_UTILITY_CODE)
 
 # Found to significantly cut VVL build time
 #
 # Note: If using ccache, see the CCACHE_SLOPPINESS note in tests/CMakeLists.txt
-target_precompile_headers(vvl PRIVATE
+target_precompile_headers(vvl_core PRIVATE
     # List stable headers
     <algorithm>
     <array>
@@ -730,12 +722,12 @@ target_precompile_headers(vvl PRIVATE
 
 if (ANDROID)
     # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
-    target_link_libraries(VkLayer_utils PUBLIC log)
+    target_link_libraries(vvl_core PUBLIC log)
 
     # Required for AHardwareBuffer_describe. Marking as PUBLIC since the tests use AHardwareBuffer_describe as well.
     # Use libnativewindow rather than libandroid, since libandroid pulls in many Android framework libraries
     # which can fail to load in some processes.
-    target_link_libraries(VkLayer_utils PUBLIC nativewindow)
+    target_link_libraries(vvl_core PUBLIC nativewindow)
 
     install(TARGETS vvl DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
@@ -784,7 +776,7 @@ add_custom_target(vvl_generated_setting_files
     COMMAND Python3::Interpreter "scripts/generate_settings.py"
     WORKING_DIRECTORY ${VVL_SOURCE_DIR}
 )
-add_dependencies(vvl vvl_generated_setting_files)
+add_dependencies(vvl_core vvl_generated_setting_files)
 
 # For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system directories
 # This json isn't used for regular local development, it's used for installation

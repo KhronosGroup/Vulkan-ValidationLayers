@@ -95,7 +95,10 @@
 #include "generated/vk_layer_dispatch_table.h"
 
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <optional>
+#include <thread>
 
 #define VVL_TracyVkZone(ctx, cmdbuf, name) TracyVkZone(ctx, cmdbuf, name)
 

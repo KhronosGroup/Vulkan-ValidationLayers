@@ -53,7 +53,7 @@ target_sources(VVL_Test_ICD PRIVATE
 
 target_link_libraries(VVL_Test_ICD PRIVATE
     Vulkan::Headers
-    VkLayer_utils
+    vvl_core
 )
 
 target_include_directories(VVL_Test_ICD PRIVATE

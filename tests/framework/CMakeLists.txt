@@ -101,7 +101,7 @@ elseif(MSVC)
 endif()
 
 target_link_libraries(vk_test_framework PUBLIC
-    VkLayer_utils
+    vvl_core
     glslang::SPIRV
     SPIRV-Tools-static
     SPIRV-Headers::SPIRV-Headers
