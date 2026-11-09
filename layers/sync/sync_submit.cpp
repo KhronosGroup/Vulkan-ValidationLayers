@@ -863,7 +863,7 @@ std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageR
 BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(ResourceUsageTag tag) const {
     assert(tag >= batch_.base_tag);
     const size_t index = tag - batch_.base_tag;
-    const AccessLog& access_log = *recording_->access_log;
+    const AccessLog& access_log = recording_->access_log;
     assert(index < access_log.size());
     const ResourceUsageRecord& record = access_log[index];
     const auto debug_name_provider = (record.label_command_index == vvl::kNoIndex32) ? nullptr : this;

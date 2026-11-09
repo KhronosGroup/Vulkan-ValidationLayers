@@ -349,7 +349,7 @@ void CommandBufferRecording::Reset() {
     commands.clear();
     command_data.Reset();
 
-    access_log->clear();
+    access_log.clear();
     handles.clear();
     label_commands.clear();
     secondary_recordings.clear();
@@ -383,7 +383,7 @@ CommandBufferContext::CommandBufferContext(const CommandBufferContext& from, AsP
     : CommandBufferContext(from.sync_state_, from.cb_state_->GetQueueFlags(), from.cb_state_->Handle()) {
     // Copy only the needed fields out of from for a temporary, proxy command buffer context
     cb_state_ = from.cb_state_;
-    *recording_->access_log = *from.recording_->access_log;
+    recording_->access_log = from.recording_->access_log;
     command_number_ = from.command_number_;
     reset_count_ = from.reset_count_;
 
@@ -1139,7 +1139,7 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
 
 void CommandBufferContext::ImportRecordedAccessLog(const CommandBufferContext& recorded_context) {
     recording_->secondary_recordings.emplace_back(recorded_context.recording_);
-    vvl::Append(*recording_->access_log, *recorded_context.recording_->access_log);
+    vvl::Append(recording_->access_log, recorded_context.recording_->access_log);
 
     // Adjust command indices for the log records added from recorded_context.
     const auto& recorded_label_commands = recorded_context.cb_state_->GetLabelCommands();
@@ -1148,20 +1148,20 @@ void CommandBufferContext::ImportRecordedAccessLog(const CommandBufferContext& r
     if (!label_commands.empty()) {
         assert(label_commands.size() >= recorded_label_commands.size());
         const uint32_t command_offset = static_cast<uint32_t>(label_commands.size() - recorded_label_commands.size());
-        for (size_t i = 0; i < recorded_context.recording_->access_log->size(); i++) {
-            size_t index = (recording_->access_log->size() - 1) - i;
-            assert((*recording_->access_log)[index].label_command_index != vvl::kNoIndex32);
-            (*recording_->access_log)[index].label_command_index += command_offset;
+        for (size_t i = 0; i < recorded_context.recording_->access_log.size(); i++) {
+            size_t index = (recording_->access_log.size() - 1) - i;
+            assert(recording_->access_log[index].label_command_index != vvl::kNoIndex32);
+            recording_->access_log[index].label_command_index += command_offset;
         }
     }
 }
 
 ResourceUsageTag CommandBufferContext::NextCommandTag(vvl::Func command, SubCommandType subcommand, uint32_t subpass) {
     command_number_++;
-    current_command_tag_ = recording_->access_log->size();
+    current_command_tag_ = recording_->access_log.size();
 
     ResourceUsageRecord& record =
-        recording_->access_log->emplace_back(recording_.get(), command, subcommand, command_number_, reset_count_, subpass);
+        recording_->access_log.emplace_back(recording_.get(), command, subcommand, command_number_, reset_count_, subpass);
 
     if (!cb_state_->GetLabelCommands().empty()) {
         record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
@@ -1171,12 +1171,12 @@ ResourceUsageTag CommandBufferContext::NextCommandTag(vvl::Func command, SubComm
 }
 
 ResourceUsageTag CommandBufferContext::NextSubCommandTag(vvl::Func command, SubCommandType subcommand, uint32_t subpass) {
-    const ResourceUsageTag tag = recording_->access_log->size();
+    const ResourceUsageTag tag = recording_->access_log.size();
     ResourceUsageRecord& record =
-        recording_->access_log->emplace_back(recording_.get(), command, subcommand, command_number_, reset_count_, subpass);
+        recording_->access_log.emplace_back(recording_.get(), command, subcommand, command_number_, reset_count_, subpass);
 
     // By default copy handle range from the main command, but can be overwritten with AddSubcommandHandle.
-    const auto& main_command_record = (*recording_->access_log)[current_command_tag_];
+    const auto& main_command_record = recording_->access_log[current_command_tag_];
     record.first_handle_index = main_command_record.first_handle_index;
     record.handle_count = main_command_record.handle_count;
 
@@ -1199,11 +1199,11 @@ ResourceUsageTagEx CommandBufferContext::AddCommandHandle(ResourceUsageTag tag, 
 
 ResourceUsageTagEx CommandBufferContext::AddCommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle,
                                                                  uint32_t index) {
-    assert(tag < recording_->access_log->size());
+    assert(tag < recording_->access_log.size());
     const uint32_t handle_index = AddHandle(typed_handle, index);
     // TODO: the following range check is not needed. Test and remove.
-    if (tag < recording_->access_log->size()) {
-        auto& record = (*recording_->access_log)[tag];
+    if (tag < recording_->access_log.size()) {
+        auto& record = recording_->access_log[tag];
         if (record.first_handle_index == vvl::kNoIndex32) {
             record.first_handle_index = handle_index;
             record.handle_count = 1;
@@ -1217,12 +1217,12 @@ ResourceUsageTagEx CommandBufferContext::AddCommandHandleIndexed(ResourceUsageTa
 }
 
 void CommandBufferContext::AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle& typed_handle) {
-    assert(tag < recording_->access_log->size());
+    assert(tag < recording_->access_log.size());
     const uint32_t handle_index = AddHandle(typed_handle, vvl::kNoIndex32);
     // TODO: the following range check is not needed. Test and remove.
-    if (tag < recording_->access_log->size()) {
-        auto& record = (*recording_->access_log)[tag];
-        const auto& main_command_record = (*recording_->access_log)[current_command_tag_];
+    if (tag < recording_->access_log.size()) {
+        auto& record = recording_->access_log[tag];
+        const auto& main_command_record = recording_->access_log[current_command_tag_];
         if (record.first_handle_index == main_command_record.first_handle_index) {
             // override default behavior that subcommand references the same handles as the main command
             record.first_handle_index = handle_index;
@@ -1288,7 +1288,7 @@ void CommandBufferContext::CheckCommandTagDebugCheckpoint() {
         const auto& pattern = sync_state_.debug_cmdbuf_pattern;
         const bool cmdbuf_match = pattern.empty() || (cmdbuf_name.find(pattern) != std::string::npos);
         if (cmdbuf_match) {
-            sync_state_.LogInfo("SYNCVAL_DEBUG_COMMAND", LogObjectList(), Location(recording_->access_log->back().command),
+            sync_state_.LogInfo("SYNCVAL_DEBUG_COMMAND", LogObjectList(), Location(recording_->access_log.back().command),
                                 "Command stream has reached command #%" PRIu32 " in command buffer %s with reset count #%" PRIu32,
                                 sync_state_.debug_command_number, sync_state_.FormatHandle(cb_state_->Handle()).c_str(),
                                 sync_state_.debug_reset_count);
