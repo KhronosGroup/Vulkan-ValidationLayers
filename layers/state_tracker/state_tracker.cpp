@@ -2088,14 +2088,35 @@ void DeviceState::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModu
     Destroy<ShaderModule>(shaderModule);
 }
 
+void DeviceState::AddDescriptorHeapEmbeddedSamplers(const std::vector<size_t>& hashes) {
+    if (hashes.empty()) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(descriptor_heap_embedded_samplers_lock_);
+    for (const size_t hash : hashes) {
+        descriptor_heap_embedded_samplers_[hash]++;
+    }
+}
+
+void DeviceState::RemoveDescriptorHeapEmbeddedSamplers(const std::vector<size_t>& hashes) {
+    if (hashes.empty()) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(descriptor_heap_embedded_samplers_lock_);
+    for (const size_t hash : hashes) {
+        auto it = descriptor_heap_embedded_samplers_.find(hash);
+        if (it != descriptor_heap_embedded_samplers_.end() && --it->second == 0) {
+            descriptor_heap_embedded_samplers_.erase(it);
+        }
+    }
+}
+
 void DeviceState::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
                                                 const RecordObject& record_obj) {
     // Don't do state lookup if not needed
     if (enabled_features.descriptorHeap) {
         if (const auto& shader_state = Get<ShaderObject>(shader)) {
-            if (shader_state->descriptor_heap_embedded_samplers_count > 0) {
-                descriptor_heap_global_embedded_sampler_count_ -= shader_state->descriptor_heap_embedded_samplers_count;
-            }
+            RemoveDescriptorHeapEmbeddedSamplers(shader_state->descriptor_heap_embedded_sampler_hashes);
         }
     }
 
@@ -2107,9 +2128,7 @@ void DeviceState::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipel
     // Don't do state lookup if not needed
     if (enabled_features.descriptorHeap) {
         if (const auto& pipeline_state = Get<Pipeline>(pipeline)) {
-            if (pipeline_state->descriptor_heap_embedded_samplers_count > 0) {
-                descriptor_heap_global_embedded_sampler_count_ -= pipeline_state->descriptor_heap_embedded_samplers_count;
-            }
+            RemoveDescriptorHeapEmbeddedSamplers(pipeline_state->descriptor_heap_embedded_sampler_hashes);
         }
     }
 
@@ -2457,11 +2476,7 @@ void DeviceState::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipel
             continue;  // vkspec.html#pipelines-multiple
         }
 
-        if (pCreateInfos[i].pStages) {
-            if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
-                descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
-            }
-        }
+        AddDescriptorHeapEmbeddedSamplers(pipeline_states[i]->descriptor_heap_embedded_sampler_hashes);
 
         pipeline_states[i]->SetHandle(pipeline_handle);
         Add(std::move(pipeline_states[i]));
@@ -2514,9 +2529,7 @@ void DeviceState::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
             continue;  // vkspec.html#pipelines-multiple
         }
 
-        if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
-            descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
-        }
+        AddDescriptorHeapEmbeddedSamplers(pipeline_states[i]->descriptor_heap_embedded_sampler_hashes);
 
         pipeline_states[i]->SetHandle(pipeline_handle);
         Add(std::move(pipeline_states[i]));
@@ -2575,9 +2588,7 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
                 continue;  // vkspec.html#pipelines-multiple
             }
 
-            if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
-                descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
-            }
+            AddDescriptorHeapEmbeddedSamplers(pipeline_states[i]->descriptor_heap_embedded_sampler_hashes);
 
             pipeline_states[i]->SetHandle(pipeline_handle);
             Add(std::move(pipeline_states[i]));
@@ -2603,9 +2614,7 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
             // https://vkdoc.net/chapters/deferred-host-operations#deferred-host-operations-requesting
             (void)chassis_state;
             for (size_t i = 0; i < pipeline_states.size(); ++i) {
-                if (pipeline_states[i]->descriptor_heap_embedded_samplers_count > 0) {
-                    descriptor_heap_global_embedded_sampler_count_ += pipeline_states[i]->descriptor_heap_embedded_samplers_count;
-                }
+                AddDescriptorHeapEmbeddedSamplers(pipeline_states[i]->descriptor_heap_embedded_sampler_hashes);
 
                 pipeline_states[i]->SetHandle(pipelines.second[i]);
                 this->Add(std::move(pipeline_states[i]));
@@ -5952,9 +5961,7 @@ void DeviceState::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t creat
             }
         }
 
-        if (shader_object_state->descriptor_heap_embedded_samplers_count > 0) {
-            descriptor_heap_global_embedded_sampler_count_ += shader_object_state->descriptor_heap_embedded_samplers_count;
-        }
+        AddDescriptorHeapEmbeddedSamplers(shader_object_state->descriptor_heap_embedded_sampler_hashes);
 
         Add(std::move(shader_object_state));
     }

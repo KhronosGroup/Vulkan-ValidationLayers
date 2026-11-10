@@ -41,6 +41,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <vector>
 #include <optional>
 
@@ -2103,7 +2104,13 @@ class DeviceState : public vvl::BaseDevice {
         mutable std::shared_mutex lock;
     } descriptor_heap_reserved_address;
 
-    std::atomic<uint32_t> descriptor_heap_global_embedded_sampler_count_ = {0u};
+    // maxDescriptorHeapEmbeddedSamplers is a limit on *unique* embedded samplers
+    // So we need track them info hash and refcount them by the pipelines/shaders using them
+    mutable std::mutex descriptor_heap_embedded_samplers_lock_;
+    // <hash key, ref count>
+    vvl::unordered_map<size_t, uint32_t> descriptor_heap_embedded_samplers_;
+    void AddDescriptorHeapEmbeddedSamplers(const std::vector<size_t>& hashes);
+    void RemoveDescriptorHeapEmbeddedSamplers(const std::vector<size_t>& hashes);
 
     // When users opt in, we will try to hash all descriptors seen from VK_EXT_descriptor_buffer and VK_EXT_descriptor_heap
     // This is only here because both GPU-AV and GPU Dump need to share this.

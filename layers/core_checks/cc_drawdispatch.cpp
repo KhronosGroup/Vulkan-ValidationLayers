@@ -1674,7 +1674,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound& last_bo
             if (!stage_state.HasSpirv()) {
                 continue;
             }
-            const bool has_embedded_samplers = pipeline.descriptor_heap_embedded_samplers_count != 0;
+            const bool has_embedded_samplers = !pipeline.descriptor_heap_embedded_sampler_hashes.empty();
 
             skip |= ValidateActionStateDescriptorHeap(last_bound_state, stage_state, has_embedded_samplers, loc);
 
@@ -2017,7 +2017,7 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound& las
 
         if (shader_object.descriptor_heap_mode) {
             if (shader_object.stage.HasSpirv()) {
-                const bool has_embedded_samplers = shader_object.descriptor_heap_embedded_samplers_count != 0;
+                const bool has_embedded_samplers = !shader_object.descriptor_heap_embedded_sampler_hashes.empty();
 
                 skip |= ValidateActionStateDescriptorHeap(last_bound_state, shader_object.stage, has_embedded_samplers, loc);
 

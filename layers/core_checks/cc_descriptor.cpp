@@ -22,6 +22,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
+#include <mutex>
 #include <ostream>
 #include <sstream>
 #include <valarray>
@@ -5431,8 +5432,8 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                          num_samplers, phys_dev_props.limits.maxSamplerAllocationCount);
     }
 
-    if (device_state->descriptor_heap_global_embedded_sampler_count_ > 0) {
-        skip |= ValidateEmbeddedSamplersCount(0, error_obj.location);
+    if (enabled_features.descriptorHeap) {
+        skip |= ValidateEmbeddedSamplersCount({}, error_obj.location);
     }
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -6048,11 +6049,26 @@ bool CoreChecks::ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer&
     return skip;
 }
 
-bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const Location& loc) const {
+bool CoreChecks::ValidateEmbeddedSamplersCount(const std::vector<size_t>& embedded_sampler_hashes, const Location& loc) const {
     bool skip = false;
     // Only vkCreateSampler should be calling with no new samplers
     const bool is_create_sampler = loc.function == Func::vkCreateSampler;
-    assert(new_sampler_count != 0 || is_create_sampler);
+    assert(!embedded_sampler_hashes.empty() || is_create_sampler);
+
+    uint32_t current_count = 0;  // unique embedded samplers already in use
+    vvl::unordered_set<size_t> new_hashes;
+    {
+        std::lock_guard<std::mutex> lock(device_state->descriptor_heap_embedded_samplers_lock_);
+        current_count = (uint32_t)device_state->descriptor_heap_embedded_samplers_.size();
+        for (const size_t hash : embedded_sampler_hashes) {
+            if (device_state->descriptor_heap_embedded_samplers_.count(hash) == 0) {
+                new_hashes.insert(hash);
+            }
+        }
+    }
+    if (is_create_sampler && current_count == 0) {
+        return skip;  // vkCreateSampler is only affected once embedded samplers exist
+    }
 
     const uint32_t samplers_count = (uint32_t)Count<vvl::Sampler>();
 
@@ -6079,10 +6095,9 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
                          phys_dev_ext_props.descriptor_heap_props.samplerDescriptorSize);
     }
 
-    if (new_sampler_count > 0) {
-        const uint32_t embedded_sampler_count =
-            device_state->descriptor_heap_global_embedded_sampler_count_.load() + new_sampler_count;
-        if (embedded_sampler_count > phys_dev_ext_props.descriptor_heap_props.maxDescriptorHeapEmbeddedSamplers) {
+    if (!new_hashes.empty()) {
+        const uint32_t new_sampler_count = (uint32_t)new_hashes.size();
+        if (current_count + new_sampler_count > phys_dev_ext_props.descriptor_heap_props.maxDescriptorHeapEmbeddedSamplers) {
             const char* vuid = loc.function == Func::vkCreateGraphicsPipelines ? "VUID-vkCreateGraphicsPipelines-pCreateInfos-11429"
                                : loc.function == Func::vkCreateComputePipelines ? "VUID-vkCreateComputePipelines-pCreateInfos-11429"
                                : loc.function == Func::vkCreateRayTracingPipelinesKHR
@@ -6090,10 +6105,10 @@ bool CoreChecks::ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const
                                : loc.function == Func::vkCreateShadersEXT ? "VUID-vkCreateShadersEXT-pCreateInfos-11428"
                                                                           : kVUIDUndefined;
             skip |= LogError(vuid, device, loc,
-                             "contains %" PRIu32 " embedded samplers, but on this VkDevice there are currently %" PRIu32
-                             " embedded samplers in pipelines and shaders, and this will now exceed "
+                             "contains %" PRIu32 " new unique embedded samplers, but on this VkDevice there are currently %" PRIu32
+                             " unique embedded samplers in pipelines and shaders, and this will now exceed "
                              "maxDescriptorHeapEmbeddedSamplers (%" PRIu32 ")",
-                             new_sampler_count, embedded_sampler_count - new_sampler_count,
+                             new_sampler_count, current_count,
                              phys_dev_ext_props.descriptor_heap_props.maxDescriptorHeapEmbeddedSamplers);
         }
     }

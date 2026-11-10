@@ -3133,7 +3133,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateInheritanceDescriptorHeapInfo(const vvl::CommandBuffer& cb_state, const Location& loc) const;
     bool ValidateReservedRangeOverlap(const vvl::CommandBuffer& cb_state, const VkBindHeapInfoEXT* pBindInfo,
                                       const Location& loc) const;
-    bool ValidateEmbeddedSamplersCount(uint32_t new_sampler_count, const Location& loc) const;
+    bool ValidateEmbeddedSamplersCount(const std::vector<size_t>& embedded_sampler_hashes, const Location& loc) const;
 
     bool HasTileMemoryType(uint32_t memory_type_index) const;
     bool ValidateBoundTileMemory(const vvl::Bindable& bindable, const vvl::CommandBuffer& cb_state,

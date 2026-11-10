@@ -49,7 +49,7 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
 
     const bool is_independent_set;  // to match Pipeline version
     const bool descriptor_heap_mode;
-    const uint32_t descriptor_heap_embedded_samplers_count;
+    const std::vector<size_t> descriptor_heap_embedded_sampler_hashes;
 
     const DescriptorSetLayoutList set_layouts;
     const PushConstantRangesId push_constant_ranges;

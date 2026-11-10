@@ -48,7 +48,8 @@ static inline const VkSamplerCreateInfo* GetEmbeddedSampler(const VkDescriptorSe
     }
 }
 
-uint32_t CountDescriptorHeapEmbeddedSamplers(const void* pNext);
+// One hash per embedded sampler mapping (can contain duplicates)
+std::vector<size_t> GetDescriptorHeapEmbeddedSamplerHashes(const void* pNext);
 
 static constexpr bool IsDescriptorHeapAddr(const VkDescriptorType type) {
     return (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) || (type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) ||

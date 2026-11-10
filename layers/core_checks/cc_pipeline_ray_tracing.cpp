@@ -229,8 +229,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             }
         }
 
-        if (pipeline->descriptor_heap_embedded_samplers_count > 0) {
-            skip |= ValidateEmbeddedSamplersCount(pipeline->descriptor_heap_embedded_samplers_count, create_info_loc);
+        if (!pipeline->descriptor_heap_embedded_sampler_hashes.empty()) {
+            skip |= ValidateEmbeddedSamplersCount(pipeline->descriptor_heap_embedded_sampler_hashes, create_info_loc);
         }
         if (create_info.maxPipelineRayRecursionDepth > phys_dev_ext_props.ray_tracing_props_khr.maxRayRecursionDepth) {
             skip |=
