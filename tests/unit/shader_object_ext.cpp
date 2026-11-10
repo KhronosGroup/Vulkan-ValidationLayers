@@ -8936,3 +8936,37 @@ TEST_F(NegativeShaderObjectEXT, NullPushConstantRangesWithCount) {
     vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderObjectEXT, UntypedPointerInHeapsWithNoFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::descriptorHeap);
+    RETURN_IF_SKIP(Init());
+
+    const char* cs_src = R"(
+        OpCapability Shader
+        OpCapability DescriptorHeapEXT
+        OpExtension "SPV_EXT_descriptor_heap"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize 1 1 1
+        %void = OpTypeVoid
+        %void_fn = OpTypeFunction %void
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+        %main = OpFunction %void None %void_fn
+        %entry = OpLabel
+        OpReturn
+        OpFunctionEnd
+    )";
+
+    std::vector<uint32_t> cs_spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, cs_spv);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfoEXT(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkShaderEXT shader;
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08740");
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+}

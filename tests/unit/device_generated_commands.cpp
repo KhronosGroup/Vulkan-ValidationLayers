@@ -3514,7 +3514,7 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessAddressDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDeviceGeneratedCommands, IndirectBindableXfbExecutionMode) {
+TEST_F(NegativeDeviceGeneratedCommands, IndirectBindableXfbExecutionModeEXT) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);

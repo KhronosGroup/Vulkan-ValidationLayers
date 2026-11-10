@@ -325,12 +325,16 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateDrawVertexBinding(const LastBound& last_bound_state, const Location& loc) const;
     bool ValidateDrawCustomResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                    const core::CommandBufferSubState& cb_sub_state, const Location& loc) const;
+    bool ValidateDrawCustomResolveFormats(const VkCustomResolveCreateInfoEXT& cr_info, const vvl::RenderPass& rp_state,
+                                          const core::CommandBufferSubState& cb_sub_state, const Location& loc) const;
     bool ValidateDrawDynamicRenderingFsOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                const Location& loc) const;
     bool ValidateDrawRenderingTileMemoryOutputs(const LastBound& last_bound_state, const vvl::CommandBuffer& cb_state,
                                                 const Location& loc) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                                             const Location& loc) const;
+    bool ValidateDrawDynamicRenderpassMultiview(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
+                                                const Location& loc) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
                                VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemory(const vvl::DeviceMemory& mem_info, VkDeviceSize offset, VkDeviceSize size, const Location& offset_loc,
@@ -1037,7 +1041,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateTransformFeedbackPipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateTransformFeedbackShaderObject(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                               const vku::safe_VkShaderCreateInfoEXT& create_info, const Location& loc) const;
+                                               const ShaderStageState& stage_state, const Location& loc) const;
     virtual bool ValidatePipelineShaderStage(const vvl::Pipeline& pipeline,
                                              const vku::safe_VkPipelineShaderStageCreateInfo& stage_ci,
                                              const void* pipeline_ci_pnext, const Location& loc) const;

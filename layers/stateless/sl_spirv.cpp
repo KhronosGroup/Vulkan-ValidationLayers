@@ -22,6 +22,7 @@
 #include "containers/container_utils.h"
 #include "generated/spirv_grammar_helper.h"
 #include "chassis/dispatch_object.h"
+#include "error_message/error_location.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_module.h"
 #include "utils/math_utils.h"
@@ -1006,8 +1007,10 @@ bool SpirvValidator::ValidateUntypedPointerFeature(const spirv::Module& module_s
                   {spv::OpTypeUntypedPointerKHR, spv::OpUntypedVariableKHR, spv::OpUntypedAccessChainKHR,
                    spv::OpUntypedInBoundsAccessChainKHR, spv::OpUntypedPtrAccessChainKHR, spv::OpUntypedInBoundsPtrAccessChainKHR,
                    spv::OpUntypedArrayLengthKHR, spv::OpUntypedPrefetchKHR, spv::OpUntypedGroupAsyncCopyKHR})) {
+        const char* vuid = loc.function == vvl::Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-pCode-08740"
+                                                                         : "VUID-VkShaderModuleCreateInfo-pCode-08740";
         skip |= LogError(
-            "VUID-VkShaderModuleCreateInfo-pCode-08740", module_state.handle(), loc,
+            vuid, module_state.handle(), loc,
             "%s was used but the VkPhysicalDeviceShaderUntypedPointersFeaturesKHR::shaderUntypedPointers feature was not enabled. "
             "\nThis is a special situation, where even though the Capability DescriptorHeapEXT was declared, which implicity "
             "declared Capability UntypedPointersKHR, both the shaderUntypedPointers and descriptorHeap feature are needed.",

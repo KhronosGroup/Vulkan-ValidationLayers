@@ -94,7 +94,7 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
     const VkShaderStageFlagBits stage = entrypoint.stage;
 
     PushConstantRangesId shader_object_push_constant_ranges_id;
-    std::vector<VkPushConstantRange> const* push_constant_ranges;
+    std::vector<VkPushConstantRange> const* push_constant_ranges = nullptr;
     if (pipeline) {
         // A null pipeline layout validated elsewhere
         const auto& pipeline_layout_state = pipeline->PipelineLayoutState();
@@ -103,8 +103,8 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
         }
         push_constant_ranges = pipeline_layout_state->push_constant_ranges_layout.get();
     } else {
-        shader_object_push_constant_ranges_id = GetCanonicalId(stage_state.shader_object_create_info->pushConstantRangeCount,
-                                                               stage_state.shader_object_create_info->pPushConstantRanges);
+        shader_object_push_constant_ranges_id = GetCanonicalId(stage_state.shader_object_create_info_ext->pushConstantRangeCount,
+                                                               stage_state.shader_object_create_info_ext->pPushConstantRanges);
         push_constant_ranges = shader_object_push_constant_ranges_id.get();
     }
 
@@ -174,8 +174,8 @@ bool CoreChecks::ValidateShader64BitIndexing(const spirv::Module& module_state, 
     if (pipeline && (pipeline->create_flags & VK_PIPELINE_CREATE_2_64_BIT_INDEXING_BIT_EXT)) {
         return skip;
     }
-    if (stage_state.shader_object_create_info &&
-        (stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT)) {
+    if (stage_state.shader_object_create_info_ext &&
+        (stage_state.shader_object_create_info_ext->flags & VK_SHADER_CREATE_64_BIT_INDEXING_BIT_EXT)) {
         return skip;
     }
     if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::shader_64bit_indexing)) {
@@ -919,11 +919,10 @@ bool CoreChecks::ValidateTransformFeedbackPipeline(const spirv::Module& module_s
 }
 
 bool CoreChecks::ValidateTransformFeedbackShaderObject(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                                       const vku::safe_VkShaderCreateInfoEXT& create_info,
-                                                       const Location& loc) const {
+                                                       const ShaderStageState& stage_state, const Location& loc) const {
     bool skip = false;
 
-    if ((create_info.flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) != 0 &&
+    if ((stage_state.shader_object_create_info_ext->flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) != 0 &&
         entrypoint.execution_mode.Has(spirv::ExecutionModeSet::xfb_bit)) {
         skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-11006", module_state.handle(), loc.dot(Field::flags),
                          "contains VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT, but shader %s specifies xfb execution mode.",
@@ -1437,7 +1436,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState& stage_state, const 
         }
     } else {
         if (enabled_features.transformFeedback) {
-            skip |= ValidateTransformFeedbackShaderObject(module_state, entrypoint, *stage_state.shader_object_create_info, loc);
+            skip |= ValidateTransformFeedbackShaderObject(module_state, entrypoint, stage_state, loc);
         }
     }
 
@@ -1561,13 +1560,13 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t& binary, const Location& 
         const auto diag_info = ExtractSpirvValDiagnostic(diag, fallback_vuid);
 
         if (spv_valid == SPV_WARNING) {
-            skip |= LogWarning(diag_info.vuid.c_str(), device, loc.dot(Field::pCode),
+            skip |= LogWarning(diag_info.vuid.c_str(), device, loc,
                                "(spirv-val produced a warning):\n%s\nCommand to reproduce:\n\t%s\n", diag_info.error_msg.c_str(),
                                spirv_val_command.c_str());
         } else {
-            skip |= LogError(diag_info.vuid.c_str(), device, loc.dot(Field::pCode),
-                             "(spirv-val produced an error):\n%s\nCommand to reproduce:\n\t%s\n", diag_info.error_msg.c_str(),
-                             spirv_val_command.c_str());
+            skip |=
+                LogError(diag_info.vuid.c_str(), device, loc, "(spirv-val produced an error):\n%s\nCommand to reproduce:\n\t%s\n",
+                         diag_info.error_msg.c_str(), spirv_val_command.c_str());
         }
     } else if (cache) {
         // No point to cache anything that is not valid, or it will get suppressed on the next run
@@ -1619,7 +1618,7 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo& 
         }
 
         spv_const_binary_t binary{create_info.pCode, create_info.codeSize / sizeof(uint32_t)};
-        skip |= RunSpirvValidation(binary, create_info_loc, cache);
+        skip |= RunSpirvValidation(binary, create_info_loc.dot(Field::pCode), cache);
     }
 
     return skip;
@@ -1765,8 +1764,9 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module& module_state
             }
         }
     } else {
-        const bool varying = stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
-        const bool full = stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+        const bool varying =
+            stage_state.shader_object_create_info_ext->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+        const bool full = stage_state.shader_object_create_info_ext->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
         const auto* required_subgroup_size =
             vku::FindStructInPNextChain<VkShaderRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
         if (varying && full) {
@@ -1775,7 +1775,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module& module_state
                     "VUID-VkShaderCreateInfoEXT-flags-08416", module_state.handle(), loc.dot(Field::flags),
                     "(%s) but local workgroup size X dimension (%" PRIu32
                     ") is not a multiple of VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::maxSubgroupSize (%" PRIu32 ").",
-                    string_VkPipelineShaderStageCreateFlags(stage_state.shader_object_create_info->flags).c_str(), local_size.x,
+                    string_VkPipelineShaderStageCreateFlags(stage_state.shader_object_create_info_ext->flags).c_str(), local_size.x,
                     phys_dev_props_core13.maxSubgroupSize);
             }
         } else if (full && !varying) {
@@ -1783,7 +1783,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module& module_state
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08417", module_state.handle(), loc.dot(Field::flags),
                                  "(%s), but local workgroup size X dimension (%" PRIu32
                                  ") is not a multiple of VkPhysicalDeviceVulkan11Properties::subgroupSize (%" PRIu32 ").",
-                                 string_VkPipelineShaderStageCreateFlags(stage_state.shader_object_create_info->flags).c_str(),
+                                 string_VkPipelineShaderStageCreateFlags(stage_state.shader_object_create_info_ext->flags).c_str(),
                                  local_size.x, phys_dev_props_core11.subgroupSize);
             }
         }
