@@ -271,6 +271,7 @@ class QueueSubState : public vvl::QueueSubState {
   public:
     QueueSubState(Validator &gpuav, vvl::Queue &q);
     virtual ~QueueSubState();
+    void Destroy() override;
 
     void PreSubmit(std::vector<vvl::QueueSubmission>& submissions) override;
     bool PostSubmit(vvl::QueueSubmission& submission) override;
