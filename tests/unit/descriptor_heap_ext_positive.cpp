@@ -3873,3 +3873,44 @@ TEST_F(PositiveDescriptorHeapEXT, EmbeddedSamplerOtherResourceType) {
     vk::CmdDispatch(m_command_buffer, 1u, 1u, 1u);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDescriptorHeapEXT, MaxEmbeddedSamplersShared) {
+    TEST_DESCRIPTION("Embedded samplers with the same create info count once towards maxDescriptorHeapEmbeddedSamplers");
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test only for MockICD.";
+    }
+
+    const uint32_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
+    VkSamplerCreateInfo sampler_info = vku::InitStructHelper();
+
+    VkDescriptorSetAndBindingMappingEXT mapping = MakeSetAndBindingMappingEXT(0, 0);
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.pEmbeddedSampler = &sampler_info;
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
+    mapping_info.mappingCount = 1u;
+    mapping_info.pMappings = &mapping;
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform sampler2D tex;
+        void main() {
+            vec4 color = textureLod(tex, vec2(0.0f), 0.0f);
+        }
+    )glsl";
+    VkShaderObj cs_module(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    VkPipelineCreateFlags2CreateInfo pipeline_create_flags_2_create_info = vku::InitStructHelper();
+    pipeline_create_flags_2_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkComputePipelineCreateInfo pipe_ci = vku::InitStructHelper(&pipeline_create_flags_2_create_info);
+    pipe_ci.layout = VK_NULL_HANDLE;
+    pipe_ci.stage = cs_module.GetStageCreateInfo(&mapping_info);
+
+    std::vector<vkt::Pipeline> pipes(max_samplers + 1);
+    for (uint32_t i = 0; i < max_samplers + 1; ++i) {
+        pipes[i].Init(*m_device, pipe_ci);
+    }
+}

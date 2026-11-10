@@ -149,7 +149,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
 
     mutable bool binary_data_released = false;
 
-    const uint32_t descriptor_heap_embedded_samplers_count;
+    const std::vector<size_t> descriptor_heap_embedded_sampler_hashes;
 
     Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
@@ -553,7 +553,7 @@ class Pipeline : public StateObject, public SubStateManager<PipelineSubState> {
         // Signal that the custom initialization was not used
         return false;
     }
-    static uint32_t CountDescriptorHeapEmbeddedSamplers(const Pipeline& pipe_state);
+    static std::vector<size_t> GetDescriptorHeapEmbeddedSamplerHashes(const Pipeline& pipe_state);
 
     const ShaderStageState* GetShaderStageState(VkShaderStageFlagBits stage) const {
         for (const ShaderStageState& shader_stage_state : stage_states) {

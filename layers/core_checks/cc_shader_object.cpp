@@ -295,9 +295,11 @@ bool CoreChecks::ValidateCreateShadersSpirvEXT(uint32_t createInfoCount, const V
 
         // Will be empty if not VK_SHADER_CODE_TYPE_SPIRV_EXT
         const std::shared_ptr<spirv::Module> spirv = chassis_state.module_states[i];
-        const uint32_t embedded_samplers_count = CountDescriptorHeapEmbeddedSamplers(create_info.pNext);
-        if ((create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0 && embedded_samplers_count > 0) {
-            skip |= ValidateEmbeddedSamplersCount(embedded_samplers_count, loc.dot(Field::pCreateInfos, i));
+        if ((create_info.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0) {
+            const std::vector<size_t> embedded_sampler_hashes = GetDescriptorHeapEmbeddedSamplerHashes(create_info.pNext);
+            if (!embedded_sampler_hashes.empty()) {
+                skip |= ValidateEmbeddedSamplersCount(embedded_sampler_hashes, loc.dot(Field::pCreateInfos, i));
+            }
         }
 
         if (!spirv || create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {

@@ -93,17 +93,18 @@ static std::shared_ptr<vvl::ShaderModule> GetShaderModuleFromInlinedSpirv(
     }
 }
 
-uint32_t Pipeline::CountDescriptorHeapEmbeddedSamplers(const Pipeline& pipe_state) {
-    uint32_t count = 0;
+std::vector<size_t> Pipeline::GetDescriptorHeapEmbeddedSamplerHashes(const Pipeline& pipe_state) {
+    std::vector<size_t> hashes;
 
-    if (pipe_state.descriptor_heap_mode) {
-        for (uint32_t i = 0; i < pipe_state.shader_stages_ci.size(); ++i) {
-            const auto& stage_ci = pipe_state.shader_stages_ci[i];
-            count += ::CountDescriptorHeapEmbeddedSamplers(stage_ci.pNext);
+    // pStages can be null with a non-zero stageCount (invalid, but we build state before validating)
+    if (pipe_state.descriptor_heap_mode && pipe_state.shader_stages_ci.data() != nullptr) {
+        for (const auto& stage_ci : pipe_state.shader_stages_ci) {
+            const std::vector<size_t> stage_hashes = ::GetDescriptorHeapEmbeddedSamplerHashes(stage_ci.pNext);
+            hashes.insert(hashes.end(), stage_hashes.begin(), stage_hashes.end());
         }
     }
 
-    return count;
+    return hashes;
 }
 
 std::vector<ShaderStageState> Pipeline::GetStageStates(const DeviceState& state_data, const Pipeline& pipe_state,
@@ -959,7 +960,7 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkGraphicsPipelineCreate
       uses_pipeline_robustness(UsesPipelineRobustness(GraphicsCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(UsesPipelineVertexRobustness(GraphicsCreateInfo().pNext, *this)),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
-      descriptor_heap_embedded_samplers_count(CountDescriptorHeapEmbeddedSamplers(*this)) {
+      descriptor_heap_embedded_sampler_hashes(GetDescriptorHeapEmbeddedSamplerHashes(*this)) {
     if (library_create_info) {
         const auto& exe_layout_state = state_data.Get<vvl::PipelineLayout>(GraphicsCreateInfo().layout);
         const auto* exe_layout = exe_layout_state.get();
@@ -1008,7 +1009,7 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkComputePipelineCreateI
       uses_pipeline_robustness(UsesPipelineRobustness(ComputeCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
-      descriptor_heap_embedded_samplers_count(CountDescriptorHeapEmbeddedSamplers(*this)),
+      descriptor_heap_embedded_sampler_hashes(GetDescriptorHeapEmbeddedSamplerHashes(*this)),
       merged_graphics_layout(layout) {
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
 }
@@ -1036,7 +1037,7 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkRayTracingPipelineCrea
       uses_pipeline_robustness(UsesPipelineRobustness(RayTracingCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
-      descriptor_heap_embedded_samplers_count(CountDescriptorHeapEmbeddedSamplers(*this)),
+      descriptor_heap_embedded_sampler_hashes(GetDescriptorHeapEmbeddedSamplerHashes(*this)),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders & ~(kShaderStageAllRayTracing)));
 }
@@ -1062,7 +1063,7 @@ Pipeline::Pipeline(const DeviceState& state_data, const VkDataGraphPipelineCreat
       uses_pipeline_robustness(UsesPipelineRobustness(DataGraphCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(false),
       ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
-      descriptor_heap_embedded_samplers_count(CountDescriptorHeapEmbeddedSamplers(*this)),
+      descriptor_heap_embedded_sampler_hashes(GetDescriptorHeapEmbeddedSamplerHashes(*this)),
       merged_graphics_layout(layout) {
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
 }

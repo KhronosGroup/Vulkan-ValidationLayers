@@ -5055,6 +5055,7 @@ TEST_F(NegativeDescriptorHeapEXT, MaxEmbeddedSamplers) {
 
     std::vector<CreateComputePipelineHelper> pipes(max_samplers + 1);
     for (size_t i = 0; i < max_samplers; i++) {
+        embedded_sampler.mipLodBias = static_cast<float>(i);
         pipes[i] = CreateComputePipelineHelper(*this, &pipeline_create_flags_2_create_info);
         pipes[i].LateBindPipelineInfo();
         pipes[i].cp_ci_.layout = VK_NULL_HANDLE;
@@ -5062,6 +5063,7 @@ TEST_F(NegativeDescriptorHeapEXT, MaxEmbeddedSamplers) {
         pipes[i].CreateComputePipeline(false);
     }
 
+    embedded_sampler.mipLodBias = static_cast<float>(max_samplers);
     pipes[max_samplers] = CreateComputePipelineHelper(*this, &pipeline_create_flags_2_create_info);
     pipes[max_samplers].LateBindPipelineInfo();
     pipes[max_samplers].cp_ci_.layout = VK_NULL_HANDLE;
@@ -5097,8 +5099,10 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationTotalCountShaderObject) {
 
     std::vector<vkt::ShaderEXT*> shaders(max_samplers + 1);
     for (size_t i = 0; i < max_samplers; i++) {
+        embedded_sampler.mipLodBias = static_cast<float>(i);
         shaders[i] = new vkt::ShaderEXT(*m_device, vert_ci);
     }
+    embedded_sampler.mipLodBias = static_cast<float>(max_samplers);
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-11428");
     shaders[max_samplers] = new vkt::ShaderEXT(*m_device, vert_ci);
@@ -6427,4 +6431,22 @@ TEST_F(NegativeDescriptorHeapEXT, BindResourceHeapReservedRangeOverflow) {
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDescriptorHeapEXT, NullStagesGraphicsLibrary) {
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitBasicDescriptorHeap());
+    InitRenderTarget();
+
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
+    flags2.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;
+    CreatePipelineHelper pipe(*this);
+    pipe.InitVertexInputLibInfo(&flags2);
+    pipe.gp_ci_.stageCount = 1;
+    pipe.gp_ci_.pStages = nullptr;
+    pipe.gp_ci_.layout = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-stageCount-09587");
+    pipe.CreateGraphicsPipeline(false);
+    m_errorMonitor->VerifyFound();
 }

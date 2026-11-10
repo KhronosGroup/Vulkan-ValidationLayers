@@ -55,8 +55,8 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
                 *chassis_state.stateless_data[i].pipeline_pnext_module, chassis_state.stateless_data[i],
                 create_info_loc.dot(Field::stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
         }
-        if (pipeline->descriptor_heap_embedded_samplers_count > 0) {
-            skip |= ValidateEmbeddedSamplersCount(pipeline->descriptor_heap_embedded_samplers_count, create_info_loc);
+        if (!pipeline->descriptor_heap_embedded_sampler_hashes.empty()) {
+            skip |= ValidateEmbeddedSamplersCount(pipeline->descriptor_heap_embedded_sampler_hashes, create_info_loc);
         }
 
         auto pipeline_layout = pipeline->PipelineLayoutState();

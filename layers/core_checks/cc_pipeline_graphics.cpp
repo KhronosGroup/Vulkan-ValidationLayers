@@ -81,8 +81,8 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline& pipeline, const v
     vku::safe_VkSubpassDescription2* subpass_desc = nullptr;
     const auto rp_state = pipeline.RenderPassState();
 
-    if (pipeline.descriptor_heap_embedded_samplers_count > 0) {
-        skip |= ValidateEmbeddedSamplersCount(pipeline.descriptor_heap_embedded_samplers_count, create_info_loc);
+    if (!pipeline.descriptor_heap_embedded_sampler_hashes.empty()) {
+        skip |= ValidateEmbeddedSamplersCount(pipeline.descriptor_heap_embedded_sampler_hashes, create_info_loc);
     }
 
     if (rp_state && rp_state->UsesDynamicRendering()) {

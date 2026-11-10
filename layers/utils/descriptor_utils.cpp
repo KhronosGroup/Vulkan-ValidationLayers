@@ -26,6 +26,7 @@
 #include "generated/error_location_helper.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/vk_extension_helper.h"
+#include "utils/hash_vk_types.h"
 #include "utils/math_utils.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/state_tracker.h"
@@ -35,21 +36,19 @@
 #include <string>
 #include <vector>
 
-uint32_t CountDescriptorHeapEmbeddedSamplers(const void* pNext) {
-    const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info =
-        vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(pNext);
-    uint32_t count = 0;
+std::vector<size_t> GetDescriptorHeapEmbeddedSamplerHashes(const void* pNext) {
+    std::vector<size_t> hashes;
 
-    if (mapping_info) {
+    if (const VkShaderDescriptorSetAndBindingMappingInfoEXT* mapping_info =
+            vku::FindStructInPNextChain<VkShaderDescriptorSetAndBindingMappingInfoEXT>(pNext)) {
         for (uint32_t i = 0; i < mapping_info->mappingCount; ++i) {
-            const VkDescriptorSetAndBindingMappingEXT& mapping = mapping_info->pMappings[i];
-            if (GetEmbeddedSampler(mapping) != nullptr) {
-                count++;
+            if (const VkSamplerCreateInfo* sampler = GetEmbeddedSampler(mapping_info->pMappings[i])) {
+                hashes.push_back(HashSamplerCreateInfo(*sampler));
             }
         }
     }
 
-    return count;
+    return hashes;
 }
 
 vvl::Field DescriptorBufferSizeField(bool robust, VkDescriptorType type) {

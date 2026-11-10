@@ -38,7 +38,8 @@ ShaderObject::ShaderObject(DeviceState& dev_data, const VkShaderCreateInfoEXT& c
       create_info_ext(*safe_create_info_ext.ptr()),
       is_independent_set((create_info_i.flags & VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_KHR) != 0),
       descriptor_heap_mode((create_info_i.flags & VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT) != 0),
-      descriptor_heap_embedded_samplers_count(descriptor_heap_mode ? CountDescriptorHeapEmbeddedSamplers(create_info_i.pNext) : 0),
+      descriptor_heap_embedded_sampler_hashes(descriptor_heap_mode ? GetDescriptorHeapEmbeddedSamplerHashes(create_info_i.pNext)
+                                                                   : std::vector<size_t>()),
       set_layouts(GetSetLayouts(dev_data, create_info_ext)),
       push_constant_ranges(GetCanonicalId(create_info_ext.pushConstantRangeCount, create_info_ext.pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, is_independent_set, true)),
