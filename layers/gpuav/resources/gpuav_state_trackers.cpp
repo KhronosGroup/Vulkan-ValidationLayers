@@ -448,7 +448,9 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, gpuav::QueueSubmission& 
 
 QueueSubState::QueueSubState(Validator& gpuav, vvl::Queue& q) : vvl::QueueSubState(q), gpuav_(gpuav), timeline_khr_(false) {}
 
-QueueSubState::~QueueSubState() {
+QueueSubState::~QueueSubState() { Destroy(); }
+
+void QueueSubState::Destroy() {
     shared_resources_cache.Clear();
 
     if (barrier_command_buffer_) {

@@ -1918,6 +1918,42 @@ TEST_F(PositiveGpuAV, EmptySubmit) {
     m_device->Wait();
 }
 
+TEST_F(PositiveGpuAV, DestroyDeviceWithSyncVal) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13657");
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "validate_sync", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint data[];
+        };
+        void main() {
+            data[0] = 42;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveGpuAV, ValidationBufferSuballocations) {
     TEST_DESCRIPTION("Make sure sub-allocating inside buffers used for validation purposes does not blow up");
     RETURN_IF_SKIP(InitGpuAvFramework());
