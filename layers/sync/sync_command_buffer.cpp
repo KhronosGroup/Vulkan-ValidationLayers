@@ -1139,19 +1139,31 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
 
 void CommandBufferContext::ImportRecordedAccessLog(const CommandBufferContext& recorded_context) {
     recording_->secondary_recordings.emplace_back(recorded_context.recording_);
+
+    const size_t first_imported_record_index = recording_->access_log.size();
     vvl::Append(recording_->access_log, recorded_context.recording_->access_log);
 
-    // Adjust command indices for the log records added from recorded_context.
-    const auto& recorded_label_commands = recorded_context.cb_state_->GetLabelCommands();
+    const size_t recorded_label_command_count = recorded_context.cb_state_->GetLabelCommands().size();
     const bool use_proxy = !proxy_label_commands_.empty();
     const auto& label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
+
+    // The secondary's labels have already been appended:
+    // a) to proxy_label_commands_ during validation: SyncValidator::PreCallValidateCmdExecuteCommands
+    // b) to the primary label commands during recording: CommandBuffer::RecordExecuteCommands
+    assert(label_commands.size() >= recorded_label_command_count);
+    const uint32_t label_command_offset = static_cast<uint32_t>(label_commands.size() - recorded_label_command_count);
+
+    // Adjust label command indices for imported log records
     if (!label_commands.empty()) {
-        assert(label_commands.size() >= recorded_label_commands.size());
-        const uint32_t command_offset = static_cast<uint32_t>(label_commands.size() - recorded_label_commands.size());
         for (size_t i = 0; i < recorded_context.recording_->access_log.size(); i++) {
-            size_t index = (recording_->access_log.size() - 1) - i;
-            assert(recording_->access_log[index].label_command_index != vvl::kNoIndex32);
-            recording_->access_log[index].label_command_index += command_offset;
+            ResourceUsageRecord& imported_record = recording_->access_log[first_imported_record_index + i];
+
+            if (imported_record.label_command_index == vvl::kNoIndex32) {
+                // repeat the last label command from the primary
+                imported_record.label_command_index = (label_command_offset == 0) ? vvl::kNoIndex32 : label_command_offset - 1;
+            } else {
+                imported_record.label_command_index += label_command_offset;
+            }
         }
     }
 }
