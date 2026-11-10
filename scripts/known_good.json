@@ -35,7 +35,7 @@
             "cmake_options": [
                 "-DSPIRV_HEADERS_ENABLE_TESTS=OFF"
             ],
-            "commit": "fef168c54ed2e37c314eb251806aaf9877f38465"
+            "commit": "6efe5ae6b7c6ad29da3f2cc3f164b9c3d72b78b1"
         },
         {
             "name": "SPIRV-Tools",
@@ -49,7 +49,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "28f99f74a2a922ff85fc8fd966d6b3d6a45be795"
+            "commit": "251c437ef506157c139f77f5525c02223bc78868"
         },
         {
             "name": "mimalloc",
@@ -90,7 +90,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "e1b562a8bed273a02f30b59b66a5d499793cede5",
+            "commit": "b411a8fb8aa0f6ee727df17f3f8eafb3eb85ba9e",
             "cmake_options": [
                 "-DENABLE_OPT=OFF",
                 "-DGLSLANG_TESTS=OFF"

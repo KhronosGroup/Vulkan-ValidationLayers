@@ -3030,6 +3030,8 @@ bool CoreChecks::ValidateDescriptorHeapDirectAccess(const spirv::Module& module_
 
         if (!is_descriptor_type) {
             // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8631
+            // TODO - These should now be caught now by https://github.com/KhronosGroup/SPIRV-Tools/pull/6929
+            // Will keep these here until a future VK_KHR_descriptor_heap is released for sake of helping developers
             const char* vuid = is_sampler_heap ? "UNASSIGNED-RuntimeSpirv-SamplerHeapEXT-DirectAccess"
                                                : "UNASSIGNED-RuntimeSpirv-ResourceHeapEXT-DirectAccess";
             skip |= LogError(
