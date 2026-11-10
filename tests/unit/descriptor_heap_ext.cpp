@@ -4983,7 +4983,7 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCountPipeline) {
     }
 }
 
-TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCountShaderObject) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationCountShaderObjectEXT) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
@@ -5073,17 +5073,17 @@ TEST_F(NegativeDescriptorHeapEXT, MaxEmbeddedSamplers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationTotalCountShaderObject) {
+TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationTotalCountShaderObjectEXT) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
-    // Creating this many emedded samplers is really slow on many drivers
+    // Creating this many embedded samplers is really slow on many drivers
     if (!IsPlatformMockICD()) {
         GTEST_SKIP() << "Test only for MockICD.";
     }
 
-    const size_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
+    const uint32_t max_samplers = heap_props.maxDescriptorHeapEmbeddedSamplers;
     VkSamplerCreateInfo embedded_sampler = vku::InitStructHelper();
     VkDescriptorSetAndBindingMappingEXT mapping;
     mapping = MakeSetAndBindingMappingEXT(0, 0, 1, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT);
@@ -5098,7 +5098,7 @@ TEST_F(NegativeDescriptorHeapEXT, SamplerAllocationTotalCountShaderObject) {
     VkShaderCreateInfoEXT vert_ci = ShaderCreateInfoHeapEXT(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, &mapping_info);
 
     std::vector<vkt::ShaderEXT*> shaders(max_samplers + 1);
-    for (size_t i = 0; i < max_samplers; i++) {
+    for (uint32_t i = 0; i < max_samplers; i++) {
         embedded_sampler.mipLodBias = static_cast<float>(i);
         shaders[i] = new vkt::ShaderEXT(*m_device, vert_ci);
     }

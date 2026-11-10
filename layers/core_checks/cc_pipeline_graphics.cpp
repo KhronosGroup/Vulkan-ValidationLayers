@@ -3759,16 +3759,6 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound& last_bou
     }
 
     const VkPipelineRenderingCreateInfo& pipeline_rendering_ci = pipeline.GetRenderPassPipelineRenderingCreateInfo();
-    const auto rendering_view_mask = rp_state.GetDynamicRenderingViewMask();
-    // There is currently a 06031 VU that catches the viewMask at vkCmdExecuteCommands time, so seems like this is not suppose to be
-    // validated with inherited render passes
-    if (rp_state.use_dynamic_rendering && pipeline_rendering_ci.viewMask != rendering_view_mask) {
-        const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-        skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_VIEW_MASK_06178), objlist, loc,
-                         "The last bound pipeline (%s) viewMask (0x%" PRIx32
-                         ") must be equal to VkRenderingInfo::viewMask (0x%" PRIx32 ")",
-                         FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
-    }
 
     // With rasterization disabled there is no fragment output interface state and the attachment formats in
     // VkPipelineRenderingCreateInfo are ignored, so |pipeline_rendering_ci| is going to have false zero in it

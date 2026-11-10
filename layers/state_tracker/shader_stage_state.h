@@ -52,7 +52,7 @@ struct ShaderStageState {
     std::shared_ptr<const vvl::ShaderModule> module_state;
     std::shared_ptr<const spirv::Module> spirv_state;
     const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info;
-    const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info;
+    const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info_ext;
     // Can be null because GPL
     const vvl::DescriptorSetLayoutList *descriptor_set_layouts;
     // Will be NULL if coming from ShaderObject or Descriptor Heaps
@@ -71,7 +71,7 @@ struct ShaderStageState {
     } heap;
 
     ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
-                     const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
+                     const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info_ext,
                      const vvl::DescriptorSetLayoutList* descriptor_set_layouts,
                      std::shared_ptr<const vvl::ShaderModule> module_state, std::shared_ptr<const spirv::Module> spirv_state,
                      const VkPipelineLayout pipeline_layout, bool descriptor_heap_mode);

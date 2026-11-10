@@ -64,27 +64,27 @@ uint32_t GetMaxActiveSlot(const ActiveSlotMap& active_slots) {
 }
 
 const char* ShaderStageState::GetPName() const {
-    return (pipeline_create_info) ? pipeline_create_info->pName : shader_object_create_info->pName;
+    return (pipeline_create_info) ? pipeline_create_info->pName : shader_object_create_info_ext->pName;
 }
 
 VkShaderStageFlagBits ShaderStageState::GetStage() const {
-    return (pipeline_create_info) ? pipeline_create_info->stage : shader_object_create_info->stage;
+    return (pipeline_create_info) ? pipeline_create_info->stage : shader_object_create_info_ext->stage;
 }
 
 vku::safe_VkSpecializationInfo* ShaderStageState::GetSpecializationInfo() const {
-    return (pipeline_create_info) ? pipeline_create_info->pSpecializationInfo : shader_object_create_info->pSpecializationInfo;
+    return (pipeline_create_info) ? pipeline_create_info->pSpecializationInfo : shader_object_create_info_ext->pSpecializationInfo;
 }
 
 const void* ShaderStageState::GetPNext() const {
-    return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
+    return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info_ext->pNext;
 }
 
 // vkspec.html#shaders-varying-subgroup-size
 bool ShaderStageState::AllowsVaryingSubgroupSize() const {
     if (pipeline_create_info) {
         return (pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT) != 0;
-    } else if (shader_object_create_info) {
-        return (shader_object_create_info->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0;
+    } else if (shader_object_create_info_ext) {
+        return (shader_object_create_info_ext->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0;
     }
     return false;
 }
@@ -93,8 +93,8 @@ bool ShaderStageState::AllowsVaryingSubgroupSize() const {
 bool ShaderStageState::RequiresFullSubgroup() const {
     if (pipeline_create_info) {
         return (pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) != 0;
-    } else if (shader_object_create_info) {
-        return (shader_object_create_info->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0;
+    } else if (shader_object_create_info_ext) {
+        return (shader_object_create_info_ext->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0;
     }
     return false;
 }
@@ -156,7 +156,7 @@ ShaderStageState::Heap ShaderStageState::GetHeapInfo(bool descriptor_heap_mode) 
 }
 
 ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo* pipeline_create_info,
-                                   const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info,
+                                   const vku::safe_VkShaderCreateInfoEXT* shader_object_create_info_ext,
                                    const vvl::DescriptorSetLayoutList* descriptor_set_layouts,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,
                                    std::shared_ptr<const spirv::Module> spirv_state, const VkPipelineLayout pipeline_layout,
@@ -164,7 +164,7 @@ ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateIn
     : module_state(module_state),
       spirv_state(spirv_state),
       pipeline_create_info(pipeline_create_info),
-      shader_object_create_info(shader_object_create_info),
+      shader_object_create_info_ext(shader_object_create_info_ext),
       descriptor_set_layouts(descriptor_set_layouts),
       pipeline_layout(pipeline_layout),
       entrypoint(spirv_state ? spirv_state->FindEntrypoint(GetPName(), GetStage()) : nullptr),
