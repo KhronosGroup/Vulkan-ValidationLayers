@@ -594,6 +594,10 @@ set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
 
 if(MSVC)
     target_link_options(vvl PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        # Nothing links against the layer (the loader finds the exports by name), so skip the import library
+        target_link_options(vvl PRIVATE /NOIMPLIB)
+    endif()
     target_compile_options(vvl_core PRIVATE /bigobj)
 elseif(MINGW)
     target_sources(vvl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
