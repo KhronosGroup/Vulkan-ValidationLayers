@@ -614,7 +614,8 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, DirectAccessUint) {
         OpReturn
         OpFunctionEnd
     )";
-    m_errorMonitor->SetDesiredError("UNASSIGNED-RuntimeSpirv-ResourceHeapEXT-DirectAccess", 4);
+    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-ResourceHeapEXT-13744");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-08771");  // empty module
     vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, nullptr, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
@@ -701,7 +702,8 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, DirectAccessUintWithMapping) {
         OpReturn
         OpFunctionEnd
     )";
-    m_errorMonitor->SetDesiredError("UNASSIGNED-RuntimeSpirv-ResourceHeapEXT-DirectAccess", 4);
+    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-ResourceHeapEXT-13744");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-08771");  // empty module
     vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
@@ -757,7 +759,8 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, DirectAccessSamplerHeap) {
     mapping_info.mappingCount = 1u;
     mapping_info.pMappings = &mapping;
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-RuntimeSpirv-SamplerHeapEXT-DirectAccess");
+    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-ResourceHeapEXT-13744");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-08771");  // empty module
     vkt::HeapComputePipelineEXT pipe(*m_device, spirv, SPV_ENV_VULKAN_1_2, &mapping_info, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
