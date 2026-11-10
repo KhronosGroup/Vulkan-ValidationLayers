@@ -18,6 +18,7 @@
 #include "sync_val_tests.h"
 
 struct NegativeSyncValReporting : public VkSyncValTest {};
+struct PositiveSyncValReporting : public VkSyncValTest {};
 
 TEST_F(NegativeSyncValReporting, DebugRegion) {
     TEST_DESCRIPTION("Prior access debug region reporting: single debug region");
@@ -1499,4 +1500,26 @@ TEST_F(NegativeSyncValReporting, CommandBufferMatchesQueue) {
     transfer_queue->Submit2(transfer_cb);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncValReporting, DebugLabelSecondaryWithoutLabels) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13668");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb.Begin();
+    vk::CmdFillBuffer(secondary_cb, buffer, 0, 4, 0);
+    secondary_cb.End();
+
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+    label.pLabelName = "Primary";
+
+    m_command_buffer.Begin();
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    m_command_buffer.ExecuteCommands(secondary_cb);
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    m_command_buffer.End();
 }
