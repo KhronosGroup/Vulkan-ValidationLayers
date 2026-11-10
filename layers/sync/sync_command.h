@@ -541,12 +541,14 @@ struct DrawAttachmentCommand {
     RenderPassAccessContext* render_pass_context;
     const RenderingInstance* rendering_instance;
     uint32_t render_pass_instance_id;
+    uint32_t color_write_enabled_mask;
     bool depth_write;
     bool stencil_write;
 
     struct Storage {
         const vvl::Pipeline* pipeline;
         uint32_t render_pass_instance_id;
+        uint32_t color_write_enabled_mask;
         bool depth_write;
         bool stencil_write;
         DrawAttachmentCommand MakeCommand(RenderPassAccessContext* render_pass_context,

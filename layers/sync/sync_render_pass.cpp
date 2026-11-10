@@ -566,8 +566,8 @@ static uint32_t GetSubpassDepthStencilAttachmentIndex(const vku::safe_VkPipeline
 }
 
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncEnvironment& env, const ErrorReporter& reporter,
-                                                            const vvl::Pipeline* pipeline, bool depth_write_enabled,
-                                                            bool stencil_write_enabled) const {
+                                                            const vvl::Pipeline* pipeline, uint32_t color_write_enabled_mask,
+                                                            bool depth_write_enabled, bool stencil_write_enabled) const {
     bool skip = false;
     if (!pipeline || pipeline->RasterizationDisabled()) {
         return skip;
@@ -596,7 +596,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncEnvironmen
     // Input attachment accesses are validated by ShaderAccessCommand
     if (subpass.pColorAttachments && subpass.colorAttachmentCount && !list.empty()) {
         for (const auto location : list) {
-            if (location >= subpass.colorAttachmentCount ||
+            if (!IsColorAttachmentWriteEnabled(location, subpass.colorAttachmentCount, color_write_enabled_mask) ||
                 subpass.pColorAttachments[location].attachment == VK_ATTACHMENT_UNUSED) {
                 continue;
             }
@@ -653,8 +653,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncEnvironmen
     return skip;
 }
 
-void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::Pipeline* pipeline, bool depth_write_enabled,
-                                                          bool stencil_write_enabled, ResourceUsageTag tag, QueueId queue_id) {
+void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::Pipeline* pipeline, uint32_t color_write_enabled_mask,
+                                                          bool depth_write_enabled, bool stencil_write_enabled,
+                                                          ResourceUsageTag tag, QueueId queue_id) {
     if (!pipeline || pipeline->RasterizationDisabled()) {
         return;
     }
@@ -665,7 +666,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::Pipeline* p
     // Input attachment accesses are recorded by ShaderAccessCommand
     if (subpass.pColorAttachments && subpass.colorAttachmentCount && !list.empty()) {
         for (const auto location : list) {
-            if (location >= subpass.colorAttachmentCount ||
+            if (!IsColorAttachmentWriteEnabled(location, subpass.colorAttachmentCount, color_write_enabled_mask) ||
                 subpass.pColorAttachments[location].attachment == VK_ATTACHMENT_UNUSED) {
                 continue;
             }

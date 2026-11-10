@@ -65,6 +65,13 @@ inline bool StoreOpWrites(VkAttachmentStoreOp store_op, VkAttachmentLoadOp load_
     return store_op != VK_ATTACHMENT_STORE_OP_NONE || LoadOpWrites(load_op);
 }
 
+inline bool IsColorAttachmentWriteEnabled(uint32_t location, uint32_t color_attachment_count, uint32_t color_write_enabled_mask) {
+    // NOTE: The 32-bit mask matches existing color attachment state tracking.
+    // Another reason to keep this practical limit is that a larger mask would
+    // increase the size of every stored draw command (DrawAttachmentCommand::Storage)
+    return location < color_attachment_count && location < 32 && (color_write_enabled_mask & (1u << location)) != 0;
+}
+
 extern const AccessRange kFullRange;
 
 constexpr VkImageAspectFlags kColorAspects =

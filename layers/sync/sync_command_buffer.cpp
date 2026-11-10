@@ -789,10 +789,21 @@ DrawAttachmentCommand CommandBufferContext::GetDrawAttachmentCommand() const {
         pipeline = nullptr;
     }
 
+    uint32_t color_write_enabled_mask = 0;
+    if (pipeline) {
+        for (const uint32_t location : pipeline->fs_writable_output_location_list) {
+            if (location < 32 && last_bound_state.GetColorWriteMask(location) != 0 &&
+                last_bound_state.IsColorWriteEnabled(location)) {
+                color_write_enabled_mask |= 1u << location;
+            }
+        }
+    }
+
     return {pipeline,
             current_renderpass_context_.get(),
             GetRenderingInstance(),
             current_render_pass_instance_id_,
+            color_write_enabled_mask,
             pipeline && last_bound_state.IsDepthWriteEnable(),
             pipeline && IsStencilWriteable(last_bound_state)};
 }

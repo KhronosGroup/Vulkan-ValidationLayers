@@ -440,7 +440,8 @@ void RenderingInstance::RecordEndRendering(AccessContext& access_context, uint32
 
 bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, const AccessContext& access_context,
                                                 const ErrorReporter& reporter, uint32_t render_pass_instance_id,
-                                                const vvl::Pipeline* pipeline, bool depth_write, bool stencil_write) const {
+                                                const vvl::Pipeline* pipeline, uint32_t color_write_enabled_mask, bool depth_write,
+                                                bool stencil_write) const {
     bool skip = false;
     if (!pipeline || pipeline->RasterizationDisabled()) {
         return skip;
@@ -449,7 +450,7 @@ bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, cons
     const SyncValidator& validator = env.validator;
 
     for (const uint32_t output_location : list) {
-        if (output_location >= color_attachment_count) {
+        if (!IsColorAttachmentWriteEnabled(output_location, color_attachment_count, color_write_enabled_mask)) {
             continue;
         }
         const auto& attachment = attachments[output_location];
@@ -501,15 +502,15 @@ bool RenderingInstance::ValidateDrawAttachments(const SyncEnvironment& env, cons
 }
 
 void RenderingInstance::RecordDrawAttachments(AccessContext& access_context, uint32_t render_pass_instance_id,
-                                              const vvl::Pipeline* pipeline, bool depth_write, bool stencil_write,
-                                              ResourceUsageTag tag, QueueId queue_id) const {
+                                              const vvl::Pipeline* pipeline, uint32_t color_write_enabled_mask, bool depth_write,
+                                              bool stencil_write, ResourceUsageTag tag, QueueId queue_id) const {
     if (!pipeline || pipeline->RasterizationDisabled()) {
         return;
     }
     const auto& list = pipeline->fs_writable_output_location_list;
 
     for (const uint32_t output_location : list) {
-        if (output_location >= color_attachment_count) {
+        if (!IsColorAttachmentWriteEnabled(output_location, color_attachment_count, color_write_enabled_mask)) {
             continue;
         }
         const auto& attachment = attachments[output_location];

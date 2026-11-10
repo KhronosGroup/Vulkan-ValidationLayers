@@ -1492,14 +1492,15 @@ void TraceRaysCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessC
 
 DrawAttachmentCommand DrawAttachmentCommand::Storage::MakeCommand(RenderPassAccessContext* render_pass_context,
                                                                   const RenderingInstance* rendering_instance) const {
-    return {pipeline, render_pass_context, rendering_instance, render_pass_instance_id, depth_write, stencil_write};
+    return {pipeline,    render_pass_context, rendering_instance, render_pass_instance_id, color_write_enabled_mask,
+            depth_write, stencil_write};
 }
 
 DrawAttachmentCommand::Storage DrawAttachmentCommand::MakeStorage(CommandData& command_data) const {
     if (pipeline) {
         command_data.AddPipeline(*pipeline);
     }
-    return {pipeline, render_pass_instance_id, depth_write, stencil_write};
+    return {pipeline, render_pass_instance_id, color_write_enabled_mask, depth_write, stencil_write};
 }
 
 bool DrawAttachmentCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
@@ -1509,20 +1510,22 @@ bool DrawAttachmentCommand::Validate(const CommandBufferContext& cb_context, con
 bool DrawAttachmentCommand::Validate(const SyncEnvironment& env, const AccessContext& access_context,
                                      const ErrorReporter& reporter) const {
     if (render_pass_context) {
-        return render_pass_context->ValidateDrawSubpassAttachment(env, reporter, pipeline, depth_write, stencil_write);
+        return render_pass_context->ValidateDrawSubpassAttachment(env, reporter, pipeline, color_write_enabled_mask, depth_write,
+                                                                  stencil_write);
     } else if (rendering_instance) {
         return rendering_instance->ValidateDrawAttachments(env, access_context, reporter, render_pass_instance_id, pipeline,
-                                                           depth_write, stencil_write);
+                                                           color_write_enabled_mask, depth_write, stencil_write);
     }
     return false;
 }
 
 void DrawAttachmentCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     if (render_pass_context) {
-        render_pass_context->RecordDrawSubpassAttachment(pipeline, depth_write, stencil_write, tag, env.queue_id);
+        render_pass_context->RecordDrawSubpassAttachment(pipeline, color_write_enabled_mask, depth_write, stencil_write, tag,
+                                                         env.queue_id);
     } else if (rendering_instance) {
-        rendering_instance->RecordDrawAttachments(access_context, render_pass_instance_id, pipeline, depth_write, stencil_write,
-                                                  tag, env.queue_id);
+        rendering_instance->RecordDrawAttachments(access_context, render_pass_instance_id, pipeline, color_write_enabled_mask,
+                                                  depth_write, stencil_write, tag, env.queue_id);
     }
 }
 

@@ -69,9 +69,10 @@ class RenderPassAccessContext {
                                         AccessContext& access_context);
 
     bool ValidateDrawSubpassAttachment(const SyncEnvironment& env, const ErrorReporter& reporter, const vvl::Pipeline* pipeline,
-                                       bool depth_write_enabled, bool stencil_write_enabled) const;
-    void RecordDrawSubpassAttachment(const vvl::Pipeline* pipeline, bool depth_write_enabled, bool stencil_write_enabled,
-                                     ResourceUsageTag tag, QueueId queue_id);
+                                       uint32_t color_write_enabled_mask, bool depth_write_enabled,
+                                       bool stencil_write_enabled) const;
+    void RecordDrawSubpassAttachment(const vvl::Pipeline* pipeline, uint32_t color_write_enabled_mask, bool depth_write_enabled,
+                                     bool stencil_write_enabled, ResourceUsageTag tag, QueueId queue_id);
 
     const vvl::ImageView* GetClearAttachmentView(const VkClearAttachment& clear_attachment) const;
 
