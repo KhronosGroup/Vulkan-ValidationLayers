@@ -91,10 +91,11 @@ struct RenderingInstance {
                             QueueId queue_id) const;
 
     bool ValidateDrawAttachments(const SyncEnvironment& env, const AccessContext& access_context, const ErrorReporter& reporter,
-                                 uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline, bool depth_write,
-                                 bool stencil_write) const;
+                                 uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline, uint32_t color_write_enabled_mask,
+                                 bool depth_write, bool stencil_write) const;
     void RecordDrawAttachments(AccessContext& access_context, uint32_t render_pass_instance_id, const vvl::Pipeline* pipeline,
-                               bool depth_write, bool stencil_write, ResourceUsageTag tag, QueueId queue_id) const;
+                               uint32_t color_write_enabled_mask, bool depth_write, bool stencil_write, ResourceUsageTag tag,
+                               QueueId queue_id) const;
 
   private:
     ImageRangeGen GetOptimizedDrawRangeGen(const AccessContext& access_context, uint32_t attachment_index, SyncAccessIndex usage,
