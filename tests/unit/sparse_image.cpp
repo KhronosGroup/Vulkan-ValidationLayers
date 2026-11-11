@@ -1415,3 +1415,70 @@ TEST_F(NegativeSparseImage, GetFormatPropertiesSamples) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeSparseImage, OpaqueBindMetadataMipTail) {
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
+    RETURN_IF_SKIP(Init());
+
+    if (m_device->QueuesWithSparseCapability().empty()) {
+        GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
+    }
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+
+    uint32_t requirements_count = 0;
+    vk::GetImageSparseMemoryRequirements(device(), image, &requirements_count, nullptr);
+    std::vector<VkSparseImageMemoryRequirements> sparse_requirements(requirements_count);
+    vk::GetImageSparseMemoryRequirements(device(), image, &requirements_count, sparse_requirements.data());
+
+    const VkSparseImageMemoryRequirements* metadata_requirements = nullptr;
+    for (const auto& requirements : sparse_requirements) {
+        if (requirements.formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+            metadata_requirements = &requirements;
+            break;
+        }
+    }
+    if (!metadata_requirements) {
+        GTEST_SKIP() << "Image has no metadata aspect";
+    }
+
+    VkMemoryRequirements memory_requirements;
+    vk::GetImageMemoryRequirements(device(), image, &memory_requirements);
+    VkMemoryAllocateInfo alloc_info =
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, memory_requirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+
+    // Start one past the end of the mip tail region
+    VkSparseMemoryBind opaque_bind = {};
+    opaque_bind.flags = VK_SPARSE_MEMORY_BIND_METADATA_BIT;
+    opaque_bind.resourceOffset = metadata_requirements->imageMipTailOffset + metadata_requirements->imageMipTailSize;
+    opaque_bind.size = memory_requirements.alignment;
+    opaque_bind.memory = memory;
+    opaque_bind.memoryOffset = 0;
+
+    VkSparseImageOpaqueMemoryBindInfo opaque_bind_info = {};
+    opaque_bind_info.image = image;
+    opaque_bind_info.bindCount = 1;
+    opaque_bind_info.pBinds = &opaque_bind;
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.imageOpaqueBindCount = 1;
+    bind_info.pImageOpaqueBinds = &opaque_bind_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageOpaqueMemoryBindInfo-pBinds-01103");
+    vk::QueueBindSparse(m_device->QueuesWithSparseCapability()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}

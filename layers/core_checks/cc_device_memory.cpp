@@ -2821,6 +2821,58 @@ bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(vvl::Image const&
     return skip;
 }
 
+bool CoreChecks::ValidateSparseImageOpaqueMetadataBind(vvl::Image const& image_state, VkSparseMemoryBind const& bind,
+                                                       const Location& bind_loc) const {
+    bool skip = false;
+
+    if ((bind.flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) == 0) {
+        return skip;
+    }
+
+    const VkSparseImageMemoryRequirements* metadata_requirements = nullptr;
+    for (const auto& requirements : image_state.sparse_requirements) {
+        if (requirements.formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+            metadata_requirements = &requirements;
+            break;
+        }
+    }
+    if (!metadata_requirements) {
+        return skip;  // The image has no metadata aspect, so there is no mip tail region
+    }
+
+    // Without VK_SPARSE_IMAGE_FORMAT_SINGLE_MIPTAIL_BIT each array layer gets its own mip tail |imageMipTailStride| apart
+    const bool single_mip_tail = (metadata_requirements->formatProperties.flags & VK_SPARSE_IMAGE_FORMAT_SINGLE_MIPTAIL_BIT) != 0;
+    const uint32_t mip_tail_count = single_mip_tail ? 1u : image_state.GetArrayLayers();
+
+    const VkDeviceSize bind_end = bind.resourceOffset + bind.size;
+    for (uint32_t layer = 0; layer < mip_tail_count; layer++) {
+        const VkDeviceSize mip_tail_offset =
+            metadata_requirements->imageMipTailOffset + (layer * metadata_requirements->imageMipTailStride);
+        const VkDeviceSize mip_tail_end = mip_tail_offset + metadata_requirements->imageMipTailSize;
+        if ((bind.resourceOffset >= mip_tail_offset) && (bind_end <= mip_tail_end) && (bind_end >= bind.resourceOffset)) {
+            return skip;
+        }
+    }
+
+    std::stringstream valid_ranges;
+    for (uint32_t layer = 0; layer < mip_tail_count; layer++) {
+        const VkDeviceSize mip_tail_offset =
+            metadata_requirements->imageMipTailOffset + (layer * metadata_requirements->imageMipTailStride);
+        valid_ranges << "\n  [" << mip_tail_offset << ", " << (mip_tail_offset + metadata_requirements->imageMipTailSize) << ")";
+    }
+
+    skip |= LogError("VUID-VkSparseImageOpaqueMemoryBindInfo-pBinds-01103", image_state.Handle(), bind_loc,
+                     "has VK_SPARSE_MEMORY_BIND_METADATA_BIT set, but the range it binds [%" PRIu64 ", %" PRIu64
+                     ") is not inside the mip tail region of the metadata aspect of %s.\nThe metadata aspect mip tail "
+                     "region:%s\nVkSparseImageMemoryRequirements: imageMipTailOffset = %" PRIu64 ", imageMipTailSize = %" PRIu64
+                     ", imageMipTailStride = %" PRIu64 ", flags = %s",
+                     bind.resourceOffset, bind_end, FormatHandle(image_state).c_str(), valid_ranges.str().c_str(),
+                     metadata_requirements->imageMipTailOffset, metadata_requirements->imageMipTailSize,
+                     metadata_requirements->imageMipTailStride,
+                     string_VkSparseImageFormatFlags(metadata_requirements->formatProperties.flags).c_str());
+    return skip;
+}
+
 // This will only be called after we are sure the image was created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT
 bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const* image_state, VkSparseImageMemoryBind const& bind,
                                                const Location& bind_loc, const Location& memory_loc) const {
