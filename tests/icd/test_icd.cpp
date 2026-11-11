@@ -2197,6 +2197,20 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsK
     return VK_SUCCESS;
 }
 
+static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimeDomainPropertiesEXT(
+    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
+    uint64_t* pTimeDomainsCounter) {
+    if (pSwapchainTimeDomainProperties->pTimeDomains) {
+        pSwapchainTimeDomainProperties->pTimeDomains[0] = VK_TIME_DOMAIN_PRESENT_STAGE_LOCAL_EXT;
+        pSwapchainTimeDomainProperties->pTimeDomainIds[0] = 1;
+    }
+    pSwapchainTimeDomainProperties->timeDomainCount = 1;
+    if (pTimeDomainsCounter) {
+        *pTimeDomainsCounter = 1;
+    }
+    return VK_SUCCESS;
+}
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(

@@ -4115,3 +4115,56 @@ TEST_F(PositiveWsi, MSRTSSwapchainImage) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveWsi, PresentTimingsCountOnly) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    vk::SetSwapchainPresentTimingQueueSizeEXT(device(), swapchain, 1);
+
+    VkTimeDomainKHR time_domain;
+    uint64_t time_domain_id;
+    VkSwapchainTimeDomainPropertiesEXT time_domain_props = vku::InitStructHelper();
+    time_domain_props.timeDomainCount = 1;
+    time_domain_props.pTimeDomains = &time_domain;
+    time_domain_props.pTimeDomainIds = &time_domain_id;
+    vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+    SetPresentImageLayout(swapchain.GetImages()[image_index]);
+
+    VkPresentTimingInfoEXT timing_info = vku::InitStructHelper();
+    timing_info.timeDomainId = time_domain_id;
+    timing_info.presentStageQueries = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT;
+
+    VkPresentTimingsInfoEXT timings_info = vku::InitStructHelper();
+    timings_info.swapchainCount = 1;
+    timings_info.pTimingInfos = &timing_info;
+
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &timings_info);
+    m_default_queue->Wait();
+
+    VkPastPresentationTimingInfoEXT past_info = vku::InitStructHelper();
+    past_info.swapchain = swapchain;
+    VkPastPresentationTimingPropertiesEXT past_props = vku::InitStructHelper();
+
+    // Array is null, so presentationTimingCount is output only and its value is ignored
+    past_props.pPresentationTimings = nullptr;
+
+    past_props.presentationTimingCount = 1;
+    vk::GetPastPresentationTimingEXT(device(), &past_info, &past_props);
+
+    past_info.flags = VK_PAST_PRESENTATION_TIMING_ALLOW_OUT_OF_ORDER_RESULTS_BIT_EXT;
+    past_props.presentationTimingCount = 1;
+    vk::GetPastPresentationTimingEXT(device(), &past_info, &past_props);
+}
