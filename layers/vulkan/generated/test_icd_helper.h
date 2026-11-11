@@ -5404,12 +5404,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimingPropertiesEXT(VkDevice d
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainTimeDomainPropertiesEXT(
-    VkDevice device, VkSwapchainKHR swapchain, VkSwapchainTimeDomainPropertiesEXT* pSwapchainTimeDomainProperties,
-    uint64_t* pTimeDomainsCounter) {
-    return VK_SUCCESS;
-}
-
 static VKAPI_ATTR VkResult VKAPI_CALL
 GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
                              VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties) {

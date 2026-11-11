@@ -5686,10 +5686,6 @@ TEST_F(NegativeWsi, PresentTimingsMissingCreateFlag) {
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Skipping on mock icd because time domains cannot be queried.";
-    }
-
     VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
     swapchain_ci.surface = m_surface;
     swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
@@ -5838,10 +5834,6 @@ TEST_F(NegativeWsi, PresentTimingsAbsoluteTime) {
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Skipping on mock icd because time domains cannot be queried.";
-    }
-
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
 
     uint32_t present_mode_count = 0;
@@ -5908,10 +5900,6 @@ TEST_F(NegativeWsi, PresentTimingsRelativeTime) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
-
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Skipping on mock icd because time domains cannot be queried.";
-    }
 
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
 

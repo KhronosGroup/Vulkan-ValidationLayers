@@ -4675,9 +4675,9 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
 
         if (present_timings_info && present_timings_info->pTimingInfos &&
             present_timings_info->pTimingInfos[i].presentStageQueries) {
-            const Swapchain::PresentTimingInfo presentTimingInfo{
+            const Swapchain::PresentTimingInfo present_timing_info{
                 CountSetBits(present_timings_info->pTimingInfos[i].presentStageQueries), present_submission_ref};
-            swapchain_data->present_timing_stage_queries.push_back({present_id, presentTimingInfo});
+            swapchain_data->present_timing_stage_queries.push_back({present_id, present_timing_info});
         }
 
         // spec: "However, if the presentation request is rejected by the presentation engine with an error

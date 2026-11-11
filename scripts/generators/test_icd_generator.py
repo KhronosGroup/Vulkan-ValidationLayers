@@ -92,6 +92,7 @@ class TestIcdGenerator(BaseGenerator):
             'vkCreateSwapchainKHR',
             'vkDestroySwapchainKHR',
             'vkGetSwapchainImagesKHR',
+            'vkGetSwapchainTimeDomainPropertiesEXT',
             'vkAcquireNextImageKHR',
             'vkAcquireNextImage2KHR',
             'vkCreateBuffer',
