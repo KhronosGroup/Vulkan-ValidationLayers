@@ -7135,6 +7135,81 @@ TEST_F(NegativeShaderObjectEXT, MeshShaderPayloadMemoryOverLimit) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderObjectEXT, DrawFragmentShadingRate) {
+    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fsr_properties);
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+    if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) ||
+        !FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        GTEST_SKIP() << "Format does not support FSR and FDM";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    const vkt::ShaderEXT vert_shader(*m_device, ShaderCreateInfoEXT(vs_spv, VK_SHADER_STAGE_VERTEX_BIT));
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    const vkt::ShaderEXT frag_shader(*m_device, ShaderCreateInfoEXT(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT));
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();
+    fragment_shading_rate.imageView = image_view;
+    fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+
+    VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
+    fragment_density_map.imageView = image_view;
+    fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    {
+        VkRenderingInfo begin_rendering_info = vku::InitStructHelper(&fragment_shading_rate);
+        begin_rendering_info.layerCount = 1;
+        begin_rendering_info.colorAttachmentCount = 1;
+        begin_rendering_info.pColorAttachments = &color_attachment;
+        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        SetDefaultDynamicStatesExcludeEXT();
+        m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
+        m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdDraw-shaderObject-fragmentShadingRateAttachment");
+        vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.EndRendering();
+        m_command_buffer.End();
+    }
+
+    {
+        VkRenderingInfo begin_rendering_info = vku::InitStructHelper(&fragment_density_map);
+        begin_rendering_info.layerCount = 1;
+        begin_rendering_info.colorAttachmentCount = 1;
+        begin_rendering_info.pColorAttachments = &color_attachment;
+        begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRendering(begin_rendering_info);
+        SetDefaultDynamicStatesExcludeEXT();
+        m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
+        m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdDraw-shaderObject-fragmentDensityMapAttachment");
+        vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.EndRendering();
+        m_command_buffer.End();
+    }
+}
+
 TEST_F(NegativeShaderObjectEXT, DrawMissingNextStage) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();

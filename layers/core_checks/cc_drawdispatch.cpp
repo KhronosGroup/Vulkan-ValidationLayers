@@ -1480,6 +1480,7 @@ bool CoreChecks::ValidateActionState(const LastBound& last_bound_state, const Lo
             skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, cb_state, loc);
             skip |= ValidateDrawDynamicRenderpassExternalFormatResolve(last_bound_state, *cb_state.active_render_pass, loc);
             skip |= ValidateDrawDynamicRenderpassMultiview(last_bound_state, *cb_state.active_render_pass, loc);
+            skip |= ValidateDrawDynamicRenderpassFragmentShadingRate(last_bound_state, *cb_state.active_render_pass, loc);
             const auto& cb_sub_state = core::SubState(cb_state);
             skip |= ValidateDrawCustomResolve(last_bound_state, *cb_state.active_render_pass, cb_sub_state, loc);
         }
@@ -3281,6 +3282,62 @@ bool CoreChecks::ValidateDrawCustomResolveFormats(const VkCustomResolveCreateInf
                     string_VkFormat(cr_info.stencilAttachmentFormat), FormatHandle(resolve_image_view).c_str(),
                     string_VkFormat(resolve_image_view_state->create_info.format));
             }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDynamicRenderpassFragmentShadingRate(const LastBound& last_bound_state,
+                                                                  const vvl::RenderPass& rp_state, const Location& loc) const {
+    bool skip = false;
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    const vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
+    const vvl::ShaderObject* fragment_shader =
+        pipeline ? nullptr : last_bound_state.GetShaderObjectStateIfValid(ShaderObjectStage::FRAGMENT);
+    if (!pipeline && !fragment_shader) {
+        return skip;
+    }
+
+    const VkRenderingInfo& rendering_info = *rp_state.dynamic_rendering_begin_rendering_info.ptr();
+
+    const auto* fsr_info = vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext);
+    if (fsr_info && fsr_info->imageView != VK_NULL_HANDLE) {
+        if (pipeline && !(pipeline->create_flags & VK_PIPELINE_CREATE_2_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+            const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_FSR_06183), objlist, loc,
+                             "Currently bound graphics pipeline %s must have been created with "
+                             "VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                             FormatHandle(*pipeline).c_str());
+        } else if (fragment_shader &&
+                   !(fragment_shader->safe_create_info_ext.flags & VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT)) {
+            const LogObjectList objlist(cb_state.Handle(), fragment_shader->Handle());
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8739
+            skip |= LogError("UNASSIGNED-vkCmdDraw-shaderObject-fragmentShadingRateAttachment", objlist, loc,
+                             "Fragment shader object %s was created without "
+                             "VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT, but the current render pass instance has "
+                             "a VkRenderingFragmentShadingRateAttachmentInfoKHR::imageView (%s).",
+                             FormatHandle(*fragment_shader).c_str(), FormatHandle(fsr_info->imageView).c_str());
+        }
+    }
+
+    const auto* fdm_info = vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
+    if (fdm_info && fdm_info->imageView != VK_NULL_HANDLE) {
+        if (pipeline && !(pipeline->create_flags & VK_PIPELINE_CREATE_2_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+            const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
+            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_FDM_06184), objlist, loc,
+                             "Currently bound graphics pipeline %s must have been created with "
+                             "VK_PIPELINE_CREATE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
+                             FormatHandle(*pipeline).c_str());
+        } else if (fragment_shader &&
+                   !(fragment_shader->safe_create_info_ext.flags & VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+            const LogObjectList objlist(cb_state.Handle(), fragment_shader->Handle());
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8739
+            skip |= LogError("UNASSIGNED-vkCmdDraw-shaderObject-fragmentDensityMapAttachment", objlist, loc,
+                             "Fragment shader object %s was created without "
+                             "VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT, but the current render pass instance has "
+                             "a VkRenderingFragmentDensityMapAttachmentInfoEXT::imageView (%s).",
+                             FormatHandle(*fragment_shader).c_str(), FormatHandle(fdm_info->imageView).c_str());
         }
     }
 
