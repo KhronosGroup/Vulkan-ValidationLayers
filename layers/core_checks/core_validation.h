@@ -2268,6 +2268,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                        const Location& bind_loc, const Location& subresource_loc) const;
     bool ValidateSparseImageMemoryBind(vvl::Image const* image_state, VkSparseImageMemoryBind const& bind, const Location& bind_loc,
                                        const Location& memory_loc) const;
+    bool ValidateSparseImageOpaqueMetadataBind(vvl::Image const& image_state, VkSparseMemoryBind const& bind,
+                                               const Location& bind_loc) const;
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,

@@ -692,6 +692,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                         skip |=
                             ValidateSparseMemoryBind(memory_bind, image_state->requirements[0], image_state->requirements[0].size,
                                                      image_state->external_memory_handle_types, image_state->Handle(), bind_loc);
+                        skip |= ValidateSparseImageOpaqueMetadataBind(*image_state, memory_bind, bind_loc);
                     }
                 }
             }
