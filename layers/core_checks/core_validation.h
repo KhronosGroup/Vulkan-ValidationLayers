@@ -1261,8 +1261,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                                    const VkRenderingInfo& rendering_info, const Location& barrier_loc) const;
 
-    bool ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, VkImage image, VkImageLayout layout,
-                                              VkImageUsageFlags2KHR usage, bool is_stencil_usage = false) const;
+    bool IsImageLayoutCompatibleWithUsage(VkImageLayout layout, VkImageUsageFlags2KHR usage_flags) const;
+    bool ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, const vvl::Image& image_state,
+                                              VkImageAspectFlags aspect_mask, VkImageLayout layout) const;
 
     bool ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                           const Location& barrier_loc, const vvl::Image& image_state,

@@ -2883,10 +2883,10 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
             }
         }
 
-        skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::oldLayout), transition.image, transition.oldLayout,
-                                                     image_state->usage);
-        skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::newLayout), transition.image, transition.newLayout,
-                                                     image_state->usage);
+        skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::oldLayout), *image_state, aspect_mask,
+                                                     transition.oldLayout);
+        skip |= ValidateImageLayoutAgainstImageUsage(transition_loc.dot(Field::newLayout), *image_state, aspect_mask,
+                                                     transition.newLayout);
 
         auto image_layer_count_var = Field::arrayLayers;
         uint32_t image_layer_count = image_state->GetArrayLayers();

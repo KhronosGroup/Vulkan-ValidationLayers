@@ -1011,6 +1011,32 @@ TEST_F(PositiveImageLayout, SeparateStencilAspectTransition) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveImageLayout, DepthStencilBarrierSeparateStencilUsage) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/5020");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+    VkImageStencilUsageCreateInfo stencil_usage = vku::InitStructHelper();
+    stencil_usage.stencilUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, ds_format,
+                                                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.pNext = &stencil_usage;
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(barrier);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveImageLayout, SeparateDepthStencilAndRenderToStencil) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11074
     TEST_DESCRIPTION("Separate stencil aspect transition and rendering to stencil aspect");

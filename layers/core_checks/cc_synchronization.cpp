@@ -1953,10 +1953,7 @@ bool CoreChecks::ValidateSubpassDependency(const Location& loc, const VkSubpassD
     return skip;
 }
 
-// Verify an image barrier's old/new layouts are compatible with the image's usage flags.
-bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, VkImage image, VkImageLayout layout,
-                                                      VkImageUsageFlags2KHR usage_flags, bool is_stencil_usage) const {
-    bool skip = false;
+bool CoreChecks::IsImageLayoutCompatibleWithUsage(VkImageLayout layout, VkImageUsageFlags2KHR usage_flags) const {
     bool is_error = false;
     switch (layout) {
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
@@ -2044,11 +2041,30 @@ bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location& layout_loc
             break;
     }
 
-    if (is_error) {
-        const auto& vuid = vvl::GetBadImageLayoutVUID(layout_loc, layout);
-        skip |= LogError(vuid, image, layout_loc, "(%s) is not compatible with %s %s flags %s.", string_VkImageLayout(layout),
-                         FormatHandle(image).c_str(), is_stencil_usage ? "stencilUsage" : "usage",
-                         string_VkImageUsageFlags2KHR(usage_flags).c_str());
+    return !is_error;
+}
+
+// Verify an image barrier's old/new layouts are compatible with the image's usage flags.
+bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, const vvl::Image& image_state,
+                                                      VkImageAspectFlags aspect_mask, VkImageLayout layout) const {
+    bool skip = false;
+    const bool has_stencil_usage = image_state.stencil_usage.has_value();
+    const bool check_usage = !has_stencil_usage || (aspect_mask & ~VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+    const bool check_stencil_usage = has_stencil_usage && (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+
+    if (check_usage && !IsImageLayoutCompatibleWithUsage(layout, image_state.usage)) {
+        skip |= LogError(vvl::GetBadImageLayoutVUID(layout_loc, layout), image_state.Handle(), layout_loc,
+                         "(%s) is not compatible with %s usage flags %s.", string_VkImageLayout(layout),
+                         FormatHandle(image_state).c_str(), string_VkImageUsageFlags2KHR(image_state.usage).c_str());
+    }
+    if (check_stencil_usage && !IsImageLayoutCompatibleWithUsage(layout, *image_state.stencil_usage)) {
+        // TODO being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8740
+        const std::string vuid = layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                     ? "UNASSIGNED-ImageLayoutTransition-stencilUsage"
+                                     : vvl::GetBadImageLayoutVUID(layout_loc, layout);
+        skip |= LogError(vuid, image_state.Handle(), layout_loc, "(%s) is not compatible with %s stencilUsage flags %s.",
+                         string_VkImageLayout(layout), FormatHandle(image_state).c_str(),
+                         string_VkImageUsageFlags2KHR(*image_state.stencil_usage).c_str());
     }
     return skip;
 }
@@ -2080,12 +2096,10 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_s
                                                  barrier_loc.dot(Field::subresourceRange));
 
     if ((barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) || (old_layout != new_layout)) {
-        // A stencil-only barrier is checked against the separate stencil usage when the image has one
-        const bool is_stencil_usage = image_state.stencil_usage.has_value() && barrier_aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT;
-
-        const VkImageUsageFlags2KHR usage = is_stencil_usage ? *image_state.stencil_usage : image_state.usage;
-        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::oldLayout), image, old_layout, usage, is_stencil_usage);
-        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::newLayout), image, new_layout, usage, is_stencil_usage);
+        skip |=
+            ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::oldLayout), image_state, barrier_aspect_mask, old_layout);
+        skip |=
+            ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::newLayout), image_state, barrier_aspect_mask, new_layout);
     }
 
     // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked
