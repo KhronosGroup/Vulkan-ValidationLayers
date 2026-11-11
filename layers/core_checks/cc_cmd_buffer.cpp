@@ -2605,7 +2605,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuf
         const Location info_loc = error_obj.location.dot(Field::pBindingInfos, i);
         const VkBindTransformFeedbackBuffer2InfoEXT& binding_info = pBindingInfos[i];
 
-        skip |= ValidateDeviceAddressRange(binding_info.addressRange.address, binding_info.addressRange.size, true,
+        skip |= ValidateDeviceAddressRange(binding_info.addressRange.address, binding_info.addressRange.size, false,
                                            info_loc.dot(Field::addressRange), LogObjectList(commandBuffer),
                                            VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT,
                                            "VUID-vkCmdBindTransformFeedbackBuffers2EXT-addressRange-13091");
