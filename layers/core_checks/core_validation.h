@@ -333,6 +333,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                 const Location& loc) const;
     bool ValidateDrawDynamicRenderpassExternalFormatResolve(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                                             const Location& loc) const;
+    bool ValidateDrawDynamicRenderpassFragmentShadingRate(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
+                                                          const Location& loc) const;
     bool ValidateDrawDynamicRenderpassMultiview(const LastBound& last_bound_state, const vvl::RenderPass& rp_state,
                                                 const Location& loc) const;
     bool ValidateStageMaskHost(const LogObjectList& objlist, const Location& stage_mask_loc,
@@ -762,8 +764,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                           const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderpassLegacyDithering(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                               const vvl::RenderPass& rp_state, const Location& loc) const;
-    bool ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                                  const vvl::RenderPass& rp_state, const Location& loc) const;
     bool ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
                                                                 const vvl::RenderPass& rp_state,
                                                                 const VkPipelineRenderingCreateInfo& pipeline_rendering_ci,

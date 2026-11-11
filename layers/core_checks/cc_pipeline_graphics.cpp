@@ -3773,7 +3773,6 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound& last_bou
     skip |= ValidateDrawPipelineDynamicRenderpassNonInherited(last_bound_state, pipeline, rp_state, loc);
     skip |= ValidateDrawPipelineDynamicRenderpassLegacyDithering(last_bound_state, pipeline, rp_state, loc);
     skip |= ValidateDrawPipelineDynamicRenderpassSampleCount(last_bound_state, pipeline, rp_state, loc);
-    skip |= ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(last_bound_state, pipeline, rp_state, loc);
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11644
     // skip |= ValidateDrawPipelineDynamicRenderingAttachmentFlags(last_bound_state, pipeline, rp_state, loc);
     return skip;
@@ -4221,42 +4220,6 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const La
                               pipeline_rendering_ci.stencilAttachmentFormat == VK_FORMAT_UNDEFINED)
                                  ? "\nHint: This can be allowed if the dynamicRenderingUnusedAttachments feature is enabled."
                                  : "");
-        }
-    }
-
-    return skip;
-}
-
-bool CoreChecks::ValidateDrawPipelineDynamicRenderpassFragmentShadingRate(const LastBound& last_bound_state,
-                                                                          const vvl::Pipeline& pipeline,
-                                                                          const vvl::RenderPass& rp_state,
-                                                                          const Location& loc) const {
-    bool skip = false;
-
-    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    auto rendering_fragment_shading_rate_attachment_info =
-        vku::FindStructInPNextChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(
-            rp_state.dynamic_rendering_begin_rendering_info.pNext);
-    if (rendering_fragment_shading_rate_attachment_info &&
-        (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
-        if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_FSR_06183), objlist, loc,
-                             "Currently bound graphics pipeline %s must have been created with "
-                             "VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
-                             FormatHandle(pipeline).c_str());
-        }
-    }
-
-    auto rendering_fragment_shading_rate_density_map = vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(
-        rp_state.dynamic_rendering_begin_rendering_info.pNext);
-    if (rendering_fragment_shading_rate_density_map && (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
-        if (!(pipeline.create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(CreateActionVuid(loc.function, vvl::ActionVUID::DYNAMIC_RENDERING_FDM_06184), objlist, loc,
-                             "Currently bound graphics pipeline %s must have been created with "
-                             "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
-                             FormatHandle(pipeline).c_str());
         }
     }
 
