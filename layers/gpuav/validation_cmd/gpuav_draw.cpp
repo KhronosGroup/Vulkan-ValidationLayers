@@ -17,6 +17,7 @@
 
 #include "gpuav/validation_cmd/gpuav_draw.h"
 #include <vulkan/vulkan_core.h>
+#include <sstream>
 
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
@@ -1004,8 +1005,11 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
                 const uint32_t index_count = error_record[kValCmd_ErrorPayloadDword_2];
                 const uint32_t highest_accessed_index = first_index + index_count;
 
-                std::stringstream indirect_buffer_info;
-                indirect_buffer_info << "VkDrawIndexedIndirectCommand buffer:\n";
+                std::ostringstream error_ss;
+                error_ss << "Index " << highest_accessed_index
+                         << " is not within the bound index buffer. Computed from VkDrawIndexedIndirectCommand[" << draw_i
+                         << "] (.firstIndex = " << first_index << ", .indexCount = " << index_count
+                         << ")\nVkDrawIndexedIndirectCommand buffer:\n";
                 if (loc_with_debug_region.function == vvl::Func::vkCmdDrawIndexedIndirect2KHR) {
                     auto draw_buffer_state = gpuav.Get<vvl::Buffer>(api_buffer);
                     if (!draw_buffer_state) {
@@ -1014,33 +1018,17 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
                         return skip;
                     }
 
-                    indirect_buffer_info << "- Offset address: 0x" << std::hex << draw_buffer_state->deviceAddress + api_offset
-                                         << '\n';
+                    error_ss << "- Offset address: 0x" << std::hex << draw_buffer_state->deviceAddress + api_offset << std::dec
+                             << '\n';
                 } else {
-                    indirect_buffer_info << "- Buffer: " << gpuav.FormatHandle(api_buffer) << '\n';
-                    indirect_buffer_info << "- Buffer offset: " << api_offset << '\n';
+                    error_ss << "- Buffer: " << gpuav.FormatHandle(api_buffer) << '\n';
+                    error_ss << "- Buffer offset: " << api_offset << '\n';
                 }
-                indirect_buffer_info << "- Stride: " << api_stride << '\n';
+                error_ss << "- Stride: " << api_stride << '\n';
+                error_ss << '\n' << index_buffer_binding.String(*gpuav.device_state) << '\n';
+                error_ss << "Hint: This can be allowed if the robustBufferAccess2 feature is enabled.";
 
-                skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region,
-                                       "Index %" PRIu32
-                                       " is not within the bound index buffer. Computed from VkDrawIndexedIndirectCommand[%" PRIu32
-                                       "] (.firstIndex = %" PRIu32 ", .indexCount = %" PRIu32
-                                       ")\n"
-
-                                       "%s\n"
-
-                                       "%s\n"
-                                       "Hint: This can be allowed if the robustBufferAccess2 feature is enabled.",
-
-                                       // OOB index info
-                                       highest_accessed_index, draw_i, first_index, index_count,
-
-                                       // Draw parameters buffer
-                                       indirect_buffer_info.str().c_str(),
-
-                                       // Index buffer binding info
-                                       index_buffer_binding.String(*gpuav.device_state).c_str());
+                skip |= gpuav.LogError(vuid, objlist, loc_with_debug_region, "%s", error_ss.str().c_str());
                 break;
             }
 
