@@ -6441,7 +6441,6 @@ TEST_F(NegativeWsi, PresentTimingsStageCount) {
     present_stage_time.time = 0u;
 
     VkPastPresentationTimingEXT past_presentation_timing = vku::InitStructHelper();
-    past_presentation_timing.presentId = present_id_value;
     past_presentation_timing.targetTime = 1u;
     past_presentation_timing.presentStageCount = 1u;
     past_presentation_timing.pPresentStages = &present_stage_time;

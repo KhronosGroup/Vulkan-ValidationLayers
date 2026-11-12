@@ -1481,22 +1481,18 @@ bool CoreChecks::PreCallValidateGetPastPresentationTimingEXT(
                 }
             }
         } else {
-            for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
-                uint32_t max = 0;
-                for (const auto& query : swapchain_state->present_timing_stage_queries) {
-                    if (query.first == pPastPresentationTimingProperties->pPresentationTimings[i].presentId &&
-                        query.second.num_present_stage_queries > max) {
-                        max = query.second.num_present_stage_queries;
-                    }
-                }
-                if (pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount < max) {
+            const auto& queries = swapchain_state->present_timing_stage_queries;
+            for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount && i < queries.size(); ++i) {
+                const uint32_t required_stage_count = queries[i].second.num_present_stage_queries;
+                if (pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount < required_stage_count) {
                     skip |= LogError("VUID-vkGetPastPresentationTimingEXT-flags-12231", pPastPresentationTimingInfo->swapchain,
                                      error_obj.location.dot(Field::pPastPresentationTimingProperties)
                                          .dot(Field::pPresentationTimings, i)
                                          .dot(Field::presentStageCount),
                                      "is %" PRIu32 ", but vkQueuePresentKHR was called with %" PRIu32
                                      " bits set in VkPresentTimingInfoEXT::presentStageQueries",
-                                     pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount, max);
+                                     pPastPresentationTimingProperties->pPresentationTimings[i].presentStageCount,
+                                     required_stage_count);
                 }
             }
         }
