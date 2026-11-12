@@ -4756,6 +4756,10 @@ void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
         for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
             const VkPastPresentationTimingEXT& timing = pPastPresentationTimingProperties->pPresentationTimings[i];
             if (!timing.reportComplete) {
+                // TODO: With zero IDs, skipping partial reports can remove
+                // the wrong entry. Ordered queries could match by position,
+                // but must preserve the order of driver queries and their
+                // post-call recording
                 continue;
             }
             SubmissionReference present_submission_ref;
