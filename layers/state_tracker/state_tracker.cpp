@@ -4677,6 +4677,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
             present_timings_info->pTimingInfos[i].presentStageQueries) {
             const Swapchain::PresentTimingInfo present_timing_info{
                 CountSetBits(present_timings_info->pTimingInfos[i].presentStageQueries), present_submission_ref};
+            std::lock_guard lock(swapchain_data->present_timing_mutex);
             swapchain_data->present_timing_stage_queries.push_back({present_id, present_timing_info});
         }
 
@@ -4742,16 +4743,17 @@ void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
         ASSERT_AND_RETURN(swapchain);
         for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
             if (pPastPresentationTimingProperties->pPresentationTimings[i].reportComplete) {
-                // The results come from the driver, and the application owns the array they are written into, so there is no
-                // guarantee there is a queued query for every completed timing reported here.
-                if (swapchain->present_timing_stage_queries.empty()) {
-                    break;
+                SubmissionReference present_submission_ref;
+                {
+                    std::lock_guard lock(swapchain->present_timing_mutex);
+                    if (swapchain->present_timing_stage_queries.empty()) {
+                        // Timing results may be available before a concurrent present's post-call record adds its tracking entry
+                        break;
+                    }
+                    present_submission_ref = swapchain->present_timing_stage_queries.front().second.present_submission_ref;
+                    swapchain->present_timing_stage_queries.pop_front();
                 }
-
-                const SubmissionReference present_submission_ref =
-                    swapchain->present_timing_stage_queries.front().second.present_submission_ref;
                 present_submission_ref.queue->NotifyAndWaitForPresent(record_obj.location, present_submission_ref.seq);
-                swapchain->present_timing_stage_queries.pop_front();
             }
         }
     }
