@@ -4742,19 +4742,24 @@ void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
         auto swapchain = Get<Swapchain>(pPastPresentationTimingInfo->swapchain);
         ASSERT_AND_RETURN(swapchain);
         for (uint32_t i = 0; i < pPastPresentationTimingProperties->presentationTimingCount; ++i) {
-            if (pPastPresentationTimingProperties->pPresentationTimings[i].reportComplete) {
-                SubmissionReference present_submission_ref;
-                {
-                    std::lock_guard lock(swapchain->present_timing_mutex);
-                    if (swapchain->present_timing_stage_queries.empty()) {
-                        // Timing results may be available before a concurrent present's post-call record adds its tracking entry
-                        break;
-                    }
-                    present_submission_ref = swapchain->present_timing_stage_queries.front().second.present_submission_ref;
-                    swapchain->present_timing_stage_queries.pop_front();
-                }
-                present_submission_ref.queue->NotifyAndWaitForPresent(record_obj.location, present_submission_ref.seq);
+            const VkPastPresentationTimingEXT& timing = pPastPresentationTimingProperties->pPresentationTimings[i];
+            if (!timing.reportComplete) {
+                continue;
             }
+            SubmissionReference present_submission_ref;
+            {
+                std::lock_guard lock(swapchain->present_timing_mutex);
+                auto& queries = swapchain->present_timing_stage_queries;
+                auto it = std::find_if(queries.begin(), queries.end(),
+                                       [&timing](const auto& pending) { return pending.first == timing.presentId; });
+                // The tracking entry may not exist yet if a concurrent present's post-call record has not run
+                if (it == queries.end()) {
+                    continue;
+                }
+                present_submission_ref = it->second.present_submission_ref;
+                queries.erase(it);
+            }
+            present_submission_ref.queue->NotifyAndWaitForPresent(record_obj.location, present_submission_ref.seq);
         }
     }
 }
