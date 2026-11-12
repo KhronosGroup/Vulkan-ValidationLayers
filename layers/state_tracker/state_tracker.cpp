@@ -4638,6 +4638,10 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     const auto* present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
     const auto* present_id_info_2 = vku::FindStructInPNextChain<VkPresentId2KHR>(pPresentInfo->pNext);
     const auto* present_timings_info = vku::FindStructInPNextChain<VkPresentTimingsInfoEXT>(pPresentInfo->pNext);
+
+    // True if a timing query reported completion before this post-call record ran
+    bool has_early_timing_completion = false;
+
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         auto swapchain_data = Get<Swapchain>(pPresentInfo->pSwapchains[i]);
         if (!swapchain_data) {
@@ -4678,7 +4682,11 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
             const Swapchain::PresentTimingInfo present_timing_info{
                 CountSetBits(present_timings_info->pTimingInfos[i].presentStageQueries), present_submission_ref};
             std::lock_guard lock(swapchain_data->present_timing_mutex);
-            swapchain_data->present_timing_stage_queries.push_back({present_id, present_timing_info});
+            if (swapchain_data->present_timing_early_completions.erase(present_id)) {
+                has_early_timing_completion = true;
+            } else {
+                swapchain_data->present_timing_stage_queries.push_back({present_id, present_timing_info});
+            }
         }
 
         // spec: "However, if the presentation request is rejected by the presentation engine with an error
@@ -4691,6 +4699,10 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         }
 
         swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref, present_wait_semaphores);
+    }
+
+    if (has_early_timing_completion) {
+        queue_state->NotifyAndWaitForPresent(record_obj.location, last_present_seq);
     }
 
     // Wait on the external fence because we may not be able to track when it's signaled
@@ -4754,6 +4766,10 @@ void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
                                        [&timing](const auto& pending) { return pending.first == timing.presentId; });
                 // The tracking entry may not exist yet if a concurrent present's post-call record has not run
                 if (it == queries.end()) {
+                    // Zero does not uniquely identify a present for later matching
+                    if (timing.presentId != 0) {
+                        swapchain->present_timing_early_completions.insert(timing.presentId);
+                    }
                     continue;
                 }
                 present_submission_ref = it->second.present_submission_ref;
