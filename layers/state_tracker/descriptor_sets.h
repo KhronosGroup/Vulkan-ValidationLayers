@@ -175,6 +175,12 @@ class DescriptorSetLayoutDef {
     uint32_t GetNonInlineDescriptorCount() const { return non_inline_descriptor_count_; };
     uint32_t GetDynamicDescriptorCount() const { return dynamic_descriptor_count_; };
     bool HasImmutableSamplers() const { return !immutable_sampler_create_infos_.empty(); };
+    bool HasImmutableSamplersAtBinding(uint32_t binding) const {
+        return binding < immutable_sampler_create_infos_.size() && !immutable_sampler_create_infos_[binding].empty();
+    };
+    const std::vector<vku::safe_VkSamplerCreateInfo>& GetImmutableSamplerCreateInfos(uint32_t binding) const {
+        return immutable_sampler_create_infos_[binding];
+    }
     bool HasYcbcrSamplers() const { return has_ycbcr_samplers_; };
     bool HasTaskMesh() const { return has_task_mask_; };
     bool HasNonMeshPreRaster() const { return has_non_mesh_pre_raster_; };
@@ -330,6 +336,10 @@ class DescriptorSetLayout : public StateObject {
     uint32_t GetDynamicDescriptorCount() const { return layout_id_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };
     bool HasImmutableSamplers() const { return layout_id_->HasImmutableSamplers(); };
+    bool HasImmutableSamplersAtBinding(uint32_t binding) const { return layout_id_->HasImmutableSamplersAtBinding(binding); }
+    const std::vector<vku::safe_VkSamplerCreateInfo>& GetImmutableSamplerCreateInfos(uint32_t binding) const {
+        return layout_id_->GetImmutableSamplerCreateInfos(binding);
+    }
     bool HasYcbcrSamplers() const { return layout_id_->HasYcbcrSamplers(); };
     bool HasTaskMesh() const { return layout_id_->HasTaskMesh(); };
     bool HasNonMeshPreRaster() const { return layout_id_->HasNonMeshPreRaster(); };

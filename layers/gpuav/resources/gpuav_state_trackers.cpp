@@ -861,8 +861,7 @@ ShaderObjectSubState::ShaderObjectSubState(Validator& gpuav, vvl::ShaderObject& 
 
 PipelineSubState::PipelineSubState(Validator& gpuav, vvl::Pipeline& pipeline) : vvl::PipelineSubState(pipeline), gpuav_(gpuav) {}
 
-VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const LastBound& last_bound, const Location& loc,
-                                                          vvl::DescriptorMode mode) const {
+VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const Location& loc, vvl::DescriptorMode mode) const {
     std::unique_lock<std::mutex> recreated_layout_lock(mutex_);
     if (recreated_layout_ != VK_NULL_HANDLE) {
         return recreated_layout_;
@@ -887,28 +886,51 @@ VkPipelineLayout PipelineSubState::GetPipelineLayoutUnion(const LastBound& last_
         } else {
             VkDescriptorSetLayout recreated_desc_set_layout = VK_NULL_HANDLE;
 
-            // So ya, this is a fun
-            // Someone can call vkCmdBindPipeline whose pipeline layout was created with an immutable sampler and the VkSampler was
-            // destroyed, so we need to use the one from vkCmdBindDescriptorSets which must still be valid... I tried to use
-            // |desc_set_pipeline_layout| instead of |PipelineLayoutState| but you can have draw/dispatch that use no descriptor
-            // such that there is no vkCmdBindDescriptorSets call.
-            //
-            // This feels like there is some way to unwind all of this into a more elegant solution,
-            // but if you are reading this (unhinged comment), you likely are already confused why we have this function as well
-            // and rather just bandaid until someone complains
-            vku::safe_VkDescriptorSetLayoutCreateInfo dsl_create_info = set_layout->GetCreateInfo();
+            vku::safe_VkDescriptorSetLayoutCreateInfo dsl_ci = set_layout->GetCreateInfo();
+
+            // Recreate immutable samplers, from the pipeline layout
+            // (Maintenance 4 allows them to be destroyed at this point)
             if (pipeline_layout_state->has_immutable_samplers) {
-                if (last_bound.desc_set_pipeline_layout && last_bound.desc_set_pipeline_layout->set_layouts.list[set_layout_i]) {
-                    dsl_create_info = last_bound.desc_set_pipeline_layout->set_layouts.list[set_layout_i]->GetCreateInfo();
-                } else {
-                    assert(false);  // Should not be possible, but at this point, not even the LLM knows
+                // Each descriptor set layout can specify an array of immutable samplers.
+                // To tighten memory usage, all these arrays are stored in one recreated_immutable_samplers_ flat array.
+                // sampler_sub_arrays_starts stores the start of each of those arrays.
+                std::vector<size_t> sampler_sub_arrays_starts;
+
+                for (uint32_t binding = 0; binding < dsl_ci.bindingCount; ++binding) {
+                    if (set_layout->HasImmutableSamplersAtBinding(binding)) {
+                        const auto& sampler_cis = set_layout->GetImmutableSamplerCreateInfos(binding);
+                        sampler_sub_arrays_starts.emplace_back(recreated_immutable_samplers_.size());
+                        for (uint32_t s_i = 0; s_i < dsl_ci.pBindings[binding].descriptorCount; ++s_i) {
+                            VkSampler sampler = VK_NULL_HANDLE;
+                            const VkResult result = DispatchCreateSampler(gpuav_.device, sampler_cis[s_i].ptr(), nullptr, &sampler);
+                            (void)result;
+                            if (result == VK_SUCCESS) {
+                                recreated_immutable_samplers_.emplace_back(sampler);
+                            }
+                        }
+                    }
+                }
+
+                uint32_t sampler_start_i = 0;
+                for (uint32_t binding = 0; binding < dsl_ci.bindingCount; ++binding) {
+                    if (set_layout->HasImmutableSamplersAtBinding(binding)) {
+                        dsl_ci.pBindings[binding].pImmutableSamplers =
+                            recreated_immutable_samplers_.data() + sampler_sub_arrays_starts[sampler_start_i];
+                        ++sampler_start_i;
+                    }
                 }
             }
 
             const VkResult result =
-                DispatchCreateDescriptorSetLayout(gpuav_.device, dsl_create_info.ptr(), nullptr, &recreated_desc_set_layout);
+                DispatchCreateDescriptorSetLayout(gpuav_.device, dsl_ci.ptr(), nullptr, &recreated_desc_set_layout);
             (void)result;
             assert(result == VK_SUCCESS);
+
+            if (pipeline_layout_state->has_immutable_samplers) {
+                for (uint32_t binding = 0; binding < dsl_ci.bindingCount; ++binding) {
+                    dsl_ci.pBindings[binding].pImmutableSamplers = nullptr;
+                }
+            }
 
             set_layout_handles.emplace_back(recreated_desc_set_layout);
             recreated_desc_set_layouts_indices.emplace_back(set_layout_i);
@@ -946,6 +968,10 @@ void PipelineSubState::Destroy() {
         DispatchDestroyPipelineLayout(gpuav_.device, recreated_layout_, nullptr);
         recreated_layout_ = VK_NULL_HANDLE;
     }
+    for (auto sampler : recreated_immutable_samplers_) {
+        DispatchDestroySampler(gpuav_.device, sampler, nullptr);
+    }
+    recreated_immutable_samplers_.clear();
     if (uninstrumented_pipeline != VK_NULL_HANDLE) {
         // vkDestroyPipeline expects an unwrapped handle,
         // so cannot use DispatchDestroyPipeline as it will try to unwrap supplied pipeline handle

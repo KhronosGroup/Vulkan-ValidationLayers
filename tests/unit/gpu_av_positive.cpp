@@ -2878,6 +2878,46 @@ TEST_F(PositiveGpuAV, ImmutableSamplerIdenticallyDefinedMaintenance4) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveGpuAV, ImmutableSamplerNoDescriptorSetBound) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13669
+    TEST_DESCRIPTION("Pipeline layout has an immutable sampler, but shader uses no descriptor so none is bound");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    const vkt::DescriptorSetLayout dsl(*m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()}});
+    const VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 2 * sizeof(uint32_t)};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl}, {pc_range});
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(push_constant) uniform PushConstants {
+            uint a;
+            uint b;
+        };
+        shared uint result;
+        void main() {
+            result = a / b;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    const uint32_t push_constants[2] = {4, 2};
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    // No vkCmdBindDescriptorSets
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), push_constants);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveGpuAV, QueueSubmitAndRetirement) {
     TEST_DESCRIPTION("Concurrent QueueSubmit and submission retirement on the queue thread");
     SetTargetApiVersion(VK_API_VERSION_1_2);
