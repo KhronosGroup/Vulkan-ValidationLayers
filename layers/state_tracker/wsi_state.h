@@ -22,6 +22,7 @@
 #include "state_tracker/state_object.h"
 #include "state_tracker/submission_reference.h"
 #include "state_tracker/surface_type.h"
+#include "containers/custom_containers.h"
 #include "containers/span.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <atomic>
@@ -158,10 +159,15 @@ class Swapchain : public RefcountedStateObject, public SubStateManager<Swapchain
         uint32_t num_present_stage_queries;
         SubmissionReference present_submission_ref;
     };
-    mutable std::mutex present_timing_mutex;  // protects deque
+    // Protects pending queries and early completions
+    mutable std::mutex present_timing_mutex;
+
     std::deque<std::pair<uint64_t, PresentTimingInfo>> present_timing_stage_queries;
+    // Nonzero ids reported complete before their present's post-call record
+    vvl::unordered_set<uint64_t> present_timing_early_completions;
     // Present timing queue size set by vkSetSwapchainPresentTimingQueueSizeEXT
     uint32_t present_timing_queue_size = 0;
+
     // Present timing id to domain map
     std::unordered_map<uint64_t, VkTimeDomainKHR> time_domains;
     bool present_at_absolute_time_supported;
