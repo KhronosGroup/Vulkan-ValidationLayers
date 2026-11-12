@@ -1460,6 +1460,7 @@ bool CoreChecks::PreCallValidateGetPastPresentationTimingEXT(
 
     auto swapchain_state = Get<vvl::Swapchain>(pPastPresentationTimingInfo->swapchain);
     ASSERT_AND_RETURN_SKIP(swapchain_state);
+    std::lock_guard lock(swapchain_state->present_timing_mutex);
     if (pPastPresentationTimingProperties->pPresentationTimings && !swapchain_state->present_timing_stage_queries.empty()) {
         if ((pPastPresentationTimingInfo->flags & VK_PAST_PRESENTATION_TIMING_ALLOW_OUT_OF_ORDER_RESULTS_BIT_EXT) != 0) {
             uint32_t max = 0;
