@@ -4733,6 +4733,10 @@ void DeviceState::PostCallRecordGetSwapchainTimeDomainPropertiesEXT(
 void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
     VkDevice device, const VkPastPresentationTimingInfoEXT* pPastPresentationTimingInfo,
     VkPastPresentationTimingPropertiesEXT* pPastPresentationTimingProperties, const RecordObject& record_obj) {
+    if (record_obj.result != VK_SUCCESS && record_obj.result != VK_INCOMPLETE) {
+        return;
+    }
+
     if (pPastPresentationTimingProperties->pPresentationTimings != nullptr) {
         auto swapchain = Get<Swapchain>(pPastPresentationTimingInfo->swapchain);
         ASSERT_AND_RETURN(swapchain);
@@ -4746,7 +4750,7 @@ void DeviceState::PostCallRecordGetPastPresentationTimingEXT(
 
                 const SubmissionReference present_submission_ref =
                     swapchain->present_timing_stage_queries.front().second.present_submission_ref;
-                present_submission_ref.queue->NotifyAndWait(record_obj.location, present_submission_ref.seq);
+                present_submission_ref.queue->NotifyAndWaitForPresent(record_obj.location, present_submission_ref.seq);
                 swapchain->present_timing_stage_queries.pop_front();
             }
         }
