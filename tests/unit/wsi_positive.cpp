@@ -4168,3 +4168,65 @@ TEST_F(PositiveWsi, PresentTimingsCountOnly) {
     past_props.presentationTimingCount = 1;
     vk::GetPastPresentationTimingEXT(device(), &past_info, &past_props);
 }
+
+TEST_F(PositiveWsi, PresentTimingsUnusedOutputEntry) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_PRESENT_TIMING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::presentTiming);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+
+    // NOTE: Bypass the capability check on TestICD because it does not populate VkPresentTimingSurfaceCapabilitiesEXT
+    if (!IsPlatformMockICD()) {
+        VkPresentTimingSurfaceCapabilitiesEXT timing_caps = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR caps = vku::InitStructHelper(&timing_caps);
+        VkPhysicalDeviceSurfaceInfo2KHR info = vku::InitStructHelper();
+        info.surface = m_surface;
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &info, &caps);
+        if (!timing_caps.presentTimingSupported) {
+            GTEST_SKIP() << "Surface does not support presentation timing";
+        }
+    }
+
+    const SurfaceInformation surface_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, surface_info);
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PRESENT_TIMING_BIT_EXT;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    vk::SetSwapchainPresentTimingQueueSizeEXT(device(), swapchain, 1);
+
+    VkTimeDomainKHR time_domain;
+    uint64_t time_domain_id;
+    VkSwapchainTimeDomainPropertiesEXT time_domain_props = vku::InitStructHelper();
+    time_domain_props.timeDomainCount = 1;
+    time_domain_props.pTimeDomains = &time_domain;
+    time_domain_props.pTimeDomainIds = &time_domain_id;
+    vk::GetSwapchainTimeDomainPropertiesEXT(device(), swapchain, &time_domain_props, nullptr);
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+    SetPresentImageLayout(swapchain.GetImages()[image_index]);
+
+    VkPresentTimingInfoEXT timing_info = vku::InitStructHelper();
+    timing_info.timeDomainId = time_domain_id;
+    timing_info.presentStageQueries = VK_PRESENT_STAGE_QUEUE_OPERATIONS_END_BIT_EXT;
+    VkPresentTimingsInfoEXT timings_info = vku::InitStructHelper();
+    timings_info.swapchainCount = 1;
+    timings_info.pTimingInfos = &timing_info;
+    m_default_queue->Present(swapchain, image_index, vkt::no_semaphore, &timings_info);
+    m_default_queue->Wait();
+
+    VkPresentStageTimeEXT stage_time{};
+    // Only the first output entry corresponds to a pending request, so the second needs no stage storage
+    VkPastPresentationTimingEXT timings[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    timings[0].presentStageCount = 1;
+    timings[0].pPresentStages = &stage_time;
+
+    VkPastPresentationTimingInfoEXT past_info = vku::InitStructHelper();
+    past_info.swapchain = swapchain;
+    VkPastPresentationTimingPropertiesEXT past_props = vku::InitStructHelper();
+    past_props.presentationTimingCount = 2;
+    past_props.pPresentationTimings = timings;
+    vk::GetPastPresentationTimingEXT(device(), &past_info, &past_props);
+}
