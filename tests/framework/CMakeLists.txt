@@ -130,12 +130,19 @@ if(SLANG_INSTALL_DIR)
     target_compile_definitions(vk_test_framework PUBLIC VVL_USE_SLANG)
 endif()
 
+# The test executables share one output directory, so copy DLLs once to avoid races, using a target they all depend on.
 function(configure_slang_for_target TARGET_NAME)
     if(WIN32)
-        add_custom_command(TARGET ${TARGET_NAME} PRE_LINK
-            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>
-            COMMAND_EXPAND_LISTS
-        )
+        if(NOT TARGET vvl_copy_slang_dlls)
+            add_custom_target(vvl_copy_slang_dlls
+                # Unlike at PRE_LINK, nothing has created the output directory yet
+                COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${TARGET_NAME}>
+                # This runs on every build: skip the copy when unchanged, which also works while a test holds the DLL
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>
+                COMMAND_EXPAND_LISTS
+            )
+        endif()
+        add_dependencies(${TARGET_NAME} vvl_copy_slang_dlls)
     endif()
 endfunction()
 
