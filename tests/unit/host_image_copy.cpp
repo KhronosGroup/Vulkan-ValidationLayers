@@ -2565,3 +2565,62 @@ TEST_F(NegativeHostImageCopy, CopyImageToMemoryLayers) {
     vk::CopyImageToMemoryEXT(*m_device, &copy_to_image_memory);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeHostImageCopy, CopyMemoryToImageOverlapDstRegions) {
+    TEST_DESCRIPTION("Try to copy two overlapping host memory regions into the same image.");
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    std::vector<uint8_t> pixels(width * height * 4);
+
+    VkMemoryToImageCopy regions[2];
+    regions[0] = vku::InitStructHelper();
+    regions[0].pHostPointer = pixels.data();
+    regions[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    regions[0].imageExtent = {16, 16, 1};
+    regions[1] = regions[0];
+    regions[1].imageOffset = {8, 8, 0};
+
+    VkCopyMemoryToImageInfo copy_to_image = vku::InitStructHelper();
+    copy_to_image.dstImage = image;
+    copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_to_image.regionCount = 2;
+    copy_to_image.pRegions = regions;
+
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-pRegions-12474");
+    vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeHostImageCopy, CopyImageToImageOverlapDstRegions) {
+    TEST_DESCRIPTION("Try to copy two overlapping regions into the same destination image.");
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    vkt::Image src_image(*m_device, image_ci);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::Image dst_image(*m_device, image_ci);
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy2 regions[2];
+    regions[0] = vku::InitStructHelper();
+    regions[0].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    regions[0].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    regions[0].extent = {16, 16, 1};
+    regions[1] = regions[0];
+    regions[1].srcOffset = {16, 16, 0};
+    regions[1].dstOffset = {8, 8, 0};
+
+    VkCopyImageToImageInfo copy_image_to_image = vku::InitStructHelper();
+    copy_image_to_image.regionCount = 2;
+    copy_image_to_image.pRegions = regions;
+    copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_to_image.srcImage = src_image;
+    copy_image_to_image.dstImage = dst_image;
+
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-pRegions-12477");
+    vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
+    m_errorMonitor->VerifyFound();
+}
