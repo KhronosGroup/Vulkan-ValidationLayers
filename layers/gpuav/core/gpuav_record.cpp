@@ -40,6 +40,48 @@
 
 namespace gpuav {
 
+void Validator::OnDeviceLost() {
+    assert(is_device_lost);
+    auto guard = device_state->WriteLock();
+    ReportDeviceLostErrors();
+}
+
+void Validator::PublishDeviceLost(const Location& loc) {
+    const bool first_loss = !is_device_lost.exchange(true);
+    for (auto& vo : dispatch_device_->object_dispatch) {
+        if (vo) {
+            vo->is_device_lost = true;
+        }
+    }
+
+    if (first_loss) {
+        InternalWarning(device, loc, "VK_ERROR_DEVICE_LOST was returned to a command GPU-AV issued internally.");
+    }
+}
+
+void Validator::ReportDeviceLostErrors() const {
+    assert(is_device_lost);
+    const auto report = [](const std::shared_ptr<vvl::CommandBuffer>& cb) {
+        if (auto* substate = static_cast<CommandBufferSubState*>(cb->SubState(LayerObjectTypeGpuAssisted))) {
+            substate->CompleteAllSubmissions();
+        }
+    };
+
+    std::vector<std::shared_ptr<vvl::CommandBuffer>> busy;
+    device_state->ForEachShared<vvl::CommandBuffer>([&](const std::shared_ptr<vvl::CommandBuffer>& cb) {
+        WriteLockGuard guard(cb->lock, std::try_to_lock);
+        if (guard.owns_lock()) {
+            report(cb);
+        } else {
+            busy.push_back(cb);
+        }
+    });
+    for (const auto& cb : busy) {
+        auto guard = cb->WriteLock();
+        report(cb);
+    }
+}
+
 void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
                                           const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) {

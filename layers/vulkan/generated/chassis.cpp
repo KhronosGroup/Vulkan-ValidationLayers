@@ -505,9 +505,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
         VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_PostCallRecordvkQueueSubmit", post_call_record_gpu_zone);
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueueSubmit]) {
             if (!vo) {
@@ -563,9 +561,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
         VVL_ZoneScopedN("PostCallRecord_vkQueueWaitIdle");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueueWaitIdle]) {
             if (!vo) {
@@ -616,9 +612,7 @@ VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
         VVL_ZoneScopedN("PostCallRecord_vkDeviceWaitIdle");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordDeviceWaitIdle]) {
             if (!vo) {
@@ -1229,9 +1223,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
         VVL_ZoneScopedN("PostCallRecord_vkQueueBindSparse");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueueBindSparse]) {
             if (!vo) {
@@ -1421,9 +1413,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
         VVL_ZoneScopedN("PostCallRecord_vkGetFenceStatus");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetFenceStatus]) {
             if (!vo) {
@@ -1475,9 +1465,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCoun
         VVL_ZoneScopedN("PostCallRecord_vkWaitForFences");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordWaitForFences]) {
             if (!vo) {
@@ -1715,9 +1703,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
         VVL_ZoneScopedN("PostCallRecord_vkGetQueryPoolResults");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetQueryPoolResults]) {
             if (!vo) {
@@ -3071,9 +3057,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetEventStatus(VkDevice device, VkEvent event) {
         VVL_ZoneScopedN("PostCallRecord_vkGetEventStatus");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetEventStatus]) {
             if (!vo) {
@@ -7014,9 +6998,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValue(VkDevice device, VkSemap
         VVL_ZoneScopedN("PostCallRecord_vkGetSemaphoreCounterValue");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreCounterValue]) {
             if (!vo) {
@@ -7067,9 +7049,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphores(VkDevice device, const VkSemaphore
         VVL_ZoneScopedN("PostCallRecord_vkWaitSemaphores");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordWaitSemaphores]) {
             if (!vo) {
@@ -7874,9 +7854,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount,
         VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_PostCallRecordvkQueueSubmit2", post_call_record_gpu_zone);
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueueSubmit2]) {
             if (!vo) {
@@ -10349,9 +10327,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
         VVL_ZoneScopedN("PostCallRecord_vkCreateSwapchainKHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateSwapchainKHR]) {
             if (!vo) {
@@ -10495,9 +10471,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
         VVL_ZoneScopedN("PostCallRecord_vkAcquireNextImageKHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordAcquireNextImageKHR]) {
             if (!vo) {
@@ -10692,9 +10666,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcq
         VVL_ZoneScopedN("PostCallRecord_vkAcquireNextImage2KHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordAcquireNextImage2KHR]) {
             if (!vo) {
@@ -11072,9 +11044,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
         VVL_ZoneScopedN("PostCallRecord_vkCreateSharedSwapchainsKHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateSharedSwapchainsKHR]) {
             if (!vo) {
@@ -13728,9 +13698,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainStatusKHR(VkDevice device, VkSwapchai
         VVL_ZoneScopedN("PostCallRecord_vkGetSwapchainStatusKHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetSwapchainStatusKHR]) {
             if (!vo) {
@@ -14979,9 +14947,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(VkDevice device, VkSe
         VVL_ZoneScopedN("PostCallRecord_vkGetSemaphoreCounterValueKHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreCounterValueKHR]) {
             if (!vo) {
@@ -15032,9 +14998,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(VkDevice device, const VkSemaph
         VVL_ZoneScopedN("PostCallRecord_vkWaitSemaphoresKHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordWaitSemaphoresKHR]) {
             if (!vo) {
@@ -15323,9 +15287,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresentKHR(VkDevice device, VkSwapchainKHR
         VVL_ZoneScopedN("PostCallRecord_vkWaitForPresentKHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordWaitForPresentKHR]) {
             if (!vo) {
@@ -16382,9 +16344,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCou
         VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_PostCallRecordvkQueueSubmit2KHR", post_call_record_gpu_zone);
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueueSubmit2KHR]) {
             if (!vo) {
@@ -18097,9 +18057,7 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForPresent2KHR(VkDevice device, VkSwapchainKH
         VVL_ZoneScopedN("PostCallRecord_vkWaitForPresent2KHR");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordWaitForPresent2KHR]) {
             if (!vo) {
@@ -21031,9 +20989,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainCounterEXT(VkDevice device, VkSwapcha
         VVL_ZoneScopedN("PostCallRecord_vkGetSwapchainCounterEXT");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetSwapchainCounterEXT]) {
             if (!vo) {
@@ -21085,9 +21041,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRefreshCycleDurationGOOGLE(VkDevice device, Vk
         VVL_ZoneScopedN("PostCallRecord_vkGetRefreshCycleDurationGOOGLE");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetRefreshCycleDurationGOOGLE]) {
             if (!vo) {
@@ -21143,9 +21097,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPastPresentationTimingGOOGLE(VkDevice device, 
         VVL_ZoneScopedN("PostCallRecord_vkGetPastPresentationTimingGOOGLE");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetPastPresentationTimingGOOGLE]) {
             if (!vo) {
@@ -25160,9 +25112,7 @@ GetPastPresentationTimingEXT(VkDevice device, const VkPastPresentationTimingInfo
         VVL_ZoneScopedN("PostCallRecord_vkGetPastPresentationTimingEXT");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetPastPresentationTimingEXT]) {
             if (!vo) {
@@ -27688,9 +27638,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSetPerfHintQCOM(VkQueue queue, const VkPerfH
         VVL_ZoneScopedN("PostCallRecord_vkQueueSetPerfHintQCOM");
 
         if (result == VK_ERROR_DEVICE_LOST) {
-            for (auto& vo : device_dispatch->object_dispatch) {
-                vo->is_device_lost = true;
-            }
+            device_dispatch->DeviceLost();
         }
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueueSetPerfHintQCOM]) {
             if (!vo) {
