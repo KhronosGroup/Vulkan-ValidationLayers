@@ -54,6 +54,7 @@
 #include "gpuav/spirv/descriptor_heap_pass.h"
 #include "gpuav/spirv/trace_ray_pass.h"
 #include "gpuav/spirv/shared_memory_data_race_pass.h"
+#include "gpuav/spirv/expect_assume_pass.h"
 #include "gpuav/spirv/mesh_shading_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
@@ -2005,6 +2006,12 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
     // Currently only runs in Safe Mode until have perf numbers how costly it is to enable
     if (gpuav_settings.shader_instrumentation.sanitizer && gpuav_settings.safe_mode) {
         spirv::SanitizerPass pass(module);
+        modified |= pass.Run();
+    }
+
+    // Currently just sharing the sanitizer setting until decide it makes sense to have its own setting
+    if (gpuav_settings.shader_instrumentation.sanitizer && module.has_assume_true_) {
+        spirv::ExpectAssumePass pass(module);
         modified |= pass.Run();
     }
 

@@ -123,6 +123,10 @@ class Module {
 
     // Prevent adding function if nothing was instrumented
     bool need_log_error_ = false;
+
+    // Lets ExpectAssumePass be skipped for the (majority of) shaders without an OpAssumeTrueKHR
+    bool has_assume_true_ = false;
+
     // Used when UseErrorPayloadVariable is set. Needs to be same for all passes.
     // Will be set in the LogErrorPass
     uint32_t error_payload_variable_id_ = 0;
