@@ -244,10 +244,9 @@ std::vector<BatchContextPtr> SyncValidator::GetAllQueueBatchContexts() {
         }
     }
     // Get present batches
-    device_state->ForEachShared<vvl::Swapchain>([&batch_contexts](const std::shared_ptr<vvl::Swapchain>& swapchain) {
-        auto& sync_swapchain = SubState(*swapchain);
-        sync_swapchain.GetPresentBatches(batch_contexts);
-    });
+    for (const auto& swapchain : swapchains_) {
+        SubState(*swapchain).GetPresentBatches(batch_contexts);
+    }
 
     return batch_contexts;
 }
@@ -349,6 +348,11 @@ void SyncValidator::Created(vvl::CommandBuffer& cb_state) {
 
 void SyncValidator::Created(vvl::Swapchain& swapchain_state) {
     swapchain_state.SetSubState(container_type, std::make_unique<SwapchainSubState>(swapchain_state));
+
+    // The state tracker calls this without holding syncval's validation object mutex.
+    // Lock here to protect swapchains_ from concurrent syncval access
+    auto lock = WriteLock();
+    swapchains_.push_back(swapchain_state.shared_from_this());
 }
 
 void SyncValidator::Created(vvl::Image& image_state) {
@@ -382,7 +386,11 @@ void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, co
 
 void SyncValidator::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                      const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
-    ProcessQueueCommand(SwapchainDestroyedCommand{swapchain});
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain);
+    if (!swapchain_state) {
+        return;
+    }
+    ProcessQueueCommand(SwapchainDestroyedCommand{std::move(swapchain_state)});
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -638,6 +646,7 @@ void SyncValidator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocati
     timeline_signals_.clear();
     waitable_fences_.clear();
     host_waitable_semaphores_.clear();
+    swapchains_.clear();
 }
 
 void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
@@ -646,10 +655,8 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    assert(!vvl::Contains(timeline_signals_, *pSemaphore));
-
     if (auto sem_state = Get<vvl::Semaphore>(*pSemaphore); sem_state && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-        host_waitable_semaphores_[*pSemaphore].synchronized_value = sem_state->initial_value;
+        ProcessQueueCommand(SemaphoreCreatedCommand{*pSemaphore, sem_state->initial_value});
     }
 }
 

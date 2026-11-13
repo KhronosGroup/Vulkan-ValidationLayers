@@ -72,6 +72,9 @@ class SyncValidator : public vvl::DeviceProxy {
     vvl::unordered_map<VkFence, FenceHostSyncPoint> waitable_fences_;
     vvl::unordered_map<VkSemaphore, TimelineHostSyncState> host_waitable_semaphores_;
 
+    // Keep swapchains until their destruction commands execute
+    std::vector<std::shared_ptr<vvl::Swapchain>> swapchains_;
+
     // Run validation after a GPU synchronization point
     const bool retire_mode_ = false;  // placeholder
     QueueCommandStorage queue_commands_;

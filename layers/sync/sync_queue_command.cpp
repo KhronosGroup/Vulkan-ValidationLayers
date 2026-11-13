@@ -123,6 +123,12 @@ bool ResourceDestroyedCommand::Execute(SyncValidator& validator) const {
     return false;
 }
 
+bool SemaphoreCreatedCommand::Execute(SyncValidator& validator) const {
+    assert(!vvl::Contains(validator.timeline_signals_, semaphore));
+    validator.host_waitable_semaphores_[semaphore].synchronized_value = initial_value;
+    return false;
+}
+
 bool SemaphoreDestroyedCommand::Execute(SyncValidator& validator) const {
     if (auto it = validator.timeline_signals_.find(semaphore); it != validator.timeline_signals_.end()) {
         validator.stats.RemoveTimelineSignals((uint32_t)it->second.size());
@@ -134,8 +140,9 @@ bool SemaphoreDestroyedCommand::Execute(SyncValidator& validator) const {
 
 bool SwapchainDestroyedCommand::Execute(SyncValidator& validator) const {
     for (const auto& batch : validator.GetAllQueueBatchContexts()) {
-        batch->last_synchronized_present.OnDestroySwapchain(swapchain);
+        batch->last_synchronized_present.OnDestroySwapchain(swapchain->VkHandle());
     }
+    vvl::EraseIf(validator.swapchains_, [this](const auto& state) { return state == swapchain; });
     return false;
 }
 
