@@ -288,6 +288,8 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
 
         if (opcode == spv::OpFunctionEnd) {
             function_end_found = true;
+        } else if (opcode == spv::OpAssumeTrueKHR) {
+            has_assume_true_ = true;
         }
 
         if (opcode == spv::OpLoopMerge) {

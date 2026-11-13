@@ -44,6 +44,7 @@ const int kErrorGroup_SharedMemoryDataRace = 15;
 const int kErrorGroup_TraceRay = 16;
 const int kErrorGroup_InstDescriptorHeap = 17;
 const int kErrorGroup_InstDescriptorBuffer = 18;
+const int kErrorGroup_InstExpectAssume = 19;
 
 // We just take ExecutionModel and normalize it so we only use 5 bits to store it
 const int kExecutionModel_Vertex = 0;
@@ -175,6 +176,10 @@ const int kErrorSubCode_Sanitizer_Atan2 = 4;
 const int kErrorSubCode_Sanitizer_Fminmax = 5;
 const int kErrorSubCode_Sanitizer_CoopMatAlignment = 6;
 const int kErrorSubCode_Sanitizer_Count = 7;  // update when adding new item
+
+// ExpectAssume
+//
+const int kErrorSubCode_ExpectAssume_AssumeTrue = 1;
 
 // Pre Draw
 //

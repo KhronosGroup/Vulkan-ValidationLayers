@@ -246,6 +246,14 @@ class GpuAVGpuAVShaderSanitizer : public GpuAVTest {
     void CoopMatAlignmentTest(const char* cs_source, const std::vector<uint32_t>& params, bool expect_error);
 };
 
+class GpuAVExpectAssume : public GpuAVTest {
+  public:
+    void InitExpectAssume(bool safe_mode = true);
+    void ZeroComputeTest(const char* shader, int source_type, uint32_t error_count,
+                         const char* expected_error = "SPIRV-ExpectAssume-AssumeTrue",
+                         const VkSpecializationInfo* spec_info = nullptr);
+};
+
 class GpuAVBufferDeviceAddressTest : public GpuAVTest {
   public:
     void InitGpuVUBufferDeviceAddress(bool safe_mode = true);

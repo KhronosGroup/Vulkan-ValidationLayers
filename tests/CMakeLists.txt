@@ -154,6 +154,8 @@ set(TEST_SOURCES
     unit/gpu_av_descriptor_indexing_positive.cpp
     unit/gpu_av_descriptor_post_process.cpp
     unit/gpu_av_descriptor_post_process_positive.cpp
+    unit/gpu_av_expect_assume.cpp
+    unit/gpu_av_expect_assume_positive.cpp
     unit/gpu_av_indirect_buffer.cpp
     unit/gpu_av_indirect_buffer_positive.cpp
     unit/gpu_av_index_buffer.cpp

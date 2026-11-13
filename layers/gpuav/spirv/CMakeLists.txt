@@ -30,6 +30,8 @@ set(GPU_AV_SPIRV_SOURCES
     descriptor_heap_pass.cpp
     buffer_device_address_pass.h
     buffer_device_address_pass.cpp
+    expect_assume_pass.h
+    expect_assume_pass.cpp
     sanitizer_pass.h
     sanitizer_pass.cpp
     shared_memory_data_race_pass.h

@@ -70,6 +70,11 @@ extern const uint32_t instrumentation_descriptor_indexing_oob_comp_function_0_of
 extern const uint32_t instrumentation_descriptor_indexing_oob_comp_function_1_offset;
 extern const uint32_t instrumentation_descriptor_indexing_oob_comp_function_2_offset;
 
+extern const uint32_t instrumentation_expect_assume_comp_size;
+extern const uint32_t instrumentation_expect_assume_comp[];
+// These offset match the function in the order they are declared in the GLSL source
+extern const uint32_t instrumentation_expect_assume_comp_function_0_offset;
+
 extern const uint32_t instrumentation_log_error_comp_size;
 extern const uint32_t instrumentation_log_error_comp[];
 // These offset match the function in the order they are declared in the GLSL source
