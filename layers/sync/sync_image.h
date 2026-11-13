@@ -54,6 +54,21 @@ static inline const ImageSubState& SubState(const vvl::Image& img) {
     return *static_cast<const ImageSubState*>(img.SubState(LayerObjectTypeSyncValidation));
 }
 
+// Retains the image for replay after view destruction
+class ImageViewSubState : public vvl::ImageViewSubState {
+  public:
+    explicit ImageViewSubState(vvl::ImageView& view) : vvl::ImageViewSubState(view), image(view.image_state) {}
+
+    const std::shared_ptr<const vvl::Image> image;
+};
+
+static inline const ImageViewSubState& SubState(const vvl::ImageView& view) {
+    return *static_cast<const ImageViewSubState*>(view.SubState(LayerObjectTypeSyncValidation));
+}
+
+// Use this instead of view.image_state, which is cleared when the view is destroyed
+static inline const vvl::Image* GetImage(const vvl::ImageView& view) { return SubState(view).image.get(); }
+
 ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view);
 ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, uint32_t view_mask,
                                 VkImageAspectFlags override_depth_stencil_aspect_mask = 0);

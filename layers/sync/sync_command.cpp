@@ -1377,8 +1377,9 @@ bool ShaderAccessCommand::ValidateImageShaderAccess(const SyncEnvironment& env, 
     objlist.add(pipeline->Handle());
 
     std::string resource_description = validator.FormatHandle(info.resource_handle);
-    if (reporter.IsReplay() && image_access.image_view->image_state) {
-        resource_description += " (" + validator.FormatHandle(image_access.image_view->image_state->Handle()) + ")";
+    const vvl::Image* image = GetImage(*image_access.image_view);
+    if (reporter.IsReplay() && image) {
+        resource_description += " (" + validator.FormatHandle(image->Handle()) + ")";
     }
 
     const std::string error = validator.error_messages_.ImageDescriptorError(
@@ -1424,7 +1425,7 @@ void DescriptorAccesses::RegisterResources(CommandBufferContext& cb_context, Res
         access.handle_index = cb_context.AddCommandHandle(tag, access.info.resource_handle).handle_index;
     }
     for (auto& access : image_accesses) {
-        access.handle_index = cb_context.AddCommandHandle(tag, access.image_view->image_state->Handle()).handle_index;
+        access.handle_index = cb_context.AddCommandHandle(tag, GetImage(*access.image_view)->Handle()).handle_index;
     }
 }
 
@@ -1963,7 +1964,7 @@ void AccelerationStructureCopyCommand::Apply(SyncEnvironment& env, ResourceUsage
 }
 
 static ImageRangeGen MakeVideoPictureRangeGen(const VideoPictureAccess& picture) {
-    const ImageSubState& image_substate = SubState(*picture.view->image_state);
+    const ImageSubState& image_substate = SubState(*GetImage(*picture.view));
     return image_substate.MakeImageRangeGen(picture.subresource_range, picture.effective_offset, picture.effective_extent, false);
 }
 
@@ -2258,6 +2259,7 @@ bool ClearAttachmentsCommand::Validate(const SyncEnvironment& env, const AccessC
     };
 
     for (const Attachment& attachment : attachments) {
+        const vvl::Image& image = *GetImage(*attachment.view);
         const bool color = (attachment.effective_aspects & kColorAspects) != 0;
         const SyncOrdering ordering = color ? SyncOrdering::kColorAttachment : SyncOrdering::kDepthStencilAttachment;
         const AttachmentAccess attachment_access{AttachmentAccessType::Access, ordering, render_pass_instance_id, subpass};
@@ -2275,14 +2277,13 @@ bool ClearAttachmentsCommand::Validate(const SyncEnvironment& env, const AccessC
             subresource_range->aspectMask = attachment.effective_aspects;
 
             if (view_mask == 0) {
-                const auto hazard = access_context.DetectAttachmentHazard(*attachment.view->image_state, *subresource_range,
-                                                                          attachment.view->is_depth_sliced, access_index,
-                                                                          attachment_access, env.queue_id);
+                const auto hazard = access_context.DetectAttachmentHazard(
+                    image, *subresource_range, attachment.view->is_depth_sliced, access_index, attachment_access, env.queue_id);
                 if (hazard.IsHazard()) {
                     report_hazard(hazard, attachment, color, uint32_t(rect_index), rect);
                 }
             } else {
-                const ImageSubState& sub_state = SubState(*attachment.view->image_state);
+                const ImageSubState& sub_state = SubState(image);
                 const VkImageSubresourceRange& attachment_subresource = attachment.view->normalized_subresource_range;
                 const auto view_indices = GetSetBitIndices(view_mask);
 
@@ -2308,7 +2309,7 @@ bool ClearAttachmentsCommand::Validate(const SyncEnvironment& env, const AccessC
 
 void ClearAttachmentsCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessContext& access_context) const {
     for (const Attachment& attachment : attachments) {
-        const ImageSubState& sub_state = SubState(*attachment.view->image_state);
+        const ImageSubState& sub_state = SubState(*GetImage(*attachment.view));
         const bool color = (attachment.effective_aspects & kColorAspects) != 0;
         const SyncOrdering ordering = color ? SyncOrdering::kColorAttachment : SyncOrdering::kDepthStencilAttachment;
         const AttachmentAccess attachment_access{AttachmentAccessType::Access, ordering, render_pass_instance_id, subpass};

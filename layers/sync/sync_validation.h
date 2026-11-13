@@ -129,6 +129,7 @@ class SyncValidator : public vvl::DeviceProxy {
     void Created(vvl::CommandBuffer& cb_state) override;
     void Created(vvl::Swapchain& swapchain_state) override;
     void Created(vvl::Image& image_state) override;
+    void Created(vvl::ImageView& view_state) override;
 
     void DebugCapture() final;
 
