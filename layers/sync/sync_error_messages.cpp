@@ -33,7 +33,7 @@ vvl::Func ErrorMessages::AddReplayInfo(const SyncEnvironment& env, const HazardR
     if (!reporter.IsReplay()) {
         return reporter.loc.function;
     }
-    const ResourceUsageInfo recorded_usage_info = reporter.cb_context.GetResourceUsageInfo(ResourceUsageTagEx{reporter.replay_tag});
+    const ResourceUsageInfo recorded_usage_info = reporter.recording.GetResourceUsageInfo(ResourceUsageTagEx{reporter.replay_tag});
 
     additional_info.message_type_override = "SubmitTimeError";
     additional_info.properties.Add(kPropertyCommandBufferIndex, reporter.loc.index);
@@ -46,7 +46,7 @@ vvl::Func ErrorMessages::AddReplayInfo(const SyncEnvironment& env, const HazardR
     if (!recorded_usage_info.debug_region_name.empty()) {
         ss << "[" << recorded_usage_info.debug_region_name << "]";
     }
-    const VulkanTypedHandle cb_handle = reporter.cb_context.GetRecordingShared()->cb_handle;
+    const VulkanTypedHandle cb_handle = reporter.recording.cb_handle;
     if (env.handle.type == kVulkanObjectTypeQueue) {
         ss << " (from " << validator_.FormatHandle(cb_handle);
         ss << " submitted on the current ";

@@ -24,7 +24,6 @@
 #include <variant>
 
 namespace vvl {
-class CommandBuffer;
 class Semaphore;
 }  // namespace vvl
 
@@ -36,7 +35,6 @@ class QueueState;
 class SyncValidator;
 
 using BatchContextPtr = std::shared_ptr<QueueBatchContext>;
-using CommandBufferConstPtr = std::shared_ptr<const vvl::CommandBuffer>;
 
 struct AcquiredImage {
     std::shared_ptr<const vvl::Image> image;
@@ -194,7 +192,7 @@ struct BatchInfo {
 
 struct CommandBufferLog final : DebugNameProvider {
     BatchInfo batch;
-    std::shared_ptr<const CommandBufferRecording> recording;
+    CommandBufferRecordingPtr recording;
 
     // Label stack at the point when command buffer is submitted to the queue
     std::vector<std::string> initial_label_stack;
@@ -219,7 +217,7 @@ struct SwapchainOpLog {
 // Hazard reports use it to describe the prior access
 class BatchLog {
   public:
-    void Import(const BatchInfo& batch, const CommandBufferContext& cb_context,
+    void Import(const BatchInfo& batch, const CommandBufferRecordingPtr& recording,
                 const std::vector<std::string>& initial_label_stack);
     void Import(const BatchLog& other);
     void Insert(const ResourceUsageRange& range, SwapchainOpLog&& log);
@@ -240,7 +238,7 @@ struct UnresolvedBatch {
     vvl::Func submit_func = vvl::Func::Empty;
     uint64_t submit_index = 0;
     uint32_t batch_index = 0;
-    std::vector<CommandBufferConstPtr> command_buffers;
+    std::vector<CommandBufferRecordingPtr> recordings;
 
     // Waits-before-signals that prevent this batch from being resolved.
     // When the wait is resolved it is removed from this list and the batch
@@ -332,7 +330,7 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
                                                     std::vector<VkSemaphoreSubmitInfo>& unresolved_waits,
                                                     SignalsUpdate& signals_update);
 
-    bool ValidateSubmit(vvl::span<const CommandBufferConstPtr> command_buffers, uint64_t submit_index, uint32_t batch_index,
+    bool ValidateSubmit(vvl::span<const CommandBufferRecordingPtr> recordings, uint64_t submit_index, uint32_t batch_index,
                         std::vector<std::string>& current_label_stack, const Location& submit_loc);
 
     // For Present

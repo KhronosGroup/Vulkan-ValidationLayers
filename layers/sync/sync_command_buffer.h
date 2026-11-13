@@ -28,7 +28,6 @@ namespace syncval {
 class SyncValidator;
 class ErrorMessages;
 struct AccessStats;
-struct CommandBufferRecording;
 
 // Vulkan handle and associated information.
 // Command buffer context stores array of handles that are referenced by the tagged commands.
@@ -150,7 +149,8 @@ struct ReportedHazard {
 // a) Reports errors
 // b) Collects the record-time errors so that replay does not duplicate them
 struct ErrorReporter {
-    const CommandBufferContext& cb_context;
+    const SyncValidator& validator;
+    const CommandBufferRecording& recording;
     const Location& loc;
 
     // Collected reports during recording. Null during queue submission
@@ -190,14 +190,17 @@ struct CommandBufferRecording {
     std::vector<vvl::LabelCommand> label_commands;
 
     // Keeps recordings of executed secondaries alive
-    std::vector<std::shared_ptr<const CommandBufferRecording>> secondary_recordings;
+    std::vector<CommandBufferRecordingPtr> secondary_recordings;
 
     // Reports collected during recording, used to suppress duplicates during replay
     // The mutex protects the reports against invalid concurrent recording
-    std::mutex reported_hazards_mutex;
+    mutable std::mutex reported_hazards_mutex;
     std::vector<ReportedHazard> reported_hazards;
 
     void Reset();
+    size_t GetTagCount() const { return access_log.size(); }
+    bool HasReportedHazard(const ReportedHazard& report) const;
+    ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex, const DebugNameProvider* debug_name_provider = nullptr) const;
     const SyncImageBarrier* GetImageBarrier(const ResourceUsageRecord& record, uint32_t handle_index) const;
 };
 
@@ -224,7 +227,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     void RecordReportedHazards(const std::vector<ReportedHazard>& new_hazards) const;
     void FinalizeRecording();
-    bool HasReportedHazard(const ReportedHazard& report) const;
 
     // The command buffer's own access context. Subpass contexts exist only inside a vkCmdBeginRenderPass
     // instance, so use this instead of GetCurrentAccessContext() anywhere else. Dynamic rendering has no
@@ -266,8 +268,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     void RecordExecutedCommandBuffer(const CommandBufferContext& recorded_context);
 
-    size_t GetTagCount() const { return recording_->access_log.size(); }
-
     ResourceUsageTag NextCommandTag(vvl::Func command, SubCommandType subcommand = SubCommandType::kNone,
                                     uint32_t subpass = vvl::kNoIndex32);
     ResourceUsageTag NextSubCommandTag(vvl::Func command, SubCommandType subcommand, uint32_t subpass = vvl::kNoIndex32);
@@ -292,10 +292,9 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
     void StoreBarriersForReporting(vvl::span<const BarrierSet> barrier_sets);
 
-    std::shared_ptr<const CommandBufferRecording> GetRecordingShared() const { return recording_; }
+    const CommandBufferRecording& GetRecording() const { return *recording_; }
+    CommandBufferRecordingPtr GetRecordingShared() const { return recording_; }
     void ImportRecordedAccessLog(const CommandBufferContext& cb_context);
-    const std::vector<CommandEntry>& GetCommands() const { return recording_->commands; }
-    const CommandData& GetCommandData() const { return recording_->command_data; }
 
     // DebugNameProvider
     std::string GetDebugRegionName(const ResourceUsageRecord& record) const override;
@@ -317,7 +316,6 @@ class CommandBufferContext final : public ResourceUsageInfoProvider, public Debu
 
   private:
     const SyncValidator& sync_state_;
-    const ErrorMessages& error_messages_;
 
     // Note: since every CommandBufferContext is encapsulated in its CommandBuffer object,
     // a reference count is not needed here.

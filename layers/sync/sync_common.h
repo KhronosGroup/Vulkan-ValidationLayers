@@ -28,6 +28,9 @@ class Buffer;
 
 namespace syncval {
 
+struct CommandBufferRecording;
+using CommandBufferRecordingPtr = std::shared_ptr<const CommandBufferRecording>;
+
 using ImageRangeGen = ImageRangeGenerator;
 
 // The resource tag index is relative to the command buffer or queue in which it's found

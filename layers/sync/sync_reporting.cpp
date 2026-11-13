@@ -360,7 +360,7 @@ static void ReportAcquireImageSynchronizationInsight(std::ostringstream& ss) {
 
 LogObjectList BaseObjectList(const SyncEnvironment& env, const ErrorReporter& reporter, const VulkanTypedHandle& resource) {
     LogObjectList objlist;
-    const VulkanTypedHandle cb_handle = reporter.cb_context.GetRecordingShared()->cb_handle;
+    const VulkanTypedHandle cb_handle = reporter.recording.cb_handle;
 
     // During recording, env.handle is the command buffer handle. Skip to avoid duplication.
     if (env.handle != cb_handle) {
@@ -677,77 +677,6 @@ void FormatVideoQuantizationMap(const Logger& logger, const VkVideoEncodeQuantiz
     ss << logger.FormatHandle(quantization_map.quantizationMap);
     ss << ", quantizationMapExtent (" << string_VkExtent2D(quantization_map.quantizationMapExtent) << ")";
     ss << "}";
-}
-
-static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_ex, const ResourceUsageRecord& record,
-                                                        const DebugNameProvider* debug_name_provider) {
-    ResourceUsageInfo info;
-    info.command = record.command;
-    info.command_seq = record.seq_num;
-    info.sub_command_type = record.sub_command_type;
-    info.subpass = record.subpass;
-    info.command_buffer_reset_count = record.reset_count;
-    info.cb_handle = record.recording->cb_handle;
-
-    // Associated resource
-    if (tag_ex.handle_index != vvl::kNoIndex32) {
-        const auto& handle_records = record.recording->handles;
-
-        // Command buffer can be in inconsistent state due to core validation errors.
-        // In this case the goal is not to crash, no guarantees that the reported
-        // information (handle index) makes sense.
-        const bool valid_handle_index = tag_ex.handle_index < handle_records.size();
-
-        if (valid_handle_index) {
-            info.resource_handle = handle_records[tag_ex.handle_index].TypedHandle();
-            info.image_barrier = record.recording->GetImageBarrier(record, tag_ex.handle_index);
-        }
-    }
-
-    // Debug region name. Empty name means that we are not inside any debug region.
-    if (debug_name_provider) {
-        info.debug_region_name = debug_name_provider->GetDebugRegionName(record);
-    }
-    return info;
-}
-
-ResourceUsageInfo CommandBufferContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
-    const ResourceUsageRecord& record = recording_->access_log[tag_ex.tag];
-    const auto debug_name_provider = (record.label_command_index == vvl::kNoIndex32) ? nullptr : this;
-    return GetResourceUsageInfoFromRecord(tag_ex, record, debug_name_provider);
-}
-
-ResourceUsageInfo BatchLog::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
-    auto found_log = log_map_.find(tag_ex.tag);
-    assert(found_log != log_map_.cend());
-
-    ResourceUsageInfo info;
-    const BatchInfo* batch = nullptr;
-    if (const CommandBufferLog* cb_log = std::get_if<CommandBufferLog>(&found_log->second)) {
-        assert(tag_ex.tag >= cb_log->batch.base_tag);
-        const size_t index = tag_ex.tag - cb_log->batch.base_tag;
-        const AccessLog& access_log = cb_log->recording->access_log;
-        const ResourceUsageRecord& record = access_log[index];
-        const DebugNameProvider* debug_name_provider = (record.label_command_index == vvl::kNoIndex32) ? nullptr : cb_log;
-        info = GetResourceUsageInfoFromRecord(tag_ex, record, debug_name_provider);
-        batch = &cb_log->batch;
-    } else {
-        const SwapchainOpLog& swapchain_log = *std::get_if<SwapchainOpLog>(&found_log->second);
-        const uint32_t index = static_cast<uint32_t>(tag_ex.tag - swapchain_log.batch.base_tag);
-        info.command = swapchain_log.ops[index].command;
-        batch = &swapchain_log.batch;
-    }
-    if (batch->queue_state) {
-        info.queue = batch->queue_state->GetQueue();
-        info.submit_index = batch->submit_index;
-        info.batch_index = batch->batch_index;
-        info.batch_base_tag = batch->base_tag;
-    }
-    return info;
-}
-
-ResourceUsageInfo QueueBatchContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
-    return batch_log_.GetResourceUsageInfo(tag_ex);
 }
 
 }  // namespace syncval
