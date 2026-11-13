@@ -27,7 +27,7 @@ bool WaitForFenceCommand::Execute(SyncValidator& validator) const {
 }
 
 bool WaitForSemaphoreCommand::Execute(SyncValidator& validator) const {
-    validator.WaitForSemaphore(semaphore, value);
+    validator.WaitForSemaphore(semaphore, value, imported);
     return false;
 }
 
@@ -52,16 +52,14 @@ bool SignalSemaphoreCommand::Execute(SyncValidator& validator) const {
 }
 
 bool HostResetEventCommand::Execute(SyncValidator& validator) const {
-    if (auto event_state = validator.Get<vvl::Event>(event)) {
-        const auto all_batches = validator.GetAllQueueBatchContexts();
-        for (const auto& batch : all_batches) {
-            SyncEventsContext& events_context = batch->GetEventsContext();
-            if (SyncEventState* sync_event = events_context.GetFromShared(event_state)) {
-                sync_event->last_command = vvl::Func::vkResetEvent;
-                sync_event->unsynchronized_set = vvl::Func::Empty;
-                sync_event->ResetFirstScope();
-                sync_event->barriers = 0;
-            }
+    const auto all_batches = validator.GetAllQueueBatchContexts();
+    for (const auto& batch : all_batches) {
+        SyncEventsContext& events_context = batch->GetEventsContext();
+        if (SyncEventState* sync_event = events_context.GetFromShared(event)) {
+            sync_event->last_command = vvl::Func::vkResetEvent;
+            sync_event->unsynchronized_set = vvl::Func::Empty;
+            sync_event->ResetFirstScope();
+            sync_event->barriers = 0;
         }
     }
     return false;
@@ -260,7 +258,13 @@ QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_i
 
         batch.waits.reserve(submit.waitSemaphoreInfoCount);
         for (const auto& wait : vvl::make_span(submit.pWaitSemaphoreInfos, submit.waitSemaphoreInfoCount)) {
-            batch.waits.emplace_back(wait);
+            const auto semaphore_state = validator.Get<vvl::Semaphore>(wait.semaphore);
+            if (!semaphore_state) {
+                continue;
+            }
+            batch.waits.emplace_back(SemaphoreSubmitInfo{wait.semaphore, wait.value, wait.stageMask, semaphore_state->initial_value,
+                                                         semaphore_state->type,
+                                                         semaphore_state->Scope() != vvl::Semaphore::Scope::kInternal});
         }
 
         batch.recordings.reserve(submit.commandBufferInfoCount);
@@ -272,7 +276,13 @@ QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_i
 
         batch.signals.reserve(submit.signalSemaphoreInfoCount);
         for (const auto& signal : vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount)) {
-            batch.signals.emplace_back(signal);
+            const auto semaphore_state = validator.Get<vvl::Semaphore>(signal.semaphore);
+            if (!semaphore_state) {
+                continue;
+            }
+            batch.signals.emplace_back(SemaphoreSubmitInfo{signal.semaphore, signal.value, signal.stageMask,
+                                                           semaphore_state->initial_value, semaphore_state->type,
+                                                           semaphore_state->Scope() != vvl::Semaphore::Scope::kInternal});
         }
     }
 }
@@ -300,7 +310,7 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
         const SubmitBatch& submit = batches[batch_idx];
         auto batch = std::make_shared<QueueBatchContext>(validator, queue_state);
 
-        std::vector<VkSemaphoreSubmitInfo> unresolved_waits;
+        std::vector<SemaphoreSubmitInfo> unresolved_waits;
         auto resolved_batches = batch->ResolveSubmitWaits(submit.waits, unresolved_waits, signals_update);
 
         // Add unresolved batch

@@ -24,6 +24,7 @@
 #include <variant>
 
 namespace vvl {
+class Event;
 class Swapchain;
 enum class Func;
 }  // namespace vvl
@@ -41,6 +42,7 @@ struct WaitForFenceCommand {
 struct WaitForSemaphoreCommand {
     VkSemaphore semaphore;
     uint64_t value;
+    bool imported;
     bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
@@ -53,7 +55,7 @@ struct SignalSemaphoreCommand {
 };
 
 struct HostResetEventCommand {
-    VkEvent event;
+    std::shared_ptr<const vvl::Event> event;
     bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
@@ -115,11 +117,20 @@ struct AcquireNextImageCommand {
     bool Execute(SyncValidator& validator) const;
 };
 
+struct SemaphoreSubmitInfo {
+    VkSemaphore semaphore;
+    uint64_t value;
+    VkPipelineStageFlags2 stage_mask;
+    uint64_t initial_value;
+    VkSemaphoreType type;
+    bool is_external;
+};
+
 struct QueueSubmitCommand {
     struct SubmitBatch {
-        small_vector<VkSemaphoreSubmitInfo, 1> waits;
+        small_vector<SemaphoreSubmitInfo, 1> waits;
         small_vector<CommandBufferRecordingPtr, 1> recordings;
-        small_vector<VkSemaphoreSubmitInfo, 1> signals;
+        small_vector<SemaphoreSubmitInfo, 1> signals;
     };
     QueueId queue_id;
     VkFence fence;

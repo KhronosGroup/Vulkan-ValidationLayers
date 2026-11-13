@@ -17,6 +17,7 @@
 
 #pragma once
 #include "sync/sync_command_buffer.h"
+#include "sync/sync_queue_command.h"
 #include "state_tracker/queue_state.h"
 #include "containers/small_vector.h"
 #include "containers/range_map.h"
@@ -111,7 +112,7 @@ struct SignalsUpdate {
 
     // Register submission batch signals.
     // Return true if at least one timeline signal was registered
-    bool RegisterSignals(const BatchContextPtr& batch, const vvl::span<const VkSemaphoreSubmitInfo>& submit_signals);
+    bool RegisterSignals(const BatchContextPtr& batch, const vvl::span<const SemaphoreSubmitInfo>& submit_signals);
 
     // Return resolving binary signal. Empty result in the case of a validation error
     std::optional<SignalInfo> OnBinaryWait(VkSemaphore semaphore);
@@ -122,10 +123,10 @@ struct SignalsUpdate {
     SignalsUpdate(const SyncValidator& sync_validator) : sync_validator_(sync_validator) {}
 
   private:
-    void OnBinarySignal(const BatchContextPtr& batch, const VkSemaphoreSubmitInfo& submit_signal);
+    void OnBinarySignal(const BatchContextPtr& batch, const SemaphoreSubmitInfo& submit_signal);
 
     // Return false if the signal is invalid (non-increasing value)
-    bool OnTimelineSignal(const BatchContextPtr& batch, const VkSemaphoreSubmitInfo& submit_signal);
+    bool OnTimelineSignal(const BatchContextPtr& batch, const SemaphoreSubmitInfo& submit_signal);
 
   private:
     const SyncValidator& sync_validator_;
@@ -243,7 +244,7 @@ struct UnresolvedBatch {
     // Waits-before-signals that prevent this batch from being resolved.
     // When the wait is resolved it is removed from this list and the batch
     // from the resolving signal is stored in resolved_dependencies array.
-    std::vector<VkSemaphoreSubmitInfo> unresolved_waits;
+    std::vector<SemaphoreSubmitInfo> unresolved_waits;
 
     // The batches from the resolved dependencies. They are used for async validaton.
     // This includes the batches from the resolved waits and also the last batch
@@ -251,7 +252,7 @@ struct UnresolvedBatch {
     std::vector<BatchContextPtr> resolved_dependencies;
 
     // Signals to signal when all the waits are resolved.
-    std::vector<VkSemaphoreSubmitInfo> signals;
+    std::vector<SemaphoreSubmitInfo> signals;
 
     // Queue's label stack at the beginning of this batch
     std::vector<std::string> label_stack;
@@ -326,8 +327,8 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
     void ResetEventsContext() { events_context_.Clear(); }
 
     // For Submit
-    std::vector<BatchContextPtr> ResolveSubmitWaits(vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
-                                                    std::vector<VkSemaphoreSubmitInfo>& unresolved_waits,
+    std::vector<BatchContextPtr> ResolveSubmitWaits(vvl::span<const SemaphoreSubmitInfo> wait_semaphores,
+                                                    std::vector<SemaphoreSubmitInfo>& unresolved_waits,
                                                     SignalsUpdate& signals_update);
 
     bool ValidateSubmit(vvl::span<const CommandBufferRecordingPtr> recordings, uint64_t submit_index, uint32_t batch_index,

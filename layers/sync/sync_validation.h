@@ -106,7 +106,7 @@ class SyncValidator : public vvl::DeviceProxy {
     std::vector<BatchContextPtr> GetAllQueueBatchContexts();
 
     void WaitForFence(VkFence fence);
-    void WaitForSemaphore(VkSemaphore semaphore, uint64_t value);
+    void WaitForSemaphore(VkSemaphore semaphore, uint64_t value, bool imported);
 
     void UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo* infos);
 

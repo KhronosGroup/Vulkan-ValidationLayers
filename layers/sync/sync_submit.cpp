@@ -33,7 +33,7 @@ SignalInfo::SignalInfo(uint64_t timeline_value) : first_scope(kQueueIdInvalid, S
 SignalInfo::SignalInfo(const BatchContextPtr& acquire_batch, const PresentedImage& presented, ResourceUsageTag acquire_tag)
     : batch(acquire_batch), first_scope(), acquired_image(std::make_shared<AcquiredImage>(presented, acquire_tag)) {}
 
-void SignalsUpdate::OnBinarySignal(const BatchContextPtr& batch, const VkSemaphoreSubmitInfo& submit_signal) {
+void SignalsUpdate::OnBinarySignal(const BatchContextPtr& batch, const SemaphoreSubmitInfo& submit_signal) {
     const VkSemaphore semaphore = submit_signal.semaphore;
 
     // Signal can't be registered in both lists at the same time.
@@ -50,11 +50,11 @@ void SignalsUpdate::OnBinarySignal(const BatchContextPtr& batch, const VkSemapho
     }
     // Register signal
     const VkQueueFlags queue_flags = batch->GetQueueFlags();
-    const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
+    const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stage_mask, VK_PIPELINE_STAGE_2_HOST_BIT);
     binary_signal_requests.emplace(semaphore, SignalInfo(batch, exec_scope, 0));
 }
 
-bool SignalsUpdate::OnTimelineSignal(const BatchContextPtr& batch, const VkSemaphoreSubmitInfo& submit_signal) {
+bool SignalsUpdate::OnTimelineSignal(const BatchContextPtr& batch, const SemaphoreSubmitInfo& submit_signal) {
     const VkSemaphore semaphore = submit_signal.semaphore;
     std::vector<SignalInfo>& signals = timeline_signals[semaphore];
 
@@ -65,20 +65,18 @@ bool SignalsUpdate::OnTimelineSignal(const BatchContextPtr& batch, const VkSemap
 
     // Register signal
     const VkQueueFlags queue_flags = batch->GetQueueFlags();
-    const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
+    const auto exec_scope = SyncExecScope::MakeSrc(queue_flags, submit_signal.stage_mask, VK_PIPELINE_STAGE_2_HOST_BIT);
     signals.emplace_back(SignalInfo(batch, exec_scope, submit_signal.value));
     return true;
 }
 
-bool SignalsUpdate::RegisterSignals(const BatchContextPtr& batch, const vvl::span<const VkSemaphoreSubmitInfo>& submit_signals) {
+bool SignalsUpdate::RegisterSignals(const BatchContextPtr& batch, const vvl::span<const SemaphoreSubmitInfo>& submit_signals) {
     bool registered_timeline_signal = false;
     for (const auto& submit_signal : submit_signals) {
-        if (auto semaphore_state = sync_validator_.Get<vvl::Semaphore>(submit_signal.semaphore)) {
-            if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY) {
-                OnBinarySignal(batch, submit_signal);
-            } else {
-                registered_timeline_signal |= OnTimelineSignal(batch, submit_signal);
-            }
+        if (submit_signal.type == VK_SEMAPHORE_TYPE_BINARY) {
+            OnBinarySignal(batch, submit_signal);
+        } else {
+            registered_timeline_signal |= OnTimelineSignal(batch, submit_signal);
         }
     }
     return registered_timeline_signal;
@@ -647,15 +645,11 @@ ResourceUsageTag QueueBatchContext::SetupBatchTags(uint32_t tag_count) {
     return tag_range_.begin;
 }
 
-std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<const VkSemaphoreSubmitInfo> wait_infos,
-                                                                   std::vector<VkSemaphoreSubmitInfo>& unresolved_waits,
+std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<const SemaphoreSubmitInfo> wait_infos,
+                                                                   std::vector<SemaphoreSubmitInfo>& unresolved_waits,
                                                                    SignalsUpdate& signals_update) {
     std::vector<BatchContextPtr> resolved_batches;
     for (const auto& wait_info : wait_infos) {
-        auto semaphore_state = sync_state_.Get<vvl::Semaphore>(wait_info.semaphore);
-        if (!semaphore_state) {
-            continue;  // [core validation check]
-        }
         // Binary semaphore wait:
         // * There must be a single resovling signal. If no signal is found, it is a validation error.
         // * The resolving signal must not depend on another not yet submitted timeline signal. That's
@@ -669,7 +663,7 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<con
         //   synchronize accesses from multiple queues even if each queue has matching signal.
         std::optional<SignalInfo> resolving_signal;
 
-        if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY) {
+        if (wait_info.type == VK_SEMAPHORE_TYPE_BINARY) {
             resolving_signal = signals_update.OnBinaryWait(wait_info.semaphore);
             if (!resolving_signal) {
                 // [core validation check]: binary signal not found or depends on not yet submitted timeline signal
@@ -678,14 +672,14 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<con
         } else {
             // Special case when semaphore initial value satisfies the wait.
             // There is no batch that signals initial value, nothing to resolve here.
-            if (wait_info.value <= semaphore_state->initial_value) {
+            if (wait_info.value <= wait_info.initial_value) {
                 continue;
             }
             resolving_signal = signals_update.OnTimelineWait(wait_info.semaphore, wait_info.value);
 
             // Register wait-before-signal
             if (!resolving_signal) {
-                if (semaphore_state->Scope() == vvl::Semaphore::Scope::kInternal) {
+                if (!wait_info.is_external) {
                     unresolved_waits.emplace_back(wait_info);
                     continue;
                 } else {
@@ -696,7 +690,7 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<con
             }
         }
         if (resolving_signal->batch) {
-            ResolveSubmitSemaphoreWait(resolving_signal.value(), wait_info.stageMask);
+            ResolveSubmitSemaphoreWait(resolving_signal.value(), wait_info.stage_mask);
             ImportTags(*resolving_signal->batch);
             resolved_batches.emplace_back(std::move(resolving_signal->batch));
         }
