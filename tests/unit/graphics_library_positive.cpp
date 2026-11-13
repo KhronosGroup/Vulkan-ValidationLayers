@@ -2790,3 +2790,25 @@ TEST_F(PositiveGraphicsLibrary, InterpolationDecorationMismatch) {
 
     vkt::Pipeline exe_pipe(*m_device, {vertex_input_lib, shader_lib, frag_out_lib}, shader_lib.gp_ci_.layout, RenderPass());
 }
+
+TEST_F(PositiveGraphicsLibrary, ColorBlendAttachmentCountIgnored) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13691");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    VkPipelineColorBlendAttachmentState color_blend = DefaultColorBlendAttachmentState();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitFragmentOutputLibInfo();
+    pipe.cb_ci_.attachmentCount = 0xDEADBEEFu;  // Ignored.
+    pipe.cb_ci_.pAttachments = &color_blend;    // Ignored, but not null.
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+    pipe.CreateGraphicsPipeline(false);
+}
