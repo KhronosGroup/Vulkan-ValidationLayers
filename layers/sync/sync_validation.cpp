@@ -512,7 +512,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(
 void SyncValidator::RecordCmdPipelineBarrier(CommandBufferContext& cb_context, BarrierSet&& barrier_set,
                                              const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
-    const uint32_t barrier_set_index = static_cast<uint32_t>(cb_context.GetCommandData().barrier_sets.size());
+    const uint32_t barrier_set_index = static_cast<uint32_t>(cb_context.GetRecording().command_data.barrier_sets.size());
     bool has_layout_transition = false;
     for (const SyncBufferBarrier& buffer_barrier : barrier_set.buffer_barriers) {
         cb_context.AddCommandHandle(tag, buffer_barrier.buffer->Handle());
@@ -2080,7 +2080,7 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
 void SyncValidator::RecordCmdWaitEvents(CommandBufferContext& cb_context, std::vector<std::shared_ptr<const vvl::Event>>&& events,
                                         std::vector<BarrierSet>&& barrier_sets, const Location& loc) const {
     const ResourceUsageTag tag = cb_context.NextCommandTag(loc.function);
-    uint32_t barrier_set_index = static_cast<uint32_t>(cb_context.GetCommandData().barrier_sets.size());
+    uint32_t barrier_set_index = static_cast<uint32_t>(cb_context.GetRecording().command_data.barrier_sets.size());
     bool has_layout_transition = false;
     for (BarrierSet& barrier_set : barrier_sets) {
         for (SyncImageBarrier& image_barrier : barrier_set.image_barriers) {
@@ -2216,7 +2216,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
             continue;
         }
         const CommandBufferContext& recorded_cb_context = GetCommandBufferContext(*recorded_cb);
-        const ResourceUsageTag base_tag = proxy_cb_context.GetTagCount();
+        const ResourceUsageTag base_tag = proxy_cb_context.GetRecording().GetTagCount();
         const Location cb_loc = error_obj.location.dot(vvl::Field::pCommandBuffers, cb_index);
 
         // Update proxy label commands so they can be used by ImportRecordedAccessLog
@@ -2224,8 +2224,8 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         proxy_cb_context.ImportRecordedAccessLog(recorded_cb_context);
 
-        skip |= ReplayCommands(proxy_cb_context.GetSyncEnvironment(), proxy_cb_context.GetCbAccessContext(), recorded_cb_context,
-                               base_tag, cb_loc, &new_hazards, &cb_context);
+        skip |= ReplayCommands(proxy_cb_context.GetSyncEnvironment(), proxy_cb_context.GetCbAccessContext(),
+                               recorded_cb_context.GetRecording(), base_tag, cb_loc, &new_hazards, &cb_context);
     }
     // A skipped command is not recorded, its tag goes to the next command
     if (!skip) {
@@ -2426,9 +2426,8 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {
 
                 const auto async_batches = ready_batch.batch->RegisterAsyncContexts(ready_batch.resolved_dependencies);
 
-                skip |= ready_batch.batch->ValidateSubmit(ready_batch.command_buffers, ready_batch.submit_index,
-                                                          ready_batch.batch_index, ready_batch.label_stack,
-                                                          Location(ready_batch.submit_func));
+                skip |= ready_batch.batch->ValidateSubmit(ready_batch.recordings, ready_batch.submit_index, ready_batch.batch_index,
+                                                          ready_batch.label_stack, Location(ready_batch.submit_func));
 
                 // Process signals. New timeline signals can resolve more batches on the next iteration
                 const auto submit_signals = vvl::make_span(ready_batch.signals.data(), ready_batch.signals.size());

@@ -24,7 +24,6 @@
 #include <variant>
 
 namespace vvl {
-class CommandBuffer;
 class Swapchain;
 enum class Func;
 }  // namespace vvl
@@ -119,7 +118,7 @@ struct AcquireNextImageCommand {
 struct QueueSubmitCommand {
     struct SubmitBatch {
         small_vector<VkSemaphoreSubmitInfo, 1> waits;
-        small_vector<std::shared_ptr<const vvl::CommandBuffer>, 1> command_buffers;
+        small_vector<CommandBufferRecordingPtr, 1> recordings;
         small_vector<VkSemaphoreSubmitInfo, 1> signals;
     };
     QueueId queue_id;

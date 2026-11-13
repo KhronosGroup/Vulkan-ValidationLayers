@@ -263,10 +263,11 @@ QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_i
             batch.waits.emplace_back(wait);
         }
 
-        batch.command_buffers.reserve(submit.commandBufferInfoCount);
+        batch.recordings.reserve(submit.commandBufferInfoCount);
         for (const auto& cb_info : vvl::make_span(submit.pCommandBufferInfos, submit.commandBufferInfoCount)) {
+            const auto cb = validator.Get<vvl::CommandBuffer>(cb_info.commandBuffer);
             // Append even a null lookup result so later command buffers are reported at their original indices
-            batch.command_buffers.emplace_back(validator.Get<vvl::CommandBuffer>(cb_info.commandBuffer));
+            batch.recordings.emplace_back(cb ? SubState(*cb).cb_context.GetRecordingShared() : nullptr);
         }
 
         batch.signals.reserve(submit.signalSemaphoreInfoCount);
@@ -309,7 +310,7 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
             unresolved_batch.submit_func = submit_func;
             unresolved_batch.submit_index = submit_id;
             unresolved_batch.batch_index = batch_idx;
-            unresolved_batch.command_buffers.assign(submit.command_buffers.begin(), submit.command_buffers.end());
+            unresolved_batch.recordings.assign(submit.recordings.begin(), submit.recordings.end());
             unresolved_batch.unresolved_waits = std::move(unresolved_waits);
             unresolved_batch.resolved_dependencies = std::move(resolved_batches);
             unresolved_batch.signals.assign(submit.signals.begin(), submit.signals.end());
@@ -328,7 +329,7 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
         // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case
         const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
 
-        skip |= batch->ValidateSubmit(submit.command_buffers, submit_id, batch_idx, current_label_stack, submit_loc);
+        skip |= batch->ValidateSubmit(submit.recordings, submit_id, batch_idx, current_label_stack, submit_loc);
 
         new_timeline_signals |= signals_update.RegisterSignals(batch, submit.signals);
 

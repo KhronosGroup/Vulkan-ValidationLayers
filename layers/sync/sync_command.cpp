@@ -86,13 +86,13 @@ struct CommandReplayContext {
     std::optional<RenderPassAccessContext> render_pass_context;
 };
 
-bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_context, const CommandBufferContext& cb_context,
+bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_context, const CommandBufferRecording& recording,
                     ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards,
                     const CommandBufferContext* primary_context) {
     bool skip = false;
-    const CommandData& command_data = cb_context.GetCommandData();
+    const CommandData& command_data = recording.command_data;
     CommandReplayContext replay_context(env, destination_access_context, base_tag);
-    ErrorReporter reporter{cb_context, loc, new_hazards, base_tag};
+    ErrorReporter reporter{env.validator, recording, loc, new_hazards, base_tag};
 
     const VkRect2D* inherited_render_area = primary_context ? primary_context->GetCurrentRenderArea() : nullptr;
 
@@ -137,7 +137,7 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
         command.Apply(env, tag, access_context);
     };
 
-    for (const CommandEntry& entry : cb_context.GetCommands()) {
+    for (const CommandEntry& entry : recording.commands) {
         reporter.replay_tag = entry.tag;
         const uint32_t index = entry.command_ref.index;
         AccessContext& access_context = replay_context.CurrentAccessContext();
@@ -442,7 +442,8 @@ static bool ValidateRecording(const Command& command, const Context& access_cont
     const SyncEnvironment& env = cb_context.GetSyncEnvironment();
     std::vector<ReportedHazard> new_hazards;
 
-    const bool skip = command.Validate(env, access_context, ErrorReporter{cb_context, loc, &new_hazards});
+    const ErrorReporter reporter{env.validator, cb_context.GetRecording(), loc, &new_hazards};
+    const bool skip = command.Validate(env, access_context, reporter);
 
     // A skipped command is not recorded, its tag goes to the next command
     if (!skip) {

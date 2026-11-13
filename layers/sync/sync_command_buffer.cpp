@@ -260,7 +260,7 @@ bool ErrorReporter::ReportHazard(const HazardResult& hazard, VulkanTypedHandle r
         return false;
     }
     Collect(report);
-    return cb_context.GetSyncState().SyncError(hazard.Hazard(), objlist, error_loc, error);
+    return validator.SyncError(hazard.Hazard(), objlist, error_loc, error);
 }
 
 bool ErrorReporter::ReportEventError(const SyncEventState& event_state, const char* vuid, const LogObjectList& objlist,
@@ -271,7 +271,7 @@ bool ErrorReporter::ReportEventError(const SyncEventState& event_state, const ch
         return false;
     }
     Collect(report);
-    return cb_context.GetSyncState().LogError(vuid, objlist, error_loc, "%s", message.c_str());
+    return validator.LogError(vuid, objlist, error_loc, "%s", message.c_str());
 }
 
 ResourceUsageTag ErrorReporter::CommandTag() const {
@@ -279,7 +279,7 @@ ResourceUsageTag ErrorReporter::CommandTag() const {
         return replay_tag;
     }
     // During recording the validated command gets the next tag
-    const ResourceUsageTag next_tag = cb_context.GetTagCount();
+    const ResourceUsageTag next_tag = recording.GetTagCount();
     return next_tag;
 }
 
@@ -298,7 +298,7 @@ bool ErrorReporter::IsAlreadyReported(ReportedHazard report) const {
         }
         report.prior_tag -= base_tag;
     }
-    return cb_context.HasReportedHazard(report);
+    return recording.HasReportedHazard(report);
 }
 
 void ErrorReporter::Collect(ReportedHazard report) const {
@@ -337,12 +337,49 @@ void CommandBufferContext::FinalizeRecording() {
     std::sort(recording_->reported_hazards.begin(), recording_->reported_hazards.end(), less);
 }
 
-bool CommandBufferContext::HasReportedHazard(const ReportedHazard& report) const {
-    std::lock_guard lock(recording_->reported_hazards_mutex);
-    const auto [first, last] = std::equal_range(recording_->reported_hazards.begin(), recording_->reported_hazards.end(), report,
+bool CommandBufferRecording::HasReportedHazard(const ReportedHazard& report) const {
+    std::lock_guard lock(reported_hazards_mutex);
+    const auto [first, last] = std::equal_range(reported_hazards.begin(), reported_hazards.end(), report,
                                                 [](const auto& a, const auto& b) { return a.tag < b.tag; });
     const bool already_reported = std::find(first, last, report) != last;
     return already_reported;
+}
+
+ResourceUsageInfo CommandBufferRecording::GetResourceUsageInfo(ResourceUsageTagEx tag_ex,
+                                                               const DebugNameProvider* debug_name_provider) const {
+    const ResourceUsageRecord& record = access_log[tag_ex.tag];
+    ResourceUsageInfo info;
+    info.command = record.command;
+    info.command_seq = record.seq_num;
+    info.sub_command_type = record.sub_command_type;
+    info.subpass = record.subpass;
+    info.command_buffer_reset_count = record.reset_count;
+    info.cb_handle = record.recording->cb_handle;
+
+    // Associated resource
+    if (tag_ex.handle_index != vvl::kNoIndex32) {
+        const auto& handle_records = record.recording->handles;
+
+        // Command buffer can be in inconsistent state due to core validation errors.
+        // In this case the goal is not to crash, no guarantees that the reported
+        // information (handle index) makes sense.
+        const bool valid_handle_index = tag_ex.handle_index < handle_records.size();
+
+        if (valid_handle_index) {
+            info.resource_handle = handle_records[tag_ex.handle_index].TypedHandle();
+            info.image_barrier = record.recording->GetImageBarrier(record, tag_ex.handle_index);
+        }
+    }
+
+    // Debug region name. Empty name means that we are not inside any debug region
+    if (record.label_command_index != vvl::kNoIndex32) {
+        if (debug_name_provider) {
+            info.debug_region_name = debug_name_provider->GetDebugRegionName(record);
+        } else {
+            info.debug_region_name = vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index);
+        }
+    }
+    return info;
 }
 
 void CommandBufferRecording::Reset() {
@@ -360,7 +397,6 @@ void CommandBufferRecording::Reset() {
 
 CommandBufferContext::CommandBufferContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags, VulkanTypedHandle handle)
     : sync_state_(sync_validator),
-      error_messages_(sync_validator.error_messages_),
       command_number_(0),
       reset_count_(0),
       cb_access_context_(sync_validator),
@@ -958,7 +994,7 @@ const SyncImageBarrier* CommandBufferRecording::GetImageBarrier(const ResourceUs
 }
 
 void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContext& recorded_cb_context) {
-    const ResourceUsageTag base_tag = GetTagCount();
+    const ResourceUsageTag base_tag = recording_->GetTagCount();
 
     // The errors reported while recording the secondary command buffer
     if (NeedsCommandStorage()) {
@@ -1003,8 +1039,9 @@ void CommandBufferContext::RecordExecutedCommandBuffer(const CommandBufferContex
         StoreCommand(tag, command);
     };
 
-    const CommandData& command_data = recorded_cb_context.GetCommandData();
-    for (const CommandEntry& entry : recorded_cb_context.GetCommands()) {
+    const CommandBufferRecording& recording = recorded_cb_context.GetRecording();
+    const CommandData& command_data = recording.command_data;
+    for (const CommandEntry& entry : recording.commands) {
         const ResourceUsageTag tag = base_tag + entry.tag;
         const uint32_t index = entry.command_ref.index;
 
@@ -1256,6 +1293,10 @@ void CommandBufferContext::AddSubcommandHandle(ResourceUsageTag tag, const Vulka
             record.handle_count++;
         }
     }
+}
+
+ResourceUsageInfo CommandBufferContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
+    return recording_->GetResourceUsageInfo(tag_ex, this);
 }
 
 std::string CommandBufferContext::GetDebugRegionName(const ResourceUsageRecord& record) const {

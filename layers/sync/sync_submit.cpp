@@ -704,42 +704,44 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<con
     return resolved_batches;
 }
 
-bool QueueBatchContext::ValidateSubmit(vvl::span<const CommandBufferConstPtr> command_buffers, uint64_t submit_index,
+bool QueueBatchContext::ValidateSubmit(vvl::span<const CommandBufferRecordingPtr> recordings, uint64_t submit_index,
                                        uint32_t batch_index, std::vector<std::string>& current_label_stack,
                                        const Location& submit_loc) {
     bool skip = false;
 
     BatchInfo batch{queue_state_, submit_index, batch_index};
     uint32_t tag_count = 0;
-    for (const auto& cb : command_buffers) {
-        if (!cb) continue;
-        tag_count += static_cast<uint32_t>(SubState(*cb).cb_context.GetTagCount());
+    for (const CommandBufferRecordingPtr& recording : recordings) {
+        if (!recording) continue;
+        tag_count += static_cast<uint32_t>(recording->GetTagCount());
     }
     batch.base_tag = SetupBatchTags(tag_count);
 
-    for (uint32_t index = 0; index < (uint32_t)command_buffers.size(); index++) {
-        if (!command_buffers[index]) {
+    for (uint32_t index = 0; index < (uint32_t)recordings.size(); index++) {
+        const CommandBufferRecordingPtr& recording = recordings[index];
+        if (!recording) {
             continue;
         }
-        const auto& cb = SubState(*command_buffers[index]);
-        const CommandBufferContext& cb_context = cb.cb_context;
-
         // Validate and resolve command buffers that have tagged commands
-        if (cb_context.GetTagCount() > 0) {
+        if (recording->GetTagCount() > 0) {
             const Location submit_info_loc = submit_loc.dot(vvl::Field::pSubmits, batch_index);
             const Location cb_loc = submit_loc.function == vvl::Func::vkQueueSubmit
                                         ? submit_info_loc.dot(vvl::Field::pCommandBuffers, index)
                                         : submit_info_loc.dot(vvl::Field::pCommandBufferInfos, index);
 
-            batch_log_.Import(batch, cb_context, current_label_stack);
+            batch_log_.Import(batch, recording, current_label_stack);
 
-            skip |= ReplayCommands(GetSyncEnvironment(), GetAccessContext(), cb_context, batch.base_tag, cb_loc);
-            batch.base_tag += cb_context.GetTagCount();
+            skip |= ReplayCommands(GetSyncEnvironment(), GetAccessContext(), *recording, batch.base_tag, cb_loc);
+            batch.base_tag += recording->GetTagCount();
         }
         // Apply debug label commands
-        vvl::CommandBuffer::ReplayLabelCommands(cb.base.GetLabelCommands(), current_label_stack);
+        vvl::CommandBuffer::ReplayLabelCommands(recording->label_commands, current_label_stack);
     }
     return skip;
+}
+
+ResourceUsageInfo QueueBatchContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
+    return batch_log_.GetResourceUsageInfo(tag_ex);
 }
 
 std::vector<BatchContextPtr> SyncValidator::GetLastBatches(std::function<bool(const BatchContextPtr&)> filter) const {
@@ -771,14 +773,14 @@ void QueueState::SetLastBatch(BatchContextPtr&& last) {
     }
 }
 
-void BatchLog::Import(const BatchInfo& batch, const CommandBufferContext& cb_context,
+void BatchLog::Import(const BatchInfo& batch, const CommandBufferRecordingPtr& recording,
                       const std::vector<std::string>& initial_label_stack) {
     CommandBufferLog log;
     log.batch = batch;
-    log.recording = cb_context.GetRecordingShared();
+    log.recording = recording;
     log.initial_label_stack = initial_label_stack;
 
-    ResourceUsageRange import_range = {batch.base_tag, batch.base_tag + cb_context.GetTagCount()};
+    ResourceUsageRange import_range = {batch.base_tag, batch.base_tag + recording->GetTagCount()};
     log_map_.insert(std::make_pair(import_range, LogEntry(std::move(log))));
 }
 
@@ -844,6 +846,32 @@ void BatchLog::Trim(const ResourceUsageTagSet& used_tags) {
             }
         }
     }
+}
+
+ResourceUsageInfo BatchLog::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
+    auto found_log = log_map_.find(tag_ex.tag);
+    assert(found_log != log_map_.cend());
+
+    ResourceUsageInfo info;
+    const BatchInfo* batch = nullptr;
+    if (const CommandBufferLog* cb_log = std::get_if<CommandBufferLog>(&found_log->second)) {
+        assert(tag_ex.tag >= cb_log->batch.base_tag);
+        const ResourceUsageTagEx local_tag_ex{tag_ex.tag - cb_log->batch.base_tag, tag_ex.handle_index};
+        info = cb_log->recording->GetResourceUsageInfo(local_tag_ex, cb_log);
+        batch = &cb_log->batch;
+    } else {
+        const SwapchainOpLog& swapchain_log = *std::get_if<SwapchainOpLog>(&found_log->second);
+        const uint32_t index = static_cast<uint32_t>(tag_ex.tag - swapchain_log.batch.base_tag);
+        info.command = swapchain_log.ops[index].command;
+        batch = &swapchain_log.batch;
+    }
+    if (batch->queue_state) {
+        info.queue = batch->queue_state->GetQueue();
+        info.submit_index = batch->submit_index;
+        info.batch_index = batch->batch_index;
+        info.batch_base_tag = batch->base_tag;
+    }
+    return info;
 }
 
 VkSwapchainKHR BatchLog::GetPresentSwapchain(ResourceUsageTag tag) const {
