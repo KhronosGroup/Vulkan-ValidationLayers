@@ -552,6 +552,56 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 
 // Special-case APIs for which core_validation needs custom parameter lists and/or modifies parameters
 
+// attachmentCount and pAttachments are ignored if all of the blend attachment state is dynamic
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13691
+//
+// This is done once here because there are 3 spots that will crash otherwise
+//  1. stateless validation loops over pAttachments
+//  2. vvl::DeviceState builds vvl::Pipeline, which deep copies it (needed for GPL of course)
+//  3. DispatchDevice::CreateGraphicsPipelines deep copies it again to unwrap handles
+static const VkGraphicsPipelineCreateInfo* RemoveIgnoredColorBlendAttachments(
+    const vvl::DispatchDevice& device_dispatch, uint32_t create_info_count, const VkGraphicsPipelineCreateInfo* pCreateInfos,
+    std::vector<VkGraphicsPipelineCreateInfo>& local_create_infos,
+    std::vector<VkPipelineColorBlendStateCreateInfo>& local_color_blend_states) {
+    if (!pCreateInfos) {
+        return pCreateInfos;
+    }
+    const bool advanced_blend = IsExtEnabled(device_dispatch.extensions.vk_ext_blend_operation_advanced);
+    for (uint32_t i = 0; i < create_info_count; ++i) {
+        const VkGraphicsPipelineCreateInfo& create_info = pCreateInfos[i];
+        if (!create_info.pDynamicState || !create_info.pDynamicState->pDynamicStates) {
+            continue;
+        }
+        bool enable = false;
+        bool equation = false;
+        bool write_mask = false;
+        bool advanced = !advanced_blend;
+        for (VkDynamicState dynamic_state :
+             vvl::make_span(create_info.pDynamicState->pDynamicStates, create_info.pDynamicState->dynamicStateCount)) {
+            enable |= dynamic_state == VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT;
+            equation |= dynamic_state == VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT;
+            write_mask |= dynamic_state == VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT;
+            advanced |= dynamic_state == VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT;
+        }
+        if (!enable || !equation || !write_mask || !advanced) {
+            continue;
+        } else if (!create_info.pColorBlendState || !create_info.pColorBlendState->pAttachments) {
+            continue;
+        }
+
+        // Only allocate if an app actually hits this
+        if (local_create_infos.empty()) {
+            local_create_infos.assign(pCreateInfos, pCreateInfos + create_info_count);
+            local_color_blend_states.resize(create_info_count);
+        }
+        local_color_blend_states[i] = *create_info.pColorBlendState;
+        local_color_blend_states[i].attachmentCount = 0;
+        local_color_blend_states[i].pAttachments = nullptr;
+        local_create_infos[i].pColorBlendState = &local_color_blend_states[i];
+    }
+    return local_create_infos.empty() ? pCreateInfos : local_create_infos.data();
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
@@ -560,6 +610,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     auto device_dispatch = vvl::GetDispatchDevice(device);
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateGraphicsPipelines, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+
+    std::vector<VkGraphicsPipelineCreateInfo> local_create_infos;
+    std::vector<VkPipelineColorBlendStateCreateInfo> local_color_blend_states;
+    pCreateInfos = RemoveIgnoredColorBlendAttachments(*device_dispatch, createInfoCount, pCreateInfos, local_create_infos,
+                                                      local_color_blend_states);
 
     PipelineStates pipeline_states;
     chassis::CreateGraphicsPipelines chassis_state(pCreateInfos);

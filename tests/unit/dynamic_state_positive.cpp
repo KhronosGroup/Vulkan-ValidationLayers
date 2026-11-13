@@ -1950,3 +1950,24 @@ TEST_F(PositiveDynamicState, GPLMultisampleStateIgnored) {
     pipe.gp_ci_.pMultisampleState = nullptr;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveDynamicState, ColorBlendAttachmentCountIgnored) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13691");
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // VK_EXT_blend_operation_advanced is not enabled, so VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT is not needed.
+    VkPipelineColorBlendAttachmentState color_blend = DefaultColorBlendAttachmentState();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.cb_ci_.attachmentCount = 0xDEADBEEFu;  // Ignored.
+    pipe.cb_ci_.pAttachments = &color_blend;    // Ignored, but not null.
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+    pipe.CreateGraphicsPipeline();
+}
