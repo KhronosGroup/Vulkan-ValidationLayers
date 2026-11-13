@@ -224,7 +224,7 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncEnvironment& e
             ss << "in subpass " << subpass << " of " << validator.FormatHandle(rp_state.Handle());
             ss << " on attachment " << transition.attachment << " (";
             ss << validator.FormatHandle(attachment_view->Handle());
-            ss << ", " << validator.FormatHandle(attachment_view->image_state->Handle());
+            ss << ", " << validator.FormatHandle(GetImage(*attachment_view)->Handle());
             ss << ", oldLayout " << string_VkImageLayout(transition.old_layout);
             ss << ", newLayout " << string_VkImageLayout(transition.new_layout);
             ss << ")";
@@ -579,7 +579,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncEnvironmen
     auto report_atachment_hazard = [&env, &reporter](const HazardResult& hazard, const vvl::ImageView& attachment_view,
                                                      std::string_view attachment_description) {
         const SyncValidator& validator = env.validator;
-        const vvl::Image& attachment_image = *attachment_view.image_state;
+        const vvl::Image& attachment_image = *GetImage(attachment_view);
         LogObjectList objlist = BaseObjectList(env, reporter, attachment_view.Handle());
         objlist.add(attachment_image.Handle());
 
@@ -807,7 +807,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncEn
             std::ostringstream ss;
             ss << "on attachment " << transition.attachment << " (";
             ss << validator.FormatHandle(view_gen.GetViewState()->Handle());
-            ss << ", " << validator.FormatHandle(view_gen.GetViewState()->image_state->Handle());
+            ss << ", " << validator.FormatHandle(GetImage(*view_gen.GetViewState())->Handle());
             ss << ", oldLayout " << string_VkImageLayout(transition.old_layout);
             ss << ", newLayout " << string_VkImageLayout(transition.new_layout);
             ss << ")";

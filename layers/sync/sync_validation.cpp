@@ -355,6 +355,10 @@ void SyncValidator::Created(vvl::Image& image_state) {
     image_state.SetSubState(container_type, std::make_unique<ImageSubState>(image_state));
 }
 
+void SyncValidator::Created(vvl::ImageView& view_state) {
+    view_state.SetSubState(container_type, std::make_unique<ImageViewSubState>(view_state));
+}
+
 void SyncValidator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                                const RecordObject& record_obj) {
     if (const auto buffer_state = Get<vvl::Buffer>(buffer)) {

@@ -767,7 +767,7 @@ ImageRangeGen AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type, uint32
         }
         subresource.baseArrayLayer += view_index;
         subresource.layerCount = 1;
-        auto range_gen = SubState(*view_->image_state).MakeImageRangeGen(subresource, view_->is_depth_sliced);
+        auto range_gen = SubState(*GetImage(*view_)).MakeImageRangeGen(subresource, view_->is_depth_sliced);
         return range_gen;
     }
 

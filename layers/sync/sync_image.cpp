@@ -96,7 +96,7 @@ ImageRangeGen ImageSubState::MakeImageRangeGen(const VkImageSubresourceRange& su
 }
 
 ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view) {
-    const auto& sub_state = SubState(*view.image_state);
+    const auto& sub_state = SubState(*GetImage(view));
     return sub_state.MakeImageRangeGen(view.normalized_subresource_range, view.is_depth_sliced);
 }
 
@@ -107,7 +107,7 @@ ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, uint32_t view_mask,
         assert((override_depth_stencil_aspect_mask & kDepthStencilAspects) == override_depth_stencil_aspect_mask);
         subresource_range.aspectMask = override_depth_stencil_aspect_mask;
     }
-    const auto& sub_state = SubState(*view.image_state);
+    const auto& sub_state = SubState(*GetImage(view));
     return sub_state.MakeImageRangeGen(subresource_range, view.is_depth_sliced, view_mask);
 }
 
@@ -142,7 +142,7 @@ ImageRangeGen MakeImageRangeGen(const vvl::ImageView& view, VkOffset3D offset, V
         assert((override_depth_stencil_aspect_mask & kDepthStencilAspects) == override_depth_stencil_aspect_mask);
         subresource_range.aspectMask = override_depth_stencil_aspect_mask;
     }
-    const vvl::Image& image = *view.image_state;
+    const vvl::Image& image = *GetImage(view);
 
     if (vkuFormatIsCompressed(image.GetFormat()) && !vkuFormatIsCompressed(view.create_info.format)) {
         // Each uncompressed view texel represents one compressed block.
