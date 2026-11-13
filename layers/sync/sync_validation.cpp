@@ -258,23 +258,20 @@ void SyncValidator::WaitForFence(VkFence fence) {
         if (wait_for.queue_id != kQueueIdInvalid) {
             const QueueState& queue_state = GetQueueState(wait_for.queue_id);
             ApplyTaggedWait(wait_for.queue_id, wait_for.tag, queue_state.GetLastSynchronizedPresent(), wait_for.queue_sync_tags);
-        } else if (!wait_for.acquired.image->Destroyed()) {
+        } else {
             ApplyAcquireWait(wait_for.acquired);
         }
         waitable_fences_.erase(fence_it);
     }
 }
 
-void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value) {
+void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value, bool imported) {
     TimelineHostSyncState* host_sync_state = vvl::Find(host_waitable_semaphores_, semaphore);
     if (!host_sync_state) {
         return;
     }
 
     // An imported payload replaces the value synchronized_value was derived from
-    const auto semaphore_state = Get<vvl::Semaphore>(semaphore);
-    const bool imported = semaphore_state && semaphore_state->ImportedHandleType().has_value();
-
     if (!imported && value <= host_sync_state->synchronized_value) {
         return;
     }
@@ -1872,7 +1869,11 @@ void SyncValidator::PostCallRecordResetEvent(VkDevice device, VkEvent event, con
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-    ProcessQueueCommand(HostResetEventCommand{event});
+    auto event_state = Get<vvl::Event>(event);
+    if (!event_state) {
+        return;
+    }
+    ProcessQueueCommand(HostResetEventCommand{std::move(event_state)});
 }
 
 bool SyncValidator::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
@@ -2399,14 +2400,14 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {
             for (UnresolvedBatch& unresolved_batch : unresolved_batches) {
                 auto it = unresolved_batch.unresolved_waits.begin();
                 while (it != unresolved_batch.unresolved_waits.end()) {
-                    const VkSemaphoreSubmitInfo& wait_info = *it;
+                    const SemaphoreSubmitInfo& wait_info = *it;
                     auto resolving_signal = signals_update.OnTimelineWait(wait_info.semaphore, wait_info.value);
                     if (!resolving_signal.has_value()) {
                         ++it;
                         continue;  // resolving signal not found, the wait stays unresolved
                     }
                     if (resolving_signal->batch) {  // null for host signals
-                        unresolved_batch.batch->ResolveSubmitSemaphoreWait(*resolving_signal, wait_info.stageMask);
+                        unresolved_batch.batch->ResolveSubmitSemaphoreWait(*resolving_signal, wait_info.stage_mask);
                         unresolved_batch.batch->ImportTags(*resolving_signal->batch);
                         unresolved_batch.resolved_dependencies.emplace_back(resolving_signal->batch);
                     }
@@ -2500,7 +2501,9 @@ void SyncValidator::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaph
     const bool wait_all = pWaitInfo->semaphoreCount == 1 || (pWaitInfo->flags & VK_SEMAPHORE_WAIT_ANY_BIT) == 0;
     if (record_obj.result == VK_SUCCESS && wait_all) {
         for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
-            ProcessQueueCommand(WaitForSemaphoreCommand{pWaitInfo->pSemaphores[i], pWaitInfo->pValues[i]});
+            const auto semaphore_state = Get<vvl::Semaphore>(pWaitInfo->pSemaphores[i]);
+            const bool imported = semaphore_state && semaphore_state->ImportedHandleType().has_value();
+            ProcessQueueCommand(WaitForSemaphoreCommand{pWaitInfo->pSemaphores[i], pWaitInfo->pValues[i], imported});
         }
     }
 }
@@ -2516,7 +2519,9 @@ void SyncValidator::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSe
         return;
     }
     if (record_obj.result == VK_SUCCESS) {
-        ProcessQueueCommand(WaitForSemaphoreCommand{semaphore, *pValue});
+        const auto semaphore_state = Get<vvl::Semaphore>(semaphore);
+        const bool imported = semaphore_state && semaphore_state->ImportedHandleType().has_value();
+        ProcessQueueCommand(WaitForSemaphoreCommand{semaphore, *pValue, imported});
     }
 }
 
