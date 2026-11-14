@@ -15,6 +15,20 @@
 #include "pipeline_helper.h"
 #include <cstdlib>
 
+// TEMPORARY - DO NOT MERGE. Canary for exercising CI webhook reporting:
+//   Windows -> compile error, Linux -> test failure, macOS -> pass.
+#if defined(_WIN32)
+#error "Intentional Windows compile failure (webhook CI canary)"
+#endif
+
+TEST(WebhookCanary, PlatformDependentResult) {
+#if defined(__linux__) && !defined(__ANDROID__)
+    FAIL() << "Intentional Linux test failure (webhook CI canary)";
+#else
+    SUCCEED();
+#endif
+}
+
 class PositiveOther : public VkLayerTest {};
 
 TEST_F(PositiveOther, StatelessValidationDisable) {
