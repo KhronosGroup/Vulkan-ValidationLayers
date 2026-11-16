@@ -73,7 +73,7 @@ class Pass {
     // Currently only used in the General Buffer OOB check, put here so it can be adapted for general use if needed
     uint32_t GetLastByte(const AccessPath& access_path, BasicBlock& block, InstructionIt* inst_it);
     uint32_t FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAccess* coop_mat_access, bool is_descriptor_array,
-                                const std::vector<const Instruction*>& access_chain_insts) const;
+                                const std::vector<uint32_t>& ac_indexes) const;
 
     // Generate SPIR-V needed to help convert things to be uniformly uint32_t
     // If no inst_it is passed in, any new instructions will be added to end of the Block

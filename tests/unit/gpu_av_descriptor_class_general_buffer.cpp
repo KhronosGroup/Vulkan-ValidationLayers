@@ -2804,3 +2804,42 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, SecondaryCommandBuffer) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UntypedPointer) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+
+    // layout(set = 0, binding = 0) buffer SSBO { uint a; layout(offset = 16) uint b; };
+    // b = a;  (using untyped pointers)
+    const char* cs_source = R"asm(
+        OpCapability Shader
+        OpCapability UntypedPointersKHR
+        OpExtension "SPV_KHR_untyped_pointers"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main" %ssbo
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %block Block
+        OpMemberDecorate %block 0 Offset 0
+        OpMemberDecorate %block 1 Offset 16
+        OpDecorate %ssbo DescriptorSet 0
+        OpDecorate %ssbo Binding 0
+        %void = OpTypeVoid
+        %func = OpTypeFunction %void
+        %uint = OpTypeInt 32 0
+        %uint_0 = OpConstant %uint 0
+        %uint_1 = OpConstant %uint 1
+        %block = OpTypeStruct %uint %uint
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+        %ssbo = OpUntypedVariableKHR %ptr StorageBuffer %block
+        %main = OpFunction %void None %func
+        %entry = OpLabel
+        %a_ptr = OpUntypedAccessChainKHR %ptr %block %ssbo %uint_0
+        %a = OpLoad %uint %a_ptr
+        %b_ptr = OpUntypedAccessChainKHR %ptr %block %ssbo %uint_1
+        OpStore %b_ptr %a
+        OpReturn
+        OpFunctionEnd
+    )asm";
+
+    ComputeStorageBufferTest(cs_source, SPV_SOURCE_ASM, 8, "VUID-vkCmdDispatch-storageBuffers-06936");
+}

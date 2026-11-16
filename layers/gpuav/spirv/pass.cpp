@@ -340,15 +340,14 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
 // Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the runtime value of
 // the indexing
 uint32_t Pass::GetLastByte(const AccessPath& access_path, BasicBlock& block, InstructionIt* inst_it) {
-    assert(!access_path.ac_list.empty());
+    assert(!access_path.ac_indexes.empty());
     uint32_t current_type_id = 0;
-    const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
-    uint32_t ac_word_index = reset_ac_word;
+    auto index_it = access_path.ac_indexes.begin();
 
     const Type& descriptor_type = *access_path.pointer_type;
     if (descriptor_type.IsArray()) {
         current_type_id = descriptor_type.inst_.Operand(0);
-        ac_word_index++;  // this jumps over the array of descriptors so we first start on the descriptor itself
+        ++index_it;  // this jumps over the array of descriptors so we first start on the descriptor itself
     } else if (descriptor_type.spv_type_ == SpvType::kStruct) {
         current_type_id = descriptor_type.Id();
     } else {
@@ -375,17 +374,8 @@ uint32_t Pass::GetLastByte(const AccessPath& access_path, BasicBlock& block, Ins
     // }
     //
     // it will get us to 20 bytes
-    auto access_chain_iter = access_path.ac_list.begin();
-
-    // This occurs in things like Slang where they have a single OpAccessChain for the descriptor
-    // (GLSL/HLSL will combine 2 indexes into the last OpAccessChain)
-    if (ac_word_index >= (*access_chain_iter)->Length()) {
-        ++access_chain_iter;
-        ac_word_index = reset_ac_word;
-    }
-
-    while (access_chain_iter != access_path.ac_list.end()) {
-        const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
+    for (; index_it != access_path.ac_indexes.end(); ++index_it) {
+        const uint32_t ac_index_id = *index_it;
         uint32_t current_offset_id = 0;
 
         const Type* current_type = type_manager_.FindTypeById(current_type_id);
@@ -483,12 +473,6 @@ uint32_t Pass::GetLastByte(const AccessPath& access_path, BasicBlock& block, Ins
             block.CreateInstruction(spv::OpIAdd, {uint32_type_id, new_sum_id, sum_id, current_offset_id}, inst_it);
             sum_id = new_sum_id;
         }
-
-        ac_word_index++;
-        if (ac_word_index >= (*access_chain_iter)->Length()) {
-            ++access_chain_iter;
-            ac_word_index = reset_ac_word;
-        }
     }
 
     // Offset of the last byte inside the accessed object
@@ -539,14 +523,13 @@ uint32_t Pass::GetLastByte(const AccessPath& access_path, BasicBlock& block, Ins
 // it will return `7` because it covers [4, 7] bytes of the descriptor
 // (This matches the GetLastByte() check)
 uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAccess* coop_mat_access, bool is_descriptor_array,
-                                  const std::vector<const Instruction*>& access_chain_insts) const {
-    assert(!access_chain_insts.empty());
+                                  const std::vector<uint32_t>& ac_indexes) const {
+    assert(!ac_indexes.empty());
     uint32_t last_byte_offset = 0;
-    const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
-    uint32_t ac_word_index = reset_ac_word;
+    auto index_it = ac_indexes.begin();
 
     if (is_descriptor_array) {
-        ac_word_index++;  // this jumps over the array of descriptors so we first start on the descriptor itself
+        ++index_it;  // this jumps over the array of descriptors so we first start on the descriptor itself
     }
 
     uint32_t known_access_size = 0;
@@ -562,19 +545,10 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAcc
     bool col_major = false;
     bool in_matrix = false;
 
-    auto access_chain_iter = access_chain_insts.begin();
-
-    // This occurs in things like Slang where they have a single OpAccessChain for the descriptor
-    // (GLSL/HLSL will combine 2 indexes into the last OpAccessChain)
-    if (ac_word_index >= (*access_chain_iter)->Length()) {
-        ++access_chain_iter;
-        ac_word_index = reset_ac_word;
-    }
-
     uint32_t current_type_id = struct_id;
     // Walk down access chains to build up the offset
-    while (access_chain_iter != access_chain_insts.end()) {
-        const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
+    for (; index_it != ac_indexes.end(); ++index_it) {
+        const uint32_t ac_index_id = *index_it;
         const Constant* index_constant = type_manager_.FindConstantById(ac_index_id);
         if (!index_constant || index_constant->inst_.Opcode() != spv::OpConstant) {
             return 0;  // Access Chain has dynamic value
@@ -665,12 +639,6 @@ uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, const CooperativeMatrixAcc
         }
 
         last_byte_offset += current_offset;
-
-        ac_word_index++;
-        if (ac_word_index >= (*access_chain_iter)->Length()) {
-            ++access_chain_iter;
-            ac_word_index = reset_ac_word;
-        }
     }
 
     // Add in offset of last byte of referenced object

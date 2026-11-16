@@ -58,7 +58,7 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId(bool is_coop_mat) {
 void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
 
-    assert(!meta.access_path->ac_list.empty());
+    assert(!meta.access_path->ac_indexes.empty());
     const DescriptorInterface& interface = meta.access_path->variable->interface_;
     const Constant& desc_set_constant = type_manager_.GetConstantUInt32(interface.set);
     const uint32_t desc_index_id = CastToUint32(descriptor_path.index_id, block, inst_it);  // might be int32
@@ -116,7 +116,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    if (meta.access_path->ac_list.empty()) {
+    if (meta.access_path->ac_indexes.empty()) {
         // Apperently thie is possible, but not sure if this means we should consider this offset zero into the buffer, as that
         // technically not allowed with typed pointers, so for now just skip these as seems no actual code generators produce this
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12618
@@ -145,7 +145,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
 
     if (!module_.settings_.safe_mode) {
         meta.access_offset = FindOffsetInStruct(meta.descriptor_block_type_id, &meta.access_path->coop_mat, is_descriptor_array,
-                                                meta.access_path->ac_list);
+                                                meta.access_path->ac_indexes);
     }
 
     // Save information to be used to make the Function
