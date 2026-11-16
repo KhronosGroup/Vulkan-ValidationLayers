@@ -4594,10 +4594,11 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, 
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    const Location info_loc = error_obj.location.dot(Field::pCopyMemoryInfo);
 
     for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {
         const VkDeviceMemoryCopyKHR& region = pCopyMemoryInfo->pRegions[i];
-        const Location region_loc = error_obj.location.dot(Field::pCopyMemoryInfo).dot(Field::pRegions, i);
+        const Location region_loc = info_loc.dot(Field::pRegions, i);
         const LogObjectList objlist(commandBuffer);
 
         skip |=
