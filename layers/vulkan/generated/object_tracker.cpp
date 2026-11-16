@@ -2028,11 +2028,11 @@ void Instance::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, 
     }
 
     if (pPhysicalDeviceGroupProperties) {
-        const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
+        const RecordObject enumerate_record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
         for (uint32_t device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
-            PostCallRecordEnumeratePhysicalDevices(instance,
-                                                   &pPhysicalDeviceGroupProperties[device_group_index].physicalDeviceCount,
-                                                   pPhysicalDeviceGroupProperties[device_group_index].physicalDevices, record_obj);
+            PostCallRecordEnumeratePhysicalDevices(
+                instance, &pPhysicalDeviceGroupProperties[device_group_index].physicalDeviceCount,
+                pPhysicalDeviceGroupProperties[device_group_index].physicalDevices, enumerate_record_obj);
         }
     }
 }
@@ -3871,11 +3871,11 @@ void Instance::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instanc
     }
 
     if (pPhysicalDeviceGroupProperties) {
-        const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
+        const RecordObject enumerate_record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
         for (uint32_t device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
-            PostCallRecordEnumeratePhysicalDevices(instance,
-                                                   &pPhysicalDeviceGroupProperties[device_group_index].physicalDeviceCount,
-                                                   pPhysicalDeviceGroupProperties[device_group_index].physicalDevices, record_obj);
+            PostCallRecordEnumeratePhysicalDevices(
+                instance, &pPhysicalDeviceGroupProperties[device_group_index].physicalDeviceCount,
+                pPhysicalDeviceGroupProperties[device_group_index].physicalDevices, enumerate_record_obj);
         }
     }
 }
