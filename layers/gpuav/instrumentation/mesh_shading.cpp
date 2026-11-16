@@ -29,7 +29,7 @@ void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb) 
         [](Validator& gpuav, CommandBufferSubState& cb, const LastBound& last_bound) {
             CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
                 [](Validator& gpuav, const Location& loc, const uint32_t* error_record, const InstrumentedShader*,
-                   std::string& out_error_msg, std::string& out_vuid_msg) {
+                   InstrumentationError& out_error) {
                     using namespace glsl;
                     bool error_found = false;
                     if (GetErrorGroup(error_record) != kErrorGroup_InstMeshShading) {
@@ -51,8 +51,8 @@ void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb) 
                             // We normally don't do "logic" to determine the VU, but in this case, its valuable to print both value,
                             // so we already have all the information and easier to select the VUID here than via the shader
                             // interface
-                            out_vuid_msg = (vertex_count > output_vertices) ? "VUID-RuntimeSpirv-MeshEXT-07332"
-                                                                            : "VUID-RuntimeSpirv-MeshEXT-07333";
+                            out_error.vuid = (vertex_count > output_vertices) ? "VUID-RuntimeSpirv-MeshEXT-07332"
+                                                                              : "VUID-RuntimeSpirv-MeshEXT-07333";
 
                             strm << "OpSetMeshOutputsEXT set the Vertex Count to " << vertex_count << " and Primitive Count to "
                                  << primitive_count << ", but they must be less than the OutputVertices (" << output_vertices
@@ -67,7 +67,7 @@ void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb) 
                                  << output_primitive << "], out vertices MeshOutput vertices[" << output_vertices << "])\"";
                         } break;
                         case kErrorSubCode_MeshShading_TaskPayloadAlways: {
-                            out_vuid_msg = "VUID-RuntimeSpirv-MeshEXT-12380";
+                            out_error.vuid = "VUID-RuntimeSpirv-MeshEXT-12380";
                             // TODO - Print the variable name
                             strm << "The mesh shader is accessing a TaskPayloadWorkgroupEXT variable, but there is no Task Shader "
                                     "to set the payload values.";
@@ -77,7 +77,7 @@ void RegisterMeshShadingValidation(Validator& gpuav, CommandBufferSubState& cb) 
                             error_found = false;
                             break;
                     }
-                    out_error_msg += strm.str();
+                    out_error.message += strm.str();
                     return error_found;
                 };
 

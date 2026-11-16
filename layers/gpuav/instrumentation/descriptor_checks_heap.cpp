@@ -130,8 +130,8 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
 
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
             [&cb, heap_binding_index, push_data_index](Validator& gpuav, const Location& loc, const uint32_t* error_record,
-                                                       const InstrumentedShader* instrumented_shader, std::string& out_error_msg,
-                                                       std::string& out_vuid_msg) {
+                                                       const InstrumentedShader* instrumented_shader,
+                                                       InstrumentationError& out_error) {
                 using namespace glsl;
 
                 bool error_found = false;
@@ -250,7 +250,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         }
                         ss << "is accessing the " << (is_sampler ? "sampler" : "resource") << " heap at offset 0x" << std::hex
                            << offset << " (address 0x" << heap_address << ") which is OOB of the heap memory.\n";
-                        out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
+                        out_error.vuid = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
                         error_found = true;
                     } break;
 
@@ -270,7 +270,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                             ss << string_range_hex(heap_cb_state->resource_reserved) << " (size of " << std::dec
                                << heap_cb_state->resource_reserved.size() << " bytes)\n";
                         }
-                        out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
+                        out_error.vuid = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_OOB_11309);
                         error_found = true;
                     } break;
 
@@ -290,14 +290,14 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         ss << " (" << std::dec << alignment_value << ")\n";
 
                         if (error_sub_code == kErrorSubCode_DescriptorHeap_DescriptorAlignmentUntyped) {
-                            out_vuid_msg = is_sampler ? "VUID-RuntimeSpirv-samplerDescriptorAlignment-11348"
-                                           : is_image ? "VUID-RuntimeSpirv-imageDescriptorAlignment-11349"  // (and 11383)
-                                                      : "VUID-RuntimeSpirv-bufferDescriptorAlignment-11384";
+                            out_error.vuid = is_sampler ? "VUID-RuntimeSpirv-samplerDescriptorAlignment-11348"
+                                             : is_image ? "VUID-RuntimeSpirv-imageDescriptorAlignment-11349"  // (and 11383)
+                                                        : "VUID-RuntimeSpirv-bufferDescriptorAlignment-11384";
                         } else {
                             vvl::ActionVUID action_vuid = is_buffer  ? vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11297
                                                           : is_image ? vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11298
                                                                      : vvl::ActionVUID::DESCRIPTOR_HEAP_ALIGNMENT_11299;
-                            out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                            out_error.vuid = vvl::CreateActionVuid(loc.function, action_vuid);
                         }
                         error_found = true;
                     } break;
@@ -338,7 +338,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         vvl::ActionVUID action_vuid = (error_sub_code == kErrorSubCode_DescriptorHeap_IndirectIndexPushAlignment)
                                                           ? vvl::ActionVUID::DESCRIPTOR_HEAP_INDIRECT_INDEX_PUSH_11300
                                                           : vvl::ActionVUID::DESCRIPTOR_HEAP_INDIRECT_ADDRESS_PUSH_11304;
-                        out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                        out_error.vuid = vvl::CreateActionVuid(loc.function, action_vuid);
                         error_found = true;
                     } break;
 
@@ -360,7 +360,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         vvl::ActionVUID action_vuid = (is_uniform)
                                                           ? vvl::ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11441
                                                           : vvl::ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11442;
-                        out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                        out_error.vuid = vvl::CreateActionVuid(loc.function, action_vuid);
                         error_found = true;
                     } break;
 
@@ -369,7 +369,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                            << ") which is not aligned to minUniformBufferOffsetAlignment (0x"
                            << gpuav.phys_dev_props.limits.minUniformBufferOffsetAlignment << ")\n";
 
-                        out_vuid_msg =
+                        out_error.vuid =
                             vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_ADDRESS_BUFFER_ALIGNMENT_11441);
                         error_found = true;
                     } break;
@@ -391,7 +391,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                         }
 
                         ss << "is accessing the indirect buffer, but the indirect address is null.\n";
-                        out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                        out_error.vuid = vvl::CreateActionVuid(loc.function, action_vuid);
                         error_found = true;
                     } break;
                     case kErrorSubCode_DescriptorHeap_DescriptorHashing_None:
@@ -418,7 +418,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                             entry.Describe(*gpuav.device_state, ss);
                             ss << '\n';
                         }
-                        out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_HASHING_12472);
+                        out_error.vuid = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_HEAP_HASHING_12472);
                         error_found = true;
                     } break;
                 }
@@ -569,7 +569,7 @@ void RegisterDescriptorChecksHeapValidation(Validator& gpuav, CommandBufferSubSt
                     }
                 }
 
-                out_error_msg += ss.str();
+                out_error.message += ss.str();
                 return error_found;
             };
 

@@ -175,8 +175,7 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
                                                                                   Validator& gpuav, const Location& loc,
                                                                                   const uint32_t* error_record,
                                                                                   const InstrumentedShader*,
-                                                                                  std::string& out_error_msg,
-                                                                                  std::string& out_vuid_msg) {
+                                                                                  InstrumentationError& out_error) {
             if (GetErrorGroup(error_record) != glsl::kErrorGroup_InstIndexedDraw) {
                 return false;
             }
@@ -189,23 +188,23 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
 
             switch (loc.function) {
                 case vvl::Func::vkCmdDrawIndexed:
-                    out_vuid_msg = "VUID-vkCmdDrawIndexed-None-02721";
+                    out_error.vuid = "VUID-vkCmdDrawIndexed-None-02721";
                     break;
                 case vvl::Func::vkCmdDrawIndexedIndirectCount:
                 case vvl::Func::vkCmdDrawIndexedIndirectCountKHR:
-                    out_vuid_msg = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
+                    out_error.vuid = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
                     break;
                 case vvl::Func::vkCmdDrawIndexedIndirectCount2KHR:
-                    out_vuid_msg = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-02721";
+                    out_error.vuid = "VUID-vkCmdDrawIndexedIndirectCount2KHR-None-02721";
                     break;
                 case vvl::Func::vkCmdDrawIndexedIndirect:
-                    out_vuid_msg = "VUID-vkCmdDrawIndexedIndirect-None-02721";
+                    out_error.vuid = "VUID-vkCmdDrawIndexedIndirect-None-02721";
                     break;
                 case vvl::Func::vkCmdDrawIndexedIndirect2KHR:
-                    out_vuid_msg = "VUID-vkCmdDrawIndexedIndirect2KHR-None-02721";
+                    out_error.vuid = "VUID-vkCmdDrawIndexedIndirect2KHR-None-02721";
                     break;
                 case vvl::Func::vkCmdDrawMultiIndexedEXT:
-                    out_vuid_msg = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
+                    out_error.vuid = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
                     break;
                 default:
                     return false;
@@ -247,38 +246,42 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
             };
 
             if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
-                out_error_msg += "Vertex index ";
+                out_error.message += "Vertex index ";
                 const uint32_t oob_vertex_index = error_record[glsl::kHeader_StageInfoOffset_0];
-                out_error_msg += std::to_string(oob_vertex_index);
+                out_error.message += std::to_string(oob_vertex_index);
             } else if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
-                out_error_msg += "Instance index ";
+                out_error.message += "Instance index ";
                 const uint32_t oob_instance_index = error_record[glsl::kHeader_StageInfoOffset_1];
-                out_error_msg += std::to_string(oob_instance_index);
+                out_error.message += std::to_string(oob_instance_index);
                 const uint32_t instance_rate_divisor =
                     local_error_info->vertex_attribute_fetch_limit_instance_input_rate->instance_rate_divisor;
                 if (instance_rate_divisor > 1 && instance_rate_divisor != vvl::kNoIndex32) {
-                    out_error_msg += " (or ";
-                    out_error_msg += std::to_string(oob_instance_index / instance_rate_divisor);
-                    out_error_msg += " if divided by instance rate divisor of ";
-                    out_error_msg += std::to_string(instance_rate_divisor);
-                    out_error_msg += ")";
+                    out_error.message += " (or ";
+                    out_error.message += std::to_string(oob_instance_index / instance_rate_divisor);
+                    out_error.message += " if divided by instance rate divisor of ";
+                    out_error.message += std::to_string(instance_rate_divisor);
+                    out_error.message += ")";
                 }
             }
 
             if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
-                out_error_msg += ", using VK_VERTEX_INPUT_RATE_VERTEX, has caused an OOB access within a bound vertex buffer.\n";
+                out_error.message +=
+                    ", using VK_VERTEX_INPUT_RATE_VERTEX, has caused an OOB access within a bound vertex buffer.\n";
 
             } else if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
-                out_error_msg += ", using VK_VERTEX_INPUT_RATE_INSTANCE, has caused an OOB access within a bound vertex buffer.\n";
+                out_error.message +=
+                    ", using VK_VERTEX_INPUT_RATE_INSTANCE, has caused an OOB access within a bound vertex buffer.\n";
             }
 
             if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
-                add_vertex_buffer_binding_info(*local_error_info->vertex_attribute_fetch_limit_vertex_input_rate, out_error_msg);
-                add_vertex_attribute_info(*local_error_info->vertex_attribute_fetch_limit_vertex_input_rate, out_error_msg);
+                add_vertex_buffer_binding_info(*local_error_info->vertex_attribute_fetch_limit_vertex_input_rate,
+                                               out_error.message);
+                add_vertex_attribute_info(*local_error_info->vertex_attribute_fetch_limit_vertex_input_rate, out_error.message);
 
             } else if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
-                add_vertex_buffer_binding_info(*local_error_info->vertex_attribute_fetch_limit_instance_input_rate, out_error_msg);
-                add_vertex_attribute_info(*local_error_info->vertex_attribute_fetch_limit_instance_input_rate, out_error_msg);
+                add_vertex_buffer_binding_info(*local_error_info->vertex_attribute_fetch_limit_instance_input_rate,
+                                               out_error.message);
+                add_vertex_attribute_info(*local_error_info->vertex_attribute_fetch_limit_instance_input_rate, out_error.message);
             }
 
             if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
@@ -286,24 +289,24 @@ void RegisterVertexAttributeFetchOobValidation(Validator& gpuav, CommandBufferSu
                 assert(index_byte_size != 0);  // Should never be VK_INDEX_TYPE_NONE_KHR
                 const uint32_t max_indices_in_buffer =
                     static_cast<uint32_t>(local_error_info->index_buffer_binding->size / index_byte_size);
-                out_error_msg += "Index Buffer (";
-                out_error_msg += gpuav.FormatHandle(local_error_info->index_buffer_binding->Buffer());
-                out_error_msg += ") binding info:\n";
-                out_error_msg += "  - Type: ";
-                out_error_msg += string_VkIndexType(local_error_info->index_buffer_binding->index_type);
-                out_error_msg += '\n';
-                out_error_msg += "  - Offset: ";
-                out_error_msg += std::to_string(local_error_info->index_buffer_binding->BufferOffset());
-                out_error_msg += " bytes\n";
-                out_error_msg += "  - Size: ";
-                out_error_msg += std::to_string(local_error_info->index_buffer_binding->size);
-                out_error_msg += " bytes (sizeof(";
-                out_error_msg += string_VkIndexType(local_error_info->index_buffer_binding->index_type);
-                out_error_msg += ") * ";
-                out_error_msg += std::to_string(max_indices_in_buffer);
-                out_error_msg += ")\n";
+                out_error.message += "Index Buffer (";
+                out_error.message += gpuav.FormatHandle(local_error_info->index_buffer_binding->Buffer());
+                out_error.message += ") binding info:\n";
+                out_error.message += "  - Type: ";
+                out_error.message += string_VkIndexType(local_error_info->index_buffer_binding->index_type);
+                out_error.message += '\n';
+                out_error.message += "  - Offset: ";
+                out_error.message += std::to_string(local_error_info->index_buffer_binding->BufferOffset());
+                out_error.message += " bytes\n";
+                out_error.message += "  - Size: ";
+                out_error.message += std::to_string(local_error_info->index_buffer_binding->size);
+                out_error.message += " bytes (sizeof(";
+                out_error.message += string_VkIndexType(local_error_info->index_buffer_binding->index_type);
+                out_error.message += ") * ";
+                out_error.message += std::to_string(max_indices_in_buffer);
+                out_error.message += ")\n";
             }
-            out_error_msg +=
+            out_error.message +=
                 "Note: Vertex buffer binding size is the effective, valid one, based on how the VkBuffer was created and "
                 "the vkCmdBindVertexBuffers parameters. So it can be clamped up to 0 if binding was invalid.\nHint: This can be "
                 "allowed if the robustBufferAccess feature is enabled.";

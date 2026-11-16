@@ -189,7 +189,7 @@ void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSub
         [](Validator& gpuav, CommandBufferSubState& cb, const LastBound& last_bound) {
             CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
                 [](Validator& gpuav, const Location& loc, const uint32_t* error_record,
-                   const InstrumentedShader* instrumented_shader, std::string& out_error_msg, std::string& out_vuid_msg) {
+                   const InstrumentedShader* instrumented_shader, InstrumentationError& out_error) {
                     using namespace glsl;
 
                     bool error_found = false;
@@ -218,7 +218,7 @@ void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSub
                     switch (error_sub_code) {
                         case kErrorSubCode_DescriptorBuffer_DescriptorHashing_None: {
                             ss << "is accessing the descriptor buffer but there is no valid descriptor at that location.";
-                            out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_BUFFER_08116);
+                            out_error.vuid = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_BUFFER_08116);
                             error_found = true;
                         } break;
                         case kErrorSubCode_DescriptorBuffer_DescriptorHashing_Wrong: {
@@ -226,12 +226,12 @@ void RegisterDescriptorChecksBufferValidation(Validator& gpuav, CommandBufferSub
                             const auto& entry = gpuav.device_state->descriptor_hashing->table.slots[slot_index].entry;
                             ss << "is accessing the  descriptor buffer but there is a descriptor there of the wrong type: \n";
                             entry.Describe(*gpuav.device_state, ss);
-                            out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_BUFFER_08116);
+                            out_error.vuid = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_BUFFER_08116);
                             error_found = true;
                         } break;
                     }
                     ss << '\n';
-                    out_error_msg += ss.str();
+                    out_error.message += ss.str();
                     return error_found;
                 };
 

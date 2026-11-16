@@ -31,7 +31,7 @@ void RegisterExpectAssume(Validator& gpuav, CommandBufferSubState& cb) {
         [](Validator& gpuav, CommandBufferSubState& cb, const LastBound& last_bound) {
             CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
                 [](Validator& gpuav, const Location& loc, const uint32_t* error_record, const InstrumentedShader*,
-                   std::string& out_error_msg, std::string& out_vuid_msg) {
+                   InstrumentationError& out_error) {
                     using namespace glsl;
                     bool error_found = false;
                     if (GetErrorGroup(error_record) != kErrorGroup_InstExpectAssume) {
@@ -48,13 +48,13 @@ void RegisterExpectAssume(Validator& gpuav, CommandBufferSubState& cb) {
                                   "compiled the shader relying on the condition being true\nNote: GPU-AV replace the "
                                   "OpAssumeTrueKHR instruciton, so the shader may behave differently with it on.\nSee more at "
                                   "https://github.khronos.org/SPIRV-Registry/extensions/KHR/SPV_KHR_expect_assume.html";
-                            out_vuid_msg = "SPIRV-ExpectAssume-AssumeTrue";
+                            out_error.vuid = "SPIRV-ExpectAssume-AssumeTrue";
                         } break;
                         default:
                             error_found = false;
                             break;
                     }
-                    out_error_msg += ss.str();
+                    out_error.message += ss.str();
                     return error_found;
                 };
 
