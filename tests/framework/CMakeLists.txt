@@ -92,7 +92,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     endif()
 elseif(MSVC)
     target_compile_options(vk_test_framework PUBLIC
-        /wd4389 # signed/unsigned mismatch
         /wd4267 # Disable some signed/unsigned mismatch warnings.
     )
 
