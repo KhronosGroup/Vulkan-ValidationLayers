@@ -230,6 +230,9 @@ const Type* TypeManager::FindTypeGlobal(const Function& function, uint32_t id) c
     if (auto ret = module_.type_manager_.FindVariableById(id)) {
         return &ret->type_;
     }
+    if (auto it = undef_ids_.find(id); it != undef_ids_.end()) {
+        return FindTypeById(it->second);
+    }
     return nullptr;
 }
 
@@ -980,7 +983,7 @@ uint64_t Constant::GetValueUint64(bool is_signed) const {
 
 void TypeManager::AddUndef(std::unique_ptr<Instruction> new_inst) {
     const auto& inst = module_.types_values_constants_.emplace_back(std::move(new_inst));
-    undef_ids_.insert(inst->ResultId());
+    undef_ids_[inst->ResultId()] = inst->TypeId();
 }
 
 bool TypeManager::IsUndef(uint32_t id) const { return undef_ids_.find(id) != undef_ids_.end(); }

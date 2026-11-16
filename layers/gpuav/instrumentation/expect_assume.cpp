@@ -45,8 +45,8 @@ void RegisterExpectAssume(Validator& gpuav, CommandBufferSubState& cb) {
                     switch (error_sub_code) {
                         case kErrorSubCode_ExpectAssume_AssumeTrue: {
                             ss << "OpAssumeTrueKHR condition was false, which is undefined behavior as the driver might have "
-                                  "compiled the shader relying on the condition being true\nNote: GPU-AV replace the "
-                                  "OpAssumeTrueKHR instruciton, so the shader may behave differently with it on.\nSee more at "
+                                  "compiled the shader relying on the condition being true.\nNote: GPU-AV replaces the "
+                                  "OpAssumeTrueKHR instruction, so the shader may behave differently with it on.\nSee more at "
                                   "https://github.khronos.org/SPIRV-Registry/extensions/KHR/SPV_KHR_expect_assume.html";
                             out_vuid_msg = "SPIRV-ExpectAssume-AssumeTrue";
                         } break;

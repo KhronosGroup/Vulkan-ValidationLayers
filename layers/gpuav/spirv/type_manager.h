@@ -293,7 +293,8 @@ class TypeManager {
     vvl::unordered_map<uint32_t, uint32_t> struct_size_map_;
 
     // The use of OpUndef is sometime misused, we store all OpUndef here as way to check if we have it one by accident
-    vvl::unordered_set<uint32_t> undef_ids_;
+    // <undef id, type id>
+    vvl::unordered_map<uint32_t, uint32_t> undef_ids_;
 
     bool IsExplicitLayoutType(const Type& type) const;
 };
