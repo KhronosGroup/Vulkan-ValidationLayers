@@ -72,6 +72,10 @@ class SyncValidator : public vvl::DeviceProxy {
     vvl::unordered_map<VkFence, FenceHostSyncPoint> waitable_fences_;
     vvl::unordered_map<VkSemaphore, TimelineHostSyncState> host_waitable_semaphores_;
 
+    // Highest timeline values seen by successful host wait/get counter.
+    // Updated when recording the wait command, so repeats can be skipped even before it executes
+    vvl::unordered_map<VkSemaphore, uint64_t> recorded_timeline_wait_values_;
+
     // Keep swapchains until their destruction commands execute
     std::vector<std::shared_ptr<vvl::Swapchain>> swapchains_;
 
@@ -116,8 +120,20 @@ class SyncValidator : public vvl::DeviceProxy {
 
     template <typename Command>
     bool ProcessQueueCommand(Command&& command) {
+        // Submit-time processing
         if (!retire_mode_) {
             return command.Execute(*this);
+        }
+
+        // Ensure the host polling does not fill the queue
+        if constexpr (std::is_same_v<Command, WaitForSemaphoreCommand>) {
+            if (!command.imported) {
+                uint64_t& observed_value = recorded_timeline_wait_values_[command.semaphore];
+                if (command.value <= observed_value) {
+                    return false;
+                }
+                observed_value = command.value;
+            }
         }
         // Non-submit commands can execute immediately if not blocked by earlier commands
         if constexpr (!std::is_same_v<Command, QueueSubmitCommand>) {

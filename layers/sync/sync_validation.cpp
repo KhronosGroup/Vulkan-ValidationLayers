@@ -709,6 +709,7 @@ void SyncValidator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocati
     timeline_signals_.clear();
     waitable_fences_.clear();
     host_waitable_semaphores_.clear();
+    recorded_timeline_wait_values_.clear();
     swapchains_.clear();
 }
 
@@ -719,6 +720,9 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
         return;
     }
     if (auto sem_state = Get<vvl::Semaphore>(*pSemaphore); sem_state && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        if (retire_mode_) {
+            recorded_timeline_wait_values_[*pSemaphore] = sem_state->initial_value;
+        }
         ProcessQueueCommand(SemaphoreCreatedCommand{*pSemaphore, sem_state->initial_value});
     }
 }
@@ -726,6 +730,9 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
 void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
                                                   const RecordObject& record_obj) {
     if (auto sem_state = Get<vvl::Semaphore>(semaphore); sem_state && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+        if (retire_mode_) {
+            recorded_timeline_wait_values_.erase(semaphore);
+        }
         ProcessQueueCommand(SemaphoreDestroyedCommand{semaphore});
     }
 }
