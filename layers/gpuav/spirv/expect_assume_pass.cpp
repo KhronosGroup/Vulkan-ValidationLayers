@@ -85,7 +85,7 @@ bool ExpectAssumePass::Instrument() {
 
                 // Subtle but important!
                 //
-                // We replaces the OpAssumeTrueKHR here with our function.
+                // We replace the OpAssumeTrueKHR here with our function.
                 // The goal is prevent a "Heisenbug" where our code changes the behavior originally seen without GPU-AV
                 inst_it = block_instructions.erase(inst_it);
                 --inst_it;

@@ -958,3 +958,43 @@ TEST_F(PositiveGpuAVSpirv, BitcastSpecConstantPhysicalStorageBuffer) {
     pipe.cs_ = VkShaderObj(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveGpuAVSpirv, SignedUndefIndex) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::shaderStorageBufferArrayDynamicIndexing);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %buffers Binding 0
+               OpDecorate %buffers DescriptorSet 0
+       %void = OpTypeVoid
+         %fn = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_2 = OpConstant %int 2
+      %undef = OpUndef %int
+       %SSBO = OpTypeStruct %int
+  %SSBO_array = OpTypeArray %SSBO %int_2
+  %ptr_array = OpTypePointer StorageBuffer %SSBO_array
+    %buffers = OpVariable %ptr_array StorageBuffer
+    %ptr_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %fn
+      %entry = OpLabel
+          %p = OpAccessChain %ptr_int %buffers %undef %int_0
+               OpStore %p %int_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}
