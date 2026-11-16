@@ -35,7 +35,6 @@ class SyncValidator;
 
 struct WaitForFenceCommand {
     VkFence fence;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
@@ -43,56 +42,47 @@ struct WaitForSemaphoreCommand {
     VkSemaphore semaphore;
     uint64_t value;
     bool imported;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
 struct SignalSemaphoreCommand {
     VkSemaphore semaphore;
     uint64_t value;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
 struct HostResetEventCommand {
     std::shared_ptr<const vvl::Event> event;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
 struct QueueWaitIdleCommand {
     VkQueue queue;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
 struct DeviceWaitIdleCommand {
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
 struct ResourceDestroyedCommand {
     small_vector<AccessRange, 1> ranges;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
 struct SemaphoreCreatedCommand {
     VkSemaphore semaphore;
     uint64_t initial_value;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
 struct SemaphoreDestroyedCommand {
     VkSemaphore semaphore;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
 struct SwapchainDestroyedCommand {
     std::shared_ptr<vvl::Swapchain> swapchain;
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
@@ -108,7 +98,6 @@ struct QueuePresentCommand {
     small_vector<ImageInfo, 1> images;  // per swapchain
 
     QueuePresentCommand(SyncValidator& validator, QueueId queue_id, const VkPresentInfoKHR& present_info);
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
@@ -120,7 +109,6 @@ struct AcquireNextImageCommand {
     VkSemaphore semaphore;
     VkFence fence;
 
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
@@ -139,7 +127,9 @@ struct QueueSubmitCommand {
         small_vector<CommandBufferRecordingPtr, 1> recordings;
         small_vector<SemaphoreSubmitInfo, 1> signals;
     };
+    bool ready;
     QueueId queue_id;
+    uint64_t last_batch_seq = 0;
     VkFence fence;
     vvl::Func submit_func;
     std::vector<std::string> initial_label_stack;
@@ -147,7 +137,6 @@ struct QueueSubmitCommand {
 
     QueueSubmitCommand(SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits, VkFence fence,
                        vvl::Func submit_func);
-    bool IsReady() const { return true; }
     bool Execute(SyncValidator& validator) const;
 };
 
@@ -156,10 +145,6 @@ using QueueCommand =
                  DeviceWaitIdleCommand, ResourceDestroyedCommand, SemaphoreCreatedCommand, SemaphoreDestroyedCommand,
                  SwapchainDestroyedCommand, QueuePresentCommand, AcquireNextImageCommand, QueueSubmitCommand>;
 using QueueCommandStorage = std::deque<QueueCommand>;
-
-// Whether the command is ready to execute.
-// Commands may need to wait for gpu results to be processed
-bool IsQueueCommandReady(const QueueCommand& command);
 
 // Returns the skip value
 bool ExecuteQueueCommand(const QueueCommand& command, SyncValidator& validator);

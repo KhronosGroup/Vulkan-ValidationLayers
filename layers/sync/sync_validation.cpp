@@ -38,6 +38,51 @@
 
 namespace syncval {
 
+// Passes the captured command from the validate call to PreSubmit
+static thread_local QueueSubmitCommand* pending_submit = nullptr;
+
+class QueueSubState : public vvl::QueueSubState {
+  public:
+    QueueSubState(SyncValidator& validator, vvl::Queue& queue, QueueId queue_id)
+        : vvl::QueueSubState(queue), validator_(validator), queue_id_(queue_id) {}
+
+    void PreSubmit(std::vector<vvl::QueueSubmission>& submissions) override;
+    void Retire(vvl::QueueSubmission& submission) override;
+
+  private:
+    SyncValidator& validator_;
+    const QueueId queue_id_;
+};
+
+void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
+    if (!pending_submit) {
+        return;
+    }
+    // Update last_batch_seq of the QueueSubmitCommand added in the validation phase
+    // NOTE: need to lock, Retire can read last_batch_seq at the same time
+    auto lock = validator_.WriteLock();
+    pending_submit->last_batch_seq = submissions.back().seq;
+    pending_submit = nullptr;
+}
+
+void QueueSubState::Retire(vvl::QueueSubmission& submission) {
+    if (!submission.is_last_submission) {
+        return;
+    }
+    const vvl::Func function = submission.loc.Get().function;
+    if (IsValueIn(function, {vvl::Func::vkQueueSubmit, vvl::Func::vkQueueSubmit2, vvl::Func::vkQueueSubmit2KHR})) {
+        // When enabled, GPU-AV's Retire callback processes the results before this callback runs
+        auto lock = validator_.WriteLock();
+        for (QueueCommand& command : validator_.queue_commands_) {
+            auto* submit = std::get_if<QueueSubmitCommand>(&command);
+            if (submit && submit->queue_id == queue_id_ && submit->last_batch_seq == submission.seq) {
+                submit->ready = true;
+                break;
+            }
+        }
+    }
+}
+
 static bool GetShowStatsEnvVar() {
     // Set environment variable as non zero number to enable stats reporting
     const auto show_stats_str = GetEnvironment("VK_SYNCVAL_SHOW_STATS");
@@ -319,7 +364,8 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
 
 void SyncValidator::ExecuteQueueCommands() {
     while (!queue_commands_.empty()) {
-        if (!IsQueueCommandReady(queue_commands_.front())) {
+        const auto* submit = std::get_if<QueueSubmitCommand>(&queue_commands_.front());
+        if (submit && !submit->ready) {
             break;
         }
         ExecuteQueueCommand(queue_commands_.front(), *this);
@@ -623,7 +669,11 @@ void SyncValidator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, con
     };
     queue_states_.reserve(device_state->Count<vvl::Queue>());
     for (const auto& queue : get_sorted_queues()) {
-        queue_states_.emplace_back(QueueState(queue, queue_id_limit_++));
+        const QueueId queue_id = queue_id_limit_++;
+        queue_states_.emplace_back(QueueState(queue, queue_id));
+        if (retire_mode_) {
+            queue->SetSubState(container_type, std::make_unique<QueueSubState>(*this, *queue, queue_id));
+        }
     }
 
     const auto env_debug_command_number = GetEnvironment("VK_SYNCVAL_DEBUG_COMMAND_NUMBER");
@@ -2388,7 +2438,11 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
         fence = VK_NULL_HANDLE;
     }
     QueueSubmitCommand command(*this, queue_id, vvl::make_span(pSubmits, submitCount), fence, error_obj.location.function);
-    return ProcessQueueCommand(std::move(command));
+    const bool skip = ProcessQueueCommand(std::move(command));
+    if (retire_mode_) {
+        pending_submit = &std::get<QueueSubmitCommand>(queue_commands_.back());
+    }
+    return skip;
 }
 
 bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {

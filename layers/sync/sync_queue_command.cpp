@@ -255,7 +255,8 @@ bool AcquireNextImageCommand::Execute(SyncValidator& validator) const {
 
 QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits,
                                        VkFence fence, vvl::Func submit_func)
-    : queue_id(queue_id),
+    : ready(!validator.retire_mode_),
+      queue_id(queue_id),
       fence(fence),
       submit_func(submit_func),
       initial_label_stack(validator.GetQueueState(queue_id).GetQueue()->cmdbuf_label_stack) {
@@ -381,10 +382,6 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
         }
     }
     return skip;
-}
-
-bool IsQueueCommandReady(const QueueCommand& command) {
-    return std::visit([](const auto& operation) { return operation.IsReady(); }, command);
 }
 
 bool ExecuteQueueCommand(const QueueCommand& command, SyncValidator& validator) {
