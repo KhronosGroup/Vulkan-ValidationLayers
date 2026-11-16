@@ -58,11 +58,16 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
     if (!pending_submit) {
         return;
     }
-    // Update last_batch_seq of the QueueSubmitCommand added in the validation phase
-    // NOTE: need to lock, Retire can read last_batch_seq at the same time
     auto lock = validator_.WriteLock();
+
+    // Update last_batch_seq of the QueueSubmitCommand added in the validation phase
     pending_submit->last_batch_seq = submissions.back().seq;
     pending_submit = nullptr;
+
+    // Another thread may have filled the queue while this submit's sequence was zero
+    if (validator_.queue_commands_.size() >= SyncValidator::kQueueCommandLimit) {
+        validator_.ExecuteQueueCommandsUntilBlocked();
+    }
 }
 
 void QueueSubState::Retire(vvl::QueueSubmission& submission) {
@@ -77,6 +82,7 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
             auto* submit = std::get_if<QueueSubmitCommand>(&command);
             if (submit && submit->queue_id == queue_id_ && submit->last_batch_seq == submission.seq) {
                 submit->ready = true;
+                validator_.ExecuteQueueCommandsUntilBlocked();
                 break;
             }
         }
@@ -362,11 +368,18 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
     }
 }
 
-void SyncValidator::ExecuteQueueCommands() {
+void SyncValidator::ExecuteQueueCommandsUntilBlocked() {
     while (!queue_commands_.empty()) {
         const auto* submit = std::get_if<QueueSubmitCommand>(&queue_commands_.front());
-        if (submit && !submit->ready) {
-            break;
+        if (submit) {
+            if (submit->last_batch_seq == 0) {
+                // PreSubmit still needs this command until it assigns the seq
+                break;
+            }
+            const bool force_progress = queue_commands_.size() >= kQueueCommandLimit;
+            if (!submit->ready && !force_progress) {
+                break;
+            }
         }
         ExecuteQueueCommand(queue_commands_.front(), *this);
         queue_commands_.pop_front();

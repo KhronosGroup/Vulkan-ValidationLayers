@@ -77,6 +77,7 @@ class SyncValidator : public vvl::DeviceProxy {
 
     // Run validation after a GPU synchronization point
     const bool retire_mode_ = false;  // placeholder
+    static constexpr size_t kQueueCommandLimit = 512;
     QueueCommandStorage queue_commands_;
 
     uint32_t debug_command_number = vvl::kNoIndex32;
@@ -115,13 +116,26 @@ class SyncValidator : public vvl::DeviceProxy {
 
     template <typename Command>
     bool ProcessQueueCommand(Command&& command) {
-        if (retire_mode_) {
-            queue_commands_.emplace_back(std::forward<Command>(command));
-            return false;
+        if (!retire_mode_) {
+            return command.Execute(*this);
         }
-        return command.Execute(*this);
+        // Non-submit commands can execute immediately if not blocked by earlier commands
+        if constexpr (!std::is_same_v<Command, QueueSubmitCommand>) {
+            if (queue_commands_.empty()) {
+                command.Execute(*this);
+                return false;
+            }
+        }
+        // Enqueue the command. Drain the queue when size limit is reached
+        queue_commands_.emplace_back(std::move(command));
+        if (queue_commands_.size() >= kQueueCommandLimit) {
+            ExecuteQueueCommandsUntilBlocked();
+        }
+        return false;
     }
-    void ExecuteQueueCommands();
+
+    // Requires the validation-object write lock, or its read lock together with queue_mutex_
+    void ExecuteQueueCommandsUntilBlocked();
 
     QueueId GetQueueId(VkQueue queue) const;
     QueueState& GetQueueState(QueueId queue_id);
