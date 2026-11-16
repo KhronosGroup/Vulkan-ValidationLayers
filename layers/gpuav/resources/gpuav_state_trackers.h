@@ -72,7 +72,6 @@ struct CommonDescriptorUpdate {
 struct InstrumentationError {
     std::string vuid;
     std::string message;
-    bool is_warning = false;
 };
 
 class CommandBufferSubState : public vvl::CommandBufferSubState {
