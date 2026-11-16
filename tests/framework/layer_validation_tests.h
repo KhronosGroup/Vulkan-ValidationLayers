@@ -33,6 +33,7 @@
 #endif
 
 #include "binding.h"
+#include "dgc_helper.h"
 #include "containers/limits.h"
 #include "render.h"
 
@@ -387,8 +388,7 @@ class DeviceGeneratedCommandsTest : public VkLayerTest {
     void InitBasicDeviceGeneratedCommands();
 
     void SetPreProcessBuffer(VkGeneratedCommandsInfoEXT &generated_commands_info, void *pipeline_or_shader_object = nullptr);
-    vkt::DeviceMemory pre_process_memory_;
-    std::unique_ptr<vkt::Buffer> pre_process_buffer_ = std::make_unique<vkt::Buffer>();
+    vkt::PreprocessBuffer pre_process_buffer_;
 };
 
 class GraphicsLibraryTest : public VkLayerTest {

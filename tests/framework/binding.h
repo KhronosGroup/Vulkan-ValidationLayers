@@ -57,6 +57,7 @@ class CommandBuffer;
 class CommandPool;
 class Swapchain;
 class IndirectCommandsLayout;
+class IndirectCommandsToken;
 class IndirectExecutionSet;
 class Tensor;
 
@@ -1410,6 +1411,9 @@ class IndirectCommandsLayout : public internal::NonDispHandle<VkIndirectCommands
 
     explicit IndirectCommandsLayout() : NonDispHandle() {}
     explicit IndirectCommandsLayout(const Device &dev, const VkIndirectCommandsLayoutCreateInfoEXT &info) { Init(dev, info); }
+    explicit IndirectCommandsLayout(const Device& dev, const IndirectCommandsToken& tokens, VkShaderStageFlags shader_stages,
+                                    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE,
+                                    VkIndirectCommandsLayoutUsageFlagsEXT flags = 0);
     void Init(const Device &dev, const VkIndirectCommandsLayoutCreateInfoEXT &info);
 };
 
