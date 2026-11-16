@@ -23,6 +23,8 @@
 #include "descriptor_encoding.h"
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEncodings {
+    uint variable_descriptor_count;
+    uint padding_;
     DescriptorEncoding data[];
 };
 
@@ -40,14 +42,18 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexing
 // At draw time on the CPU we can verify that information.
 bool inst_descriptor_indexing_oob_non_bindless(const uint inst_offset, const uint desc_set, const uint binding,
                                                const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
-    // For non-array this should hopefully optimized out as "if (0 > 1)"
-    // Have seen with Mesa, that the final NIR will optimize out all of inst_descriptor_indexing_oob_non_bindless if this is false.
-    if (desc_index >= binding_layout_size) {
+    DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
+    uint used_binding_layout_size = binding_layout_size;
+    if (used_binding_layout_size == kBindingVariableDescriptorCount) {
+         used_binding_layout_size = descriptor_encodings.variable_descriptor_count;
+    }
+
+    if (desc_index >= used_binding_layout_size) {
         error_payload = ErrorPayload(
                             inst_offset,
                             SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorIndexingOOB << kErrorGroup_Shift) | (kErrorSubCode_DescriptorIndexing_Bounds << kErrorSubCode_Shift),
                             (desc_set << kInst_DescriptorIndexing_SetShift) | desc_index,
-                            binding_layout_size,
+                            used_binding_layout_size,
                             binding
                         );
 
@@ -61,12 +67,15 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_offset, const uint de
                                            const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
 
+    DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
+    uint used_binding_layout_size = binding_layout_size;
+    if (used_binding_layout_size == kBindingVariableDescriptorCount) {
+         used_binding_layout_size = descriptor_encodings.variable_descriptor_count;
+    }
     // First make sure the index is not OOB
-    if (desc_index >= binding_layout_size) {
+    if (desc_index >= used_binding_layout_size) {
         error = kErrorSubCode_DescriptorIndexing_Bounds;
     } else {
-        DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
-
         // check if the descriptor was ever initialized
         const uint global_descriptor_index = binding_layout_offset + desc_index;
         uint desc_id = descriptor_encodings.data[global_descriptor_index].id & kNullDescriptor;
@@ -87,7 +96,7 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_offset, const uint de
                         inst_offset,
                         SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorIndexingOOB << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                         (desc_set << kInst_DescriptorIndexing_SetShift) | desc_index,
-                        binding_layout_size,
+                        used_binding_layout_size,
                         binding
                     );
         return false;
@@ -100,12 +109,15 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
                                                                   const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
 
+    DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
+    uint used_binding_layout_size = binding_layout_size;
+    if (used_binding_layout_size == kBindingVariableDescriptorCount) {
+         used_binding_layout_size = descriptor_encodings.variable_descriptor_count;
+    }
     // First make sure the index is not OOB
-    if (desc_index >= binding_layout_size) {
+    if (desc_index >= used_binding_layout_size) {
         error = kErrorSubCode_DescriptorIndexing_Bounds;
     } else {
-        DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
-
         // check if the descriptor was ever initialized
         const uint global_descriptor_index = binding_layout_offset + desc_index;
         DescriptorEncoding descriptor_encoding = descriptor_encodings.data[global_descriptor_index];
@@ -144,7 +156,7 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
                         inst_offset,
                         SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorIndexingOOB << kErrorGroup_Shift) | (error << kErrorSubCode_Shift),
                         (desc_set << kInst_DescriptorIndexing_SetShift) | desc_index,
-                        binding_layout_size,
+                        used_binding_layout_size,
                         binding
                     );
         return false;

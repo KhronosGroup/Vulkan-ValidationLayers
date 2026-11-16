@@ -113,9 +113,9 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                     found == cb_submit_info.bound_desc_sets_to_pp_buffer_map->end()) {
                     // DescriptorSetSubState::GetPostProcessBufferSize() used to do a "auto guard = Lock()"
                     // But the lock was only guarding against GPU-AV sub state, not the base state, so
-                    // base.GetNonInlineDescriptorCount() access were not fully protected
+                    // base.GetGpuAVTrackedDescriptorCount() access were not fully protected
                     const VkDeviceSize pp_buffer_size =
-                        desc_set_state.base.GetNonInlineDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
+                        desc_set_state.GetDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
 
                     if (pp_buffer_size == 0) {
                         continue;
