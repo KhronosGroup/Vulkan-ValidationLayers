@@ -121,9 +121,9 @@ class alignas(kObjectUseDataAlignment) ObjectUseData {
 template <typename T>
 class Counter {
   public:
-    void Init(VulkanObjectType type, Logger* logger) {
+    void Init(VulkanObjectType type, Logger* error_logger) {
         object_type = type;
-        this->logger = logger;
+        logger = error_logger;
     }
 
     void CreateObject(T object) { object_table.insert(object, std::make_shared<ObjectUseData>()); }

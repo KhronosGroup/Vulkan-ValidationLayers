@@ -180,7 +180,8 @@ struct PresentedImage : public PresentedImageRecord {
     PresentedImage() = default;
     PresentedImage(const std::shared_ptr<const vvl::Image>& image_state, uint32_t at_index);
 
-    void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context, SyncFlags flags = 0) const;
+    void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag usage_tag, AccessContext& access_context,
+                            SyncFlags flags = 0) const;
 };
 using PresentedImages = std::vector<PresentedImage>;
 
@@ -347,9 +348,9 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
     void LogAcquireOperation(const PresentedImage& presented, vvl::Func command);
 
     template <typename Predicate>
-    void ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& last_synchronized_present);
-    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent& last_synchronized_present);
-    void ApplyDeviceWait(const LastSynchronizedPresent& last_synchronized_present);
+    void ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& synchronized_present);
+    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag, const LastSynchronizedPresent& queue_last_synchronized_present);
+    void ApplyDeviceWait(const LastSynchronizedPresent& global_last_synchronized_present);
     void ApplyAcquireWait(const AcquiredImage& acquired);
     void OnResourceDestroyed(const AccessRange& resource_range);
 

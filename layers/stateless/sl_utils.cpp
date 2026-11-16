@@ -54,13 +54,13 @@ bool Instance::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const
     return skip;
 }
 
-bool Instance::OutputExtensionError(const Location& loc, const vvl::Extensions& extensions) const {
+bool Instance::OutputExtensionError(const Location& loc, const vvl::Extensions& required_extensions) const {
     return LogError("UNASSIGNED-GeneralParameterError-ExtensionNotEnabled", instance, loc,
-                    "function required extension %s which has not been enabled.\n", String(extensions).c_str());
+                    "function required extension %s which has not been enabled.\n", String(required_extensions).c_str());
 }
-bool Device::OutputExtensionError(const Location& loc, const vvl::Extensions& extensions) const {
+bool Device::OutputExtensionError(const Location& loc, const vvl::Extensions& required_extensions) const {
     return LogError("UNASSIGNED-GeneralParameterError-ExtensionNotEnabled", device, loc,
-                    "function required extension %s which has not been enabled.\n", String(extensions).c_str());
+                    "function required extension %s which has not been enabled.\n", String(required_extensions).c_str());
 }
 
 static const uint8_t kUtF8OneByteCode = 0xC0;

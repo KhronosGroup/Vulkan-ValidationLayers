@@ -645,21 +645,21 @@ uint32_t TypeManager::GetConstantUInt32FromId(uint32_t id) {
 
 // Gets the OpConstantTrue/OpConstantFalse
 const Constant& TypeManager::GetConstantBool(bool is_true) {
-    const Type& bool_type = GetTypeBool();
+    const Type& type_bool = GetTypeBool();
     if (is_true) {
         if (!bool_true_constants_) {
             const uint32_t constant_id = module_.TakeNextId();
             auto new_inst = std::make_unique<Instruction>(3, spv::OpConstantTrue);
-            new_inst->Fill({bool_type.Id(), constant_id});
-            AddConstant(std::move(new_inst), bool_type);  // sets member var
+            new_inst->Fill({type_bool.Id(), constant_id});
+            AddConstant(std::move(new_inst), type_bool);  // sets member var
         }
         return *bool_true_constants_;
     } else {
         if (!bool_false_constants_) {
             const uint32_t constant_id = module_.TakeNextId();
             auto new_inst = std::make_unique<Instruction>(3, spv::OpConstantFalse);
-            new_inst->Fill({bool_type.Id(), constant_id});
-            AddConstant(std::move(new_inst), bool_type);  // sets member var
+            new_inst->Fill({type_bool.Id(), constant_id});
+            AddConstant(std::move(new_inst), type_bool);  // sets member var
         }
         return *bool_false_constants_;
     };

@@ -287,12 +287,12 @@ void QueueBatchContext::Trim() {
 }
 
 template <typename Predicate>
-void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& last_synchronized_present) {
-    access_context_.EraseIf([this, &last_synchronized_present, &predicate](AccessState& access_state) {
+void QueueBatchContext::ApplyPredicatedWait(Predicate& predicate, const LastSynchronizedPresent& synchronized_present) {
+    access_context_.EraseIf([this, &synchronized_present, &predicate](AccessState& access_state) {
         // Tell EraseIf to remove present accesses that are already synchronized according to LastSynchronizedPresent
         if (access_state.HasWriteOp() && access_state.LastWrite().IsPresent()) {
             const VkSwapchainKHR swapchain = batch_log_.GetPresentSwapchain(access_state.LastWriteTag());
-            for (const auto& [synchronized_swapchain, synchronized_present_tag] : last_synchronized_present.per_swapchain) {
+            for (const auto& [synchronized_swapchain, synchronized_present_tag] : synchronized_present.per_swapchain) {
                 // NOTE: it is important to check that access belongs to a specific swapchain and not only
                 // compare the tag values. It is possible to have accesses from a different swapchain that
                 // are *not* synchronized and have tag values that satisfy tag comparison check.
@@ -355,9 +355,9 @@ struct WaitAcquirePredicate {
 };
 
 void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
-                                        const LastSynchronizedPresent& last_synchronized_present) {
+                                        const LastSynchronizedPresent& queue_last_synchronized_present) {
     WaitQueueTagPredicate predicate{queue_id, tag};
-    ApplyPredicatedWait(predicate, last_synchronized_present);
+    ApplyPredicatedWait(predicate, queue_last_synchronized_present);
 
     // SwapChain acquire batch contexts have no queue
     if (queue_state_ && queue_id == GetQueueId()) {
@@ -365,9 +365,9 @@ void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag,
     }
 }
 
-void QueueBatchContext::ApplyDeviceWait(const LastSynchronizedPresent& last_synchronized_present) {
+void QueueBatchContext::ApplyDeviceWait(const LastSynchronizedPresent& global_last_synchronized_present) {
     DeviceWaitPredicate predicate;
-    ApplyPredicatedWait(predicate, last_synchronized_present);
+    ApplyPredicatedWait(predicate, global_last_synchronized_present);
 
     // SwapChain acquire batch contexts have no queue
     if (queue_state_) {
@@ -894,10 +894,10 @@ PresentedImage::PresentedImage(const std::shared_ptr<const vvl::Image>& image_st
     range_gen = SubState(*image).MakeImageRangeGen(image->full_range, false);
 }
 
-void PresentedImage::UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context,
+void PresentedImage::UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag usage_tag, AccessContext& access_context,
                                         SyncFlags flags) const {
     ImageRangeGen mutable_range_gen = range_gen;
-    access_context.UpdateAccessState(mutable_range_gen, usage, ResourceUsageTagEx{tag}, flags);
+    access_context.UpdateAccessState(mutable_range_gen, usage, ResourceUsageTagEx{usage_tag}, flags);
 }
 
 }  // namespace syncval

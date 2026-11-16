@@ -341,7 +341,7 @@ class VideoPictureResource {
     VkExtent3D GetEffectiveImageExtent(const vvl::VideoSession &vs_state) const;
 
   private:
-    VkImageSubresourceRange GetImageSubresourceRange(ImageView const *image_view_state, uint32_t layer);
+    VkImageSubresourceRange GetImageSubresourceRange(ImageView const *view_state, uint32_t layer);
 };
 
 using VideoPictureResources = unordered_set<VideoPictureResource, VideoPictureResource::hash>;

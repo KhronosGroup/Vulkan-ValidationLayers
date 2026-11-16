@@ -239,9 +239,9 @@ class Context {
                                  value, String(name));
         } else if (result == ValidValue::NoExtension) {
             // If called from an instance function, there is no device to base extension support off of
-            auto extensions = GetEnumExtensions(value);
+            auto required_extensions = GetEnumExtensions(value);
             skip |= log.LogError(vuid, error_obj.handle, loc, "(%s) requires the extensions %s.", DescribeEnum(value),
-                                 String(extensions).c_str());
+                                 String(required_extensions).c_str());
         }
 
         return skip;
@@ -267,9 +267,10 @@ class Context {
                                          array[i], String(name));
                 } else if (result == ValidValue::NoExtension) {
                     // If called from an instance function, there is no device to base extension support off of
-                    auto extensions = GetEnumExtensions(array[i]);
-                    skip |= log.LogError(array_required_vuid, error_obj.handle, array_loc.dot(i),
-                                         "(%s) requires the extensions %s.", DescribeEnum(array[i]), String(extensions).c_str());
+                    auto required_extensions = GetEnumExtensions(array[i]);
+                    skip |=
+                        log.LogError(array_required_vuid, error_obj.handle, array_loc.dot(i), "(%s) requires the extensions %s.",
+                                     DescribeEnum(array[i]), String(required_extensions).c_str());
                 }
             }
         }

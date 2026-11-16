@@ -328,7 +328,7 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
         auto src_vk_memory_to_ranges_map = src_buffer_state.GetBoundRanges(src_ranges_bounds, src_ranges);
         auto dst_vk_memory_to_ranges_map = dst_buffer_state.GetBoundRanges(dst_ranges_bounds, dst_ranges);
 
-        for (const auto& [vk_memory, src_ranges] : src_vk_memory_to_ranges_map) {
+        for (const auto& [vk_memory, src_ranges_vec] : src_vk_memory_to_ranges_map) {
             const auto find_mem_it = dst_vk_memory_to_ranges_map.find(vk_memory);
             if (find_mem_it == dst_vk_memory_to_ranges_map.end()) {
                 continue;
@@ -337,10 +337,10 @@ void CommandBufferSubState::RecordCopyBufferCommon(vvl::Buffer& src_buffer_state
             // Memory ranges are sorted, so looking for overlaps can be done in linear time
 
             auto& dst_ranges_vec = find_mem_it->second;
-            auto src_ranges_it = src_ranges.cbegin();
+            auto src_ranges_it = src_ranges_vec.cbegin();
             auto dst_ranges_it = dst_ranges_vec.cbegin();
 
-            while (src_ranges_it != src_ranges.cend() && dst_ranges_it != dst_ranges_vec.cend()) {
+            while (src_ranges_it != src_ranges_vec.cend() && dst_ranges_it != dst_ranges_vec.cend()) {
                 if (src_ranges_it->first.intersects(dst_ranges_it->first)) {
                     auto memory_range_overlap = src_ranges_it->first & dst_ranges_it->first;
 

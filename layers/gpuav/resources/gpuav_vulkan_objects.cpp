@@ -145,15 +145,15 @@ void DescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDe
 
 void* Buffer::GetMappedPtr() const { return mapped_ptr; }
 
-void Buffer::FlushAllocation(VkDeviceSize offset, VkDeviceSize size) const {
-    VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
+void Buffer::FlushAllocation(VkDeviceSize offset, VkDeviceSize range_size) const {
+    VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, range_size);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, result, "Unable to flush device memory.");
     }
 }
 
-void Buffer::InvalidateAllocation(VkDeviceSize offset, VkDeviceSize size) const {
-    VkResult result = vmaInvalidateAllocation(gpuav.vma_allocator_, allocation, offset, size);
+void Buffer::InvalidateAllocation(VkDeviceSize offset, VkDeviceSize range_size) const {
+    VkResult result = vmaInvalidateAllocation(gpuav.vma_allocator_, allocation, offset, range_size);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, result, "Unable to invalidate device memory.");
     }

@@ -6812,10 +6812,9 @@ std::shared_ptr<CommandBuffer> DeviceState::CreateCmdBufferState(VkCommandBuffer
 std::shared_ptr<DeviceMemory> DeviceState::CreateDeviceMemoryState(VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info,
                                                                    uint64_t fake_address, const VkMemoryType& memory_type,
                                                                    const VkMemoryHeap& memory_heap,
-                                                                   VulkanTypedHandle dedicated_binding,
-                                                                   uint32_t physical_device_count) {
+                                                                   VulkanTypedHandle dedicated_binding, uint32_t phys_dev_count) {
     return std::make_shared<DeviceMemory>(handle, allocate_info, fake_address, memory_type, memory_heap, dedicated_binding,
-                                          physical_device_count);
+                                          phys_dev_count);
 }
 
 void DeviceState::PostCallRecordCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,

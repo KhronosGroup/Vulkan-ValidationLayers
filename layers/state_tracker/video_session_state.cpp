@@ -379,14 +379,14 @@ VideoPictureResource::VideoPictureResource(const DeviceState& dev_data, VkVideoP
       coded_offset(res.codedOffset),
       coded_extent(res.codedExtent) {}
 
-VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(ImageView const* image_view_state, uint32_t layer) {
-    VkImageSubresourceRange range{};
-    if (image_view_state) {
-        range = image_view_state->normalized_subresource_range;
-        range.baseArrayLayer += layer;
-        range.layerCount = 1;
+VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(ImageView const* view_state, uint32_t layer) {
+    VkImageSubresourceRange subresource_range{};
+    if (view_state) {
+        subresource_range = view_state->normalized_subresource_range;
+        subresource_range.baseArrayLayer += layer;
+        subresource_range.layerCount = 1;
     }
-    return range;
+    return subresource_range;
 }
 
 VkOffset3D VideoPictureResource::GetEffectiveImageOffset(const vvl::VideoSession& vs_state) const {

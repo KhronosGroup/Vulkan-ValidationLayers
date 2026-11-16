@@ -426,13 +426,13 @@ void CommandData::AddDescriptorSet(const vvl::DescriptorSet& descriptor_set) {
 }
 
 BufferCopyCommand BufferCopyCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    const vvl::Buffer& src_buffer = *command_data.buffers[src_buffer_index];
-    const vvl::Buffer& dst_buffer = *command_data.buffers[dst_buffer_index];
-    vvl::span<const BufferCopyRegion> regions;
+    const vvl::Buffer& decoded_src_buffer = *command_data.buffers[src_buffer_index];
+    const vvl::Buffer& decoded_dst_buffer = *command_data.buffers[dst_buffer_index];
+    vvl::span<const BufferCopyRegion> decoded_regions;
     if (region_count != 0) {
-        regions = vvl::make_span(&command_data.buffer_copy_regions[first_region], region_count);
+        decoded_regions = vvl::make_span(&command_data.buffer_copy_regions[first_region], region_count);
     }
-    return {src_buffer, dst_buffer, regions, src_handle_index, dst_handle_index};
+    return {decoded_src_buffer, decoded_dst_buffer, decoded_regions, src_handle_index, dst_handle_index};
 }
 
 // Record-time validation of a command
@@ -603,13 +603,13 @@ void StridedBufferAccessCommand::Apply(SyncEnvironment& env, ResourceUsageTag ta
 }
 
 ImageCopyCommand ImageCopyCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    const vvl::Image& src_image = *command_data.images[src_image_index];
-    const vvl::Image& dst_image = *command_data.images[dst_image_index];
-    vvl::span<const VkImageCopy> regions;
+    const vvl::Image& decoded_src_image = *command_data.images[src_image_index];
+    const vvl::Image& decoded_dst_image = *command_data.images[dst_image_index];
+    vvl::span<const VkImageCopy> decoded_regions;
     if (region_count != 0) {
-        regions = vvl::make_span(&command_data.image_copy_regions[first_region], region_count);
+        decoded_regions = vvl::make_span(&command_data.image_copy_regions[first_region], region_count);
     }
-    return {src_image, dst_image, regions, src_handle_index, dst_handle_index};
+    return {decoded_src_image, decoded_dst_image, decoded_regions, src_handle_index, dst_handle_index};
 }
 
 ImageCopyCommand::Storage ImageCopyCommand::MakeStorage(CommandData& command_data) const {
@@ -691,11 +691,11 @@ static VkExtent3D GetBlitExtent(const VkOffset3D offsets[2]) {
 }
 
 ImageBlitCommand ImageBlitCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const VkImageBlit> regions;
+    vvl::span<const VkImageBlit> decoded_regions;
     if (region_count != 0) {
-        regions = vvl::make_span(&command_data.image_blit_regions[first_region], region_count);
+        decoded_regions = vvl::make_span(&command_data.image_blit_regions[first_region], region_count);
     }
-    return {*src_image, *dst_image, regions, src_handle_index, dst_handle_index};
+    return {*src_image, *dst_image, decoded_regions, src_handle_index, dst_handle_index};
 }
 
 ImageBlitCommand::Storage ImageBlitCommand::MakeStorage(CommandData& command_data) const {
@@ -775,11 +775,11 @@ void ImageBlitCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, AccessC
 }
 
 ImageResolveCommand ImageResolveCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const VkImageResolve> regions;
+    vvl::span<const VkImageResolve> decoded_regions;
     if (region_count != 0) {
-        regions = vvl::make_span(&command_data.image_resolve_regions[first_region], region_count);
+        decoded_regions = vvl::make_span(&command_data.image_resolve_regions[first_region], region_count);
     }
-    return {*src_image, *dst_image, regions, src_handle_index, dst_handle_index};
+    return {*src_image, *dst_image, decoded_regions, src_handle_index, dst_handle_index};
 }
 
 ImageResolveCommand::Storage ImageResolveCommand::MakeStorage(CommandData& command_data) const {
@@ -853,11 +853,11 @@ void ImageResolveCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Acce
 }
 
 ImageClearCommand ImageClearCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const VkImageSubresourceRange> ranges;
+    vvl::span<const VkImageSubresourceRange> decoded_ranges;
     if (range_count != 0) {
-        ranges = vvl::make_span(&command_data.image_clear_ranges[first_range], range_count);
+        decoded_ranges = vvl::make_span(&command_data.image_clear_ranges[first_range], range_count);
     }
-    return {*image, ranges, handle_index};
+    return {*image, decoded_ranges, handle_index};
 }
 
 ImageClearCommand::Storage ImageClearCommand::MakeStorage(CommandData& command_data) const {
@@ -899,14 +899,14 @@ void ImageClearCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Access
 }
 
 BufferImageCopyCommand BufferImageCopyCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const VkBufferImageCopy> regions;
+    vvl::span<const VkBufferImageCopy> decoded_regions;
     if (region_count != 0) {
-        regions = {&command_data.buffer_image_copy_regions[first_region], region_count};
+        decoded_regions = {&command_data.buffer_image_copy_regions[first_region], region_count};
     }
     const bool buffer_to_image = (direction == Direction::kBufferToImage);
-    const uint32_t buffer_handle_index = buffer_to_image ? first_handle_index : first_handle_index + 1;
-    const uint32_t image_handle_index = buffer_to_image ? first_handle_index + 1 : first_handle_index;
-    return {*buffer, *image, regions, direction, buffer_handle_index, image_handle_index};
+    const uint32_t decoded_buffer_handle_index = buffer_to_image ? first_handle_index : first_handle_index + 1;
+    const uint32_t decoded_image_handle_index = buffer_to_image ? first_handle_index + 1 : first_handle_index;
+    return {*buffer, *image, decoded_regions, direction, decoded_buffer_handle_index, decoded_image_handle_index};
 }
 
 BufferImageCopyCommand::Storage BufferImageCopyCommand::MakeStorage(CommandData& command_data) const {
@@ -1103,15 +1103,15 @@ void ResetEventCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Access
 }
 
 WaitEventsCommand WaitEventsCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const std::shared_ptr<const vvl::Event>> events;
+    vvl::span<const std::shared_ptr<const vvl::Event>> decoded_events;
     if (event_count != 0) {
-        events = vvl::make_span(&command_data.events[first_event], event_count);
+        decoded_events = vvl::make_span(&command_data.events[first_event], event_count);
     }
-    vvl::span<const BarrierSet> barrier_sets;
+    vvl::span<const BarrierSet> decoded_barrier_sets;
     if (barrier_set_count != 0) {
-        barrier_sets = vvl::make_span(&command_data.barrier_sets[first_barrier_set], barrier_set_count);
+        decoded_barrier_sets = vvl::make_span(&command_data.barrier_sets[first_barrier_set], barrier_set_count);
     }
-    return {events, barrier_sets, command};
+    return {decoded_events, decoded_barrier_sets, command};
 }
 
 WaitEventsCommand::Storage WaitEventsCommand::MakeStorage(CommandData& command_data) const {
@@ -1189,12 +1189,12 @@ void EndRenderingCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Acce
 }
 
 BeginRenderPassCommand BeginRenderPassCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    const vvl::RenderPass& render_pass = *command_data.render_passes[render_pass_index];
-    vvl::span<const std::shared_ptr<const vvl::ImageView>> attachment_views;
+    const vvl::RenderPass& decoded_render_pass = *command_data.render_passes[render_pass_index];
+    vvl::span<const std::shared_ptr<const vvl::ImageView>> decoded_attachment_views;
     if (attachment_count != 0) {
-        attachment_views = vvl::make_span(&command_data.image_views[first_attachment_view_index], attachment_count);
+        decoded_attachment_views = vvl::make_span(&command_data.image_views[first_attachment_view_index], attachment_count);
     }
-    return BeginRenderPassCommand{render_pass, attachment_views, render_area, render_pass_instance_id};
+    return BeginRenderPassCommand{decoded_render_pass, decoded_attachment_views, render_area, render_pass_instance_id};
 }
 
 BeginRenderPassCommand::Storage BeginRenderPassCommand::MakeStorage(CommandData& command_data) const {
@@ -1285,15 +1285,16 @@ void EndRenderPassCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Ren
 }
 
 ShaderAccessCommand ShaderAccessCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const BufferAccess> buffer_accesses;
+    vvl::span<const BufferAccess> decoded_buffer_accesses;
     if (buffer_access_count != 0) {
-        buffer_accesses = vvl::make_span(&command_data.descriptor_buffer_accesses[first_buffer_access], buffer_access_count);
+        decoded_buffer_accesses =
+            vvl::make_span(&command_data.descriptor_buffer_accesses[first_buffer_access], buffer_access_count);
     }
-    vvl::span<const ImageViewAccess> image_accesses;
+    vvl::span<const ImageViewAccess> decoded_image_accesses;
     if (image_access_count != 0) {
-        image_accesses = vvl::make_span(&command_data.descriptor_image_accesses[first_image_access], image_access_count);
+        decoded_image_accesses = vvl::make_span(&command_data.descriptor_image_accesses[first_image_access], image_access_count);
     }
-    return {pipeline, buffer_accesses, image_accesses, render_pass_instance_id, subpass};
+    return {pipeline, decoded_buffer_accesses, decoded_image_accesses, render_pass_instance_id, subpass};
 }
 
 ShaderAccessCommand::Storage ShaderAccessCommand::MakeStorage(CommandData& command_data) const {
@@ -1455,11 +1456,11 @@ void DispatchIndirectCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, 
 }
 
 TraceRaysCommand TraceRaysCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const BufferAccessCommand> buffer_accesses;
+    vvl::span<const BufferAccessCommand> decoded_buffer_accesses;
     if (buffer_access_count) {
-        buffer_accesses = {&command_data.trace_rays_buffer_accesses[first_buffer_access], buffer_access_count};
+        decoded_buffer_accesses = {&command_data.trace_rays_buffer_accesses[first_buffer_access], buffer_access_count};
     }
-    return {shader_access_storage.MakeCommand(command_data), buffer_accesses};
+    return {shader_access_storage.MakeCommand(command_data), decoded_buffer_accesses};
 }
 
 TraceRaysCommand::Storage TraceRaysCommand::MakeStorage(CommandData& command_data) const {
@@ -1532,11 +1533,11 @@ void DrawAttachmentCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Ac
 }
 
 VertexInputCommand VertexInputCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const Access> accesses;
+    vvl::span<const Access> decoded_accesses;
     if (access_count != 0) {
-        accesses = vvl::make_span(&command_data.vertex_input_accesses[first_access], access_count);
+        decoded_accesses = vvl::make_span(&command_data.vertex_input_accesses[first_access], access_count);
     }
-    return {pipeline, accesses, access_index};
+    return {pipeline, decoded_accesses, access_index};
 }
 
 VertexInputCommand::Storage VertexInputCommand::MakeStorage(CommandData& command_data) const {
@@ -1584,15 +1585,15 @@ void VertexInputCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag, Acces
 }
 
 MultiDrawVertexInputCommand MultiDrawVertexInputCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const Binding> bindings;
+    vvl::span<const Binding> decoded_bindings;
     if (binding_count != 0) {
-        bindings = vvl::make_span(&command_data.multi_draw_vertex_bindings[first_binding], binding_count);
+        decoded_bindings = vvl::make_span(&command_data.multi_draw_vertex_bindings[first_binding], binding_count);
     }
-    vvl::span<const DrawRange> draws;
+    vvl::span<const DrawRange> decoded_draws;
     if (draw_count != 0) {
-        draws = vvl::make_span(&command_data.multi_draw_ranges[first_draw], draw_count);
+        decoded_draws = vvl::make_span(&command_data.multi_draw_ranges[first_draw], draw_count);
     }
-    return {pipeline, bindings, draws, access_index};
+    return {pipeline, decoded_bindings, decoded_draws, access_index};
 }
 
 MultiDrawVertexInputCommand::Storage MultiDrawVertexInputCommand::MakeStorage(CommandData& command_data) const {
@@ -1829,11 +1830,11 @@ static SyncAccessIndex GetAccessIndex(BuildAccelerationStructuresCommand::Access
 }
 
 BuildAccelerationStructuresCommand BuildAccelerationStructuresCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const Access> accesses;
+    vvl::span<const Access> decoded_accesses;
     if (access_count != 0) {
-        accesses = vvl::make_span(&command_data.acceleration_structure_build_accesses[first_access], access_count);
+        decoded_accesses = vvl::make_span(&command_data.acceleration_structure_build_accesses[first_access], access_count);
     }
-    return {accesses};
+    return {decoded_accesses};
 }
 
 BuildAccelerationStructuresCommand::Storage BuildAccelerationStructuresCommand::MakeStorage(CommandData& command_data) const {
@@ -2197,15 +2198,15 @@ ClearAttachmentsCommand::Storage ClearAttachmentsCommand::MakeStorage(CommandDat
 }
 
 ClearAttachmentsCommand ClearAttachmentsCommand::Storage::MakeCommand(const CommandData& command_data) const {
-    vvl::span<const Attachment> attachments;
+    vvl::span<const Attachment> decoded_attachments;
     if (attachment_count) {
-        attachments = {&command_data.clear_attachments[first_attachment], attachment_count};
+        decoded_attachments = {&command_data.clear_attachments[first_attachment], attachment_count};
     }
-    vvl::span<const VkClearRect> rects;
+    vvl::span<const VkClearRect> decoded_rects;
     if (rect_count) {
-        rects = {&command_data.clear_rects[first_rect], rect_count};
+        decoded_rects = {&command_data.clear_rects[first_rect], rect_count};
     }
-    return {attachments, rects, view_mask, render_pass_instance_id, subpass};
+    return {decoded_attachments, decoded_rects, view_mask, render_pass_instance_id, subpass};
 }
 
 static std::optional<VkImageSubresourceRange> RestrictSubresourceRangeToClearLayers(

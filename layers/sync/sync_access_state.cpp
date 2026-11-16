@@ -827,12 +827,12 @@ VkPipelineStageFlags2 AccessState::GetOrderedStages(QueueId queue_id, const Orde
     return ordered_stages;
 }
 
-void ReadState::Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, const AttachmentAccess& attachment_access,
-                    ResourceUsageTagEx tag_ex, QueueId queue_id) {
-    assert(access_index != SYNC_ACCESS_INDEX_NONE);
-    this->stage = stage;
-    this->access_index = access_index;
-    this->attachment_access = attachment_access;
+void ReadState::Set(VkPipelineStageFlagBits2 read_stage, SyncAccessIndex read_access_index,
+                    const AttachmentAccess& read_attachment_access, ResourceUsageTagEx tag_ex, QueueId queue_id) {
+    assert(read_access_index != SYNC_ACCESS_INDEX_NONE);
+    stage = read_stage;
+    access_index = read_access_index;
+    attachment_access = read_attachment_access;
     barriers = VK_PIPELINE_STAGE_2_NONE;
     sync_stages = VK_PIPELINE_STAGE_2_NONE;
     tag = tag_ex.tag;
@@ -873,16 +873,16 @@ bool ReadState::InBarrierSourceScope(const BarrierScope& barrier_scope) const {
     return ReadOrDependencyChainInSourceScope(barrier_scope.scope_queue, barrier_scope.src_exec_scope);
 }
 
-void WriteState::Set(SyncAccessIndex access_index, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex,
-                     SyncFlags flags, QueueId queue_id) {
-    this->access_index = access_index;
-    this->attachment_access = attachment_access;
+void WriteState::Set(SyncAccessIndex write_access_index, const AttachmentAccess& write_attachment_access, ResourceUsageTagEx tag_ex,
+                     SyncFlags write_flags, QueueId queue_id) {
+    access_index = write_access_index;
+    attachment_access = write_attachment_access;
     barriers.reset();
     dependency_chain = VK_PIPELINE_STAGE_2_NONE;
     tag = tag_ex.tag;
     handle_index = tag_ex.handle_index;
     queue = queue_id;
-    this->flags = flags;
+    flags = write_flags;
 }
 
 bool WriteState::operator==(const WriteState& rhs) const {

@@ -92,9 +92,9 @@ struct SyncAccessFlags {
         // This general operator will be replaced by specific function and assert won't be needed.
         assert(words[0] == 1 && words[1] == 0 && words[2] == 0);
 
-        uint64_t words[3] = {};
-        words[pos >> 6] = (uint64_t(1) << (pos & 63u));
-        return SyncAccessFlags(words[0], words[1], words[2]);
+        uint64_t shifted_words[3] = {};
+        shifted_words[pos >> 6] = (uint64_t(1) << (pos & 63u));
+        return SyncAccessFlags(shifted_words[0], shifted_words[1], shifted_words[2]);
     }
 
     bool operator==(const SyncAccessFlags& other) const {

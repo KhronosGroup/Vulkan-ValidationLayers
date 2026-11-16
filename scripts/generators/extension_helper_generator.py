@@ -381,15 +381,15 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                                                const VkDeviceCreateInfo* pCreateInfo)
                 : InstanceExtensions(instance_ext) {
 
-                auto api_version = NormalizeApiVersion(requested_api_version);
-                if (!api_version.Valid()) {
+                auto normalized_api_version = NormalizeApiVersion(requested_api_version);
+                if (!normalized_api_version.Valid()) {
                     return;
                 }
 
                 const auto& promotion_info_map = GetDevicePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
                     const auto& version_info = GetDeviceVersionMap(version_it.second.first);
-                    if (api_version >= version_it.first) {
+                    if (normalized_api_version >= version_it.first) {
                         if (version_info.state) this->*(version_info.state) = kEnabledByCreateinfo;
                         for (const auto& extension : version_it.second.second) {
                             const auto& info = GetInfo(extension);
@@ -439,15 +439,15 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                                                const std::vector<VkExtensionProperties> &props)
                 : InstanceExtensions(instance_ext) {
 
-                auto api_version = NormalizeApiVersion(requested_api_version);
-                if (!api_version.Valid()) {
+                auto normalized_api_version = NormalizeApiVersion(requested_api_version);
+                if (!normalized_api_version.Valid()) {
                     return;
                 }
 
                 const auto& promotion_info_map = GetDevicePromotionInfoMap();
                 for (const auto& version_it : promotion_info_map) {
                     const auto& version_info = GetDeviceVersionMap(version_it.second.first);
-                    if (api_version >= version_it.first) {
+                    if (normalized_api_version >= version_it.first) {
                         if (version_info.state) this->*(version_info.state) = kEnabledByCreateinfo;
                         for (const auto& extension : version_it.second.second) {
                             const auto& info = GetInfo(extension);

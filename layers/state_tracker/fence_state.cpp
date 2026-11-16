@@ -153,10 +153,10 @@ void vvl::Fence::Reset() {
     ResetPromise();
 }
 
-void vvl::Fence::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
+void vvl::Fence::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags import_flags) {
     auto guard = WriteLock();
     if (scope_ != kExternalPermanent) {
-        if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && (flags & VK_FENCE_IMPORT_TEMPORARY_BIT) == 0) {
+        if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && (import_flags & VK_FENCE_IMPORT_TEMPORARY_BIT) == 0) {
             scope_ = kExternalPermanent;
         } else if (scope_ == kInternal) {
             scope_ = kExternalTemporary;

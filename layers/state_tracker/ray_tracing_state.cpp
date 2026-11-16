@@ -89,13 +89,13 @@ bool AccelerationStructureKHR::UsesCreateInfo2() const {
     return std::get_if<vku::safe_VkAccelerationStructureCreateInfo2KHR>(&create_info) != nullptr;
 }
 
-BufferAndOffset AccelerationStructureKHR::GetFirstValidBuffer(const vvl::DeviceState& device_state) const {
+BufferAndOffset AccelerationStructureKHR::GetFirstValidBuffer(const vvl::DeviceState& dev_data) const {
     if (const auto* ci_1 = std::get_if<CreateInfo1>(&create_info)) {
         return {ci_1->buffer_state.get(), ci_1->ci.offset};
     }
 
     const auto& ci_2 = std::get<vku::safe_VkAccelerationStructureCreateInfo2KHR>(create_info);
-    const auto buffer_states = device_state.GetBuffersByAddress(ci_2.addressRange.address);
+    const auto buffer_states = dev_data.GetBuffersByAddress(ci_2.addressRange.address);
     const vvl::range<VkDeviceAddress> as_addr_range{ci_2.addressRange.address, ci_2.addressRange.address + ci_2.addressRange.size};
     for (const auto& as_buffer : buffer_states) {
         if ((as_buffer->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) &&

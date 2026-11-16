@@ -65,7 +65,7 @@ class Fence : public RefcountedStateObject {
     // vkResetFences
     void Reset();
 
-    void Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags);
+    void Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags import_flags);
     void Export(VkExternalFenceHandleTypeFlagBits handle_type);
     std::optional<VkExternalFenceHandleTypeFlagBits> ImportedHandleType() const;
 

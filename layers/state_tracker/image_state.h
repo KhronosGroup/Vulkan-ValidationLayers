@@ -274,7 +274,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     // Subresource encoder need to take into account that 3d image can have a separate layout
     // per slice, if supported by the implementation. This adjusts the layout range so
     // layouts map can address each slice.
-    VkImageSubresourceRange GetSubresourceEncoderRange(const DeviceState &device_state, const VkImageSubresourceRange &full_range);
+    VkImageSubresourceRange GetSubresourceEncoderRange(const DeviceState &device_state, const VkImageSubresourceRange &range);
 
     // The sparse tracker is 128 bytes vs the linear 40 bytes
     // Assume sparse images are more rare and trade 88 bytes for a small indirection if using sparse

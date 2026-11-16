@@ -177,7 +177,7 @@ struct ReadState {
     uint32_t handle_index;
     QueueId queue;
 
-    void Set(VkPipelineStageFlagBits2 stage, SyncAccessIndex access_index, const AttachmentAccess& attachment_access,
+    void Set(VkPipelineStageFlagBits2 read_stage, SyncAccessIndex read_access_index, const AttachmentAccess& read_attachment_access,
              ResourceUsageTagEx tag_ex, QueueId queue_id);
 
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
@@ -229,8 +229,8 @@ struct WriteState {
 
     SyncFlags flags;
 
-    void Set(SyncAccessIndex access_index, const AttachmentAccess& attachment_access, ResourceUsageTagEx tag_ex, SyncFlags flags,
-             QueueId queue_id);
+    void Set(SyncAccessIndex write_access_index, const AttachmentAccess& write_attachment_access, ResourceUsageTagEx tag_ex,
+             SyncFlags write_flags, QueueId queue_id);
     void MergeBarriers(const WriteState& other);
 
     bool operator==(const WriteState& rhs) const;

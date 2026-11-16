@@ -578,9 +578,9 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateObjectNotInUse(const vvl::StateObject* obj_node, const Location& loc, const char* error_code) const;
     bool ValidateDeviceQueueSupport(const Location& loc) const;
-    bool HasRequiredQueueFlags(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
+    bool HasRequiredQueueFlags(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& pd_state,
                                VkQueueFlags required_flags) const;
-    std::string DescribeRequiredQueueFlag(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
+    std::string DescribeRequiredQueueFlag(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& pd_state,
                                           VkQueueFlags required_flags) const;
     bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT& sample_location_info, const Location& loc) const;
     bool InsideRenderPass(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid = nullptr) const;

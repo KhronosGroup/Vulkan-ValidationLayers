@@ -1212,7 +1212,7 @@ class DeviceState : public vvl::BaseDevice {
 
     virtual std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(
         VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_infos, uint64_t fake_address, const VkMemoryType& memory_type,
-        const VkMemoryHeap& memory_heap, VulkanTypedHandle dedicated_binding, uint32_t physical_device_count);
+        const VkMemoryHeap& memory_heap, VulkanTypedHandle dedicated_binding, uint32_t phys_dev_count);
 
     // Memory mapping
     void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,

@@ -1158,17 +1158,17 @@ bool Device::ValidateAccelerationStructureGeometryHost(const Context& context,
         }
 
         if (!geom.geometry.instances.arrayOfPointers && geom.geometry.instances.data.hostAddress) {
-            const auto* instance =
+            const auto* as_instance =
                 reinterpret_cast<const VkAccelerationStructureInstanceKHR*>(geom.geometry.instances.data.hostAddress);
             const VkGeometryInstanceFlagsKHR micromap_flags = VK_GEOMETRY_INSTANCE_FORCE_OPACITY_MICROMAP_2_STATE_BIT_KHR |
                                                               VK_GEOMETRY_INSTANCE_DISABLE_OPACITY_MICROMAPS_BIT_KHR;
-            if ((instance->flags & micromap_flags) && !enabled_features.micromap && !enabled_features.micromapEXT) {
+            if ((as_instance->flags & micromap_flags) && !enabled_features.micromap && !enabled_features.micromapEXT) {
                 skip |= LogError("VUID-VkAccelerationStructureInstanceKHR-micromap-11580", context.error_obj.handle,
                                  geometry_loc.dot(Field::instances).dot(Field::data).dot(Field::hostAddress).dot(Field::flags),
                                  "includes micromap related flag bits (%s), but neither "
                                  "VkPhysicalDeviceOpacityMicromapFeaturesKHR::micromap nor "
                                  "VkPhysicalDeviceOpacityMicromapFeaturesEXT::micromap was enabled.",
-                                 string_VkGeometryInstanceFlagsKHR(instance->flags).c_str());
+                                 string_VkGeometryInstanceFlagsKHR(as_instance->flags).c_str());
             }
         }
     } else if (geom.geometryType == VK_GEOMETRY_TYPE_SPHERES_NV) {

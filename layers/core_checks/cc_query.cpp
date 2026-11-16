@@ -443,22 +443,21 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     return skip;
 }
 
-bool CoreChecks::HasRequiredQueueFlags(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
+bool CoreChecks::HasRequiredQueueFlags(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& pd_state,
                                        VkQueueFlags required_flags) const {
     const uint32_t queue_family_index = cb_state.command_pool.queueFamilyIndex;
-    const VkQueueFlags queue_flags = physical_device_state.queue_family_properties[queue_family_index].queueFlags;
+    const VkQueueFlags queue_flags = pd_state.queue_family_properties[queue_family_index].queueFlags;
     if (!(required_flags & queue_flags)) {
         return false;
     }
     return true;
 }
 
-std::string CoreChecks::DescribeRequiredQueueFlag(const vvl::CommandBuffer& cb_state,
-                                                  const vvl::PhysicalDevice& physical_device_state,
+std::string CoreChecks::DescribeRequiredQueueFlag(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& pd_state,
                                                   VkQueueFlags required_flags) const {
     std::ostringstream ss;
     const uint32_t queue_family_index = cb_state.command_pool.queueFamilyIndex;
-    const VkQueueFlags queue_flags = physical_device_state.queue_family_properties[queue_family_index].queueFlags;
+    const VkQueueFlags queue_flags = pd_state.queue_family_properties[queue_family_index].queueFlags;
     std::string required_flags_string;
     for (const auto& flag : AllVkQueueFlags) {
         if (flag & required_flags) {

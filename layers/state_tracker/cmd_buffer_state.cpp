@@ -1250,14 +1250,14 @@ void CommandBuffer::RecordControlVideoCoding(const VkVideoCodingControlInfoKHR& 
     }
 
     if (bound_video_session->IsEncode() && control_info.flags & VK_VIDEO_CODING_CONTROL_ENCODE_RATE_CONTROL_BIT_KHR) {
-        auto state = VideoEncodeRateControlState(bound_video_session->GetCodecOp(), &control_info);
-        if (state) {
-            video_encode_rate_control_state = state;
+        auto rate_control_state = VideoEncodeRateControlState(bound_video_session->GetCodecOp(), &control_info);
+        if (rate_control_state) {
+            video_encode_rate_control_state = rate_control_state;
 
             // Enqueue rate control specific device state changes
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [state](const vvl::VideoSession* vs_state, vvl::VideoSessionDeviceState& dev_state, bool do_validate) {
-                    dev_state.SetRateControlState(state);
+                [rate_control_state](const vvl::VideoSession* vs_state, vvl::VideoSessionDeviceState& dev_state, bool do_validate) {
+                    dev_state.SetRateControlState(rate_control_state);
                     return false;
                 });
         }

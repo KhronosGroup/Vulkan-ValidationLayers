@@ -623,10 +623,10 @@ std::optional<vvl::Semaphore::SwapchainWaitInfo> vvl::Semaphore::GetSwapchainWai
     return swapchain_wait_info_;
 }
 
-void vvl::Semaphore::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
+void vvl::Semaphore::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags import_flags) {
     auto guard = WriteLock();
     if (scope_ != kExternalPermanent) {
-        if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) &&
+        if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT || import_flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) &&
             scope_ == kInternal) {
             scope_ = kExternalTemporary;
         } else {

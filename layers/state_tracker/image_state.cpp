@@ -468,9 +468,8 @@ uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers& resource) co
                                                               : resource.layerCount;
 }
 
-VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState& device_state,
-                                                          const VkImageSubresourceRange& full_range) {
-    VkImageSubresourceRange encoder_range = full_range;
+VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState& device_state, const VkImageSubresourceRange& range) {
+    VkImageSubresourceRange encoder_range = range;
     if (CanTransitionDepthSlices(device_state.enabled_features, GetImageType(), create_flags)) {
         encoder_range.layerCount = create_info.extent.depth;
     }

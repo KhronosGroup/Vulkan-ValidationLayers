@@ -52,8 +52,8 @@ class DescriptorValidator : public Logger {
     // The main reason we can't combine is one function needs to be const and the other is non-const.
     bool ValidateBindingDynamic(const spirv::ResourceInterfaceVariable& binding_info, DescriptorBinding& binding,
                                 const uint32_t index);
-    void SetSetIndexForGpuAv(uint32_t set_index) { this->set_index = set_index; }
-    void SetObjlistForGpuAv(const LogObjectList* objlist) { this->objlist = objlist; }
+    void SetSetIndexForGpuAv(uint32_t gpuav_set_index) { set_index = gpuav_set_index; }
+    void SetObjlistForGpuAv(const LogObjectList* objlist) { base_objlist = objlist; }
     void SetLocationForGpuAv(const Location& gpuav_loc);
     void SetOriginalSpirv(const std::vector<uint32_t>* spirv) { this->original_spirv = spirv; };
     void SetInstructionPositionOffset(uint32_t position_offset) { this->instruction_position_offset = position_offset; };
@@ -118,6 +118,6 @@ class DescriptorValidator : public Logger {
     // A descriptor set might be used between multiple shaders and need to adjust which one was found
     uint32_t set_index;
 
-    const LogObjectList* objlist;  // VkPipeline or VkShaderObject
+    const LogObjectList* base_objlist;  // VkPipeline or VkShaderObject
 };
 }  // namespace vvl

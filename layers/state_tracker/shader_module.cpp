@@ -1438,8 +1438,8 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     mark_variable_access(atomic_store_pointer_ids, AccessBit::atomic_write);
     mark_variable_access(atomic_load_pointer_ids, AccessBit::atomic_read);
 
-    for (const Instruction* decoration_inst : built_in_decoration_instructions) {
-        const spv::BuiltIn built_in = decoration_inst->GetBuiltIn();
+    for (const Instruction* built_in_inst : built_in_decoration_instructions) {
+        const spv::BuiltIn built_in = built_in_inst->GetBuiltIn();
         if (built_in == spv::BuiltInLayer) {
             has_built_in_layer = true;
         } else if (built_in == spv::BuiltInFullyCoveredEXT) {
@@ -1448,7 +1448,7 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             }
         } else if (built_in == spv::BuiltInWorkgroupSize) {
             has_built_in_workgroup_size = true;
-            built_in_workgroup_size_id = decoration_inst->Word(1);
+            built_in_workgroup_size_id = built_in_inst->Word(1);
         } else if (built_in == spv::BuiltInDrawIndex) {
             has_built_in_draw_index = true;
         } else if (built_in == spv::BuiltInSamplerHeapEXT || built_in == spv::BuiltInResourceHeapEXT) {

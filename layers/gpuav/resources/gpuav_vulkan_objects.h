@@ -63,8 +63,8 @@ class Buffer {
     // No error propagation, but if hitting a VMA error, GPU-AV is likely not going to recover anyway.
 
     [[nodiscard]] void *GetMappedPtr() const;
-    void FlushAllocation(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
-    void InvalidateAllocation(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+    void FlushAllocation(VkDeviceSize offset = 0, VkDeviceSize range_size = VK_WHOLE_SIZE) const;
+    void InvalidateAllocation(VkDeviceSize offset = 0, VkDeviceSize range_size = VK_WHOLE_SIZE) const;
 
     [[nodiscard]] VkResult Create(const VkBufferCreateInfo* buffer_create_info,
                                   const VmaAllocationCreateInfo* allocation_create_info);

@@ -59,7 +59,7 @@ class AccelerationStructureKHR : public StateObject, public SubStateManager<Acce
     // containing the VkDeviceAddressRangeKHR supplied at creation time.
     // Given that in some scenarios address ranges lifespan does not match that of buffers it pertains to,
     // the returned buffer should NOT be stored and assumed to always be backing the AS.
-    BufferAndOffset GetFirstValidBuffer(const vvl::DeviceState &device_state) const;
+    BufferAndOffset GetFirstValidBuffer(const vvl::DeviceState &dev_data) const;
     VkAccelerationStructureCreateFlagsKHR GetCreateFlags() const;
     VkDeviceSize GetSize() const;
     VkAccelerationStructureTypeKHR GetType() const;

@@ -132,7 +132,7 @@ class Semaphore : public RefcountedStateObject {
     void ClearSwapchainWaitInfo(VkQueue queue_filter = VK_NULL_HANDLE);
     std::optional<SwapchainWaitInfo> GetSwapchainWaitInfo() const;
 
-    void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
+    void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags import_flags);
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
     std::optional<VkExternalSemaphoreHandleTypeFlagBits> ImportedHandleType() const;
 
