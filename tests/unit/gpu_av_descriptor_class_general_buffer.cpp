@@ -1417,17 +1417,9 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DeviceGeneratedCommandsCompute
         GTEST_SKIP() << "VK_SHADER_STAGE_COMPUTE_BIT is not supported.";
     }
 
-    VkIndirectCommandsLayoutTokenEXT token;
-    token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
-    token.offset = 0;
-
-    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
-    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+    vkt::IndirectCommandsToken tokens;
+    tokens.Action(VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT);
+    vkt::IndirectCommandsLayout command_layout(*m_device, tokens, VK_SHADER_STAGE_COMPUTE_BIT);
 
     const char* shader_source = R"glsl(
         #version 450
@@ -1453,21 +1445,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DeviceGeneratedCommandsCompute
 
     vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
 
-    VkDeviceSize pre_process_size = 0;
-    {
-        VkGeneratedCommandsMemoryRequirementsInfoEXT dgc_mem_reqs = vku::InitStructHelper(&pipeline_info);
-        dgc_mem_reqs.indirectCommandsLayout = command_layout;
-        dgc_mem_reqs.indirectExecutionSet = VK_NULL_HANDLE;
-        dgc_mem_reqs.maxSequenceCount = 1;
-        VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
-        vk::GetGeneratedCommandsMemoryRequirementsEXT(device(), &dgc_mem_reqs, &mem_reqs2);
-        pre_process_size = mem_reqs2.memoryRequirements.size;
-    }
-
-    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT;
-    vkt::Buffer pre_process_buffer(*m_device, pre_process_size, buffer_usage_flags, vkt::device_address);
-
     VkDispatchIndirectCommand* block_buffer_ptr = (VkDispatchIndirectCommand*)block_buffer.Memory().Map();
     block_buffer_ptr->x = 1;
     block_buffer_ptr->y = 1;
@@ -1479,10 +1456,9 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DeviceGeneratedCommandsCompute
     generated_commands_info.indirectCommandsLayout = command_layout;
     generated_commands_info.indirectAddressSize = sizeof(VkDispatchIndirectCommand);
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = pre_process_buffer.Address();
-    generated_commands_info.preprocessSize = pre_process_size;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxSequenceCount = 1;
+    vkt::PreprocessBuffer pre_process_buffer(*m_device, generated_commands_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);

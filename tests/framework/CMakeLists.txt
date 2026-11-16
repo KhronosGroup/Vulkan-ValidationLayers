@@ -51,6 +51,8 @@ add_library(vk_test_framework STATIC
     descriptor_helper.cpp
     descriptor_heap_object.h
     descriptor_heap_object.cpp
+    dgc_helper.h
+    dgc_helper.cpp
     thread_helper.h
     thread_helper.cpp
     gpu_av_helper.h

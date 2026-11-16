@@ -1506,16 +1506,9 @@ TEST_F(NegativeDeviceGeneratedCommands, GetRequirementsMaxIndirectSequenceCount)
     VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT dgc_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(dgc_props);
 
-    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
-    token.offset = 0;
-
-    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
-    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+    vkt::IndirectCommandsToken tokens;
+    tokens.Action(VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT);
+    vkt::IndirectCommandsLayout command_layout(*m_device, tokens, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
@@ -1579,16 +1572,9 @@ TEST_F(NegativeDeviceGeneratedCommands, GetRequirementsExecutionSetToken) {
 TEST_F(NegativeDeviceGeneratedCommands, GetRequirementsNullIES) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
-    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
-    token.offset = 0;
-
-    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
-    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+    vkt::IndirectCommandsToken tokens;
+    tokens.Action(VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT);
+    vkt::IndirectCommandsLayout command_layout(*m_device, tokens, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkGeneratedCommandsMemoryRequirementsInfoEXT req_info = vku::InitStructHelper();
     req_info.maxSequenceCount = 1;
@@ -1605,16 +1591,9 @@ TEST_F(NegativeDeviceGeneratedCommands, GetRequirementsNoExecutionTokenNullIES) 
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
-    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
-    token.offset = 0;
-
-    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
-    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+    vkt::IndirectCommandsToken tokens;
+    tokens.Action(VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT);
+    vkt::IndirectCommandsLayout command_layout(*m_device, tokens, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
@@ -2631,16 +2610,9 @@ TEST_F(NegativeDeviceGeneratedCommands, ComputeRenderPass) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
-    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
-    token.offset = 0;
-
-    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
-    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+    vkt::IndirectCommandsToken tokens;
+    tokens.Action(VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT);
+    vkt::IndirectCommandsLayout command_layout(*m_device, tokens, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
@@ -2680,16 +2652,9 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteMeshTokenVertexPipeline) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
-    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_EXT;
-    token.offset = 0;
-
-    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_SHADER_STAGE_MESH_BIT_EXT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
-    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+    vkt::IndirectCommandsToken tokens;
+    tokens.Action(VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_EXT);
+    vkt::IndirectCommandsLayout command_layout(*m_device, tokens, VK_SHADER_STAGE_MESH_BIT_EXT);
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
@@ -2731,16 +2696,9 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteDrawTokenMeshShaderObject) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
-    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
-    token.offset = 0;
-
-    VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
-    command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
-    command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
-    vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
+    vkt::IndirectCommandsToken tokens;
+    tokens.Action(VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT);
+    vkt::IndirectCommandsLayout command_layout(*m_device, tokens, VK_SHADER_STAGE_VERTEX_BIT);
 
     const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, kMeshMinimalGlsl, SPV_ENV_VULKAN_1_3);
     VkShaderCreateInfoEXT mesh_create_info =
@@ -3508,7 +3466,7 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessAddressDestroyed) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
-    pre_process_buffer_->Destroy();
+    pre_process_buffer_.buffer.Destroy();
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
     vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();

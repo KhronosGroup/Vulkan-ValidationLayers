@@ -512,6 +512,7 @@ target_sources(vvl_core PRIVATE
     utils/action_command_utils.h
     utils/assert_utils.h
     utils/cast_utils.h
+    utils/device_generated_commands_utils.h
     utils/convert_utils.cpp
     utils/convert_utils.h
     utils/dispatch_utils.cpp
