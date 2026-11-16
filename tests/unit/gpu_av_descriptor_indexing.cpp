@@ -780,14 +780,10 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
-    buffer_ptr[0] = 2;
+    uint32_t* tex_index_ptr = (uint32_t*)buffer.Memory().Map();
+    tex_index_ptr[0] = 2;
 
-    // VUID-vkCmdDraw-None-10068
-    m_errorMonitor->SetDesiredError(
-        "Descriptor index 2 is uninitialized. VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT was used and the original "
-        "descriptorCount (4) could have been reduced during AllocateDescriptorSets",
-        gpuav::glsl::kMaxErrorsPerCmd);
+    m_errorMonitor->SetDesiredError("Index of 2 used to index descriptor array of length 2", gpuav::glsl::kMaxErrorsPerCmd);
 
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -864,6 +860,141 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocateU
     buffer_ptr[0] = 1;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountNonBindless) {
+    TEST_DESCRIPTION("VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT in a non bindless descriptor array");
+
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    VkDescriptorBindingFlags ds_binding_flags[2] = {0, VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT};
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
+    layout_createinfo_binding_flags.bindingCount = 2;
+    layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
+
+    uint32_t desc_counts = 2;  // Layout has 4, but only 2 are allocated
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
+    variable_count.descriptorSetCount = 1;
+    variable_count.pDescriptorCounts = &desc_counts;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, &layout_createinfo_binding_flags, 0, &variable_count);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Image image(*m_device, 16, 16, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform foo { uint tex_index; };
+        layout(set = 0, binding = 1) uniform sampler2D tex[4];// Sized array (not a runtime array)
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           uFragColor = texture(tex[tex_index], vec2(0, 0));
+        }
+        )glsl";
+
+    VkShaderObj vs(*m_device, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    uint32_t* tex_index_ptr = (uint32_t*)buffer.Memory().Map();
+    *tex_index_ptr = 2;
+
+    m_errorMonitor->SetDesiredError("Index of 2 used to index descriptor array of length 2", gpuav::glsl::kMaxErrorsPerCmd);
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountZero) {
+    TEST_DESCRIPTION("VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT and descriptor count at desc set allocation time is 0");
+
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+
+    VkDescriptorBindingFlags ds_binding_flags =
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
+    layout_createinfo_binding_flags.bindingCount = 1;
+    layout_createinfo_binding_flags.pBindingFlags = &ds_binding_flags;
+
+    uint32_t desc_counts = 0;  // Layout has 4, but none are allocated
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
+    variable_count.descriptorSetCount = 1;
+    variable_count.pDescriptorCounts = &desc_counts;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, &layout_createinfo_binding_flags, 0, &variable_count);
+    std::vector<VkPushConstantRange> push_constant_ranges = {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)}};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, push_constant_ranges);
+
+    // Index comes from a push constant, a uniform buffer would add a descriptor to the set
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(push_constant) uniform Input {
+            uint index;
+        } in_buffer;
+
+        layout(set = 0, binding = 0) uniform sampler2D tex[];
+
+        void main() {
+           vec4 result = texture(tex[in_buffer.index], vec2(0, 0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+
+    uint32_t index = 0;
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &index);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("Index of 0 used to index descriptor array of length 0");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1577,6 +1708,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
         layout(set=0, binding=0) uniform UBO { uint in_buffer; };
         layout(set=0, binding=3) buffer  SSBO_B { float x; } B[4];
         layout(set=0, binding=5) buffer  SSBO_C { float x; } C[];
+
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
         void main(){
            C[in_buffer].x = B[2].x;
         }
@@ -1643,10 +1776,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    // VUID-vkCmdDispatch-None-10068
-    m_errorMonitor->SetDesiredError(
-        "Descriptor index 7 is uninitialized. VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT was used and the original "
-        "descriptorCount (8) could have been reduced during AllocateDescriptorSets");
+    m_errorMonitor->SetDesiredError("Index of 7 used to index descriptor array of length 6");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

@@ -35,11 +35,11 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device* device, const std::vector<
         return;
     }
 
-        VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(allocate_pnext);
-        ds_alloc_info.descriptorPool = pool_;
-        ds_alloc_info.descriptorSetCount = 1;
-        ds_alloc_info.pSetLayouts = &layout_.handle();
-        err = vk::AllocateDescriptorSets(device_->handle(), &ds_alloc_info, &set_);
+    VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(allocate_pnext);
+    ds_alloc_info.descriptorPool = pool_;
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.pSetLayouts = &layout_.handle();
+    err = vk::AllocateDescriptorSets(device_->handle(), &ds_alloc_info, &set_);
 }
 
 OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device* device, const OneOffDescriptorIndexingSet::Bindings& bindings,
