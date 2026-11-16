@@ -37,7 +37,7 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                                                                           const LastBound& last_bound) {
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
             [](Validator& gpuav, const Location& loc, const uint32_t* error_record, const InstrumentedShader*,
-               std::string& out_error_msg, std::string& out_vuid_msg) {
+               InstrumentationError& out_error) {
                 using namespace glsl;
                 bool error_found = false;
                 if (GetErrorGroup(error_record) != kErrorGroup_InstSanitizer) {
@@ -64,7 +64,7 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                             strm << " The result value is undefined.";
                         }
                         strm << GetSpirvSpecLink(opcode);
-                        out_vuid_msg = "SPIRV-Sanitizer-Divide-By-Zero";
+                        out_error.vuid = "SPIRV-Sanitizer-Divide-By-Zero";
                     } break;
                     case kErrorSubCode_Sanitizer_ImageGather: {
                         const uint32_t component_value = error_record[kInst_LogError_ParameterOffset_0];
@@ -76,7 +76,7 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                             strm << signed_value;
                         }
                         strm << ", but it must be 0, 1, 2, or 3" << GetSpirvSpecLink(spv::OpImageGather);
-                        out_vuid_msg = "SPIRV-Sanitizer-Image-Gather";
+                        out_error.vuid = "SPIRV-Sanitizer-Image-Gather";
                     } break;
                     case kErrorSubCode_Sanitizer_Pow: {
                         // Pow is only valid with a scalar/vector of 16/32-bit float
@@ -92,12 +92,12 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                         } else {
                             strm << "X == " << x_value << ", Y == " << y_value;
                         }
-                        out_vuid_msg = "SPIRV-Sanitizer-Pow";
+                        out_error.vuid = "SPIRV-Sanitizer-Pow";
                     } break;
                     case kErrorSubCode_Sanitizer_Atan2: {
                         // Atan is only valid with a scalar/vector of 16/32-bit float
                         strm << "Atan2 (from GLSL.std.450) has an undefined result because both the y and x operands are zero.";
-                        out_vuid_msg = "SPIRV-Sanitizer-Atan2";
+                        out_error.vuid = "SPIRV-Sanitizer-Atan2";
                     } break;
                     case kErrorSubCode_Sanitizer_Fminmax: {
                         // simple encoding done in inst_sanitizer_fminman (sanitizer.comp)
@@ -119,7 +119,7 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                             strm << " Using a vector of size " << vector_size
                                  << "; currently only scalar values can be printed in error messages.";
                         }
-                        out_vuid_msg = "SPIRV-Sanitizer-Fminmax";
+                        out_error.vuid = "SPIRV-Sanitizer-Fminmax";
                     } break;
                     case kErrorSubCode_Sanitizer_CoopMatAlignment: {
                         const spv::Op opcode = static_cast<spv::Op>(error_record[kInst_LogError_ParameterOffset_0]);
@@ -138,13 +138,13 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                         strm << " not aligned to the required " << required_alignment
                              << " byte alignment (the lesser of 16 bytes and the natural alignment of a row or column of the "
                                 "matrix).";
-                        out_vuid_msg = "VUID-RuntimeSpirv-OpCooperativeMatrixLoadKHR-08986";
+                        out_error.vuid = "VUID-RuntimeSpirv-OpCooperativeMatrixLoadKHR-08986";
                     } break;
                     default:
                         error_found = false;
                         break;
                 }
-                out_error_msg += strm.str();
+                out_error.message += strm.str();
                 return error_found;
             };
 

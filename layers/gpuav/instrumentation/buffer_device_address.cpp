@@ -40,7 +40,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                                                                           const LastBound&) {
         CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
             [](Validator& gpuav, const Location&, const uint32_t* error_record, const InstrumentedShader* instrumented_shader,
-               std::string& out_error_msg, std::string& out_vuid_msg) {
+               InstrumentationError& out_error) {
                 using namespace glsl;
                 bool error_found = false;
                 if (GetErrorGroup(error_record) != kErrorGroup_InstBufferDeviceAddress) {
@@ -91,7 +91,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                                 ss << "\n  " << buffer->Describe(gpuav);
                             }
                         }
-                        out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819";
+                        out_error.vuid = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819";
 
                     } break;
                     case kErrorSubCode_BufferDeviceAddress_Alignment: {
@@ -106,14 +106,14 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
                             }
                         }
                         // else it's an invalid address, handled by error logic above
-                        out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315";
+                        out_error.vuid = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315";
 
                     } break;
                     default:
                         error_found = false;
                         break;
                 }
-                out_error_msg += ss.str();
+                out_error.message += ss.str();
                 return error_found;
             };
 

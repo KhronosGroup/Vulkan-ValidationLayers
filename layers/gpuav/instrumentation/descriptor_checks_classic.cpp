@@ -134,8 +134,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                                                                                   Validator& gpuav, const Location& loc,
                                                                                   const uint32_t* error_record,
                                                                                   const InstrumentedShader*,
-                                                                                  std::string& out_error_msg,
-                                                                                  std::string& out_vuid_msg) {
+                                                                                  InstrumentationError& out_error) {
             using namespace glsl;
 
             bool error_found = false;
@@ -168,7 +167,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                 case kErrorSubCode_DescriptorIndexing_Bounds: {
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Index of " << descriptor_index
                          << " used to index descriptor array of length " << array_length << ".";
-                    out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_INDEX_OOB_10068);
+                    out_error.vuid = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_INDEX_OOB_10068);
                     error_found = true;
                 } break;
 
@@ -192,7 +191,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                                 "descriptor.";
                     }
 
-                    out_vuid_msg = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_08114);
+                    out_error.vuid = vvl::CreateActionVuid(loc.function, vvl::ActionVUID::DESCRIPTOR_08114);
                     error_found = true;
                 } break;
 
@@ -204,11 +203,11 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                         strm << " (There is no array, but descriptor is viewed as having an array of length 1)";
                     }
 
-                    out_vuid_msg = "UNASSIGNED-Descriptor destroyed";
+                    out_error.vuid = "UNASSIGNED-Descriptor destroyed";
                     error_found = true;
                 } break;
             }
-            out_error_msg += strm.str();
+            out_error.message += strm.str();
             return error_found;
         };
 
@@ -232,8 +231,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                                                                                   Validator& gpuav, const Location& loc,
                                                                                   const uint32_t* error_record,
                                                                                   const InstrumentedShader*,
-                                                                                  std::string& out_error_msg,
-                                                                                  std::string& out_vuid_msg) {
+                                                                                  InstrumentationError& out_error) {
             using namespace glsl;
             bool error_found = false;
             if (GetErrorGroup(error_record) != kErrorGroup_InstDescriptorClass) {
@@ -297,7 +295,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                         action_vuid = uses_shader_object ? vvl::ActionVUID::STORAGE_ACCESS_OOB_08613
                                                          : vvl::ActionVUID::STORAGE_ACCESS_OOB_06936;
                     }
-                    out_vuid_msg = vvl::CreateActionVuid(loc.function, action_vuid);
+                    out_error.vuid = vvl::CreateActionVuid(loc.function, action_vuid);
                 } break;
 
                 case kErrorSubCode_DescriptorClass_TexelBufferBounds: {
@@ -323,7 +321,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                     }
 
                     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3977
-                    out_vuid_msg = "UNASSIGNED-Descriptor Texel Buffer texel out of bounds";
+                    out_error.vuid = "UNASSIGNED-Descriptor Texel Buffer texel out of bounds";
                 } break;
 
                 default:
@@ -331,7 +329,7 @@ void RegisterDescriptorChecksClassicValidation(Validator& gpuav, CommandBufferSu
                     assert(false);  // other OOB checks are not implemented yet
             }
 
-            out_error_msg += strm.str();
+            out_error.message += strm.str();
             return error_found;
         };
 

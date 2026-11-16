@@ -32,7 +32,7 @@ void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubSt
         [](Validator& gpuav, CommandBufferSubState& cb, const LastBound& last_bound) {
             CommandBufferSubState::InstrumentationErrorLogger inst_error_logger =
                 [](Validator& gpuav, const Location& loc, const uint32_t* error_record,
-                   const InstrumentedShader* instrumented_shader, std::string& out_error_msg, std::string& out_vuid_msg) {
+                   const InstrumentedShader* instrumented_shader, InstrumentationError& out_error) {
                     using namespace glsl;
                     bool error_found = false;
                     if (GetErrorGroup(error_record) != kErrorGroup_SharedMemoryDataRace) {
@@ -66,19 +66,19 @@ void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubSt
                     switch (error_sub_code) {
                         case kErrorSubCode_SharedMemoryDataRace_RaceOnStore: {
                             strm << "store";
-                            out_vuid_msg = "SharedMemoryDataRace-RaceOnStore";
+                            out_error.vuid = "SharedMemoryDataRace-RaceOnStore";
                         } break;
                         case kErrorSubCode_SharedMemoryDataRace_RaceOnLoad: {
                             strm << "load";
-                            out_vuid_msg = "SharedMemoryDataRace-RaceOnLoad";
+                            out_error.vuid = "SharedMemoryDataRace-RaceOnLoad";
                         } break;
                         case kErrorSubCode_SharedMemoryDataRace_RaceOnLoadStoreVsAtomic: {
                             strm << "load or store";
-                            out_vuid_msg = "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic";
+                            out_error.vuid = "SharedMemoryDataRace-RaceOnLoadStoreVsAtomic";
                         } break;
                         case kErrorSubCode_SharedMemoryDataRace_RaceOnAtomic: {
                             strm << "atomic";
-                            out_vuid_msg = "SharedMemoryDataRace-RaceOnAtomic";
+                            out_error.vuid = "SharedMemoryDataRace-RaceOnAtomic";
                         } break;
                         default:
                             strm << "UNKNOWN";
@@ -124,7 +124,7 @@ void RegisterSharedMemoryDataRaceValidation(Validator& gpuav, CommandBufferSubSt
                         }
                     }
 
-                    out_error_msg += strm.str();
+                    out_error.message += strm.str();
                     return error_found;
                 };
 

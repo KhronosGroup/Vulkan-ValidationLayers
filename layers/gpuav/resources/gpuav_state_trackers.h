@@ -69,15 +69,21 @@ struct CommonDescriptorUpdate {
     uint32_t binding{0};
 };
 
+struct InstrumentationError {
+    std::string vuid;
+    std::string message;
+    bool is_warning = false;
+};
+
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     struct LabelLogging {
         const std::vector<std::string> &initial_label_stack;
     };
 
-    using InstrumentationErrorLogger = stdext::inplace_function<bool(
-        Validator& gpuav, const Location& loc, const uint32_t* error_record, const InstrumentedShader* instrumented_shader,
-        std::string& out_error_msg, std::string& out_vuid_msg)>;
+    using InstrumentationErrorLogger =
+        stdext::inplace_function<bool(Validator& gpuav, const Location& loc, const uint32_t* error_record,
+                                      const InstrumentedShader* instrumented_shader, InstrumentationError& out_error)>;
     using OnInstrumentationErrorLoggerRegister = stdext::inplace_function<InstrumentationErrorLogger(
         Validator &gpuav, CommandBufferSubState &cb, const LastBound &last_bound)>;
     using OnInstrumentationCommonDescUpdate = stdext::inplace_function<

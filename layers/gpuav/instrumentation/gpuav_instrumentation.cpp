@@ -297,8 +297,7 @@ bool LogInstrumentationError(Validator& gpuav, const VkCommandBuffer cb_handle, 
     // hold only one record. If there is a desire to process more than one record, this function needs
     // to be modified to loop over records and the buffer size increased.
 
-    std::string error_msg;
-    std::string vuid_msg;
+    InstrumentationError error;
     bool error_found = false;
 
     // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
@@ -311,7 +310,7 @@ bool LogInstrumentationError(Validator& gpuav, const VkCommandBuffer cb_handle, 
     }
 
     for (const CommandBufferSubState::InstrumentationErrorLogger& error_logger : error_loggers) {
-        error_found = error_logger(gpuav, loc_with_debug_region, error_record, instrumented_shader, error_msg, vuid_msg);
+        error_found = error_logger(gpuav, loc_with_debug_region, error_record, instrumented_shader, error);
         if (error_found) {
             break;
         }
@@ -323,7 +322,13 @@ bool LogInstrumentationError(Validator& gpuav, const VkCommandBuffer cb_handle, 
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
             cb_handle, error_record, instrumented_shader, error_info.pipeline_bind_point, error_info.action_command_index);
 
-        gpuav.LogError(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
+        if (error.is_warning) {
+            gpuav.LogWarning(error.vuid.c_str(), objlist, loc_with_debug_region, "%s\n%s", error.message.c_str(),
+                             debug_info_message.c_str());
+        } else {
+            gpuav.LogError(error.vuid.c_str(), objlist, loc_with_debug_region, "%s\n%s", error.message.c_str(),
+                           debug_info_message.c_str());
+        }
     }
 
     return error_found;
