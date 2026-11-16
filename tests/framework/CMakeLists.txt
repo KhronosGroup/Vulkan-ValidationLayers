@@ -91,10 +91,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
         )
     endif()
 elseif(MSVC)
-    target_compile_options(vk_test_framework PUBLIC
-        /wd4267 # Disable some signed/unsigned mismatch warnings.
-    )
-
     if (CMAKE_SIZEOF_VOID_P EQUAL 4)
         # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
         target_link_options(vk_test_framework PUBLIC /LARGEADDRESSAWARE)
