@@ -114,7 +114,7 @@ OneOffDescriptorSet& OneOffDescriptorSet::operator=(OneOffDescriptorSet&& rhs) n
 
 OneOffDescriptorSet::~OneOffDescriptorSet() {
     if (pool_ != VK_NULL_HANDLE) {
-        // No need to destroy set-- it's going away with the pool.
+        // No need to destroy set-- it's going away with the pool
         vk::DestroyDescriptorPool(device_->handle(), pool_, nullptr);
     }
 }
