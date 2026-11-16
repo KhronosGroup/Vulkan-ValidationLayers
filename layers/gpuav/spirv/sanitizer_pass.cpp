@@ -24,6 +24,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 #include <cstring>
+#include <algorithm>
 
 #include "generated/gpuav_offline_spirv.h"
 
@@ -41,6 +42,7 @@ const static OfflineFunction kOfflineFunctions[glsl::kErrorSubCode_Sanitizer_Cou
     {"inst_sanitizer_atan2", instrumentation_sanitizer_comp_function_3_offset},
     {"inst_sanitizer_fminmax", instrumentation_sanitizer_comp_function_4_offset},
     {"inst_sanitizer_coop_mat_alignment", instrumentation_sanitizer_comp_function_5_offset},
+    {"inst_sanitizer_copy_memory_sized", instrumentation_sanitizer_comp_function_6_offset},
 };
 
 SanitizerPass::SanitizerPass(Module& module) : Pass(module, kOfflineModule) {
@@ -324,6 +326,15 @@ uint32_t SanitizerPass::CreateFunctionCall(BasicBlock& block, InstructionIt* ins
                                 {bool_type, function_result, function_def, stride_uint_id, element_size_id, alignment_id,
                                  pointer_address_id, element_index_id, inst_position_id, opcode_id},
                                 inst_it);
+    } else if (meta.sub_code == glsl::kErrorSubCode_Sanitizer_CopyMemorySizedSize) {
+        const uint32_t size_id = CastToUint32(meta.target_instruction->Word(3), block, inst_it);
+        const uint32_t bool_type = type_manager_.GetTypeBool().Id();
+        const uint32_t required_multiple_id = type_manager_.CreateConstantUInt32(meta.constant_value).Id();
+        const uint32_t storage_classes_id = type_manager_.CreateConstantUInt32(meta.storage_classes).Id();
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_result, function_def, size_id, required_multiple_id, storage_classes_id, inst_position_id},
+            inst_it);
     } else {
         assert(false);
     }
@@ -357,6 +368,65 @@ bool SanitizerPass::IsConstantZero(const Constant& constant) const {
         }
     }
     return false;
+}
+
+// Smallest number of bytes the storage class can be accessed with (8-bit or 16-bit storage capabilities)
+// Yes, this is ugly, but shows how bad the state of features are for handling 8/16 bit in storage classes
+static uint32_t MinStorageAccessBytes(Module& module, spv::StorageClass storage_class) {
+    switch (storage_class) {
+        case spv::StorageClassUniform:
+            if (module.HasCapability(spv::CapabilityUniformAndStorageBuffer8BitAccess)) {
+                return 1;
+            } else if (module.HasCapability(spv::CapabilityUniformAndStorageBuffer16BitAccess)) {
+                return 2;
+            }
+            break;
+        case spv::StorageClassStorageBuffer:
+            if (module.HasCapability(spv::CapabilityStorageBuffer8BitAccess) ||
+                module.HasCapability(spv::CapabilityUniformAndStorageBuffer8BitAccess)) {
+                return 1;
+            } else if (module.HasCapability(spv::CapabilityStorageBuffer16BitAccess) ||
+                       module.HasCapability(spv::CapabilityUniformAndStorageBuffer16BitAccess)) {
+                return 2;
+            }
+            break;
+        case spv::StorageClassPushConstant:
+            if (module.HasCapability(spv::CapabilityStoragePushConstant8)) {
+                return 1;
+            } else if (module.HasCapability(spv::CapabilityStoragePushConstant16)) {
+                return 2;
+            }
+            break;
+        case spv::StorageClassInput:
+        case spv::StorageClassOutput:
+            if (module.HasCapability(spv::CapabilityStorageInputOutput16)) {
+                return 2;
+            }
+            break;
+        case spv::StorageClassWorkgroup:
+            if (module.HasCapability(spv::CapabilityWorkgroupMemoryExplicitLayout8BitAccessKHR)) {
+                return 1;
+            } else if (module.HasCapability(spv::CapabilityWorkgroupMemoryExplicitLayout16BitAccessKHR)) {
+                return 2;
+            }
+            break;
+        default:
+            break;
+    }
+    return 4;
+}
+
+static uint32_t CopyMemorySizedRequiredMultiple(Module& module, spv::StorageClass target_sc, spv::StorageClass source_sc) {
+    if (module.HasCapability(spv::CapabilityInt8)) {
+        return 1;
+    }
+    const uint32_t target_bytes = MinStorageAccessBytes(module, target_sc);
+    const uint32_t source_bytes = (source_sc == target_sc) ? target_bytes : MinStorageAccessBytes(module, source_sc);
+    const uint32_t required_multiple = std::max(target_bytes, source_bytes);
+    if (module.HasCapability(spv::CapabilityInt16)) {
+        return std::min(required_multiple, 2u);
+    }
+    return required_multiple;
 }
 
 // Mainly used because a tad faster than IsValueIn
@@ -439,6 +509,25 @@ bool SanitizerPass::RequiresInstrumentation(const Function& function, const Inst
         meta.constant_value = required_alignment;
         meta.element_size = cma.element_size;
         meta.skip_safe_mode = true;
+        return true;
+    } else if (opcode == spv::OpCopyMemorySized) {
+        if (type_manager_.FindConstantById(inst.Word(3))) {
+            return false;  // constant |Size| is already checked by spirv-val
+        }
+        const Type* target_type = type_manager_.FindTypeGlobal(function, inst.Word(1));
+        const Type* source_type = type_manager_.FindTypeGlobal(function, inst.Word(2));
+        if (!target_type || !source_type) {
+            return false;
+        }
+        const spv::StorageClass target_sc = target_type->inst_.StorageClass();
+        const spv::StorageClass source_sc = source_type->inst_.StorageClass();
+        const uint32_t required_multiple = CopyMemorySizedRequiredMultiple(module_, target_sc, source_sc);
+        if (required_multiple == 1) {
+            return false;
+        }
+        meta.sub_code = glsl::kErrorSubCode_Sanitizer_CopyMemorySizedSize;
+        meta.constant_value = required_multiple;
+        meta.storage_classes = uint32_t(target_sc) | (uint32_t(source_sc) << 16);
         return true;
     }
 

@@ -937,3 +937,97 @@ TEST_F(NegativeGpuAVShaderSanitizer, CoopMatLoadMisalignedStrideUint8Pointer) {
     // 4 bytes, but requires 16 byte alignment
     CoopMatAlignmentTest(cs_source, {4}, true);
 }
+
+TEST_F(NegativeGpuAVShaderSanitizer, CopyMemorySizedUntyped) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+
+    const char* cs_source = R"asm(
+        OpCapability Shader
+        OpCapability UntypedPointersKHR
+        OpExtension "SPV_KHR_untyped_pointers"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %block Block
+        OpMemberDecorate %block 0 Offset 0
+        OpMemberDecorate %block 1 Offset 4
+        OpMemberDecorate %block 2 Offset 20
+        OpDecorate %array ArrayStride 4
+        OpDecorate %ssbo DescriptorSet 0
+        OpDecorate %ssbo Binding 0
+        %void = OpTypeVoid
+        %func = OpTypeFunction %void
+        %uint = OpTypeInt 32 0
+        %uint_0 = OpConstant %uint 0
+        %uint_1 = OpConstant %uint 1
+        %uint_2 = OpConstant %uint 2
+        %uint_4 = OpConstant %uint 4
+        %uint_6 = OpConstant %uint 6
+        %array = OpTypeArray %uint %uint_4
+        %block = OpTypeStruct %uint %array %array
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+        %ssbo = OpUntypedVariableKHR %ptr StorageBuffer %block
+        %main = OpFunction %void None %func
+        %entry = OpLabel
+        %size_ptr = OpUntypedAccessChainKHR %ptr %block %ssbo %uint_0
+        %loaded = OpLoad %uint %size_ptr
+        ;; Buffer is zero'ed so add 6 to get 6
+        %size = OpIAdd %uint %loaded %uint_6
+        %src = OpUntypedAccessChainKHR %ptr %block %ssbo %uint_1
+        %dst = OpUntypedAccessChainKHR %ptr %block %ssbo %uint_2
+        OpCopyMemorySized %dst %src %size
+        OpReturn
+        OpFunctionEnd
+    )asm";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "VUID-RuntimeSpirv-Size-11165");
+}
+
+TEST_F(NegativeGpuAVShaderSanitizer, CopyMemorySizedTyped) {
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+
+    const char* cs_source = R"asm(
+        OpCapability Shader
+        OpCapability UntypedPointersKHR
+        OpExtension "SPV_KHR_untyped_pointers"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %block Block
+        OpMemberDecorate %block 0 Offset 0
+        OpMemberDecorate %block 1 Offset 4
+        OpMemberDecorate %block 2 Offset 20
+        OpDecorate %array ArrayStride 4
+        OpDecorate %ssbo DescriptorSet 0
+        OpDecorate %ssbo Binding 0
+        %void = OpTypeVoid
+        %func = OpTypeFunction %void
+        %uint = OpTypeInt 32 0
+        %uint_0 = OpConstant %uint 0
+        %uint_1 = OpConstant %uint 1
+        %uint_2 = OpConstant %uint 2
+        %uint_4 = OpConstant %uint 4
+        %uint_6 = OpConstant %uint 6
+        %array = OpTypeArray %uint %uint_4
+        %block = OpTypeStruct %uint %array %array
+        %block_ptr = OpTypePointer StorageBuffer %block
+        %uint_ptr = OpTypePointer StorageBuffer %uint
+        %array_ptr = OpTypePointer StorageBuffer %array
+        %ssbo = OpVariable %block_ptr StorageBuffer
+        %main = OpFunction %void None %func
+        %entry = OpLabel
+        %size_ptr = OpAccessChain %uint_ptr %ssbo %uint_0
+        %loaded = OpLoad %uint %size_ptr
+        ;; Buffer is zero'ed so add 6 to get 6
+        %size = OpIAdd %uint %loaded %uint_6
+        %src = OpAccessChain %array_ptr %ssbo %uint_1
+        %dst = OpAccessChain %array_ptr %ssbo %uint_2
+        OpCopyMemorySized %dst %src %size
+        OpReturn
+        OpFunctionEnd
+    )asm";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "VUID-RuntimeSpirv-Size-11165");
+}
