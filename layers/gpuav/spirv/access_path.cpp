@@ -285,6 +285,13 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
         }
     }
 
+    for (const Instruction* ac : ac_list) {
+        const uint32_t first_index_word = ac->IsUntypedAccessChain() ? 5 : 4;
+        for (uint32_t i = first_index_word; i < ac->Length(); i++) {
+            ac_indexes.push_back(ac->Word(i));
+        }
+    }
+
     if (!variable) {
         // We currently don't care to validate Function Variables are they are never going to be
         // something that interfaces with the API (like a descriptor/pushConstant do).

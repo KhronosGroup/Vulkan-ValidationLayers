@@ -62,6 +62,8 @@ struct AccessPath {
     //
     // Note: GLSL will try to always create a single large OpAccessChain
     std::vector<const Instruction*> ac_list;
+    // All "Indexes" operands of |ac_list| in the same order
+    std::vector<uint32_t> ac_indexes;
 
     struct Descriptor {
         // Optional variable of separate sampler descriptor (still null if combinedImageSampler)

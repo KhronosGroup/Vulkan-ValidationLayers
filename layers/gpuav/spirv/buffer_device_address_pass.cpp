@@ -178,7 +178,7 @@ bool BufferDeviceAddressPass::Instrument() {
                         continue;
                     }
 
-                    if (meta.access_path->ac_list.empty()) {
+                    if (meta.access_path->ac_indexes.empty()) {
                         continue;
                     }
                     const Instruction* last_access = meta.access_path->ac_list.front();
@@ -206,7 +206,7 @@ bool BufferDeviceAddressPass::Instrument() {
                         }
 
                         const uint32_t struct_offset =
-                            FindOffsetInStruct(root_struct_id, nullptr, false, meta.access_path->ac_list);
+                            FindOffsetInStruct(root_struct_id, nullptr, false, meta.access_path->ac_indexes);
                         if (struct_offset == 0) {
                             continue;
                         }
