@@ -105,7 +105,7 @@ TEST_F(NegativeBestPractices, SpecialUseExtensionsDevice) {
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = NULL;
-    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.enabledExtensionCount = size32(m_device_extension_names);
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");
@@ -752,7 +752,7 @@ TEST_F(NegativeBestPractices, MissingQueryDetails) {
 
     VkPhysicalDeviceFeatures all_features{};
     VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.queueCreateInfoCount = create_queue_infos.size();
+    device_ci.queueCreateInfoCount = size32(create_queue_infos);
     device_ci.pQueueCreateInfos = create_queue_infos.data();
     device_ci.enabledLayerCount = 0;
     device_ci.ppEnabledLayerNames = NULL;
@@ -2125,7 +2125,7 @@ TEST_F(NegativeBestPractices, UnneededQueueFamilyOwnershipTransferImage) {
         GTEST_SKIP() << "Transfer-only queue family is required";
     }
 
-    uint32_t qf_count = m_device->physical_device_.queue_properties_.size();
+    uint32_t qf_count = size32(m_device->physical_device_.queue_properties_);
     std::vector<VkQueueFamilyOwnershipTransferPropertiesKHR> qfot_props(qf_count);
     std::vector<VkQueueFamilyProperties2> qf_props(qf_count);
     for (uint32_t i = 0; i < qf_count; i++) {

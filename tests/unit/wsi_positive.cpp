@@ -3399,7 +3399,7 @@ TEST_F(PositiveWsi, PresentTimingsCalibrateableTimeDomains) {
 
     std::vector<uint64_t> timestamps(present_stages_to_test.size());
     uint64_t max_deviation{};
-    vk::GetCalibratedTimestampsKHR(device(), timestamp_infos.size(), timestamp_infos.data(), timestamps.data(), &max_deviation);
+    vk::GetCalibratedTimestampsKHR(device(), size32(timestamp_infos), timestamp_infos.data(), timestamps.data(), &max_deviation);
 }
 
 TEST_F(PositiveWsi, PresentTimingsFull) {

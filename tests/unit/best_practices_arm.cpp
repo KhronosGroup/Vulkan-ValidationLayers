@@ -245,7 +245,7 @@ TEST_F(NegativeBestPracticesARM, SuboptimalDescriptorReuseTest) {
     // allocate N/2 descriptor sets
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorPool = ds_pool;
-    alloc_info.descriptorSetCount = descriptor_sets.size() / 2;
+    alloc_info.descriptorSetCount = size32(descriptor_sets) / 2;
     alloc_info.pSetLayouts = ds_layouts.data();
 
     VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets.data());
@@ -272,7 +272,7 @@ TEST_F(NegativeBestPracticesARM, SuboptimalDescriptorReuseTest) {
     m_errorMonitor->VerifyFound();
 
     // allocate the remaining descriptor sets (N - (N/2))
-    alloc_info.descriptorSetCount = descriptor_sets.size() - (descriptor_sets.size() / 2);
+    alloc_info.descriptorSetCount = size32(descriptor_sets) - (size32(descriptor_sets) / 2);
     err = vk::AllocateDescriptorSets(device(), &alloc_info, ds);
 
     // this should create no validation warnings
@@ -324,7 +324,7 @@ TEST_F(NegativeBestPracticesARM, SparseIndexBufferTest) {
     VkConstantBufferObj sparse_ibo(m_device, sparse_indices.size() * sizeof(uint16_t), sparse_indices.data(),
                                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-    auto test_pipelines = [&](VkConstantBufferObj& ibo, size_t index_count, bool expect_error) -> void {
+    auto test_pipelines = [&](VkConstantBufferObj& ibo, uint32_t index_count, bool expect_error) -> void {
         CreatePipelineHelper pipe(*this);
         pipe.ia_ci_.primitiveRestartEnable = VK_FALSE;
         pipe.CreateGraphicsPipeline();
@@ -373,13 +373,13 @@ TEST_F(NegativeBestPracticesARM, SparseIndexBufferTest) {
     };
 
     // our non-sparse indices should not trigger a warning for either pipeline in this case
-    test_pipelines(nonsparse_ibo, nonsparse_indices.size(), false);
-    test_pipelines(nonsparse_ibo_2, nonsparse_indices_2.size(), false);
-    test_pipelines(nonsparse_ibo_3, nonsparse_indices_3.size(), false);
-    test_pipelines(nonsparse_ibo_4, nonsparse_indices_4.size(), false);
+    test_pipelines(nonsparse_ibo, size32(nonsparse_indices), false);
+    test_pipelines(nonsparse_ibo_2, size32(nonsparse_indices_2), false);
+    test_pipelines(nonsparse_ibo_3, size32(nonsparse_indices_3), false);
+    test_pipelines(nonsparse_ibo_4, size32(nonsparse_indices_4), false);
 
     // our sparse indices should trigger warnings for both pipelines in this case
-    test_pipelines(sparse_ibo, sparse_indices.size(), true);
+    test_pipelines(sparse_ibo, size32(sparse_indices), true);
 }
 
 TEST_F(NegativeBestPracticesARM, PostTransformVertexCacheThrashingIndicesTest) {
@@ -409,7 +409,7 @@ TEST_F(NegativeBestPracticesARM, PostTransformVertexCacheThrashingIndicesTest) {
         for (size_t j = 0; j < 128; j++) {
             // worst case index buffer sequence for re-use
             // (0, 1, 2, 3, ..., 127, 0, 1, 2, 3, ..., 127, 0, 1, 2, ...<x16>)
-            worst_indices[j + i * 128] = j;
+            worst_indices[j + i * 128] = static_cast<uint16_t>(j);
         }
     }
 
@@ -419,7 +419,7 @@ TEST_F(NegativeBestPracticesARM, PostTransformVertexCacheThrashingIndicesTest) {
         for (size_t j = 0; j < 128; j++) {
             // best case index buffer sequence for re-use
             // (0, 0, 0, ...<x16>, 1, 1, 1, ...<x16>, 2, 2, 2, ...<x16> , ..., 127)
-            best_indices[i + j * 16] = j;
+            best_indices[i + j * 16] = static_cast<uint16_t>(j);
         }
     }
 
@@ -432,7 +432,7 @@ TEST_F(NegativeBestPracticesARM, PostTransformVertexCacheThrashingIndicesTest) {
     worst_ibo.Memory().Map();
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "BestPractices-Arm-vkCmdDrawIndexed-post-transform-cache-thrashing");
-    vk::CmdDrawIndexed(m_command_buffer, worst_indices.size(), 0, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, size32(worst_indices), 0, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     worst_ibo.Memory().Unmap();
 
@@ -442,7 +442,7 @@ TEST_F(NegativeBestPracticesARM, PostTransformVertexCacheThrashingIndicesTest) {
     vk::CmdBindIndexBuffer(m_command_buffer, best_ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
     best_ibo.Memory().Map();
-    vk::CmdDrawIndexed(m_command_buffer, best_indices.size(), 0, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, size32(best_indices), 0, 0, 0, 0);
     best_ibo.Memory().Unmap();
 }
 
@@ -539,7 +539,7 @@ TEST_F(NegativeBestPracticesARM, RobustBufferAccessTest) {
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = nullptr;
-    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.enabledExtensionCount = size32(m_device_extension_names);
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkPhysicalDeviceFeatures supported_features;
@@ -612,10 +612,10 @@ TEST_F(NegativeBestPracticesARM, DepthPrePassUsage) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only);
-    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, indices.size(), 10, 0, 0, 0);
+    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, size32(indices), 10, 0, 0, 0);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_equal);
-    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, indices.size(), 10, 0, 0, 0);
+    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, size32(indices), 10, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
 
@@ -626,10 +626,10 @@ TEST_F(NegativeBestPracticesARM, DepthPrePassUsage) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only);
-    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, indices.size(), 1000, 0, 0, 0);
+    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, size32(indices), 1000, 0, 0, 0);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_equal);
-    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, indices.size(), 1000, 0, 0, 0);
+    for (size_t i = 0; i < 30; i++) vk::CmdDrawIndexed(m_command_buffer, size32(indices), 1000, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
 

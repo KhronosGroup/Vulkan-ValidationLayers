@@ -620,7 +620,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     }
 
     // Cleanup
-    vk::WaitForFences(device(), fence_handles.size(), fence_handles.data(), VK_TRUE, kWaitTimeout);
+    vk::WaitForFences(device(), size32(fence_handles), fence_handles.data(), VK_TRUE, kWaitTimeout);
 }
 
 TEST_F(NegativeWsi, GetSwapchainImageAndTryDestroy) {
@@ -684,7 +684,7 @@ TEST_F(NegativeWsi, SwapchainNotSupported) {
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_create_info;
-    device_create_info.enabledExtensionCount = m_device_extension_names.size();
+    device_create_info.enabledExtensionCount = size32(m_device_extension_names);
     device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     vkt::Device test_device(Gpu(), device_create_info);
@@ -756,7 +756,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
     }
 
     // Cleanup
-    vk::WaitForFences(device(), fence_handles.size(), fence_handles.data(), VK_TRUE, kWaitTimeout);
+    vk::WaitForFences(device(), size32(fence_handles), fence_handles.data(), VK_TRUE, kWaitTimeout);
 }
 
 TEST_F(NegativeWsi, SwapchainImageFormatList) {
@@ -6189,7 +6189,7 @@ TEST_F(NegativeWsi, PresentTimingsCalibrateableTimeDomains3) {
     std::vector<uint64_t> timestamps(timestamp_infos.size());
     uint64_t max_deviation;
     m_errorMonitor->SetDesiredError("VUID-vkGetCalibratedTimestampsKHR-timeDomain-09246");
-    vk::GetCalibratedTimestampsKHR(device(), timestamp_infos.size(), timestamp_infos.data(), timestamps.data(), &max_deviation);
+    vk::GetCalibratedTimestampsKHR(device(), size32(timestamp_infos), timestamp_infos.data(), timestamps.data(), &max_deviation);
     m_errorMonitor->VerifyFound();
 }
 

@@ -301,7 +301,7 @@ TEST_F(NegativeDataGraph, GetDataGraphPipelinePropertiesDuplicatedProperty) {
     query_results[2].dataSize = 0;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-09889");
-    vk::GetDataGraphPipelinePropertiesARM(m_device->handle(), &pipeline_info, query_results.size(), query_results.data());
+    vk::GetDataGraphPipelinePropertiesARM(m_device->handle(), &pipeline_info, size32(query_results), query_results.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -383,11 +383,11 @@ TEST_F(NegativeDataGraph, BindSessionTwice) {
     session.AllocSessionMem(device_mem);
 
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     // bind again to trigger error
     m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-session-09785");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -412,7 +412,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryOffsetLargerThanSize) {
     session_bind_infos[0].memoryOffset = mem_req.memoryRequirements.size + 2 * mem_req.memoryRequirements.alignment;
 
     m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-memoryOffset-09787");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -447,7 +447,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryInvalidMemoryBits) {
 
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
     m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-memory-09788");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -471,7 +471,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryInvalidOffsetAlignment) {
     session_bind_infos[0].memoryOffset = mem_reqs[0].memoryRequirements.alignment - 1;
 
     m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-memoryOffset-09789");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -491,7 +491,7 @@ TEST_F(NegativeDataGraph, BindSessionMemoryTooSmall) {
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
 
     m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-size-09790");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -525,7 +525,7 @@ TEST_F(NegativeDataGraph, BindProtectedSessionToUnprotectedMemory) {
     m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-session-09791");
     // we are using a different memory type from the session, which also causes an error with memoryBits
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-memory-09788");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -558,7 +558,7 @@ TEST_F(NegativeDataGraph, BindUnprotectedSessionToProtectedMemory) {
     m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-session-09792");
     // we are using a different memory type from the session, which also causes an error with memoryBits
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-memory-09788");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -581,7 +581,7 @@ TEST_F(NegativeDataGraph, BindSessionObjectIndexTooLarge) {
     session_bind_infos[0].objectIndex = session.BindPointReqs()[0].numObjects + 1;
 
     m_errorMonitor->SetDesiredError("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-objectIndex-09805");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -607,7 +607,7 @@ TEST_F(NegativeDataGraph, BindSessionObjectWrongBindPoint) {
     // VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM is the only legal value for bindPoint, so whatever we
     // put in place of it, we also trigger this implicit check:
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-bindPoint-parameter");
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -627,7 +627,7 @@ TEST_F(NegativeDataGraph, DestroySessionInUse) {
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -738,7 +738,7 @@ TEST_F(NegativeDataGraph, CmdDispatchPipelineNotBound) {
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -767,7 +767,7 @@ TEST_F(NegativeDataGraph, CmdDispatchDescriptorSetNotBound) {
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -900,7 +900,7 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedUnprotectedCmdBu
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -952,7 +952,7 @@ TEST_F(NegativeDataGraph, CmdDispatchProtectedNoFaultUnsupportedProtectedCmdBuff
     session.AllocSessionMem(device_mem);
 
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -985,7 +985,7 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorNoUpdate) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     // update only 1 of 2 descriptors
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
@@ -1018,7 +1018,7 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorDeletedObject) {
         std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
         session.AllocSessionMem(device_mem);
         auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-        vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+        vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
         pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
         pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -1059,7 +1059,7 @@ TEST_F(NegativeDataGraph, CmdDispatchInvalidDescriptorBufferBit) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -1091,7 +1091,7 @@ TEST_F(NegativeDataGraph, CmdDispatchMissingDescriptorBufferBit) {
     // create a pipeline layout with the required flags
     VkDescriptorSetLayoutCreateInfo dslci = vku::InitStructHelper();
     dslci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    dslci.bindingCount = pipeline.descriptor_set_layout_bindings_.size();
+    dslci.bindingCount = size32(pipeline.descriptor_set_layout_bindings_);
     dslci.pBindings = pipeline.descriptor_set_layout_bindings_.data();
 
     vkt::DescriptorSetLayout dsl(*m_device, dslci);
@@ -1110,7 +1110,7 @@ TEST_F(NegativeDataGraph, CmdDispatchMissingDescriptorBufferBit) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -1319,7 +1319,7 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongRank) {
     const std::vector<int64_t> dimensions{1, 2, 4};
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R32_SINT;
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
     desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
 
@@ -1348,7 +1348,7 @@ TEST_F(NegativeDataGraph, GraphConstantTensorWrongDimensions) {
     const std::vector<int64_t> dimensions{1, 2, 4, 1};  // dim[3] is 4 in the spirv
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R32_SINT;
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
     desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
 
@@ -1518,7 +1518,7 @@ TEST_F(NegativeDataGraph, ResourceTensorWrongRank) {
     auto* desc =
         const_cast<VkTensorDescriptionARM*>(vku::FindStructInPNextChain<VkTensorDescriptionARM>(pipeline.resources_[0].pNext));
     const std::vector<int64_t> dimensions{1, 4, 16};
-    desc->dimensionCount = dimensions.size();
+    desc->dimensionCount = size32(dimensions);
     desc->pDimensions = dimensions.data();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
@@ -1537,7 +1537,7 @@ TEST_F(NegativeDataGraph, ResourceTensorWrongDimensions) {
     auto* desc =
         const_cast<VkTensorDescriptionARM*>(vku::FindStructInPNextChain<VkTensorDescriptionARM>(pipeline.resources_[0].pNext));
     const std::vector<int64_t> dimensions{1, 8, 16, 1};  // dim[3] is 4 in the spirv
-    desc->dimensionCount = dimensions.size();
+    desc->dimensionCount = size32(dimensions);
     desc->pDimensions = dimensions.data();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pNext-09923");
@@ -1623,7 +1623,7 @@ TEST_F(NegativeDataGraph, ResourceInfoImageLayoutsNoUnifiedImageLayouts) {
     session.AllocSessionMem(device_mem);
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
         DataGraphTest::InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
     VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
@@ -2270,7 +2270,7 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongPipeline) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -2301,7 +2301,7 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongTensorUsage) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     // pass a tensor with the wrong usage into the pipeline
     VkTensorDescriptionARM wrong_desc = pipeline.GetTensorDesc(vkt::dg::TensorType::BASIC_SPIRV_IN);
@@ -2426,7 +2426,7 @@ TEST_F(NegativeDataGraph, CmdDispatchWrongQueue) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -2517,7 +2517,7 @@ TEST_F(NegativeDataGraph, OpticalFlowWrongHint) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     // set a hint that is too high
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
@@ -2550,7 +2550,7 @@ TEST_F(NegativeDataGraph, OpticalFlowNoCacheSession) {
     session.AllocSessionMem(device_mem);
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
         DataGraphTest::InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
     // Set one of the disallowed bits
@@ -2590,7 +2590,7 @@ TEST_F(NegativeDataGraph, OpticalFlowDispatchWithoutOpticalFlowCreateInfo) {
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
         DataGraphTest::InitSessionBindInfo(session, device_mem);
 
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     // Set optical flow dispatch info for `pipeline` which was not created with optical flow create info.
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
@@ -2630,7 +2630,7 @@ TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsNoUnifiedImageLayout
     session.AllocSessionMem(device_mem);
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
         DataGraphTest::InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
     VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
@@ -2667,7 +2667,7 @@ TEST_F(NegativeDataGraph, OpticalFlowConnectionsImageLayoutsUnifiedImageLayouts)
     session.AllocSessionMem(device_mem);
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
         DataGraphTest::InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
     VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
@@ -3209,7 +3209,7 @@ TEST_F(NegativeDataGraph, QueryNeuralStatisticsMissingCreateInfo) {
     query_result[1].pData = nullptr;
     query_result[1].dataSize = 0;
 
-    uint32_t prop_count = query_result.size();
+    uint32_t prop_count = size32(query_result);
     m_errorMonitor->SetDesiredError("VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-09856");
     vk::GetDataGraphPipelinePropertiesARM(device(), &pipeline_info, prop_count, query_result.data());
     m_errorMonitor->VerifyFound();

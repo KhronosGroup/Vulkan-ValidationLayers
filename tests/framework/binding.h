@@ -211,7 +211,7 @@ class QueueCreateInfoArray {
 
   public:
     QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props, bool all_queue_count = false);
-    size_t Size() const { return queue_info_.size(); }
+    uint32_t Size() const { return static_cast<uint32_t>(queue_info_.size()); }
     const VkDeviceQueueCreateInfo *Data() const { return queue_info_.data(); }
 };
 

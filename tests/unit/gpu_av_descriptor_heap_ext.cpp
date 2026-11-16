@@ -88,7 +88,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, NoMappings) {
     VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
     pipe.SetVertexInput(input_binding, input_attrib);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 
@@ -146,7 +146,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, NoHeapBound) {
     VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
     pipe.SetVertexInput(input_binding, input_attrib);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 
@@ -207,7 +207,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, HeapBoundBeforePipeline) {
     VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
     pipe.SetVertexInput(input_binding, input_attrib);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 
@@ -269,7 +269,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, HeapBoundAfterPipeline) {
     VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
     pipe.SetVertexInput(input_binding, input_attrib);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 
@@ -332,7 +332,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, SamplerHeapBound) {
     VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
     pipe.SetVertexInput(input_binding, input_attrib);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 
@@ -423,7 +423,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, MappingsUsed) {
     VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
     pipe.SetVertexInput(input_binding, input_attrib);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(&mapping_info), pipe.fs_->GetStageCreateInfo(&mapping_info)};
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 
@@ -569,7 +569,7 @@ TEST_F(NegativeGpuAVDescriptorHeapEXT, HeapRebound) {
     VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
     pipe.SetVertexInput(input_binding, input_attrib);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 

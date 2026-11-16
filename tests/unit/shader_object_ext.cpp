@@ -1673,7 +1673,7 @@ TEST_F(NegativeShaderObjectEXT, MissingCmdSetDiscardRectangleModeEXT) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
     vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer, VK_TRUE);
-    vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0u, discard_rectangles.size(), discard_rectangles.data());
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0u, size32(discard_rectangles), discard_rectangles.data());
     m_command_buffer.BindShadersEXT(m_vert_shader, m_frag_shader);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07881");

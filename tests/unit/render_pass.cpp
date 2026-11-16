@@ -1215,7 +1215,7 @@ TEST_F(NegativeRenderPass, MixedAttachmentSamplesAMD) {
     subpass.pDepthStencilAttachment = &depth_ref;
 
     VkRenderPassCreateInfo rpci = vku::InitStructHelper();
-    rpci.attachmentCount = attachments.size();
+    rpci.attachmentCount = size32(attachments);
     rpci.pAttachments = attachments.data();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
@@ -3266,7 +3266,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled4) {
     device_create_info.queueCreateInfoCount = queue_info.Size();
     device_create_info.pQueueCreateInfos = queue_info.Data();
     device_create_info.pEnabledFeatures = nullptr;
-    device_create_info.enabledExtensionCount = m_device_extension_names.size();
+    device_create_info.enabledExtensionCount = size32(m_device_extension_names);
     device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice second_device;

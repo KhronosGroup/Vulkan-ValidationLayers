@@ -27,7 +27,7 @@ TEST_F(PositiveInstance, TwoInstances) {
     VkInstance i1, i2, i3;
 
     VkInstanceCreateInfo ici = vku::InitStructHelper();
-    ici.enabledLayerCount = instance_layers_.size();
+    ici.enabledLayerCount = size32(instance_layers_);
     ici.ppEnabledLayerNames = instance_layers_.data();
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &i1));

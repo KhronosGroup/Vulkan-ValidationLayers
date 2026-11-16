@@ -288,7 +288,7 @@ void Device::Init(const VkDeviceCreateInfo& info) {
 }
 
 void Device::InitQueues(const VkDeviceCreateInfo& info) {
-    uint32_t queue_node_count = physical_device_.queue_properties_.size();
+    uint32_t queue_node_count = static_cast<uint32_t>(physical_device_.queue_properties_.size());
 
     queue_families_.resize(queue_node_count);
     for (uint32_t i = 0; i < info.queueCreateInfoCount; i++) {
@@ -1187,7 +1187,7 @@ Tensor::Tensor() {
     description_ = vku::InitStructHelper();
     description_.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     description_.format = VK_FORMAT_R32_SINT;
-    description_.dimensionCount = dimensions_.size();
+    description_.dimensionCount = static_cast<uint32_t>(dimensions_.size());
     description_.pDimensions = dimensions_.data();
     description_.pStrides = nullptr;
     description_.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -1205,7 +1205,7 @@ Tensor::Tensor(const Device& dev, const bool is_copy_tensor) {
     description_ = vku::InitStructHelper();
     description_.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     description_.format = VK_FORMAT_R32_SINT;
-    description_.dimensionCount = dimensions_.size();
+    description_.dimensionCount = static_cast<uint32_t>(dimensions_.size());
     description_.pDimensions = dimensions_.data();
     description_.pStrides = nullptr;
     description_.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;

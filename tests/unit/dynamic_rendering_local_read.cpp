@@ -1057,7 +1057,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, BeginWithinRenderPass) {
         subpass.pResolveAttachments = NULL;
 
         VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
-        rp_info.attachmentCount = attachment_descriptions.size();
+        rp_info.attachmentCount = size32(attachment_descriptions);
         rp_info.pAttachments = attachment_descriptions.data();
         rp_info.subpassCount = 1;
         rp_info.pSubpasses = &subpass;
@@ -1067,12 +1067,12 @@ TEST_F(NegativeDynamicRenderingLocalRead, BeginWithinRenderPass) {
         vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
 
         framebuffer = std::shared_ptr<vkt::Framebuffer>(new vkt::Framebuffer(
-            *m_device, m_renderPass, framebuffer_attachments.size(), framebuffer_attachments.data(), m_width, m_height));
+            *m_device, m_renderPass, size32(framebuffer_attachments), framebuffer_attachments.data(), m_width, m_height));
 
         m_renderPassBeginInfo.renderPass = m_renderPass;
         m_renderPassBeginInfo.framebuffer = framebuffer->handle();
         m_renderPassBeginInfo.renderArea.extent = {m_width, m_height};
-        m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();
+        m_renderPassBeginInfo.clearValueCount = size32(m_renderPassClearValues);
         m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 
         m_command_buffer.Begin();
@@ -1147,7 +1147,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ColorAttachmentCountInPipelineRenderin
     std::vector<VkFormat> color_attachments(m_device->Physical().limits_.maxColorAttachments + 1, VK_FORMAT_R8G8B8A8_UNORM);
 
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = color_attachments.size();
+    pipeline_rendering_info.colorAttachmentCount = size32(color_attachments);
     pipeline_rendering_info.pColorAttachmentFormats = color_attachments.data();
 
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);

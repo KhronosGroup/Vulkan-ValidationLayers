@@ -5203,7 +5203,7 @@ TEST_F(NegativeImage, ImageBoxFilterInstructionButInvalidFormatFeatures) {
         std::min(8.0f, static_cast<float>(image_processing_props.maxBoxFilterBlockSize.height)),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(box_sizes);
     specialization_info.pData = box_sizes.data();
@@ -5291,7 +5291,7 @@ TEST_F(NegativeImage, ImageBoxFilterInstructionButInvalidSamplerFlags) {
         std::min(8.0f, static_cast<float>(image_processing_props.maxBoxFilterBlockSize.height)),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(box_sizes);
     specialization_info.pData = box_sizes.data();
@@ -5450,7 +5450,7 @@ TEST_F(NegativeImage, ImageBlockMatchInstructionButInvalidFormatFeatures) {
         std::min(8u, image_processing_props.maxBlockMatchRegion.height),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(block_sizes);
     specialization_info.pData = block_sizes.data();
@@ -5570,7 +5570,7 @@ TEST_F(NegativeImage, ImageBlockMatchWindowInstructionButInvalidFormatFeatures) 
         std::min(8u, image_processing_props.maxBlockMatchRegion.height),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(block_sizes);
     specialization_info.pData = block_sizes.data();
@@ -5686,7 +5686,7 @@ TEST_F(NegativeImage, ImageBlockMatchWindowWithClampToEdgeButFeatureNotEnabled) 
         std::min(8u, image_processing_props.maxBlockMatchRegion.height),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(block_sizes);
     specialization_info.pData = block_sizes.data();
@@ -5802,7 +5802,7 @@ TEST_F(NegativeImage, ImageBlockMatchWindowWithAsymmetricClampToEdge) {
         std::min(8u, image_processing_props.maxBlockMatchRegion.height),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(block_sizes);
     specialization_info.pData = block_sizes.data();

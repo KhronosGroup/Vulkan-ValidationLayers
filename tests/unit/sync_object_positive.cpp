@@ -846,7 +846,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     si[2] = si[0];
     si[3] = si[1];
 
-    vk::QueueSubmit(m_default_queue->handle(), si.size(), si.data(), VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), size32(si), si.data(), VK_NULL_HANDLE);
 
     if (m_device->Physical().Features().sparseBinding) {
         // Signal the imported semaphore and wait on the exported semaphore
@@ -857,7 +857,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
         bi[1].pWaitSemaphores = &import_semaphore.handle();
         bi[2] = bi[0];
         bi[3] = bi[1];
-        vk::QueueBindSparse(m_device->QueuesWithSparseCapability()[0]->handle(), bi.size(), bi.data(), VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_device->QueuesWithSparseCapability()[0]->handle(), size32(bi), bi.data(), VK_NULL_HANDLE);
     }
 
     // Cleanup
@@ -940,7 +940,7 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     ti[1].waitSemaphoreValueCount = 1;
     ti[1].pWaitSemaphoreValues = &wait_value;
 
-    vk::QueueSubmit(m_default_queue->handle(), si.size(), si.data(), VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), size32(si), si.data(), VK_NULL_HANDLE);
 
     m_default_queue->Wait();
 

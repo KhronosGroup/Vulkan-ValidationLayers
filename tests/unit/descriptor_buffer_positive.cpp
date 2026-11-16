@@ -1458,7 +1458,7 @@ TEST_F(PositiveDescriptorBuffer, ImageLayoutIgnored) {
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    ds_layout_ci.bindingCount = bindings.size();
+    ds_layout_ci.bindingCount = size32(bindings);
     ds_layout_ci.pBindings = bindings.data();
     vkt::DescriptorSetLayout descriptor_set_layout(*m_device, ds_layout_ci);
 

@@ -688,7 +688,7 @@ TEST_F(NegativePipelineBinary, Creation5) {
     VkPipelineCreateInfoKHR pipeline_create_info = vku::InitStructHelper(&pipe.cp_ci_);
 
     VkPipelineBinaryInfoKHR binary_info = vku::InitStructHelper();
-    binary_info.binaryCount = binaries.size();
+    binary_info.binaryCount = size32(binaries);
     binary_info.pPipelineBinaries = binaries.data();
     flags2.pNext = &binary_info;
 

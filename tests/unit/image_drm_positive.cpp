@@ -89,7 +89,7 @@ TEST_F(PositiveImageDrm, Basic) {
 
         VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
         mod_list.pDrmFormatModifiers = mods.data();
-        mod_list.drmFormatModifierCount = mods.size();
+        mod_list.drmFormatModifierCount = size32(mods);
         ci.pNext = &mod_list;
 
         vkt::Image image(*m_device, ci, vkt::no_mem);
@@ -216,7 +216,7 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
     }
 
     VkImageDrmFormatModifierListCreateInfoEXT list_create_info = vku::InitStructHelper();
-    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.drmFormatModifierCount = size32(mods);
     list_create_info.pDrmFormatModifiers = mods.data();
     create_info.pNext = &list_create_info;
 
@@ -264,7 +264,7 @@ TEST_F(PositiveImageDrm, MutableFormat) {
 
     VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
     mod_list.pDrmFormatModifiers = mods.data();
-    mod_list.drmFormatModifierCount = mods.size();
+    mod_list.drmFormatModifierCount = size32(mods);
     format_list.pNext = &mod_list;
     image_info.pNext = &format_list;
 
@@ -396,7 +396,7 @@ TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
 
     VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
     mod_list.pDrmFormatModifiers = mods.data();
-    mod_list.drmFormatModifierCount = mods.size();
+    mod_list.drmFormatModifierCount = size32(mods);
     image_info.pNext = &mod_list;
 
     vkt::Image image(*m_device, image_info);

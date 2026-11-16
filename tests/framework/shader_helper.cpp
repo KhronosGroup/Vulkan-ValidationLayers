@@ -371,7 +371,7 @@ bool SlangToSPV(const spv_target_env target_env, const char* slang_shader, const
     options.push_back(
         {slang::CompilerOptionName::VulkanUseEntryPointName, {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}});
     sessionDesc.compilerOptionEntries = options.data();
-    sessionDesc.compilerOptionEntryCount = options.size();
+    sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(options.size());
 
     ComPtr<slang::ISession> session;
     SlangResult result = slang_session->createSession(sessionDesc, session.writeRef());

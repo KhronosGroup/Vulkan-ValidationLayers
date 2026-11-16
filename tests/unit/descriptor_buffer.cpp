@@ -570,7 +570,7 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptorsOff) {
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-bufferlessPushDescriptors-08056",
                                     descriptor_buffer_properties.maxDescriptorBufferBindings + 1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-bufferCount-08051");
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, binding_infos.size(), binding_infos.data());
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, size32(binding_infos), binding_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -605,7 +605,7 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptors) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-bufferCount-08051");
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-bufferlessPushDescriptors-08059",
                                     descriptor_buffer_properties.maxDescriptorBufferBindings + 1);
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, binding_infos.size(), binding_infos.data());
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, size32(binding_infos), binding_infos.data());
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-bufferlessPushDescriptors-08059");

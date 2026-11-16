@@ -41,7 +41,7 @@ TEST_F(NegativeProtectedMemory, Queue) {
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
 
     // need to find a queue without protected support
-    for (size_t i = 0; i < queue_families.size(); i++) {
+    for (uint32_t i = 0; i < queue_families.size(); i++) {
         if ((queue_families[i].queueFlags & VK_QUEUE_PROTECTED_BIT) == 0) {
             unprotected_queue = true;
             queue_family_index = i;
@@ -269,7 +269,7 @@ TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
 
-    for (size_t i = 0; i < queue_families.size(); i++) {
+    for (uint32_t i = 0; i < queue_families.size(); i++) {
         // need to have at least 2 queues to use
         if (((queue_families[i].queueFlags & VK_QUEUE_PROTECTED_BIT) != 0) && (queue_families[i].queueCount > 1)) {
             protected_queue = true;
@@ -1057,7 +1057,7 @@ TEST_F(NegativeProtectedMemory, RayTracingPipeline) {
     raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
     raytracing_pipeline_ci.pStages = shader_stages.data();
     raytracing_pipeline_ci.pGroups = shader_groups.data();
-    raytracing_pipeline_ci.groupCount = shader_groups.size();
+    raytracing_pipeline_ci.groupCount = size32(shader_groups);
     raytracing_pipeline_ci.layout = pipeline_layout;
 
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;

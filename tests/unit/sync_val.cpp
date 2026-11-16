@@ -3720,7 +3720,7 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     VkClearValue clear = {};
     std::array<VkClearValue, 2> clear_values = {{clear, clear}};
     m_renderPassBeginInfo.pClearValues = clear_values.data();
-    m_renderPassBeginInfo.clearValueCount = clear_values.size();
+    m_renderPassBeginInfo.clearValueCount = size32(clear_values);
     m_renderPassBeginInfo.renderArea = {{0, 0}, {32, 32}};
     m_renderPassBeginInfo.renderPass = rp;
 
@@ -4421,9 +4421,9 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     VkRenderPassCreateInfo renderpass_info = vku::InitStructHelper();
     renderpass_info.flags = 0;
-    renderpass_info.attachmentCount = attachment_descriptions.size();
+    renderpass_info.attachmentCount = size32(attachment_descriptions);
     renderpass_info.pAttachments = attachment_descriptions.data();
-    renderpass_info.subpassCount = subpasses.size();
+    renderpass_info.subpassCount = size32(subpasses);
     renderpass_info.pSubpasses = subpasses.data();
     renderpass_info.dependencyCount = 0;
     renderpass_info.pDependencies = nullptr;
@@ -4440,7 +4440,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     // run the renderpass with no dependencies
     {
         vkt::RenderPass rp(*m_device, renderpass_info);
-        vkt::Framebuffer fb(*m_device, rp, attachments.size(), attachments.data(), kWidth, kHeight);
+        vkt::Framebuffer fb(*m_device, rp, size32(attachments), attachments.data(), kWidth, kHeight);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp;
@@ -4455,7 +4455,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
-            g_pipe_12.gp_ci_.subpass = i + 1;
+            g_pipe_12.gp_ci_.subpass = static_cast<uint32_t>(i + 1);
             g_pipes[i].Init(*m_device, g_pipe_12.gp_ci_);
         }
 
@@ -4465,11 +4465,11 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         m_command_buffer.Begin();
 
         vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               0, 0, nullptr, 0, nullptr, img_barriers.size(), img_barriers.data());
+                               0, 0, nullptr, 0, nullptr, size32(img_barriers), img_barriers.data());
 
         m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
         m_renderPassBeginInfo.pClearValues = clear_values.data();
-        m_renderPassBeginInfo.clearValueCount = clear_values.size();
+        m_renderPassBeginInfo.clearValueCount = size32(clear_values);
 
         m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
         m_renderPassBeginInfo.renderPass = rp;
@@ -4504,12 +4504,12 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
                                 0};
         subpass_dependencies.push_back(dep);
     }
-    renderpass_info.dependencyCount = subpass_dependencies.size();
+    renderpass_info.dependencyCount = size32(subpass_dependencies);
     renderpass_info.pDependencies = subpass_dependencies.data();
 
     {
         vkt::RenderPass rp(*m_device, renderpass_info);
-        vkt::Framebuffer fb(*m_device, rp, attachments.size(), attachments.data(), kWidth, kHeight);
+        vkt::Framebuffer fb(*m_device, rp, size32(attachments), attachments.data(), kWidth, kHeight);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp;
@@ -4524,7 +4524,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
-            g_pipe_12.gp_ci_.subpass = i + 1;
+            g_pipe_12.gp_ci_.subpass = static_cast<uint32_t>(i + 1);
             g_pipes[i].Init(*m_device, g_pipe_12.gp_ci_);
         }
 
@@ -4534,11 +4534,11 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         m_command_buffer.Begin();
 
         vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               0, 0, nullptr, 0, nullptr, img_barriers.size(), img_barriers.data());
+                               0, 0, nullptr, 0, nullptr, size32(img_barriers), img_barriers.data());
 
         m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
         m_renderPassBeginInfo.pClearValues = clear_values.data();
-        m_renderPassBeginInfo.clearValueCount = clear_values.size();
+        m_renderPassBeginInfo.clearValueCount = size32(clear_values);
 
         m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
         m_renderPassBeginInfo.renderPass = rp;
@@ -4592,11 +4592,11 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         VkSubpassDependency{2, 3, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                             VK_ACCESS_INPUT_ATTACHMENT_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0});
 
-    renderpass_info.dependencyCount = subpass_dependencies.size();
+    renderpass_info.dependencyCount = size32(subpass_dependencies);
     renderpass_info.pDependencies = subpass_dependencies.data();
     {
         vkt::RenderPass rp(*m_device, renderpass_info);
-        vkt::Framebuffer fb(*m_device, rp, attachments.size(), attachments.data(), kWidth, kHeight);
+        vkt::Framebuffer fb(*m_device, rp, size32(attachments), attachments.data(), kWidth, kHeight);
 
         CreatePipelineHelper g_pipe_0(*this);
         g_pipe_0.gp_ci_.renderPass = rp;
@@ -4611,7 +4611,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
-            g_pipe_12.gp_ci_.subpass = i + 1;
+            g_pipe_12.gp_ci_.subpass = static_cast<uint32_t>(i + 1);
             g_pipes[i].Init(*m_device, g_pipe_12.gp_ci_);
         }
 
@@ -4620,11 +4620,11 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         m_command_buffer.Begin();
         vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               0, 0, nullptr, 0, nullptr, img_barriers.size(), img_barriers.data());
+                               0, 0, nullptr, 0, nullptr, size32(img_barriers), img_barriers.data());
 
         m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
         m_renderPassBeginInfo.pClearValues = clear_values.data();
-        m_renderPassBeginInfo.clearValueCount = clear_values.size();
+        m_renderPassBeginInfo.clearValueCount = size32(clear_values);
 
         m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
         m_renderPassBeginInfo.renderPass = rp;
@@ -4936,7 +4936,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
         elem = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
     }
 
-    layout_createinfo_binding_flags.bindingCount = ds_binding_flags.size();
+    layout_createinfo_binding_flags.bindingCount = size32(ds_binding_flags);
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags.data();
 
     // Prepare descriptors
@@ -5041,7 +5041,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     descriptor_writes[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[5].pImageInfo = &image_info[2];
 
-    vk::UpdateDescriptorSets(device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+    vk::UpdateDescriptorSets(device(), size32(descriptor_writes), descriptor_writes.data(), 0, NULL);
 
     // only descriptor 0 is used, the rest are going to get destroyed
     const char* shader_source = R"glsl(

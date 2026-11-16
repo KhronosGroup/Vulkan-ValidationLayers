@@ -63,7 +63,7 @@ void GpuAVTest::InitGpuAvFramework(std::vector<VkLayerSettingEXT> layer_settings
                                                   VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue});
 
     VkLayerSettingsCreateInfoEXT layer_setting_ci = vku::InitStructHelper();
-    layer_setting_ci.settingCount = layer_settings.size();
+    layer_setting_ci.settingCount = size32(layer_settings);
     layer_setting_ci.pSettings = layer_settings.data();
 
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
@@ -1765,7 +1765,7 @@ TEST_F(PositiveGpuAV, DualShaderLibrary) {
     vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     combined_lib.shader_stages_ = {vs_stage.stage_ci, fs_stage.stage_ci};
-    combined_lib.gp_ci_.stageCount = combined_lib.shader_stages_.size();
+    combined_lib.gp_ci_.stageCount = size32(combined_lib.shader_stages_);
     combined_lib.gp_ci_.pStages = combined_lib.shader_stages_.data();
 
     combined_lib.CreateGraphicsPipeline(false);
@@ -1808,7 +1808,7 @@ TEST_F(PositiveGpuAV, DualShaderLibraryInline) {
     combined_lib.gp_ci_.layout = pipeline_layout;
 
     combined_lib.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    combined_lib.gp_ci_.stageCount = combined_lib.shader_stages_.size();
+    combined_lib.gp_ci_.stageCount = size32(combined_lib.shader_stages_);
     combined_lib.gp_ci_.pStages = combined_lib.shader_stages_.data();
 
     combined_lib.CreateGraphicsPipeline(false);
@@ -2132,7 +2132,7 @@ TEST_F(PositiveGpuAV, DualShaderLibraryDestroyLayout) {
     combined_lib.gp_ci_.renderPass = RenderPass();
     combined_lib.gp_ci_.subpass = 0;
     combined_lib.gp_ci_.layout = pipeline_layout_lib;
-    combined_lib.gp_ci_.stageCount = combined_lib.shader_stages_.size();
+    combined_lib.gp_ci_.stageCount = size32(combined_lib.shader_stages_);
     combined_lib.gp_ci_.pStages = combined_lib.shader_stages_.data();
     combined_lib.CreateGraphicsPipeline(false);
 
@@ -2779,7 +2779,7 @@ TEST_F(PositiveGpuAV, HeapWithUntypedPointers) {
     pipe.vi_ci_.vertexAttributeDescriptionCount = 4u;
     pipe.vi_ci_.pVertexAttributeDescriptions = attributes;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 }

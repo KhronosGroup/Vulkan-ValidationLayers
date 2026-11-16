@@ -1393,7 +1393,7 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
         pre_raster_lib.shader_stages_ = {pre_raster_lib.vs_->GetStageCreateInfo(), stages[0], stages[1]};
-        pre_raster_lib.gp_ci_.stageCount = pre_raster_lib.shader_stages_.size();
+        pre_raster_lib.gp_ci_.stageCount = size32(pre_raster_lib.shader_stages_);
         pre_raster_lib.gp_ci_.pStages = pre_raster_lib.shader_stages_.data();
         pre_raster_lib.CreateGraphicsPipeline();
     }

@@ -186,7 +186,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     VkRenderPassCreateInfo rp_info = vku::InitStructHelper(&renderPassMultiviewCreateInfo);
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachmentDescription;
-    rp_info.subpassCount = subpasses.size();
+    rp_info.subpassCount = size32(subpasses);
     rp_info.pSubpasses = subpasses.data();
 
     std::vector<VkSubpassDependency> dependencies;
@@ -239,7 +239,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     m_renderPassBeginInfo.renderPass = m_renderPass;
     m_renderPassBeginInfo.framebuffer = fb;
     m_renderPassBeginInfo.renderArea.extent = {m_width, m_height};
-    m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();
+    m_renderPassBeginInfo.clearValueCount = size32(m_renderPassClearValues);
     m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 
     // Pipeline not bound test
@@ -671,7 +671,7 @@ TEST_F(NegativeMultiview, Features) {
     device_create_info.queueCreateInfoCount = queue_info.Size();
     device_create_info.pQueueCreateInfos = queue_info.Data();
     device_create_info.ppEnabledExtensionNames = extension_list.data();
-    device_create_info.enabledExtensionCount = extension_list.size();
+    device_create_info.enabledExtensionCount = size32(extension_list);
     VkDevice test_device;
 
     if ((multiview_features.multiviewGeometryShader == VK_FALSE) && (multiview_features.multiviewTessellationShader == VK_FALSE)) {

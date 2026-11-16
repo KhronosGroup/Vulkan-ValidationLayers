@@ -330,7 +330,7 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorAccelerationStructures) {
     }
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
 
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
@@ -384,7 +384,7 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorUpdateAfterBindAccelerationStruc
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
 
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
@@ -434,7 +434,7 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetAccelerationStructures) {
     }
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
 
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
@@ -488,7 +488,7 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetUpdateAfterBindAccelerationStructures
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
 
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
@@ -1305,7 +1305,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
         raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
         raytracing_pipeline_ci.pStages = shader_stages.data();
         raytracing_pipeline_ci.pGroups = shader_groups.data();
-        raytracing_pipeline_ci.groupCount = shader_groups.size();
+        raytracing_pipeline_ci.groupCount = size32(shader_groups);
         raytracing_pipeline_ci.layout = pipeline_layout;
 
         const VkResult result = vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
@@ -5811,7 +5811,7 @@ TEST_F(NegativeRayTracing, CmdBuildClusterAccelerationStructureIndirectValidatio
         raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
         raytracing_pipeline_ci.pStages = shader_stages.data();
         raytracing_pipeline_ci.pGroups = shader_groups.data();
-        raytracing_pipeline_ci.groupCount = shader_groups.size();
+        raytracing_pipeline_ci.groupCount = size32(shader_groups);
         raytracing_pipeline_ci.layout = pipeline_layout;
         raytracing_pipeline_ci.maxPipelineRayRecursionDepth = 1;
 

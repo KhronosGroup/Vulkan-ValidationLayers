@@ -168,7 +168,7 @@ TEST_F(PositiveLegacy, UseDeprecatedDeviceExtensionsPromoted) {
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = nullptr;
-    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.enabledExtensionCount = size32(m_device_extension_names);
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     vk::CreateDevice(this->Gpu(), &dev_info, nullptr, &local_device);

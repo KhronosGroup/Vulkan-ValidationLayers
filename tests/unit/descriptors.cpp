@@ -2145,7 +2145,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     VkDescriptorSet descriptorSet[4] = {};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorPool = ds_pool;
-    alloc_info.descriptorSetCount = ds_vk_layouts.size();
+    alloc_info.descriptorSetCount = size32(ds_vk_layouts);
     alloc_info.pSetLayouts = ds_vk_layouts.data();
     VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, descriptorSet);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -3255,7 +3255,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
         dslb_vec.push_back(dslb);
     }
     {
-        ds_layout_ci.bindingCount = dslb_vec.size();
+        ds_layout_ci.bindingCount = size32(dslb_vec);
         ds_layout_ci.pBindings = dslb_vec.data();
         vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
@@ -3318,7 +3318,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     dslb.binding = 1;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = &dslb_vec[0];
 
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);

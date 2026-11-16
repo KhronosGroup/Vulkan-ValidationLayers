@@ -38,7 +38,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndex) {
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381");
@@ -111,7 +111,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
-    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.enabledExtensionCount = size32(m_device_extension_names);
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     // Create a device with a single queue family
@@ -142,7 +142,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUnique) {
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
 
-    for (size_t i = 0; i < queue_families.size(); i++) {
+    for (uint32_t i = 0; i < queue_families.size(); i++) {
         if (queue_families[i].queueCount > 1) {
             found_queue = true;
             queue_family_index = i;
@@ -227,7 +227,7 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
     device_ci.queueCreateInfoCount = 2;
     device_ci.pQueueCreateInfos = device_queue_ci;
     device_ci.enabledLayerCount = 0;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
@@ -260,7 +260,7 @@ TEST_F(NegativeDeviceQueue, QueueCount) {
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device = VK_NULL_HANDLE;
@@ -287,7 +287,7 @@ TEST_F(NegativeDeviceQueue, QueuePriorities) {
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device = VK_NULL_HANDLE;
@@ -316,7 +316,7 @@ TEST_F(NegativeDeviceQueue, QueuePrioritiesNull) {
     VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device = VK_NULL_HANDLE;
@@ -366,7 +366,7 @@ TEST_F(NegativeDeviceQueue, BindPipeline) {
 TEST_F(NegativeDeviceQueue, CreateCommandPool) {
     TEST_DESCRIPTION("vkCreateCommandPool with bad queue");
     RETURN_IF_SKIP(Init());
-    const size_t queue_count = m_device->Physical().queue_properties_.size();
+    const uint32_t queue_count = size32(m_device->Physical().queue_properties_);
     m_errorMonitor->SetDesiredError("VUID-vkCreateCommandPool-queueFamilyIndex-01937");
     vkt::CommandPool commandPool(*m_device, queue_count + 1);
     m_errorMonitor->VerifyFound();
@@ -477,7 +477,7 @@ TEST_F(NegativeDeviceQueue, DeviceCreateInvalidParameters) {
     device_ci.queueCreateInfoCount = 1u;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0u;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device;
@@ -547,7 +547,7 @@ TEST_F(NegativeDeviceQueue, DeviceCreateEnabledLayerNamesPointer) {
     VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 1u;
     device_ci.pQueueCreateInfos = &device_queue_ci;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
     device_ci.enabledLayerCount = 1u;
     device_ci.ppEnabledLayerNames = nullptr;
@@ -594,7 +594,7 @@ TEST_F(NegativeDeviceQueue, MissingInternallySynchronizedQueuesFeature) {
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
 
-    for (size_t i = 0; i < queue_families.size(); i++) {
+    for (uint32_t i = 0; i < queue_families.size(); i++) {
         if (queue_families[i].queueCount > 1) {
             found_queue = true;
             queue_family_index = i;
@@ -802,7 +802,7 @@ TEST_F(NegativeDeviceQueue, ArmSchedulingControlsCreateDevice) {
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-09396");

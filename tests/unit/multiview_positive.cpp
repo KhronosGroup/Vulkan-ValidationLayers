@@ -183,7 +183,7 @@ TEST_F(PositiveMultiview, PushDescriptor) {
     subpasses[1].viewMask = 0x1;
 
     VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = subpasses.size();
+    render_pass_ci.subpassCount = size32(subpasses);
     render_pass_ci.pSubpasses = subpasses.data();
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;

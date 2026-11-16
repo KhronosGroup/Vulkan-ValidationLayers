@@ -1945,7 +1945,7 @@ TEST_F(NegativeVideoEncode, EncodeInputFormatMismatch) {
     uint32_t alt_pic_format_index = 0;
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncode(), [&alt_pic_format_index](const VideoConfig& config) {
         const auto& format_props = config.SupportedPictureFormatProps();
-        for (size_t i = 0; i < format_props.size(); ++i) {
+        for (uint32_t i = 0; i < format_props.size(); ++i) {
             if (format_props[i].format != format_props[0].format && alt_pic_format_index == 0) {
                 alt_pic_format_index = i;
                 return true;

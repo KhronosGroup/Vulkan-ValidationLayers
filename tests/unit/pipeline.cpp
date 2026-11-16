@@ -1644,11 +1644,11 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
 
         VkSubpassDescription sp = {};
         sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        sp.colorAttachmentCount = cr.size();
+        sp.colorAttachmentCount = size32(cr);
         sp.pColorAttachments = cr.data();
 
         VkRenderPassCreateInfo rpi = vku::InitStructHelper();
-        rpi.attachmentCount = att.size();
+        rpi.attachmentCount = size32(att);
         rpi.pAttachments = att.data();
         rpi.subpassCount = 1;
         rpi.pSubpasses = &sp;
@@ -1656,7 +1656,7 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
         const std::array<VkPipelineColorBlendAttachmentState, 3> cba = {{{}, {}, {}}};
 
         VkPipelineColorBlendStateCreateInfo cbi = vku::InitStructHelper();
-        cbi.attachmentCount = cba.size();
+        cbi.attachmentCount = size32(cba);
         cbi.pAttachments = cba.data();
 
         vkt::RenderPass rp(*m_device, rpi);

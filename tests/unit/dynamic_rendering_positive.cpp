@@ -640,7 +640,7 @@ TEST_F(PositiveDynamicRendering, ExecuteCommandsWithNullImageView) {
     constexpr std::array bad_color_formats = {VK_FORMAT_UNDEFINED};
 
     VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
-    inheritance_rendering_info.colorAttachmentCount = bad_color_formats.size();
+    inheritance_rendering_info.colorAttachmentCount = size32(bad_color_formats);
     inheritance_rendering_info.pColorAttachmentFormats = bad_color_formats.data();
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 

@@ -256,7 +256,7 @@ TEST_F(NegativeTensor, DimensionsHaveZerosOrNegative) {
     constexpr int64_t good_dims[]{1, 2, 3, 4};
     constexpr uint32_t n_dims = std::size(good_dims);
     std::vector<int64_t> dims(n_dims);
-    desc.dimensionCount = dims.size();
+    desc.dimensionCount = size32(dims);
     desc.pDimensions = dims.data();
     desc.tiling = VK_TENSOR_TILING_OPTIMAL_ARM;
     desc.pStrides = nullptr;
@@ -399,7 +399,7 @@ TEST_F(NegativeTensor, StridesNotMultiple) {
     const std::vector<int64_t> dimensions{4ul, 1ul};
     const std::vector<int64_t> strides{3l, 2l};
     desc.pDimensions = dimensions.data();
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.format = VK_FORMAT_R16_UINT;
     desc.pStrides = strides.data();
 
@@ -422,7 +422,7 @@ TEST_F(NegativeTensor, StridesExtremes) {
     const std::vector<int64_t> dimensions{2ul, 2ul, 2ul, 2ul};
     const std::vector<int64_t> strides{0l, -1l, static_cast<int64_t>(tensor_props.maxTensorStride + 1), 1l};
     desc.pDimensions = dimensions.data();
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pStrides = strides.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09738");
@@ -445,7 +445,7 @@ TEST_F(NegativeTensor, StridesOverlap) {
     const std::vector<int64_t> dimensions{1ul, 1ul, 1ul};
     const std::vector<int64_t> strides{1l, 4ul, 1l};
     desc.pDimensions = dimensions.data();
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pStrides = strides.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-pStrides-09739");
@@ -464,7 +464,7 @@ TEST_F(NegativeTensor, NonPacked) {
     const std::vector<int64_t> dimensions{1ul, 3ul, 1ul};
     const std::vector<int64_t> strides{4l, 1l, 1l};
     desc.pDimensions = dimensions.data();
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pStrides = strides.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-None-09740");
@@ -485,7 +485,7 @@ TEST_F(NegativeTensor, OptimalAliased) {
 
     const std::vector<int64_t> dimensions{1ul, 1ul, 5ul};
     desc.pDimensions = dimensions.data();
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pStrides = nullptr;
 
     m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-tiling-09741");
@@ -1102,7 +1102,7 @@ TEST_F(NegativeTensor, CopyTensorDifferentDimensionCounts) {
     auto dst_desc = DefaultDesc();
     std::vector<int64_t> dst_dimensions{2ul, 2ul, 2ul};
     dst_desc.pDimensions = dst_dimensions.data();
-    dst_desc.dimensionCount = dst_dimensions.size();
+    dst_desc.dimensionCount = size32(dst_dimensions);
     dst_desc.pStrides = nullptr;
     dst_desc.usage |= VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
     auto dst_info = DefaultCreateInfo(&dst_desc);
@@ -1135,7 +1135,7 @@ TEST_F(NegativeTensor, CopyTensorDifferentDimensions) {
     auto dst_desc = DefaultDesc();
     std::vector<int64_t> dst_dimensions{1, 4, 4, 4};
     dst_desc.pDimensions = dst_dimensions.data();
-    dst_desc.dimensionCount = dst_dimensions.size();
+    dst_desc.dimensionCount = size32(dst_dimensions);
     dst_desc.pStrides = nullptr;
     dst_desc.usage |= VK_TENSOR_USAGE_TRANSFER_DST_BIT_ARM;
     auto dst_info = DefaultCreateInfo(&dst_desc);
@@ -1943,7 +1943,7 @@ TEST_F(NegativeTensor, TensorMemoryBarrierSharingModeConcurrentSrcQueueFamilyNot
     auto info = DefaultCreateInfo(&desc);
     std::vector<uint32_t> qf_indices{submit_family, other_family};
     info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-    info.queueFamilyIndexCount = qf_indices.size();
+    info.queueFamilyIndexCount = size32(qf_indices);
     info.pQueueFamilyIndices = qf_indices.data();
 
     vkt::Tensor tensor(*m_device, info);
@@ -1991,7 +1991,7 @@ TEST_F(NegativeTensor, TensorMemoryBarrierSharingModeConcurrentDstQueueFamilyNot
     auto info = DefaultCreateInfo(&desc);
     std::vector<uint32_t> qf_indices{submit_family, other_family};
     info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-    info.queueFamilyIndexCount = qf_indices.size();
+    info.queueFamilyIndexCount = size32(qf_indices);
     info.pQueueFamilyIndices = qf_indices.data();
 
     vkt::Tensor tensor(*m_device, info);
@@ -2385,7 +2385,7 @@ TEST_F(NegativeTensor, DispatchShaderSpirvMismatchedRank) {
 
     VkTensorDescriptionARM desc = TensorShaderDesc();
     std::vector<int64_t> dimensions{1, 4, 4};
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
 
     vkt::Tensor tensor(*m_device, desc);
@@ -2733,7 +2733,7 @@ TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoNullViews) {
                                        });
     std::vector<VkTensorViewARM> views = {VK_NULL_HANDLE};
     VkWriteDescriptorSetTensorARM tensor_descriptor_write = vku::InitStructHelper();
-    tensor_descriptor_write.tensorViewCount = views.size();
+    tensor_descriptor_write.tensorViewCount = size32(views);
     tensor_descriptor_write.pTensorViews = views.data();
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&tensor_descriptor_write);
@@ -2756,7 +2756,7 @@ TEST_F(NegativeTensor, TilingsInnerDimensionTooBig) {
     const std::vector<int64_t> dimensions{ 1, 2, 3, 5 };
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.pDimensions = dimensions.data();
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pStrides = nullptr;
     desc.format = VK_FORMAT_R16_SINT;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -2781,7 +2781,7 @@ TEST_F(NegativeTensor, TilingsStridesNotNull) {
     const std::vector<int64_t> strides{ 96, 48, 16, 4};
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.pDimensions = dimensions.data();
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pStrides = strides.data();
     desc.format = format;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -2814,7 +2814,7 @@ TEST_F(NegativeTensor, RollingInvalidTiling) {
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.format = VK_FORMAT_R16_SINT;
     const std::vector<int64_t> dimensions{ 1, 32, 64, 4 };
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -2840,7 +2840,7 @@ TEST_F(NegativeTensor, RollingInvalidDimensions) {
     desc.tiling = VK_TENSOR_TILING_BRICK_16_WIDE_ARM;
     desc.format = VK_FORMAT_R8_SINT;
     std::vector<int64_t> dims = { 1, 2, 3, 4, 5 }; /* dimensionCount > 4 */
-    desc.dimensionCount = dims.size();
+    desc.dimensionCount = size32(dims);
     desc.pDimensions = dims.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -2865,7 +2865,7 @@ TEST_F(NegativeTensor, RollingWrapsGreatherThanDimensions) {
     desc.tiling = VK_TENSOR_TILING_BRICK_8_WIDE_ARM;
     desc.format = VK_FORMAT_R8_SINT;
     std::vector<int64_t> dims{ 1, 2, 8 };
-    desc.dimensionCount = dims.size();
+    desc.dimensionCount = size32(dims);
     desc.pDimensions = dims.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -2893,7 +2893,7 @@ TEST_F(NegativeTensor, RollingWrapsNEqDimensionAndGreatherThan2exp16) {
     desc.tiling = VK_TENSOR_TILING_BRICK_8_WIDE_ARM;
     desc.format = VK_FORMAT_R8_SINT;
     std::vector<int64_t> dims{ 1, 4, 100000 };
-    desc.dimensionCount = dims.size();
+    desc.dimensionCount = size32(dims);
     desc.pDimensions = dims.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -2915,7 +2915,7 @@ TEST_F(NegativeTensor, RollingWrapsNEqDimensionAndNotPow2) {
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R8_SINT;
     std::vector<int64_t> dims{ 1, 4, 8 };
-    desc.dimensionCount = dims.size();
+    desc.dimensionCount = size32(dims);
     desc.pDimensions = dims.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -2937,7 +2937,7 @@ TEST_F(NegativeTensor, RollingWrapsNotMultipleOfBrickOuterSize) {
     desc.tiling = VK_TENSOR_TILING_BRICK_4_WIDE_ARM;  // brickOuterSize = 4
     desc.format = VK_FORMAT_R8_SINT;
     std::vector<int64_t> dims{ 1, 2, 8, 36 };
-    desc.dimensionCount = dims.size();
+    desc.dimensionCount = size32(dims);
     desc.pDimensions = dims.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -2960,7 +2960,7 @@ TEST_F(NegativeTensor, RollingWrapsNotMultipleOf64DivBrickOuterSizeDivElementSiz
     desc.tiling = VK_TENSOR_TILING_BRICK_4_WIDE_ARM;  // brickOuterSize = 4
     desc.format = VK_FORMAT_R8_SINT;
     std::vector<int64_t> dims{ 1, 2, 36 };
-    desc.dimensionCount = dims.size();
+    desc.dimensionCount = size32(dims);
     desc.pDimensions = dims.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;

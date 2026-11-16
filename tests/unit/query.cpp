@@ -28,7 +28,7 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->Physical().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    uint32_t queueFamilyIndex = size32(queueFamilyProperties);
     std::vector<VkPerformanceCounterKHR> counters;
 
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
@@ -52,7 +52,7 @@ TEST_F(NegativeQuery, PerformanceCreation) {
 
     VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = vku::InitStructHelper();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
-    perf_query_pool_ci.counterIndexCount = counters.size();
+    perf_query_pool_ci.counterIndexCount = size32(counters);
     std::vector<uint32_t> counterIndices;
     for (uint32_t c = 0; c < counters.size(); c++) counterIndices.push_back(c);
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
@@ -70,7 +70,7 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     query_pool_ci.pNext = &perf_query_pool_ci;
 
     // Invalid counter indices
-    counterIndices.push_back(counters.size());
+    counterIndices.push_back(size32(counters));
     perf_query_pool_ci.counterIndexCount++;
     perf_query_pool_ci.pCounterIndices = counterIndices.data();
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321");
@@ -102,7 +102,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->Physical().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    uint32_t queueFamilyIndex = size32(queueFamilyProperties);
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
 
@@ -140,7 +140,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
 
     VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = vku::InitStructHelper();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
-    perf_query_pool_ci.counterIndexCount = counterIndices.size();
+    perf_query_pool_ci.counterIndexCount = size32(counterIndices);
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
@@ -215,7 +215,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->Physical().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    uint32_t queueFamilyIndex = size32(queueFamilyProperties);
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
 
@@ -255,7 +255,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
 
     VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = vku::InitStructHelper();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
-    perf_query_pool_ci.counterIndexCount = counterIndices.size();
+    perf_query_pool_ci.counterIndexCount = size32(counterIndices);
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
@@ -307,7 +307,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     RETURN_IF_SKIP(Init());
 
     auto queue_family_properties = m_device->Physical().queue_properties_;
-    uint32_t queue_family_index = queue_family_properties.size();
+    uint32_t queue_family_index = size32(queue_family_properties);
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counter_indices;
 
@@ -347,7 +347,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
 
     VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = vku::InitStructHelper();
     perf_query_pool_ci.queueFamilyIndex = queue_family_index;
-    perf_query_pool_ci.counterIndexCount = counter_indices.size();
+    perf_query_pool_ci.counterIndexCount = size32(counter_indices);
     perf_query_pool_ci.pCounterIndices = &counter_indices[0];
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
@@ -451,7 +451,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     GetPhysicalDeviceProperties2(perf_query_props);
 
     auto queueFamilyProperties = m_device->Physical().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    uint32_t queueFamilyIndex = size32(queueFamilyProperties);
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
     uint32_t nPasses = 0;
@@ -477,7 +477,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
 
         VkQueryPoolPerformanceCreateInfoKHR create_info = vku::InitStructHelper();
         create_info.queueFamilyIndex = idx;
-        create_info.counterIndexCount = counterIndices.size();
+        create_info.counterIndexCount = size32(counterIndices);
         create_info.pCounterIndices = &counterIndices[0];
 
         vk::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(Gpu(), &create_info, &nPasses);
@@ -497,7 +497,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
 
     VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = vku::InitStructHelper();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
-    perf_query_pool_ci.counterIndexCount = counterIndices.size();
+    perf_query_pool_ci.counterIndexCount = size32(counterIndices);
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
@@ -680,7 +680,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->Physical().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    uint32_t queueFamilyIndex = size32(queueFamilyProperties);
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
 
@@ -715,7 +715,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
 
     VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = vku::InitStructHelper();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
-    perf_query_pool_ci.counterIndexCount = counterIndices.size();
+    perf_query_pool_ci.counterIndexCount = size32(counterIndices);
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
@@ -870,7 +870,7 @@ TEST_F(NegativeQuery, HostResetDevice) {
     device_create_info.queueCreateInfoCount = queue_info.Size();
     device_create_info.pQueueCreateInfos = queue_info.Data();
     device_create_info.pEnabledFeatures = &features;
-    device_create_info.enabledExtensionCount = m_device_extension_names.size();
+    device_create_info.enabledExtensionCount = size32(m_device_extension_names);
     device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice second_device;
@@ -1029,7 +1029,7 @@ TEST_F(NegativeQuery, PoolCreate) {
     device_create_info.enabledLayerCount = 0;
     device_create_info.ppEnabledLayerNames = NULL;
     device_create_info.pEnabledFeatures = &features;
-    device_create_info.enabledExtensionCount = m_device_extension_names.size();
+    device_create_info.enabledExtensionCount = size32(m_device_extension_names);
     device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
     VkResult err = vk::CreateDevice(Gpu(), &device_create_info, nullptr, &local_device);
     ASSERT_EQ(VK_SUCCESS, err);

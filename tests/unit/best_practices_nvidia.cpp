@@ -52,7 +52,7 @@ TEST_F(NegativeBestPracticesNV, PageableDeviceLocalMemory) {
     }
 
     // Now enable the expected features
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
     device_ci.pNext = &pageable;
 
@@ -371,7 +371,7 @@ TEST_F(NegativeBestPracticesNV, BindMemory_NoPriority) {
     VkDeviceCreateInfo device_ci = vku::InitStructHelper(&maintenance4_features);
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     vkt::Device test_device(Gpu(), device_ci);
@@ -434,7 +434,7 @@ TEST_F(NegativeBestPracticesNV, BindMemory_StaticPriority) {
     VkDeviceCreateInfo device_ci = vku::InitStructHelper(&maintenance4_features);
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.enabledExtensionCount = size32(m_device_extension_names);
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     vkt::Device test_device(Gpu(), device_ci);

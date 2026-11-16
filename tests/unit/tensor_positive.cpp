@@ -38,7 +38,7 @@ VkTensorDescriptionARM TensorTest::DefaultDesc() {
     static VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R8_SINT;
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
     desc.pStrides = strides.data();
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -52,7 +52,7 @@ VkTensorDescriptionARM TensorTest::TensorShaderDesc() {
     static VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R32_SINT;
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -256,7 +256,7 @@ TEST_F(PositiveTensor, WriteDescriptorSetTensorInfoNullViewsNullDescriptor) {
                                        });
     std::vector<VkTensorViewARM> views = {VK_NULL_HANDLE};
     VkWriteDescriptorSetTensorARM tensor_descriptor_write = vku::InitStructHelper();
-    tensor_descriptor_write.tensorViewCount = views.size();
+    tensor_descriptor_write.tensorViewCount = size32(views);
     tensor_descriptor_write.pTensorViews = views.data();
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper(&tensor_descriptor_write);
@@ -362,7 +362,7 @@ TEST_F(PositiveTensor, Tilings) {
     const std::vector<int64_t> dimensions{ 1, 2, 3, 4 };
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.pDimensions = dimensions.data();
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pStrides = nullptr;  // required
     desc.format = VK_FORMAT_R16_SINT;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
@@ -394,7 +394,7 @@ TEST_F(PositiveTensor, Rolling) {
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.format = VK_FORMAT_R64_SINT;
     const std::vector<int64_t> dimensions{ 1, 32, 64, 4 };
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;

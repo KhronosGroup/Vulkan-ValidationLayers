@@ -5646,7 +5646,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingColorImageViewFor
     constexpr std::array bad_color_formats = {VK_FORMAT_R8G8B8A8_UINT};
 
     VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
-    inheritance_rendering_info.colorAttachmentCount = bad_color_formats.size();
+    inheritance_rendering_info.colorAttachmentCount = size32(bad_color_formats);
     inheritance_rendering_info.pColorAttachmentFormats = bad_color_formats.data();
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -5691,7 +5691,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithNullImageView) {
     constexpr std::array bad_color_formats = {VK_FORMAT_R8G8B8A8_UINT};
 
     VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
-    inheritance_rendering_info.colorAttachmentCount = bad_color_formats.size();
+    inheritance_rendering_info.colorAttachmentCount = size32(bad_color_formats);
     inheritance_rendering_info.pColorAttachmentFormats = bad_color_formats.data();
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 

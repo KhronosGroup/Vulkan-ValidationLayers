@@ -531,7 +531,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
         vk::CmdSetViewport(primary_cmd, 0, 1, test_data.kViewportArray);
         vk::CmdSetScissor(primary_cmd, 0, 1, test_data.kScissorArray);
         test_data.BeginRenderPass(primary_cmd);
-        vk::CmdExecuteCommands(primary_cmd, secondaries.size(), secondaries.data());
+        vk::CmdExecuteCommands(primary_cmd, size32(secondaries), secondaries.data());
         vk::CmdEndRenderPass(primary_cmd);
         vk::EndCommandBuffer(primary_cmd);
 
