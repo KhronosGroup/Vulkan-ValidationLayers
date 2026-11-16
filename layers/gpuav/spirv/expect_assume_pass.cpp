@@ -28,6 +28,13 @@ const static OfflineModule kOfflineModule = {instrumentation_expect_assume_comp,
 
 const static OfflineFunction kOfflineFunction = {"inst_assume_true", instrumentation_expect_assume_comp_function_0_offset};
 
+// This currently only checks for OpAssumeKHR and NOT OpExpectKHR
+//
+// The origianl idea was to add both, but after more investigation decided that OpExpectKHR is a perf hint and at best would be
+// warning (not an error). In some shader is likley to be wrong and this would result in a lot of spam. Even if you decided to mute
+// the VUID, now we have an issue where our slot for errors are being consumed by a warning that might not be reported even.
+//
+// I still think it makes sense to keep this pass instead of folding into (the ever growing) sanitizer pass for now
 ExpectAssumePass::ExpectAssumePass(Module& module) : Pass(module, kOfflineModule) {}
 
 uint32_t ExpectAssumePass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
