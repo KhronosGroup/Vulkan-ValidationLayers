@@ -2751,18 +2751,19 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList& objlist, const vvl::C
         skip |= ValidateImageBarrierAgainstImage(cb_state, barrier, barrier_loc, *image_state, local_layout_registry);
 
         if (old_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
-            const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
-            skip |=
-                ValidateImageBarrierZeroInitializedSubresourceRange(barrier.subresourceRange, *image_state, objlist, barrier_loc);
+            const LogObjectList cb_image_objlist(cb_state.Handle(), image_state->Handle());
+            skip |= ValidateImageBarrierZeroInitializedSubresourceRange(barrier.subresourceRange, *image_state, cb_image_objlist,
+                                                                        barrier_loc);
         }
 
         constexpr VkExternalMemoryHandleTypeFlags kD3D11HandleTypes =
             VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT;
         const VkExternalMemoryHandleTypeFlags d3d11_types = image_state->external_memory_handle_types & kD3D11HandleTypes;
         if (barrier_loc.structure == Struct::VkImageMemoryBarrier && d3d11_types != 0) {
-            const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
+            const LogObjectList cb_image_objlist(cb_state.Handle(), image_state->Handle());
             if (barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL && new_layout != VK_IMAGE_LAYOUT_GENERAL) {
-                skip |= LogError("VUID-VkImageMemoryBarrier-dstQueueFamilyIndex-12331", objlist, barrier_loc.dot(Field::newLayout),
+                skip |= LogError("VUID-VkImageMemoryBarrier-dstQueueFamilyIndex-12331", cb_image_objlist,
+                                 barrier_loc.dot(Field::newLayout),
                                  "is %s, but dstQueueFamilyIndex is VK_QUEUE_FAMILY_EXTERNAL and %s was created with %s in "
                                  "VkExternalMemoryImageCreateInfo::handleTypes, so it must be VK_IMAGE_LAYOUT_GENERAL.",
                                  string_VkImageLayout(new_layout), FormatHandle(*image_state).c_str(),
@@ -2770,7 +2771,8 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList& objlist, const vvl::C
             }
             if (barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL && old_layout != VK_IMAGE_LAYOUT_GENERAL &&
                 old_layout != VK_IMAGE_LAYOUT_UNDEFINED) {
-                skip |= LogError("VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-12332", objlist, barrier_loc.dot(Field::oldLayout),
+                skip |= LogError("VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-12332", cb_image_objlist,
+                                 barrier_loc.dot(Field::oldLayout),
                                  "is %s, but srcQueueFamilyIndex is VK_QUEUE_FAMILY_EXTERNAL and %s was created with %s in "
                                  "VkExternalMemoryImageCreateInfo::handleTypes, so it must be VK_IMAGE_LAYOUT_GENERAL or "
                                  "VK_IMAGE_LAYOUT_UNDEFINED.",

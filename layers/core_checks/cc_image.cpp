@@ -2724,7 +2724,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image& image_state
             bool is_valid = false;
 
             for (uint32_t i = 0u; i < max_plane_count; ++i) {
-                if (aspect_mask == allowed_plane_indices[i]) {
+                if (aspect_mask == static_cast<VkImageAspectFlags>(allowed_plane_indices[i])) {
                     is_valid = true;
                     break;
                 }

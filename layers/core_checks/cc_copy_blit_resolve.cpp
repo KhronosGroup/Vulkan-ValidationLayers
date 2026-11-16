@@ -771,7 +771,6 @@ bool CoreChecks::ValidateBufferImageCopyData(const vvl::CommandBuffer& cb_state,
         const VkQueueFlags required_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         if (!HasRequiredQueueFlags(cb_state, *physical_device_state, required_flags)) {
             const char* vuid = GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::BufferOffset_07737).c_str();
-            const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool.Handle());
             skip |= LogError(
                 vuid, objlist, region_loc.dot(Field::bufferOffset),
                 "(%" PRIu64

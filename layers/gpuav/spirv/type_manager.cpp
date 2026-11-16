@@ -414,7 +414,7 @@ const Type& TypeManager::GetTypeSampledImage(const Type& image_type) {
 const Type& TypeManager::GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type, bool get_explicit_layout) {
     if (get_explicit_layout || !IsExplicitLayoutType(pointer_type)) {
         for (const auto type : pointer_types_) {
-            if (type->inst_.Word(2) != storage_class) {
+            if (spv::StorageClass(type->inst_.Word(2)) != storage_class) {
                 continue;
             }
 

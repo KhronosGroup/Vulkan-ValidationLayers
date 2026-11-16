@@ -561,7 +561,7 @@ void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, cons
             smallest_pending_signal_value_.reset();
         } else if (smallest_pending_signal_value_.has_value() && timeline_.begin()->first > *smallest_pending_signal_value_) {
             smallest_pending_signal_value_.reset();
-            for (const auto& [payload, timepoint] : timeline_) {
+            for (const auto& [timepoint_payload, timepoint] : timeline_) {
                 if (!timepoint.signal_submit.has_value()) {
                     continue;
                 }
@@ -570,7 +570,7 @@ void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, cons
                 // we iterate over pending operations
                 assert(timepoint.signal_submit->queue != nullptr);
 
-                smallest_pending_signal_value_ = payload;
+                smallest_pending_signal_value_ = timepoint_payload;
                 break;
             }
         }

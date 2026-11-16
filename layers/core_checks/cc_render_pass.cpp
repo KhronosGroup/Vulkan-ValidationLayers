@@ -2489,8 +2489,8 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2& create_
     auto structure = use_rp2 ? Struct::VkSubpassDependency2 : Struct::VkSubpassDependency;
     for (uint32_t i = 0; i < create_info.dependencyCount; ++i) {
         auto const& dependency = create_info.pDependencies[i];
-        Location loc(func_name, structure, Field::pDependencies, i);
-        skip |= ValidateSubpassDependency(loc, dependency);
+        const Location dependency_loc(func_name, structure, Field::pDependencies, i);
+        skip |= ValidateSubpassDependency(dependency_loc, dependency);
     }
     return skip;
 }

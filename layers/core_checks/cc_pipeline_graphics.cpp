@@ -2479,7 +2479,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline& p
                     bool combination_found = false;
                     for (const auto& combination : combinations) {
                         if (coverage_reduction_mode == combination.coverageReductionMode &&
-                            raster_samples == combination.rasterizationSamples &&
+                            raster_samples == static_cast<uint32_t>(combination.rasterizationSamples) &&
                             subpass_depth_samples == combination.depthStencilSamples &&
                             subpass_color_samples == combination.colorSamples) {
                             combination_found = true;

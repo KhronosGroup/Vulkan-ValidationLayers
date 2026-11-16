@@ -633,7 +633,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
                         valid &= signed_components_match(property);
 
                         valid &= property.saturatingAccumulation ==
-                                 !!(flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask);
+                                 static_cast<VkBool32>((flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask) != 0);
 
                         if (valid) {
                             found_matching_prop = true;
@@ -662,8 +662,9 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
 
                             valid &= signed_components_match(property);
 
-                            valid &= property.saturatingAccumulation ==
-                                     !!(flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask);
+                            valid &=
+                                property.saturatingAccumulation ==
+                                static_cast<VkBool32>((flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask) != 0);
 
                             valid &= property.scope != VK_SCOPE_WORKGROUP_KHR || workgroup_size == property.workgroupInvocations;
 
@@ -1006,11 +1007,13 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module& module_state, co
                 bool found = false;
                 for (uint32_t i = 0; i < device_state->cooperative_vector_properties_nv.size(); ++i) {
                     const auto& property = device_state->cooperative_vector_properties_nv[i];
-                    if (property.inputType == input_type && property.inputInterpretation == input_interpretation &&
-                        property.matrixInterpretation == matrix_interpretation &&
+                    // The SPIR-V operands are raw 32-bit words, the properties are VkComponentTypeKHR
+                    if (static_cast<uint32_t>(property.inputType) == input_type &&
+                        static_cast<uint32_t>(property.inputInterpretation) == input_interpretation &&
+                        static_cast<uint32_t>(property.matrixInterpretation) == matrix_interpretation &&
                         (insn.Opcode() == spv::OpCooperativeVectorMatrixMulNV ||
-                         property.biasInterpretation == bias_interpretation) &&
-                        property.resultType == result_type && (!transpose || property.transpose)) {
+                         static_cast<uint32_t>(property.biasInterpretation) == bias_interpretation) &&
+                        static_cast<uint32_t>(property.resultType) == result_type && (!transpose || property.transpose)) {
                         found = true;
                         break;
                     }
