@@ -112,3 +112,17 @@ bool inst_sanitizer_coop_mat_alignment(const uint stride, const uint element_siz
     }
     return true;
 }
+
+bool inst_sanitizer_copy_memory_sized(const uint size, const uint required_multiple, const uint storage_classes, const uint inst_offset)
+{
+    if ((size % required_multiple) != 0u) {
+        error_payload = ErrorPayload(
+                        inst_offset,
+                        SpecConstantLinkShaderId | (kErrorGroup_InstSanitizer << kErrorGroup_Shift) | (kErrorSubCode_Sanitizer_CopyMemorySizedSize << kErrorSubCode_Shift),
+                        size,
+                        required_multiple,
+                        storage_classes);
+        return false;
+    }
+    return true;
+}

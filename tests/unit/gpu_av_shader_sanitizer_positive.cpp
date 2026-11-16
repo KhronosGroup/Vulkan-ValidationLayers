@@ -579,3 +579,53 @@ TEST_F(PositiveGpuAVShaderSanitizer, CoopMatAlignedPointerBDA) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVShaderSanitizer, CopyMemorySized) {
+    TEST_DESCRIPTION("OpCopyMemorySized with a non-constant Size of 6 is valid when StorageBuffer16BitAccess is enabled");
+    AddRequiredExtensions(VK_KHR_SHADER_UNTYPED_POINTERS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderUntypedPointers);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+
+    const char* cs_source = R"asm(
+        OpCapability Shader
+        OpCapability UntypedPointersKHR
+        OpCapability StorageBuffer16BitAccess
+        OpExtension "SPV_KHR_untyped_pointers"
+        OpExtension "SPV_KHR_16bit_storage"
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize 1 1 1
+        OpDecorate %block Block
+        OpMemberDecorate %block 0 Offset 0
+        OpMemberDecorate %block 1 Offset 4
+        OpMemberDecorate %block 2 Offset 20
+        OpDecorate %array ArrayStride 4
+        OpDecorate %ssbo DescriptorSet 0
+        OpDecorate %ssbo Binding 0
+        %void = OpTypeVoid
+        %func = OpTypeFunction %void
+        %uint = OpTypeInt 32 0
+        %uint_0 = OpConstant %uint 0
+        %uint_1 = OpConstant %uint 1
+        %uint_2 = OpConstant %uint 2
+        %uint_4 = OpConstant %uint 4
+        %uint_6 = OpConstant %uint 6
+        %array = OpTypeArray %uint %uint_4
+        %block = OpTypeStruct %uint %array %array
+        %ptr = OpTypeUntypedPointerKHR StorageBuffer
+        %ssbo = OpUntypedVariableKHR %ptr StorageBuffer %block
+        %main = OpFunction %void None %func
+        %entry = OpLabel
+        %size_ptr = OpUntypedAccessChainKHR %ptr %block %ssbo %uint_0
+        %loaded = OpLoad %uint %size_ptr
+        ;; Buffer is zero'ed so add 6 to get 6, which is valid
+        %size = OpIAdd %uint %loaded %uint_6
+        %src = OpUntypedAccessChainKHR %ptr %block %ssbo %uint_1
+        %dst = OpUntypedAccessChainKHR %ptr %block %ssbo %uint_2
+        OpCopyMemorySized %dst %src %size
+        OpReturn
+        OpFunctionEnd
+    )asm";
+
+    SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM);
+}

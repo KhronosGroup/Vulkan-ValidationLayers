@@ -28,6 +28,35 @@ static std::string GetSpirvSpecLink(const spv::Op opcode) {
     // (https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7853)
     return "\nSee more at https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#" + std::string(spv::OpToString(opcode));
 }
+
+// matches MinStorageAccessBytes in sanitizer_pass.cpp (which is also ugly due the state of the spec)
+static const char* BitAccessCapability(spv::StorageClass storage_class, bool is_8bit) {
+    switch (storage_class) {
+        case spv::StorageClassUniform:
+            return is_8bit ? "UniformAndStorageBuffer8BitAccess" : "UniformAndStorageBuffer16BitAccess";
+        case spv::StorageClassStorageBuffer:
+            return is_8bit ? "StorageBuffer8BitAccess" : "StorageBuffer16BitAccess";
+        case spv::StorageClassPushConstant:
+            return is_8bit ? "StoragePushConstant8" : "StoragePushConstant16";
+        case spv::StorageClassInput:
+        case spv::StorageClassOutput:
+            return is_8bit ? "Int8" : "StorageInputOutput16";
+        case spv::StorageClassWorkgroup:
+            return is_8bit ? "WorkgroupMemoryExplicitLayout8BitAccessKHR" : "WorkgroupMemoryExplicitLayout16BitAccessKHR";
+        default:
+            return is_8bit ? "Int8" : "Int16";
+    }
+}
+
+static std::string BitAccessCapabilities(spv::StorageClass target_sc, spv::StorageClass source_sc, bool is_8bit) {
+    std::string capabilities = BitAccessCapability(target_sc, is_8bit);
+    const char* source_capability = BitAccessCapability(source_sc, is_8bit);
+    if (capabilities != source_capability) {
+        capabilities += std::string(" and ") + source_capability;
+    }
+    return capabilities;
+}
+
 void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
     if (!gpuav.gpuav_settings.shader_instrumentation.sanitizer) {
         return;
@@ -139,6 +168,31 @@ void RegisterSanitizer(Validator& gpuav, CommandBufferSubState& cb) {
                              << " byte alignment (the lesser of 16 bytes and the natural alignment of a row or column of the "
                                 "matrix).";
                         out_error.vuid = "VUID-RuntimeSpirv-OpCooperativeMatrixLoadKHR-08986";
+                    } break;
+                    case kErrorSubCode_Sanitizer_CopyMemorySizedSize: {
+                        const uint32_t size = error_record[kInst_LogError_ParameterOffset_0];
+                        const uint32_t required_multiple = error_record[kInst_LogError_ParameterOffset_1];
+                        const uint32_t storage_classes = error_record[kInst_LogError_ParameterOffset_2];
+                        const auto target_sc = static_cast<spv::StorageClass>(storage_classes & 0xFFFF);
+                        const auto source_sc = static_cast<spv::StorageClass>(storage_classes >> 16);
+                        strm << "OpCopyMemorySized has a Size operand of " << size << ", but it must be a multiple of "
+                             << required_multiple;
+                        if (target_sc == source_sc) {
+                            strm << " (Target and Source are both " << spv::StorageClassToString(target_sc) << ")";
+                        } else {
+                            strm << " (Target is " << spv::StorageClassToString(target_sc) << ", Source is "
+                                 << spv::StorageClassToString(source_sc) << ")";
+                        }
+                        // A multiple of 2 means 16-bit access is already allowed, so only 8-bit is missing
+                        if (required_multiple == 4) {
+                            strm << "\nHint: Size can be a multiple of 2 if the shader declares "
+                                 << BitAccessCapabilities(target_sc, source_sc, false) << ", or any value with "
+                                 << BitAccessCapabilities(target_sc, source_sc, true);
+                        } else {
+                            strm << "\nHint: Size can be any value if the shader declares "
+                                 << BitAccessCapabilities(target_sc, source_sc, true);
+                        }
+                        out_error.vuid = "VUID-RuntimeSpirv-Size-11165";
                     } break;
                     default:
                         error_found = false;
