@@ -388,6 +388,10 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, gpuav::QueueSubmission& 
                                          const vvl::CommandBufferSubmitInfo& cb_submit_info_vvl, const Location& submission_loc) {
     VVL_ZoneScoped;
 
+    if (gpuav_.aborted_) {
+        return;
+    }
+
     // Remove current command buffer submission from pending list
     if (submission_seq != vvl::kU64Max) {
         vvl::erase_if(pending_submissions_, [queue, submission_seq](const CommandBufferSubState::SubmissionInfo& info) {
@@ -479,17 +483,8 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, gpuav::QueueSubmission& 
 
     cmd_errors_counts_buffer_.Clear();
 
-    // #ARNO_TODO might want to rework that early return.
-    // Why isn't it above error buffer scan loop anyway?
-    if (gpuav_.aborted_ || gpuav_.device_state->dispatch_device_->is_device_lost) {
-        return;
-    }
-
     bool success = true;
     for (auto& on_cb_completion_func : on_cb_completion_functions) {
-        if (gpuav_.device_state->dispatch_device_->is_device_lost) {
-            break;
-        }
         success = on_cb_completion_func(gpuav_, *this, queue_submission, cb_submit_info_gpuav, cb_submit_info_vvl, submission_loc);
         if (!success) {
             break;

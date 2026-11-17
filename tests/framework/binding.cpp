@@ -454,7 +454,14 @@ VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
     }
 }
 
-void Device::Wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
+void Device::Wait() const {
+    const VkResult result = vk::DeviceWaitIdle(handle());
+    if (expect_wait_success_) {
+        ASSERT_EQ(VK_SUCCESS, result);
+    }
+}
+
+void Device::ExpectWaitSuccess(bool expect_wait_success) { expect_wait_success_ = expect_wait_success; }
 
 VkResult Device::Wait(const std::vector<const Fence*>& fences, bool wait_all, uint64_t timeout) {
     std::vector<VkFence> fence_handles;
@@ -846,9 +853,11 @@ VkResult Queue::Present(const Swapchain& swapchain, uint32_t image_index, const 
     return result;
 }
 
-VkResult Queue::Wait() {
+VkResult Queue::Wait(bool expect_success) {
     VkResult result = vk::QueueWaitIdle(handle());
-    EXPECT_EQ(VK_SUCCESS, result);
+    if (expect_success) {
+        EXPECT_EQ(VK_SUCCESS, result);
+    }
     return result;
 }
 

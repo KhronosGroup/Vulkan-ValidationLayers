@@ -285,6 +285,7 @@ class Device : public internal::Handle<VkDevice> {
 
     // vkDeviceWaitIdle()
     void Wait() const;
+    void ExpectWaitSuccess(bool expect_wait_success);
 
     // vkWaitForFences()
     VkResult Wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout);
@@ -322,6 +323,7 @@ class Device : public internal::Handle<VkDevice> {
     VkPhysicalDeviceFeatures features_;
     std::vector<QueueFamilyQueues> queue_families_;
     std::vector<Queue *> queues_[QUEUE_CAPABILITY_COUNT];
+    bool expect_wait_success_ = true;
 };
 
 class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
@@ -511,12 +513,12 @@ class Queue : public internal::Handle<VkQueue> {
                      void *present_info_pnext = nullptr);
 
     // vkQueueWaitIdle()
-    VkResult Wait();
+    VkResult Wait(bool expect_success = true);
 
     // Common combo for most GPU-AV test
-    void SubmitAndWait(const CommandBuffer &cmd) {
+    void SubmitAndWait(const CommandBuffer& cmd, bool expect_success = true) {
         Submit(cmd);
-        Wait();
+        Wait(expect_success);
     }
 
     const uint32_t family_index;

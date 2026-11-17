@@ -7221,3 +7221,70 @@ TEST_F(NegativeDebugPrintf, CoopMat2LoadTensorDecodeWithView) {
 
     CoopMat2CallbackTest(shader_source, "decode with view callback", spv::CooperativeMatrixUseMatrixAKHR);
 }
+
+TEST_F(NegativeDebugPrintf, ShaderAbort) {
+    TEST_DESCRIPTION("Upon a device loss provoked by abortEXT(), printf should still be able to print its messages");
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderAbort);
+    AddRequiredFeature(vkt::Feature::shaderConstantData);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_EXT_abort : enable
+        layout(local_size_x = 1) in;
+        void main() {
+            debugPrintfEXT("Hello from GLSL %u", 42u);
+            abortEXT("Aborting with %u", 7u);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_device->ExpectWaitSuccess(false);
+    m_errorMonitor->SetDesiredInfo("Hello from GLSL 42");
+    m_default_queue->SubmitAndWait(m_command_buffer, false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, ShaderAbortSlang) {
+    TEST_DESCRIPTION("Upon a device loss provoked by abort(), printf should still be able to print its messages");
+    RETURN_IF_SKIP(CheckSlangSupport());
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderAbort);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char* slang_shader = R"slang(
+        [numthreads(1, 1, 1)]
+        void main() {
+            printf("Hello from Slang %u", 42);
+            abort("Aborting with %u", 7);
+        }
+    )slang";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_SLANG);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_device->ExpectWaitSuccess(false);
+    m_errorMonitor->SetDesiredInfo("Hello from Slang 42");
+    m_default_queue->SubmitAndWait(m_command_buffer, false);
+    m_errorMonitor->VerifyFound();
+}
