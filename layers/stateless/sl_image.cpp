@@ -727,8 +727,9 @@ bool Device::ValidateCreateImageSwapchain(const VkImageCreateInfo& create_info, 
                          "is not VK_NULL_HANDLE, but initialLayout (%s) is not VK_IMAGE_LAYOUT_UNDEFINED.",
                          string_VkImageLayout(create_info.initialLayout));
     }
-    const VkImageCreateFlags2KHR valid_flags = (VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
-                                                VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
+    const VkImageCreateFlags2KHR valid_flags =
+        (VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT | VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT |
+         VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT);
     if ((create_flags & ~valid_flags) != 0) {
         skip |= LogError(vuid, swapchain_create_info->swapchain, swapchain_loc,
                          "is not VK_NULL_HANDLE, but flags (%s) includes flags outside the allowed set (%s).",
