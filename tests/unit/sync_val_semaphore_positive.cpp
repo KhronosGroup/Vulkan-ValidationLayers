@@ -899,7 +899,10 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitForFencesWithTimelineSignalBatches)
 
     // The second batch context which imports the first one.
     // The timeline signal in the first submit still references the first batch.
-    m_default_queue->Submit2(vkt::no_cmd);
+    vkt::CommandBuffer empty_command_buffer(*m_device, m_command_pool);
+    empty_command_buffer.Begin();
+    empty_command_buffer.End();
+    m_default_queue->Submit2(empty_command_buffer);
 
     // The original omission was that iteration over all batch context did not take into account
     // batches associated with timeline signals. In the case of regression accesses in the first

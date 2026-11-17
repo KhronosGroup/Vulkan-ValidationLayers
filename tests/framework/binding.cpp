@@ -470,18 +470,20 @@ VkResult Device::Wait(const std::vector<const Fence*>& fences, bool wait_all, ui
 }
 
 VkResult Queue::Submit(const CommandBuffer& cmd, const Fence& fence) {
+    const uint32_t submit_count = cmd.initialized() ? 1 : 0;
     VkSubmitInfo submit = vku::InitStructHelper();
-    submit.commandBufferCount = cmd.initialized() ? 1 : 0;
+    submit.commandBufferCount = submit_count;
     submit.pCommandBuffers = &cmd.handle();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence);
+    VkResult result = vk::QueueSubmit(handle(), submit_count, submit_count ? &submit : nullptr, fence);
     return result;
 }
 
 VkResult Queue::Submit(const std::vector<VkCommandBuffer>& cmds, const Fence& fence) {
+    const uint32_t submit_count = cmds.empty() ? 0 : 1;
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = static_cast<uint32_t>(cmds.size());
     submit_info.pCommandBuffers = cmds.data();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence);
+    VkResult result = vk::QueueSubmit(handle(), submit_count, submit_count ? &submit_info : nullptr, fence);
     return result;
 }
 
@@ -586,23 +588,25 @@ VkResult Queue::Submit(const CommandBuffer& cmd, const TimelineWait& wait, const
 }
 
 VkResult Queue::Submit2(const CommandBuffer& cmd, const Fence& fence, bool use_khr) {
+    const uint32_t submit_count = cmd.initialized() ? 1 : 0;
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd;
 
     VkSubmitInfo2 submit = vku::InitStructHelper();
-    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.commandBufferInfoCount = submit_count;
     submit.pCommandBufferInfos = &cb_info;
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
+        result = vk::QueueSubmit2KHR(handle(), submit_count, submit_count ? &submit : nullptr, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
+        result = vk::QueueSubmit2(handle(), submit_count, submit_count ? &submit : nullptr, fence);
     }
     return result;
 }
 
 VkResult Queue::Submit2(const std::vector<VkCommandBuffer>& cmds, const Fence& fence, bool use_khr) {
+    const uint32_t submit_count = cmds.empty() ? 0 : 1;
     std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
     cmd_submit_infos.reserve(cmds.size());
     for (size_t i = 0; i < cmds.size(); i++) {
@@ -616,9 +620,9 @@ VkResult Queue::Submit2(const std::vector<VkCommandBuffer>& cmds, const Fence& f
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
+        result = vk::QueueSubmit2KHR(handle(), submit_count, submit_count ? &submit : nullptr, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
+        result = vk::QueueSubmit2(handle(), submit_count, submit_count ? &submit : nullptr, fence);
     }
     return result;
 }
