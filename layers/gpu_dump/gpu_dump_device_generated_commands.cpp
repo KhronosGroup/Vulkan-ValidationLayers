@@ -26,68 +26,77 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/device_generated_commands_state.h"
-#include "state_tracker/last_bound_state.h"
+#include "utils/device_generated_commands_utils.h"
 
 namespace gpudump {
 
 void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommandsInfoEXT& info, VkPipelineBindPoint bind_point,
                                                         const Location& loc) const {
+    const auto indirect_commands_layout = dev_data.Get<vvl::IndirectCommandsLayout>(info.indirectCommandsLayout);
+    if (!indirect_commands_layout) {
+        return;  // Invalid handle, will be caught by object lifetime validation
+    }
+    const auto indirect_execution_set = dev_data.Get<vvl::IndirectExecutionSet>(info.indirectExecutionSet);
+
     std::ostringstream ss;
-    ss << "[Dump Device Generated Commands]\n";
+    ss << "[Dump Device Generated Commands] (" << dev_data.FormatHandle(base.Handle()) << ", "
+       << dev_data.FormatHandle(indirect_commands_layout->Handle());
+    if (indirect_execution_set) {
+        ss << ", " << dev_data.FormatHandle(indirect_execution_set->Handle());
+    }
+    ss << ")\n";
 
     bool found_warning = false;
-    const LastBound& last_bound = base.lastBound[ConvertToVvlBindPoint(bind_point)];
-    const bool has_pipeline = last_bound.pipeline_state != nullptr;
 
-    ss << "maxDrawCount = " << info.maxDrawCount << ", maxSequenceCount = " << info.maxSequenceCount << "\n";
+    ss << "- shaderStages = " << string_VkShaderStageFlags(info.shaderStages) << " (" << string_VkPipelineBindPoint(bind_point)
+       << ")\n";
+    ss << "- maxSequenceCount = " << info.maxSequenceCount << ", maxDrawCount = " << info.maxDrawCount << "\n";
     if (info.sequenceCountAddress != 0) {
         vvl::range<VkDeviceAddress> sequence_range{info.sequenceCountAddress, info.sequenceCountAddress + sizeof(uint32_t)};
-        ss << "Sequence count found at " << vvl::string_range_hex(sequence_range) << "\n";
-        auto buffer_states = dev_data.GetBuffersByAddress(info.sequenceCountAddress);
-        for (auto& buffer_state : buffer_states) {
-            ss << "    - " << buffer_state->Describe(dev_data) << "\n";
-        }
-        if (buffer_states.empty()) {
-            ss << "    - [WARNING] No VkBuffer found at " << Hex(info.sequenceCountAddress) << "\n";
-            found_warning = true;
-        }
-    }
-
-    if (info.preprocessAddress != 0) {
-        vvl::range<VkDeviceAddress> preprocess_range{info.preprocessAddress, info.preprocessAddress + info.preprocessSize};
-        ss << "Preprocess at " << vvl::string_range_hex(preprocess_range) << "\n";
-        auto buffer_states = dev_data.GetBuffersByAddress(info.preprocessAddress);
-        for (auto& buffer_state : buffer_states) {
-            ss << "    - " << buffer_state->Describe(dev_data) << "\n";
-        }
-        if (buffer_states.empty()) {
-            ss << "    - [WARNING] No VkBuffer found at " << Hex(info.preprocessAddress) << "\n";
-            found_warning = true;
-        }
+        ss << "- sequenceCountAddress at " << vvl::string_range_hex(sequence_range) << "\n";
+        found_warning |= dev_data.ListBuffers(ss, info.sequenceCountAddress, 1);
+    } else {
+        ss << "- sequenceCountAddress = 0 (maxSequenceCount is used as the sequence count)\n";
     }
 
     {
         vvl::range<VkDeviceAddress> indirect_range{info.indirectAddress, info.indirectAddress + info.indirectAddressSize};
-        ss << "Indirect buffer at " << vvl::string_range_hex(indirect_range) << "\n";
-        auto buffer_states = dev_data.GetBuffersByAddress(info.indirectAddress);
-        for (auto& buffer_state : buffer_states) {
-            ss << "    - " << buffer_state->Describe(dev_data) << "\n";
-        }
-        if (buffer_states.empty()) {
-            ss << "    - [WARNING] No VkBuffer found at " << Hex(info.indirectAddress) << "\n";
-            found_warning = true;
+        ss << "- indirectAddress at " << vvl::string_range_hex(indirect_range)
+           << " (indirectAddressSize = " << info.indirectAddressSize << ")\n";
+        found_warning |= dev_data.ListBuffers(ss, info.indirectAddress, 1);
+    }
+
+    if (info.preprocessAddress != 0) {
+        vvl::range<VkDeviceAddress> preprocess_range{info.preprocessAddress, info.preprocessAddress + info.preprocessSize};
+        ss << "- preprocessAddress at " << vvl::string_range_hex(preprocess_range) << " (preprocessSize = " << info.preprocessSize
+           << ")\n";
+        found_warning |= dev_data.ListBuffers(ss, info.preprocessAddress, 1);
+    }
+
+    if (indirect_execution_set) {
+        ss << "- " << dev_data.FormatHandle(indirect_execution_set->Handle()) << " contains ";
+        if (indirect_execution_set->is_pipeline) {
+            ss << "pipelines (maxPipelineCount = " << indirect_execution_set->max_pipeline_count << ")\n";
+        } else {
+            ss << "shader objects (maxShaderCount = " << indirect_execution_set->max_shader_count << ")\n";
         }
     }
 
-    const auto indirect_commands_layout = dev_data.Get<vvl::IndirectCommandsLayout>(info.indirectCommandsLayout);
-    ss << "Tokens:\n";
-    for (uint32_t i = 0; i < indirect_commands_layout->create_info.tokenCount; i++) {
-        const VkIndirectCommandsLayoutTokenEXT& token = indirect_commands_layout->create_info.pTokens[i];
-        ss << " - Token [" << i << "] ";
+    const VkIndirectCommandsLayoutCreateInfoEXT& layout_ci = indirect_commands_layout->create_info;
+    ss << "- " << dev_data.FormatHandle(indirect_commands_layout->Handle()) << " indirectStride = " << layout_ci.indirectStride;
+    if (layout_ci.flags != 0) {
+        ss << ", flags = " << string_VkIndirectCommandsLayoutUsageFlagsEXT(layout_ci.flags);
+    }
+    ss << "\n";
+    for (uint32_t i = 0; i < layout_ci.tokenCount; i++) {
+        const VkIndirectCommandsLayoutTokenEXT& token = layout_ci.pTokens[i];
+        ss << "  - Token [" << i << "] ";
         switch (token.type) {
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT:
-                ss << "[EXECUTION_SET] " << (has_pipeline ? "pipeline" : "shader object") << ", stage "
-                   << string_VkShaderStageFlags(token.data.pExecutionSet->shaderStages);
+                ss << "[EXECUTION_SET] "
+                   << (token.data.pExecutionSet->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT ? "pipeline"
+                                                                                                           : "shader object")
+                   << ", stage " << string_VkShaderStageFlags(token.data.pExecutionSet->shaderStages);
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT:
                 ss << "[PUSH_CONSTANT] " << string_VkPushConstantRange(token.data.pPushConstant->updateRange);
@@ -96,10 +105,12 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
                 ss << "[SEQUENCE_INDEX] " << string_VkPushConstantRange(token.data.pPushConstant->updateRange);
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT:
-                ss << "[INDEX_BUFFER] mode = " << string_VkIndirectCommandsInputModeFlagBitsEXT(token.data.pIndexBuffer->mode);
+                ss << "[INDEX_BUFFER] mode = " << string_VkIndirectCommandsInputModeFlagBitsEXT(token.data.pIndexBuffer->mode)
+                   << ", VkBindIndexBufferIndirectCommandEXT";
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT:
-                ss << "[VERTEX_BUFFER] vertexBindingUnit = " << token.data.pVertexBuffer->vertexBindingUnit;
+                ss << "[VERTEX_BUFFER] vertexBindingUnit = " << token.data.pVertexBuffer->vertexBindingUnit
+                   << ", VkBindVertexBufferIndirectCommandEXT";
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_EXT:
                 ss << "[DRAW_INDEXED] VkDrawIndexedIndirectCommand";
@@ -140,7 +151,14 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_MAX_ENUM_EXT:
                 break;
         }
-        ss << " (offset " << token.offset << ")\n";
+
+        const uint32_t data_size = vvl::IndirectCommandsTokenDataSize(token);
+        if (data_size == 0) {
+            // offset is ignored for these tokens
+            ss << " (nothing read from the indirect buffer, the sequence index is used)\n";
+        } else {
+            ss << " (offset " << token.offset << ", size " << data_size << ")\n";
+        }
     }
 
     if (dev_data.gpu_dump_settings.to_stdout) {
