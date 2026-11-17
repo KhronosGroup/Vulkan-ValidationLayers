@@ -20,6 +20,7 @@
 struct SyncValSettings {
     bool full_validation = true;
     bool record_time_validation = true;
+    bool defer_full_validation = false;
     bool shader_accesses_heuristic = false;
 
     // This validation currently is controlled only by the settings and is disabled by default.

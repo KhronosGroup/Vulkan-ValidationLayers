@@ -16,6 +16,7 @@
 #include "pipeline_helper.h"
 #include "render_pass_helper.h"
 #include "descriptor_helper.h"
+#include "sync/sync_settings.h"
 
 class NegativeSyncVal : public VkSyncValTest {};
 
@@ -7931,4 +7932,25 @@ TEST_F(NegativeSyncVal, PartialRenderAreaStoreWrite) {
     vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, destination, 1, &copy);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, BasicDeferredFullValidation) {
+    TEST_DESCRIPTION("Report a hazard at the fence wait instead of during recording or submission");
+    SyncValSettings settings;
+    settings.record_time_validation = false;
+    settings.defer_full_validation = true;
+    RETURN_IF_SKIP(InitSyncVal(&settings));
+
+    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Fence fence(*m_device);
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer, fence);
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    fence.Wait(kWaitTimeout);
+    m_errorMonitor->VerifyFound();
 }

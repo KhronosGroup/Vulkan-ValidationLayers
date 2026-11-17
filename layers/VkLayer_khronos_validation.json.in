@@ -482,6 +482,21 @@
                                     }
                                 },
                                 {
+                                    "key": "syncval_defer_full_validation",
+                                    "label": "Defer full validation",
+                                    "description": "Defer full validation. Trigger validation after GPU work completes, during submission retirement. Has no effect when full validation is disabled.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "view": "HIDDEN",
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "validate_sync", "value": true },
+                                            { "key": "syncval_full_validation", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
                                     "key": "syncval_submit_time_validation",
                                     "label": "Submit-time validation (deprecated)",
                                     "description": "Deprecated, use Full validation instead. When present it sets Full validation.",
