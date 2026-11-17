@@ -37,6 +37,9 @@ void CommandBufferSubState::DumpDeviceGeneratedCommands(const VkGeneratedCommand
         return;  // Invalid handle, will be caught by object lifetime validation
     }
     const auto indirect_execution_set = dev_data.Get<vvl::IndirectExecutionSet>(info.indirectExecutionSet);
+    if (info.indirectExecutionSet != VK_NULL_HANDLE && !indirect_execution_set) {
+        return;  // Invalid handle, will be caught by object lifetime validation
+    }
 
     std::ostringstream ss;
     ss << "[Dump Device Generated Commands] (" << dev_data.FormatHandle(base.Handle()) << ", "

@@ -2622,15 +2622,13 @@ VkResult DispatchDevice::CreateIndirectExecutionSetEXT(VkDevice device, const Vk
     switch (local_pCreateInfo.type) {
         case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT:
             if (local_pCreateInfo.info.pPipelineInfo) {
-                auto* pipeline_info = reinterpret_cast<vku::safe_VkIndirectExecutionSetPipelineInfoEXT*>(
-                    const_cast<VkIndirectExecutionSetPipelineInfoEXT*>(local_pCreateInfo.info.pPipelineInfo));
+                auto* pipeline_info = const_cast<VkIndirectExecutionSetPipelineInfoEXT*>(local_pCreateInfo.info.pPipelineInfo);
                 pipeline_info->initialPipeline = Unwrap(pipeline_info->initialPipeline);
             }
             break;
         case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT:
             if (local_pCreateInfo.info.pShaderInfo) {
-                auto* shader_info = reinterpret_cast<vku::safe_VkIndirectExecutionSetShaderInfoEXT*>(
-                    const_cast<VkIndirectExecutionSetShaderInfoEXT*>(local_pCreateInfo.info.pShaderInfo));
+                auto* shader_info = (vku::safe_VkIndirectExecutionSetShaderInfoEXT*)local_pCreateInfo.info.pShaderInfo;
                 for (uint32_t index0 = 0; index0 < shader_info->shaderCount; ++index0) {
                     if (shader_info->pSetLayoutInfos) {
                         const auto& set_layout = shader_info->pSetLayoutInfos[index0];
