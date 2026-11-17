@@ -561,13 +561,14 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
         }
         const uint32_t member_index = member.first;
         for (const auto access_chain_insn : it->second) {
-            if (access_chain_insn->Length() < 5) {
+            const uint32_t first_index_word = access_chain_insn->IsUntypedAccessChain() ? 5 : 4;
+            if (access_chain_insn->Length() <= first_index_word) {
                 continue;
             }
 
             // We know for sure any built-in inside a block are only 1-element deep so can just check the "Indexes 0" operand
             // Also no built-in we are dealing with are inside array-of-structs
-            const Instruction* value_def = module_state.GetAnyConstantDef(access_chain_insn->Word(4));
+            const Instruction* value_def = module_state.GetAnyConstantDef(access_chain_insn->Word(first_index_word));
             // Very very low chance using a spec constant to dynamically pick which built-in member of a struct to access
             if (value_def && value_def->Opcode() == spv::OpConstant) {
                 const uint32_t value = value_def->GetConstantValue();
@@ -1205,8 +1206,12 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
             case spv::OpAccessChain:
             case spv::OpInBoundsAccessChain:
             case spv::OpPtrAccessChain:
-            case spv::OpInBoundsPtrAccessChain: {
-                const uint32_t base_id = insn.Word(3);
+            case spv::OpInBoundsPtrAccessChain:
+            case spv::OpUntypedAccessChainKHR:
+            case spv::OpUntypedInBoundsAccessChainKHR:
+            case spv::OpUntypedPtrAccessChainKHR:
+            case spv::OpUntypedInBoundsPtrAccessChainKHR: {
+                const uint32_t base_id = insn.Word(insn.IsUntypedAccessChain() ? 4 : 3);
                 parsed.access_chain_map[base_id].push_back(&insn);
                 break;
             }
@@ -2898,13 +2903,14 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
     const auto access_chain_it = parsed.access_chain_map.find(id);
     if (IsArray() && access_chain_it != parsed.access_chain_map.end()) {
         for (const Instruction* pointer : access_chain_it->second) {
-            if (pointer->Length() < 5) {
+            const uint32_t first_index_word = pointer->IsUntypedAccessChain() ? 5 : 4;
+            if (pointer->Length() <= first_index_word) {
                 continue;  // Empty access chain with no indexes
             } else if (entrypoint.accessible.access_chains.find(pointer) == entrypoint.accessible.access_chains.end()) {
                 continue;  // not reachable from this entry point
             }
-            // Taking only the first index (word 4) as that one is used to access arrays of descriptors
-            const spirv::Instruction* access_op = module_state.FindDef(pointer->Word(4));
+            // Taking only the first index as that one is used to access arrays of descriptors
+            const spirv::Instruction* access_op = module_state.FindDef(pointer->Word(first_index_word));
             const auto access_opcode = (spv::Op)access_op->Opcode();
             if (!IsValueIn(access_opcode, {spv::OpConstant, spv::OpSpecConstant, spv::OpConstantComposite})) {
                 all_constant_integral_expressions = false;

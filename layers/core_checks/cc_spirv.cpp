@@ -2876,10 +2876,11 @@ bool CoreChecks::ValidateShaderDescriptorSetAndBindingMappingInfo(const spirv::M
                 if (!resource_variable.all_constant_integral_expressions) {
                     std::stringstream msg;
                     if (resource_variable.non_constant_id != 0) {
-                        // We know this is a OpAccessChain, because of how all_constant_integral_expressions is determined
+                        // We know this is an access chain, because of how all_constant_integral_expressions is determined
                         const spirv::Instruction* pointer = module_state.FindDef(resource_variable.non_constant_id);
-                        const spirv::Instruction* base = module_state.FindDef(pointer->Word(3));
-                        for (uint32_t j = 4; j < pointer->Length(); ++j) {
+                        const uint32_t base_word = pointer->IsUntypedAccessChain() ? 4 : 3;
+                        const spirv::Instruction* base = module_state.FindDef(pointer->Word(base_word));
+                        for (uint32_t j = base_word + 1; j < pointer->Length(); ++j) {
                             const spirv::Instruction* access_op = module_state.FindDef(pointer->Word(j));
                             if (!IsValueIn((spv::Op)access_op->Opcode(),
                                            {spv::OpConstant, spv::OpSpecConstant, spv::OpConstantComposite})) {
