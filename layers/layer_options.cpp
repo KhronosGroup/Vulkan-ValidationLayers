@@ -200,6 +200,7 @@ const char* VK_LAYER_GPUAV_DEBUG_TEST_LOWER_LIMITS = "gpuav_debug_test_lower_lim
 // ---
 const char* VK_LAYER_SYNCVAL_FULL_VALIDATION = "syncval_full_validation";
 const char* VK_LAYER_SYNCVAL_RECORD_TIME_VALIDATION = "syncval_record_time_validation";
+const char* VK_LAYER_SYNCVAL_DEFER_FULL_VALIDATION = "syncval_defer_full_validation";
 const char* VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC = "syncval_shader_accesses_heuristic";
 const char* VK_LAYER_SYNCVAL_LOAD_OP_AFTER_STORE_OP_VALIDATION = "syncval_load_op_after_store_op_validation";
 const char* VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES = "syncval_message_extra_properties";
@@ -1238,6 +1239,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_RECORD_TIME_VALIDATION)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_RECORD_TIME_VALIDATION,
                                 syncval_settings.record_time_validation);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_DEFER_FULL_VALIDATION)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_DEFER_FULL_VALIDATION, syncval_settings.defer_full_validation);
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC)) {

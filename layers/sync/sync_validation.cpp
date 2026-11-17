@@ -684,7 +684,7 @@ void SyncValidator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, con
     for (const auto& queue : get_sorted_queues()) {
         const QueueId queue_id = queue_id_limit_++;
         queue_states_.emplace_back(QueueState(queue, queue_id));
-        if (retire_mode_) {
+        if (defer_full_validation_) {
             queue->SetSubState(container_type, std::make_unique<QueueSubState>(*this, *queue, queue_id));
         }
     }
@@ -720,7 +720,7 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
         return;
     }
     if (auto sem_state = Get<vvl::Semaphore>(*pSemaphore); sem_state && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-        if (retire_mode_) {
+        if (defer_full_validation_) {
             recorded_timeline_wait_values_[*pSemaphore] = sem_state->initial_value;
         }
         ProcessQueueCommand(SemaphoreCreatedCommand{*pSemaphore, sem_state->initial_value});
@@ -730,7 +730,7 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
 void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
                                                   const RecordObject& record_obj) {
     if (auto sem_state = Get<vvl::Semaphore>(semaphore); sem_state && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-        if (retire_mode_) {
+        if (defer_full_validation_) {
             recorded_timeline_wait_values_.erase(semaphore);
         }
         ProcessQueueCommand(SemaphoreDestroyedCommand{semaphore});
@@ -2459,7 +2459,7 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
     }
     QueueSubmitCommand command(*this, queue_id, vvl::make_span(pSubmits, submitCount), fence, error_obj.location.function);
     const bool skip = ProcessQueueCommand(std::move(command));
-    if (retire_mode_) {
+    if (defer_full_validation_) {
         pending_submit = &std::get<QueueSubmitCommand>(queue_commands_.back());
     }
     return skip;

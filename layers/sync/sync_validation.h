@@ -80,7 +80,7 @@ class SyncValidator : public vvl::DeviceProxy {
     std::vector<std::shared_ptr<vvl::Swapchain>> swapchains_;
 
     // Run validation after a GPU synchronization point
-    const bool retire_mode_ = false;  // placeholder
+    const bool defer_full_validation_ = syncval_settings.full_validation && syncval_settings.defer_full_validation;
     static constexpr size_t kQueueCommandLimit = 512;
     QueueCommandStorage queue_commands_;
 
@@ -121,7 +121,7 @@ class SyncValidator : public vvl::DeviceProxy {
     template <typename Command>
     bool ProcessQueueCommand(Command&& command) {
         // Submit-time processing
-        if (!retire_mode_) {
+        if (!defer_full_validation_) {
             return command.Execute(*this);
         }
 

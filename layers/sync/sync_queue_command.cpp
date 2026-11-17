@@ -255,7 +255,7 @@ bool AcquireNextImageCommand::Execute(SyncValidator& validator) const {
 
 QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits,
                                        VkFence fence, vvl::Func submit_func)
-    : ready(!validator.retire_mode_),
+    : ready(!validator.defer_full_validation_),
       queue_id(queue_id),
       fence(fence),
       submit_func(submit_func),

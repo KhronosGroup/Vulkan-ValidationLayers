@@ -52,6 +52,10 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings* p_sync_settings)
     settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_record_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
                                             1, &record_time_validation});
 
+    const VkBool32 defer_full_validation = static_cast<VkBool32>(sync_settings.defer_full_validation);
+    settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_defer_full_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                            &defer_full_validation});
+
     const VkBool32 shader_accesses_heuristic = static_cast<VkBool32>(sync_settings.shader_accesses_heuristic);
     settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_shader_accesses_heuristic",
                                             VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &shader_accesses_heuristic});
