@@ -158,6 +158,10 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                                                   const vvl::CommandBufferSubmitInfo& cb_info, const Location& submission_loc) {
         VVL_ZoneScoped;
 
+        if (gpuav.device_state->dispatch_device_->is_device_lost) {
+            return true;
+        }
+
         if (!cb_submit_info.bound_desc_sets_to_pp_buffer_map) {
             return true;
         }
