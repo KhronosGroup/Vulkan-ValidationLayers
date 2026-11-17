@@ -375,7 +375,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
 
 bool Module::HasCapability(spv::Capability capability) {
     for (const auto& inst : capabilities_) {
-        if (inst->Word(1) == capability) {
+        if (spv::Capability(inst->Word(1)) == capability) {
             return true;
         }
     }
@@ -411,7 +411,7 @@ void Module::AddCapability(spv::Capability capability) {
 
 void Module::RemoveCapability(spv::Capability capability) {
     for (auto it = capabilities_.begin(); it != capabilities_.end();) {
-        if (it->get()->Word(1) == capability) {
+        if (spv::Capability(it->get()->Word(1)) == capability) {
             it = capabilities_.erase(it);
             return;
         } else {
@@ -1017,8 +1017,7 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 bool found = false;
                 for (const auto& annotation : annotations_) {
                     if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
-                        spv::Decoration(annotation->Word(2)) == decoration->Word(2) &&
-                        spv::Decoration(annotation->Word(3)) == decoration->Word(3)) {
+                        annotation->Word(2) == decoration->Word(2) && annotation->Word(3) == decoration->Word(3)) {
                         found = true;
                         break;
                     }

@@ -71,6 +71,10 @@ inline constexpr size_t kObjectUseDataAlignment = 64;
 // Sanity check on the build machine
 static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kObjectUseDataAlignment == 0);
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4324)  // structure was padded due to alignment specifier: the padding is the point
+#endif
 class alignas(kObjectUseDataAlignment) ObjectUseData {
   public:
     struct UseStatus {
@@ -110,6 +114,9 @@ class alignas(kObjectUseDataAlignment) ObjectUseData {
     // Need to update write and read counts atomically. Writer in high 32 bits, reader in low 32 bits.
     std::atomic<uint64_t> writer_reader_count{};
 };
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 template <typename T>
 class Counter {

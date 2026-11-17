@@ -1162,9 +1162,9 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             elif handle_type == 'VkPhysicalDeviceGroupProperties':
                 post_call_record += f'''
                     if ({handle_param.name}) {{
-                        const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
+                        const RecordObject enumerate_record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
                         for (uint32_t device_group_index = 0; device_group_index < *{create_params[-2].name}; device_group_index++) {{
-                            PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{handle_param.name}[device_group_index].physicalDeviceCount, {handle_param.name}[device_group_index].physicalDevices, record_obj);
+                            PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{handle_param.name}[device_group_index].physicalDeviceCount, {handle_param.name}[device_group_index].physicalDevices, enumerate_record_obj);
                         }}
                     }}\n'''
         # Handle object destroy operations

@@ -51,7 +51,7 @@ class QueryPool : public StateObject {
 
     VkQueryPool VkHandle() const { return handle_.Cast<VkQueryPool>(); }
 
-    void SetQueryState(uint32_t query, uint32_t perf_pass, QueryState state);
+    void SetQueryState(uint32_t query, uint32_t perf_pass, QueryState new_state);
     QueryState GetQueryState(uint32_t query, uint32_t perf_pass) const;
     static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags flags);
     uint32_t GetQuerySize(VkQueryResultFlags flags) const;
