@@ -1971,3 +1971,18 @@ TEST_F(PositiveDynamicState, ColorBlendAttachmentCountIgnored) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveDynamicState, LineStippleFactorIgnored) {
+    AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rectangularLines);
+    AddRequiredFeature(vkt::Feature::stippledRectangularLines);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE);
+    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR;
+    pipe.line_state_ci_.stippledLineEnable = VK_TRUE;
+    pipe.line_state_ci_.lineStippleFactor = 0;
+    pipe.CreateGraphicsPipeline();
+}
