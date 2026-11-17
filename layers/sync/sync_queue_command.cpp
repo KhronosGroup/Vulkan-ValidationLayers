@@ -45,7 +45,7 @@ bool SignalSemaphoreCommand::Execute(SyncValidator& validator) const {
     signals.emplace_back(SignalInfo(value));
     skip |= validator.PropagateTimelineSignals(signals_update);
 
-    if (!skip) {
+    if (validator.ShouldUpdateQueueState(skip)) {
         validator.ApplySignalsUpdate(signals_update, nullptr);
     }
     return skip;
@@ -212,8 +212,7 @@ bool QueuePresentCommand::Execute(SyncValidator& validator) const {
     batch->DoPresentOperations(presented_images);
     batch->LogPresentOperations(presented_images, submit_id);
 
-    // Update state if there are no validation errors
-    if (!skip) {
+    if (validator.ShouldUpdateQueueState(skip)) {
         validator.stats.UpdateAccessStats(validator);
         validator.stats.UpdateMemoryStats();
         queue_state.SetLastBatch(std::move(batch));
@@ -356,11 +355,13 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
         last_batch = batch;
     }
 
-    if (new_last_batch && !skip) {
-        queue_state.SetLastBatch(std::move(new_last_batch));
-    }
-    if (!new_unresolved_batches.empty() && !skip) {
-        vvl::Append(queue_state.UnresolvedBatches(), new_unresolved_batches);
+    if (validator.ShouldUpdateQueueState(skip)) {
+        if (new_last_batch) {
+            queue_state.SetLastBatch(std::move(new_last_batch));
+        }
+        if (!new_unresolved_batches.empty()) {
+            vvl::Append(queue_state.UnresolvedBatches(), new_unresolved_batches);
+        }
     }
 
     // Check if timeline signals resolve existing wait-before-signal dependencies
@@ -368,7 +369,7 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
         skip |= validator.PropagateTimelineSignals(signals_update);
     }
 
-    if (!skip) {
+    if (validator.ShouldUpdateQueueState(skip)) {
         validator.stats.UpdateMemoryStats();
         validator.ApplySignalsUpdate(signals_update, queue_state.LastBatch());
         FenceHostSyncPoint sync_point;
