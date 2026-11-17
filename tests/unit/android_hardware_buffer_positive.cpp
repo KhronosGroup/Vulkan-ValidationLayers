@@ -139,7 +139,7 @@ TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
     vk::GetBufferMemoryRequirements2(device(), &buffer_mem_reqs2, &mem_reqs2);
 
     // Allocate an AHardwareBuffer to match the size
-    vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_BLOB, AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER, mem_reqs.size);
+    vkt::AHB ahb(AHARDWAREBUFFER_FORMAT_BLOB, AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER, static_cast<uint32_t>(mem_reqs.size));
 
     // Get real values
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper();
