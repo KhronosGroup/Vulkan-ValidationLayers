@@ -2615,48 +2615,35 @@ VkResult DispatchDevice::CreateIndirectExecutionSetEXT(VkDevice device, const Vk
     if (!wrap_handles)
         return device_dispatch_table.CreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator, pIndirectExecutionSet);
 
-    // When using a union of pointer we still need to unwrap the handles, but since it is a pointer, we can just use the pointer
-    // from the incoming parameter instead of using safe structs as it is less complex doing it here
+    // The safe struct deep copies the |info| union (based on |type|), so the copy can be unwrapped in place
     vku::safe_VkIndirectExecutionSetCreateInfoEXT local_pCreateInfo;
     local_pCreateInfo.initialize(pCreateInfo);
 
-    // need in local scope to call down whatever we use
-    vku::safe_VkIndirectExecutionSetPipelineInfoEXT pipeline_info;
-    vku::safe_VkIndirectExecutionSetShaderInfoEXT shader_info;
-
-    if (pCreateInfo) {
-        local_pCreateInfo.initialize(pCreateInfo);
-        switch (local_pCreateInfo.type) {
-            case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT:
-                if (pCreateInfo->info.pPipelineInfo) {
-                    pipeline_info.initialize(pCreateInfo->info.pPipelineInfo);
-                    pipeline_info.initialPipeline = Unwrap(pCreateInfo->info.pPipelineInfo->initialPipeline);
-                    local_pCreateInfo.info.pPipelineInfo = pipeline_info.ptr();
-                }
-                break;
-            case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT:
-                if (local_pCreateInfo.info.pShaderInfo) {
-                    shader_info.initialize(pCreateInfo->info.pShaderInfo);
-
-                    for (uint32_t index0 = 0; index0 < local_pCreateInfo.info.pShaderInfo->shaderCount; ++index0) {
-                        if (local_pCreateInfo.info.pShaderInfo->pSetLayoutInfos) {
-                            const auto& set_layout = local_pCreateInfo.info.pShaderInfo->pSetLayoutInfos[index0];
-                            if (set_layout.pSetLayouts) {
-                                for (uint32_t index1 = 0; index1 < set_layout.setLayoutCount; ++index1) {
-                                    shader_info.pSetLayoutInfos[index0].pSetLayouts[index1] =
-                                        Unwrap(set_layout.pSetLayouts[index1]);
-                                }
-                            }
+    switch (local_pCreateInfo.type) {
+        case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT:
+            if (local_pCreateInfo.info.pPipelineInfo) {
+                auto* pipeline_info = reinterpret_cast<vku::safe_VkIndirectExecutionSetPipelineInfoEXT*>(
+                    const_cast<VkIndirectExecutionSetPipelineInfoEXT*>(local_pCreateInfo.info.pPipelineInfo));
+                pipeline_info->initialPipeline = Unwrap(pipeline_info->initialPipeline);
+            }
+            break;
+        case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT:
+            if (local_pCreateInfo.info.pShaderInfo) {
+                auto* shader_info = reinterpret_cast<vku::safe_VkIndirectExecutionSetShaderInfoEXT*>(
+                    const_cast<VkIndirectExecutionSetShaderInfoEXT*>(local_pCreateInfo.info.pShaderInfo));
+                for (uint32_t index0 = 0; index0 < shader_info->shaderCount; ++index0) {
+                    if (shader_info->pSetLayoutInfos) {
+                        const auto& set_layout = shader_info->pSetLayoutInfos[index0];
+                        for (uint32_t index1 = 0; set_layout.pSetLayouts && index1 < set_layout.setLayoutCount; ++index1) {
+                            set_layout.pSetLayouts[index1] = Unwrap(set_layout.pSetLayouts[index1]);
                         }
-                        shader_info.pInitialShaders[index0] = Unwrap(local_pCreateInfo.info.pShaderInfo->pInitialShaders[index0]);
                     }
-
-                    local_pCreateInfo.info.pShaderInfo = shader_info.ptr();
+                    shader_info->pInitialShaders[index0] = Unwrap(shader_info->pInitialShaders[index0]);
                 }
-                break;
-            default:
-                break;
-        }
+            }
+            break;
+        default:
+            break;
     }
 
     VkResult result = device_dispatch_table.CreateIndirectExecutionSetEXT(
