@@ -153,6 +153,10 @@ class SyncValidator : public vvl::DeviceProxy {
     // Requires the validation-object write lock, or its read lock together with queue_mutex_
     void ExecuteQueueCommandsUntilBlocked();
 
+    // In ordinary mode, skip cancels the API call, so its state updates are discarded.
+    // Deferred mode does not cancel the call, so we must track its effects to match actual execution
+    bool ShouldUpdateQueueState(bool skip) const { return !skip || defer_full_validation_; }
+
     QueueId GetQueueId(VkQueue queue) const;
     QueueState& GetQueueState(QueueId queue_id);
     QueueId GetQueueIdLimit() const { return queue_id_limit_; }
