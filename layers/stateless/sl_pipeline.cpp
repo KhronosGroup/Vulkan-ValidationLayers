@@ -1681,8 +1681,9 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfo>(create_info.pRasterizationState->pNext);
             const bool dynamic_line_raster_mode = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
             const bool dynamic_line_stipple_enable = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+            const bool dynamic_line_stipple = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE);
             if (line_state) {
-                if (line_state->stippledLineEnable && !dynamic_line_stipple_enable) {
+                if (line_state->stippledLineEnable && !dynamic_line_stipple) {
                     if (line_state->lineStippleFactor < 1 || line_state->lineStippleFactor > 256) {
                         skip |= LogError(
                             "VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767", device,
