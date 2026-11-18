@@ -402,6 +402,71 @@ TEST_F(PositiveHostImageCopy, TransitionImageLayoutDepthWrongAspect) {
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
 }
 
+TEST_F(PositiveHostImageCopy, TransitionAll3dImageSlices) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13705");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.extent.depth = 2;
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, 0)) {
+        GTEST_SKIP() << "3D host transfer image not supported";
+    }
+    vkt::Image image(*m_device, image_ci);
+
+    VkHostImageLayoutTransitionInfo transition_info = vku::InitStructHelper();
+    transition_info.image = image;
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+
+    // Both slices must be in GENERAL after the host transition
+    VkImageMemoryBarrier barrier = image.LayoutTransitionBarrier(VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                                 transition_info.subresourceRange);
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveHostImageCopy, TransitionSingle3dImageSlice) {
+    TEST_DESCRIPTION("A host transition of slice 0 preserves the layout of slice 1");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.extent.depth = 2;
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, 0)) {
+        GTEST_SKIP() << "3D host transfer image not supported";
+    }
+    vkt::Image image(*m_device, image_ci);
+
+    VkHostImageLayoutTransitionInfo transition_info = vku::InitStructHelper();
+    transition_info.image = image;
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition_info.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    transition_info.subresourceRange.layerCount = 1;
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+
+    // Slice 1 must remain in GENERAL after transitioning only slice 0
+    VkImageMemoryBarrier barrier = image.LayoutTransitionBarrier(VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                                 {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1});
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(barrier, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
 TEST_F(PositiveHostImageCopy, CopyImageToImageMemcpyUsesSubresourceExtent) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 

@@ -1189,13 +1189,7 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const
         }
     }
 
-    VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(mem_barrier.subresourceRange);
-
-    // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
-    if (mem_barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
-        CanTransitionDepthSlices(enabled_features, image_state.GetImageType(), image_state.create_flags)) {
-        normalized_subresource_range.layerCount = image_state.GetExtent().depth - normalized_subresource_range.baseArrayLayer;
-    }
+    const VkImageSubresourceRange image_layout_range = image_state.NormalizeImageLayoutRange(mem_barrier.subresourceRange);
 
     VkImageLayout old_layout = mem_barrier.oldLayout;
     if (IsQueueFamilyExternal(mem_barrier.srcQueueFamilyIndex)) {
@@ -1213,9 +1207,9 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const
     //
     // However, we still need to record initial layout for the "initial layout" validation
     if (cb_state.IsReleaseOp(mem_barrier)) {
-        cb_state.TrackImageFirstLayout(image_state, normalized_subresource_range, 0, 0, old_layout);
+        cb_state.TrackImageFirstLayout(image_state, image_layout_range, 0, 0, old_layout);
     } else {
-        cb_state.SetImageLayout(image_state, normalized_subresource_range, mem_barrier.newLayout, old_layout);
+        cb_state.SetImageLayout(image_state, image_layout_range, mem_barrier.newLayout, old_layout);
     }
 }
 
