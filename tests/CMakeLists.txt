@@ -280,6 +280,7 @@ set(TEST_SOURCES
     unit/sync_object.cpp
     unit/sync_object_positive.cpp
     unit/sync_val.cpp
+    unit/sync_val_deferred.cpp
     unit/sync_val_positive.cpp
     unit/sync_val_reporting.cpp
     unit/sync_val_ray_tracing.cpp

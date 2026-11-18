@@ -86,6 +86,13 @@ void VkSyncValTest::InitSyncVal(const SyncValSettings* p_sync_settings) {
     RETURN_IF_SKIP(InitState());
 }
 
+void VkSyncValTest::InitDeferredSyncVal() {
+    SyncValSettings settings;
+    settings.record_time_validation = false;
+    settings.defer_full_validation = true;
+    RETURN_IF_SKIP(InitSyncVal(&settings));
+}
+
 void VkSyncValTest::InitTimelineSemaphore() {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);

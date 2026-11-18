@@ -36,6 +36,7 @@ class VkSyncValTest : public VkLayerTest {
   public:
     void InitSyncValFramework(const SyncValSettings *p_sync_settings = nullptr);
     void InitSyncVal(const SyncValSettings *p_sync_settings = nullptr);
+    void InitDeferredSyncVal();
     void InitTimelineSemaphore();
     void InitRayTracing();
 
