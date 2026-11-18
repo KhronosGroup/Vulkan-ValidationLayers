@@ -294,3 +294,48 @@ if(BUILD_TESTS)
     # Set tests as Visual Studio startup project
     set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT vk_layer_validation_tests)
 endif()
+
+# Building Arm64X binaries requires 2 builds. One for the arm64 code, and the other for the arm64ec code.
+# Source https://learn.microsoft.com/en-us/windows/arm/arm64x-build#building-an-arm64x-dll-with-cmake
+if(DEFINED BUILD_AS_ARM64X)
+    set(ARM64X_TARGETS vvl)
+
+    # Directory where the link.rsp file generated during the arm64 build is stored. It lives in the
+    # source tree because the two passes use separate binary directories.
+    set(arm64ReproDir "${CMAKE_CURRENT_SOURCE_DIR}/repros")
+
+    # This function reads in the content of the rsp file outputted from the arm64 build for a target.
+    # Then passes the arm64 libs, objs and def file to the linker using /machine:arm64x to combine
+    # them with the arm64ec counterparts and create an arm64x binary.
+    function(set_arm64_dependencies n)
+        set(REPRO_FILE "${arm64ReproDir}/${n}.rsp")
+        file(STRINGS "${REPRO_FILE}" ARM64_OBJS REGEX obj\"$)
+        file(STRINGS "${REPRO_FILE}" ARM64_DEF REGEX def\"$)
+        file(STRINGS "${REPRO_FILE}" ARM64_LIBS REGEX lib\"$)
+        string(REPLACE "\"" ";" ARM64_OBJS "${ARM64_OBJS}")
+        string(REPLACE "\"" ";" ARM64_LIBS "${ARM64_LIBS}")
+        string(REPLACE "\"" ";" ARM64_DEF "${ARM64_DEF}")
+        # link.exe writes the switch lower cased into the rsp file, but do not count on that.
+        string(REGEX REPLACE "/[Dd][Ee][Ff]:" "/defArm64Native:" ARM64_DEF "${ARM64_DEF}")
+
+        target_sources(${n} PRIVATE ${ARM64_OBJS})
+        target_link_options(${n} PRIVATE /machine:arm64x "${ARM64_DEF}" "${ARM64_LIBS}")
+    endfunction()
+
+    # During the arm64 build, create link.rsp files that contain the absolute path to the inputs
+    # passed to the linker (objs, def files, libs).
+    if("${BUILD_AS_ARM64X}" STREQUAL "ARM64")
+        add_custom_target(arm64x_mkdirs ALL COMMAND cmd /c (if not exist \"${arm64ReproDir}/\" mkdir \"${arm64ReproDir}\" ))
+        foreach (n ${ARM64X_TARGETS})
+            add_dependencies(${n} arm64x_mkdirs)
+            # tell the linker to produce this special rsp file that has absolute paths to its inputs
+            target_link_options(${n} PRIVATE "/LINKREPROFULLPATHRSP:${arm64ReproDir}/${n}.rsp")
+        endforeach()
+
+    # During the ARM64EC build, modify the link step appropriately to produce an arm64x binary
+    elseif("${BUILD_AS_ARM64X}" STREQUAL "ARM64EC")
+        foreach (n ${ARM64X_TARGETS})
+            set_arm64_dependencies(${n})
+        endforeach()
+    endif()
+endif()
