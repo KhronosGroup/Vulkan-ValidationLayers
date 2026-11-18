@@ -7954,3 +7954,43 @@ TEST_F(NegativeSyncVal, BasicDeferredFullValidation) {
     fence.Wait(kWaitTimeout);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncVal, DeferredFullValidationAfterError) {
+    TEST_DESCRIPTION("Check that state tracking continues after a deferred validation error");
+    SyncValSettings settings;
+    settings.record_time_validation = false;
+    settings.defer_full_validation = true;
+    RETURN_IF_SKIP(InitSyncVal(&settings));
+
+    vkt::Buffer buffer_a(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    vkt::Fence fence(*m_device);
+
+    cb0.Begin();
+    vk::CmdFillBuffer(cb0, buffer_a, 0, 4, 0);
+    cb0.End();
+
+    cb1.Begin();
+    vk::CmdFillBuffer(cb1, buffer_a, 0, 4, 0);
+    vk::CmdFillBuffer(cb1, buffer_b, 0, 4, 0);
+    cb1.End();
+
+    cb2.Begin();
+    cb2.Copy(buffer_b, buffer_c);
+    cb2.End();
+
+    m_default_queue->Submit(cb0);
+    m_default_queue->Submit(cb1);
+    m_default_queue->Submit(cb2, fence);
+
+    // The second report requires keeping cb1's write to buffer_b despite its error on buffer_a
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    fence.Wait(kWaitTimeout);
+    m_errorMonitor->VerifyFound();
+}
