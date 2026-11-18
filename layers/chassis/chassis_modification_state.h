@@ -70,13 +70,13 @@ struct ShaderObject {
     bool is_modified = false;
     bool force_shader_instrumentation = false;
     std::vector<vku::safe_VkShaderCreateInfoEXT> modified_create_infos;
-    const VkShaderCreateInfoEXT* pCreateInfos = nullptr;
+    const VkShaderCreateInfoEXT* pCreateInfosEXT = nullptr;
 
     // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
     std::vector<ShaderObjectInstrumentationData> instrumentations_data;
 
     ShaderObject(uint32_t createInfoCount, const VkShaderCreateInfoEXT* create_info) {
-        pCreateInfos = create_info;
+        pCreateInfosEXT = create_info;
         module_states.resize(createInfoCount);
         stateless_data.resize(createInfoCount);
     }

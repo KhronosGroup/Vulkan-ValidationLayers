@@ -1069,7 +1069,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     VkResult result;
     {
         VVL_ZoneScopedN("Dispatch_CreateShadersEXT");
-        result = device_dispatch->CreateShadersEXT(device, createInfoCount, chassis_state.pCreateInfos, pAllocator, pShaders);
+        result = device_dispatch->CreateShadersEXT(device, createInfoCount, chassis_state.pCreateInfosEXT, pAllocator, pShaders);
 
         // If we have modified the pCreateInfos caused things to fail, revert to allow the app to continue
         if (result < VK_SUCCESS && chassis_state.is_modified) {

@@ -102,7 +102,7 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module& module_state, co
             return skip;
         }
         push_constant_ranges = pipeline_layout_state->push_constant_ranges_layout.get();
-    } else {
+    } else if (stage_state.shader_object_create_info_ext) {
         shader_object_push_constant_ranges_id = GetCanonicalId(stage_state.shader_object_create_info_ext->pushConstantRangeCount,
                                                                stage_state.shader_object_create_info_ext->pPushConstantRanges);
         push_constant_ranges = shader_object_push_constant_ranges_id.get();
@@ -1763,7 +1763,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module& module_state
                 }
             }
         }
-    } else {
+    } else if (stage_state.shader_object_create_info_ext) {
         const bool varying =
             stage_state.shader_object_create_info_ext->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
         const bool full = stage_state.shader_object_create_info_ext->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
