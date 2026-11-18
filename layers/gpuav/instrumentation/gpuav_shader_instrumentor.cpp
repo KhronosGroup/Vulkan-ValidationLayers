@@ -760,7 +760,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
         }
     }
 
-    chassis_state.pCreateInfos = reinterpret_cast<VkShaderCreateInfoEXT*>(chassis_state.modified_create_infos.data());
+    chassis_state.pCreateInfosEXT = reinterpret_cast<VkShaderCreateInfoEXT*>(chassis_state.modified_create_infos.data());
 }
 
 void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
