@@ -220,9 +220,9 @@ class Device : public internal::Handle<VkDevice> {
     explicit Device(VkPhysicalDevice phy, const VkDeviceCreateInfo &info) : target_api_version_(VK_API_VERSION_1_0), physical_device_(phy) { Init(info); }
     explicit Device(VkPhysicalDevice phy, std::vector<const char *> &extension_names, VkPhysicalDeviceFeatures *features = nullptr,
                     void *create_device_pnext = nullptr, bool all_queue_count = false,
-                    uint32_t target_api_version = VK_API_VERSION_1_0)
+                    uint32_t target_api_version = VK_API_VERSION_1_0, bool protected_memory = false)
         : target_api_version_(target_api_version), physical_device_(phy) {
-        Init(extension_names, features, create_device_pnext, all_queue_count);
+        Init(extension_names, features, create_device_pnext, all_queue_count, protected_memory);
     }
 
     ~Device() noexcept;
@@ -231,7 +231,8 @@ class Device : public internal::Handle<VkDevice> {
     // vkCreateDevice()
     void Init(const VkDeviceCreateInfo &info);
     void Init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features = nullptr,
-              void *create_device_pnext = nullptr, bool all_queue_count = false);  // all queues, all extensions, etc
+              void *create_device_pnext = nullptr, bool all_queue_count = false,
+              bool protected_memory = false);  // all queues, all extensions, etc
 
     void SetName(const char *name) { Handle<VkDevice>::SetName(handle_, VK_OBJECT_TYPE_DEVICE, name); }
     const PhysicalDevice &Physical() const { return physical_device_; }

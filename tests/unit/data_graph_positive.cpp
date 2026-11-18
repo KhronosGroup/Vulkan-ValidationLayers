@@ -30,6 +30,10 @@ void DataGraphTest::InitBasicDataGraph(bool optical_flow) {
         AddRequiredExtensions(VK_ARM_DATA_GRAPH_OPTICAL_FLOW_EXTENSION_NAME);
         AddRequiredFeature(vkt::Feature::dataGraphOpticalFlow);
     }
+    if (protected_memory_) {
+        AddRequiredFeature(vkt::Feature::protectedMemory);
+        AddRequiredFeature(vkt::Feature::pipelineProtectedAccess);
+    }
     RETURN_IF_SKIP(Init());
 }
 
@@ -175,23 +179,28 @@ TEST_F(PositiveDataGraph, ExecuteDataGraph) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
+TEST_F(PositiveDataGraph, ProtectedMemoryDataGraph) {
     TEST_DESCRIPTION("Execute a datagraph with protected memory");
-    SetTargetApiVersion(VK_API_VERSION_1_4);
-    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
-    AddRequiredExtensions(VK_ARM_DATA_GRAPH_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::tensors);
-    AddRequiredFeature(vkt::Feature::dataGraph);
-    AddRequiredFeature(vkt::Feature::dataGraphShaderModule);
-    AddRequiredFeature(vkt::Feature::shaderTensorAccess);
-    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    AddRequiredFeature(vkt::Feature::shaderInt8);
-    AddRequiredFeature(vkt::Feature::protectedMemory);
-    AddRequiredFeature(vkt::Feature::pipelineProtectedAccess);
-    RETURN_IF_SKIP(InitFramework());
-    // We need to create a device with ALSO a protected queue (VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)
-    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
+    protected_memory_ = true;
+    RETURN_IF_SKIP(InitBasicDataGraph());
 
+    // Find a queue family that supports data graph and protected memory.
+    uint32_t queue_family_count = 0;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
+    const auto data_graph_queue = std::find_if(queue_families.begin(), queue_families.end(), [](const auto& properties) {
+        constexpr VkQueueFlags required_flags = VK_QUEUE_DATA_GRAPH_BIT_ARM | VK_QUEUE_PROTECTED_BIT;
+        return (properties.queueFlags & required_flags) == required_flags;
+    });
+    if (data_graph_queue == queue_families.end()) {
+        GTEST_SKIP() << "Requires a data graph queue family supporting protected queues";
+    }
+
+    const uint32_t queue_family_index = static_cast<uint32_t>(std::distance(queue_families.begin(), data_graph_queue));
+    vkt::CommandPool command_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
+    const auto& queue = *m_device->QueuesFromFamily(queue_family_index).front();
     vkt::dg::HelperParameters params;
     params.protected_tensors = true;
     vkt::dg::DataGraphPipelineHelper pipeline(*this, params);
@@ -213,14 +222,20 @@ TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
+    command_buffer.Begin();
+    vk::CmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline);
+    vk::CmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.get()->set_, 0, nullptr);
-    vk::CmdDispatchDataGraphARM(m_command_buffer, session, nullptr);
-    m_command_buffer.End();
+    vk::CmdDispatchDataGraphARM(command_buffer, session, nullptr);
+    command_buffer.End();
 
-    m_default_queue->SubmitAndWait(m_command_buffer);
+    VkProtectedSubmitInfo protected_submit_info = vku::InitStructHelper();
+    protected_submit_info.protectedSubmit = VK_TRUE;
+    VkSubmitInfo submit_info = vku::InitStructHelper(&protected_submit_info);
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer.handle();
+    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(queue.handle(), 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_EQ(VK_SUCCESS, vk::QueueWaitIdle(queue.handle()));
 }
 
 TEST_F(PositiveDataGraph, ShaderModuleInPNext) {

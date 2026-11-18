@@ -230,7 +230,7 @@ void Device::Destroy() noexcept {
 Device::~Device() noexcept { Destroy(); }
 
 void Device::Init(std::vector<const char*>& extensions, VkPhysicalDeviceFeatures* features, void* create_device_pnext,
-                  bool all_queue_count) {
+                  bool all_queue_count, bool protected_memory) {
     // request all queues
     QueueCreateInfoArray queue_info(physical_device_.queue_properties_, all_queue_count);
     for (uint32_t i = 0; i < (uint32_t)physical_device_.queue_properties_.size(); i++) {
@@ -245,6 +245,10 @@ void Device::Init(std::vector<const char*>& extensions, VkPhysicalDeviceFeatures
     for (uint32_t j = 0; j < queue_info.Size(); ++j) {
         if (qci[j].queueCount) {
             create_queue_infos.push_back(qci[j]);
+            if (protected_memory &&
+                (physical_device_.queue_properties_[qci[j].queueFamilyIndex].queueFlags & VK_QUEUE_PROTECTED_BIT)) {
+                create_queue_infos.back().flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
+            }
         }
     }
 
