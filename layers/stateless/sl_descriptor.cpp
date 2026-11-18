@@ -1506,6 +1506,13 @@ bool Device::manual_PreCallValidateCmdBindSamplerHeapEXT(VkCommandBuffer command
                          pBindInfo->reservedRangeOffset, pBindInfo->reservedRangeSize, pBindInfo->heapRange.size);
     }
 
+    if (pBindInfo->reservedRangeSize == 0 && pBindInfo->reservedRangeOffset != 0) {
+        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8750
+        skip |= LogError("UNASSIGNED-vkCmdBindSamplerHeapEXT-reserved-range-zero", commandBuffer,
+                         error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
+                         "(%" PRIu64 ") is not zero but reservedRangeSize is zero.", pBindInfo->reservedRangeOffset);
+    }
+
     if (pBindInfo->reservedRangeSize < phys_dev_ext_props.descriptor_heap_props.minSamplerHeapReservedRange) {
         skip |= LogError("VUID-vkCmdBindSamplerHeapEXT-pBindInfo-11224", commandBuffer,
                          error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeSize),
@@ -1548,6 +1555,13 @@ bool Device::manual_PreCallValidateCmdBindResourceHeapEXT(VkCommandBuffer comman
                          error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
                          "(%" PRIu64 ") + reservedRangeSize (%" PRIu64 ") is greater than pBindInfo->heapRange.size (%" PRIu64 ").",
                          pBindInfo->reservedRangeOffset, pBindInfo->reservedRangeSize, pBindInfo->heapRange.size);
+    }
+
+    if (pBindInfo->reservedRangeSize == 0 && pBindInfo->reservedRangeOffset != 0) {
+        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8750
+        skip |= LogError("UNASSIGNED-vkCmdBindResourceHeapEXT-reserved-range-zero", commandBuffer,
+                         error_obj.location.dot(Field::pBindInfo).dot(Field::reservedRangeOffset),
+                         "(%" PRIu64 ") is not zero but reservedRangeSize is zero.", pBindInfo->reservedRangeOffset);
     }
 
     if (pBindInfo->reservedRangeSize < phys_dev_ext_props.descriptor_heap_props.minResourceHeapReservedRange) {

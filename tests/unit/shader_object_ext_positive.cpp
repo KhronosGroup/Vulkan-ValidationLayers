@@ -1967,7 +1967,7 @@ TEST_F(PositiveShaderObjectEXT, DrawWithHeap) {
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = resource_heap.AddressRange();
-    resource_bind_info.reservedRangeOffset = resource_heap_size;
+    resource_bind_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size : 0;
     resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();

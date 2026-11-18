@@ -2775,7 +2775,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, HeapMultipleDraws) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = heap.Address();
     bind_resource_info.heapRange.size = heap_size;
-    bind_resource_info.reservedRangeOffset = descriptor_size;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? descriptor_size : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 

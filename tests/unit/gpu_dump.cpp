@@ -2802,7 +2802,7 @@ TEST_F(NegativeGpuDump, DescriptorHeapReservedRangeRuntimeArray) {
     bind_resource_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     if (no_reserved_range) {
-        bind_resource_info.reservedRangeOffset -= heap_props.bufferDescriptorSize;
+        bind_resource_info.reservedRangeOffset = bind_resource_info.heapRange.size - heap_props.bufferDescriptorSize;
         bind_resource_info.reservedRangeSize = heap_props.bufferDescriptorSize;
     }
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);

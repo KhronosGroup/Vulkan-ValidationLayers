@@ -202,7 +202,7 @@ TEST_F(NegativeDescriptorHeapUntypedEXT, SecondaryCmdBufferResourceHeapUnbound) 
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange = desc_heap.resource_heap_.AddressRange();
-    bind_resource_info.reservedRangeOffset = desc_heap.resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
+    bind_resource_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     VkCommandBufferInheritanceDescriptorHeapInfoEXT inheritance_heap_info = vku::InitStructHelper();

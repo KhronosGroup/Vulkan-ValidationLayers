@@ -295,7 +295,7 @@ TEST_F(PositiveDescriptorHeapEXT, ResetCommandBufferOverlappingResource) {
     VkBindHeapInfoEXT bind_info2 = vku::InitStructHelper();
     bind_info2.heapRange.address = desc_heap.resource_heap_.Address();
     bind_info2.heapRange.size = desc_heap.resource_heap_.CreateInfo().size - resource_stride;
-    bind_info2.reservedRangeOffset = resource_stride;
+    bind_info2.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_stride : 0;
     bind_info2.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     cmd_buffer1.Begin();
