@@ -12,6 +12,7 @@
  */
 
 #include "layer_validation_tests.h"
+#include "descriptor_heap_object.h"
 #include "ray_tracing_objects.h"
 #include "feature_requirements.h"
 #include "descriptor_helper.h"
@@ -2203,16 +2204,8 @@ TEST_F(PositiveRayTracing, DescriptorHeap) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
-
-    const VkDeviceSize descriptor_size =
-        vk::GetPhysicalDeviceDescriptorSizeEXT(gpu_, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
-    const VkDeviceSize reserved_offset = Align(descriptor_size, heap_props.resourceHeapAlignment);
-
-    const VkDeviceSize heap_size = reserved_offset + heap_props.minResourceHeapReservedRange;
-    vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-    uint8_t* heap_data = static_cast<uint8_t*>(heap.Memory().Map());
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(desc_heap.heap_props.bufferDescriptorSize);
 
     vkt::rt::Pipeline pipeline(*this, m_device);
 
@@ -2272,26 +2265,11 @@ TEST_F(PositiveRayTracing, DescriptorHeap) {
 
     vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
 
-    VkDeviceAddress tlas_device_address = tlas.GetDstAS()->GetAccelerationStructureDeviceAddress();
-
-    VkDeviceAddressRangeEXT device_address_range = {tlas_device_address, 0};
-
-    VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
-    resource_info.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    resource_info.data.pAddressRange = &device_address_range;
-
-    VkHostAddressRangeEXT descriptor = {heap_data, static_cast<size_t>(descriptor_size)};
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &descriptor);
-
-    VkBindHeapInfoEXT bind_heap_info = vku::InitStructHelper();
-    bind_heap_info.heapRange.address = heap.Address();
-    bind_heap_info.heapRange.size = heap_size;
-    bind_heap_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? reserved_offset : 0;
-    bind_heap_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    desc_heap.WriteAccelerationStructureDescriptor(*tlas.GetDstAS());
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_heap_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,

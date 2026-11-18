@@ -130,18 +130,12 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, HeapBoundInMultimpleCmdBuffers) {
 
     vkt::CommandBuffer cmd_buffer(*m_device, m_command_pool);
 
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = desc_heap.resource_heap_.Address();
-    bind_resource_info.heapRange.size = desc_heap.resource_heap_.CreateInfo().size;
-    bind_resource_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-
     m_command_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.End();
 
     cmd_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(cmd_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(cmd_buffer);
     cmd_buffer.End();
 }
 
@@ -1245,15 +1239,10 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, SecondaryBind) {
     )glsl";
     vkt::HeapComputePipelineEXT pipe(*m_device, cs_source, SPV_ENV_VULKAN_1_0, &mapping_info);
 
-    VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
-    resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
-    resource_bind_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
-    resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-
     // No VkCommandBufferInheritanceDescriptorHeapInfoEXT
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.Begin();
-    vk::CmdBindResourceHeapEXT(secondary, &resource_bind_info);
+    desc_heap.BindResourceHeap(secondary);
     vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(secondary, 1u, 1u, 1u);
     secondary.End();

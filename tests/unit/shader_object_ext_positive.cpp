@@ -10,6 +10,7 @@
  */
 
 #include "layer_validation_tests.h"
+#include "descriptor_heap_object.h"
 #include "shader_object_helper.h"
 #include "descriptor_helper.h"
 #include "shader_helper.h"
@@ -1945,33 +1946,13 @@ TEST_F(PositiveShaderObjectEXT, DrawWithHeap) {
     const vkt::ShaderEXT vert_shader(*m_device, create_infos[0]);
     const vkt::ShaderEXT frag_shader(*m_device, create_infos[1]);
 
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
-
-    VkDeviceSize resource_heap_size = Align(heap_props.bufferDescriptorAlignment, heap_props.imageDescriptorAlignment);
-    VkDeviceSize total_heap_size = resource_heap_size + heap_props.minResourceHeapReservedRange;
-    vkt::Buffer resource_heap(*m_device, total_heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-    uint8_t* resource_heap_data = static_cast<uint8_t*>(resource_heap.Memory().Map());
-
-    VkDeviceSize buffer_size = sizeof(uint32_t) * 16u;
-    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
-    VkDeviceAddressRangeEXT buffer_address_range = {buffer.Address(), buffer_size};
-
-    VkHostAddressRangeEXT resource_host = {resource_heap_data, static_cast<size_t>(heap_props.bufferDescriptorSize)};
-
-    VkResourceDescriptorInfoEXT descriptor_info = vku::InitStructHelper();
-    descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_info.data.pAddressRange = &buffer_address_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &descriptor_info, &resource_host);
-
-    VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
-    resource_bind_info.heapRange = resource_heap.AddressRange();
-    resource_bind_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size : 0;
-    resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
+    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 16u, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(desc_heap.heap_props.bufferDescriptorSize);
+    desc_heap.WriteBufferDescriptor(buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     m_command_buffer.Begin();
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &resource_bind_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExcludeEXT();
     m_command_buffer.BindShadersEXT(vert_shader, frag_shader);
