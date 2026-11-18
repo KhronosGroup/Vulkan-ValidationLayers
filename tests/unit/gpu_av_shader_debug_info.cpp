@@ -11,6 +11,7 @@
  */
 
 #include "layer_validation_tests.h"
+#include "descriptor_heap_object.h"
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
 #include "buffer_helper.h"
@@ -2717,24 +2718,10 @@ TEST_F(NegativeGpuAVShaderDebugInfo, HeapMultipleDraws) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT heap_props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(heap_props);
-
-    const VkDeviceSize descriptor_size = Align(Align(heap_props.bufferDescriptorAlignment, heap_props.bufferDescriptorAlignment),
-                                               heap_props.imageDescriptorAlignment);
-    const VkDeviceSize heap_size = descriptor_size + heap_props.minResourceHeapReservedRange;
-
-    vkt::Buffer heap(*m_device, heap_size, VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-    uint8_t* heap_data = static_cast<uint8_t*>(heap.Memory().Map());
-
     vkt::Buffer ssbo_buffer(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
-    VkDeviceAddressRangeEXT address_range = ssbo_buffer.AddressRange();
-
-    VkResourceDescriptorInfoEXT resource_info = vku::InitStructHelper();
-    resource_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    resource_info.data.pAddressRange = &address_range;
-    VkHostAddressRangeEXT host_address = {heap_data, static_cast<size_t>(heap_props.bufferDescriptorSize)};
-    vk::WriteResourceDescriptorsEXT(*m_device, 1u, &resource_info, &host_address);
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(desc_heap.heap_props.bufferDescriptorSize);
+    desc_heap.WriteBufferDescriptor(ssbo_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     const char* vs_source = R"glsl(
         #version 450
@@ -2772,12 +2759,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, HeapMultipleDraws) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
 
-    VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-    bind_resource_info.heapRange.address = heap.Address();
-    bind_resource_info.heapRange.size = heap_size;
-    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? descriptor_size : 0;
-    bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+    desc_heap.BindResourceHeap(m_command_buffer);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);

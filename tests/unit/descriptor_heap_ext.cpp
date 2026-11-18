@@ -3946,38 +3946,11 @@ TEST_F(NegativeDescriptorHeapEXT, EmbeddedSamplerReservedArea) {
     bind_info.heapRange = buffer.AddressRange();
     bind_info.reservedRangeSize = heap_props.minSamplerHeapReservedRangeWithEmbedded - 1;
 
-    // Resource descriptor heap buffer
     const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    const VkDeviceSize resource_descriptor_count = 4;
-    const VkDeviceSize resource_heap_size_app = resource_descriptor_count * resource_stride;
-    const VkDeviceSize resource_heap_size = resource_heap_size_app + heap_props.minResourceHeapReservedRange;
-    const VkDeviceSize out_data_buffer_size = 256;
-
-    vkt::Buffer resource_heap(*m_device, resource_heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-    const auto resource_heap_ptr = static_cast<char*>(resource_heap.Memory().Map());
-
-    // Sampler descriptor heap buffer
-    const VkDeviceSize sampler_stride = heap_props.samplerDescriptorSize;
-    const VkDeviceSize sampler_descriptor_count = 4;
-    const VkDeviceSize sampler_heap_size_app = sampler_descriptor_count * sampler_stride;
-    const VkDeviceSize sampler_heap_size = sampler_heap_size_app + heap_props.minSamplerHeapReservedRange;
-
-    vkt::Buffer sampler_heap(*m_device, sampler_heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-    const auto sampler_heap_ptr = static_cast<char*>(sampler_heap.Memory().Map());
-
-    // Output buffer descriptor
-    vkt::Buffer out_buffer(*m_device, out_data_buffer_size, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
-
-    VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resource_stride)};
-    VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
-    VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
-    out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    out_descriptor_info.data.pAddressRange = &out_address_range;
-    vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
-
-    VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
-    VkHostAddressRangeEXT input_descriptor{sampler_heap_ptr + sampler_stride, static_cast<size_t>(sampler_stride)};
-    vk::WriteSamplerDescriptorsEXT(*m_device, 1, &sampler_ci, &input_descriptor);
+    vkt::Buffer out_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR, vkt::device_address);
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(4 * resource_stride);
+    desc_heap.WriteBufferDescriptor(out_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     VkDescriptorSetAndBindingMappingEXT mappings[3];
     mappings[0] = MakeSetAndBindingMappingEXT(0, 0);
@@ -4039,11 +4012,7 @@ TEST_F(NegativeDescriptorHeapEXT, EmbeddedSamplerReservedArea) {
     for (int i = 0; i < 2; ++i) {
         m_command_buffer.Begin();
 
-        VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-        bind_resource_info.heapRange = resource_heap.AddressRange();
-        bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
-        bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+        desc_heap.BindResourceHeap(m_command_buffer);
 
         vk::CmdBindSamplerHeapEXT(m_command_buffer, &bind_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, i == 0 ? pipe : pipe2);
@@ -4155,29 +4124,15 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedPipeline) {
         }
     )glsl";
 
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    const VkDeviceSize resource_descriptor_count = 4;
-    const VkDeviceSize resource_heap_size_app = resource_descriptor_count * resource_stride;
-    const VkDeviceSize resource_heap_size = resource_heap_size_app + heap_props.minResourceHeapReservedRange;
-    const VkDeviceSize dataBufferSize = 256;
+    vkt::Buffer out_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+    desc_heap.WriteBufferDescriptor(out_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+
     for (int i = 0; i < 2; i++) {
-        vkt::Buffer resource_heap(*m_device, resource_heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-        const auto resource_heap_ptr = static_cast<char*>(resource_heap.Memory().Map());
-
-        // Output buffer descriptor
-        vkt::Buffer out_buffer(*m_device, dataBufferSize, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, vkt::device_address);
-
-        VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resource_stride)};
-        VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
-        VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
-        out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        out_descriptor_info.data.pAddressRange = &out_address_range;
-
-        vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
-
         VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
         mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-        mappings.sourceData.constantOffset.heapOffset = 0u * (uint32_t)resource_stride;
+        mappings.sourceData.constantOffset.heapOffset = 0;
         mappings.sourceData.constantOffset.heapArrayStride = 0;
 
         VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -4189,11 +4144,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedPipeline) {
 
         m_command_buffer.Begin();
 
-        VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-        bind_resource_info.heapRange = resource_heap.AddressRange();
-        bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
-        bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+        desc_heap.BindResourceHeap(m_command_buffer);
 
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
         if (i != 0) {
@@ -4224,30 +4175,15 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedShaderObject) {
         )glsl";
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
 
-    const VkDeviceSize resource_stride = heap_props.bufferDescriptorSize;
-    const VkDeviceSize resource_descriptor_count = 4;
-    const VkDeviceSize resource_heap_size_app = resource_descriptor_count * resource_stride;
-    const VkDeviceSize resource_heap_size = resource_heap_size_app + heap_props.minResourceHeapReservedRange;
-    const VkDeviceSize dataBufferSize = 256;
+    vkt::Buffer out_buffer(*m_device, 256, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::DescriptorHeapEXT desc_heap(*this);
+    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize);
+    desc_heap.WriteBufferDescriptor(out_buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     for (int i = 0; i < 2; i++) {
-        vkt::Buffer resource_heap(*m_device, resource_heap_size, VK_BUFFER_USAGE_2_DESCRIPTOR_HEAP_BIT_EXT, vkt::device_address);
-        const auto resource_heap_ptr = static_cast<char*>(resource_heap.Memory().Map());
-
-        // Output buffer descriptor
-        vkt::Buffer out_buffer(*m_device, dataBufferSize, VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT, vkt::device_address);
-
-        VkHostAddressRangeEXT out_descriptor{resource_heap_ptr, static_cast<size_t>(resource_stride)};
-        VkDeviceAddressRangeEXT out_address_range = out_buffer.AddressRange();
-        VkResourceDescriptorInfoEXT out_descriptor_info = vku::InitStructHelper();
-        out_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        out_descriptor_info.data.pAddressRange = &out_address_range;
-
-        vk::WriteResourceDescriptorsEXT(*m_device, 1, &out_descriptor_info, &out_descriptor);
-
         VkDescriptorSetAndBindingMappingEXT mappings = MakeSetAndBindingMappingEXT(0, 0);
         mappings.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
-        mappings.sourceData.constantOffset.heapOffset = 0u * (uint32_t)resource_stride;
+        mappings.sourceData.constantOffset.heapOffset = 0;
         mappings.sourceData.constantOffset.heapArrayStride = 0;
 
         VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info = vku::InitStructHelper();
@@ -4266,11 +4202,7 @@ TEST_F(NegativeDescriptorHeapEXT, PushDataAssignedShaderObject) {
 
         m_command_buffer.Begin();
 
-        VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
-        bind_resource_info.heapRange = resource_heap.AddressRange();
-        bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
-        bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
-        vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
+        desc_heap.BindResourceHeap(m_command_buffer);
 
         if (i != 0) {
             vk::CmdPushDataEXT(m_command_buffer, &push_data_info);
