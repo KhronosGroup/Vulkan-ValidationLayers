@@ -235,7 +235,7 @@ VkDeviceSize DescriptorHeapEXT::AlignResource(VkDeviceSize offset) {
 VkDeviceSize DescriptorHeapEXT::AlignSampler(VkDeviceSize offset) { return Align(offset, heap_props.samplerDescriptorAlignment); }
 
 VkDeviceSize DescriptorHeapEXT::GetResourceHeapReservedRangeOffset() const {
-    if (resource_reserved_range_in_front_) {
+    if (resource_reserved_range_in_front_ || heap_props.minResourceHeapReservedRange == 0) {
         return 0;
     } else {
         return resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
@@ -245,7 +245,7 @@ VkDeviceSize DescriptorHeapEXT::GetResourceHeapReservedRangeOffset() const {
 VkDeviceSize DescriptorHeapEXT::GetSamplerHeapReservedRangeOffset() const {
     const VkDeviceSize min_reserved_range =
         embedded_samplers ? heap_props.minSamplerHeapReservedRangeWithEmbedded : heap_props.minSamplerHeapReservedRange;
-    if (sampler_reserved_range_in_front_) {
+    if (sampler_reserved_range_in_front_ || min_reserved_range == 0) {
         return 0;
     } else {
         return sampler_heap_.CreateInfo().size - min_reserved_range;

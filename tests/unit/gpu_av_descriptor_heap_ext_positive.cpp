@@ -133,7 +133,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, HeapBoundInMultimpleCmdBuffers) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = desc_heap.resource_heap_.Address();
     bind_resource_info.heapRange.size = desc_heap.resource_heap_.CreateInfo().size;
-    bind_resource_info.reservedRangeOffset = desc_heap.resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
+    bind_resource_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
@@ -1156,7 +1156,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, SecondaryInheritance) {
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
-    resource_bind_info.reservedRangeOffset = desc_heap.resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
+    resource_bind_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
     resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     VkCommandBufferInheritanceDescriptorHeapInfoEXT inh_desc_heap_info = vku::InitStructHelper();
     inh_desc_heap_info.pResourceHeapBindInfo = &resource_bind_info;
@@ -1247,7 +1247,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, SecondaryBind) {
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
-    resource_bind_info.reservedRangeOffset = desc_heap.resource_heap_.CreateInfo().size - heap_props.minResourceHeapReservedRange;
+    resource_bind_info.reservedRangeOffset = desc_heap.GetResourceHeapReservedRangeOffset();
     resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     // No VkCommandBufferInheritanceDescriptorHeapInfoEXT
@@ -1408,7 +1408,7 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, HashingDeviceLocal) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     vkt::Buffer ssbo_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -1969,7 +1969,9 @@ TEST_F(PositiveGpuAVDescriptorHeapEXT, ComputeAndGraphicsShareDescriptor) {
 
     bind_resource_info.heapRange.address += resource_stride;
     bind_resource_info.heapRange.size -= resource_stride;
-    bind_resource_info.reservedRangeOffset -= resource_stride;
+    if (bind_resource_info.reservedRangeSize != 0) {
+        bind_resource_info.reservedRangeOffset -= resource_stride;
+    }
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);

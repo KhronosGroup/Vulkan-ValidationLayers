@@ -2286,7 +2286,7 @@ TEST_F(PositiveRayTracing, DescriptorHeap) {
     VkBindHeapInfoEXT bind_heap_info = vku::InitStructHelper();
     bind_heap_info.heapRange.address = heap.Address();
     bind_heap_info.heapRange.size = heap_size;
-    bind_heap_info.reservedRangeOffset = reserved_offset;
+    bind_heap_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? reserved_offset : 0;
     bind_heap_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     // Bind descriptor set, pipeline, and trace rays

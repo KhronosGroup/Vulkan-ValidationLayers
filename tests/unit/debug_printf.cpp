@@ -6186,7 +6186,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeap) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
@@ -6283,7 +6283,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapGraphics) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
@@ -6359,7 +6359,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapUntypedPointers) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
@@ -6484,7 +6484,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapGPL) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
@@ -6562,7 +6562,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapShaderObjects) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
@@ -6673,7 +6673,7 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeap) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     VkBufferCopy copy_region;
@@ -6779,7 +6779,7 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapGraphics) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     VkBufferCopy copy_region;
@@ -6898,7 +6898,7 @@ TEST_F(NegativeDebugPrintf, DeviceLocalHeapMesh) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     VkBufferCopy copy_region;
@@ -7009,7 +7009,7 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange.address = descriptor_heap.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
@@ -7019,13 +7019,15 @@ TEST_F(NegativeDebugPrintf, DescriptorHeapRebindHeap) {
 
     bind_resource_info.heapRange.address += descriptor_stride;
     bind_resource_info.heapRange.size -= descriptor_stride;
-    bind_resource_info.reservedRangeOffset -= descriptor_stride;
+    if (bind_resource_info.reservedRangeSize != 0) {
+        bind_resource_info.reservedRangeOffset -= descriptor_stride;
+    }
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     bind_resource_info.heapRange.address = descriptor_heap2.Address();
     bind_resource_info.heapRange.size = resource_heap_size_driver;
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 

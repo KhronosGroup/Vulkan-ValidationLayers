@@ -7562,7 +7562,7 @@ TEST_F(NegativeShaderObjectEXT, EmbeddedSamplerReservedArea) {
 
     VkBindHeapInfoEXT bind_resource_info = vku::InitStructHelper();
     bind_resource_info.heapRange = resource_heap.AddressRange();
-    bind_resource_info.reservedRangeOffset = resource_heap_size_app;
+    bind_resource_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size_app : 0;
     bind_resource_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_resource_info);
 
@@ -8005,7 +8005,7 @@ TEST_F(NegativeShaderObjectEXT, DrawWithHeap) {
 
     VkBindHeapInfoEXT resource_bind_info = vku::InitStructHelper();
     resource_bind_info.heapRange = resource_heap.AddressRange();
-    resource_bind_info.reservedRangeOffset = resource_heap_size;
+    resource_bind_info.reservedRangeOffset = heap_props.minResourceHeapReservedRange ? resource_heap_size : 0;
     resource_bind_info.reservedRangeSize = heap_props.minResourceHeapReservedRange;
 
     m_command_buffer.Begin();
