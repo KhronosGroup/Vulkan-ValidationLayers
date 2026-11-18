@@ -42,11 +42,11 @@ struct AcquiredImage {
     ImageRangeGenerator generator;
 
     // Tag of the image acquire operation
-    ResourceUsageTag acquire_tag;
+    ResourceUsageTag acquire_tag = kInvalidTag;
 
     // Last present before the acquire operation above.
     // kInvalidTag if the image has never been presented
-    ResourceUsageTag present_tag;
+    ResourceUsageTag present_tag = kInvalidTag;
 
     AcquiredImage() = default;
     AcquiredImage(const PresentedImage& presented, ResourceUsageTag acquire_tag);
@@ -253,6 +253,10 @@ struct UnresolvedBatch {
 
     // Signals to signal when all the waits are resolved.
     std::vector<SemaphoreSubmitInfo> signals;
+
+    // Fences that signal after this batch, including fences from later fence-only submits.
+    // Their host sync points are recorded when this batch is resolved and gets its tags.
+    small_vector<VkFence, 1> fences;
 
     // Queue's label stack at the beginning of this batch
     std::vector<std::string> label_stack;

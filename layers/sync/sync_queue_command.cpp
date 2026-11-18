@@ -372,14 +372,22 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
     if (validator.ShouldUpdateQueueState(skip)) {
         validator.stats.UpdateMemoryStats();
         validator.ApplySignalsUpdate(signals_update, queue_state.LastBatch());
-        FenceHostSyncPoint sync_point;
-        sync_point.queue_id = queue_id;
-        sync_point.tag = validator.ReserveGlobalTagRange(1).begin;
-        if (queue_state.LastBatch()) {
-            sync_point.queue_sync_tags = queue_state.LastBatch()->GetQueueSyncTags();
-        }
         if (fence != VK_NULL_HANDLE) {
-            validator.waitable_fences_[fence] = std::move(sync_point);
+            auto& unresolved_batches = queue_state.UnresolvedBatches();
+            if (!unresolved_batches.empty()) {
+                // The last batch has no tags until its waits are resolved, so PropagateTimelineSignals()
+                // records the fence sync point after that batch is validated
+                unresolved_batches.back().fences.emplace_back(fence);
+            } else if (const BatchContextPtr queue_last_batch = queue_state.LastBatch()) {
+                FenceHostSyncPoint sync_point;
+                sync_point.queue_id = queue_id;
+                sync_point.tag = queue_last_batch->GetTagRange().end;
+                sync_point.queue_sync_tags = queue_last_batch->GetQueueSyncTags();
+                validator.waitable_fences_[fence] = std::move(sync_point);
+            } else {
+                // A fence-only submit on an unused queue has no sync point to record
+                validator.waitable_fences_.erase(fence);
+            }
         }
     }
     return skip;
