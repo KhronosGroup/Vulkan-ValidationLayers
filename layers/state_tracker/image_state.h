@@ -227,11 +227,14 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
 
     std::string DescribeSubresourceLayers(const VkImageSubresourceLayers &subresource) const;
 
-    VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const;
+    VkImageSubresourceRange NormalizeSubresourceRange(VkImageSubresourceRange subresource_range) const;
+    // Normalizes a barrier or host transition range.
+    // Layers represent 3D depth slices when per-slice layouts are supported
+    VkImageSubresourceRange NormalizeImageLayoutRange(VkImageSubresourceRange transition_range) const;
     uint32_t NormalizeLayerCount(const VkImageSubresourceLayers &resource) const;
 
     void SetInitialLayoutMap();
-    void SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout);
+    void SetImageLayout(const VkImageSubresourceRange &transition_range, VkImageLayout layout);
 
     // This function is only used for comparing Imported External Dedicated Memory
     bool CompareCreateInfo(const Image &other) const;

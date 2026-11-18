@@ -19,8 +19,6 @@
 
 #include "sync/sync_common.h"
 
-struct DeviceFeatures;
-
 namespace syncval {
 
 class AccessContext;
@@ -136,9 +134,9 @@ struct BarrierSet {
                                   const VkBufferMemoryBarrier2* barriers);
 
     void MakeImageMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
-                                 uint32_t barrier_count, const VkImageMemoryBarrier* barriers, const DeviceFeatures& features);
+                                 uint32_t barrier_count, const VkImageMemoryBarrier* barriers);
     void MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                 const VkImageMemoryBarrier2* barriers, const DeviceFeatures& features);
+                                 const VkImageMemoryBarrier2* barriers);
 };
 
 // Defines the source scope of the barrier.

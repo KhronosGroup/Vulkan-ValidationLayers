@@ -455,12 +455,19 @@ std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers& sub
     return ss.str();
 }
 
-VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourceRange& range) const {
-    VkImageSubresourceRange norm = range;
-    norm.levelCount = GetEffectiveLevelCount(range, create_info.mipLevels);
-    norm.layerCount = GetEffectiveLayerCount(range, create_info.arrayLayers);
-    norm.aspectMask = NormalizeAspectMask(range.aspectMask, create_info.format);
-    return norm;
+VkImageSubresourceRange Image::NormalizeSubresourceRange(VkImageSubresourceRange subresource_range) const {
+    subresource_range.levelCount = GetEffectiveLevelCount(subresource_range, create_info.mipLevels);
+    subresource_range.layerCount = GetEffectiveLayerCount(subresource_range, create_info.arrayLayers);
+    subresource_range.aspectMask = NormalizeAspectMask(subresource_range.aspectMask, create_info.format);
+    return subresource_range;
+}
+
+VkImageSubresourceRange Image::NormalizeImageLayoutRange(VkImageSubresourceRange transition_range) const {
+    transition_range.levelCount = GetEffectiveLevelCount(transition_range, create_info.mipLevels);
+    // The encoder's layer limit already accounts for whether per-slice layouts are supported
+    transition_range.layerCount = GetEffectiveLayerCount(transition_range, subresource_encoder.Limits().arrayLayer);
+    transition_range.aspectMask = NormalizeAspectMask(transition_range.aspectMask, create_info.format);
+    return transition_range;
 }
 
 uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers& resource) const {
@@ -513,10 +520,10 @@ void Image::SetInitialLayoutMap() {
     layout_map_lock = std::move(new_layout_map_lock);
 }
 
-void Image::SetImageLayout(const VkImageSubresourceRange& range, VkImageLayout layout) {
+void Image::SetImageLayout(const VkImageSubresourceRange& transition_range, VkImageLayout layout) {
     using sparse_container::update_range_value;
     using sparse_container::value_precedence;
-    RangeGenerator range_gen(subresource_encoder, NormalizeSubresourceRange(range));
+    RangeGenerator range_gen(subresource_encoder, NormalizeImageLayoutRange(transition_range));
     auto guard = LayoutMapWriteLock();
     for (; range_gen->non_empty(); ++range_gen) {
         update_range_value(*layout_map, *range_gen, layout, value_precedence::prefer_source);

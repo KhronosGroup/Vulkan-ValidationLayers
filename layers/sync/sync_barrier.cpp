@@ -227,8 +227,7 @@ BarrierSet::BarrierSet(const SyncValidator& sync_state, VkQueueFlags queue_flags
 
     MakeMemoryBarriers(queue_flags, dep_info);
     MakeBufferMemoryBarriers(sync_state, queue_flags, dep_info.bufferMemoryBarrierCount, dep_info.pBufferMemoryBarriers);
-    MakeImageMemoryBarriers(sync_state, queue_flags, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers,
-                            sync_state.device_state->enabled_features);
+    MakeImageMemoryBarriers(sync_state, queue_flags, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
 }
 
 BarrierSet::BarrierSet(const SyncValidator& sync_state, const SyncExecScope& src_exec_scope, const SyncExecScope& dst_exec_scope,
@@ -238,8 +237,7 @@ BarrierSet::BarrierSet(const SyncValidator& sync_state, const SyncExecScope& src
     : src_exec_scope(src_exec_scope), dst_exec_scope(dst_exec_scope) {
     MakeMemoryBarriers(src_exec_scope, dst_exec_scope, memory_barrier_count, memory_barriers);
     MakeBufferMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, buffer_barrier_count, buffer_barriers);
-    MakeImageMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, image_barrier_count, image_barriers,
-                            sync_state.device_state->enabled_features);
+    MakeImageMemoryBarriers(sync_state, src_exec_scope, dst_exec_scope, image_barrier_count, image_barriers);
 }
 
 void BarrierSet::MakeMemoryBarriers(const SyncExecScope& src, const SyncExecScope& dst, uint32_t barrier_count,
@@ -331,19 +329,11 @@ void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator& sync_state, VkQue
 }
 
 void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, const SyncExecScope& src, const SyncExecScope& dst,
-                                         uint32_t barrier_count, const VkImageMemoryBarrier* barriers,
-                                         const DeviceFeatures& features) {
+                                         uint32_t barrier_count, const VkImageMemoryBarrier* barriers) {
     image_barriers.reserve(barrier_count);
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         if (auto image = sync_state.Get<vvl::Image>(barrier.image)) {
-            auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
-
-            // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
-            if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
-                CanTransitionDepthSlices(features, image->GetImageType(), image->create_flags)) {
-                subresource_range.layerCount = image->GetExtent().depth - subresource_range.baseArrayLayer;
-            }
-
+            const auto subresource_range = image->NormalizeImageLayoutRange(barrier.subresourceRange);
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
             image_barriers.emplace_back(image, sync_barrier, subresource_range, barrier.oldLayout, barrier.newLayout, index);
         }
@@ -351,21 +341,14 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, const 
 }
 
 void BarrierSet::MakeImageMemoryBarriers(const SyncValidator& sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
-                                         const VkImageMemoryBarrier2* barriers, const DeviceFeatures& features) {
+                                         const VkImageMemoryBarrier2* barriers) {
     image_barriers.reserve(barrier_count);
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
         auto image = sync_state.Get<vvl::Image>(barrier.image);
         if (image) {
-            auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
-
-            // VK_REMAINING_ARRAY_LAYERS for sliced 3d image in the context of layout transition means image's depth extent.
-            if (barrier.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS &&
-                CanTransitionDepthSlices(features, image->GetImageType(), image->create_flags)) {
-                subresource_range.layerCount = image->GetExtent().depth - subresource_range.baseArrayLayer;
-            }
-
+            const auto subresource_range = image->NormalizeImageLayoutRange(barrier.subresourceRange);
             const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
             image_barriers.emplace_back(image, sync_barrier, subresource_range, barrier.oldLayout, barrier.newLayout, index);
         }
