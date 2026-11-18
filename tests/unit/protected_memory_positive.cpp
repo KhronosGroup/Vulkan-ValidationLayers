@@ -40,7 +40,7 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
 
-    for (size_t i = 0; i < queue_families.size(); i++) {
+    for (uint32_t i = 0; i < queue_families.size(); i++) {
         // need to have at least 2 queues to use
         if (((queue_families[i].queueFlags & VK_QUEUE_PROTECTED_BIT) != 0) && (queue_families[i].queueCount > 1)) {
             protected_queue = true;

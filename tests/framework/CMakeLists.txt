@@ -81,20 +81,18 @@ find_package(SPIRV-Tools CONFIG)
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(vk_test_framework PUBLIC
         -Wno-sign-compare
-        -Wno-shorten-64-to-32
         -Wno-missing-field-initializers
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         target_compile_options(vk_test_framework PUBLIC
             -Wno-sign-conversion
             -Wno-implicit-int-conversion
+            # MSVC rejects 64-bit to 32-bit narrowing (C4267/C4244), so report it on Clang too
+            # instead of only in MSVC CI
+            -Wshorten-64-to-32
         )
     endif()
 elseif(MSVC)
-    target_compile_options(vk_test_framework PUBLIC
-        /wd4267 # Disable some signed/unsigned mismatch warnings.
-    )
-
     if (CMAKE_SIZEOF_VOID_P EQUAL 4)
         # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
         target_link_options(vk_test_framework PUBLIC /LARGEADDRESSAWARE)

@@ -2929,7 +2929,7 @@ TEST_F(NegativeCopyBufferImage, MinImageTransferGranularity) {
     }
     const size_t queue_family_index = std::distance(queue_family_properties.begin(), large_granularity_family);
     VkExtent3D granularity = queue_family_properties[queue_family_index].minImageTransferGranularity;
-    vkt::CommandPool command_pool(*m_device, queue_family_index, 0);
+    vkt::CommandPool command_pool(*m_device, static_cast<uint32_t>(queue_family_index), 0);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_3D;

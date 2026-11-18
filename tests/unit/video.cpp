@@ -1074,7 +1074,7 @@ TEST_F(NegativeVideo, BeginCodingReferenceFormatMismatch) {
     VideoConfig config =
         GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigs()), [&alt_ref_format_index](const VideoConfig& config) {
             const auto& format_props = config.SupportedDpbFormatProps();
-            for (size_t i = 0; i < format_props.size(); ++i) {
+            for (uint32_t i = 0; i < format_props.size(); ++i) {
                 if (format_props[i].format != format_props[0].format && alt_ref_format_index == 0) {
                     alt_ref_format_index = i;
                     return true;

@@ -1160,7 +1160,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     si[3] = si[1];
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pWaitSemaphores-03238");
-    vk::QueueSubmit(m_default_queue->handle(), si.size(), si.data(), VK_NULL_HANDLE);
+    vk::QueueSubmit(m_default_queue->handle(), size32(si), si.data(), VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     auto index = m_device->graphics_queue_node_index_;
@@ -1176,7 +1176,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
         bi[2] = bi[0];
         bi[3] = bi[1];
         m_errorMonitor->SetDesiredError("VUID-vkQueueBindSparse-pWaitSemaphores-03245");
-        vk::QueueBindSparse(m_default_queue->handle(), bi.size(), bi.data(), VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_default_queue->handle(), size32(bi), bi.data(), VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 

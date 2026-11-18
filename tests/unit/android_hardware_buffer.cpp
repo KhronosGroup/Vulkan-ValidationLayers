@@ -1235,7 +1235,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportTensorHandleType) {
     VkTensorDescriptionARM tensor_desc = vku::InitStructHelper();
     tensor_desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     tensor_desc.format = VK_FORMAT_R8_SINT;
-    tensor_desc.dimensionCount = dimensions.size();
+    tensor_desc.dimensionCount = size32(dimensions);
     tensor_desc.pDimensions = dimensions.data();
     tensor_desc.pStrides = nullptr;
     tensor_desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;

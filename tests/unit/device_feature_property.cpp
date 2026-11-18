@@ -179,7 +179,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions11) {
 
     m_second_device_ci.pNext = &features11;
     m_second_device_ci.ppEnabledExtensionNames = extension_list.data();
-    m_second_device_ci.enabledExtensionCount = extension_list.size();
+    m_second_device_ci.enabledExtensionCount = size32(extension_list);
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-04476");
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
@@ -224,7 +224,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions12) {
 
     m_second_device_ci.pNext = &features12;
     m_second_device_ci.ppEnabledExtensionNames = extension_list.data();
-    m_second_device_ci.enabledExtensionCount = extension_list.size();
+    m_second_device_ci.enabledExtensionCount = size32(extension_list);
 
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
@@ -244,7 +244,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions14) {
 
     std::array<const char*, 1> extension_list = {VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
     m_second_device_ci.ppEnabledExtensionNames = extension_list.data();
-    m_second_device_ci.enabledExtensionCount = extension_list.size();
+    m_second_device_ci.enabledExtensionCount = size32(extension_list);
 
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-10858");
@@ -315,7 +315,7 @@ TEST_F(NegativeDeviceFeatureProperty, Maintenance1AndNegativeViewport) {
     }
 
     std::array extension_names = {VK_KHR_MAINTENANCE_1_EXTENSION_NAME, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME};
-    m_second_device_ci.enabledExtensionCount = extension_names.size();
+    m_second_device_ci.enabledExtensionCount = size32(extension_names);
     m_second_device_ci.ppEnabledExtensionNames = extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374");
@@ -337,7 +337,7 @@ TEST_F(NegativeDeviceFeatureProperty, BufferDeviceAddressExtAndKhr) {
 
     std::array extension_names = {VK_KHR_DEVICE_GROUP_EXTENSION_NAME, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
                                   VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME};
-    m_second_device_ci.enabledExtensionCount = extension_names.size();
+    m_second_device_ci.enabledExtensionCount = size32(extension_names);
     m_second_device_ci.ppEnabledExtensionNames = extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328");

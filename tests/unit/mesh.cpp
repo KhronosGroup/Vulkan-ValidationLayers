@@ -150,7 +150,7 @@ TEST_F(NegativeMesh, BasicUsage) {
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07067"};
         VkPipelineDynamicStateCreateInfo dyn_state = vku::InitStructHelper();
         for (int i = 0; i < 5; i++) {
-            dyn_state.dynamicStateCount = dyn_states[i].size();
+            dyn_state.dynamicStateCount = size32(dyn_states[i]);
             dyn_state.pDynamicStates = dyn_states[i].data();
             if (*dyn_state.pDynamicStates == VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) continue;
             const auto break_vp5 = [&](CreatePipelineHelper& helper) {

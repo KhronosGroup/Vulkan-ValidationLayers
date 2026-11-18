@@ -153,8 +153,8 @@ TEST_F(PositiveShaderSpirv, GroupDecorations) {
 
     // CreateDescriptorSetLayout
     VkDescriptorSetLayoutBinding dslb[6] = {};
-    size_t dslb_size = std::size(dslb);
-    for (size_t i = 0; i < dslb_size; i++) {
+    uint32_t dslb_size = size32(dslb);
+    for (uint32_t i = 0; i < dslb_size; i++) {
         dslb[i].binding = i;
         dslb[i].descriptorCount = 1;
         dslb[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;

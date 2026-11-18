@@ -21,7 +21,7 @@
 template <typename T, typename U>
 bool HaveSameElementsUpTo(const T& l1, const U& l2, size_t n) {
     for (size_t i = 0; i < n; ++i) {
-        if (l1[i] != l2[i]) {
+        if (l1[static_cast<typename T::size_type>(i)] != l2[i]) {
             return false;
         }
     }

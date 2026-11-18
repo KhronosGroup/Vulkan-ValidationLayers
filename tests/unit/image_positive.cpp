@@ -1269,7 +1269,7 @@ TEST_F(PositiveImage, ImageBoxFilterInstruction) {
         std::min(8.0f, static_cast<float>(image_processing_props.maxBoxFilterBlockSize.height)),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(box_sizes);
     specialization_info.pData = box_sizes.data();
@@ -1373,7 +1373,7 @@ TEST_F(PositiveImage, ImageBlockMatchInstruction) {
         std::min(8u, image_processing_props.maxBlockMatchRegion.height),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(block_sizes);
     specialization_info.pData = block_sizes.data();
@@ -1486,7 +1486,7 @@ TEST_F(PositiveImage, ImageBlockMatchWindowWithClampToEdge) {
         std::min(8u, image_processing_props.maxBlockMatchRegion.height),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(block_sizes);
     specialization_info.pData = block_sizes.data();
@@ -1651,7 +1651,7 @@ TEST_F(PositiveImage, ImageBlockMatchWindowInstruction) {
         std::min(8u, image_processing_props.maxBlockMatchRegion.height),
     };
     VkSpecializationInfo specialization_info{};
-    specialization_info.mapEntryCount = map_entries.size();
+    specialization_info.mapEntryCount = size32(map_entries);
     specialization_info.pMapEntries = map_entries.data();
     specialization_info.dataSize = sizeof(block_sizes);
     specialization_info.pData = block_sizes.data();

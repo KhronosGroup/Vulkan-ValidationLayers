@@ -78,7 +78,7 @@ TEST_F(PositiveDeviceQueue, QueueFamilyIndexDifferentCreateFlags) {
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
 
-    for (size_t i = 0; i < queue_families.size(); i++) {
+    for (uint32_t i = 0; i < queue_families.size(); i++) {
         if (queue_families[i].queueCount > 1) {
             found_queue = true;
             queue_family_index = i;

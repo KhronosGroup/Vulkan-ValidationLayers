@@ -1391,7 +1391,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineBinaryRayTracingPipeline) {
     raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
     raytracing_pipeline_ci.pStages = shader_stages.data();
     raytracing_pipeline_ci.pGroups = shader_groups.data();
-    raytracing_pipeline_ci.groupCount = shader_groups.size();
+    raytracing_pipeline_ci.groupCount = size32(shader_groups);
     raytracing_pipeline_ci.layout = pipeline_layout;
 
     {
@@ -1520,7 +1520,7 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupHandles) {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rt_pipeline_props);
 
-    const uint32_t sbt_size = rt_pipe.GetRayTracingShaderGroupCreateInfos().size() * rt_pipeline_props.shaderGroupHandleSize;
+    const uint32_t sbt_size = size32(rt_pipe.GetRayTracingShaderGroupCreateInfos()) * rt_pipeline_props.shaderGroupHandleSize;
     std::vector<uint8_t> sbt_host_storage(sbt_size * 2u);
     const uint32_t shader_group_count = rt_pipe.GetShaderGroupsCount();
 

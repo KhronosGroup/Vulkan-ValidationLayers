@@ -27,7 +27,7 @@ RenderPassSingleSubpass::RenderPassSingleSubpass(VkLayerTest& test, vkt::Device*
 }
 
 VkRenderPassCreateInfo RenderPassSingleSubpass::GetCreateInfo() {
-    rp_create_info_.attachmentCount = attachment_descriptions_.size();
+    rp_create_info_.attachmentCount = static_cast<uint32_t>(attachment_descriptions_.size());
     rp_create_info_.pAttachments = attachment_descriptions_.data();
     rp_create_info_.pDependencies = subpass_dependencies_.data();
     return rp_create_info_;
@@ -109,7 +109,7 @@ RenderPass2SingleSubpass::RenderPass2SingleSubpass(VkLayerTest& test, vkt::Devic
 }
 
 VkRenderPassCreateInfo2 RenderPass2SingleSubpass::GetCreateInfo() {
-    rp_create_info_.attachmentCount = attachment_descriptions_.size();
+    rp_create_info_.attachmentCount = static_cast<uint32_t>(attachment_descriptions_.size());
     rp_create_info_.pAttachments = attachment_descriptions_.data();
     rp_create_info_.pDependencies = subpass_dependencies_.data();
     return rp_create_info_;
@@ -141,7 +141,7 @@ void RenderPass2SingleSubpass::AddInputAttachment(uint32_t attachment_index, VkI
     attachment_ref.aspectMask = aspect_mask;
 
     input_attachments_.push_back(attachment_ref);
-    subpass_description_.inputAttachmentCount = input_attachments_.size();
+    subpass_description_.inputAttachmentCount = static_cast<uint32_t>(input_attachments_.size());
     subpass_description_.pInputAttachments = input_attachments_.data();
 }
 
@@ -153,7 +153,7 @@ void RenderPass2SingleSubpass::AddColorAttachment(uint32_t attachment_index, VkI
     attachment_ref.aspectMask = aspect_mask;
 
     color_attachments_.push_back(attachment_ref);
-    subpass_description_.colorAttachmentCount = color_attachments_.size();
+    subpass_description_.colorAttachmentCount = static_cast<uint32_t>(color_attachments_.size());
     subpass_description_.pColorAttachments = color_attachments_.data();
 }
 

@@ -544,7 +544,7 @@ TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsFirstSubpass) {
     secondary.End();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPass, Framebuffer(), 32, 32, m_renderPassClearValues.size(),
+    m_command_buffer.BeginRenderPass(m_renderPass, Framebuffer(), 32, 32, size32(m_renderPassClearValues),
                                      m_renderPassClearValues.data());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-contents-09680");
@@ -571,7 +571,7 @@ TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsNotFirstSubpass) {
     std::array subpasses = {vku::InitStruct<VkSubpassDescription2>(), vku::InitStruct<VkSubpassDescription2>()};
 
     VkRenderPassCreateInfo2 render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = subpasses.size();
+    render_pass_ci.subpassCount = size32(subpasses);
     render_pass_ci.pSubpasses = subpasses.data();
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
@@ -601,7 +601,7 @@ TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsNotFirstSubpass) {
     secondary.End();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp, fb, 32, 32, m_renderPassClearValues.size(), m_renderPassClearValues.data());
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32, size32(m_renderPassClearValues), m_renderPassClearValues.data());
     m_command_buffer.NextSubpass();
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-None-09681");
     vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());

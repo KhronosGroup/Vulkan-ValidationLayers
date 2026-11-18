@@ -465,7 +465,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(RenderPass(), Framebuffer(), 32, 32, m_renderPassClearValues.size(),
+    m_command_buffer.BeginRenderPass(RenderPass(), Framebuffer(), 32, 32, size32(m_renderPassClearValues),
                                      m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);

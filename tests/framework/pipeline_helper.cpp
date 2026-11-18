@@ -150,7 +150,7 @@ void CreatePipelineHelper::AddDynamicState(VkDynamicState dynamic_state) {
     dynamic_states_.push_back(dynamic_state);
     dyn_state_ci_ = vku::InitStructHelper();
     dyn_state_ci_.pDynamicStates = dynamic_states_.data();
-    dyn_state_ci_.dynamicStateCount = dynamic_states_.size();
+    dyn_state_ci_.dynamicStateCount = size32(dynamic_states_);
     // Set here and don't have have to worry about late bind setting it
     gp_ci_.pDynamicState = &dyn_state_ci_;
 }
@@ -273,7 +273,7 @@ void CreatePipelineHelper::InitShaderLibInfo(std::vector<VkPipelineShaderStageCr
 
     gp_ci_.pMultisampleState = &ms_ci_;
 
-    gp_ci_.stageCount = info.size();
+    gp_ci_.stageCount = size32(info);
     gp_ci_.pStages = info.data();
 }
 
@@ -304,7 +304,7 @@ void CreatePipelineHelper::LateBindPipelineInfo() {
         gp_ci_.layout = pipeline_layout_;
     }
     if (gp_ci_.stageCount == 0) {
-        gp_ci_.stageCount = shader_stages_.size();
+        gp_ci_.stageCount = size32(shader_stages_);
         gp_ci_.pStages = shader_stages_.data();
     }
     if ((gp_ci_.pTessellationState == nullptr) && IsValidVkStruct(tess_ci_)) {

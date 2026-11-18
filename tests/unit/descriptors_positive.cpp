@@ -514,7 +514,7 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
 
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
     allocate_info.descriptorPool = pool;
-    allocate_info.descriptorSetCount = layouts.size();
+    allocate_info.descriptorSetCount = size32(layouts);
     allocate_info.pSetLayouts = layouts.data();
 
     std::array<VkDescriptorSet, layouts.size()> descriptor_sets;

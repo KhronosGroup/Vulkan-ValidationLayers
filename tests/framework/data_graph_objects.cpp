@@ -332,7 +332,7 @@ VkTensorDescriptionARM DataGraphPipelineHelper::GetTensorDesc(TensorType type) {
     VkTensorDescriptionARM desc = vku::InitStructHelper();
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = format;
-    desc.dimensionCount = dims->size();
+    desc.dimensionCount = static_cast<uint32_t>(dims->size());
     desc.pDimensions = dims->data();
     desc.usage = params_.usage_bit;
     return desc;
@@ -380,7 +380,7 @@ void DataGraphPipelineHelper::InitPipelineResources() {
             descriptor_set_layout_bindings_[i] = {i, params_.desc_type, 1, VK_SHADER_STAGE_ALL, nullptr};
         }
     }
-    pipeline_ci_.resourceInfoCount = resources_.size();
+    pipeline_ci_.resourceInfoCount = static_cast<uint32_t>(resources_.size());
     pipeline_ci_.pResourceInfos = resources_.data();
 
     descriptor_set_.reset(new OneOffDescriptorSet(device_, descriptor_set_layout_bindings_));
@@ -390,7 +390,7 @@ void DataGraphPipelineHelper::InitPipelineResources() {
 void DataGraphPipelineHelper::CreatePipelineLayout(const std::vector<VkPushConstantRange>& push_constant_ranges) {
     pipeline_layout_ci_ = vku::InitStructHelper();
     pipeline_layout_ci_.flags = 0;
-    pipeline_layout_ci_.pushConstantRangeCount = push_constant_ranges.size();
+    pipeline_layout_ci_.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());
     pipeline_layout_ci_.pPushConstantRanges = push_constant_ranges.data();
     pipeline_layout_ = vkt::PipelineLayout(*device_, pipeline_layout_ci_, {&descriptor_set_->layout_});
 

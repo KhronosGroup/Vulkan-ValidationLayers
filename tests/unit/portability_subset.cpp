@@ -37,7 +37,7 @@ TEST_F(NegativePortabilitySubset, Device) {
     }
 
     VkDeviceCreateInfo dev_info = vku::InitStructHelper();
-    dev_info.queueCreateInfoCount = create_queue_infos.size();
+    dev_info.queueCreateInfoCount = size32(create_queue_infos);
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = NULL;

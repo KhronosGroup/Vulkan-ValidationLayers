@@ -4521,7 +4521,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DualShaderLibrary) {
     combined_lib.gp_ci_.layout = pipeline_layout;
 
     combined_lib.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    combined_lib.gp_ci_.stageCount = combined_lib.shader_stages_.size();
+    combined_lib.gp_ci_.stageCount = size32(combined_lib.shader_stages_);
     combined_lib.gp_ci_.pStages = combined_lib.shader_stages_.data();
 
     combined_lib.CreateGraphicsPipeline(false);

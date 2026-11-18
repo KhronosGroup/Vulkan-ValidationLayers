@@ -193,7 +193,8 @@ TEST_F(NegativeDeviceAddressCommands, CopyGranularity) {
     if (large_granularity_family == queue_family_properties.end()) {
         GTEST_SKIP() << "No queue family has a large enough granularity for this test to be meaningful";
     }
-    const size_t queue_family_index = std::distance(queue_family_properties.begin(), large_granularity_family);
+    const uint32_t queue_family_index =
+        static_cast<uint32_t>(std::distance(queue_family_properties.begin(), large_granularity_family));
     vkt::CommandPool command_pool(*m_device, queue_family_index, 0);
     vkt::CommandBuffer cb(*m_device, command_pool);
 

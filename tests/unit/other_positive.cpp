@@ -126,7 +126,7 @@ TEST_F(PositiveOther, ParameterLayerFeatures2Capture) {
 
     VkDeviceCreateInfo dev_info = vku::InitStructHelper(&features2);
     dev_info.flags = 0;
-    dev_info.queueCreateInfoCount = create_queue_infos.size();
+    dev_info.queueCreateInfoCount = size32(create_queue_infos);
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = nullptr;
@@ -427,7 +427,7 @@ TEST_F(PositiveOther, AllowedDuplicateStype) {
     VkInstance instance;
 
     VkInstanceCreateInfo ici = vku::InitStructHelper();
-    ici.enabledLayerCount = instance_layers_.size();
+    ici.enabledLayerCount = size32(instance_layers_);
     ici.ppEnabledLayerNames = instance_layers_.data();
 
     VkDebugUtilsMessengerCreateInfoEXT dbgUtils0 = vku::InitStructHelper();

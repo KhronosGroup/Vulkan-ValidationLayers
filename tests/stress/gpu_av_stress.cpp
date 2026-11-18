@@ -40,7 +40,7 @@ void StressGpuAV::InitGpuAvFramework(std::vector<VkLayerSettingEXT> layer_settin
     }
 
     VkLayerSettingsCreateInfoEXT layer_setting_ci = vku::InitStructHelper();
-    layer_setting_ci.settingCount = layer_settings.size();
+    layer_setting_ci.settingCount = size32(layer_settings);
     layer_setting_ci.pSettings = layer_settings.data();
 
     AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);

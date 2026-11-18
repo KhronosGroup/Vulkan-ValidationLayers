@@ -3084,7 +3084,7 @@ TEST_F(NegativeDynamicState, DiscardRectanglesNotSetMaxDiscardRectangles) {
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0, discard_rectangles.size() - 1, discard_rectangles.data());
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0, size32(discard_rectangles) - 1, discard_rectangles.data());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09236");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();

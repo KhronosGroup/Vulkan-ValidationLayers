@@ -28,7 +28,7 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device* device, const std::vector<
     VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper(create_pool_pnext);
     pool_ci.flags = pool_flags;
     pool_ci.maxSets = 1;
-    pool_ci.poolSizeCount = pool_sizes.size();
+    pool_ci.poolSizeCount = size32(pool_sizes);
     pool_ci.pPoolSizes = pool_sizes.data();
     VkResult err = vk::CreateDescriptorPool(device_->handle(), &pool_ci, nullptr, &pool_);
     if (err != VK_SUCCESS) {
@@ -65,19 +65,19 @@ OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device* device, co
     }
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
-    flags_create_info.bindingCount = ds_binding_flags.size();
+    flags_create_info.bindingCount = size32(ds_binding_flags);
     flags_create_info.pBindingFlags = ds_binding_flags.data();
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
     ds_layout_ci.flags = layout_flags;
-    ds_layout_ci.bindingCount = ds_layout_bindings.size();
+    ds_layout_ci.bindingCount = size32(ds_layout_bindings);
     ds_layout_ci.pBindings = ds_layout_bindings.data();
     layout_.Init(*device, ds_layout_ci);
 
     VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper(create_pool_pnext);
     pool_ci.flags = pool_flags;
     pool_ci.maxSets = 1;
-    pool_ci.poolSizeCount = pool_sizes.size();
+    pool_ci.poolSizeCount = size32(pool_sizes);
     pool_ci.pPoolSizes = pool_sizes.data();
     VkResult err = vk::CreateDescriptorPool(device_->handle(), &pool_ci, nullptr, &pool_);
     if (err != VK_SUCCESS) {
@@ -213,7 +213,7 @@ void OneOffDescriptorSet::UpdateDescriptorSets() {
             descriptor_writes[i].pNext = &info.accel_struct_info.value();
         }
     }
-    vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+    vk::UpdateDescriptorSets(device_->handle(), size32(descriptor_writes), descriptor_writes.data(), 0, NULL);
 }
 
 namespace vkt {

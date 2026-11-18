@@ -276,7 +276,7 @@ TEST_F(NegativeOther, PnextOnlyStructValidation) {
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = NULL;
-    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.enabledExtensionCount = size32(m_device_extension_names);
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
     dev_info.pNext = &features2;
     VkDevice dev;
@@ -749,7 +749,7 @@ TEST_F(NegativeOther, DuplicatePhysicalDevices) {
     create_info.pQueueCreateInfos = queue_info.Data();
     create_info.enabledLayerCount = 0;
     create_info.ppEnabledLayerNames = nullptr;
-    create_info.enabledExtensionCount = m_device_extension_names.size();
+    create_info.enabledExtensionCount = size32(m_device_extension_names);
     create_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkDevice device;

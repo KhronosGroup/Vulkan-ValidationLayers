@@ -94,7 +94,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
     ASSERT_TRUE(ds_layout.initialized());
@@ -146,7 +146,7 @@ static void test_excess_descriptors(class NegativePipelineLayout* test, const st
     }
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-    pipeline_layout_ci.setLayoutCount = ds_layouts.size();
+    pipeline_layout_ci.setLayoutCount = size32(ds_layouts);
     pipeline_layout_ci.pSetLayouts = ds_layouts.data();
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     vk::CreatePipelineLayout(dev, &pipeline_layout_ci, NULL, &pipeline_layout);
@@ -415,7 +415,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     VkResult err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -463,7 +463,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -495,7 +495,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -527,7 +527,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -559,7 +559,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -602,7 +602,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -650,7 +650,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -683,7 +683,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
 
-    ds_layout_ci.bindingCount = dslb_vec.size();
+    ds_layout_ci.bindingCount = size32(dslb_vec);
     ds_layout_ci.pBindings = dslb_vec.data();
     err = vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -940,7 +940,7 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = NULL;
-    pipeline_layout_ci.setLayoutCount = ds_vk_layouts.size();
+    pipeline_layout_ci.setLayoutCount = size32(ds_vk_layouts);
     pipeline_layout_ci.pSetLayouts = ds_vk_layouts.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00293");

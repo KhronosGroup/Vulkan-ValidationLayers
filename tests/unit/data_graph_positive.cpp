@@ -99,7 +99,7 @@ VkTensorDescriptionARM DataGraphTest::DefaultDesc() {
     static const std::vector<int64_t> dimensions{2};
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R8_SINT;
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
     desc.pStrides = nullptr;
     desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
@@ -112,7 +112,7 @@ VkTensorDescriptionARM DataGraphTest::DefaultConstantTensorDesc() {
     static std::vector<int64_t> dimensions{1, 2, 4, 4};
     desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
     desc.format = VK_FORMAT_R32_SINT;
-    desc.dimensionCount = dimensions.size();
+    desc.dimensionCount = size32(dimensions);
     desc.pDimensions = dimensions.data();
     desc.usage = VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM;
     return desc;
@@ -159,7 +159,7 @@ TEST_F(PositiveDataGraph, ExecuteDataGraph) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -207,7 +207,7 @@ TEST_F(PositiveDataGraph, DISABLED_ProtectedMemoryDataGraph) {
     std::vector<vkt::DeviceMemory> device_mem(session.BindPointsCount());
     session.AllocSessionMem(device_mem, true);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -310,7 +310,7 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     // create a pipeline layout with the required flags
     VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
     dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    dsl_ci.bindingCount = pipeline.descriptor_set_layout_bindings_.size();
+    dsl_ci.bindingCount = size32(pipeline.descriptor_set_layout_bindings_);
     dsl_ci.pBindings = pipeline.descriptor_set_layout_bindings_.data();
 
     vkt::DescriptorSetLayout dsl(*m_device, dsl_ci);
@@ -330,7 +330,7 @@ TEST_F(PositiveDataGraph, CmdDispatchDescriptorBuffer) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);
@@ -375,7 +375,7 @@ TEST_F(PositiveDataGraph, ResourceInfoImageLayoutsUnifiedImageLayouts) {
     session.AllocSessionMem(device_mem);
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
         DataGraphTest::InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
     VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
@@ -404,7 +404,7 @@ TEST_F(PositiveDataGraph, OpticalFlow) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
     VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
@@ -438,7 +438,7 @@ TEST_F(PositiveDataGraph, OpticalFlowConnectionsImageLayoutsUnifiedImageLayouts)
     session.AllocSessionMem(device_mem);
     std::vector<VkBindDataGraphPipelineSessionMemoryInfoARM> session_bind_infos =
         DataGraphTest::InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     VkDataGraphPipelineOpticalFlowDispatchInfoARM optical_flow_di = vku::InitStructHelper();
     VkDataGraphPipelineDispatchInfoARM pipeline_di = vku::InitStructHelper(&optical_flow_di);
@@ -467,7 +467,7 @@ TEST_F(PositiveDataGraph, CopyUpdateDescriptor) {
     std::vector<vkt::DeviceMemory> device_mem(bind_point_reqs.size());
     session.AllocSessionMem(device_mem);
     auto session_bind_infos = InitSessionBindInfo(session, device_mem);
-    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, session_bind_infos.size(), session_bind_infos.data());
+    vk::BindDataGraphPipelineSessionMemoryARM(*m_device, size32(session_bind_infos), session_bind_infos.data());
 
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(0, &pipeline.tensor_views_[0]->handle(), 0);
     pipeline.descriptor_set_->WriteDescriptorTensorInfo(1, &pipeline.tensor_views_[1]->handle(), 0);

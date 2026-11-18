@@ -239,7 +239,7 @@ TEST_F(PositiveTileShading, RenderPassWithResolveAttachment) {
         tile_info.tileApronSize = {0, 0};
 
         VkRenderPassCreateInfo rp_ci = vku::InitStructHelper(&tile_info);
-        rp_ci.attachmentCount = attachment_descs.size();
+        rp_ci.attachmentCount = size32(attachment_descs);
         rp_ci.pAttachments = attachment_descs.data();
         rp_ci.subpassCount = 1;
         rp_ci.pSubpasses = &subpass_desc;
@@ -297,7 +297,7 @@ TEST_F(PositiveTileShading, RenderPassWithResolveAttachment) {
         tile_info.tileApronSize = {0, 0};
 
         VkRenderPassCreateInfo2 rp_ci2 = vku::InitStructHelper(&tile_info);
-        rp_ci2.attachmentCount = attachment_descs.size();
+        rp_ci2.attachmentCount = size32(attachment_descs);
         rp_ci2.pAttachments = attachment_descs.data();
         rp_ci2.subpassCount = 1;
         rp_ci2.pSubpasses = &subpass_desc;

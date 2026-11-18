@@ -1681,7 +1681,7 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
 
     VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
     mod_list.pDrmFormatModifiers = mods.data();
-    mod_list.drmFormatModifierCount = mods.size();
+    mod_list.drmFormatModifierCount = size32(mods);
     image_create_info.pNext = &mod_list;
 
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);

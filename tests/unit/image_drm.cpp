@@ -116,7 +116,7 @@ TEST_F(NegativeImageDrm, Basic2) {
     }
 
     VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = vku::InitStructHelper();
-    drm_format_mod_list.drmFormatModifierCount = mods.size();
+    drm_format_mod_list.drmFormatModifierCount = size32(mods);
     drm_format_mod_list.pDrmFormatModifiers = mods.data();
 
     VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_mod_explicit = vku::InitStructHelper();
@@ -211,7 +211,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
     }
 
     VkImageDrmFormatModifierListCreateInfoEXT list_create_info = vku::InitStructHelper();
-    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.drmFormatModifierCount = size32(mods);
     list_create_info.pDrmFormatModifiers = mods.data();
     create_info.pNext = &list_create_info;
 
@@ -294,7 +294,7 @@ TEST_F(NegativeImageDrm, MutableFormat) {
 
     VkImageDrmFormatModifierListCreateInfoEXT mod_list = vku::InitStructHelper();
     mod_list.pDrmFormatModifiers = mods.data();
-    mod_list.drmFormatModifierCount = mods.size();
+    mod_list.drmFormatModifierCount = size32(mods);
 
     VkImageCreateInfo image_info = vku::InitStructHelper(&mod_list);
     image_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
@@ -481,7 +481,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
     }
 
     auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
-    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.drmFormatModifierCount = size32(mods);
     list_create_info.pDrmFormatModifiers = mods.data();
     create_info.pNext = &list_create_info;
 
@@ -529,7 +529,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     }
 
     auto list_create_info = vku::InitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
-    list_create_info.drmFormatModifierCount = mods.size();
+    list_create_info.drmFormatModifierCount = size32(mods);
     list_create_info.pDrmFormatModifiers = mods.data();
     create_info.pNext = &list_create_info;
 

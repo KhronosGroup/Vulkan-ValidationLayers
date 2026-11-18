@@ -3192,7 +3192,7 @@ TEST_F(NegativeDeviceGeneratedCommands, LayoutAndHeapFlag) {
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT | VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+    pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
     pipe.gp_ci_.pStages = pipe.shader_stages_.data();
     pipe.CreateGraphicsPipeline(false);
 

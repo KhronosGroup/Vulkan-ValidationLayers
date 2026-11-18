@@ -538,7 +538,7 @@ TEST_F(PositiveBestPractices, CreateDeviceWithFeatures) {
     const char* portability_extension = VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME;
 
     VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.queueCreateInfoCount = create_queue_infos.size();
+    device_ci.queueCreateInfoCount = size32(create_queue_infos);
     device_ci.pQueueCreateInfos = create_queue_infos.data();
     device_ci.enabledLayerCount = 0;
     device_ci.ppEnabledLayerNames = nullptr;

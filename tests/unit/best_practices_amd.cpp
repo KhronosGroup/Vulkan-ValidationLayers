@@ -96,7 +96,7 @@ TEST_F(NegativeBestPracticesAMD, UsageConcurentRT) {
 
     std::vector<uint32_t> queueFamilies(m_device->Physical().queue_properties_.size());
     for (size_t i = 0; i < m_device->Physical().queue_properties_.size(); i++) {
-        queueFamilies[i] = i;
+        queueFamilies[i] = static_cast<uint32_t>(i);
     }
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);

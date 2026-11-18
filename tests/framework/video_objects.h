@@ -3436,7 +3436,7 @@ class VkVideoLayerTest : public VkLayerTest {
 
     uint32_t FindQueueFamilySupportingCodecOp(VkVideoCodecOperationFlagBitsKHR codec_op) {
         uint32_t qfi = VK_QUEUE_FAMILY_IGNORED;
-        for (size_t i = 0; i < queue_family_video_props_.size(); ++i) {
+        for (uint32_t i = 0; i < queue_family_video_props_.size(); ++i) {
             if (queue_family_video_props_[i].videoCodecOperations & codec_op) {
                 qfi = i;
                 break;

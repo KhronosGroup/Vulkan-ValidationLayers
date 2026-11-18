@@ -2694,7 +2694,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DualShaderLibraryDuplicateLayoutsDyna
     combined_lib.gp_ci_.subpass = 0;
     combined_lib.gp_ci_.layout = pipeline_layout_lib;
     combined_lib.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    combined_lib.gp_ci_.stageCount = combined_lib.shader_stages_.size();
+    combined_lib.gp_ci_.stageCount = size32(combined_lib.shader_stages_);
     combined_lib.gp_ci_.pStages = combined_lib.shader_stages_.data();
     combined_lib.CreateGraphicsPipeline(false);
 
@@ -2777,7 +2777,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DualShaderLibraryDuplicateLayoutsImmu
     combined_lib.gp_ci_.subpass = 0;
     combined_lib.gp_ci_.layout = pipeline_layout_lib;
     combined_lib.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    combined_lib.gp_ci_.stageCount = combined_lib.shader_stages_.size();
+    combined_lib.gp_ci_.stageCount = size32(combined_lib.shader_stages_);
     combined_lib.gp_ci_.pStages = combined_lib.shader_stages_.data();
     combined_lib.CreateGraphicsPipeline(false);
 

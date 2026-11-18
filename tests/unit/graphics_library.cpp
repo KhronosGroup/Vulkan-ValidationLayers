@@ -376,7 +376,7 @@ TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
     {
         CreatePipelineHelper pipe(*this);
         pipe.gp_ci_.layout = VK_NULL_HANDLE;
-        pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+        pipe.gp_ci_.stageCount = size32(pipe.shader_stages_);
         pipe.gp_ci_.pStages = pipe.shader_stages_.data();
 
         m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-06602");

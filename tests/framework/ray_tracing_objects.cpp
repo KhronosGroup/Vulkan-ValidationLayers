@@ -1198,7 +1198,7 @@ GeometryKHR GeometrySimpleOnDeviceIndexedTriangleInfo(const vkt::Device& device,
     // Fill vertex and index buffers with one triangle
     // Warning: Changing vertices will break some tests implicitly
     // relying on this
-    triangle_geometry.SetPrimitiveCount(triangles_count);
+    triangle_geometry.SetPrimitiveCount(static_cast<uint32_t>(triangles_count));
     constexpr std::array vertices = {// Vertex 0
                                      10.0f, 10.0f, 0.0f,
                                      // Vertex 1
@@ -2247,7 +2247,7 @@ void Pipeline::BuildPipeline() {
 
         VkRayTracingShaderGroupCreateInfoKHR raygen_group_ci = vku::InitStructHelper();
         raygen_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        raygen_group_ci.generalShader = pipeline_stage_cis.size() - 1;
+        raygen_group_ci.generalShader = size32(pipeline_stage_cis) - 1;
         raygen_group_ci.closestHitShader = VK_SHADER_UNUSED_KHR;
         raygen_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
         raygen_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -2263,7 +2263,7 @@ void Pipeline::BuildPipeline() {
 
         VkRayTracingShaderGroupCreateInfoKHR miss_group_ci = vku::InitStructHelper();
         miss_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        miss_group_ci.generalShader = pipeline_stage_cis.size() - 1;
+        miss_group_ci.generalShader = size32(pipeline_stage_cis) - 1;
         miss_group_ci.closestHitShader = VK_SHADER_UNUSED_KHR;
         miss_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
         miss_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -2282,7 +2282,7 @@ void Pipeline::BuildPipeline() {
         }
 
         hit_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-        hit_group_ci.closestHitShader = pipeline_stage_cis.size() - 1;
+        hit_group_ci.closestHitShader = size32(pipeline_stage_cis) - 1;
         hit_group_ci.generalShader = VK_SHADER_UNUSED_KHR;
         hit_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
         hit_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -2296,7 +2296,7 @@ void Pipeline::BuildPipeline() {
             pipeline_stage_cis.emplace_back(intersection_stage_ci);
 
             hit_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
-            hit_group_ci.intersectionShader = pipeline_stage_cis.size() - 1;
+            hit_group_ci.intersectionShader = size32(pipeline_stage_cis) - 1;
         }
 
         shader_group_cis_.emplace_back(hit_group_ci);
@@ -2311,7 +2311,7 @@ void Pipeline::BuildPipeline() {
 
         VkRayTracingShaderGroupCreateInfoKHR callable_group_ci = vku::InitStructHelper();
         callable_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        callable_group_ci.generalShader = pipeline_stage_cis.size() - 1;
+        callable_group_ci.generalShader = size32(pipeline_stage_cis) - 1;
         callable_group_ci.closestHitShader = VK_SHADER_UNUSED_KHR;
         callable_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
         callable_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -2995,7 +2995,7 @@ std::vector<uint8_t> Pipeline::GetRayTracingCaptureReplayShaderGroupHandles() {
     // Get shader group handles to fill ray gen shader binding table (SBT)
     const uint32_t handle_size_aligned =
         Align(rt_pipeline_props.shaderGroupHandleCaptureReplaySize, rt_pipeline_props.shaderGroupHandleAlignment);
-    const uint32_t sbt_size = shader_group_cis_.size() * handle_size_aligned;
+    const uint32_t sbt_size = size32(shader_group_cis_) * handle_size_aligned;
     std::vector<uint8_t> sbt_host_storage(sbt_size);
 
     const VkResult result =

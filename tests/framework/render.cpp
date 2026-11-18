@@ -289,7 +289,7 @@ void VkRenderFramework::InitFramework(void* instance_pnext) {
             if (device_type_rank[tmp_props.deviceType] > device_type_rank[physDevProps_.deviceType]) {
                 physDevProps_ = tmp_props;
                 gpu_ = phys_devices[i];
-                m_gpu_index = i;
+                m_gpu_index = static_cast<uint32_t>(i);
             }
         }
     }
@@ -1206,7 +1206,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView* ds
     subpass.pPreserveAttachments = NULL;
 
     VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
-    rp_info.attachmentCount = attachment_descriptions.size();
+    rp_info.attachmentCount = size32(attachment_descriptions);
     rp_info.pAttachments = attachment_descriptions.data();
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &subpass;
@@ -1215,14 +1215,14 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView* ds
 
     vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
 
-    m_framebuffer = new vkt::Framebuffer(*m_device, m_renderPass, m_framebuffer_attachments.size(),
+    m_framebuffer = new vkt::Framebuffer(*m_device, m_renderPass, size32(m_framebuffer_attachments),
                                          m_framebuffer_attachments.data(), m_width, m_height);
 
     m_renderPassBeginInfo.renderPass = m_renderPass;
     m_renderPassBeginInfo.framebuffer = m_framebuffer->handle();
     m_renderPassBeginInfo.renderArea.extent.width = m_width;
     m_renderPassBeginInfo.renderArea.extent.height = m_height;
-    m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();
+    m_renderPassBeginInfo.clearValueCount = size32(m_renderPassClearValues);
     m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 }
 
