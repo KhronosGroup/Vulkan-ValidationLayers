@@ -215,6 +215,7 @@ class VkRenderFramework : public VkTestFramework {
     // Then all required features and supported optional features are used for device creation.
     vkt::FeatureRequirements requested_features_;
     bool all_queue_count_ = false;
+    bool protected_memory_ = false;
 
     uint32_t m_gpu_index;
     vkt::Device *m_device;
