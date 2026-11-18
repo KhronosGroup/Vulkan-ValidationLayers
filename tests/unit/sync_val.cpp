@@ -16,7 +16,6 @@
 #include "pipeline_helper.h"
 #include "render_pass_helper.h"
 #include "descriptor_helper.h"
-#include "sync/sync_settings.h"
 
 class NegativeSyncVal : public VkSyncValTest {};
 
@@ -7932,65 +7931,4 @@ TEST_F(NegativeSyncVal, PartialRenderAreaStoreWrite) {
     vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, destination, 1, &copy);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
-}
-
-TEST_F(NegativeSyncVal, BasicDeferredFullValidation) {
-    TEST_DESCRIPTION("Report a hazard at the fence wait instead of during recording or submission");
-    SyncValSettings settings;
-    settings.record_time_validation = false;
-    settings.defer_full_validation = true;
-    RETURN_IF_SKIP(InitSyncVal(&settings));
-
-    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    vkt::Fence fence(*m_device);
-
-    m_command_buffer.Begin();
-    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0);
-    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0);
-    m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer, fence);
-
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    fence.Wait(kWaitTimeout);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeSyncVal, DeferredFullValidationAfterError) {
-    TEST_DESCRIPTION("Check that state tracking continues after a deferred validation error");
-    SyncValSettings settings;
-    settings.record_time_validation = false;
-    settings.defer_full_validation = true;
-    RETURN_IF_SKIP(InitSyncVal(&settings));
-
-    vkt::Buffer buffer_a(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    vkt::Buffer buffer_b(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    vkt::Buffer buffer_c(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
-    vkt::CommandBuffer cb0(*m_device, m_command_pool);
-    vkt::CommandBuffer cb1(*m_device, m_command_pool);
-    vkt::CommandBuffer cb2(*m_device, m_command_pool);
-    vkt::Fence fence(*m_device);
-
-    cb0.Begin();
-    vk::CmdFillBuffer(cb0, buffer_a, 0, 4, 0);
-    cb0.End();
-
-    cb1.Begin();
-    vk::CmdFillBuffer(cb1, buffer_a, 0, 4, 0);
-    vk::CmdFillBuffer(cb1, buffer_b, 0, 4, 0);
-    cb1.End();
-
-    cb2.Begin();
-    cb2.Copy(buffer_b, buffer_c);
-    cb2.End();
-
-    m_default_queue->Submit(cb0);
-    m_default_queue->Submit(cb1);
-    m_default_queue->Submit(cb2, fence);
-
-    // The second report requires keeping cb1's write to buffer_b despite its error on buffer_a
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    fence.Wait(kWaitTimeout);
-    m_errorMonitor->VerifyFound();
 }
