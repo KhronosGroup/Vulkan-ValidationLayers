@@ -252,7 +252,16 @@ bool AcquireNextImageCommand::Execute(SyncValidator& validator) const {
     return false;
 }
 
-QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits,
+static void AddSemaphore(const SyncValidator& validator, small_vector<SemaphoreSubmitInfo, 1>& semaphores, VkSemaphore semaphore,
+                         uint64_t value, VkPipelineStageFlags2 stage_mask) {
+    if (const auto semaphore_state = validator.Get<vvl::Semaphore>(semaphore)) {
+        semaphores.emplace_back(SemaphoreSubmitInfo{semaphore, value, stage_mask, semaphore_state->initial_value,
+                                                    semaphore_state->type,
+                                                    semaphore_state->Scope() != vvl::Semaphore::Scope::kInternal});
+    }
+}
+
+QueueSubmitCommand::QueueSubmitCommand(const SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits,
                                        VkFence fence, vvl::Func submit_func)
     : ready(!validator.defer_full_validation_),
       queue_id(queue_id),
@@ -265,13 +274,7 @@ QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_i
 
         batch.waits.reserve(submit.waitSemaphoreInfoCount);
         for (const auto& wait : vvl::make_span(submit.pWaitSemaphoreInfos, submit.waitSemaphoreInfoCount)) {
-            const auto semaphore_state = validator.Get<vvl::Semaphore>(wait.semaphore);
-            if (!semaphore_state) {
-                continue;
-            }
-            batch.waits.emplace_back(SemaphoreSubmitInfo{wait.semaphore, wait.value, wait.stageMask, semaphore_state->initial_value,
-                                                         semaphore_state->type,
-                                                         semaphore_state->Scope() != vvl::Semaphore::Scope::kInternal});
+            AddSemaphore(validator, batch.waits, wait.semaphore, wait.value, wait.stageMask);
         }
 
         batch.recordings.reserve(submit.commandBufferInfoCount);
@@ -283,13 +286,32 @@ QueueSubmitCommand::QueueSubmitCommand(SyncValidator& validator, QueueId queue_i
 
         batch.signals.reserve(submit.signalSemaphoreInfoCount);
         for (const auto& signal : vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount)) {
-            const auto semaphore_state = validator.Get<vvl::Semaphore>(signal.semaphore);
-            if (!semaphore_state) {
-                continue;
-            }
-            batch.signals.emplace_back(SemaphoreSubmitInfo{signal.semaphore, signal.value, signal.stageMask,
-                                                           semaphore_state->initial_value, semaphore_state->type,
-                                                           semaphore_state->Scope() != vvl::Semaphore::Scope::kInternal});
+            AddSemaphore(validator, batch.signals, signal.semaphore, signal.value, signal.stageMask);
+        }
+    }
+}
+
+// TODO: SyncVal uses vkQueueSubmit scopes for sparse bind semaphore and fence operations.
+// This can hide a hazard when an application relies on a sparse bind signal to synchronize
+// earlier command buffer accesses on the same queue without an explicit dependency
+QueueSubmitCommand::QueueSubmitCommand(const SyncValidator& validator, QueueId queue_id, vvl::span<const VkBindSparseInfo> binds,
+                                       VkFence fence, vvl::Func submit_func)
+    : ready(!validator.defer_full_validation_), queue_id(queue_id), fence(fence), submit_func(submit_func) {
+    batches.reserve(binds.size());
+    for (const VkBindSparseInfo& bind : binds) {
+        SubmitBatch& batch = batches.emplace_back();
+        const auto* timeline = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(bind.pNext);
+
+        batch.waits.reserve(bind.waitSemaphoreCount);
+        for (uint32_t i = 0; i < bind.waitSemaphoreCount; ++i) {
+            const uint64_t value = (timeline && i < timeline->waitSemaphoreValueCount) ? timeline->pWaitSemaphoreValues[i] : 0;
+            AddSemaphore(validator, batch.waits, bind.pWaitSemaphores[i], value, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
+        }
+
+        batch.signals.reserve(bind.signalSemaphoreCount);
+        for (uint32_t i = 0; i < bind.signalSemaphoreCount; ++i) {
+            const uint64_t value = (timeline && i < timeline->signalSemaphoreValueCount) ? timeline->pSignalSemaphoreValues[i] : 0;
+            AddSemaphore(validator, batch.signals, bind.pSignalSemaphores[i], value, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
         }
     }
 }

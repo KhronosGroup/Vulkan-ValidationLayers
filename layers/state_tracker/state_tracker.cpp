@@ -1743,6 +1743,10 @@ void DeviceState::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
 
     std::vector<QueueSubmission> submissions;
     submissions.reserve(bindInfoCount);
+    if (bindInfoCount == 0) {
+        QueueSubmission& submission = submissions.emplace_back(record_obj.location);
+        submission.AddFence(Get<Fence>(fence));
+    }
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const VkBindSparseInfo& bind_info = pBindInfo[bind_idx];
         // Track objects tied to memory

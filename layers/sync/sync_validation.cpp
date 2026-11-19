@@ -75,7 +75,8 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
         return;
     }
     const vvl::Func function = submission.loc.Get().function;
-    if (IsValueIn(function, {vvl::Func::vkQueueSubmit, vvl::Func::vkQueueSubmit2, vvl::Func::vkQueueSubmit2KHR})) {
+    if (IsValueIn(function, {vvl::Func::vkQueueSubmit, vvl::Func::vkQueueSubmit2, vvl::Func::vkQueueSubmit2KHR,
+                             vvl::Func::vkQueueBindSparse})) {
         // When enabled, GPU-AV's Retire callback processes the results before this callback runs
         auto lock = validator_.WriteLock();
         for (QueueCommand& command : validator_.queue_commands_) {
@@ -396,6 +397,12 @@ QueueId SyncValidator::GetQueueId(VkQueue queue) const {
 }
 
 QueueState& SyncValidator::GetQueueState(QueueId queue_id) {
+    assert(queue_id != kQueueIdInvalid);
+    assert(queue_id < queue_id_limit_);
+    return queue_states_[queue_id];
+}
+
+const QueueState& SyncValidator::GetQueueState(QueueId queue_id) const {
     assert(queue_id != kQueueIdInvalid);
     assert(queue_id < queue_id_limit_);
     return queue_states_[queue_id];
@@ -2419,37 +2426,9 @@ void SyncValidator::RecordAcquireNextImageState(VkSwapchainKHR swapchain, VkSema
 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                                const ErrorObject& error_obj) const {
-    bool skip = false;
     if (!syncval_settings.full_validation) {
-        return skip;
+        return false;
     }
-
-    SubmitInfoArrayConverter submit_info(pSubmits, submitCount);
-    const VkSubmitInfo2* submits = submit_info.submit_infos2.data();
-
-    std::lock_guard lock_guard(queue_mutex_);
-    skip |= const_cast<SyncValidator*>(this)->ProcessQueueSubmit(queue, submitCount, submits, fence, error_obj);
-    return skip;
-}
-
-bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                                const ErrorObject& error_obj) const {
-    bool skip = false;
-    if (!syncval_settings.full_validation) {
-        return skip;
-    }
-    std::lock_guard lock_guard(queue_mutex_);
-    skip |= const_cast<SyncValidator*>(this)->ProcessQueueSubmit(queue, submitCount, pSubmits, fence, error_obj);
-    return skip;
-}
-
-bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
-                                                   VkFence fence, const ErrorObject& error_obj) const {
-    return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
-}
-
-bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                       const ErrorObject& error_obj) {
     const QueueId queue_id = GetQueueId(queue);
     if (queue_id == kQueueIdInvalid) {
         return false;
@@ -2457,7 +2436,59 @@ bool SyncValidator::ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, cons
     if (fence != VK_NULL_HANDLE && !Get<vvl::Fence>(fence)) {
         fence = VK_NULL_HANDLE;
     }
-    QueueSubmitCommand command(*this, queue_id, vvl::make_span(pSubmits, submitCount), fence, error_obj.location.function);
+
+    const SubmitInfoArrayConverter submit_info(pSubmits, submitCount);
+
+    std::lock_guard lock_guard(queue_mutex_);
+    SyncValidator& validator = *const_cast<SyncValidator*>(this);
+    QueueSubmitCommand command(validator, queue_id, vvl::make_span(submit_info.submit_infos2), fence, error_obj.location.function);
+    return validator.ProcessQueueSubmit(std::move(command));
+}
+
+bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+                                                const ErrorObject& error_obj) const {
+    if (!syncval_settings.full_validation) {
+        return false;
+    }
+    const QueueId queue_id = GetQueueId(queue);
+    if (queue_id == kQueueIdInvalid) {
+        return false;
+    }
+    if (fence != VK_NULL_HANDLE && !Get<vvl::Fence>(fence)) {
+        fence = VK_NULL_HANDLE;
+    }
+
+    std::lock_guard lock_guard(queue_mutex_);
+    SyncValidator& validator = *const_cast<SyncValidator*>(this);
+    QueueSubmitCommand command(validator, queue_id, vvl::make_span(pSubmits, submitCount), fence, error_obj.location.function);
+    return validator.ProcessQueueSubmit(std::move(command));
+}
+
+bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
+                                                   VkFence fence, const ErrorObject& error_obj) const {
+    return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
+}
+
+bool SyncValidator::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                                   VkFence fence, const ErrorObject& error_obj) const {
+    if (!syncval_settings.full_validation) {
+        return false;
+    }
+    const QueueId queue_id = GetQueueId(queue);
+    if (queue_id == kQueueIdInvalid) {
+        return false;
+    }
+    if (fence != VK_NULL_HANDLE && !Get<vvl::Fence>(fence)) {
+        fence = VK_NULL_HANDLE;
+    }
+
+    std::lock_guard lock_guard(queue_mutex_);
+    SyncValidator& validator = *const_cast<SyncValidator*>(this);
+    QueueSubmitCommand command(validator, queue_id, vvl::make_span(pBindInfo, bindInfoCount), fence, error_obj.location.function);
+    return validator.ProcessQueueSubmit(std::move(command));
+}
+
+bool SyncValidator::ProcessQueueSubmit(QueueSubmitCommand&& command) {
     const bool skip = ProcessQueueCommand(std::move(command));
     if (defer_full_validation_) {
         pending_submit = &std::get<QueueSubmitCommand>(queue_commands_.back());
