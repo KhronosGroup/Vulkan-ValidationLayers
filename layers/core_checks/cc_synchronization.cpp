@@ -2467,7 +2467,15 @@ void CoreChecks::RecordBarrierValidationInfo(const Location& barrier_loc, vvl::C
                                              QFOTransferBarrierSets<QFOImageTransferBarrier>& barrier_sets) {
     if (IsOwnershipTransfer(barrier)) {
         ImageBarrier adjusted_barrier = barrier;
-        adjusted_barrier.subresourceRange = image_state.NormalizeSubresourceRange(barrier.subresourceRange);
+        VkImageSubresourceRange& range = adjusted_barrier.subresourceRange;
+
+        // TODO: Drop this once NormalizeImageLayoutRange expands REMAINING using the depth at baseMipLevel
+        // and 3d layout transitions use each mip's depth to determine its slice count
+        if (image_state.can_transition_depth_slices && range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+            range.layerCount = GetEffectiveLayerCount(range, image_state.GetEffectiveSubresourceExtent(range).depth);
+        }
+
+        range = image_state.NormalizeImageLayoutRange(range);
 
         if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
             barrier_sets.release.emplace(adjusted_barrier);

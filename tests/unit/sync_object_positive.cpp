@@ -3075,3 +3075,65 @@ TEST_F(PositiveSyncObject, RenderPassBarrier) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncObject, ImageOwnershipTransferNormalize3dSlices) {
+    TEST_DESCRIPTION("Match explicit and REMAINING depth slices in ownership transfers");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is not present";
+    }
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {4, 4, 4};
+    image_ci.mipLevels = 2;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if (!IsImageFormatSupported(Gpu(), image_ci, 0)) {
+        GTEST_SKIP() << "3D array-compatible transfer image is not supported";
+    }
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.srcQueueFamilyIndex = transfer_queue->family_index;
+    barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    barrier.image = image;
+
+    // Release barriers specify explicit layer count
+    vkt::CommandPool release_pool(*m_device, transfer_queue->family_index);
+    vkt::CommandBuffer release_cb(*m_device, release_pool);
+    release_cb.Begin();
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4};  // all 4 slices in mip 0
+    release_cb.Barrier(barrier);
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 2};  // all 2 slices in mip 1
+    release_cb.Barrier(barrier);
+    release_cb.End();
+
+    // Acquire barriers use REMAINING constant to specify the same layers
+    m_command_buffer.Begin();
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS};
+    m_command_buffer.Barrier(barrier);
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, VK_REMAINING_ARRAY_LAYERS};
+    m_command_buffer.Barrier(barrier);
+    m_command_buffer.End();
+
+    vkt::Semaphore semaphore(*m_device);
+    transfer_queue->Submit2(release_cb, vkt::Signal(semaphore));
+    m_default_queue->Submit2(m_command_buffer, vkt::Wait(semaphore));
+    m_device->Wait();
+}
