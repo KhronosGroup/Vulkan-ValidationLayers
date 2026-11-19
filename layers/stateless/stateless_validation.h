@@ -508,6 +508,9 @@ class Device : public vvl::BaseDevice {
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                         const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                         const RecordObject &record_obj) override;
+    void PostCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
+                                         const RecordObject& record_obj) override;
     void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                             const RecordObject &record_obj) override;
