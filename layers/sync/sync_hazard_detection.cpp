@@ -373,17 +373,18 @@ HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image& image, co
                                                      AccessContext::DetectOptions options) const {
     EventBarrierHazardDetector detector(SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope, scope_map,
                                         queue_id, scope_tag);
+    // TODO: Use MakeBarrierRangeGen once VK_REMAINING_ARRAY_LAYERS is expanded using the selected mip's depth
     ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, false);
     return DetectHazardGeneratedRangeGen(detector, range_gen, options);
 }
 
 HazardResult AccessContext::DetectImageBarrierHazard(const vvl::Image& image, VkPipelineStageFlags2 src_exec_scope,
                                                      const SyncAccessFlags& src_access_scope,
-                                                     const VkImageSubresourceRange& subresource_range, bool is_depth_sliced,
-                                                     const DetectOptions options, QueueId queue_id) const {
+                                                     const VkImageSubresourceRange& subresource_range, const DetectOptions options,
+                                                     QueueId queue_id) const {
     BarrierHazardDetector detector(*this, SyncAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope,
                                    queue_id);
-    ImageRangeGen range_gen = SubState(image).MakeImageRangeGen(subresource_range, is_depth_sliced);
+    ImageRangeGen range_gen = SubState(image).MakeBarrierRangeGen(subresource_range);
     return DetectHazardGeneratedRangeGen(detector, range_gen, options);
 }
 

@@ -40,6 +40,9 @@ class ImageSubState : public vvl::ImageSubState {
                                     uint32_t view_mask) const;
     ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange& subresource_range, const VkOffset3D& offset,
                                     const VkExtent3D& extent, bool is_depth_sliced) const;
+    ImageRangeGen MakeBarrierRangeGen(const VkImageSubresourceRange& subresource_range) const {
+        return MakeImageRangeGen(subresource_range, base.can_transition_depth_slices);
+    }
 
   protected:
     VkDeviceSize opaque_base_address_ = 0U;

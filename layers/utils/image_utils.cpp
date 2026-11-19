@@ -19,7 +19,6 @@
 #include "containers/range.h"
 #include "utils/math_utils.h"
 #include "generated/vk_extension_helper.h"
-#include "generated/device_features.h"
 
 #include <algorithm>
 #include <sstream>
@@ -312,11 +311,6 @@ bool IsDepthSliceView(VkImageType imageType, VkImageCreateFlags2KHR imageCreateF
     const bool image_supports_depth_slice_view = imageType == VK_IMAGE_TYPE_3D && (imageCreateFlags & depth_slice_view_flags) != 0;
 
     return image_supports_depth_slice_view && (view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
-}
-
-bool CanTransitionDepthSlices(const DeviceFeatures& features, VkImageType imageType, VkImageCreateFlags2KHR imageCreateFlags) {
-    return features.maintenance9 && imageType == VK_IMAGE_TYPE_3D &&
-           (imageCreateFlags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0;
 }
 
 // Compatibility is defined in Vulkan spec Table 2 "Image Type and Image View Type Compatibility

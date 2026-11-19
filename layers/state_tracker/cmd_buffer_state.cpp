@@ -39,7 +39,6 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
 #include "utils/assert_utils.h"
-#include "utils/image_utils.h"
 #include "containers/container_utils.h"
 
 // Submit time validation helper. Since CmdBeginRendering is itself an action command,
@@ -2040,8 +2039,7 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image& image_state, const V
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
         VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(subresource_range);
 
-        if (depth_extent != 0 &&
-            CanTransitionDepthSlices(dev_data.enabled_features, image_state.GetImageType(), image_state.create_flags)) {
+        if (depth_extent != 0 && image_state.can_transition_depth_slices) {
             normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
             normalized_subresource_range.layerCount = depth_extent;
         }

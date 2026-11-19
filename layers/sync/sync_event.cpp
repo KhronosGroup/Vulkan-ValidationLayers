@@ -21,7 +21,6 @@
 #include "sync_validation.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/event_state.h"
-#include "utils/image_utils.h"
 #include "utils/text_utils.h"
 
 namespace syncval {
@@ -439,10 +438,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
             }
         }
         for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
-            const auto& sub_state = SubState(*barrier.image);
-            const bool can_transition_depth_slices = CanTransitionDepthSlices(
-                env.validator.enabled_features, sub_state.base.GetImageType(), sub_state.base.create_flags);
-            ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
+            auto range_gen = SubState(*barrier.image).MakeBarrierRangeGen(barrier.subresource_range);
             EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
             ApplyMarkupFunctor markup_action(barrier.IsLayoutTransition());
             if (barrier.IsLayoutTransition()) {
@@ -499,10 +495,7 @@ void ApplyCmdWaitEvents(SyncEnvironment& env, AccessContext& access_context,
             CollectBarriersFunctor collect_barriers(access_context, barrier_scope, event_barrier, barrier.IsLayoutTransition(),
                                                     barrier.handle_index, pending_barriers);
 
-            const auto& sub_state = SubState(*barrier.image);
-            const bool can_transition_depth_slices = CanTransitionDepthSlices(
-                env.validator.enabled_features, sub_state.base.GetImageType(), sub_state.base.create_flags);
-            ImageRangeGen range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
+            auto range_gen = SubState(*barrier.image).MakeBarrierRangeGen(barrier.subresource_range);
             EventImageRangeGenerator filtered_range_gen(sync_event->FirstScope(), range_gen);
 
             if (barrier.IsLayoutTransition()) {

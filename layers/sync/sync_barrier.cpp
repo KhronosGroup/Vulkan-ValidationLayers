@@ -20,7 +20,6 @@
 #include "sync_validation.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
-#include "utils/image_utils.h"
 #include "utils/sync_utils.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -435,17 +434,13 @@ static void ApplySingleBufferBarrier(QueueId queue_id, AccessContext& access_con
     access_context.RegisterGlobalBarrier(exec_dep_barrier, queue_id);
 }
 
-static void ApplySingleImageBarrier(const DeviceFeatures& features, QueueId queue_id, AccessContext& access_context,
-                                    const SyncImageBarrier& image_barrier, const SyncBarrier& exec_dep_barrier,
-                                    ResourceUsageTag tag) {
+static void ApplySingleImageBarrier(QueueId queue_id, AccessContext& access_context, const SyncImageBarrier& image_barrier,
+                                    const SyncBarrier& exec_dep_barrier, ResourceUsageTag tag) {
     const BarrierScope barrier_scope(image_barrier.barrier, queue_id);
     ApplySingleImageBarrierFunctor apply_barrier(access_context, barrier_scope, image_barrier.barrier,
                                                  image_barrier.IsLayoutTransition(), image_barrier.handle_index, tag);
 
-    const auto& sub_state = SubState(*image_barrier.image);
-    const bool can_transition_depth_slices =
-        CanTransitionDepthSlices(features, sub_state.base.GetImageType(), sub_state.base.create_flags);
-    auto range_gen = sub_state.MakeImageRangeGen(image_barrier.subresource_range, can_transition_depth_slices);
+    auto range_gen = SubState(*image_barrier.image).MakeBarrierRangeGen(image_barrier.subresource_range);
 
     access_context.UpdateMemoryAccessState(apply_barrier, range_gen);
     access_context.RegisterGlobalBarrier(exec_dep_barrier, queue_id);
@@ -459,8 +454,8 @@ static void ApplySingleMemoryBarrier(QueueId queue_id, AccessContext& access_con
 // Collects barrier effects in PendingBarriers, then applies them.
 // This ensures multiple barriers are applied independently of each other.
 //
-static void ApplyMultipleBarriers(const DeviceFeatures& features, QueueId queue_id, AccessContext& access_context,
-                                  const BarrierSet& barrier_set, ResourceUsageTag tag) {
+static void ApplyMultipleBarriers(QueueId queue_id, AccessContext& access_context, const BarrierSet& barrier_set,
+                                  ResourceUsageTag tag) {
     // Apply markup action.
     // Markup splits entries at barrier boundaries and fills map gaps and absent outside spans for
     // layout transitions. This finalizes the map structure before collecting access state pointers
@@ -478,10 +473,7 @@ static void ApplyMultipleBarriers(const DeviceFeatures& features, QueueId queue_
         }
     }
     for (const SyncImageBarrier& barrier : barrier_set.image_barriers) {
-        const auto& sub_state = SubState(*barrier.image);
-        const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(features, sub_state.base.GetImageType(), sub_state.base.create_flags);
-        auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
+        auto range_gen = SubState(*barrier.image).MakeBarrierRangeGen(barrier.subresource_range);
         ApplyMarkupFunctor markup_action(barrier.IsLayoutTransition());
         access_context.UpdateMemoryAccessState(markup_action, range_gen);
     }
@@ -505,10 +497,7 @@ static void ApplyMultipleBarriers(const DeviceFeatures& features, QueueId queue_
         CollectBarriersFunctor collect_barriers(access_context, barrier_scope, barrier.barrier, barrier.IsLayoutTransition(),
                                                 barrier.handle_index, pending_barriers);
 
-        const auto& sub_state = SubState(*barrier.image);
-        const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(features, sub_state.base.GetImageType(), sub_state.base.create_flags);
-        auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, can_transition_depth_slices);
+        auto range_gen = SubState(*barrier.image).MakeBarrierRangeGen(barrier.subresource_range);
 
         access_context.UpdateMemoryAccessState(collect_barriers, range_gen);
     }
@@ -554,11 +543,11 @@ void ApplyBarrier(SyncEnvironment& env, AccessContext& access_context, const Bar
     } else if (single_image_barrier) {
         const SyncImageBarrier& image_barrier = barrier_set.image_barriers[0];
         const SyncBarrier& exec_dep_barrier = barrier_set.memory_barriers[0];
-        ApplySingleImageBarrier(env.validator.enabled_features, env.queue_id, access_context, image_barrier, exec_dep_barrier, tag);
+        ApplySingleImageBarrier(env.queue_id, access_context, image_barrier, exec_dep_barrier, tag);
     } else if (single_memory_barrier) {
         ApplySingleMemoryBarrier(env.queue_id, access_context, barrier_set.memory_barriers[0]);
     } else {
-        ApplyMultipleBarriers(env.validator.enabled_features, env.queue_id, access_context, barrier_set, tag);
+        ApplyMultipleBarriers(env.queue_id, access_context, barrier_set, tag);
     }
 
     if (barrier_set.single_exec_scope) {
