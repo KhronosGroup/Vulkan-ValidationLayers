@@ -1080,10 +1080,11 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(create_info.pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0 &&
                                              feedback_struct->pipelineStageCreationFeedbackCount != create_info.stageCount)) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pipelineStageCreationFeedbackCount-06594", device,
-                             create_info_loc.pNext(Struct::VkPipelineCreationFeedback, Field::pipelineStageCreationFeedbackCount),
-                             "(%" PRIu32 ") is different than stageCount(%" PRIu32 ").",
-                             feedback_struct->pipelineStageCreationFeedbackCount, create_info.stageCount);
+            skip |= LogError(
+                "VUID-VkGraphicsPipelineCreateInfo-pipelineStageCreationFeedbackCount-06594", device,
+                create_info_loc.pNext(Struct::VkPipelineCreationFeedbackCreateInfo, Field::pipelineStageCreationFeedbackCount),
+                "(%" PRIu32 ") is different than stageCount(%" PRIu32 ").", feedback_struct->pipelineStageCreationFeedbackCount,
+                create_info.stageCount);
         }
 
         // helpers for bool used multiple times below
