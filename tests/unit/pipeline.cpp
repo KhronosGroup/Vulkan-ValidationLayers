@@ -4467,3 +4467,22 @@ TEST_F(NegativePipeline, GetModelPipelineCacheData) {
     vk::GetPipelineCacheData(device(), cache, &size, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipeline, InvalidLogicOpRenderPass2) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::logicOp);
+    RETURN_IF_SKIP(Init());
+
+    RenderPass2SingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.CreateRenderPass();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.renderPass = rp;
+    pipe.cb_ci_.logicOpEnable = VK_TRUE;
+    pipe.cb_ci_.logicOp = VK_LOGIC_OP_MAX_ENUM;
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00607");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
