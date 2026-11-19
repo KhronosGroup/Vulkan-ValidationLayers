@@ -56,6 +56,9 @@ class Instance : public vvl::InstanceProxy {
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
                                                     const RecordObject& record_obj) final;
+    void PostCallRecordGetPhysicalDeviceProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                       VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
+                                                       const RecordObject& record_obj) final;
 
     void InternalWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
     void AdjustmentWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;

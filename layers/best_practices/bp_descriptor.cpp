@@ -163,6 +163,14 @@ bool BestPractices::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice devic
     return skip;
 }
 
+bool BestPractices::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device,
+                                                                     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
+                                                                     const VkAllocationCallbacks* pAllocator,
+                                                                     VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
+                                                                     const ErrorObject& error_obj) const {
+    return PreCallValidateCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, error_obj);
+}
+
 bool BestPractices::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                                         const ErrorObject& error_obj) const {
