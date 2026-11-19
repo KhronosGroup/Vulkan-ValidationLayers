@@ -59,6 +59,32 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     vkt::Framebuffer framebuffer_bad_image_view(*m_device, fb_ci);
 }
 
+TEST_F(PositiveImagelessFramebuffer, ZeroAttachmentImageInfoCount) {
+    TEST_DESCRIPTION("attachmentImageInfoCount can be zero even if attachmentCount is not");
+
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    RETURN_IF_SKIP(Init());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp.CreateRenderPass();
+
+    VkFramebufferAttachmentsCreateInfo fb_attachment_ci = vku::InitStructHelper();
+    fb_attachment_ci.attachmentImageInfoCount = 0;
+    fb_attachment_ci.pAttachmentImageInfos = nullptr;
+    VkFramebufferCreateInfo fb_ci = vku::InitStructHelper(&fb_attachment_ci);
+    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+    fb_ci.width = 32;
+    fb_ci.height = 32;
+    fb_ci.layers = 1;
+    fb_ci.renderPass = rp;
+    fb_ci.attachmentCount = 1;
+    fb_ci.pAttachments = nullptr;
+    vkt::Framebuffer framebuffer(*m_device, fb_ci);
+}
+
 TEST_F(PositiveImagelessFramebuffer, Image3D) {
     TEST_DESCRIPTION("Create imageless framebuffer with image view from 3D image.");
     SetTargetApiVersion(VK_API_VERSION_1_2);

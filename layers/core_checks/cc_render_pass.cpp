@@ -5222,7 +5222,9 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
         skip |= ValidateFrameBufferSubpasses(*pCreateInfo, create_info_loc, *rpci);
         skip |= ValidateFrameBufferAttachments(*pCreateInfo, create_info_loc, *rp_state, *rpci);
         skip |= ValidateTileMemoryAttachments(pCreateInfo->pAttachments, create_info_loc, *rp_state, *rpci);
-    } else if (framebuffer_attachments_create_info) {
+    } else if (framebuffer_attachments_create_info &&
+               framebuffer_attachments_create_info->attachmentImageInfoCount == pCreateInfo->attachmentCount) {
+        // attachmentImageInfoCount is allowed to be zero, then there is nothing to check
         skip |= ValidateFrameBufferAttachmentsImageless(*pCreateInfo, create_info_loc, *rpci, *framebuffer_attachments_create_info);
     }
 

@@ -2639,24 +2639,24 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer&
             continue;  // is by definition small enough as it is at the start
         }
         if (binding_info.usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-            if (offset > phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferRange) {
+            if (offset >= phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferRange) {
                 const char* vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08127"
                                         : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08127";
                 const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
                 skip |= LogError(vuid, objlist, loc.dot(Field::pOffset, i),
-                                 "(%" PRIu64 ") is greater than maxResourceDescriptorBufferRange (%" PRIu64
+                                 "(%" PRIu64 ") is greater than or equal to maxResourceDescriptorBufferRange (%" PRIu64
                                  ").\nThis can be fixed by updating VkDescriptorBufferBindingInfoEXT::address (0x%" PRIx64
                                  ") such that the offset can be lowered.",
                                  offset, phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferRange, start);
             }
         }
         if (binding_info.usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
-            if (offset > phys_dev_ext_props.descriptor_buffer_props.maxSamplerDescriptorBufferRange) {
+            if (offset >= phys_dev_ext_props.descriptor_buffer_props.maxSamplerDescriptorBufferRange) {
                 const char* vuid = is_2 ? "VUID-VkSetDescriptorBufferOffsetsInfoEXT-pOffsets-08126"
                                         : "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08126";
                 const LogObjectList objlist(cb_state.Handle(), set_layout->Handle(), pipeline_layout->Handle());
                 skip |= LogError(vuid, objlist, loc.dot(Field::pOffset, i),
-                                 "(%" PRIu64 ") is greater than maxSamplerDescriptorBufferRange (%" PRIu64
+                                 "(%" PRIu64 ") is greater than or equal to maxSamplerDescriptorBufferRange (%" PRIu64
                                  ").\nThis can be fixed by updating VkDescriptorBufferBindingInfoEXT::address (0x%" PRIx64
                                  ") such that the offset can be lowered.",
                                  offset, phys_dev_ext_props.descriptor_buffer_props.maxSamplerDescriptorBufferRange, start);

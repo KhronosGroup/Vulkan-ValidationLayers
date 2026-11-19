@@ -1215,8 +1215,8 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const
 
 bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const vvl::Image& image_state) const {
     if (!(subres_range.layerCount) || !(subres_range.levelCount)) return false;
-    if (subres_range.baseMipLevel + subres_range.levelCount > image_state.GetMipLevels()) return false;
-    if ((subres_range.baseArrayLayer + subres_range.layerCount) > image_state.GetArrayLayers()) {
+    if (static_cast<uint64_t>(subres_range.baseMipLevel) + subres_range.levelCount > image_state.GetMipLevels()) return false;
+    if (static_cast<uint64_t>(subres_range.baseArrayLayer) + subres_range.layerCount > image_state.GetArrayLayers()) {
         return false;
     }
     const VkFormat image_format = image_state.GetFormat();
