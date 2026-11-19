@@ -998,6 +998,35 @@ TEST_F(PositiveSyncValTimelineSemaphore, FenceWaitForWaitBeforeSignal) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveSyncValBinarySemaphore, BindSparseWaitAndSignal) {
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(InitSyncVal());
+    const auto& sparse_queues = m_device->QueuesWithSparseCapability();
+    if (sparse_queues.empty()) {
+        GTEST_SKIP() << "A sparse binding queue is required";
+    }
+    const vkt::Queue& queue = *sparse_queues[0];
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, 256, 0);
+    m_command_buffer.End();
+
+    vkt::Semaphore before_bind(*m_device);
+    vkt::Semaphore after_bind(*m_device);
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(before_bind));
+
+    VkBindSparseInfo bind = vku::InitStructHelper();
+    bind.waitSemaphoreCount = 1;
+    bind.pWaitSemaphores = &before_bind.handle();
+    bind.signalSemaphoreCount = 1;
+    bind.pSignalSemaphores = &after_bind.handle();
+    vk::QueueBindSparse(queue, 1, &bind, VK_NULL_HANDLE);
+
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(after_bind));
+    m_device->Wait();
+}
+
 TEST_F(PositiveSyncValBinarySemaphore, SemaphoreScopeIncludesAllAccesses) {
     TEST_DESCRIPTION("Semaphore access scopes include all device accesses, not only accesses supported by the stage mask");
     SetTargetApiVersion(VK_API_VERSION_1_3);

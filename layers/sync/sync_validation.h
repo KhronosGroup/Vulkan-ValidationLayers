@@ -159,6 +159,7 @@ class SyncValidator : public vvl::DeviceProxy {
 
     QueueId GetQueueId(VkQueue queue) const;
     QueueState& GetQueueState(QueueId queue_id);
+    const QueueState& GetQueueState(QueueId queue_id) const;
     QueueId GetQueueIdLimit() const { return queue_id_limit_; }
 
     std::vector<BatchContextPtr> GetLastBatches(std::function<bool(const BatchContextPtr&)> filter) const;
@@ -562,14 +563,15 @@ class SyncValidator : public vvl::DeviceProxy {
                                             const RecordObject& record_obj) override;
     void RecordAcquireNextImageState(VkSwapchainKHR swapchain, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                      const RecordObject& record_obj);
-    bool ProcessQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                            const ErrorObject& error_obj);
+    bool ProcessQueueSubmit(QueueSubmitCommand&& command);
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                      const ErrorObject& error_obj) const override;
+    bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
+                                        const ErrorObject& error_obj) const override;
     void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject& record_obj) override;
     void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                      uint64_t timeout, const RecordObject& record_obj) override;

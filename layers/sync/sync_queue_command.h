@@ -135,7 +135,9 @@ struct QueueSubmitCommand {
     std::vector<std::string> initial_label_stack;
     std::vector<SubmitBatch> batches;
 
-    QueueSubmitCommand(SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits, VkFence fence,
+    QueueSubmitCommand(const SyncValidator& validator, QueueId queue_id, vvl::span<const VkSubmitInfo2> submits, VkFence fence,
+                       vvl::Func submit_func);
+    QueueSubmitCommand(const SyncValidator& validator, QueueId queue_id, vvl::span<const VkBindSparseInfo> binds, VkFence fence,
                        vvl::Func submit_func);
     bool Execute(SyncValidator& validator) const;
 };
