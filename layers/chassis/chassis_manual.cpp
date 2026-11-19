@@ -587,6 +587,11 @@ static const VkGraphicsPipelineCreateInfo* RemoveIgnoredColorBlendAttachments(
             continue;
         } else if (!create_info.pColorBlendState || !create_info.pColorBlendState->pAttachments) {
             continue;
+        } else if (create_info.pColorBlendState->attachmentCount <= device_dispatch.phys_dev_props.limits.maxColorAttachments) {
+            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13743
+            // Intel Window drivers seem to have a bug and still read attachmentCount when they shouldn't
+            // so only strip what is impossible for a real app to pass
+            continue;
         }
 
         // Only allocate if an app actually hits this
