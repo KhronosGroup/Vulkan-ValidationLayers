@@ -1861,6 +1861,16 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayout) {
     m_errorMonitor->VerifyFound();
     transition_info.subresourceRange.levelCount = 1;
 
+    // baseMipLevel + levelCount wraps around in 32 bits
+    transition_info.subresourceRange.baseMipLevel = 2;
+    transition_info.subresourceRange.levelCount = vvl::kU32Max - 1;
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01486");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01724");
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+    m_errorMonitor->VerifyFound();
+    transition_info.subresourceRange.baseMipLevel = 0;
+    transition_info.subresourceRange.levelCount = 1;
+
     // Bad baseArrayLayer
     // Also has to get baseArrayLayer + layerCount > arrayLayers, so test both
     transition_info.subresourceRange.baseArrayLayer = 1;

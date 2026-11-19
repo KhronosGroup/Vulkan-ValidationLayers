@@ -763,7 +763,8 @@ bool Device::ValidateMultiviewPerViewRenderAreasRenderPassBeginInfo(
                          multiview_per_view_info.perViewRenderAreaCount);
     }
 
-    if (rendering_info) {
+    // A perViewRenderAreaCount of zero means renderArea is used for all views
+    if (rendering_info && multiview_per_view_info.perViewRenderAreaCount != 0) {
         const int msb = MostSignificantBit(rendering_info->viewMask);
         const uint32_t required_count = static_cast<uint32_t>(msb + 1);
         if (multiview_per_view_info.perViewRenderAreaCount < required_count) {
