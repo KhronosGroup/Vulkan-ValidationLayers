@@ -317,6 +317,12 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
     ReserveBindingSlot(physicalDevice, device_props2->properties.limits, record_obj.location);
 }
 
+void Instance::PostCallRecordGetPhysicalDeviceProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                             VkPhysicalDeviceProperties2* device_props2,
+                                                             const RecordObject& record_obj) {
+    PostCallRecordGetPhysicalDeviceProperties2(physicalDevice, device_props2, record_obj);
+}
+
 // Clean up device-related resources
 void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                            const RecordObject& record_obj) {
