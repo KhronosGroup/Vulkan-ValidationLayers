@@ -316,7 +316,7 @@ class AccessContext {
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const vvl::Image& image, VkPipelineStageFlags2 src_exec_scope,
                                           const SyncAccessFlags& src_access_scope, const VkImageSubresourceRange& subresource_range,
-                                          bool is_depth_sliced, DetectOptions options, QueueId queue_id) const;
+                                          DetectOptions options, QueueId queue_id) const;
     HazardResult DetectImageBarrierHazard(const AttachmentViewGen& attachment_view, const SyncBarrier& barrier,
                                           DetectOptions options, QueueId queue_id = kQueueIdInvalid) const;
 

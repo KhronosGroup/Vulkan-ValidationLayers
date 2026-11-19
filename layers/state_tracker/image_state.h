@@ -32,8 +32,6 @@ class Swapchain;
 class VideoProfileDesc;
 }  // namespace vvl
 
-struct DeviceFeatures;
-
 // Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
 static inline VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
     VkImageSubresourceLayers subresource_layers;
@@ -92,7 +90,6 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     // Provided by either VkImageStencilUsage2CreateInfo or VkImageStencilUsageCreateInfo and 0 otherwise
     std::optional<VkImageUsageFlags2KHR> stencil_usage;
 
-    bool layout_locked;                        // A front-buffered image that has been presented can never have layout transitioned
     const uint64_t ahb_format;                 // External Android format, if provided
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers, and aspects
     const VkSwapchainKHR create_from_swapchain;
@@ -106,6 +103,8 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     using MemoryReqs = std::array<VkMemoryRequirements, kMaxPlanes>;
     const MemoryReqs requirements;
 
+    bool layout_locked;                      // Once presented a front-buffered image can't be transitioned
+    const bool can_transition_depth_slices;  // 2D-array-compatible 3D image, maintenance9 enabled
     const bool sparse_residency;
     const std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
 
@@ -277,7 +276,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     // Subresource encoder need to take into account that 3d image can have a separate layout
     // per slice, if supported by the implementation. This adjusts the layout range so
     // layouts map can address each slice.
-    VkImageSubresourceRange GetSubresourceEncoderRange(const DeviceState &device_state, const VkImageSubresourceRange &full_range);
+    VkImageSubresourceRange GetSubresourceEncoderRange() const;
 
     // The sparse tracker is 128 bytes vs the linear 40 bytes
     // Assume sparse images are more rare and trade 88 bytes for a small indirection if using sparse
@@ -334,9 +333,8 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     const VkFormatFeatureFlags2 format_features;
     const VkImageUsageFlags2KHR inherited_usage;  // from spec #resources-image-inherited-usage
 
-    ImageView(const DeviceState &device_state, const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
-              const VkImageViewCreateInfo *ci, VkFormatFeatureFlags2 ff,
-              const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
+    ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
+              VkFormatFeatureFlags2 ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     ImageView(const ImageView &rh_obj) = delete;
     VkImageView VkHandle() const { return handle_.Cast<VkImageView>(); }
 
@@ -370,7 +368,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
     std::string DescribeImageUsage(const Logger& logger) const;
 
   private:
-    VkImageSubresourceRange GetImageLayoutRange(const DeviceFeatures& features) const;
+    VkImageSubresourceRange GetImageLayoutRange() const;
 };
 
 class ImageViewSubState {

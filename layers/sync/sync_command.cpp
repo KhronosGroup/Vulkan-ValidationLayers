@@ -27,7 +27,6 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/render_pass_state.h"
-#include "utils/image_utils.h"
 #include "utils/math_utils.h"
 #include "utils/vk_api_utils.h"
 
@@ -1026,12 +1025,9 @@ bool BarrierCommand::Validate(const SyncEnvironment& env, const AccessContext& a
             continue;
         }
         const vvl::Image& image_state = *image_barrier.image;
-        const bool can_transition_depth_slices =
-            CanTransitionDepthSlices(validator.enabled_features, image_state.GetImageType(), image_state.create_flags);
-
         const auto hazard = access_context.DetectImageBarrierHazard(
             image_state, image_barrier.barrier.src_exec_scope.exec_scope, image_barrier.barrier.src_access_scope,
-            image_barrier.subresource_range, can_transition_depth_slices, AccessContext::kDetectAll, env.queue_id);
+            image_barrier.subresource_range, AccessContext::kDetectAll, env.queue_id);
 
         if (hazard.IsHazard()) {
             const LogObjectList objlist = BaseObjectList(env, reporter, image_state.Handle());

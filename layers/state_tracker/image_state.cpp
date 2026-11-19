@@ -28,6 +28,7 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/wsi_state.h"
+#include "generated/device_features.h"
 #include "generated/dispatch_functions.h"
 #include "generated/extended_flags_helper_generator.h"
 #include "utils/math_utils.h"
@@ -132,6 +133,10 @@ static bool GetMetalExport(const VkImageCreateInfo* info, VkExportMetalObjectTyp
 
 namespace vvl {
 
+static bool CanTransitionDepthSlices(const DeviceFeatures& features, VkImageType image_type, VkImageCreateFlags2KHR create_flags) {
+    return features.maintenance9 && image_type == VK_IMAGE_TYPE_3D && (create_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0;
+}
+
 Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateInfo* pCreateInfo, VkFormatFeatureFlags2 ff)
     : Bindable(img, kVulkanObjectTypeImage, (GetImageCreateFlags(*pCreateInfo) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (GetImageCreateFlags(*pCreateInfo) & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
@@ -140,7 +145,6 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
       create_flags(GetImageCreateFlags(create_info)),
       usage(GetImageUsageFlags(create_info)),
       stencil_usage(GetImageStencilUsageFlags(pCreateInfo->pNext)),
-      layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
       full_range{MakeImageFullRange(create_info)},
       create_from_swapchain(GetSwapchain(pCreateInfo)),
@@ -149,13 +153,15 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
       format_features(ff),
       disjoint((create_flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       requirements(GetMemoryRequirements(dev_data, img, pCreateInfo, disjoint, IsExternalBuffer())),
+      layout_locked(false),
+      can_transition_depth_slices(CanTransitionDepthSlices(dev_data.enabled_features, GetImageType(), create_flags)),
       sparse_residency((create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0),
       sparse_requirements(GetSparseRequirements(dev_data, img, sparse_residency)),
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
-      subresource_encoder(GetSubresourceEncoderRange(dev_data, full_range)),
+      subresource_encoder(GetSubresourceEncoderRange()),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
@@ -182,7 +188,6 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
       create_flags(GetImageCreateFlags(create_info)),
       usage(GetImageUsageFlags(create_info)),
       stencil_usage(GetImageStencilUsageFlags(pCreateInfo->pNext)),
-      layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
       full_range{MakeImageFullRange(create_info)},
       create_from_swapchain(swapchain),
@@ -191,13 +196,15 @@ Image::Image(const vvl::DeviceState& dev_data, VkImage img, const VkImageCreateI
       format_features(ff),
       disjoint((create_flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       requirements{},
+      layout_locked(false),
+      can_transition_depth_slices(CanTransitionDepthSlices(dev_data.enabled_features, GetImageType(), create_flags)),
       sparse_residency(false),
       sparse_requirements{},
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
-      subresource_encoder(GetSubresourceEncoderRange(dev_data, full_range)),
+      subresource_encoder(GetSubresourceEncoderRange()),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
@@ -475,10 +482,9 @@ uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers& resource) co
                                                               : resource.layerCount;
 }
 
-VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState& device_state,
-                                                          const VkImageSubresourceRange& full_range) {
+VkImageSubresourceRange Image::GetSubresourceEncoderRange() const {
     VkImageSubresourceRange encoder_range = full_range;
-    if (CanTransitionDepthSlices(device_state.enabled_features, GetImageType(), create_flags)) {
+    if (can_transition_depth_slices) {
         encoder_range.layerCount = create_info.extent.depth;
     }
     return encoder_range;
@@ -600,9 +606,8 @@ static bool GetMetalExport(const VkImageViewCreateInfo& ci) {
 
 namespace vvl {
 
-ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl::Image>& image_state, VkImageView handle,
-                     const VkImageViewCreateInfo* ci, VkFormatFeatureFlags2 ff,
-                     const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props)
+ImageView::ImageView(const std::shared_ptr<vvl::Image>& image_state, VkImageView handle, const VkImageViewCreateInfo* ci,
+                     VkFormatFeatureFlags2 ff, const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props)
     : StateObject(handle, kVulkanObjectTypeImageView),
       safe_create_info(ci),
       create_info(*safe_create_info.ptr()),
@@ -614,7 +619,7 @@ ImageView::ImageView(const DeviceState& device_state, const std::shared_ptr<vvl:
       filter_cubic(cubic_props.filterCubic == VK_TRUE),
       filter_cubic_minmax(cubic_props.filterCubicMinmax == VK_TRUE),
       normalized_subresource_range(ImageView::NormalizeImageViewSubresourceRange(*image_state, create_info)),
-      image_layout_range(GetImageLayoutRange(device_state.enabled_features)),
+      image_layout_range(GetImageLayoutRange()),
       samples(image_state->GetSamples()),
       sampler_conversion(GetSamplerConversion(create_info)),
       min_lod(GetImageViewMinLod(create_info)),
@@ -664,7 +669,7 @@ VkImageSubresourceRange ImageView::NormalizeImageViewSubresourceRange(const Imag
     return range;
 }
 
-VkImageSubresourceRange ImageView::GetImageLayoutRange(const DeviceFeatures& features) const {
+VkImageSubresourceRange ImageView::GetImageLayoutRange() const {
     VkImageSubresourceRange subres_range = create_info.subresourceRange;
 
     // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
@@ -677,7 +682,7 @@ VkImageSubresourceRange ImageView::GetImageLayoutRange(const DeviceFeatures& fea
     //     If the maintenance9 feature is not enabled, any layout transitions performed on such an attachment view during a render
     //     pass instance still apply to the entire subresource referenced which includes all the slices of the selected mip level.
     //
-    if (is_depth_sliced && !CanTransitionDepthSlices(features, image_state->GetImageType(), image_state->create_flags)) {
+    if (is_depth_sliced && !image_state->can_transition_depth_slices) {
         subres_range.baseArrayLayer = 0;
         subres_range.layerCount = 1;
     }
