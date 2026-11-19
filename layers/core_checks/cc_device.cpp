@@ -1076,7 +1076,8 @@ bool CoreChecks::PreCallValidateGetDeviceFaultDebugInfoKHR(VkDevice device, VkDe
     bool skip = false;
     if (!device_state->dispatch_device_->is_device_lost) {
         skip |= LogError("VUID-vkGetDeviceFaultDebugInfoKHR-device-12383", device, error_obj.location,
-                         "device has not been found to be in a lost state.");
+                         "device has not been found to be in a lost state.\nHint: vkGetDeviceFaultReportsKHR can be called at "
+                         "anytime, even when VK_ERROR_DEVICE_LOST has not occured.");
     }
     return skip;
 }
