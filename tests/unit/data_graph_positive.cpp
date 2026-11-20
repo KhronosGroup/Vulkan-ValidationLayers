@@ -30,10 +30,6 @@ void DataGraphTest::InitBasicDataGraph(bool optical_flow) {
         AddRequiredExtensions(VK_ARM_DATA_GRAPH_OPTICAL_FLOW_EXTENSION_NAME);
         AddRequiredFeature(vkt::Feature::dataGraphOpticalFlow);
     }
-    if (protected_memory_) {
-        AddRequiredFeature(vkt::Feature::protectedMemory);
-        AddRequiredFeature(vkt::Feature::pipelineProtectedAccess);
-    }
     RETURN_IF_SKIP(Init());
 }
 
@@ -181,26 +177,18 @@ TEST_F(PositiveDataGraph, ExecuteDataGraph) {
 
 TEST_F(PositiveDataGraph, ProtectedMemoryDataGraph) {
     TEST_DESCRIPTION("Execute a datagraph with protected memory");
-    protected_memory_ = true;
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::pipelineProtectedAccess);
+    queue_create_flags_ = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
     RETURN_IF_SKIP(InitBasicDataGraph());
 
-    // Find a queue family that supports data graph and protected memory.
-    uint32_t queue_family_count = 0;
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
-    const auto data_graph_queue = std::find_if(queue_families.begin(), queue_families.end(), [](const auto& properties) {
-        constexpr VkQueueFlags required_flags = VK_QUEUE_DATA_GRAPH_BIT_ARM | VK_QUEUE_PROTECTED_BIT;
-        return (properties.queueFlags & required_flags) == required_flags;
-    });
-    if (data_graph_queue == queue_families.end()) {
+    const auto queue_family_index = m_device->QueueFamily(VK_QUEUE_DATA_GRAPH_BIT_ARM | VK_QUEUE_PROTECTED_BIT);
+    if (!queue_family_index) {
         GTEST_SKIP() << "Requires a data graph queue family supporting protected queues";
     }
-
-    const uint32_t queue_family_index = static_cast<uint32_t>(std::distance(queue_families.begin(), data_graph_queue));
-    vkt::CommandPool command_pool(*m_device, queue_family_index, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    vkt::CommandPool command_pool(*m_device, *queue_family_index, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
     vkt::CommandBuffer command_buffer(*m_device, command_pool);
-    const auto& queue = *m_device->QueuesFromFamily(queue_family_index).front();
+    const auto& queue = *m_device->QueuesFromFamily(*queue_family_index).front();
     vkt::dg::HelperParameters params;
     params.protected_tensors = true;
     vkt::dg::DataGraphPipelineHelper pipeline(*this, params);

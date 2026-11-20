@@ -215,7 +215,8 @@ class VkRenderFramework : public VkTestFramework {
     // Then all required features and supported optional features are used for device creation.
     vkt::FeatureRequirements requested_features_;
     bool all_queue_count_ = false;
-    bool protected_memory_ = false;
+    // Applied to every queue created by InitState (VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT only on families that support it)
+    VkDeviceQueueCreateFlags queue_create_flags_ = 0;
 
     uint32_t m_gpu_index;
     vkt::Device *m_device;
