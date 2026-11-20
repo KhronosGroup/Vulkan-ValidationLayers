@@ -1694,7 +1694,9 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 }
 
                 if (!dynamic_line_raster_mode) {
-                    if (create_info.pMultisampleState &&
+                    const bool rasterization_enabled = !create_info.pRasterizationState->rasterizerDiscardEnable ||
+                                                       vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
+                    if (rasterization_enabled && create_info.pMultisampleState &&
                         (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM ||
                          line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)) {
                         if (create_info.pMultisampleState->alphaToCoverageEnable) {
