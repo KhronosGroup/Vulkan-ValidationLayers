@@ -401,6 +401,46 @@ TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangBasic) {
     TestHelper(shader_source, SPV_SOURCE_SLANG);
 }
 
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SubgroupBarrier) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12813");
+    const char* shader_source = R"glsl(
+        #version 450
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+
+        layout(local_size_x = 64) in;
+        shared uint bins[64];
+        void main() {
+            bins[gl_LocalInvocationIndex] = 0;
+            controlBarrier(gl_ScopeSubgroup, gl_ScopeWorkgroup, gl_StorageSemanticsShared, gl_SemanticsAcquireRelease);
+            // Another invocation's slot, but always in the same subgroup
+            uint other = gl_SubgroupID * gl_SubgroupSize + (gl_SubgroupInvocationID ^ 1);
+            atomicAdd(bins[other], 1);
+        }
+    )glsl";
+
+    TestHelper(shader_source, SPV_SOURCE_GLSL);
+}
+
+TEST_F(PositiveGpuAVSharedMemoryDataRace, SubgroupBarrierSlang) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12813");
+    const char* shader_source = R"slang(
+        groupshared uint sharedBins[64];
+
+        [numthreads(64, 1, 1)]
+        void main()
+        {
+            uint waveBinsIndex = WaveGetWaveIndex() * WaveGetLaneCount();
+            sharedBins[waveBinsIndex + WaveGetLaneIndex()] = 0;
+            GroupMemoryBarrierWithWaveSync();
+
+            InterlockedAdd(sharedBins[waveBinsIndex + (WaveGetLaneIndex() ^ 1)], 1);
+        }
+    )slang";
+
+    TestHelper(shader_source, SPV_SOURCE_SLANG);
+}
+
 TEST_F(PositiveGpuAVSharedMemoryDataRace, SlangIssue12415) {
     TEST_DESCRIPTION(
         "Regression test for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12415. A first load from a "
