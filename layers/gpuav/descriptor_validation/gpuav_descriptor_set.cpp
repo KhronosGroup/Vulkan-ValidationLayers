@@ -45,16 +45,19 @@ DescriptorSetSubState::DescriptorSetSubState(const vvl::DescriptorSet& set, Vali
 DescriptorSetSubState::~DescriptorSetSubState() { descriptor_encodings_.Destroy(); }
 
 void DescriptorSetSubState::BuildBindingLayouts() {
-    const uint32_t binding_count = (base.GetBindingCount() > 0) ? base.GetLayout()->GetMaxBinding() + 1 : 0;
+    const uint32_t total_bindings_count = (base.GetBindingCount() > 0) ? base.GetLayout()->GetMaxBinding() + 1 : 0;
 
-    binding_layouts_.resize(binding_count);
+    binding_layouts_.resize(total_bindings_count);
     uint32_t start = 0;
     for (const auto& binding : base) {
         if (binding->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
             binding_layouts_[binding->binding] = {start, 1};
             start++;
         } else {
-            binding_layouts_[binding->binding] = {start, binding->count};
+            const uint32_t binding_count = binding->IsVariableCount() ? base.GetVariableDescriptorCount() : binding->count;
+            binding_layouts_[binding->binding] = {start, binding_count};
+
+            // Only last binding can have a variable count, so no need to use binding_count here
             start += binding->count;
         }
     }
@@ -62,7 +65,10 @@ void DescriptorSetSubState::BuildBindingLayouts() {
 
 void DescriptorSetSubState::CreateDescriptorEncodingBuffer() {
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
-    buffer_info.size = base.GetNonInlineDescriptorCount() * sizeof(glsl::DescriptorEncoding);
+
+    const uint32_t descriptor_count = GetDescriptorCount();
+    const uint32_t sizeof_variable_descriptor_count_var = 2 * sizeof(uint32_t);
+    buffer_info.size = sizeof_variable_descriptor_count_var + descriptor_count * sizeof(glsl::DescriptorEncoding);
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
@@ -76,6 +82,8 @@ void DescriptorSetSubState::CreateDescriptorEncodingBuffer() {
     if (result != VK_SUCCESS) {
         return;
     }
+    auto variable_descriptor_count_ptr = (uint32_t*)descriptor_encodings_.GetMappedPtr();
+    *variable_descriptor_count_ptr = base.GetVariableDescriptorCount();
 }
 
 template <typename StateObject>
@@ -241,10 +249,12 @@ static std::tuple<uint32_t, uint32_t, vko::BufferRange> GetWriteDescriptorSetEnc
         return {0, 0, vko::BufferRange{}};
     }
 
-    vko::BufferRange desc_set_encodings =
-        cb_sub_state.gpu_resources_manager.GetHostCoherentBufferRange(binding->count * sizeof(glsl::DescriptorEncoding));
+    constexpr uint32_t binding_layout_size_var_offset = 2;
+    vko::BufferRange desc_set_encodings = cb_sub_state.gpu_resources_manager.GetHostCoherentBufferRange(
+        binding_layout_size_var_offset * sizeof(uint32_t) + binding->count * sizeof(glsl::DescriptorEncoding));
 
-    auto desc_set_encodings_ptr = (glsl::DescriptorEncoding*)desc_set_encodings.offset_mapped_ptr;
+    auto desc_set_encodings_ptr =
+        (glsl::DescriptorEncoding*)((uint32_t*)desc_set_encodings.offset_mapped_ptr + binding_layout_size_var_offset);
     uint32_t index = 0;
     GetBindingEncodingsHelper(binding, desc_set_encodings_ptr, index);
 
@@ -339,11 +349,6 @@ VkDeviceAddress DescriptorSetSubState::GetDescriptorEncodingsAddress(Validator& 
     std::lock_guard guard(state_lock_);
     const uint32_t current_version = current_version_.load();
 
-    if (base.GetNonInlineDescriptorCount() == 0) {
-        // no descriptors
-        return 0;
-    }
-
     // Create buffer just in time
     if (descriptor_encodings_.IsDestroyed()) {
         CreateDescriptorEncodingBuffer();
@@ -352,7 +357,9 @@ VkDeviceAddress DescriptorSetSubState::GetDescriptorEncodingsAddress(Validator& 
         return descriptor_encodings_.Address();
     }
 
-    auto desc_set_encodings_ptr = (glsl::DescriptorEncoding*)descriptor_encodings_.GetMappedPtr();
+    constexpr uint32_t binding_layout_size_var_offset = 2;
+    auto desc_set_encodings_ptr =
+        (glsl::DescriptorEncoding*)((uint32_t*)descriptor_encodings_.GetMappedPtr() + binding_layout_size_var_offset);
 
     uint32_t index = 0;
     for (const auto& binding : base) {

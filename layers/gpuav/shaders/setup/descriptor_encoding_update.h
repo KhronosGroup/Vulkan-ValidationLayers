@@ -38,7 +38,11 @@ using DescriptorEncodingsPtr = uint64_t;
 #else
 
 #include "../instrumentation/descriptor_encoding.h"
-layout(buffer_reference, scalar) buffer DescriptorEncodingsPtr { DescriptorEncoding array[]; };
+layout(buffer_reference, scalar) buffer DescriptorEncodingsPtr {
+    uint variable_descriptor_count;
+    uint padding_;
+    DescriptorEncoding array[];
+};
 
 #endif
 

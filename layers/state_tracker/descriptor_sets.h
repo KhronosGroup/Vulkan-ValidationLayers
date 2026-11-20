@@ -172,7 +172,7 @@ class DescriptorSetLayoutDef {
     size_t hash() const;
 
     uint32_t GetTotalDescriptorCount() const { return descriptor_count_; };
-    uint32_t GetNonInlineDescriptorCount() const { return non_inline_descriptor_count_; };
+    uint32_t GetGpuAVTrackedDescriptorCount() const { return gpuav_tracked_descriptor_count_; };
     uint32_t GetDynamicDescriptorCount() const { return dynamic_descriptor_count_; };
     bool HasImmutableSamplers() const { return !immutable_sampler_create_infos_.empty(); };
     bool HasImmutableSamplersAtBinding(uint32_t binding) const {
@@ -299,9 +299,14 @@ class DescriptorSetLayoutDef {
     uint32_t binding_count_;     // # of bindings in this layout
     // total # descriptors in this layout (used to check if two layouts are the same or not)
     uint32_t descriptor_count_;
-    // only counts INLINE_UNIFORM_BLOCK descriptors as one.
-    // When using Inline Uniform Block, each descriptor is the number of bytes, which can skew descriptor_count_
-    uint32_t non_inline_descriptor_count_;
+
+    // Only For GPU-AV
+    // - INLINE_UNIFORM_BLOCK bindings count as one descriptor
+    //   => When using Inline Uniform Block, each descriptor is the number of bytes, which can skew descriptor_count_
+    // - descriptors with a VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT flag are not counted
+    //   => actual count is set at descriptor set allocation time, VkDescriptorSetVariableDescriptorCountAllocateInfo
+    uint32_t gpuav_tracked_descriptor_count_;
+
     uint32_t dynamic_descriptor_count_;
     BindingTypeStats binding_type_stats_;
 };
@@ -332,7 +337,7 @@ class DescriptorSetLayout : public StateObject {
     const DescriptorSetLayoutDef *GetLayoutDef() const { return layout_id_.get(); }
     DescriptorSetLayoutId GetLayoutId() const { return layout_id_; }
     uint32_t GetTotalDescriptorCount() const { return layout_id_->GetTotalDescriptorCount(); };
-    uint32_t GetNonInlineDescriptorCount() const { return layout_id_->GetNonInlineDescriptorCount(); };
+    uint32_t GetGpuAVTrackedDescriptorCount() const { return layout_id_->GetGpuAVTrackedDescriptorCount(); };
     uint32_t GetDynamicDescriptorCount() const { return layout_id_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };
     bool HasImmutableSamplers() const { return layout_id_->HasImmutableSamplers(); };
@@ -908,7 +913,7 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
 
     // A number of common Get* functions that return data based on layout from which this set was created
     uint32_t GetTotalDescriptorCount() const { return layout_->GetTotalDescriptorCount(); };
-    uint32_t GetNonInlineDescriptorCount() const { return layout_->GetNonInlineDescriptorCount(); };
+    uint32_t GetGpuAVTrackedDescriptorCount() const { return layout_->GetGpuAVTrackedDescriptorCount(); };
     uint32_t GetDynamicDescriptorCount() const { return layout_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_->GetBindingCount(); };
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {

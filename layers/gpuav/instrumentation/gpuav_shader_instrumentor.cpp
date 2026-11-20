@@ -1325,15 +1325,19 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSe
     auto dsl_bindings = set_layout_state.GetBindings();
     for (uint32_t binding_index = 0; binding_index < dsl_bindings.size(); binding_index++) {
         auto& dsl_binding = dsl_bindings[binding_index];
+        const VkDescriptorBindingFlags flags = set_layout_state.GetDescriptorBindingFlagsFromBinding(dsl_binding.binding);
+
         if (dsl_binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
             binding_layouts[dsl_binding.binding] = {start, 1};
             start += 1;
         } else {
-            binding_layouts[dsl_binding.binding] = {start, dsl_binding.descriptorCount};
+            const bool has_variable_descriptor_count = (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) != 0;
+            const uint32_t descriptor_count =
+                has_variable_descriptor_count ? glsl::kBindingVariableDescriptorCount : dsl_binding.descriptorCount;
+            binding_layouts[dsl_binding.binding] = {start, descriptor_count};
             start += dsl_binding.descriptorCount;
         }
 
-        const VkDescriptorBindingFlags flags = set_layout_state.GetDescriptorBindingFlagsFromBinding(binding_index);
         if (vvl::IsBindless(flags)) {
             out_instrumentation_dsl.has_bindless_descriptors = true;
         }
