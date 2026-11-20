@@ -648,6 +648,8 @@ enum class Feature {
     taskShader,
     // VkPhysicalDeviceMultiDrawFeaturesEXT
     multiDraw,
+    // VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX
+    multiLevelAccelerationStructure,
     // VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT
     multisampledRenderToSingleSampled,
     // VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT

@@ -4663,6 +4663,24 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void** i
             }
             return {&vk_struct->multiDraw, "VkPhysicalDeviceMultiDrawFeaturesEXT::multiDraw"};
         }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+        case Feature::multiLevelAccelerationStructure: {
+            auto vk_struct = const_cast<VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX*>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->multiLevelAccelerationStructure,
+                    "VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX::multiLevelAccelerationStructure"};
+        }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         case Feature::multisampledRenderToSingleSampled: {
             auto vk_struct = const_cast<VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT*>(

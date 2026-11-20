@@ -1591,6 +1591,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_EXT_shader_64bit_indexing};
                 }
             }
+            if (value & (VK_PIPELINE_CREATE_2_RAY_TRACING_ALLOW_MULTI_LEVEL_ACCELERATION_STRUCTURES_BIT_AMDX)) {
+                if (!IsExtEnabled(extensions.vk_amdx_multi_level_acceleration_structure)) {
+                    return {vvl::Extension::_VK_AMDX_multi_level_acceleration_structure};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkImageCreateFlagBits2KHR:
             if (value & (VK_IMAGE_CREATE_2_ALIAS_SINGLE_LAYER_DESCRIPTOR_BIT_KHR)) {

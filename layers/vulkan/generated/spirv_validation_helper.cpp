@@ -309,6 +309,10 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityCooperativeMatrixPerElementOperationsEXT, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixPerElementOperationsEXT, {0, &DeviceFeatures::cooperativeMatrixPerElementOperationsNV, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixGetCoordinateEXT, {0, &DeviceFeatures::cooperativeMatrixGetCoordinate, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityRayTracingMultiLevelAccelerationStructureAMDX, {0, &DeviceFeatures::multiLevelAccelerationStructure, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityRayQueryMultiLevelAccelerationStructureAMDX, {0, &DeviceFeatures::multiLevelAccelerationStructure, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixLayoutsARM, {0, &DeviceFeatures::cooperativeMatrixArmLayouts, nullptr, ""}},
     };
     // clang-format on
@@ -457,6 +461,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_KHR_constant_data", {0, nullptr, &DeviceExtensions::vk_khr_shader_constant_data, ""}},
         {"SPV_EXT_ocp_microscaling_types", {0, nullptr, &DeviceExtensions::vk_ext_shader_ocp_microscaling_types, ""}},
         {"SPV_EXT_cooperative_matrix_maintenance1", {0, nullptr, &DeviceExtensions::vk_ext_cooperative_matrix_maintenance1, ""}},
+        {"SPV_AMDX_multi_level_acceleration_structure", {0, nullptr, &DeviceExtensions::vk_amdx_multi_level_acceleration_structure, ""}},
         {"SPV_ARM_cooperative_matrix_layouts", {0, nullptr, &DeviceExtensions::vk_arm_cooperative_matrix_layouts, ""}},
     };
     // clang-format on
@@ -977,6 +982,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_KHR_constant_data", {{vvl::Extension::_VK_KHR_shader_constant_data}}},
     {"SPV_EXT_ocp_microscaling_types", {{vvl::Extension::_VK_EXT_shader_ocp_microscaling_types}}},
     {"SPV_EXT_cooperative_matrix_maintenance1", {{vvl::Extension::_VK_EXT_cooperative_matrix_maintenance1}}},
+    {"SPV_AMDX_multi_level_acceleration_structure", {{vvl::Extension::_VK_AMDX_multi_level_acceleration_structure}}},
     {"SPV_ARM_cooperative_matrix_layouts", {{vvl::Extension::_VK_ARM_cooperative_matrix_layouts}}},
     };
 
