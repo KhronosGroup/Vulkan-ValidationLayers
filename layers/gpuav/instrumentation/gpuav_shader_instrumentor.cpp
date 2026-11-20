@@ -260,6 +260,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateI
     // Settings we will want for every SPIR-V instrumention pass
     instrumentation_device_settings_.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
     instrumentation_device_settings_.safe_mode = gpuav_settings.safe_mode;
+    instrumentation_device_settings_.shader_abort = false;  // set after GPU-AV knows the features are supported
     instrumentation_device_settings_.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
     instrumentation_device_settings_.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
     instrumentation_device_settings_.disable_dontinline = gpuav_settings.debug_disable_dontinline;
@@ -2004,8 +2005,8 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         }
     }
 
-    // Currently only runs in Safe Mode until have perf numbers how costly it is to enable
-    if (gpuav_settings.shader_instrumentation.sanitizer && gpuav_settings.safe_mode) {
+    // Currently only runs in Safe Mode (or Shader Abort) until have perf numbers how costly it is to enable
+    if (gpuav_settings.shader_instrumentation.sanitizer && (gpuav_settings.safe_mode || gpuav_settings.shader_abort)) {
         spirv::SanitizerPass pass(module);
         modified |= pass.Run();
     }

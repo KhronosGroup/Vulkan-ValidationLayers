@@ -55,7 +55,8 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId(bool is_coop_mat) {
     }
 }
 
-void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
+uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+                                                              const InstructionMeta& meta) {
     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
 
     assert(!meta.access_path->ac_indexes.empty());
@@ -75,14 +76,15 @@ void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, Ins
     const uint32_t function_result = module_.TakeNextId();
     const bool is_coop_mat = meta.access_path->coop_mat.used;
     const uint32_t function_def = GetLinkFunctionId(is_coop_mat);
-    const uint32_t void_type = type_manager_.GetTypeVoid().Id();
+    const uint32_t bool_type = type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {void_type, function_result, function_def, inst_position_id, desc_set_constant.Id(), desc_index_id,
+                            {bool_type, function_result, function_def, inst_position_id, desc_set_constant.Id(), desc_index_id,
                              descriptor_offset_id, binding_layout_offset.Id()},
                             inst_it);
 
     module_.need_log_error_ = true;
+    return function_result;
 }
 
 static bool IsBufferAccess(uint32_t opcode) {
@@ -143,7 +145,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    if (!module_.settings_.safe_mode) {
+    if (!module_.settings_.WrapCheck()) {
         meta.access_offset = FindOffsetInStruct(meta.descriptor_block_type_id, &meta.access_path->coop_mat, is_descriptor_array,
                                                 meta.access_path->ac_indexes);
     }
@@ -165,13 +167,16 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
     }
 
     // Can safely loop function list as there is no injecting of new Functions until linking time
-    for (const auto& function : module_.functions_) {
+    for (Function& function : module_.functions_) {
         if (!function.called_from_target_) {
             continue;
         }
 
         for (auto block_it = function.blocks_.begin(); block_it != function.blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
+
+            // Currently can't inject CFG logic into a loop header block, these still report at the end of the shader
+            const bool abort_on_error = module_.settings_.shader_abort && !current_block.IsLoopHeader();
 
             cf_.Update(current_block);
             if (debug_disable_loops_ && cf_.in_loop) {
@@ -183,7 +188,7 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
             // < Descriptor SSA ID, Highest offset byte that will be accessed >
             vvl::unordered_map<uint32_t, uint32_t> block_highest_offset_map;
 
-            if (!module_.settings_.safe_mode) {
+            if (!module_.settings_.WrapCheck()) {
                 // Pre-pass loop the Block to get the highest offset accessed (statically known)
                 // Do here before we inject instructions into the block list below
                 for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
@@ -212,7 +217,7 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
                     continue;
                 }
 
-                if (!module_.settings_.safe_mode && meta.access_offset != 0) {
+                if (!module_.settings_.WrapCheck() && meta.access_offset != 0) {
                     const uint32_t block_highest_offset = block_highest_offset_map[meta.descriptor_block_type_id];
                     if (meta.access_offset < block_highest_offset) {
                         continue;  // skipping because other instruction in block will be a higher offset
@@ -223,6 +228,19 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
                     return instrumentations_count_ != 0;
                 }
                 instrumentations_count_++;
+
+                // We currently do not safe mode wrap this pass as it would get really slow
+                // We add "skip" style wrapping only for shader abort currently
+                if (abort_on_error) {
+                    InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
+                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
+                    InjectFunctionPost(current_block, ic_data);
+                    // Skip the newly added valid and abort block.
+                    // Start searching again from newly split merge block
+                    block_it++;
+                    block_it++;
+                    break;
+                }
 
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
                 CreateFunctionCall(current_block, &inst_it, meta);

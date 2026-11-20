@@ -49,6 +49,7 @@ void GpuAVSettings::DisableShaderInstrumentationAndOptions() {
     shader_instrumentation.vertex_attribute_fetch_oob = false;
     shader_instrumentation.sanitizer = false;
     shader_instrumentation.shared_memory_data_race = false;
+    shader_abort = false;
     // Because of this setting, cannot really have an "enabled" parameter to pass to this method
     select_instrumented_shaders = false;
 }
@@ -130,6 +131,7 @@ void GpuAVSettings::TracyLogSettings() const {
 #define VVL_TRACY_PRINT_GPUAV_SETTING(setting) VVL_TracyMessageStream("  " #setting ": " << setting);
     VVL_TracyMessageStream("GpuAVSettings:");
     VVL_TRACY_PRINT_GPUAV_SETTING(safe_mode);
+    VVL_TRACY_PRINT_GPUAV_SETTING(shader_abort);
     VVL_TRACY_PRINT_GPUAV_SETTING(force_on_robustness);
     VVL_TRACY_PRINT_GPUAV_SETTING(select_instrumented_shaders);
     if (!shader_selection_patterns.empty()) {

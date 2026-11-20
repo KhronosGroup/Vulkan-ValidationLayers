@@ -24,6 +24,7 @@
 #include "state_tracker/shader_instruction.h"
 #include "module.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
+#include "gpuav/shaders/gpuav_error_header.h"
 #include "type_manager.h"
 
 namespace gpuav {
@@ -747,6 +748,10 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
     BasicBlock& original_block = **original_block_it;
     const uint32_t original_label = original_block.GetLabelId();
 
+    // Done before splitting the block as it might inject into the first block and needs to fix up inst_it
+    const bool shader_abort = module_.settings_.shader_abort;
+    const uint32_t stage_info_id = shader_abort ? GetStageInfo(function, original_block, inst_it) : 0;
+
     // Where we call targeted instruction if it is valid
     BasicBlockIt valid_block_it = function.InsertNewBlock(original_block_it);
     BasicBlock& valid_block = **valid_block_it;
@@ -773,7 +778,9 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
     // If thre is a result, we need to create an additional BasicBlock to hold the |else| case, then after we create a Phi node to
     // hold the result
     const uint32_t target_inst_id = target_inst.ResultId();
-    if (target_inst_id != 0) {
+    if (shader_abort) {
+        CreateAbortBlock(invalid_block, stage_info_id);
+    } else if (target_inst_id != 0) {
         const uint32_t phi_id = module_.TakeNextId();
         const Type& phi_type = *type_manager_.FindTypeById(target_inst.TypeId());
         uint32_t null_id = 0;
@@ -815,24 +822,27 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
                                       {phi_type.Id(), phi_id, target_inst_id, valid_block_label, null_id, invalid_block_label});
     }
 
-    // When skipping some instructions, we need something valid to replace it
-    if (target_inst.Opcode() == spv::OpRayQueryInitializeKHR) {
-        // Currently assume the RayQuery object was valid already
-        // The AS object is not, as it might have been loaded from an invalid descriptor, so use a null one
-        const Type& uvec2_type = type_manager_.GetTypeVector(type_manager_.GetTypeInt(32, false), 2);
-        const Constant& null_constant = type_manager_.GetConstantNull(uvec2_type);
-        const uint32_t null_as_id = module_.TakeNextId();
-        invalid_block.CreateInstruction(spv::OpConvertUToAccelerationStructureKHR,
-                                        {type_manager_.GetTypeAccelerationStructure().Id(), null_as_id, null_constant.Id()});
+    if (!shader_abort) {
+        // When skipping some instructions, we need something valid to replace it
+        if (target_inst.Opcode() == spv::OpRayQueryInitializeKHR) {
+            // Currently assume the RayQuery object was valid already
+            // The AS object is not, as it might have been loaded from an invalid descriptor, so use a null one
+            const Type& uvec2_type = type_manager_.GetTypeVector(type_manager_.GetTypeInt(32, false), 2);
+            const Constant& null_constant = type_manager_.GetConstantNull(uvec2_type);
+            const uint32_t null_as_id = module_.TakeNextId();
+            invalid_block.CreateInstruction(spv::OpConvertUToAccelerationStructureKHR,
+                                            {type_manager_.GetTypeAccelerationStructure().Id(), null_as_id, null_constant.Id()});
 
-        const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
-        const uint32_t float32_0_id = type_manager_.GetConstantZeroFloat32().Id();
-        const uint32_t vec3_0_id = type_manager_.GetConstantZeroVec3().Id();
-        invalid_block.CreateInstruction(spv::OpRayQueryInitializeKHR, {target_inst.Operand(0), null_as_id, uint32_0_id, uint32_0_id,
-                                                                       vec3_0_id, float32_0_id, vec3_0_id, float32_0_id});
+            const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
+            const uint32_t float32_0_id = type_manager_.GetConstantZeroFloat32().Id();
+            const uint32_t vec3_0_id = type_manager_.GetConstantZeroVec3().Id();
+            invalid_block.CreateInstruction(
+                spv::OpRayQueryInitializeKHR,
+                {target_inst.Operand(0), null_as_id, uint32_0_id, uint32_0_id, vec3_0_id, float32_0_id, vec3_0_id, float32_0_id});
+        }
+
+        invalid_block.CreateInstruction(spv::OpBranch, {merge_block_label});
     }
-
-    invalid_block.CreateInstruction(spv::OpBranch, {merge_block_label});
 
     // move all remaining instructions to the newly created merge block
     merge_block.instructions_.insert(merge_block.instructions_.end(), std::make_move_iterator(inst_it),
@@ -846,6 +856,48 @@ void Pass::InjectFunctionPost(BasicBlock& original_block, const InjectConditiona
     original_block.CreateInstruction(spv::OpSelectionMerge, {ic_data.merge_block_label, spv::SelectionControlMaskNone});
     original_block.CreateInstruction(spv::OpBranchConditional,
                                      {ic_data.function_result_id, ic_data.valid_block_label, ic_data.invalid_block_label});
+}
+
+void Pass::CreateAbortBlock(BasicBlock& abort_block, uint32_t stage_info_id) {
+    if (module_.abort_message_function_id_ == 0) {
+        module_.abort_message_function_id_ = module_.TakeNextId();
+        module_.AddCapability(spv::CapabilityAbortKHR);
+        module_.AddExtension("SPV_KHR_abort");
+
+        // Need 2 identical structs, OpAbortKHR requires an explicit layout but values can't have one
+        const uint32_t uint32_type_id = type_manager_.GetTypeInt(32, false).Id();
+        const std::vector<uint32_t> members(glsl::kAbortMessageDwordSize, uint32_type_id);
+        const uint32_t struct_word_count = uint32_t(members.size() + 2);
+
+        {
+            module_.abort_message_type_id_ = module_.TakeNextId();
+            auto new_inst = std::make_unique<Instruction>(struct_word_count, spv::OpTypeStruct);
+            new_inst->Fill({module_.abort_message_type_id_});
+            new_inst->Fill(members);
+            const Type& value_type = type_manager_.AddType(std::move(new_inst), SpvType::kStruct);
+            type_manager_.AddStructTypeForLinking(&value_type);
+        }
+
+        // The OpAbortKHR Message Type
+        {
+            module_.abort_message_layout_type_id_ = module_.TakeNextId();
+            auto new_inst = std::make_unique<Instruction>(struct_word_count, spv::OpTypeStruct);
+            new_inst->Fill({module_.abort_message_layout_type_id_});
+            new_inst->Fill(members);
+            type_manager_.AddType(std::move(new_inst), SpvType::kStruct);
+            for (uint32_t i = 0; i < uint32_t(glsl::kAbortMessageDwordSize); i++) {
+                module_.AddMemberDecoration(module_.abort_message_layout_type_id_, i, spv::DecorationOffset, {i * 4});
+            }
+        }
+    }
+
+    // Still need the error payload variable the check function writes to
+    module_.need_log_error_ = true;
+
+    const uint32_t message_id = module_.TakeNextId();
+    abort_block.CreateInstruction(spv::OpFunctionCall,
+                                  {module_.abort_message_type_id_, message_id, module_.abort_message_function_id_, stage_info_id});
+    abort_block.CreateInstruction(spv::OpAbortKHR, {module_.abort_message_layout_type_id_, message_id});
 }
 
 void Pass::ControlFlow::Update(const BasicBlock& block) {

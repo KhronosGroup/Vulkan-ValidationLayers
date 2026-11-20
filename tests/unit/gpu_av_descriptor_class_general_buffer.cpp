@@ -2819,3 +2819,100 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UntypedPointer) {
 
     ComputeStorageBufferTest(cs_source, SPV_SOURCE_ASM, 8, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ShaderAbort) {
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework({kShaderAbortSetting}, false));
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint a;
+            uint b;
+        };
+
+        void main() {
+            b = 1;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
+    m_device->ExpectWaitSuccess(false);
+    m_default_queue->SubmitAndWait(m_command_buffer, false);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ShaderAbortFirstError) {
+    TEST_DESCRIPTION("Without shader abort, the last error is reported. With it, the first error is reported");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitGpuAvFramework({kShaderAbortSetting}, false));
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, std430) buffer BDA {
+            uint data[];
+        };
+
+        layout(set = 0, binding = 0) buffer SSBO {
+            BDA ptr;
+            uint index;
+            uint small_array[2];
+        };
+
+        void main() {
+            small_array[index] = 1;  // storage buffer OOB, aborts here
+            ptr.data[index * 8] = 1; // BDA OOB, never reached
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    auto* buffer_ptr = static_cast<VkDeviceAddress*>(buffer.Memory().Map());
+    buffer_ptr[0] = bda_buffer.Address();
+    buffer_ptr[1] = 8;  // index
+
+    // Only bind 20 bytes, so small_array[8] is OOB
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, 20, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    // Only the storage buffer error, a BDA error would fail the test
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
+    m_device->ExpectWaitSuccess(false);
+    m_default_queue->SubmitAndWait(m_command_buffer, false);
+    m_errorMonitor->VerifyFound();
+}

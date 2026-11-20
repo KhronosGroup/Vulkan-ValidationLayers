@@ -49,7 +49,8 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexing
 //    }
 //
 // We might have only bound 4 bytes to the buffer, so 'b' is OOB and this function will detect it
-void inst_descriptor_class_general_buffer(const uint inst_offset, const uint desc_set, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
+// Returns false if the access is invalid
+bool inst_descriptor_class_general_buffer(const uint inst_offset, const uint desc_set, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
     DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
     const uint global_descriptor_index = binding_layout_offset + desc_index;
     // check that the offset is in bounds
@@ -62,26 +63,29 @@ void inst_descriptor_class_general_buffer(const uint inst_offset, const uint des
                             byte_offset,
                             resource_size
                         );
+        return false;
     }
+    return true;
 }
 
 // Same thing as above, just uses a different SubCode and dedicated function name and using subgroupElect
-void inst_descriptor_class_general_buffer_coop_mat(const uint inst_offset, const uint desc_set, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
+bool inst_descriptor_class_general_buffer_coop_mat(const uint inst_offset, const uint desc_set, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
+    DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
+    const uint global_descriptor_index = binding_layout_offset + desc_index;
+    // check that the offset is in bounds
+    uint resource_size = descriptor_encodings.data[global_descriptor_index].dword_0;
+    const bool is_valid = byte_offset < resource_size;
+
     // CoopMat is done (currently) at a subgroup level, so if 1 thread is wrong, by definition the subgroup is all invalid.
     // To not spam the user, report only 1 error per subgroup
-    if (subgroupElect()) {
-        DescriptorEncodings descriptor_encodings = gpuav.descriptor_encodings[desc_set];
-        const uint global_descriptor_index = binding_layout_offset + desc_index;
-        // check that the offset is in bounds
-        uint resource_size = descriptor_encodings.data[global_descriptor_index].dword_0;
-        if (byte_offset >= resource_size) {
-            error_payload = ErrorPayload(
-                                inst_offset,
-                                SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorClass << kErrorGroup_Shift) | (kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds << kErrorSubCode_Shift),
-                                (desc_set << kInst_DescriptorIndexing_SetShift) | global_descriptor_index,
-                                byte_offset,
-                                resource_size
-                            );
-        }
+    if (subgroupElect() && !is_valid) {
+        error_payload = ErrorPayload(
+                            inst_offset,
+                            SpecConstantLinkShaderId | (kErrorGroup_InstDescriptorClass << kErrorGroup_Shift) | (kErrorSubCode_DescriptorClass_GeneralBufferCoopMatBounds << kErrorSubCode_Shift),
+                            (desc_set << kInst_DescriptorIndexing_SetShift) | global_descriptor_index,
+                            byte_offset,
+                            resource_size
+                        );
     }
+    return is_valid;
 }

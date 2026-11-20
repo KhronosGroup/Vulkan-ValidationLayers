@@ -246,6 +246,9 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const L
     // Need the device to be created before we can query features for settings
     InitSettings(loc);
 
+    // Device settings that can be turned off depending on feature support
+    instrumentation_device_settings_.shader_abort = gpuav_settings.shader_abort;
+
     VkResult result = UtilInitializeVma(instance, physical_device, device, &vma_allocator_);
     if (result != VK_SUCCESS) {
         InternalVmaError(device, result, "Could not initialize VMA");
@@ -431,6 +434,11 @@ void Validator::InitSettings(const Location& loc) {
 
     if (!adjustment_warnings.empty()) {
         AdjustmentWarning(device, loc, adjustment_warnings.c_str());
+    }
+
+    if (gpuav_settings.shader_abort && !(modified_features.shaderAbort && modified_features.deviceFault &&
+                                         IsExtEnabled(modified_extensions.vk_khr_device_fault))) {
+        gpuav_settings.shader_abort = false;
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully

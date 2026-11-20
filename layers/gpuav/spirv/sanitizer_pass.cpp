@@ -573,7 +573,7 @@ bool SanitizerPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                if (!module_.settings_.safe_mode || meta.skip_safe_mode) {
+                if (!module_.settings_.WrapCheck() || meta.skip_safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);
