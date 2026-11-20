@@ -126,6 +126,8 @@ class Module {
 
     // Lets ExpectAssumePass be skipped for the (majority of) shaders without an OpAssumeTrueKHR
     bool has_assume_true_ = false;
+    // Lets SharedMemoryDataRacePass skip shaders with a Subgroup scope barrier on Workgroup memory
+    bool has_subgroup_shared_memory_barrier_ = false;
 
     // Used when UseErrorPayloadVariable is set. Needs to be same for all passes.
     // Will be set in the LogErrorPass

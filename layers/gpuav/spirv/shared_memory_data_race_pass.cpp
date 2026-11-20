@@ -350,6 +350,13 @@ bool SharedMemoryDataRacePass::Instrument() {
         return false;
     }
 
+    // Only a Workgroup scope barrier resets the shadow memory,
+    // so accesses ordered by a Subgroup scope barrier would be reported as races
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12813
+    if (module_.has_subgroup_shared_memory_barrier_) {
+        return false;
+    }
+
     const std::vector<const Variable*>& shmem_vars = type_manager_.GetSharedMemoryVariables();
 
     // Since we don't support WorkgroupMemoryExplicitLayoutKHR, we don't need to worry about Aliased blocks

@@ -290,6 +290,13 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             function_end_found = true;
         } else if (opcode == spv::OpAssumeTrueKHR) {
             has_assume_true_ = true;
+        } else if (opcode == spv::OpControlBarrier && !has_subgroup_shared_memory_barrier_) {
+            const Constant* scope = type_manager_.FindConstantById(new_inst->Word(1));
+            const Constant* semantics = type_manager_.FindConstantById(new_inst->Word(3));
+            if (scope && semantics && scope->GetValueUint32() == spv::ScopeSubgroup &&
+                (semantics->GetValueUint32() & spv::MemorySemanticsWorkgroupMemoryMask) != 0) {
+                has_subgroup_shared_memory_barrier_ = true;
+            }
         }
 
         if (opcode == spv::OpLoopMerge) {
