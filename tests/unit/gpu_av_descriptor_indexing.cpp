@@ -5101,3 +5101,146 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SecondaryCommandBuffer) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorIndexing, ShaderAbort) {
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework({kShaderAbortSetting}, false));
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform UBO {
+            uint index;
+        };
+
+        layout(set = 0, binding = 1) buffer SSBO {
+            uint data;
+        } ssbos[4];
+
+        void main() {
+            ssbos[index].data = 1;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto* uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = 25;  // index
+
+    vkt::Buffer storage_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    for (uint32_t i = 0; i < 4; ++i) {
+        pipe.descriptor_set_.WriteDescriptorBufferInfo(1, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, i);
+    }
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
+    m_device->ExpectWaitSuccess(false);
+    m_default_queue->Submit(m_command_buffer);
+    ASSERT_EQ(VK_ERROR_DEVICE_LOST, m_default_queue->Wait(false));
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, ShaderAbortMultipleCommandBuffers) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework({kShaderAbortSetting}, false));
+    RETURN_IF_SKIP(InitState());
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    std::vector<VkPushConstantRange> push_constant_ranges = {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)}};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, push_constant_ranges);
+
+    vkt::Buffer storage_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    for (uint32_t i = 0; i < 4; ++i) {
+        descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, i);
+    }
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(push_constant) uniform Input {
+            uint index;
+        };
+
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint data;
+        } ssbos[4];
+
+        void main() {
+            ssbos[index].data = 1;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    vkt::CommandBuffer cb_0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb_1(*m_device, m_command_pool);
+    vkt::CommandBuffer cb_2(*m_device, m_command_pool);
+
+    {
+        cb_0.Begin();
+        VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+        label.pLabelName = "label_cb_0";
+        vk::CmdBeginDebugUtilsLabelEXT(cb_0, &label);
+        vk::CmdBindPipeline(cb_0, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdBindDescriptorSets(cb_0, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+        const uint32_t index = 0;
+        vk::CmdPushConstants(cb_0, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &index);
+        vk::CmdDispatch(cb_0, 1, 1, 1);
+        vk::CmdEndDebugUtilsLabelEXT(cb_0);
+        cb_0.End();
+    }
+
+    {
+        cb_1.Begin();
+        VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+        label.pLabelName = "label_cb_1";
+        vk::CmdBeginDebugUtilsLabelEXT(cb_1, &label);
+        vk::CmdBindPipeline(cb_1, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdBindDescriptorSets(cb_1, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+        const uint32_t index = 25;  // OOB, the only invalid one
+        vk::CmdPushConstants(cb_1, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &index);
+        vk::CmdDispatch(cb_1, 1, 1, 1);
+        vk::CmdEndDebugUtilsLabelEXT(cb_1);
+        cb_1.End();
+    }
+
+    {
+        cb_2.Begin();
+        VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+        label.pLabelName = "label_cb_2";
+        vk::CmdBeginDebugUtilsLabelEXT(cb_2, &label);
+        vk::CmdBindPipeline(cb_2, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdBindDescriptorSets(cb_2, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+        const uint32_t index = 2;
+        vk::CmdPushConstants(cb_2, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &index);
+        vk::CmdDispatch(cb_2, 1, 1, 1);
+        vk::CmdEndDebugUtilsLabelEXT(cb_2);
+        cb_2.End();
+    }
+
+    // If the error was matched to another command buffer, it would have the wrong label
+    m_errorMonitor->SetDesiredError("label_cb_1");
+    m_device->ExpectWaitSuccess(false);
+    m_default_queue->Submit({cb_0, cb_1, cb_2});
+    ASSERT_EQ(VK_ERROR_DEVICE_LOST, m_default_queue->Wait(false));
+    m_errorMonitor->VerifyFound();
+}

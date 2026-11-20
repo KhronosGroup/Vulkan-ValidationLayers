@@ -250,6 +250,8 @@ target_sources(vvl_core PRIVATE
     error_message/unimplementable_validation.h
     external/vma/vma.h
     external/vma/vma.cpp
+    external/shader_abort/shader_abort_message.h
+    external/shader_abort/shader_abort_message.cpp
     ${API_TYPE}/generated/best_practices.cpp
     ${API_TYPE}/generated/best_practices_device_methods.h
     ${API_TYPE}/generated/best_practices_instance_methods.h

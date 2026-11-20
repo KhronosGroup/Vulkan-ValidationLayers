@@ -113,6 +113,11 @@ struct DeviceSettings {
     // When off (unsafe mode) reduce amount of work so compiling the pipeline/shader is quicker
     // This is a global setting for all passes
     bool safe_mode;
+    bool shader_abort;
+    // Safe Mode and Shader Abort both wrap each check in an if/else
+    // so the invalid instruction is never executed
+    bool WrapCheck() const { return safe_mode || shader_abort; }
+
     // Used to help debug
     bool print_debug_info;
     // zero is same as "unlimited"

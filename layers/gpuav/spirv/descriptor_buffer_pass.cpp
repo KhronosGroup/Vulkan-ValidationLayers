@@ -124,7 +124,7 @@ bool DescriptorBufferPass::Instrument() {
             DescriptroIndexPushConstantAccess pc_access;
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     pc_access.Update(module_, inst_it);
                 }
 
@@ -134,7 +134,7 @@ bool DescriptorBufferPass::Instrument() {
                     continue;
                 }
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
                     const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == descriptor_path.index_id
                                                                   ? pc_access.descriptor_index_id
@@ -152,7 +152,7 @@ bool DescriptorBufferPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);

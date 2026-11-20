@@ -70,7 +70,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     uint32_t function_range_result = 0;  // only take next ID if needed
     const uint32_t function_range_id = GetLinkFunction(function_range_id_, kOfflineFunctionRange);
 
-    if (module_.settings_.safe_mode || block_skip_list_.find(inst_position) == block_skip_list_.end()) {
+    if (module_.settings_.WrapCheck() || block_skip_list_.find(inst_position) == block_skip_list_.end()) {
         // "normal" check
         function_range_result = module_.TakeNextId();
         block.CreateInstruction(
@@ -110,7 +110,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     module_.need_log_error_ = true;
 
     // Will return bool that will look like (FuncRange() && FuncAlign()) { }
-    if (module_.settings_.safe_mode) {
+    if (module_.settings_.WrapCheck()) {
         const uint32_t logical_and_id = module_.TakeNextId();
         block.CreateInstruction(spv::OpLogicalAnd, {bool_type, logical_and_id, function_range_result, function_align_result},
                                 inst_it);
@@ -144,7 +144,7 @@ bool BufferDeviceAddressPass::Instrument() {
     // We need to detect structs with a VERY specific case
     // If there is an array-of-structs where that struct has a runtime array inside of it
     vvl::unordered_set<uint32_t> struct_id_temp_workaround;
-    if (!module_.settings_.safe_mode) {
+    if (!module_.settings_.WrapCheck()) {
         type_manager_.FindArrayOfPSBStructWithRuntime(struct_id_temp_workaround);
     }
 
@@ -166,7 +166,7 @@ bool BufferDeviceAddressPass::Instrument() {
             }
             auto& block_instructions = current_block.instructions_;
 
-            if (!module_.settings_.safe_mode) {
+            if (!module_.settings_.WrapCheck()) {
                 // Pre-Pass optimization where we detect statically all the offsets inside a BDA Struct that are accessed.
                 // From here we can create a range and only do the check once since there is no real way to split a VkBuffer mid
                 // struct.
@@ -235,7 +235,7 @@ bool BufferDeviceAddressPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);

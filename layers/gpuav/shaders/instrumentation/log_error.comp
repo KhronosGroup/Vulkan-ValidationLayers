@@ -48,3 +48,42 @@ void inst_log_error(const uvec4 stage_info) {
         }
     }
 }
+
+// assert(sizeof(AbortMessage) == kAbortMessageDwordSize);
+struct AbortMessage {
+    uint magic;
+    uint cmd_buffer_id;
+
+    // Same layout as an error record in inst_errors_buffer
+    uint record_size;
+    uint shader_error_encoding;
+    uint stage_instruction_id;
+    uint stage_info_0;
+    uint stage_info_1;
+    uint stage_info_2;
+    uint action_id_error_logger_id;
+    uint parameter_0;
+    uint parameter_1;
+    uint parameter_2;
+    uint unused_0;
+    uint unused_1;
+};
+
+AbortMessage inst_abort_message(const uvec4 stage_info) {
+    return AbortMessage(
+        kAbortMessageMagic,
+        inst_errors_buffer.cmd_buffer_id,
+        kErrorRecordDwordSize,
+        error_payload.shader_error_encoding,
+        error_payload.inst_offset | (stage_info.x << kStageId_Shift),
+        stage_info.y,
+        stage_info.z,
+        stage_info.w,
+        (inst_action_index_buffer.data << kActionId_Shift) | inst_error_logger_index_buffer.data,
+        error_payload.parameter_0,
+        error_payload.parameter_1,
+        error_payload.parameter_2,
+        0u,
+        0u
+    );
+}

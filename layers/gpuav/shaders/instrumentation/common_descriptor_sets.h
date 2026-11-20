@@ -27,6 +27,8 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstErrorBuffer, scala
     uint flags;
     uint error_buffer_u32_count;
     uint written_count;
+    // Used for shader abort
+    uint cmd_buffer_id;
     // Use SpecConstantInstErrorBufferLengthId instead of data.length()
     // This allows us to use VK_DESCRIPTOR_MAPPING_SOURCE_INDIRECT_ADDRESS_EXT for heaps
     uint data[];

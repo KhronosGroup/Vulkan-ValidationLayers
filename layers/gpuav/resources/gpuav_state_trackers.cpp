@@ -83,6 +83,9 @@ void CommandBufferSubState::AllocateResources(const Location& loc) {
         ((uint32_t*)error_output_buffer_range_.offset_mapped_ptr)[glsl::error_buffer_u32_size_member_offset] =
             uint32_t(error_output_buffer_range_.size / sizeof(uint32_t));
 
+        cmd_buffer_id_ = gpuav_.next_cmd_buffer_id_++;
+        ((uint32_t*)error_output_buffer_range_.offset_mapped_ptr)[glsl::error_buffer_cmd_buffer_id_member_offset] = cmd_buffer_id_;
+
         if (gpuav_.gpuav_settings.shader_instrumentation.descriptor_checks) {
             ((uint32_t*)error_output_buffer_range_.offset_mapped_ptr)[glsl::error_buffer_flags_member_offset] =
                 glsl::inst_buffer_oob_enabled;
@@ -408,13 +411,36 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, gpuav::QueueSubmission& 
 
     {
         GpuError gpu_error{};
-        if (gpuav_.device_state->dispatch_device_->is_device_lost) {
+        const bool is_device_lost = gpuav_.device_state->dispatch_device_->is_device_lost;
+
+        auto error_output_buffer_ptr = (uint32_t*)error_output_buffer_range_.offset_mapped_ptr;
+
+        // With shader abort we copy the abort message into the error buffer, as if the shader had written them
+        std::vector<uint32_t> abort_error_records;
+        if (is_device_lost && gpuav_.gpuav_settings.shader_abort) {
+            abort_error_records = gpuav_.FindShaderAbortErrorRecords(cmd_buffer_id_, submission_loc);
+        }
+
+        if (!abort_error_records.empty()) {
+            uint32_t* error_records_start = &error_output_buffer_ptr[glsl::error_buffer_data_member_offset];
+            // Anything else in the error buffer is undefined after the device loss.
+            // Zero it, the loop below stops at the first record with a size of zero.
+            memset(error_records_start, 0, sizeof(uint32_t) * glsl::kErrorBufferDataLength);
+
+            // The error buffer only has room for kErrorRecordCounts records, any after that are dropped
+            const size_t records_dword_count = std::min(abort_error_records.size(), size_t(glsl::kErrorBufferDataLength));
+            memcpy(error_records_start, abort_error_records.data(), sizeof(uint32_t) * records_dword_count);
+            error_output_buffer_ptr[glsl::error_buffer_used_size_member_offset] = uint32_t(records_dword_count);
+
+            gpu_error.error_msg_prefix =
+                "GPU-AV injected an OpAbortKHR and an error was found, which is the reason the device was lost "
+                "(VK_ERROR_DEVICE_LOST).\n";
+        } else if (is_device_lost) {
             gpu_error.error_msg_prefix =
                 "[WARNING] A device lost occurred. Trying to print an error GPU-AV might have gathered. Since GPU buffers storing "
                 "GPU-AV errors are in theory undefined in this context, error messages may be inaccurate or wrongly report a "
                 "nonexistent error. In practice, memory tends to hold up, and reads are fine.\n";
         }
-        auto error_output_buffer_ptr = (uint32_t*)error_output_buffer_range_.offset_mapped_ptr;
 
         // The second word in the debug output buffer is the number of words that would have
         // been written by the shader instrumentation, if there was enough room in the buffer we provided.
@@ -431,15 +457,15 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, gpuav::QueueSubmission& 
 
             uint32_t* error_record_ptr = error_records_start;
             uint32_t record_size = error_record_ptr[glsl::kHeader_ErrorRecordSizeOffset];
-            assert(record_size == glsl::kErrorRecordDwordSize || gpuav_.device_state->dispatch_device_->is_device_lost);
+            assert(record_size == glsl::kErrorRecordDwordSize || is_device_lost);
 
             while (record_size > 0 && (error_record_ptr + record_size) <= error_records_end) {
                 const uint32_t error_logger_i =
                     error_record_ptr[glsl::kHeader_ActionIdErrorLoggerIdOffset] & glsl::kErrorLoggerId_Mask;
 
                 if (error_logger_i >= gpuav_.gpuav_settings.indices_buffer_count) {
-                    assert(gpuav_.device_state->dispatch_device_->is_device_lost);
-                    if (!gpuav_.device_state->dispatch_device_->is_device_lost) {
+                    assert(is_device_lost);
+                    if (!is_device_lost) {
                         const LogObjectList objlist(queue, VkHandle());
                         gpuav_.InternalError(objlist, submission_loc,
                                              "Out of bound error logger access, but no device loss was detected.");
