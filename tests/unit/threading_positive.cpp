@@ -393,52 +393,21 @@ TEST_F(PositiveThreading, InternallySynchronizedQueues) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_INTERNALLY_SYNCHRONIZED_QUEUES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::internallySynchronizedQueues);
-    RETURN_IF_SKIP(InitFramework());
+    queue_create_flags_ = VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR;
+    RETURN_IF_SKIP(Init());
+    vkt::Queue& queue = *m_default_queue;
 
-    uint32_t queue_family_property_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu_, &queue_family_property_count, nullptr);
-    std::vector<VkQueueFamilyProperties> queue_family_properties(queue_family_property_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu_, &queue_family_property_count, queue_family_properties.data());
-
-    uint32_t queue_family_index = queue_family_property_count;
-    for (uint32_t i = 0; i < queue_family_property_count; i++) {
-        if (queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            queue_family_index = i;
-            break;
-        }
-    }
-
-    float queue_priority = 1.0f;
-
-    VkDeviceQueueCreateInfo device_queue_create_info = vku::InitStructHelper();
-    device_queue_create_info.flags = VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR;
-    device_queue_create_info.queueFamilyIndex = queue_family_index;
-    device_queue_create_info.queueCount = 1u;
-    device_queue_create_info.pQueuePriorities = &queue_priority;
-
-    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.pNext = requested_features_.GetEnabledFeatures2();
-    device_ci.queueCreateInfoCount = 1u;
-    device_ci.pQueueCreateInfos = &device_queue_create_info;
-    device_ci.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
-    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
-
-    vkt::Device device(gpu_, device_ci);
-    vkt::Queue& queue = *device.QueuesWithGraphicsCapability()[0];
-
-    vkt::CommandPool command_pool(device, queue_family_index);
-
-    vkt::Buffer buffer1(device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer1(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    vkt::Buffer buffer2(device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer2(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-    vkt::CommandBuffer cmd_buffer1(device, command_pool);
+    vkt::CommandBuffer cmd_buffer1(*m_device, m_command_pool);
     cmd_buffer1.Begin();
     vk::CmdFillBuffer(cmd_buffer1, buffer1, 0, VK_WHOLE_SIZE, 1);
     cmd_buffer1.End();
 
-    vkt::CommandBuffer cmd_buffer2(device, command_pool);
+    vkt::CommandBuffer cmd_buffer2(*m_device, m_command_pool);
     cmd_buffer2.Begin();
     vk::CmdFillBuffer(cmd_buffer2, buffer1, 0, VK_WHOLE_SIZE, 1);
     cmd_buffer2.End();
