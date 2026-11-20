@@ -1584,6 +1584,12 @@ const vvl::unordered_map<ImageError, std::vector<Entry>>& GetImageErrorsMap() {
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-09601"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-09601"},
          }},
+        {ImageError::kBadStencilUsageLayout,
+         {
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-12565"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-12565"},
+             {Key(Struct::VkHostImageLayoutTransitionInfo), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-12565"},
+         }},
     };
     return kImageErrors;
 }

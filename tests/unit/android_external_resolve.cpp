@@ -1011,7 +1011,7 @@ TEST_F(NegativeAndroidExternalResolve, ClearAttachment) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06129");
     m_command_buffer.BeginRendering(begin_rendering_info);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-09298");
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-12556");
     VkClearAttachment clear_depth_attachment;
     clear_depth_attachment.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
     clear_depth_attachment.colorAttachment = 0;

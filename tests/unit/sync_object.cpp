@@ -5115,12 +5115,12 @@ TEST_F(NegativeSyncObject, BarrierSeparateStencilUsage) {
         barrier.image = image;
 
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-        m_errorMonitor->SetDesiredError("UNASSIGNED-ImageLayoutTransition-stencilUsage");
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-12565");
         m_command_buffer.Barrier(barrier);
         m_errorMonitor->VerifyFound();
 
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        m_errorMonitor->SetDesiredError("UNASSIGNED-ImageLayoutTransition-stencilUsage");
+        m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-12565");
         m_command_buffer.Barrier(barrier);
         m_errorMonitor->VerifyFound();
     }

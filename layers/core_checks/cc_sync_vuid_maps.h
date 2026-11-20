@@ -90,6 +90,7 @@ enum class ImageError {
     kDynamicRenderingLocalReadNew,
     kDynamicRenderingLocalReadOld,
     kAspectMask,
+    kBadStencilUsageLayout,
 };
 
 const std::string &GetImageBarrierVUID(const Location &loc, ImageError error);

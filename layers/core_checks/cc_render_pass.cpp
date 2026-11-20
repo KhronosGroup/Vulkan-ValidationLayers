@@ -1337,6 +1337,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         if (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_3D) {
             skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114", objlist, attachment_loc,
                              "was created with viewType of VK_IMAGE_VIEW_TYPE_3D.");
+        } else if (image_state->GetImageType() == VK_IMAGE_TYPE_3D && vkuFormatIsDepthOrStencil(image_view_create_info->format)) {
+            skip |=
+                LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-12562", objlist, attachment_loc,
+                         "is a %s view of a 3D image, but the format is %s (a depth/stencil format).",
+                         string_VkImageViewType(image_view_create_info->viewType), string_VkFormat(image_view_create_info->format));
         }
     }
 

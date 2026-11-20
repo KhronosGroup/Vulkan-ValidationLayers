@@ -828,8 +828,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     uint32_t GetViewMask() const;
 
-    bool HasExternalFormatResolveAttachment() const;
-
     bool IsPrimary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
     bool IsSecondary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
 

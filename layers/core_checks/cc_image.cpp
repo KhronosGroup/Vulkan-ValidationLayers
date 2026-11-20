@@ -1238,8 +1238,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         const vvl::ImageView* depth_view_state = nullptr;
         const vvl::ImageView* stencil_view_state = nullptr;
 
-        bool external_format_resolve = false;
-
         // "colorAttachment is only meaningful if VK_IMAGE_ASPECT_COLOR_BIT is set in aspectMask", so it can be garbage otherwise
         const bool clears_color = (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
 
@@ -1267,8 +1265,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth));
             stencil_view_state = cb_state.GetActiveAttachmentImageViewState(
                 cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil));
-
-            external_format_resolve = cb_state.HasExternalFormatResolveAttachment();
         } else {
             const auto* renderpass_create_info = rp_state->create_info.ptr();
             const auto* subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
@@ -1281,18 +1277,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                         framebuffer->create_info.attachmentCount) {
                         color_view_state = cb_state.GetActiveAttachmentImageViewState(
                             subpass_desc->pColorAttachments[clear_desc.colorAttachment].attachment);
-                    }
-                }
-
-                // Whether the subpass does an external format resolve does not depend on colorAttachment
-                if (subpass_desc->pResolveAttachments) {
-                    for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
-                        const uint32_t resolve_attachment = subpass_desc->pResolveAttachments[i].attachment;
-                        if (resolve_attachment != VK_ATTACHMENT_UNUSED &&
-                            GetExternalFormat(renderpass_create_info->pAttachments[resolve_attachment].pNext) != 0) {
-                            external_format_resolve = true;
-                            break;
-                        }
                     }
                 }
 
@@ -1371,10 +1355,12 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         } else if (aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
             skip |= ValidateClearDepthStencilValue(commandBuffer, clear_desc.clearValue.depthStencil,
                                                    attachment_loc.dot(Field::clearValue).dot(Field::depthStencil));
-        } else if (external_format_resolve && IsAnyPlaneAspect(aspect_mask)) {
+        }
+
+        if (IsAnyPlaneAspect(aspect_mask)) {
             const LogObjectList objlist(commandBuffer, rp_state->Handle());
-            skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-09298", objlist, attachment_loc.dot(Field::aspectMask),
-                             "is %s.", string_VkImageAspectFlags(aspect_mask).c_str());
+            skip |= LogError("VUID-VkClearAttachment-aspectMask-12556", objlist, attachment_loc.dot(Field::aspectMask), "is %s.",
+                             string_VkImageAspectFlags(aspect_mask).c_str());
         }
 
         std::array<const vvl::ImageView*, 3> image_views = {nullptr, nullptr, nullptr};
