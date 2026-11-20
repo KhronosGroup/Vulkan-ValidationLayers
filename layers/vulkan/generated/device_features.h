@@ -654,6 +654,8 @@ struct DeviceFeatures {
     bool taskShader;
     // VkPhysicalDeviceMultiDrawFeaturesEXT
     bool multiDraw;
+    // VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX
+    bool multiLevelAccelerationStructure;
     // VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT
     bool multisampledRenderToSingleSampled;
     // VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT

@@ -1705,6 +1705,7 @@ enum class Struct {
     VkPhysicalDeviceMeshShaderPropertiesNV,
     VkPhysicalDeviceMultiDrawFeaturesEXT,
     VkPhysicalDeviceMultiDrawPropertiesEXT,
+    VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX,
     VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT,
     VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT,
     VkPhysicalDeviceMultiviewFeatures,
@@ -3907,6 +3908,7 @@ enum class Field {
     mtlTexture,
     multiDraw,
     multiDrawIndirect,
+    multiLevelAccelerationStructure,
     multiViewport,
     multisampleArrayImage,
     multisampledRenderToSingleSampled,
@@ -6103,6 +6105,7 @@ enum class FlagBitmask {
 enum class Extension {
     Empty = 0,
     _VK_AMDX_dense_geometry_format,
+    _VK_AMDX_multi_level_acceleration_structure,
     _VK_AMDX_shader_enqueue,
     _VK_AMD_anti_lag,
     _VK_AMD_buffer_marker,

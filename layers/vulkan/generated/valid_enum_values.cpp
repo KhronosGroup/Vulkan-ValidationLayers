@@ -1347,6 +1347,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureTypeKHR v
             return ValidValue::Valid;
         case VK_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_KHR:
             return IsExtEnabled(extensions.vk_khr_opacity_micromap) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_ACCELERATION_STRUCTURE_TYPE_MID_LEVEL_AMDX:
+            return IsExtEnabled(extensions.vk_amdx_multi_level_acceleration_structure) ? ValidValue::Valid
+                                                                                       : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -3573,6 +3576,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkAccelerationStructureTyp
     switch (value) {
         case VK_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_KHR:
             return {vvl::Extension::_VK_KHR_opacity_micromap};
+        case VK_ACCELERATION_STRUCTURE_TYPE_MID_LEVEL_AMDX:
+            return {vvl::Extension::_VK_AMDX_multi_level_acceleration_structure};
         default:
             return {};
     };

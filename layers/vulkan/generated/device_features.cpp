@@ -2064,6 +2064,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo* pCreateInfo, DeviceFeatu
                 features->computeOccupancyPriority |= enabled->computeOccupancyPriority == VK_TRUE;
                 break;
             }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_LEVEL_ACCELERATION_STRUCTURE_FEATURES_AMDX: {
+                const VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX* enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX*>(pNext);
+                features->multiLevelAccelerationStructure |= enabled->multiLevelAccelerationStructure == VK_TRUE;
+                break;
+            }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_MAINTENANCE_1_FEATURES_EXT: {
                 const VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT* enabled =
                     reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT*>(pNext);

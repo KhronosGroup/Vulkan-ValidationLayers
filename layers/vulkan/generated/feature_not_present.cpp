@@ -2152,6 +2152,20 @@ void DispatchInstance::ReportErrorFeatureNotPresent(VkPhysicalDevice gpu, const 
                 }
                 break;
             }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_LEVEL_ACCELERATION_STRUCTURE_FEATURES_AMDX: {
+                VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX supported = vku::InitStructHelper();
+                features_2.pNext = &supported;
+                DispatchGetPhysicalDeviceFeatures2(gpu, &features_2);
+                const VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX* enabling =
+                    reinterpret_cast<const VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX*>(current);
+                if (enabling->multiLevelAccelerationStructure && !supported.multiLevelAccelerationStructure) {
+                    ss << "VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX::multiLevelAccelerationStructure is not "
+                          "supported\n";
+                }
+                break;
+            }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT: {
                 VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT supported = vku::InitStructHelper();
                 features_2.pNext = &supported;

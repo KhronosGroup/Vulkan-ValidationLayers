@@ -1711,6 +1711,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceMeshShaderPropertiesNV", 39},
     {"VkPhysicalDeviceMultiDrawFeaturesEXT", 37},
     {"VkPhysicalDeviceMultiDrawPropertiesEXT", 39},
+    {"VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX", 60},
     {"VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT", 61},
     {"VkPhysicalDeviceMultisampledRenderToSwapchainFeaturesEXT", 57},
     {"VkPhysicalDeviceMultiviewFeatures", 34},
@@ -3916,6 +3917,7 @@ const char* String(Field field) {
     {"mtlTexture", 11},
     {"multiDraw", 10},
     {"multiDrawIndirect", 18},
+    {"multiLevelAccelerationStructure", 32},
     {"multiViewport", 14},
     {"multisampleArrayImage", 22},
     {"multisampledRenderToSingleSampled", 34},
@@ -6121,6 +6123,7 @@ const char* String(Extension extension) {
     static const std::string_view table[] = {
     {"INVALID_EMPTY", 14}, // Extension::Empty
     {"VK_AMDX_dense_geometry_format", 30},
+    {"VK_AMDX_multi_level_acceleration_structure", 43},
     {"VK_AMDX_shader_enqueue", 23},
     {"VK_AMD_anti_lag", 16},
     {"VK_AMD_buffer_marker", 21},
@@ -9695,6 +9698,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkComputeOccupancyPriorityParametersNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_OCCUPANCY_PRIORITY_FEATURES_NV:
        return Struct::VkPhysicalDeviceComputeOccupancyPriorityFeaturesNV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_LEVEL_ACCELERATION_STRUCTURE_FEATURES_AMDX:
+       return Struct::VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX;
     case VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_2_EXT:
        return Struct::VkCooperativeMatrixProperties2EXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_INFO_2_EXT:

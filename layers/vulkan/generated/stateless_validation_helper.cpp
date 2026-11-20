@@ -3611,6 +3611,21 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::computeOccupancyPriority), structure->computeOccupancyPriority);
             }
         } break;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+        // Validation code for VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_LEVEL_ACCELERATION_STRUCTURE_FEATURES_AMDX: {  // Covers
+                                                                                                    // VUID-VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX);
+                VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX* structure =
+                    (VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::multiLevelAccelerationStructure),
+                                       structure->multiLevelAccelerationStructure);
+            }
+        } break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_MAINTENANCE_1_FEATURES_EXT: {  // Covers
@@ -9647,7 +9662,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        constexpr std::array<VkStructureType, 292> allowed_structs_VkDeviceCreateInfo = {
+        constexpr std::array<VkStructureType, 293> allowed_structs_VkDeviceCreateInfo = {
             VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT,
             VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO,
@@ -9789,6 +9804,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_LEVEL_ACCELERATION_STRUCTURE_FEATURES_AMDX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SWAPCHAIN_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
