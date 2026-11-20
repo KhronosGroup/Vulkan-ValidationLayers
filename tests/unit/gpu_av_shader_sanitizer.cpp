@@ -1031,3 +1031,45 @@ TEST_F(NegativeGpuAVShaderSanitizer, CopyMemorySizedTyped) {
 
     SimpleZeroComputeTest(cs_source, SPV_SOURCE_ASM, "VUID-RuntimeSpirv-Size-11165");
 }
+
+TEST_F(NegativeGpuAVShaderSanitizer, ShaderAbortDivideByZero) {
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework({kShaderAbortSetting}, false));
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint divisor;
+            uint result;
+        };
+
+        void main() {
+            result = 5 / divisor;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    auto* buffer_ptr = static_cast<uint32_t*>(buffer.Memory().Map());
+    buffer_ptr[0] = 0;  // divisor
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("SPIRV-Sanitizer-Divide-By-Zero");
+    m_device->ExpectWaitSuccess(false);
+    m_default_queue->Submit(m_command_buffer);
+    ASSERT_EQ(VK_ERROR_DEVICE_LOST, m_default_queue->Wait(false));
+    m_errorMonitor->VerifyFound();
+}

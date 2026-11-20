@@ -23,6 +23,7 @@
 
 struct GpuAVSettings {
     bool safe_mode = false;
+    bool shader_abort = false;
 
     bool force_on_robustness = false;
     bool select_instrumented_shaders = false;

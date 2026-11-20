@@ -175,6 +175,8 @@ vvl_sources = [
   "layers/error_message/spirv_logging.cpp",
   "layers/error_message/spirv_logging.h",
   "layers/external/inplace_function.h",
+  "layers/external/shader_abort/shader_abort_message.cpp",
+  "layers/external/shader_abort/shader_abort_message.h",
   "layers/external/vma/vk_mem_alloc.h",
   "layers/external/vma/vma.cpp",
   "layers/external/vma/vma.h",

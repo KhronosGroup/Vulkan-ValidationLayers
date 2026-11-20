@@ -84,6 +84,7 @@ class Pass {
 
     InjectConditionalData InjectFunctionPre(Function& function, const BasicBlockIt original_block_it, InstructionIt inst_it);
     void InjectFunctionPost(BasicBlock& original_block, const InjectConditionalData& ic_data);
+    void CreateAbortBlock(BasicBlock& abort_block, uint32_t stage_info_id);
 
   protected:
     Pass(Module& module, const OfflineModule& offline);

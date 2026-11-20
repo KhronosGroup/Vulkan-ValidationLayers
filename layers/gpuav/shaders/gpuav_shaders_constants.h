@@ -50,9 +50,14 @@ const uint error_buffer_u32_size_member_offset = 1;
 // overwrite each others records. This value must be initialized to zero
 const uint error_buffer_used_size_member_offset = 2;
 
+// Unique id of the command buffer owning this error buffer, written by the CPU.
+// Lets an error record be mapped back to its command buffer without knowing which buffer it was read from.
+// Main use currently for Shader Abort
+const uint error_buffer_cmd_buffer_id_member_offset = 3;
+
 // Start of the stream of records written by the instrumented shaders.
 // Each record represents a validation error. The format of the records is documented below.
-const uint error_buffer_data_member_offset = 3;
+const uint error_buffer_data_member_offset = 4;
 
 // Maximum errors a cmd is allowed to log
 const uint kMaxErrorsPerCmd = 6;

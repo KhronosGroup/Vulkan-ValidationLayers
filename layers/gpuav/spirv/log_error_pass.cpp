@@ -27,6 +27,7 @@ namespace spirv {
 const static OfflineModule kOfflineModule = {instrumentation_log_error_comp, instrumentation_log_error_comp_size,
                                              UseErrorPayloadVariable};
 const static OfflineFunction kOfflineFunction = {"inst_log_error", instrumentation_log_error_comp_function_0_offset};
+const static OfflineFunction kOfflineFunctionAbort = {"inst_abort_message", instrumentation_log_error_comp_function_1_offset};
 
 LogErrorPass::LogErrorPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
@@ -113,6 +114,11 @@ bool LogErrorPass::Instrument() {
                 }
             }
         }
+    }
+
+    if (module_.abort_message_function_id_ != 0) {
+        link_info_.functions.emplace_back(LinkFunction{kOfflineFunctionAbort, module_.abort_message_function_id_});
+        instrumentations_count_++;
     }
 
     return instrumentations_count_ != 0;

@@ -70,6 +70,15 @@ SPDX-FileCopyrightText = "2017-2024 Advanced Micro Devices, Inc."
 SPDX-License-Identifier = "MIT"
 
 # ---------------------------------------------------------------------------
+# External: ShaderAbortTools — MIT, Spencer Fricke
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "layers/external/shader_abort/**"
+SPDX-FileCopyrightText = "2026 Spencer Fricke"
+SPDX-License-Identifier = "MIT"
+
+# ---------------------------------------------------------------------------
 # External: xxhash — BSD-2-Clause, Yann Collet
 # ---------------------------------------------------------------------------
 

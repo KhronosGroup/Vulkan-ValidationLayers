@@ -767,6 +767,19 @@
                                     }
                                 },
                                 {
+                                    "key": "gpuav_shader_abort",
+                                    "label": "Shader Abort",
+                                    "description": "Uses VK_KHR_shader_abort to stop the shader at the first error found by shader instrumentation. The invalid access is never executed and the first error (instead of the last) is reported, but the device will be lost (VK_ERROR_DEVICE_LOST) once an error is found.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "gpuav_enable", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
                                     "key": "gpuav_force_on_robustness",
                                     "label": "Force on robustness features",
                                     "description": "This will enable all possible robustness features for the app at device creation time. This can be used to quickly detect if with robustness, your issue disappears. GPU-AV will also skip validating things already covered by robustness, so turning on should reduce GPU-AV performance overhead.",

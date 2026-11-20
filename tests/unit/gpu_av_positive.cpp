@@ -3004,3 +3004,119 @@ TEST_F(PositiveGpuAV, QueueSubmitDuringQueryRetire2) {
         m_default_queue->Wait();
     }
 }
+
+TEST_F(PositiveGpuAV, ShaderAbortGraphics) {
+    TEST_DESCRIPTION("Valid descriptor indexing in the vertex and fragment shader must not abort");
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    const VkLayerSettingEXT validate_setting = {OBJECT_LAYER_NAME, "gpuav_debug_validate_instrumented_shaders",
+                                                VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
+    RETURN_IF_SKIP(InitGpuAvFramework({kShaderAbortSetting, validate_setting}, false));
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char* vs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform UBO {
+            uint index;
+        };
+
+        layout(set = 0, binding = 1) readonly buffer SSBO {
+            vec4 data;
+        } ssbos[2];
+
+        void main() {
+            gl_Position = ssbos[index].data;
+        }
+    )glsl";
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform UBO {
+            uint index;
+        };
+
+        layout(set = 0, binding = 1) readonly buffer SSBO {
+            vec4 data;
+        } ssbos[2];
+
+        layout(location = 0) out vec4 color;
+
+        void main() {
+            color = ssbos[index].data;
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto* uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = 1;  // index
+
+    vkt::Buffer storage_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAV, ShaderAbortFromApp) {
+    TEST_DESCRIPTION("The app's own OpAbortKHR message must not be reported as a GPU-AV error");
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderAbort);
+    AddRequiredFeature(vkt::Feature::shaderConstantData);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(InitGpuAvFramework({kShaderAbortSetting}, false));
+    RETURN_IF_SKIP(InitState());
+
+    const char* cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_abort : enable
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint index;
+            uint data[4];
+        };
+
+        void main() {
+            data[index] = 1;
+            abortEXT("app abort %u", index);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = VkShaderObj(*m_device, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    auto* buffer_ptr = static_cast<uint32_t*>(buffer.Memory().Map());
+    buffer_ptr[0] = 2;  // index
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_device->ExpectWaitSuccess(false);
+    m_default_queue->Submit(m_command_buffer);
+    ASSERT_EQ(VK_ERROR_DEVICE_LOST, m_default_queue->Wait(false));
+}
