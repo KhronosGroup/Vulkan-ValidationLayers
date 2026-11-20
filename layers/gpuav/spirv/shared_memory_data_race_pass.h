@@ -51,6 +51,7 @@ class SharedMemoryDataRacePass : public Pass {
     void CreateFunctionCall(const Function& function, BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetWorkgroupSize();
+    bool HasSubgroupBarrierOnSharedMemory() const;
 
     uint32_t GetLinkFunctionId(const InstructionMeta& meta);
 
