@@ -2798,3 +2798,17 @@ TEST_F(PositivePipeline, SecondCreateInfoGraphics) {
         vk::DestroyPipeline(device(), pipelines[i], nullptr);
     }
 }
+
+TEST_F(PositivePipeline, LineRasterizationRasterizerDiscard) {
+    AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bresenhamLines);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.VertexShaderOnly();
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM;
+    pipe.ms_ci_.alphaToCoverageEnable = VK_TRUE;
+    pipe.CreateGraphicsPipeline();
+}
