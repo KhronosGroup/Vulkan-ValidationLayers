@@ -335,6 +335,30 @@ uint32_t SharedMemoryDataRacePass::GetWorkgroupSize() {
     return 0;
 }
 
+// Only a Workgroup scope barrier resets the shadow memory, so accesses ordered by a Subgroup scope barrier would be
+// reported as races (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/12813)
+bool SharedMemoryDataRacePass::HasSubgroupBarrierOnSharedMemory() const {
+    for (const auto& function : module_.functions_) {
+        if (!function.called_from_target_) {
+            continue;
+        }
+        for (const auto& block : function.blocks_) {
+            for (const auto& inst : block->instructions_) {
+                if (inst->Opcode() != spv::OpControlBarrier) {
+                    continue;
+                }
+                const Constant* scope = type_manager_.FindConstantById(inst->Word(1));
+                const Constant* semantics = type_manager_.FindConstantById(inst->Word(3));
+                if (scope && semantics && scope->GetValueUint32() == spv::ScopeSubgroup &&
+                    (semantics->GetValueUint32() & spv::MemorySemanticsWorkgroupMemoryMask) != 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 bool SharedMemoryDataRacePass::Instrument() {
     if (module_.interface_.entry_point_stage != VK_SHADER_STAGE_COMPUTE_BIT) {
         return false;
@@ -347,6 +371,10 @@ bool SharedMemoryDataRacePass::Instrument() {
     }
 
     if (module_.HasCapability(spv::CapabilityWorkgroupMemoryExplicitLayoutKHR)) {
+        return false;
+    }
+
+    if (HasSubgroupBarrierOnSharedMemory()) {
         return false;
     }
 
