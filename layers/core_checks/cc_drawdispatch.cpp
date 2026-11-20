@@ -292,41 +292,68 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
 bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer& cb_state, uint32_t indexCount, uint32_t firstIndex,
                                                   const Location& loc) const {
     bool skip = false;
-    if (enabled_features.robustBufferAccess2) {
-        return skip;
-    }
 
     const uint32_t index_size = IndexTypeByteSize(cb_state.index_buffer_binding.index_type);
     // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
     // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
     // BufferBinding::size for vertex buffer bindings (which record the *bound* size, not the size of the bound buffer)
     const VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size) * (static_cast<VkDeviceSize>(firstIndex) + indexCount);
-    if (end_offset > cb_state.index_buffer_binding.size) {
-        LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        if (const VkBuffer buffer = cb_state.index_buffer_binding.Handle(*device_state)) {
-            objlist.add(buffer);
+    if (end_offset <= cb_state.index_buffer_binding.size) {
+        return skip;
+    }
+
+    // robustBufferAccess2 must be enabled for all pre-rasterization shaders.
+    // Pipelines can override the device feature with VkPipelineRobustnessCreateInfo::vertexInputs
+    bool robust_buffer_access2 = enabled_features.robustBufferAccess2;
+    const vvl::Pipeline* pipeline = cb_state.GetLastBoundGraphics().pipeline_state;
+    if (enabled_features.pipelineRobustness && pipeline && pipeline->pre_raster_state) {
+        const vvl::Pipeline& pre_raster_pipeline = pipeline->pre_raster_state->parent;
+        const auto* pipeline_robustness =
+            vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pre_raster_pipeline.GraphicsCreateInfo().pNext);
+        for (const auto& stage_ci : pre_raster_pipeline.shader_stages_ci) {
+            if ((stage_ci.stage & PreRasterState::ValidShaderStages()) == 0) {
+                continue;
+            }
+            // A stage's struct takes precedence over the pipeline's
+            const auto* stage_robustness = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(stage_ci.pNext);
+            const auto* robustness = stage_robustness ? stage_robustness : pipeline_robustness;
+            if (robustness && robustness->vertexInputs != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT) {
+                robust_buffer_access2 = robustness->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2;
+            } else {
+                robust_buffer_access2 = enabled_features.robustBufferAccess2;
+            }
+            if (!robust_buffer_access2) {
+                break;
+            }
         }
-        const char* vuid = loc.function == Func::vkCmdDrawMultiIndexedEXT
-                               ? "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798"
-                               : "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798";
-        if (cb_state.index_buffer_binding.Buffer() != VK_NULL_HANDLE) {
-            const VkDeviceSize buffer_offset = cb_state.index_buffer_binding.BufferOffset();
-            skip |= LogError(vuid, objlist, loc,
-                             "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
-                             ")) "
-                             "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
-                             " bytes, which is greater than the index buffer size (%" PRIuLEAST64
-                             ").\nHint: This can be allowed if the robustBufferAccess2 feature is enabled.",
-                             index_size, firstIndex, indexCount, buffer_offset, end_offset + buffer_offset,
-                             cb_state.index_buffer_binding.size + buffer_offset);
-        } else {
-            skip |= LogError(vuid, objlist, loc,
-                             "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32 ")) = %" PRIuLEAST64
-                             " bytes, which is greater than the index buffer range size (%" PRIuLEAST64 ") at address 0x%" PRIx64
-                             ".\nHint: This can be allowed if the robustBufferAccess2 feature is enabled.",
-                             index_size, firstIndex, indexCount, end_offset, cb_state.index_buffer_binding.size,
-                             cb_state.index_buffer_binding.Address());
-        }
+    }
+    if (robust_buffer_access2) {
+        return skip;
+    }
+
+    LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (const VkBuffer buffer = cb_state.index_buffer_binding.Handle(*device_state)) {
+        objlist.add(buffer);
+    }
+    const char* vuid = loc.function == Func::vkCmdDrawMultiIndexedEXT ? "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798"
+                                                                      : "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798";
+    if (cb_state.index_buffer_binding.Buffer() != VK_NULL_HANDLE) {
+        const VkDeviceSize buffer_offset = cb_state.index_buffer_binding.BufferOffset();
+        skip |= LogError(vuid, objlist, loc,
+                         "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
+                         ")) "
+                         "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
+                         " bytes, which is greater than the index buffer size (%" PRIuLEAST64
+                         ").\nHint: This can be allowed if the robustBufferAccess2 feature is enabled.",
+                         index_size, firstIndex, indexCount, buffer_offset, end_offset + buffer_offset,
+                         cb_state.index_buffer_binding.size + buffer_offset);
+    } else {
+        skip |= LogError(vuid, objlist, loc,
+                         "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32 ")) = %" PRIuLEAST64
+                         " bytes, which is greater than the index buffer range size (%" PRIuLEAST64 ") at address 0x%" PRIx64
+                         ".\nHint: This can be allowed if the robustBufferAccess2 feature is enabled.",
+                         index_size, firstIndex, indexCount, end_offset, cb_state.index_buffer_binding.size,
+                         cb_state.index_buffer_binding.Address());
     }
 
     return skip;
