@@ -2060,9 +2060,8 @@ bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location& layout_loc
                          FormatHandle(image_state).c_str(), string_VkImageUsageFlags2KHR(image_state.usage).c_str());
     }
     if (check_stencil_usage && !IsImageLayoutCompatibleWithUsage(layout, *image_state.stencil_usage)) {
-        // TODO being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/8740
         const std::string vuid = layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                                     ? "UNASSIGNED-ImageLayoutTransition-stencilUsage"
+                                     ? vvl::GetImageBarrierVUID(layout_loc, vvl::ImageError::kBadStencilUsageLayout)
                                      : vvl::GetBadImageLayoutVUID(layout_loc, layout);
         skip |= LogError(vuid, image_state.Handle(), layout_loc, "(%s) is not compatible with %s stencilUsage flags %s.",
                          string_VkImageLayout(layout), FormatHandle(image_state).c_str(),

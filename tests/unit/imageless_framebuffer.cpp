@@ -964,6 +964,71 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
                               "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114");
 }
 
+TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView2DFrom3DDepthStencil) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    RETURN_IF_SKIP(Init());
+
+    const bool rp2_supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_UNDEFINED);
+    rp.AddDepthStencilAttachment(0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.CreateRenderPass();
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = ds_format;
+    image_ci.extent = {32, 32, 4};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    if (!IsImageFormatSupported(Gpu(), image_ci, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "3D depth/stencil image not supported";
+    }
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkFramebufferAttachmentImageInfo attachment_image_info = vku::InitStructHelper();
+    attachment_image_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    attachment_image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    attachment_image_info.width = 32;
+    attachment_image_info.height = 32;
+    attachment_image_info.layerCount = 1;
+    attachment_image_info.viewFormatCount = 1;
+    attachment_image_info.pViewFormats = &ds_format;
+    VkFramebufferAttachmentsCreateInfo attachments_ci = vku::InitStructHelper();
+    attachments_ci.attachmentImageInfoCount = 1;
+    attachments_ci.pAttachmentImageInfos = &attachment_image_info;
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper(&attachments_ci);
+    framebuffer_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+    framebuffer_ci.renderPass = rp;
+    framebuffer_ci.attachmentCount = 1;
+    framebuffer_ci.width = 32;
+    framebuffer_ci.height = 32;
+    framebuffer_ci.layers = 1;
+    vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
+
+    VkRenderPassAttachmentBeginInfo attachment_begin_info = vku::InitStructHelper();
+    attachment_begin_info.attachmentCount = 1;
+    attachment_begin_info.pAttachments = &image_view.handle();
+    VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper(&attachment_begin_info);
+    rp_begin_info.renderPass = rp;
+    rp_begin_info.framebuffer = framebuffer;
+    rp_begin_info.renderArea.extent = {32, 32};
+
+    CreateRenderPassBeginTest(m_command_buffer, &rp_begin_info, rp2_supported,
+                              "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-12562",
+                              "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-12562");
+}
+
 TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);

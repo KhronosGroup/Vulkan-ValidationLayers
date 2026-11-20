@@ -1416,7 +1416,7 @@ TEST_F(NegativeDescriptorHeapEXT, ReservedRangeZeroSizeOffset) {
     bind_info.reservedRangeSize = 0;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdBindResourceHeapEXT-reserved-range-zero");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-12558");
     vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

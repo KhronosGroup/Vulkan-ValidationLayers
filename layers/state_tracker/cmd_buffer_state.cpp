@@ -2672,15 +2672,6 @@ uint32_t CommandBuffer::GetViewMask() const {
     }
 }
 
-bool CommandBuffer::HasExternalFormatResolveAttachment() const {
-    if (active_render_pass && active_render_pass->use_dynamic_rendering &&
-        active_render_pass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
-        return active_render_pass->dynamic_rendering_begin_rendering_info.pColorAttachments->resolveMode ==
-               VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID;
-    }
-    return false;
-}
-
 // Only called for Graphics and during Multiview
 // "When multiview is enabled, at the beginning of each subpass all non-render pass state is undefined."
 void CommandBuffer::UnbindResources(Func command) {

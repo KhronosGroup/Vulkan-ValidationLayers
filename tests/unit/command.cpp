@@ -629,6 +629,7 @@ TEST_F(NegativeCommand, ClearColorAttachmentsZeroExtent) {
 
 TEST_F(NegativeCommand, ClearAttachmentsAspectMasks) {
     TEST_DESCRIPTION("Check VkClearAttachment invalid aspect masks.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -665,6 +666,16 @@ TEST_F(NegativeCommand, ClearAttachmentsAspectMasks) {
 
     attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-02246");
+    vk::CmdClearAttachments(m_command_buffer, 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-12556");
+    vk::CmdClearAttachments(m_command_buffer, 1, &attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkClearAttachment-aspectMask-12556");
     vk::CmdClearAttachments(m_command_buffer, 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
