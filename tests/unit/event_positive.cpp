@@ -961,3 +961,33 @@ TEST_F(PositiveEvent, HostResetAfterWait3) {
     event.Reset();
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveEvent, SetWaitEvents2MemoryRangeBarrier) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    VkMemoryRangeBarrierKHR memory_range_barrier = vku::InitStructHelper();
+    memory_range_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    memory_range_barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+    memory_range_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    memory_range_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    memory_range_barrier.addressRange = buffer.AddressRange();
+    memory_range_barrier.addressFlags = VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR | VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR;
+
+    VkMemoryRangeBarriersInfoKHR memory_range_barriers_info = vku::InitStructHelper();
+    memory_range_barriers_info.memoryRangeBarrierCount = 1;
+    memory_range_barriers_info.pMemoryRangeBarriers = &memory_range_barrier;
+    VkDependencyInfo dependency_info = vku::InitStructHelper(&memory_range_barriers_info);
+
+    m_command_buffer.Begin();
+    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
+    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
+    m_command_buffer.End();
+}

@@ -1103,6 +1103,10 @@ const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddress
                                                           : "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13097";
             case Func::vkCmdPipelineBarrier2KHR:
             case Func::vkCmdPipelineBarrier2:
+            case Func::vkCmdSetEvent2KHR:
+            case Func::vkCmdSetEvent2:
+            case Func::vkCmdWaitEvents2KHR:
+            case Func::vkCmdWaitEvents2:
                 return "VUID-VkMemoryRangeBarrierKHR-addressRange-13097";
             case Func::vkCmdCopyMemoryKHR:
                 return (loc.field == Field::srcRange) ? "VUID-VkDeviceMemoryCopyKHR-srcRange-13097"
@@ -1149,6 +1153,10 @@ const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddress
                                                           : "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13098";
             case Func::vkCmdPipelineBarrier2KHR:
             case Func::vkCmdPipelineBarrier2:
+            case Func::vkCmdSetEvent2KHR:
+            case Func::vkCmdSetEvent2:
+            case Func::vkCmdWaitEvents2KHR:
+            case Func::vkCmdWaitEvents2:
                 return "VUID-VkMemoryRangeBarrierKHR-addressRange-13098";
             case Func::vkCmdCopyMemoryKHR:
                 return (loc.field == Field::srcRange) ? "VUID-VkDeviceMemoryCopyKHR-srcRange-13098"
@@ -1195,6 +1203,10 @@ const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddress
                                                           : "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13099";
             case Func::vkCmdPipelineBarrier2KHR:
             case Func::vkCmdPipelineBarrier2:
+            case Func::vkCmdSetEvent2KHR:
+            case Func::vkCmdSetEvent2:
+            case Func::vkCmdWaitEvents2KHR:
+            case Func::vkCmdWaitEvents2:
                 return "VUID-VkMemoryRangeBarrierKHR-addressRange-13099";
             case Func::vkCmdCopyMemoryKHR:
                 return (loc.field == Field::srcRange) ? "VUID-VkDeviceMemoryCopyKHR-srcRange-13099"
@@ -1241,6 +1253,10 @@ const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddress
                                                           : "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13122";
             case Func::vkCmdPipelineBarrier2KHR:
             case Func::vkCmdPipelineBarrier2:
+            case Func::vkCmdSetEvent2KHR:
+            case Func::vkCmdSetEvent2:
+            case Func::vkCmdWaitEvents2KHR:
+            case Func::vkCmdWaitEvents2:
                 return "VUID-VkMemoryRangeBarrierKHR-addressRange-13122";
             case Func::vkCmdCopyMemoryKHR:
                 return (loc.field == Field::srcRange) ? "VUID-VkDeviceMemoryCopyKHR-srcRange-13122"
@@ -1287,6 +1303,10 @@ const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddress
                                                           : "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13123";
             case Func::vkCmdPipelineBarrier2KHR:
             case Func::vkCmdPipelineBarrier2:
+            case Func::vkCmdSetEvent2KHR:
+            case Func::vkCmdSetEvent2:
+            case Func::vkCmdWaitEvents2KHR:
+            case Func::vkCmdWaitEvents2:
                 return "VUID-VkMemoryRangeBarrierKHR-addressRange-13123";
             case Func::vkCmdCopyMemoryKHR:
                 return (loc.field == Field::srcRange) ? "VUID-VkDeviceMemoryCopyKHR-srcRange-13123"
@@ -1333,6 +1353,10 @@ const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddress
                                                           : "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13124";
             case Func::vkCmdPipelineBarrier2KHR:
             case Func::vkCmdPipelineBarrier2:
+            case Func::vkCmdSetEvent2KHR:
+            case Func::vkCmdSetEvent2:
+            case Func::vkCmdWaitEvents2KHR:
+            case Func::vkCmdWaitEvents2:
                 return "VUID-VkMemoryRangeBarrierKHR-addressRange-13124";
             case Func::vkCmdCopyMemoryKHR:
                 return (loc.field == Field::srcRange) ? "VUID-VkDeviceMemoryCopyKHR-srcRange-13124"
@@ -1379,6 +1403,10 @@ const std::string GetDeviceAddressCommandVUID(const Location& loc, DeviceAddress
                                                           : "VUID-VkDrawIndirectCount2InfoKHR-countAddressRange-13125";
             case Func::vkCmdPipelineBarrier2KHR:
             case Func::vkCmdPipelineBarrier2:
+            case Func::vkCmdSetEvent2KHR:
+            case Func::vkCmdSetEvent2:
+            case Func::vkCmdWaitEvents2KHR:
+            case Func::vkCmdWaitEvents2:
                 return "VUID-VkMemoryRangeBarrierKHR-addressRange-13125";
             case Func::vkCmdCopyMemoryKHR:
                 return (loc.field == Field::srcRange) ? "VUID-VkDeviceMemoryCopyKHR-srcRange-13125"

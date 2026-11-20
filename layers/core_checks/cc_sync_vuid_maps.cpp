@@ -1222,6 +1222,13 @@ static const vvl::unordered_map<QueueError, std::vector<Entry>>& GetBarrierQueue
              {Key(Struct::VkImageMemoryBarrier2), "VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-10387"},
              {Key(Struct::VkImageMemoryBarrier), "VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-10388"},
          }},
+        {QueueError::kRenderPassInstanceQueueFamilyMismatch,
+         {
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182"},
+             {Key(Func::vkCmdWaitEvents), "VUID-vkCmdWaitEvents-srcQueueFamilyIndex-01182"},
+             {Key(Func::vkCmdWaitEvents2), "VUID-vkCmdWaitEvents2-srcQueueFamilyIndex-01182"},
+         }},
     };
     return kBarrierQueueErrors;
 }
