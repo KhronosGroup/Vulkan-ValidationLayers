@@ -739,6 +739,96 @@ TEST_F(NegativeEvent, WaitEventRenderPassHostBit) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeEvent, WaitEventsRenderPassQueueFamilies) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Event event(*m_device);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
+    buffer_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    buffer_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    buffer_barrier.buffer = buffer;
+    buffer_barrier.size = 256;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcQueueFamilyIndex-01182");
+    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, nullptr, 1, &buffer_barrier, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, WaitEvents2RenderPassQueueFamilies) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Event event(*m_device);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.imageMemoryBarrierCount = 1;
+    dependency_info.pImageMemoryBarriers = &image_barrier;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-srcQueueFamilyIndex-01182");
+    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeEvent, WaitEvents2RenderPassQueueFamiliesMemoryRange) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Event event(*m_device);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    VkMemoryRangeBarrierKHR memory_range_barrier = vku::InitStructHelper();
+    memory_range_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    memory_range_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    memory_range_barrier.addressRange = buffer.AddressRange();
+    memory_range_barrier.addressFlags = VK_ADDRESS_COMMAND_FULLY_BOUND_BIT_KHR | VK_ADDRESS_COMMAND_STORAGE_BUFFER_USAGE_BIT_KHR;
+
+    VkMemoryRangeBarriersInfoKHR memory_range_barriers_info = vku::InitStructHelper();
+    memory_range_barriers_info.memoryRangeBarrierCount = 1;
+    memory_range_barriers_info.pMemoryRangeBarriers = &memory_range_barrier;
+    VkDependencyInfo dependency_info = vku::InitStructHelper(&memory_range_barriers_info);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-srcQueueFamilyIndex-01182");
+    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeEvent, WaitEventThenHostSet) {
     TEST_DESCRIPTION("Submit event wait then set it on the host");
     RETURN_IF_SKIP(Init());

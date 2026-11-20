@@ -1547,25 +1547,30 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     skip |= ValidateBarriers(error_obj.location, *cb_state, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                              bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 
+    // Inside a render pass, unequal queue family indices violate vkCmdWaitEvents VUIDs 02803 and 01182.
+    // Report only the render-pass-specific VUID 01182
     for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
-        if (pBufferMemoryBarriers[i].srcQueueFamilyIndex != pBufferMemoryBarriers[i].dstQueueFamilyIndex) {
-            skip |= LogError("VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803", objlist,
-                             error_obj.location.dot(Field::pBufferMemoryBarriers, i),
+        const Location barrier_loc = error_obj.location.dot(Field::pBufferMemoryBarriers, i);
+        if (cb_state->active_render_pass) {
+            skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, pBufferMemoryBarriers[i].srcQueueFamilyIndex,
+                                                           pBufferMemoryBarriers[i].dstQueueFamilyIndex);
+        } else if (pBufferMemoryBarriers[i].srcQueueFamilyIndex != pBufferMemoryBarriers[i].dstQueueFamilyIndex) {
+            skip |= LogError("VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803", objlist, barrier_loc,
                              "has different srcQueueFamilyIndex (%" PRIu32 ") and dstQueueFamilyIndex (%" PRIu32 ").",
                              pBufferMemoryBarriers[i].srcQueueFamilyIndex, pBufferMemoryBarriers[i].dstQueueFamilyIndex);
         }
     }
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
-        if (pImageMemoryBarriers[i].srcQueueFamilyIndex != pImageMemoryBarriers[i].dstQueueFamilyIndex) {
-            skip |= LogError("VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803", objlist,
-                             error_obj.location.dot(Field::pImageMemoryBarriers, i),
-                             "has different srcQueueFamilyIndex (%" PRIu32 ") and dstQueueFamilyIndex (%" PRIu32 ").",
-                             pImageMemoryBarriers[i].srcQueueFamilyIndex, pImageMemoryBarriers[i].dstQueueFamilyIndex);
-        }
+        const Location barrier_loc = error_obj.location.dot(Field::pImageMemoryBarriers, i);
         if (cb_state->active_render_pass) {
             const ImageBarrier barrier(pImageMemoryBarriers[i], srcStageMask, dstStageMask);
-            const Location barrier_loc = error_obj.location.dot(Field::pImageMemoryBarriers, i);
             skip |= ValidateRenderPassInstanceNoLayoutChange(objlist, barrier_loc, barrier.oldLayout, barrier.newLayout);
+            skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, barrier.srcQueueFamilyIndex,
+                                                           barrier.dstQueueFamilyIndex);
+        } else if (pImageMemoryBarriers[i].srcQueueFamilyIndex != pImageMemoryBarriers[i].dstQueueFamilyIndex) {
+            skip |= LogError("VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803", objlist, barrier_loc,
+                             "has different srcQueueFamilyIndex (%" PRIu32 ") and dstQueueFamilyIndex (%" PRIu32 ").",
+                             pImageMemoryBarriers[i].srcQueueFamilyIndex, pImageMemoryBarriers[i].dstQueueFamilyIndex);
         }
     }
 
@@ -1670,10 +1675,28 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         skip |= ValidateWaitEventDependencyFlags(dep_info.dependencyFlags, objlist, dep_info_loc);
 
         if (cb_state->active_render_pass) {
+            for (uint32_t barrier_index = 0; barrier_index < dep_info.bufferMemoryBarrierCount; barrier_index++) {
+                const VkBufferMemoryBarrier2& barrier = dep_info.pBufferMemoryBarriers[barrier_index];
+                const Location barrier_loc = dep_info_loc.dot(Field::pBufferMemoryBarriers, barrier_index);
+                skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, barrier.srcQueueFamilyIndex,
+                                                               barrier.dstQueueFamilyIndex);
+            }
             for (uint32_t barrier_index = 0; barrier_index < dep_info.imageMemoryBarrierCount; barrier_index++) {
                 const ImageBarrier barrier(dep_info.pImageMemoryBarriers[barrier_index]);
                 const Location barrier_loc = dep_info_loc.dot(Field::pImageMemoryBarriers, barrier_index);
                 skip |= ValidateRenderPassInstanceNoLayoutChange(objlist, barrier_loc, barrier.oldLayout, barrier.newLayout);
+                skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, barrier.srcQueueFamilyIndex,
+                                                               barrier.dstQueueFamilyIndex);
+            }
+            if (const auto* memory_range_barriers_info =
+                    vku::FindStructInPNextChain<VkMemoryRangeBarriersInfoKHR>(dep_info.pNext)) {
+                for (const auto [barrier_index, barrier] : vvl::enumerate(memory_range_barriers_info->pMemoryRangeBarriers,
+                                                                          memory_range_barriers_info->memoryRangeBarrierCount)) {
+                    const Location barrier_loc =
+                        dep_info_loc.pNext(Struct::VkMemoryRangeBarriersInfoKHR, Field::pMemoryRangeBarriers, barrier_index);
+                    skip |= ValidateRenderPassBarrierQueueFamilies(objlist, barrier_loc, barrier.srcQueueFamilyIndex,
+                                                                   barrier.dstQueueFamilyIndex);
+                }
             }
         }
         const EventSignalState* signal_state = vvl::Find(cb_sub_state.event_signal_states, pEvents[i]);
@@ -3058,10 +3081,7 @@ bool CoreChecks::ValidateRenderPassBarrierQueueFamilies(const LogObjectList& obj
                                                         uint32_t src_queue_family, uint32_t dst_queue_family) const {
     bool skip = false;
     if (src_queue_family != dst_queue_family) {
-        const bool is_sync2 =
-            barrier_loc.function == Func::vkCmdPipelineBarrier2 || barrier_loc.function == Func::vkCmdPipelineBarrier2KHR;
-        const char* vuid = is_sync2 ? "VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182"
-                                    : "VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182";
+        const auto& vuid = GetBarrierQueueVUID(barrier_loc, vvl::QueueError::kRenderPassInstanceQueueFamilyMismatch);
         skip |=
             LogError(vuid, objlist, barrier_loc.dot(Field::srcQueueFamilyIndex),
                      "is %" PRIu32 " and dstQueueFamilyIndex is %" PRIu32 " but they must be equal inside a render pass instance.",
