@@ -142,3 +142,34 @@ TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccess2Supported) {
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2;
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveRobustness, IndexBufferOutOfBoundsPipelineRobustnessBufferAccess2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    // robustBufferAccess2 is not enable
+    AddRequiredFeature(vkt::Feature::pipelineRobustness);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(robustness2_features);
+    if (!robustness2_features.robustBufferAccess2) {
+        GTEST_SKIP() << "robustBufferAccess2 is not supported";  // or you hit VU 06933
+    }
+
+    VkPipelineRobustnessCreateInfo pipeline_robustness_info = vku::InitStructHelper();
+    pipeline_robustness_info.vertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2;
+    CreatePipelineHelper pipe(*this, &pipeline_robustness_info);
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawIndexed(m_command_buffer, 513, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
