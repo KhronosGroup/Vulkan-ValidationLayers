@@ -610,6 +610,37 @@ class Device : public vvl::BaseDevice {
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                        const Context &context) const;
+    bool ValidateGraphicsPipelineDynamicRendering(const Context& context, const VkGraphicsPipelineCreateInfo& create_info,
+                                                  const Location& create_info_loc, VkPipelineCreateFlags2 flags) const;
+    // <VkDynamicState, index in pDynamicStates, hash for enum key>
+    using DynamicStateMap = vvl::unordered_map<VkDynamicState, uint32_t, vvl::hash<int>>;
+    bool ValidateGraphicsPipelineDynamicState(const VkGraphicsPipelineCreateInfo& create_info, const Location& create_info_loc,
+                                              bool has_pre_raster_state, DynamicStateMap& dynamic_state_map) const;
+    bool ValidateGraphicsPipelineTessellationState(const Context& context,
+                                                   const VkPipelineTessellationStateCreateInfo& tessellation_state,
+                                                   const Location& tessellation_loc,
+                                                   const DynamicStateMap& dynamic_state_map) const;
+    bool ValidateGraphicsPipelineVertexInputState(const Context& context,
+                                                  const VkPipelineVertexInputStateCreateInfo& vertex_input_state,
+                                                  const Location& vertex_loc, const DynamicStateMap& dynamic_state_map) const;
+    bool ValidateGraphicsPipelineViewportState(const Context& context, const VkGraphicsPipelineCreateInfo& create_info,
+                                               const Location& create_info_loc, const DynamicStateMap& dynamic_state_map) const;
+    bool ValidateGraphicsPipelineViewportStatePNext(const VkPipelineViewportStateCreateInfo& viewport_state,
+                                                    const Location& create_info_loc,
+                                                    const DynamicStateMap& dynamic_state_map) const;
+    bool ValidateGraphicsPipelineMultisampleState(const Context& context,
+                                                  const VkPipelineMultisampleStateCreateInfo& multisample_state,
+                                                  const Location& ms_loc) const;
+    bool ValidateGraphicsPipelineColorBlendState(const Context& context,
+                                                 const VkPipelineColorBlendStateCreateInfo& color_blend_state,
+                                                 const Location& color_loc, const DynamicStateMap& dynamic_state_map) const;
+    bool ValidateGraphicsPipelineRasterizationState(const Context& context, const VkGraphicsPipelineCreateInfo& create_info,
+                                                    const Location& create_info_loc,
+                                                    const DynamicStateMap& dynamic_state_map) const;
+    bool ValidateGraphicsPipelineLineRasterizationState(const VkGraphicsPipelineCreateInfo& create_info,
+                                                        const Location& create_info_loc,
+                                                        const VkPipelineRasterizationLineStateCreateInfo& line_state,
+                                                        const DynamicStateMap& dynamic_state_map) const;
     bool ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const;
     bool ValidateCreatePipelinesFlags2(const VkPipelineCreateFlags flags1, const VkPipelineCreateFlags2 flags2,
                                        const Location &flags1_loc) const;
