@@ -32,7 +32,7 @@ AccelerationStructureKHR::AccelerationStructureKHR(vvl::DeviceState& device_stat
         VkDeviceAddress buffer_address = 0;
         if (ci_1.buffer_state->deviceAddress != 0) {
             buffer_address = ci_1.buffer_state->deviceAddress;
-        } else if (ci_1.buffer_state->Binding()) {
+        } else if (ci_1.buffer_state->Binding() && (ci_1.buffer_state->usage & VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT)) {
             buffer_address = device_state.GetBufferDeviceAddressHelper(ci_1.buffer_state->VkHandle());
         }
         if (buffer_address != 0) {
@@ -134,7 +134,8 @@ VkDeviceAddressRangeKHR AccelerationStructureKHR::GetEffectiveDeviceAddressRange
                 VkDeviceAddress buffer_address = 0;
                 if (ci_1->buffer_state->deviceAddress != 0) {
                     buffer_address = ci_1->buffer_state->deviceAddress;
-                } else if (ci_1->buffer_state->Binding()) {
+                } else if (ci_1->buffer_state->Binding() &&
+                           (ci_1->buffer_state->usage & VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT)) {
                     buffer_address = device_state.GetBufferDeviceAddressHelper(ci_1->buffer_state->VkHandle());
                 }
                 if (buffer_address != 0) {
