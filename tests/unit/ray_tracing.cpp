@@ -3886,8 +3886,9 @@ TEST_F(NegativeRayTracing, HostInstanceInvalid) {
 
     // Build Top Level Acceleration Structure
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostTopLevel(*m_device, blas);
-    tlas.GetGeometries()[0].SetInstanceHostAccelStructRef(VK_NULL_HANDLE, 0);
-    tlas.GetGeometries()[0].AddInstanceHostAccelStructRef(VK_NULL_HANDLE);
+    VkAccelerationStructureKHR invalid_as = CastToHandle<VkAccelerationStructureKHR, uintptr_t>(0xbad00000);
+    tlas.GetGeometries()[0].SetInstanceHostAccelStructRef(invalid_as, 0);
+    tlas.GetGeometries()[0].AddInstanceHostAccelStructRef(invalid_as);
     m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03779");
     m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03779");
     tlas.BuildHost();

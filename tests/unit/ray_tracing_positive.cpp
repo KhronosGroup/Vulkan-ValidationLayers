@@ -2373,3 +2373,19 @@ TEST_F(PositiveRayTracing, ZeroStrideHitSbt) {
     vk::CmdTraceRaysKHR(m_command_buffer, &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 1, 1, 1);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveRayTracing, HostInactiveInstance) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    RETURN_IF_SKIP(Init());
+
+    auto blas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device));
+    blas->BuildHost();
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostTopLevel(*m_device, blas);
+    tlas.GetGeometries()[0].AddInstanceHostAccelStructRef(VK_NULL_HANDLE);
+    tlas.BuildHost();
+}
