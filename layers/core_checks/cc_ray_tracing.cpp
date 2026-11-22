@@ -1340,7 +1340,7 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
                     CastFromUint64<VkAccelerationStructureKHR>(instance->accelerationStructureReference);
                 auto accel_struct_state = Get<vvl::AccelerationStructureKHR>(accel_struct);
 
-                if (!accel_struct_state) {
+                if (accel_struct != VK_NULL_HANDLE && !accel_struct_state) {
                     skip |= LogError(
                         "VUID-vkBuildAccelerationStructuresKHR-pInfos-03779", device,
                         geometry_loc.dot(Field::geometry)
