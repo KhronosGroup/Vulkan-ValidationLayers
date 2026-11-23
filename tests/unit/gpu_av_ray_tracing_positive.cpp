@@ -2861,3 +2861,43 @@ TEST_F(PositiveGpuAVRayTracing, BuildAccelerationStructureDescriptorBuffer) {
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVRayTracing, OpacityMicromapBuildKHR) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_ADDRESS_COMMANDS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::deviceAddressCommands);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::micromap);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features, false));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    auto micromap = vkt::as::blueprint::BuildGeometryInfoOnDeviceMicromap(*m_device);
+    m_command_buffer.Begin();
+    micromap.SetupBuild(true);
+    micromap.VkCmdBuildAccelerationStructuresKHR(m_command_buffer, true, true);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle);
+    vkt::as::GeometryKHR& triangles = blas.GetGeometries()[0];
+    VkAccelerationStructureTrianglesOpacityMicromapKHR micromap_geometry = vku::InitStructHelper();
+    micromap_geometry.indexType = triangles.GetVkObj().geometry.triangles.indexType;
+    micromap_geometry.indexBuffer = triangles.GetVkObj().geometry.triangles.indexData.deviceAddress;
+    micromap_geometry.indexStride = 3 * triangles.GetTrianglesIndexTypeByteSize();
+    micromap_geometry.baseTriangle = 0;
+    micromap_geometry.micromap = micromap.GetDstAS()->handle();
+    triangles.SetTrianglesOpacityMicromap(&micromap_geometry);
+
+    m_command_buffer.Begin();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
