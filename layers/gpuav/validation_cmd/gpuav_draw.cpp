@@ -173,7 +173,7 @@ void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Loca
             shader_resources.push_constants.api_offset_dwords = (uint32_t)api_offset / sizeof(uint32_t);
             if (api_count_buffer) {
                 shader_resources.push_constants.flags |= glsl::kFirstInstanceFlags_DrawCountFromBuffer;
-                shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+                shader_resources.count_buffer_binding.info = {api_count_buffer, 0, api_count_buffer_offset + sizeof(uint32_t)};
                 shader_resources.push_constants.api_count_buffer_offset_dwords =
                     uint32_t(api_count_buffer_offset / sizeof(uint32_t));
 
@@ -414,7 +414,7 @@ void CountBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const Locati
             shader_resources.push_constants.api_struct_size_byte = api_struct_size_byte;
             shader_resources.push_constants.device_limit_max_draw_indirect_count = gpuav.phys_dev_props.limits.maxDrawIndirectCount;
 
-            shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+            shader_resources.count_buffer_binding.info = {api_count_buffer, 0, api_count_buffer_offset + sizeof(uint32_t)};
             shader_resources.push_constants.api_count_buffer_offset_dwords = uint32_t(api_count_buffer_offset / sizeof(uint32_t));
 
             ASSERT_AND_RETURN(validation_pipeline.BindShaderResources(gpuav, cb_state, shader_resources,
@@ -590,7 +590,7 @@ void DrawMeshIndirect(Validator& gpuav, CommandBufferSubState& cb_state, const L
             shader_resources.push_constants.api_offset_dwords = uint32_t(api_offset / sizeof(uint32_t));
             if (api_count_buffer != VK_NULL_HANDLE) {
                 shader_resources.push_constants.flags |= glsl::kDrawMeshFlags_DrawCountFromBuffer;
-                shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+                shader_resources.count_buffer_binding.info = {api_count_buffer, 0, api_count_buffer_offset + sizeof(uint32_t)};
                 shader_resources.push_constants.api_count_buffer_offset_dwords =
                     uint32_t(api_count_buffer_offset / sizeof(uint32_t));
             } else {
@@ -888,7 +888,8 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
             SetupDrawCountDispatchIndirectShader setup_validation_shader_resources;
             setup_validation_shader_resources.push_constants = push_constants;
             if (api_count_buffer != VK_NULL_HANDLE) {
-                setup_validation_shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+                setup_validation_shader_resources.count_buffer_binding.info = {api_count_buffer, 0,
+                                                                               api_count_buffer_offset + sizeof(uint32_t)};
             } else {
                 setup_validation_shader_resources.count_buffer_binding.info = {
                     shared_draw_validation_resources.dummy_buffer.VkHandle(), 0, VK_WHOLE_SIZE};
@@ -941,7 +942,8 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
             DrawIndexedIndirectIndexBufferShader validation_shader_resources;
             validation_shader_resources.push_constants = push_constants;
             if (api_count_buffer != VK_NULL_HANDLE) {
-                validation_shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+                validation_shader_resources.count_buffer_binding.info = {api_count_buffer, 0,
+                                                                         api_count_buffer_offset + sizeof(uint32_t)};
             } else {
                 validation_shader_resources.count_buffer_binding.info = {shared_draw_validation_resources.dummy_buffer.VkHandle(),
                                                                          0, VK_WHOLE_SIZE};
