@@ -2605,7 +2605,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
                                                         const ErrorObject& error_obj) const override;
-    bool ValidateCmdCopyMemoryToImage(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryImageInfoKHR& copy_memory_info,
+    bool ValidateCmdCopyMemoryToImage(const vvl::CommandBuffer& cb_state, const VkCopyDeviceMemoryImageInfoKHR& copy_memory_info,
                                       const Location& info_loc) const;
     bool PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
                                                 const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
@@ -2681,6 +2681,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
                                                      const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                       const ErrorObject& error_obj) const override;
 
     bool ValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,

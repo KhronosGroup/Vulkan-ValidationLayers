@@ -4164,6 +4164,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer command
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
 
     if (!enabled_features.indirectMemoryCopy) {
         skip |= LogError("VUID-vkCmdCopyMemoryIndirectKHR-indirectMemoryCopy-10935", commandBuffer, error_obj.location,
@@ -4366,6 +4367,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
     const ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
 
     if (!enabled_features.indirectMemoryToImageCopy) {
         skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectKHR-indirectMemoryToImageCopy-10947", commandBuffer,
@@ -4393,13 +4395,12 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
 
 // vkCmdCopyMemoryToImageKHR and vkCmdCopyImageToMemoryKHR (VK_KHR_device_address_commands)
 // TODO - We duplciate logic to not add more complexity to the already over-complicated templated ValidateMemoryImageCopyCommon()
-bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
+bool CoreChecks::ValidateCmdCopyMemoryToImage(const vvl::CommandBuffer& cb_state,
                                               const VkCopyDeviceMemoryImageInfoKHR& copy_memory_info,
                                               const Location& info_loc) const {
     bool skip = false;
 
-    auto cb_state_ptr = GetRead<vvl::CommandBuffer>(command_buffer);
-    const vvl::CommandBuffer& cb_state = *cb_state_ptr;
+    const VkCommandBuffer command_buffer = cb_state.VkHandle();
 
     auto image_state = Get<vvl::Image>(copy_memory_info.image);
     ASSERT_AND_RETURN_SKIP(image_state);
@@ -4580,19 +4581,28 @@ bool CoreChecks::ValidateCmdCopyMemoryToImage(VkCommandBuffer command_buffer,
 bool CoreChecks::PreCallValidateCmdCopyMemoryToImageKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
                                                         const ErrorObject& error_obj) const {
-    return ValidateCmdCopyMemoryToImage(commandBuffer, *pCopyMemoryInfo, error_obj.location.dot(Field::pCopyMemoryInfo));
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateCmdCopyMemoryToImage(*cb_state, *pCopyMemoryInfo, error_obj.location.dot(Field::pCopyMemoryInfo));
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdCopyImageToMemoryKHR(VkCommandBuffer commandBuffer,
                                                         const VkCopyDeviceMemoryImageInfoKHR* pCopyMemoryInfo,
                                                         const ErrorObject& error_obj) const {
-    return ValidateCmdCopyMemoryToImage(commandBuffer, *pCopyMemoryInfo, error_obj.location.dot(Field::pCopyMemoryInfo));
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateCmdCopyMemoryToImage(*cb_state, *pCopyMemoryInfo, error_obj.location.dot(Field::pCopyMemoryInfo));
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdCopyMemoryKHR(VkCommandBuffer commandBuffer, const VkCopyDeviceMemoryInfoKHR* pCopyMemoryInfo,
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     const Location info_loc = error_obj.location.dot(Field::pCopyMemoryInfo);
 
     for (uint32_t i = 0; i < pCopyMemoryInfo->regionCount; ++i) {

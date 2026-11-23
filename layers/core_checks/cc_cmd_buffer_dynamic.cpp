@@ -2021,6 +2021,14 @@ bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer com
     return ValidateCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable, error_obj);
 }
 
+bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartIndexEXT(VkCommandBuffer commandBuffer, uint32_t primitiveRestartIndex,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+    return skip;
+}
+
 bool CoreChecks::ValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
                                         const ErrorObject& error_obj) const {
     bool skip = false;

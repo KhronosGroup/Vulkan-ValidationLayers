@@ -570,12 +570,13 @@ bool CoreChecks::PreCallValidateCmdFillMemoryKHR(VkCommandBuffer commandBuffer, 
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
 
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(cb_state, error_obj.location);
+
     skip |= ValidateDeviceAddressRange(pDstRange->address, pDstRange->size, false, error_obj.location.dot(Field::pDstRange),
                                        LogObjectList(commandBuffer), VK_BUFFER_USAGE_2_TRANSFER_DST_BIT,
                                        "VUID-vkCmdFillMemoryKHR-dstRange-13000");
 
-    auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
-    const vvl::CommandBuffer& cb_state = *cb_state_ptr;
     if (!phys_dev_props_core11.protectedNoFault) {
         if (cb_state.unprotected) {
             if ((dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) != 0) {
