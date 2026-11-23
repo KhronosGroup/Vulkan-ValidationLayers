@@ -18,6 +18,7 @@
  */
 #pragma once
 
+#include "containers/custom_containers.h"
 #include "error_message/error_location.h"
 #include "gpuav/resources/gpuav_queue_state.h"
 #include "state_tracker/event_state.h"
@@ -54,6 +55,14 @@ struct CommandBufferSubmitInfo {
     std::vector<std::string> initial_label_stack;
 };
 
+// Additional syncval input for one execution of a submitted command buffer.
+// GPU-AV fills it after the GPU finishes executing the command buffer
+struct SyncValInputData {
+    // Draw counts read from countBuffer at countBufferOffset.
+    // The key is CommandBuffer::command_count
+    vvl::unordered_map<uint64_t, uint32_t> draw_counts;
+};
+
 struct QueueSubmission {
     QueueSubmission(const Location& loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
@@ -73,6 +82,10 @@ struct QueueSubmission {
 
     // Pending event waits for host reset validation
     EventWaitCommandMap event_wait_commands;
+
+    // SyncVal data slots, one per cb_infos entry. A slot is null if GPU-AV collects nothing for
+    // that command buffer. Empty if nothing is collected for the entire submission
+    std::vector<std::shared_ptr<SyncValInputData>> gpuav_to_syncval_data;
 
     LocationCapture loc;
     uint64_t seq{0};

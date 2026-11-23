@@ -283,6 +283,8 @@ vvl_sources = [
   "layers/gpuav/spirv/type_manager.h",
   "layers/gpuav/spirv/vertex_attribute_fetch_oob_pass.cpp",
   "layers/gpuav/spirv/vertex_attribute_fetch_oob_pass.h",
+  "layers/gpuav/syncval/gpuav_syncval.cpp",
+  "layers/gpuav/syncval/gpuav_syncval.h",
   "layers/gpuav/validation_cmd/gpuav_copy_buffer_to_image.cpp",
   "layers/gpuav/validation_cmd/gpuav_copy_buffer_to_image.h",
   "layers/gpuav/validation_cmd/gpuav_copy_memory_indirect.cpp",

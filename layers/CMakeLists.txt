@@ -311,6 +311,8 @@ target_sources(vvl_core PRIVATE
     gpuav/descriptor_validation/gpuav_descriptor_set.h
     gpuav/debug_printf/debug_printf.cpp
     gpuav/debug_printf/debug_printf.h
+    gpuav/syncval/gpuav_syncval.h
+    gpuav/syncval/gpuav_syncval.cpp
     gpuav/instrumentation/gpuav_shader_instrumentor.cpp
     gpuav/instrumentation/gpuav_shader_instrumentor.h
     gpuav/instrumentation/gpuav_instrumentation.h
