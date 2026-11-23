@@ -54,11 +54,7 @@ bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const V
     bool skip = false;
     const auto& error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    if (pCreateInfo->setLayoutCount > phys_dev_props.limits.maxBoundDescriptorSets) {
-        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286", device, create_info_loc.dot(Field::setLayoutCount),
-                         "(%" PRIu32 ") exceeds the maxBoundDescriptorSets limit (%" PRIu32 ").", pCreateInfo->setLayoutCount,
-                         phys_dev_props.limits.maxBoundDescriptorSets);
-    }
+    skip |= ValidatePipelineLayoutCreateInfo(*pCreateInfo, create_info_loc);
 
     if (!IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
@@ -71,14 +67,26 @@ bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const V
         }
     }
 
-    if (pCreateInfo->flags & VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR &&
-        !(pCreateInfo->flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
-        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-flags-13352", device, create_info_loc.dot(Field::flags),
-                         "is %s and does not include VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
-                         string_VkPipelineLayoutCreateFlags(pCreateInfo->flags).c_str());
+    return skip;
+}
+
+bool Device::ValidatePipelineLayoutCreateInfo(const VkPipelineLayoutCreateInfo& create_info,
+                                              const Location& create_info_loc) const {
+    bool skip = false;
+    if (create_info.setLayoutCount > phys_dev_props.limits.maxBoundDescriptorSets) {
+        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286", device, create_info_loc.dot(Field::setLayoutCount),
+                         "(%" PRIu32 ") exceeds the maxBoundDescriptorSets limit (%" PRIu32 ").", create_info.setLayoutCount,
+                         phys_dev_props.limits.maxBoundDescriptorSets);
     }
 
-    skip |= ValidatePushConstantRange(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges, create_info_loc);
+    if (create_info.flags & VK_PIPELINE_LAYOUT_CREATE_NO_TASK_SHADER_BIT_KHR &&
+        !(create_info.flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
+        skip |= LogError("VUID-VkPipelineLayoutCreateInfo-flags-13352", device, create_info_loc.dot(Field::flags),
+                         "is %s and does not include VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
+                         string_VkPipelineLayoutCreateFlags(create_info.flags).c_str());
+    }
+
+    skip |= ValidatePushConstantRange(create_info.pushConstantRangeCount, create_info.pPushConstantRanges, create_info_loc);
 
     return skip;
 }
@@ -126,9 +134,9 @@ bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const
     for (uint32_t i = 0; i < push_constant_range_count; ++i) {
         for (uint32_t j = i + 1; j < push_constant_range_count; ++j) {
             if (0 != (push_constant_ranges[i].stageFlags & push_constant_ranges[j].stageFlags)) {
-                const char* vuid = loc.function == Func::vkCreatePipelineLayout
-                                       ? "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292"
-                                       : "VUID-VkShaderCreateInfoEXT-pPushConstantRanges-10063";
+                const char* vuid = loc.function == Func::vkCreateShadersEXT
+                                       ? "VUID-VkShaderCreateInfoEXT-pPushConstantRanges-10063"
+                                       : "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292";
                 skip |= LogError(
                     vuid, device, loc,
                     "pPushConstantRanges[%" PRIu32 "].stageFlags (%s) and pPushConstantRanges[%" PRIu32
