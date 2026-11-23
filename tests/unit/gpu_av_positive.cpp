@@ -74,6 +74,11 @@ void GpuAVTest::InitGpuAvFramework(std::vector<VkLayerSettingEXT> layer_settings
     }
 }
 
+void GpuAVRayTracingTest::InitGpuAvFrameworkForRayTracing(std::vector<VkLayerSettingEXT> layer_settings, bool safe_mode) {
+    AddRayTracingRequiredExtensions();
+    RETURN_IF_SKIP(InitGpuAvFramework(std::move(layer_settings), safe_mode));
+}
+
 TEST_F(PositiveGpuAV, ReserveBinding) {
     TEST_DESCRIPTION(
         "verify that VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT is properly reserving a descriptor slot");
