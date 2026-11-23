@@ -438,10 +438,14 @@ class QueryTest : public VkLayerTest {
 
 class RayTracingTest : public virtual VkLayerTest {
   public:
-    void InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* enabled_features = nullptr, bool safe_mode = true);
+    void AddRayTracingRequiredExtensions();
+    void InitFrameworkForRayTracingTest();
 };
 
-class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};
+class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {
+  public:
+    void InitGpuAvFrameworkForRayTracing(std::vector<VkLayerSettingEXT> layer_settings = {}, bool safe_mode = true);
+};
 
 class ShaderObjectTestEXT : public virtual VkLayerTest {
   public:
