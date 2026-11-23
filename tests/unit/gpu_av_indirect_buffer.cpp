@@ -1351,3 +1351,42 @@ TEST_F(NegativeGpuAVIndirectBuffer, MeshDescriptorHeap) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVIndirectBuffer, DrawCountBufferOffset) {
+    TEST_DESCRIPTION("Draw count at a nonzero offset");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    if (m_device->Physical().limits_.maxDrawIndirectCount < 2) {
+        GTEST_SKIP() << "maxDrawIndirectCount is too low";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {1, 1};
+    rendering_info.layerCount = 1;
+
+    vkt::Buffer draw_buffer = vkt::IndirectBuffer<VkDrawIndirectCommand>(*m_device, {{3, 1, 0, 0}});
+    vkt::Buffer count_buffer = vkt::IndirectBuffer<uint32_t>(*m_device, {1, 2});
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    // The command specifies count as count_buffer[1] = 2.
+    // The draw buffer contains only single draw struct, access to the second draw struct must be reported
+    vk::CmdDrawIndirectCount(m_command_buffer, draw_buffer, 0, count_buffer, sizeof(uint32_t), 1, sizeof(VkDrawIndirectCommand));
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredWarning("WARNING-GPU-AV-drawCount");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
