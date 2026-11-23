@@ -34,9 +34,9 @@ struct SyncValSettings;
 
 class VkSyncValTest : public VkLayerTest {
   public:
-    void InitSyncValFramework(const SyncValSettings *p_sync_settings = nullptr);
+    void InitSyncValFramework(const SyncValSettings *p_sync_settings = nullptr, bool gpu_assisted = false);
     void InitSyncVal(const SyncValSettings *p_sync_settings = nullptr);
-    void InitDeferredSyncVal();
+    void InitDeferredSyncVal(bool gpu_assisted = false);
     void InitTimelineSemaphore();
     void InitRayTracing();
 

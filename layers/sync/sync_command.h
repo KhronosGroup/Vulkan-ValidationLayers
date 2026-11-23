@@ -700,13 +700,21 @@ struct DrawIndirectCountCommand {
     ShaderAccessCommand shader_accesses;
     DrawAttachmentCommand attachment_accesses;
     BufferAccessCommand count_access;
-    // TODO: Track indirect buffer accesses when gpu-av is integrated.
-    // indirect buffer accesses depend on runtime count value.
+
+    // indirect_access.count is zero during recording.
+    // Replay sets it if GPU-AV provides the draw count
+    StridedBufferAccessCommand indirect_access;
+
+    uint32_t max_draw_count = 0;
+    uint64_t command_number = 0;
 
     struct Storage {
         ShaderAccessCommand::Storage shader_access_storage;
         DrawAttachmentCommand::Storage attachment_access_storage;
         BufferAccessCommand::Storage count_access_storage;
+        StridedBufferAccessCommand::Storage indirect_access_storage;
+        uint32_t max_draw_count;
+        uint64_t command_number;
         DrawIndirectCountCommand MakeCommand(const CommandData& command_data, RenderPassAccessContext* render_pass_context,
                                              const RenderingInstance* rendering_instance) const;
     };
@@ -1098,6 +1106,6 @@ struct CommandEntry {
 // new_hazards collects newly reported errors during vkCmdExecuteCommands validation. Null during queue submission
 bool ReplayCommands(SyncEnvironment& env, AccessContext& access_context, const CommandBufferRecording& recording,
                     ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards = nullptr,
-                    const CommandBufferContext* primary_context = nullptr);
+                    const CommandBufferContext* primary_context = nullptr, const vvl::SyncValInputData* gpuav_data = nullptr);
 
 }  // namespace syncval

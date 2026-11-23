@@ -46,8 +46,8 @@ Buffer IndexBuffer(const Device &dev, const std::vector<IndexT> &indices) {
 
 // stride == sizeof(IndirectCmdT)
 template <typename IndirectCmdT>
-Buffer IndirectBuffer(const Device &dev, const std::vector<IndirectCmdT> &indirect_cmds) {
-    vkt::Buffer indirect_buffer(dev, indirect_cmds.size() * sizeof(IndirectCmdT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+Buffer IndirectBuffer(const Device &dev, const std::vector<IndirectCmdT> &indirect_cmds, VkBufferUsageFlags extra_usage = 0) {
+    vkt::Buffer indirect_buffer(dev, indirect_cmds.size() * sizeof(IndirectCmdT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | extra_usage,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     auto *indirect_buffer_ptr = static_cast<IndirectCmdT *>(indirect_buffer.Memory().Map());
     std::copy(indirect_cmds.data(), indirect_cmds.data() + indirect_cmds.size(), indirect_buffer_ptr);

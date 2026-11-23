@@ -62,6 +62,25 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
 
     // Update last_batch_seq of the QueueSubmitCommand added in the validation phase
     pending_submit->last_batch_seq = submissions.back().seq;
+
+    // Store references to this submission's GPU-AV data for replay
+    for (auto [batch_index, batch] : vvl::enumerate(pending_submit->batches)) {
+        const auto& gpuav_data = submissions[batch_index].gpuav_to_syncval_data;
+        if (gpuav_data.empty()) {
+            continue;
+        }
+        batch.gpuav_data.resize(batch.recordings.size());
+
+        // NOTE: SyncVal keeps a slot for every submitted command buffer. gpuav_data has the same
+        // size as QueueSubmission::cb_infos, which skips handles it can't find. Use a separate
+        // gpuav_data_index because gpuav_data can have fewer entries
+        uint32_t gpuav_data_index = 0;
+        for (const auto [recording_index, recording] : vvl::enumerate(batch.recordings)) {
+            if (recording) {
+                batch.gpuav_data[recording_index] = gpuav_data[gpuav_data_index++];
+            }
+        }
+    }
     pending_submit = nullptr;
 
     // Another thread may have filled the queue while this submit's sequence was zero
@@ -1271,13 +1290,15 @@ void SyncValidator::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
 bool SyncValidator::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                         uint32_t stride, const ErrorObject& error_obj) const {
-    return ValidateDrawIndirectCount(commandBuffer, countBuffer, countBufferOffset, error_obj.location);
+    return ValidateDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, stride,
+                                     sizeof(VkDrawIndirectCommand), error_obj.location);
 }
 
 void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                uint32_t stride, Func command) {
-    RecordDrawIndirectCount(commandBuffer, countBuffer, countBufferOffset, Location(command));
+    RecordDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
+                            sizeof(VkDrawIndirectCommand), Location(command));
 }
 
 void SyncValidator::PostCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1320,13 +1341,15 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer c
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                uint32_t maxDrawCount, uint32_t stride,
                                                                const ErrorObject& error_obj) const {
-    return ValidateDrawIndirectCount(commandBuffer, countBuffer, countBufferOffset, error_obj.location);
+    return ValidateDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, stride,
+                                     sizeof(VkDrawIndexedIndirectCommand), error_obj.location);
 }
 
 void SyncValidator::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                       uint32_t stride, Func command) {
-    RecordDrawIndirectCount(commandBuffer, countBuffer, countBufferOffset, Location(command));
+    RecordDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
+                            sizeof(VkDrawIndexedIndirectCommand), Location(command));
 }
 
 void SyncValidator::PostCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1541,13 +1564,15 @@ void SyncValidator::RecordDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer b
     cb_context.StoreCommand(tag, command);
 }
 
-bool SyncValidator::ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                              const Location& loc) const {
+bool SyncValidator::ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t stride,
+                                              uint32_t access_size, const Location& loc) const {
     if (!syncval_settings.record_time_validation) {
         return false;
     }
     const auto count_buffer = Get<vvl::Buffer>(countBuffer);
-    if (!count_buffer) {
+    const auto indirect_buffer = Get<vvl::Buffer>(buffer);
+    if (!count_buffer || !indirect_buffer) {
         return false;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1557,14 +1582,18 @@ bool SyncValidator::ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
     const DrawIndirectCountCommand command{
         descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand(),
         BufferAccessCommand{*count_buffer, MakeRange(countBufferOffset, sizeof(uint32_t)), SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ,
-                            vvl::kNoIndex32, 0, BufferName::kDrawCount}};
+                            vvl::kNoIndex32, 0, BufferName::kDrawCount},
+        StridedBufferAccessCommand{*indirect_buffer, offset, 0, stride, access_size, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ,
+                                   vvl::kNoIndex32, BufferName::kIndirect}};
     return command.Validate(cb_context, loc);
 }
 
-void SyncValidator::RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                            const Location& loc) {
+void SyncValidator::RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                            uint32_t stride, uint32_t access_size, const Location& loc) {
     const auto count_buffer = Get<vvl::Buffer>(countBuffer);
-    if (!count_buffer) {
+    const auto indirect_buffer = Get<vvl::Buffer>(buffer);
+    if (!count_buffer || !indirect_buffer) {
         return;
     }
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
@@ -1575,11 +1604,21 @@ void SyncValidator::RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuf
     descriptor_accesses.RegisterResources(cb_context, tag);
 
     const ResourceUsageTagEx count_tag_ex = cb_context.AddCommandHandle(tag, count_buffer->Handle());
+    const ResourceUsageTagEx indirect_tag_ex = cb_context.AddCommandHandle(tag, indirect_buffer->Handle());
+
+    // TODO: Support draw-count collection for secondary command buffers.
+    // Until then, use zero so a secondary draw can't pick up a primary draw's count
+    const uint64_t command_number = cb_state->IsPrimary() ? cb_state->command_count : 0;
 
     const DrawIndirectCountCommand command{
-        descriptor_accesses.MakeCommand(), cb_context.GetDrawAttachmentCommand(),
+        descriptor_accesses.MakeCommand(),
+        cb_context.GetDrawAttachmentCommand(),
         BufferAccessCommand{*count_buffer, MakeRange(countBufferOffset, sizeof(uint32_t)), SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ,
-                            count_tag_ex.handle_index, 0, BufferName::kDrawCount}};
+                            count_tag_ex.handle_index, 0, BufferName::kDrawCount},
+        StridedBufferAccessCommand{*indirect_buffer, offset, 0, stride, access_size, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ,
+                                   indirect_tag_ex.handle_index, BufferName::kIndirect},
+        maxDrawCount,
+        command_number};
 
     if (syncval_settings.record_time_validation) {
         command.Apply(cb_context.GetSyncEnvironment(), tag, cb_context.GetCurrentAccessContext());
@@ -1591,14 +1630,16 @@ bool SyncValidator::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuf
                                                                     VkDeviceSize offset, VkBuffer countBuffer,
                                                                     VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                     uint32_t stride, const ErrorObject& error_obj) const {
-    return ValidateDrawIndirectCount(commandBuffer, countBuffer, countBufferOffset, error_obj.location);
+    return ValidateDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, stride,
+                                     sizeof(VkDrawMeshTasksIndirectCommandEXT), error_obj.location);
 }
 
 void SyncValidator::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                    VkDeviceSize offset, VkBuffer countBuffer,
                                                                    VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                    uint32_t stride, const RecordObject& record_obj) {
-    RecordDrawIndirectCount(commandBuffer, countBuffer, countBufferOffset, record_obj.location);
+    RecordDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
+                            sizeof(VkDrawMeshTasksIndirectCommandEXT), record_obj.location);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
@@ -2543,8 +2584,9 @@ bool SyncValidator::PropagateTimelineSignals(SignalsUpdate& signals_update) {
 
                 const auto async_batches = ready_batch.batch->RegisterAsyncContexts(ready_batch.resolved_dependencies);
 
-                skip |= ready_batch.batch->ValidateSubmit(ready_batch.recordings, ready_batch.submit_index, ready_batch.batch_index,
-                                                          ready_batch.label_stack, Location(ready_batch.submit_func));
+                skip |= ready_batch.batch->ValidateSubmit(ready_batch.recordings, ready_batch.gpuav_data, ready_batch.submit_index,
+                                                          ready_batch.batch_index, ready_batch.label_stack,
+                                                          Location(ready_batch.submit_func));
 
                 // ValidateSubmit() has assigned the batch tags
                 for (VkFence fence : ready_batch.fences) {

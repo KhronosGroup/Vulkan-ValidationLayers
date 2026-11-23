@@ -16,6 +16,7 @@
  */
 
 #include "sync/sync_command.h"
+#include "containers/container_utils.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_command_buffer.h"
 #include "sync/sync_dynamic_rendering.h"
@@ -26,6 +27,7 @@
 #include "state_tracker/event_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "state_tracker/queue_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "utils/math_utils.h"
 #include "utils/vk_api_utils.h"
@@ -87,7 +89,7 @@ struct CommandReplayContext {
 
 bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_context, const CommandBufferRecording& recording,
                     ResourceUsageTag base_tag, const Location& loc, std::vector<ReportedHazard>* new_hazards,
-                    const CommandBufferContext* primary_context) {
+                    const CommandBufferContext* primary_context, const vvl::SyncValInputData* gpuav_data) {
     bool skip = false;
     const CommandData& command_data = recording.command_data;
     CommandReplayContext replay_context(env, destination_access_context, base_tag);
@@ -256,7 +258,10 @@ bool ReplayCommands(SyncEnvironment& env, AccessContext& destination_access_cont
                 continue;
             }
             case CommandType::kDrawIndirectCount: {
-                replay_draw(command_data.draw_indirect_count_commands[index], access_context);
+                auto draw = command_data.draw_indirect_count_commands[index];
+                const uint32_t* count = gpuav_data ? vvl::Find(gpuav_data->draw_counts, draw.command_number) : nullptr;
+                draw.indirect_access_storage.count = count ? std::min(*count, draw.max_draw_count) : 0;
+                replay_draw(draw, access_context);
                 continue;
             }
             case CommandType::kDrawMeshTasks: {
@@ -1755,12 +1760,19 @@ DrawIndirectCountCommand DrawIndirectCountCommand::Storage::MakeCommand(const Co
                                                                         const RenderingInstance* rendering_instance) const {
     return {shader_access_storage.MakeCommand(command_data),
             attachment_access_storage.MakeCommand(render_pass_context, rendering_instance),
-            count_access_storage.MakeCommand(command_data)};
+            count_access_storage.MakeCommand(command_data),
+            indirect_access_storage.MakeCommand(command_data),
+            max_draw_count,
+            command_number};
 }
 
 DrawIndirectCountCommand::Storage DrawIndirectCountCommand::MakeStorage(CommandData& command_data) const {
-    return {shader_accesses.MakeStorage(command_data), attachment_accesses.MakeStorage(command_data),
-            count_access.MakeStorage(command_data)};
+    return {shader_accesses.MakeStorage(command_data),
+            attachment_accesses.MakeStorage(command_data),
+            count_access.MakeStorage(command_data),
+            indirect_access.MakeStorage(command_data),
+            max_draw_count,
+            command_number};
 }
 
 bool DrawIndirectCountCommand::Validate(const CommandBufferContext& cb_context, const Location& loc) const {
@@ -1773,6 +1785,7 @@ bool DrawIndirectCountCommand::Validate(const SyncEnvironment& env, const Access
     skip |= shader_accesses.Validate(env, access_context, reporter);
     skip |= attachment_accesses.Validate(env, access_context, reporter);
     skip |= count_access.Validate(env, access_context, reporter);
+    skip |= indirect_access.Validate(env, access_context, reporter);
     // TODO: shader instrumentation support is needed to read indirect buffer content (ValidateDrawVertex)
     return skip;
 }
@@ -1781,6 +1794,7 @@ void DrawIndirectCountCommand::Apply(SyncEnvironment& env, ResourceUsageTag tag,
     shader_accesses.Apply(env, tag, access_context);
     attachment_accesses.Apply(env, tag, access_context);
     count_access.Apply(env, tag, access_context);
+    indirect_access.Apply(env, tag, access_context);
     // TODO: shader instrumentation support is needed to read indirect buffer content (RecordDrawVertexIndex)
 }
 
