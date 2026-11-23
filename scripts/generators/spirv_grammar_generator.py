@@ -39,8 +39,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.cooperativeMatrixList = []
         self.rayFlagsList = []
         self.fpEncodingList = []
-        self.hasType = []
-        self.hasResult = []
         self.provisionalList = []
         # Need range to be large as largest possible operand index
         # This is done to make it easier to group switch case of same value
@@ -149,11 +147,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 if 'operands' in instruction:
                     for index, operand in enumerate(instruction['operands']):
                         kind = operand['kind']
-                        if kind == 'IdResultType':
-                            self.hasType.append(opname)
-                        elif kind == 'IdResult':
-                            self.hasResult.append(opname)
-                        else:
+                        if kind != 'IdResultType' and kind != 'IdResult':
                             # Operands are anything that isn't a result or result type
                             if 'quantifier' in operand:
                                 if operand['quantifier'] == '?':
@@ -277,36 +271,6 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
             std::string string_SpvRayFlagsMask(uint32_t mask);
             const char* string_SpvFPEncoding(spv::FPEncoding value);
-            ''')
-
-        hasTypeCase = "\n".join([f"        case spv::{f}:" for f in self.hasType if f not in self.provisionalList])
-        hasTypeCaseProvisional = "\n".join([f"        case spv::{f}:" for f in self.hasType if f in self.provisionalList])
-        hasResultCase = "\n".join([f"        case spv::{f}:" for f in self.hasResult if f not in self.provisionalList])
-        hasResultCaseProvisional = "\n".join([f"        case spv::{f}:" for f in self.hasResult if f in self.provisionalList])
-        out.append(f'''
-            static constexpr bool OpcodeHasType(uint32_t opcode) {{
-                switch (opcode) {{
-            {hasTypeCase}
-            #ifdef VK_ENABLE_BETA_EXTENSIONS
-            {hasTypeCaseProvisional}
-            #endif
-                        return true;
-                    default:
-                        return false;
-                }}
-            }}
-
-            static constexpr bool OpcodeHasResult(uint32_t opcode) {{
-                switch (opcode) {{
-            {hasResultCase}
-            #ifdef VK_ENABLE_BETA_EXTENSIONS
-            {hasResultCaseProvisional}
-            #endif
-                        return true;
-                    default:
-                        return false;
-                }}
-            }}
             ''')
 
         # \n is not allowed in f-string until 3.12
