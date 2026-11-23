@@ -590,6 +590,7 @@ class Device : public vvl::BaseDevice {
     bool manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                                     const Context &context) const;
+    bool ValidatePipelineLayoutCreateInfo(const VkPipelineLayoutCreateInfo& create_info, const Location& create_info_loc) const;
     bool ValidatePushConstantRange(uint32_t push_constant_range_count, const VkPushConstantRange *push_constant_ranges,
                                    const Location &loc) const;
 

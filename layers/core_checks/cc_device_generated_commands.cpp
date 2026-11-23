@@ -355,10 +355,6 @@ static bool IsShaderObjectIndirectBindable(const vvl::ShaderObject& shader_objec
     return (shader_object.create_info_ext.flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) != 0;
 }
 
-static const char* DescribeDescriptorMode([[maybe_unused]] const vvl::ShaderObject& shader_object, bool descriptor_heap) {
-    return descriptor_heap ? "with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT" : "without VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT";
-}
-
 static std::string DescribeMissingIndirectBindable(const vvl::ShaderObject& shader_object) {
     return "is missing VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT, was created with flags " +
            string_VkShaderCreateFlagsEXT(shader_object.create_info_ext.flags) + ".";
@@ -410,8 +406,8 @@ bool CoreChecks::ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutio
             const LogObjectList objlist(shader_handle, first_mode_shader->Handle());
             skip |= LogError(vuid, objlist, shader_info_loc.dot(Field::pInitialShaders, i),
                              "was created %s, but the first shader in pInitialShaders was created %s.",
-                             DescribeDescriptorMode(*shader_object, shader_object->descriptor_heap_mode),
-                             DescribeDescriptorMode(*first_mode_shader, first_mode_shader->descriptor_heap_mode));
+                             shader_object->DescribeDescriptorMode(shader_object->descriptor_heap_mode),
+                             first_mode_shader->DescribeDescriptorMode(first_mode_shader->descriptor_heap_mode));
             descriptor_mode_same = false;
         }
 
@@ -570,13 +566,13 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
                                  info_loc.dot(Field::indirectCommandsLayout),
                                  "contains an execution set token, but a VkPipelineLayout was not provided.\nHint: This is "
                                  "only allowed if the shader object was created %s.",
-                                 DescribeDescriptorMode(initial_shader, true));
+                                 initial_shader.DescribeDescriptorMode(true));
             } else if (has_layout && initial_shader.descriptor_heap_mode) {
                 skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11331", cb_state.Handle(),
                                  info_loc.dot(Field::indirectCommandsLayout),
                                  "contains an execution set token and a VkPipelineLayout was provided, but shader object was "
                                  "created %s.",
-                                 DescribeDescriptorMode(initial_shader, true));
+                                 initial_shader.DescribeDescriptorMode(true));
             }
         }
     }
@@ -1362,11 +1358,10 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice dev
                                    ? "VUID-vkUpdateIndirectExecutionSetShaderEXT-pInitialShaders-11327"
                                    : "VUID-vkUpdateIndirectExecutionSetShaderEXT-pInitialShaders-11326";
 
-            skip |= LogError(vuid, objlist, set_write_loc.dot(Field::shader),
-                             "was %screated with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT, but pInitialShaders[0] "
-                             "was %screated with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT.",
-                             update_shader_object->descriptor_heap_mode ? "" : "not ",
-                             init_shader_object->descriptor_heap_mode ? "" : "not ");
+            skip |=
+                LogError(vuid, objlist, set_write_loc.dot(Field::shader), "was created %s, but pInitialShaders[0] was created %s.",
+                         update_shader_object->DescribeDescriptorMode(update_shader_object->descriptor_heap_mode),
+                         init_shader_object->DescribeDescriptorMode(init_shader_object->descriptor_heap_mode));
         }
     }
 

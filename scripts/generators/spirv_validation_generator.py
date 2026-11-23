@@ -39,6 +39,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
                 for enum in kind['enumerants']:
                     if not IsNonVulkanSprivCapability(enum['enumerant']):
                         self.capabilityList.append(enum['enumerant'])
+                        self.capabilityList.extend(enum.get('aliases', []))
                     if 'provisional' in enum:
                         self.provisionalList.append(enum['enumerant'])
                 break

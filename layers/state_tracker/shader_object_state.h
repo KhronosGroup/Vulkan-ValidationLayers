@@ -71,6 +71,9 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
     VkShaderEXT VkHandle() const { return handle_.Cast<VkShaderEXT>(); }
     bool IsGraphicsShaderState() const { return GetStage() != VK_SHADER_STAGE_COMPUTE_BIT; };
     VkShaderStageFlagBits GetStage() const { return stage.GetStage(); }
+
+    const char* DescribeDescriptorMode(bool descriptor_heap) const;
+    const char* LayoutStructName() const { return "VkShaderCreateInfoEXT"; }
 };
 
 class ShaderObjectSubState {

@@ -181,16 +181,10 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         out.append(f'DestroyObject{parent_instance}({param.name});\n')
             elif param.pointer and createObject(command.name) and command.name != 'vkEnumeratePhysicalDevices' and prefix == 'Finish':
                 if param.type in self.vk.handles:
-                    create_pipelines_call = True
-                    create_shaders_call = True
-                    # The CreateXxxPipelines/CreateShaders APIs can return a list of partly created pipelines/shaders upon failure
-                    if not ('Create' in command.name and 'Pipelines' in command.name):
-                        create_pipelines_call = False
-                    if not ('Create' in command.name and 'Shaders' in command.name):
-                        create_shaders_call = False
-                    if not create_pipelines_call and not create_shaders_call:
+                    # The CreateXxxPipelines/CreateShaders APIs can return a list of partly created objects upon failure
+                    partial_success_call = 'Create' in command.name and ('Pipelines' in command.name or 'Shaders' in command.name)
+                    if not partial_success_call:
                         out.append('if (record_obj.result == VK_SUCCESS) {\n')
-                        create_pipelines_call = False
                     if param.length:
                         # Add pointer dereference for array counts that are pointer values
                         dereference = ''
@@ -201,17 +195,15 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         param_len = param.length.replace("::", "->")
                         out.append(f'if ({param.name}) {{\n')
                         out.append(f'    for (uint32_t index = 0; index < {dereference}{param_len}; index++) {{\n')
-                        if create_pipelines_call:
-                            out.append('if (!pPipelines[index]) continue;\n')
-                        if create_shaders_call:
-                            out.append('if (!pShaders[index]) continue;\n')
+                        if partial_success_call:
+                            out.append(f'if (!{param.name}[index]) continue;\n')
                         out.append(f'CreateObject({param.name}[index]);\n')
                         out.append('}\n')
                         out.append('}\n')
 
                     else:
                         out.append(f'CreateObject(*{param.name});\n')
-                    if not create_pipelines_call and not create_shaders_call:
+                    if not partial_success_call:
                         out.append('}\n')
             else:
                 if param.type in self.vk.handles and param.type != 'VkPhysicalDevice':

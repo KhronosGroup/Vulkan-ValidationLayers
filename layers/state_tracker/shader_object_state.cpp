@@ -60,4 +60,8 @@ void ShaderObject::Destroy() {
     StateObject::Destroy();
 }
 
+const char* ShaderObject::DescribeDescriptorMode(bool descriptor_heap) const {
+    return descriptor_heap ? "with VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT" : "without VK_SHADER_CREATE_DESCRIPTOR_HEAP_BIT_EXT";
+}
+
 }  // namespace vvl
