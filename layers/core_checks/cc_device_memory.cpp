@@ -3276,6 +3276,7 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryEXT(VkCommandBuffer commandBu
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     const LogObjectList objlist(cb_state->Handle());
 
     const Location memory_info_loc = error_obj.location.dot(Field::pDecompressMemoryInfoEXT);
@@ -3327,6 +3328,7 @@ bool CoreChecks::PreCallValidateCmdDecompressMemoryIndirectCountEXT(VkCommandBuf
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     const LogObjectList objlist(cb_state->Handle());
 
     {

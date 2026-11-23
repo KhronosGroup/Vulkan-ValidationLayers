@@ -693,6 +693,39 @@ TEST_F(NegativeMemory, MemoryDecompressionSrcAddressOutOfRange) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeMemory, MemoryDecompressionNotRecording) {
+    AddRequiredExtensions(VK_EXT_MEMORY_DECOMPRESSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::memoryDecompression);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+    VkPhysicalDeviceMemoryDecompressionPropertiesEXT props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props);
+    if ((props.decompressionMethods & VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT) == 0) {
+        GTEST_SKIP() << "GDeflate decompression method not supported";
+    }
+
+    VkBufferUsageFlags2CreateInfo usage2 = vku::InitStructHelper();
+    usage2.usage = VK_BUFFER_USAGE_2_MEMORY_DECOMPRESSION_BIT_EXT;
+    vkt::Buffer src_buffer(*m_device, 64u, usage2, vkt::device_address);
+    vkt::Buffer dst_buffer(*m_device, 64u, usage2, vkt::device_address);
+
+    VkDecompressMemoryRegionEXT region = {};
+    region.srcAddress = src_buffer.Address();
+    region.dstAddress = dst_buffer.Address();
+    region.compressedSize = 64u;
+    region.decompressedSize = 64u;
+
+    VkDecompressMemoryInfoEXT decompress_info = vku::InitStructHelper();
+    decompress_info.decompressionMethod = VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_EXT;
+    decompress_info.regionCount = 1;
+    decompress_info.pRegions = &region;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDecompressMemoryEXT-commandBuffer-recording");
+    vk::CmdDecompressMemoryEXT(m_command_buffer, &decompress_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeMemory, MapMemory) {
     RETURN_IF_SKIP(Init());
 

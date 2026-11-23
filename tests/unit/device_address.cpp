@@ -787,3 +787,21 @@ TEST_F(NegativeDeviceAddress, TransformFeedback) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceAddress, CmdCopyMemoryIndirectNotRecording) {
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    const VkDeviceSize copy_size = sizeof(VkCopyMemoryIndirectCommandKHR);
+    vkt::Buffer indirect_buffer(*m_device, copy_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+
+    VkCopyMemoryIndirectInfoKHR indirect_info = vku::InitStructHelper();
+    indirect_info.copyCount = 1u;
+    indirect_info.copyAddressRange = {indirect_buffer.Address(), copy_size, copy_size};
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryIndirectKHR-commandBuffer-recording");
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, &indirect_info);
+    m_errorMonitor->VerifyFound();
+}

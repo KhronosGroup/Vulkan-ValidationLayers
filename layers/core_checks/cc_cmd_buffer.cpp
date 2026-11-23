@@ -764,6 +764,9 @@ bool CoreChecks::PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
 
+    const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(cb_state, error_obj.location);
+
     skip |= ValidateDeviceAddressCommands(commandBuffer, pDstRange->address, pDstRange->size, dstFlags,
                                           error_obj.location.dot(Field::pDstRange));
 
@@ -772,7 +775,6 @@ bool CoreChecks::PreCallValidateCmdUpdateMemoryKHR(VkCommandBuffer commandBuffer
                                        "VUID-vkCmdUpdateMemoryKHR-dstRange-13005");
 
     if (!phys_dev_props_core11.protectedNoFault) {
-        const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
         if (cb_state.unprotected) {
             if ((dstFlags & VK_ADDRESS_COMMAND_PROTECTED_BIT_KHR) != 0) {
                 skip |= LogError("VUID-vkCmdUpdateMemoryKHR-commandBuffer-13010", commandBuffer,
@@ -2557,6 +2559,8 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
     bool skip = false;
 
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+
     if (cb_state->transform_feedback_active) {
         skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-None-02365", commandBuffer, error_obj.location,
                          "transform feedback is active.");
@@ -2603,6 +2607,8 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffers2EXT(VkCommandBuf
     bool skip = false;
 
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+
     if (cb_state->transform_feedback_active) {
         skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffers2EXT-None-02365", commandBuffer, error_obj.location,
                          "transform feedback is active.");
@@ -2918,6 +2924,9 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers3KHR(VkCommandBuffer command
                                                          uint32_t bindingCount, const VkBindVertexBuffer3InfoKHR* pBindingInfos,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
+
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         const Location binding_info_loc = error_obj.location.dot(Field::pBindingInfos, i);

@@ -235,9 +235,9 @@ TEST_F(NegativeDeviceAddressCommands, ComputeQueueDepthAspect) {
 
     RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
 
-    auto compute_queue = m_device->QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    auto compute_queue = m_device->QueueFamily(VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT);
     if (!compute_queue.has_value()) {
-        GTEST_SKIP() << "Need a queue that supports compute but not graphics";
+        GTEST_SKIP() << "Need a queue that supports compute and transfer but not graphics";
     }
     vkt::CommandPool pool(*m_device, *compute_queue);
     vkt::CommandBuffer cb(*m_device, pool);
@@ -372,6 +372,54 @@ TEST_F(NegativeDeviceAddressCommands, CmdUpdateMemoryUsage) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
+}
+
+TEST_F(NegativeDeviceAddressCommands, Recording) {
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicDeviceAddressCommands());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    const VkDeviceAddressRangeKHR range = buffer.AddressRange();
+
+    {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdFillMemoryKHR-commandBuffer-recording");
+        vk::CmdFillMemoryKHR(m_command_buffer, &range, 0u, 0u);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::Image image(*m_device, 4u, 4u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+
+        VkDeviceMemoryImageCopyKHR region = vku::InitStructHelper();
+        region.addressRange = buffer.AddressRange();
+        region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        region.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        region.imageExtent = {4u, 4u, 1u};
+        VkCopyDeviceMemoryImageInfoKHR copy_memory_info = vku::InitStructHelper();
+        copy_memory_info.image = image;
+        copy_memory_info.regionCount = 1u;
+        copy_memory_info.pRegions = &region;
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-recording");
+        vk::CmdCopyImageToMemoryKHR(m_command_buffer, &copy_memory_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        const uint32_t data = 255;
+
+        VkRenderingInfo suspend_info = vku::InitStructHelper();
+        suspend_info.flags = VK_RENDERING_SUSPENDING_BIT;
+        suspend_info.layerCount = 1;
+        suspend_info.renderArea = {{0, 0}, {1, 1}};
+
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRendering(suspend_info);
+        m_command_buffer.EndRendering();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateMemoryKHR-suspended");
+        vk::CmdUpdateMemoryKHR(m_command_buffer, &range, 0u, sizeof(data), &data);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeDeviceAddressCommands, CmdUpdateMemoryAlignmentAndSize) {
