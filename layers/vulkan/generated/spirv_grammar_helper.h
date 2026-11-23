@@ -461,6 +461,8 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpAtomicFAddEXT:
         case spv::OpArithmeticFenceEXT:
         case spv::OpSubgroupBitcastShuffleINTEL:
+        case spv::OpStochasticRoundFToFINTEL:
+        case spv::OpClampStochasticRoundFToSINTEL:
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
         case spv::OpUntypedVariableLengthArrayINTEL:
@@ -473,6 +475,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpGroupLogicalAndKHR:
         case spv::OpGroupLogicalOrKHR:
         case spv::OpGroupLogicalXorKHR:
+        case spv::OpClampConvertFToSINTEL:
         case spv::OpRoundFToTF32INTEL:
         case spv::OpFDot2MixAcc32VALVE:
         case spv::OpFDot2MixAcc16VALVE:
@@ -484,6 +487,15 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpIsNodePayloadValidAMDX:
         case spv::OpPoisonKHR:
         case spv::OpFreezeKHR:
+        case spv::OpGetInstanceCustomIndexAtLevelAMDX:
+        case spv::OpGetInstanceIdAtLevelAMDX:
+        case spv::OpGetObjectToWorldAtLevelAMDX:
+        case spv::OpGetWorldToObjectAtLevelAMDX:
+        case spv::OpRayQueryGetIntersectionInstanceLevelAMDX:
+        case spv::OpRayQueryGetIntersectionInstanceCustomIndexAtLevelAMDX:
+        case spv::OpRayQueryGetIntersectionInstanceIdAtLevelAMDX:
+        case spv::OpRayQueryGetIntersectionObjectToWorldAtLevelAMDX:
+        case spv::OpRayQueryGetIntersectionWorldToObjectAtLevelAMDX:
         case spv::OpSpecConstantTargetINTEL:
         case spv::OpSpecConstantArchitectureINTEL:
         case spv::OpSpecConstantCapabilitiesINTEL:
@@ -956,6 +968,8 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpAtomicFAddEXT:
         case spv::OpArithmeticFenceEXT:
         case spv::OpSubgroupBitcastShuffleINTEL:
+        case spv::OpStochasticRoundFToFINTEL:
+        case spv::OpClampStochasticRoundFToSINTEL:
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
         case spv::OpBitwiseFunctionINTEL:
         case spv::OpUntypedVariableLengthArrayINTEL:
@@ -968,6 +982,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpGroupLogicalAndKHR:
         case spv::OpGroupLogicalOrKHR:
         case spv::OpGroupLogicalXorKHR:
+        case spv::OpClampConvertFToSINTEL:
         case spv::OpRoundFToTF32INTEL:
         case spv::OpFDot2MixAcc32VALVE:
         case spv::OpFDot2MixAcc16VALVE:
@@ -982,6 +997,15 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpSpecConstantStringAMDX:
         case spv::OpPoisonKHR:
         case spv::OpFreezeKHR:
+        case spv::OpGetInstanceCustomIndexAtLevelAMDX:
+        case spv::OpGetInstanceIdAtLevelAMDX:
+        case spv::OpGetObjectToWorldAtLevelAMDX:
+        case spv::OpGetWorldToObjectAtLevelAMDX:
+        case spv::OpRayQueryGetIntersectionInstanceLevelAMDX:
+        case spv::OpRayQueryGetIntersectionInstanceCustomIndexAtLevelAMDX:
+        case spv::OpRayQueryGetIntersectionInstanceIdAtLevelAMDX:
+        case spv::OpRayQueryGetIntersectionObjectToWorldAtLevelAMDX:
+        case spv::OpRayQueryGetIntersectionWorldToObjectAtLevelAMDX:
         case spv::OpSpecConstantTargetINTEL:
         case spv::OpSpecConstantArchitectureINTEL:
         case spv::OpSpecConstantCapabilitiesINTEL:

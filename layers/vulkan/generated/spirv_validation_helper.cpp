@@ -309,10 +309,12 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityCooperativeMatrixPerElementOperationsEXT, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixPerElementOperationsEXT, {0, &DeviceFeatures::cooperativeMatrixPerElementOperationsNV, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixGetCoordinateEXT, {0, &DeviceFeatures::cooperativeMatrixGetCoordinate, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityRayTracingMultiLevelAccelerationStructureAMDX, {0, &DeviceFeatures::multiLevelAccelerationStructure, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityRayQueryMultiLevelAccelerationStructureAMDX, {0, &DeviceFeatures::multiLevelAccelerationStructure, nullptr, ""}},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        {spv::CapabilityRayTracingMultiLevelAccelerationStructureAMDX, {0, &DeviceFeatures::multiLevelAccelerationStructure, nullptr, ""}},
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        {spv::CapabilityRayQueryMultiLevelAccelerationStructureAMDX, {0, &DeviceFeatures::multiLevelAccelerationStructure, nullptr, ""}},
+#endif
         {spv::CapabilityCooperativeMatrixLayoutsARM, {0, &DeviceFeatures::cooperativeMatrixArmLayouts, nullptr, ""}},
     };
     // clang-format on
@@ -856,6 +858,12 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityCooperativeMatrixConversionsEXT, "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixConversions"},
     {spv::CapabilityCooperativeMatrixPerElementOperationsEXT, "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixPerElementOperations OR VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixPerElementOperations"},
     {spv::CapabilityCooperativeMatrixGetCoordinateEXT, "VkPhysicalDeviceCooperativeMatrixMaintenance1FeaturesEXT::cooperativeMatrixGetCoordinate"},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {spv::CapabilityRayTracingMultiLevelAccelerationStructureAMDX, "VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX::multiLevelAccelerationStructure"},
+#endif  // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    {spv::CapabilityRayQueryMultiLevelAccelerationStructureAMDX, "VkPhysicalDeviceMultiLevelAccelerationStructureFeaturesAMDX::multiLevelAccelerationStructure"},
+#endif  // VK_ENABLE_BETA_EXTENSIONS
     {spv::CapabilityCooperativeMatrixLayoutsARM, "VkPhysicalDeviceCooperativeMatrixLayoutsFeaturesARM::cooperativeMatrixArmLayouts"},
     };
 
