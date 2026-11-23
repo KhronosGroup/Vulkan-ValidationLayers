@@ -1062,6 +1062,8 @@ void BLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
 
         if (info.geometryCount == 0) {
             continue;
+        } else if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_OPACITY_MICROMAP_KHR) {
+            continue;  // TODO - support?
         }
 
         auto dst_as_state = gpuav.Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
