@@ -66,8 +66,10 @@ Instruction::Instruction(uint32_t length, spv::Op opcode) : position_offset_(0),
 }
 
 void Instruction::SetResultTypeIndex() {
-    const bool has_result = OpcodeHasResult(Opcode());
-    if (OpcodeHasType(Opcode())) {
+    bool has_result = false;
+    bool has_type = false;
+    spv::HasResultAndType(static_cast<spv::Op>(Opcode()), &has_result, &has_type);
+    if (has_type) {
         type_id_index_ = 1;
         operand_index_++;
         if (has_result) {

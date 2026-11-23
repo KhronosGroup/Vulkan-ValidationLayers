@@ -253,7 +253,10 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module& module_state, co
     // TODO - Should have more robust way in ModuleState to find the type
     vvl::unordered_map<uint32_t, uint32_t> id_to_type_id;
     for (const spirv::Instruction& insn : module_state.GetInstructions()) {
-        if (OpcodeHasType(insn.Opcode()) && OpcodeHasResult(insn.Opcode())) {
+        bool has_result = false;
+        bool has_type = false;
+        spv::HasResultAndType(static_cast<spv::Op>(insn.Opcode()), &has_result, &has_type);
+        if (has_type && has_result) {
             id_to_type_id[insn.Word(2)] = insn.Word(1);
         }
     }
@@ -908,7 +911,10 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module& module_state, co
 
     vvl::unordered_map<uint32_t, uint32_t> id_to_type_id;
     for (const spirv::Instruction& insn : module_state.GetInstructions()) {
-        if (OpcodeHasType(insn.Opcode()) && OpcodeHasResult(insn.Opcode())) {
+        bool has_result = false;
+        bool has_type = false;
+        spv::HasResultAndType(static_cast<spv::Op>(insn.Opcode()), &has_result, &has_type);
+        if (has_type && has_result) {
             id_to_type_id[insn.Word(2)] = insn.Word(1);
         }
     }
