@@ -114,9 +114,6 @@ bool DescriptorBufferPass::Instrument() {
                 continue;
             }
 
-            if (current_block.IsLoopHeader()) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
-            }
             auto& block_instructions = current_block.instructions_;
 
             // We only need to instrument the set/binding/index combo once per block (in unsafe mode)

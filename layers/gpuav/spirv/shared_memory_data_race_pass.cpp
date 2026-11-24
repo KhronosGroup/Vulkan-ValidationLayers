@@ -402,9 +402,6 @@ bool SharedMemoryDataRacePass::Instrument() {
                 continue;
             }
 
-            if (current_block.IsLoopHeader()) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
-            }
             auto& block_instructions = current_block.instructions_;
 
             // Call init_shadow at the start of the entry point

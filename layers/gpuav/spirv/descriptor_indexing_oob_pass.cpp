@@ -206,9 +206,6 @@ bool DescriptorIndexingOOBPass::Instrument() {
                 continue;
             }
 
-            if (current_block.IsLoopHeader()) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
-            }
             auto& block_instructions = current_block.instructions_;
 
             // Don't clear if the new block occurs from control flow breaking one up
