@@ -178,6 +178,11 @@ AccessPath::AccessPath(const Module& module, TypeManager& type_manager, const Fu
 
     // Will be null if already found |variable|
     const Instruction* root_ptr_inst = function.FindInstruction(ptr_id);
+    if (!variable && !root_ptr_inst) {
+        // Pointer is not from inside the function and not a variable
+        // https://gitlab.khronos.org/Tracker/vk-gl-cts/-/work_items/7321
+        return;
+    }
 
     // PhysicalStorageBuffer (BDA) pointers never originate from an OpVariable.
     // If the pointer being accessed is BDA, handle and return immediately.
