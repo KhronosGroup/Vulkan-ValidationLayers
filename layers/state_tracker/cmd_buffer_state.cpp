@@ -2035,7 +2035,7 @@ void CommandBuffer::TrackStencilAttachmentFirstLayout(const vvl::ImageView& view
 }
 
 void CommandBuffer::TrackImageFirstLayout(const vvl::Image& image_state, const VkImageSubresourceRange& subresource_range,
-                                          int32_t depth_offset, uint32_t depth_extent, VkImageLayout layout) {
+                                          int32_t depth_offset, uint32_t depth_extent, VkImageLayout layout, vvl::Field field) {
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
         VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(subresource_range);
 
@@ -2046,7 +2046,7 @@ void CommandBuffer::TrackImageFirstLayout(const vvl::Image& image_state, const V
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
             TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, normalized_subresource_range.aspectMask, nullptr,
-                             GetLastLabelCommandIndex(), current_command);
+                             GetLastLabelCommandIndex(), current_command, field);
         }
     }
 }

@@ -63,7 +63,7 @@ TEST_F(NegativeImageLayout, Blit) {
     vk::CmdBlitImage(m_command_buffer, img_src_transfer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_color, VK_IMAGE_LAYOUT_GENERAL,
                      1, &blit_region, VK_FILTER_LINEAR);
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImageLayout-00226");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -72,7 +72,7 @@ TEST_F(NegativeImageLayout, Blit) {
     vk::CmdBlitImage(m_command_buffer, img_color, VK_IMAGE_LAYOUT_GENERAL, img_dst_transfer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                      1, &blit_region, VK_FILTER_LINEAR);
     m_command_buffer.End();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImageLayout-00221");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -174,7 +174,7 @@ TEST_F(NegativeImageLayout, SubmitTimeDebugRegion) {
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDraw-None-09600", "Debug region: FrameWork::BlitPass");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBlitImage-dstImageLayout-00226", "Debug region: FrameWork::BlitPass");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -208,7 +208,7 @@ TEST_F(NegativeImageLayout, SubmitTimeFrameID) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_command_buffer.handle();
 
-    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDraw-None-09600", "frameID 42");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdBlitImage-dstImageLayout-00226", "frameID 42");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
@@ -253,7 +253,7 @@ TEST_F(NegativeImageLayout, Compute) {
         vk::CmdDispatch(cmd, 1, 1, 1);
         cmd.End();
 
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-09600");
         m_default_queue->SubmitAndWait(cmd);
         m_errorMonitor->VerifyFound();
     }
@@ -267,7 +267,7 @@ TEST_F(NegativeImageLayout, Compute) {
         vk::CmdDispatchBaseKHR(cmd, 0, 0, 0, 1, 1, 1);
         cmd.End();
 
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-None-09600");
         m_default_queue->SubmitAndWait(cmd);
         m_errorMonitor->VerifyFound();
     }
@@ -310,7 +310,7 @@ TEST_F(NegativeImageLayout, Compute11) {
     vk::CmdDispatchBase(m_command_buffer, 0, 0, 0, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-None-09600");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -373,7 +373,7 @@ TEST_F(NegativeImageLayout, MultipleCommandDispatches) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-09600");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -430,7 +430,7 @@ TEST_F(NegativeImageLayout, DISABLED_Mutable) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-09600");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1126,7 +1126,7 @@ TEST_F(NegativeImageLayout, TimelineSemaphoreOrdering) {
     m_second_command_buffer.End();
 
     m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-01197");
     m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 1));
     m_errorMonitor->VerifyFound();
     m_device->Wait();

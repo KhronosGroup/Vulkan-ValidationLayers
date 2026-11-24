@@ -652,6 +652,39 @@ const std::string& GetImageImageLayoutVUID(const Location& loc) {
     return result;
 }
 
+// Uses the command and the field (ex. srcImageLayout) that specified the expected layout
+// Returns an empty string for draw/dispatch/traceRays (descriptors), use CreateActionVuid() for those
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10318
+const std::string& GetSubmitTimeImageLayoutVUID(const Location& loc) {
+    static const std::array<Entry, 22> errors{{
+        {Key(Func::vkCmdCopyImage, Field::srcImageLayout), "VUID-vkCmdCopyImage-srcImageLayout-00128"},
+        {Key(Func::vkCmdCopyImage, Field::dstImageLayout), "VUID-vkCmdCopyImage-dstImageLayout-00133"},
+        {Key(Func::vkCmdCopyImage2, Field::srcImageLayout), "VUID-VkCopyImageInfo2-srcImageLayout-00128"},
+        {Key(Func::vkCmdCopyImage2, Field::dstImageLayout), "VUID-VkCopyImageInfo2-dstImageLayout-00133"},
+        {Key(Func::vkCmdBlitImage, Field::srcImageLayout), "VUID-vkCmdBlitImage-srcImageLayout-00221"},
+        {Key(Func::vkCmdBlitImage, Field::dstImageLayout), "VUID-vkCmdBlitImage-dstImageLayout-00226"},
+        {Key(Func::vkCmdBlitImage2, Field::srcImageLayout), "VUID-VkBlitImageInfo2-srcImageLayout-00221"},
+        {Key(Func::vkCmdBlitImage2, Field::dstImageLayout), "VUID-VkBlitImageInfo2-dstImageLayout-00226"},
+        {Key(Func::vkCmdCopyBufferToImage, Field::dstImageLayout), "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180"},
+        {Key(Func::vkCmdCopyBufferToImage2, Field::dstImageLayout), "VUID-VkCopyBufferToImageInfo2-dstImageLayout-00180"},
+        {Key(Func::vkCmdCopyImageToBuffer, Field::srcImageLayout), "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189"},
+        {Key(Func::vkCmdCopyImageToBuffer2, Field::srcImageLayout), "VUID-VkCopyImageToBufferInfo2-srcImageLayout-00189"},
+        {Key(Func::vkCmdCopyImageToMemoryKHR, Field::imageLayout), "VUID-VkCopyDeviceMemoryImageInfoKHR-imageLayout-13028"},
+        {Key(Func::vkCmdCopyMemoryToImageKHR, Field::imageLayout), "VUID-VkCopyDeviceMemoryImageInfoKHR-imageLayout-13028"},
+        {Key(Func::vkCmdClearColorImage, Field::imageLayout), "VUID-vkCmdClearColorImage-imageLayout-00004"},
+        {Key(Func::vkCmdClearDepthStencilImage, Field::imageLayout), "VUID-vkCmdClearDepthStencilImage-imageLayout-00011"},
+        // The command alone is enough for these
+        {Key(Func::vkCmdPipelineBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01197"},
+        {Key(Func::vkCmdWaitEvents), "VUID-VkImageMemoryBarrier-oldLayout-01197"},
+        {Key(Func::vkCmdPipelineBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01197"},
+        {Key(Func::vkCmdWaitEvents2), "VUID-VkImageMemoryBarrier2-oldLayout-01197"},
+        {Key(Func::vkCmdBeginRenderPass), "VUID-vkCmdBeginRenderPass-initialLayout-00900"},
+        {Key(Func::vkCmdBeginRenderPass2), "VUID-vkCmdBeginRenderPass2-initialLayout-03100"},
+    }};
+
+    return FindVUID(loc, errors);
+}
+
 const char* GetSurfaceSupportVUID(const Location& loc) {
     if (loc.function == Func::vkGetDeviceGroupSurfacePresentModes2EXT) {
         return "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213";
