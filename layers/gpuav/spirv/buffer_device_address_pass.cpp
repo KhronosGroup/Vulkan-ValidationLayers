@@ -24,6 +24,7 @@
 #include "utils/math_utils.h"
 #include "utils/assert_utils.h"
 #include "gpuav/shaders/gpuav_error_header.h"
+#include "generated/spirv_grammar_helper.h"
 
 #include "generated/gpuav_offline_spirv.h"
 
@@ -57,6 +58,8 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     uint32_t access_type_value = 0;
     if (opcode == spv::OpStore) {
         access_type_value |= 1 << glsl::kInst_BuffAddrAccess_PayloadShiftIsWrite;
+    } else if (AtomicOperation(opcode)) {
+        access_type_value |= 1 << glsl::kInst_BuffAddrAccess_PayloadShiftIsAtomic;
     }
     if (meta.type_is_struct) {
         access_type_value |= 1 << glsl::kInst_BuffAddrAccess_PayloadShiftIsStruct;
