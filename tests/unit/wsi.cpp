@@ -3418,6 +3418,74 @@ TEST_F(NegativeWsi, PresentImageWithWrongLayout2) {
     m_default_queue->Wait();
 }
 
+TEST_F(NegativeWsi, PresentImageWithWrongLayoutMsaaResolve) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/13768");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const VkFormat format = m_surface_formats[0].format;
+    const VkExtent2D extent = GetSwapchainExtent(m_surface_capabilities);
+
+    VkImageCreateInfo msaa_ci =
+        vkt::Image::ImageCreateInfo2D(extent.width, extent.height, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    msaa_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    if (!IsImageFormatSupported(Gpu(), msaa_ci, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "4x MSAA color attachment not supported";
+    }
+
+    VkAttachmentDescription msaa_desc = {};
+    msaa_desc.format = format;
+    msaa_desc.samples = VK_SAMPLE_COUNT_4_BIT;
+    msaa_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    msaa_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    msaa_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    msaa_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    msaa_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    msaa_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Should have been VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+    VkAttachmentDescription resolve_desc = msaa_desc;
+    resolve_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    resolve_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(msaa_desc);
+    rp.AddAttachmentDescription(resolve_desc);
+    rp.AddColorAttachment(0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddResolveAttachment(1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.CreateRenderPass();
+
+    vkt::Image msaa_image(*m_device, msaa_ci, vkt::set_layout);
+    vkt::ImageView msaa_view = msaa_image.CreateView();
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    const vkt::Semaphore acquire_semaphore(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    VkImageViewCreateInfo swapchain_view_ci = vku::InitStructHelper();
+    swapchain_view_ci.image = swapchain_images[image_index];
+    swapchain_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    swapchain_view_ci.format = format;
+    swapchain_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkt::ImageView swapchain_view(*m_device, swapchain_view_ci);
+
+    VkImageView attachments[2] = {msaa_view, swapchain_view};
+    vkt::Framebuffer fb(*m_device, rp, 2, attachments, extent.width, extent.height);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp, fb, extent.width, extent.height);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore));
+
+    m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
 TEST_F(NegativeWsi, CreatingSwapchainWithExtent) {
     TEST_DESCRIPTION("Create swapchain with extent greater than maxImageExtent of SurfaceCapabilities");
 
