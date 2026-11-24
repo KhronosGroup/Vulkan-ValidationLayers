@@ -156,7 +156,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
     }
 
     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
-    if (!module_.settings_.safe_mode) {
+    if (!module_.settings_.WrapCheck()) {
         uint32_t variable_id = meta.access_path->variable->Id();
         auto variable_found_it = block_instrumented_table_.find(variable_id);
         if (variable_found_it == block_instrumented_table_.end()) {
@@ -222,7 +222,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
             DescriptroIndexPushConstantAccess pc_access;
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     pc_access.Update(module_, inst_it);
                 }
 
@@ -250,7 +250,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
                     continue;
                 }
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
                     const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == descriptor_path.index_id
                                                                   ? pc_access.descriptor_index_id
@@ -268,7 +268,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(function, block_it, inst_it);

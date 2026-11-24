@@ -136,6 +136,11 @@ class Module {
     // Used by SharedMemoryDataRacePass, linked by Module::LinkFunctions
     uint32_t shared_memory_shadow_variable_id_ = 0;
 
+    // Used for shader abort (see Pass::CreateAbortBlock)
+    uint32_t abort_message_function_id_ = 0;
+    uint32_t abort_message_type_id_ = 0;
+    uint32_t abort_message_layout_type_id_ = 0;
+
     spirv::InstrumentationStatus& out_status;
 
   private:

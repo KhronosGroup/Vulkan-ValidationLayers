@@ -63,6 +63,8 @@ class Instance : public vvl::InstanceProxy {
     void InternalWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
     void AdjustmentWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
     void AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo* modified_create_info, const Location& loc);
+    void AddShaderAbortFeatures(VkPhysicalDevice physical_device, const std::vector<VkExtensionProperties>& available_extensions,
+                                vku::safe_VkDeviceCreateInfo* modified_create_info, std::string& adjustment_warnings);
     bool timeline_khr_{false};
     mutable bool reported_gpdp2_warning_{false};
 };
@@ -100,6 +102,10 @@ class Validator : public GpuShaderInstrumentor {
     void PublishDeviceLost(const Location& loc);
     // Requires the state tracker's record lock and no command-buffer lock
     void ReportDeviceLostErrors() const;
+    // The messages are queried every time instead of being saved, the device keeps them (reading does not drain them) and this is
+    // only called after the device is lost
+    std::vector<uint32_t> FindShaderAbortErrorRecords(uint32_t cmd_buffer_id, const Location& loc) const;
+
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) final;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) final;
@@ -301,6 +307,8 @@ class Validator : public GpuShaderInstrumentor {
         const vvl::Buffer* buffer_state_ = nullptr;
         VkDeviceSize reserved_offset_ = 0;
     } resource_heap;
+
+    std::atomic<uint32_t> next_cmd_buffer_id_{0};
 
   private:
     std::string instrumented_shader_cache_path_{};

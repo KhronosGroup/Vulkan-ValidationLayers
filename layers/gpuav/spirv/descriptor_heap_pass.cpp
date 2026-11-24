@@ -434,7 +434,7 @@ uint32_t DescriptorHeapPass::CreateFunctionCallSampler(BasicBlock& block, Instru
     }
 
     uint32_t function_result = 0;
-    if (module_.settings_.safe_mode) {
+    if (module_.settings_.WrapCheck()) {
         const uint32_t bool_type = type_manager_.GetTypeBool().Id();
         function_result = module_.TakeNextId();
         block.CreateInstruction(spv::OpLogicalAnd, {bool_type, function_result, non_sampler_result, valid_sampler}, inst_it);
@@ -774,7 +774,7 @@ bool DescriptorHeapPass::Instrument() {
             DescriptroIndexPushConstantAccess pc_access;
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     pc_access.Update(module_, inst_it);
                 }
 
@@ -786,7 +786,7 @@ bool DescriptorHeapPass::Instrument() {
 
                 bool skip_resource = false;
                 bool skip_sampler = !meta.instrument_separate_sampler;
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     const AccessPath::Descriptor& descriptor_path = meta.access_path->descriptor;
                     const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == descriptor_path.index_id
                                                                   ? pc_access.descriptor_index_id
@@ -813,7 +813,7 @@ bool DescriptorHeapPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     if (!skip_resource) {
                         CreateFunctionCall(current_block, &inst_it, meta, false);
                     }

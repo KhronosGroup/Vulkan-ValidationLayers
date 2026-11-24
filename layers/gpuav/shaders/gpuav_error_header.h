@@ -189,10 +189,22 @@ const int kValCmd_ErrorPayloadDword_4 = kHeaderSize + 4;
 // -------------------
 const int kErrorRecordDwordSize = kHeaderSize + 5;
 const int kErrorRecordCounts = 4096;  // Maximum number of errors a command buffer can hold. Arbitrary value
-const int kErrorBufferByteSize =
-    4 * kErrorRecordDwordSize * kErrorRecordCounts + 3 * 4;  // 3 * 4 bytes to store flags, buffer dword size and errors count
+// 4 * 4 bytes to store flags, buffer dword size, errors count and command buffer id
+const int kErrorBufferByteSize = (4 * kErrorRecordDwordSize * kErrorRecordCounts) + (4 * 4);
+
 // We know the size of the uint32_t array for SpecConstantInstErrorBufferLengthId
 const int kErrorBufferDataLength = kErrorRecordDwordSize * kErrorRecordCounts;
+
+// Shader Abort message
+// -------------------
+// Magic value so we can find our message if the app is calling OpAbortKHR itself
+const uint kAbortMessageMagic = 0x1234ABCDu;
+const int kAbortMessage_MagicOffset = 0;
+// Command buffer id to map to the command buffer
+const int kAbortMessage_CmdBufferIdOffset = 1;
+// The error record (payload)
+const int kAbortMessage_ErrorRecordOffset = 2;
+const int kAbortMessageDwordSize = kAbortMessage_ErrorRecordOffset + kErrorRecordDwordSize;
 
 #ifdef __cplusplus
 }  // namespace glsl

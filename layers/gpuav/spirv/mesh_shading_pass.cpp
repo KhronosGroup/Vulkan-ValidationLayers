@@ -141,7 +141,7 @@ bool MeshShading::Instrument() {
                 }
                 instrumentations_count_++;
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else if (meta.function_id == SET_MESH_OUTPUT) {
                     // Rather than branching around OpSetMeshOutputsEXT, clamp its counts to the OutputVertices/OutputPrimitivesEXT

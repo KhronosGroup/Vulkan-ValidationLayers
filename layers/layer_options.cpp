@@ -158,6 +158,7 @@ const char* VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
 // ---
 const char* VK_LAYER_GPUAV_ENABLE = "gpuav_enable";
 const char* VK_LAYER_GPUAV_SAFE_MODE = "gpuav_safe_mode";
+const char* VK_LAYER_GPUAV_SHADER_ABORT = "gpuav_shader_abort";
 const char* VK_LAYER_GPUAV_SHADER_INSTRUMENTATION = "gpuav_shader_instrumentation";
 const char* VK_LAYER_GPUAV_DESCRIPTOR_CHECKS = "gpuav_descriptor_checks";
 const char* VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
@@ -1034,6 +1035,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data) {
     GpuAVSettings& gpuav_settings = *settings_data->gpuav_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SAFE_MODE)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SAFE_MODE, gpuav_settings.safe_mode);
+    }
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_ABORT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_ABORT, gpuav_settings.shader_abort);
     }
 
     bool shader_instrumentation_enabled = true;

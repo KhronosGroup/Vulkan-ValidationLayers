@@ -297,7 +297,7 @@ bool TraceRayPass::Instrument() {
 
                 ++instrumentations_count_;
 
-                if (!module_.settings_.safe_mode) {
+                if (!module_.settings_.WrapCheck()) {
                     for (auto& func_call : func_calls) {
                         AddFunctionCall(current_block, std::move(func_call), &inst_it);
                     }

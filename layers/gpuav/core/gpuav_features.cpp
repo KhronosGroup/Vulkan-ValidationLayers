@@ -447,8 +447,66 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         }
     }
 
+    if (gpuav_settings.shader_abort) {
+        AddShaderAbortFeatures(physical_device, available_extensions, modified_create_info, adjustment_warnings);
+    }
+
     if (!adjustment_warnings.empty()) {
         AdjustmentWarning(kNoObjects, loc, adjustment_warnings.c_str());
+    }
+}
+
+void Instance::AddShaderAbortFeatures(VkPhysicalDevice physical_device,
+                                      const std::vector<VkExtensionProperties>& available_extensions,
+                                      vku::safe_VkDeviceCreateInfo* modified_create_info, std::string& adjustment_warnings) {
+    const char* not_supported_message =
+        "\tShader abort option was enabled, but VK_KHR_shader_abort (shaderAbort) or VK_KHR_device_fault (deviceFault) is not "
+        "supported. [Disabling gpuav_shader_abort]\n";
+    if (!IsExtensionAvailable(VK_KHR_SHADER_ABORT_EXTENSION_NAME, available_extensions) ||
+        !IsExtensionAvailable(VK_KHR_DEVICE_FAULT_EXTENSION_NAME, available_extensions) ||
+        !IsExtensionAvailable(VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME, available_extensions)) {
+        adjustment_warnings += not_supported_message;
+        return;
+    }
+
+    VkPhysicalDeviceFaultFeaturesKHR supported_fault_feature = vku::InitStructHelper();
+    VkPhysicalDeviceShaderAbortFeaturesKHR supported_abort_feature = vku::InitStructHelper(&supported_fault_feature);
+    VkPhysicalDeviceFeatures2 features_2 = vku::InitStructHelper(&supported_abort_feature);
+    DispatchGetPhysicalDeviceFeatures2(physical_device, &features_2);
+    if (!supported_abort_feature.shaderAbort || !supported_fault_feature.deviceFault) {
+        adjustment_warnings += not_supported_message;
+        return;
+    }
+
+    // VK_KHR_shader_abort depends on VK_KHR_shader_constant_data, but we never need its feature
+    vku::AddExtension(*modified_create_info, VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    vku::AddExtension(*modified_create_info, VK_KHR_DEVICE_FAULT_EXTENSION_NAME);
+    vku::AddExtension(*modified_create_info, VK_KHR_SHADER_CONSTANT_DATA_EXTENSION_NAME);
+
+    if (auto* abort_feature = const_cast<VkPhysicalDeviceShaderAbortFeaturesKHR*>(
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderAbortFeaturesKHR>(modified_create_info->pNext))) {
+        if (!abort_feature->shaderAbort) {
+            adjustment_warnings += "\tForcing VkPhysicalDeviceShaderAbortFeaturesKHR::shaderAbort to VK_TRUE\n";
+            abort_feature->shaderAbort = VK_TRUE;
+        }
+    } else {
+        adjustment_warnings += "\tAdding a VkPhysicalDeviceShaderAbortFeaturesKHR to pNext with shaderAbort set to VK_TRUE\n";
+        VkPhysicalDeviceShaderAbortFeaturesKHR new_abort_feature = vku::InitStructHelper();
+        new_abort_feature.shaderAbort = VK_TRUE;
+        vku::AddToPnext(*modified_create_info, new_abort_feature);
+    }
+
+    if (auto* fault_feature = const_cast<VkPhysicalDeviceFaultFeaturesKHR*>(
+            vku::FindStructInPNextChain<VkPhysicalDeviceFaultFeaturesKHR>(modified_create_info->pNext))) {
+        if (!fault_feature->deviceFault) {
+            adjustment_warnings += "\tForcing VkPhysicalDeviceFaultFeaturesKHR::deviceFault to VK_TRUE\n";
+            fault_feature->deviceFault = VK_TRUE;
+        }
+    } else {
+        adjustment_warnings += "\tAdding a VkPhysicalDeviceFaultFeaturesKHR to pNext with deviceFault set to VK_TRUE\n";
+        VkPhysicalDeviceFaultFeaturesKHR new_fault_feature = vku::InitStructHelper();
+        new_fault_feature.deviceFault = VK_TRUE;
+        vku::AddToPnext(*modified_create_info, new_fault_feature);
     }
 }
 

@@ -158,6 +158,11 @@ khronos_validation.gpuav_safe_mode = false
 - Providing a CDL dump file to parse the debug names from it.
 khronos_validation.gpuav_select_instrumented_shaders = false
 
+# Shader Abort
+# =====================
+# Uses VK_KHR_shader_abort to report first faulty instruction found by shader instrumentation, and stops the corresponding GPU command execution. Shader abort deliberately causes a device loss (VK_ERROR_DEVICE_LOST).
+khronos_validation.gpuav_shader_abort = false
+
 # Shader instrumentation
 # =====================
 # Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries. Warning: will considerably slow down shader executions.

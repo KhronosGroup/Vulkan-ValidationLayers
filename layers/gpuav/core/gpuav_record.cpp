@@ -27,6 +27,7 @@
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include "gpuav/instrumentation/register_validation.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
+#include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/validation_cmd/gpuav_copy_buffer_to_image.h"
 #include "gpuav/validation_cmd/gpuav_copy_memory_indirect.h"
@@ -35,7 +36,11 @@
 #include "gpuav/validation_cmd/gpuav_ray_tracing.h"
 #include "utils/math_utils.h"
 
+#include "shader_abort/shader_abort_message.h"
+
 #include <cstdint>
+#include <sstream>
+#include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_safe_struct.hpp>
 
 namespace gpuav {
@@ -74,6 +79,60 @@ void Validator::ReportDeviceLostErrors() const {
         auto guard = cb->WriteLock();
         report(cb);
     }
+}
+
+std::vector<uint32_t> Validator::FindShaderAbortErrorRecords(uint32_t cmd_buffer_id, const Location& loc) const {
+    assert(device_state->dispatch_device_->is_device_lost);
+    std::vector<uint32_t> error_records;
+
+    VkDeviceFaultShaderAbortMessageInfoKHR abort_message_info = vku::InitStructHelper();
+    VkDeviceFaultDebugInfoKHR debug_info = vku::InitStructHelper(&abort_message_info);
+    VkResult result = DispatchGetDeviceFaultDebugInfoKHR(device, &debug_info);
+    if (result != VK_SUCCESS) {
+        std::ostringstream ss;
+        ss << "vkGetDeviceFaultDebugInfoKHR returned " << string_VkResult(result)
+           << " while getting the size of the OpAbortKHR messages, so errors found by gpuav_shader_abort can't be reported.";
+        InternalWarning(device, loc, ss.str().c_str());
+        return error_records;
+    }
+
+    // The device was lost for another reason
+    if (abort_message_info.messageDataSize == 0) {
+        return error_records;
+    }
+
+    std::vector<uint8_t> message_data(static_cast<size_t>(abort_message_info.messageDataSize));
+    abort_message_info.pMessageData = message_data.data();
+    debug_info.vendorBinarySize = 0;
+    debug_info.pVendorBinaryData = nullptr;
+    result = DispatchGetDeviceFaultDebugInfoKHR(device, &debug_info);
+    // VK_INCOMPLETE is not an error, only whole messages were written and messageDataSize is now the number of bytes written
+    if (result != VK_SUCCESS && result != VK_INCOMPLETE) {
+        std::ostringstream ss;
+        ss << "vkGetDeviceFaultDebugInfoKHR returned " << string_VkResult(result)
+           << " while reading the OpAbortKHR messages, so errors found by gpuav_shader_abort can't be reported.";
+        InternalWarning(device, loc, ss.str().c_str());
+        return error_records;
+    }
+
+    const uint64_t data_size = std::min(static_cast<uint64_t>(message_data.size()), abort_message_info.messageDataSize);
+    uint64_t offset = 0;
+    ShaderAbortMessage message;
+    // Uses https://github.com/LunarG/ShaderAbortTools
+    while (shader_abort_next_message(message_data.data(), data_size, &offset, &message)) {
+        uint32_t payload[glsl::kAbortMessageDwordSize];
+        if (message.size != sizeof(payload)) {
+            continue;
+        }
+        memcpy(payload, message.pPayload, sizeof(payload));
+
+        const uint32_t* record = &payload[glsl::kAbortMessage_ErrorRecordOffset];
+        if (payload[glsl::kAbortMessage_MagicOffset] == glsl::kAbortMessageMagic &&
+            payload[glsl::kAbortMessage_CmdBufferIdOffset] == cmd_buffer_id && record[glsl::kHeader_ShaderIdErrorOffset] != 0) {
+            error_records.insert(error_records.end(), record, record + glsl::kErrorRecordDwordSize);
+        }
+    }
+    return error_records;
 }
 
 void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,

@@ -18,6 +18,7 @@ This directory contains more detailed information about how each part of the Val
         - [GPU-AV Development](./gpu_av_development.md)
         - [Scoped GPU-AV](./gpu_av_scoped.md)
         - [Shader Instrumentation](./gpu_av_shader_instrumentation.md)
+        - [Shader Abort](./gpu_av_shader_abort.md)
         - [Internal Descriptor](./gpu_av_internal_descriptor.md)
         - [Descriptor Indexing](./gpu_av_descriptor_indexing.md)
         - [Descriptor Buffer](./gpu_av_descriptor_buffer.md)

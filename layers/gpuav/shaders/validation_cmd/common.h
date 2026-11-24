@@ -69,6 +69,7 @@ layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagErrorBuffer, scalar
     uint flags;
     uint error_buffer_u32_size;
     uint errors_count;
+    uint cmd_buffer_id;
     uint errors_buffer[];
 };
 
