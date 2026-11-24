@@ -206,7 +206,8 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             }
             default: {
                 SpvType spv_type = GetSpvType(new_inst->Opcode());
-                if (spv_type != SpvType::Empty) {
+                // OpTypeForwardPointer has no result id, so there is no Type to track
+                if (spv_type != SpvType::Empty && spv_type != SpvType::kForwardPointer) {
                     type_manager_.AddType(std::move(new_inst), spv_type);
                 } else {
                     // unknown instruction, try and just keep in last section to not just crash
@@ -716,7 +717,7 @@ void Module::LinkFunctions(const LinkInfo& info) {
                     type_id = TakeNextId();
                     old_result_id = new_inst->Word(1);
                     new_inst->UpdateWord(1, type_id);
-                    type_manager_.AddType(std::move(new_inst), spv_type);
+                    types_values_constants_.emplace_back(std::move(new_inst));
                     break;
                 }
                 case SpvType::kStruct: {
