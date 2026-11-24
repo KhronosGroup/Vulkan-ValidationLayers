@@ -1390,6 +1390,80 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadSlang) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVBufferDeviceAddress, SingleBlockLoop) {
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    const char* shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %pc
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %pc_block Block
+               OpMemberDecorate %pc_block 0 Offset 0
+               OpDecorate %rta ArrayStride 4
+               OpDecorate %buf Block
+               OpMemberDecorate %buf 0 Offset 0
+       %void = OpTypeVoid
+     %func_t = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+      %int_5 = OpConstant %int 5
+       %bool = OpTypeBool
+        %rta = OpTypeRuntimeArray %int
+        %buf = OpTypeStruct %rta
+    %buf_ptr = OpTypePointer PhysicalStorageBuffer %buf
+   %pc_block = OpTypeStruct %buf_ptr
+     %pc_ptr = OpTypePointer PushConstant %pc_block
+%pc_buf_ptr = OpTypePointer PushConstant %buf_ptr
+    %int_ptr = OpTypePointer PhysicalStorageBuffer %int
+         %pc = OpVariable %pc_ptr PushConstant
+       %main = OpFunction %void None %func_t
+      %entry = OpLabel
+      %pc_ac = OpAccessChain %pc_buf_ptr %pc %int_0
+        %bda = OpLoad %buf_ptr %pc_ac
+               OpBranch %loop
+       %loop = OpLabel
+          %i = OpPhi %int %int_0 %entry %i_next %loop
+        %sum = OpPhi %int %int_0 %entry %sum_next %loop
+       %ac_i = OpAccessChain %int_ptr %bda %int_0 %i
+        %val = OpLoad %int %ac_i Aligned 4
+   %sum_next = OpIAdd %int %sum %val
+     %i_next = OpIAdd %int %i %int_1
+       %cond = OpSLessThan %bool %i_next %int_5
+               OpLoopMerge %merge %loop None
+               OpBranchConditional %cond %loop %merge
+      %merge = OpLabel
+       %ac_0 = OpAccessChain %int_ptr %bda %int_0 %int_0
+               OpStore %ac_0 %sum_next Aligned 4
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    vkt::Buffer bda_buffer(*m_device, 16, 0, vkt::device_address);
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress)};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    VkDeviceAddress bda_buffer_addr = bda_buffer.Address();
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress),
+                         &bda_buffer_addr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-11819");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());

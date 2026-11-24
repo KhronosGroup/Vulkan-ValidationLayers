@@ -556,9 +556,6 @@ bool SanitizerPass::Instrument() {
                 continue;
             }
 
-            if (current_block.IsLoopHeader()) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
-            }
             auto& block_instructions = current_block.instructions_;
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {

@@ -21,8 +21,7 @@
 
 class NegativeGpuAVSpirv : public GpuAVTest {};
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7462
-TEST_F(NegativeGpuAVSpirv, DISABLED_LoopHeaderPhi) {
+TEST_F(NegativeGpuAVSpirv, LoopHeaderPhi) {
     TEST_DESCRIPTION("Require injection in the Loop Header block that contains a Phi");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -112,5 +111,7 @@ TEST_F(NegativeGpuAVSpirv, DISABLED_LoopHeaderPhi) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
     m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
 }

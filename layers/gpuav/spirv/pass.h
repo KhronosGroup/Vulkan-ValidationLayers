@@ -84,6 +84,7 @@ class Pass {
 
     InjectConditionalData InjectFunctionPre(Function& function, const BasicBlockIt original_block_it, InstructionIt inst_it);
     void InjectFunctionPost(BasicBlock& original_block, const InjectConditionalData& ic_data);
+    void SplitLoopHeader(Function& function, BasicBlockIt block_it, InstructionIt& inst_it);
 
   protected:
     Pass(Module& module, const OfflineModule& offline);

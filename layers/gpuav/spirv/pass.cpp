@@ -746,6 +746,9 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
     // We turn the block into 4 separate blocks
     BasicBlock& original_block = **original_block_it;
     const uint32_t original_label = original_block.GetLabelId();
+    if (original_block.IsLoopHeader()) {
+        SplitLoopHeader(function, original_block_it, inst_it);
+    }
 
     // Where we call targeted instruction if it is valid
     BasicBlockIt valid_block_it = function.InsertNewBlock(original_block_it);
@@ -840,6 +843,55 @@ InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlo
     original_block.instructions_.erase(inst_it, original_block.instructions_.end());
 
     return InjectConditionalData{merge_block_label, valid_block_label, invalid_block_label, 0, merge_block_it};
+}
+
+// Don't worry, this isn't a compiler, but it is possible (but rare) to need to validate in the loop header which break when we want
+// to try and wrap the check for safe mode.
+//
+// The issues is the loop header can't also be a selection header, so before splitting it we move the label, OpPhi and OpLoopMerge
+// into a new header block placed before it. The original block (still holding the terminator) becomes a normal block in the loop
+//
+// here is some LLM generated ascii visual I had generated:
+//
+//     %header = OpLabel           %header = OpLabel
+//     OpPhi                       OpPhi
+//     <instructions>      ->      OpLoopMerge %merge %continue
+//     OpLoopMerge                 OpBranch %body
+//     OpBranchConditional         %body = OpLabel
+//                                 <instructions>
+//                                 OpBranchConditional
+void Pass::SplitLoopHeader(Function& function, BasicBlockIt block_it, InstructionIt& inst_it) {
+    BasicBlock& block = **block_it;
+    InstructionList& insts = block.instructions_;
+    const uint32_t header_label = block.GetLabelId();
+    const uint32_t body_label = module_.TakeNextId();
+    const size_t inst_index = inst_it - insts.begin();
+
+    auto header = std::make_unique<BasicBlock>(std::move(insts[0]));
+    header->function_ = &function;
+    size_t moved_count = 1;
+    while (insts[moved_count]->Opcode() == spv::OpPhi) {
+        header->instructions_.push_back(std::move(insts[moved_count]));
+        moved_count++;
+    }
+
+    auto loop_merge_it = insts.end() - 2;
+    if ((*loop_merge_it)->Word(2) == header_label) {
+        // was its own continue target
+        (*loop_merge_it)->UpdateWord(2, body_label);
+    }
+    header->instructions_.push_back(std::move(*loop_merge_it));
+    header->CreateInstruction(spv::OpBranch, {body_label});
+    header->loop_header_merge_target_ = block.loop_header_merge_target_;
+    block.loop_header_merge_target_ = 0;
+
+    insts.erase(loop_merge_it);
+    insts.erase(insts.begin(), insts.begin() + moved_count);
+    InstructionIt front = insts.begin();
+    block.CreateInstruction(spv::OpLabel, {body_label}, &front);
+    inst_it = insts.begin() + (inst_index - moved_count + 1);
+
+    function.blocks_.insert(block_it, std::move(header));
 }
 
 void Pass::InjectFunctionPost(BasicBlock& original_block, const InjectConditionalData& ic_data) {
