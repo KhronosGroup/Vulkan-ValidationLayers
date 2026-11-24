@@ -1092,10 +1092,10 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Geometry) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - Not being triggered, shader is instrumented, but doesn't seem tessellation shader is executed
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationControl) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, TessellationControl) {
     TEST_DESCRIPTION("Basic TessellationControl shader test");
     AddRequiredFeature(vkt::Feature::tessellationShader);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -1120,7 +1120,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationControl) 
     VkShaderObj tes(*m_device, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
-    tess_ci.patchControlPoints = 4u;
+    tess_ci.patchControlPoints = 3u;
 
     CreatePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -1146,14 +1146,16 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationControl) 
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-storageBuffers-06936");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-storageBuffers-06936");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - Not being triggered, shader is instrumented, but doesn't seem tessellation shader is executed
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationEvaluation) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, TessellationEvaluation) {
     TEST_DESCRIPTION("Basic TessellationEvaluation shader test");
     AddRequiredFeature(vkt::Feature::tessellationShader);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -1176,7 +1178,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationEvaluatio
     VkShaderObj tes(*m_device, shader_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkPipelineTessellationStateCreateInfo tess_ci = vku::InitStructHelper();
-    tess_ci.patchControlPoints = 4u;
+    tess_ci.patchControlPoints = 3u;
 
     CreatePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -1202,6 +1204,8 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationEvaluatio
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-storageBuffers-06936");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-storageBuffers-06936");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
