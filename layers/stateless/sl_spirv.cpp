@@ -140,6 +140,10 @@ bool SpirvValidator::Validate(const spirv::Module& module_state, const spirv::St
         skip |= ValidateShaderMultipleWaitQueues(module_state, stateless_data, loc);
     }
 
+    if (enabled_features.shaderAbort) {
+        skip |= ValidateAbortMessageSize(module_state, stateless_data, loc);
+    }
+
     if (enabled_features.tileShading) {
         skip |= ValidateTileShadingAtomicAccess(module_state, stateless_data, loc);
     }
@@ -1822,6 +1826,23 @@ bool SpirvValidator::ValidateShaderMultipleWaitQueues(const spirv::Module& modul
         }
     }
 
+    return skip;
+}
+
+bool SpirvValidator::ValidateAbortMessageSize(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
+                                              const Location& loc) const {
+    bool skip = false;
+    const uint64_t max_size = phys_dev_ext_props.shader_abort_props.maxShaderAbortMessageSize;
+    for (const spirv::Instruction* insn : stateless_data.abort_inst) {
+        const uint64_t message_size = module_state.GetTypeBytesSize(module_state.FindDef(insn->Word(1))) + 8u;
+        if (message_size > max_size) {
+            skip |= LogError("VUID-RuntimeSpirv-pMessageData-12568", module_state.handle(), loc,
+                             "OpAbortKHR has a Message Type of %" PRIu64
+                             " bytes (including the 8 byte size value) which is larger than maxShaderAbortMessageSize (%" PRIu64
+                             ").\n%s\n",
+                             message_size, max_size, module_state.DescribeInstruction(*insn).c_str());
+        }
+    }
     return skip;
 }
 

@@ -696,6 +696,7 @@ struct StatelessData {
     std::vector<const Instruction *> tensor_inst;
     std::vector<const Instruction *> image_texel_pointer_inst;
     std::vector<const Instruction *> loop_merge_inst;
+    std::vector<const Instruction*> abort_inst;
     // Both variables and instruction explicitly accessing untyped variables
     std::vector<const Instruction*> explicit_memory_inst;
 

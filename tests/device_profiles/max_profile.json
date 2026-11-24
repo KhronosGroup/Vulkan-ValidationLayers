@@ -106,6 +106,9 @@
                 "VkPhysicalDeviceShaderConstantDataFeaturesKHR": {
                     "shaderConstantData": true
                 },
+                "VkPhysicalDeviceShaderAbortFeaturesKHR": {
+                    "shaderAbort": true
+                },
                 "VkPhysicalDevicePrimitiveRestartIndexFeaturesEXT": {
                     "primitiveRestartIndex": true
                 },
@@ -1588,6 +1591,9 @@
                 "VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX": {
                     "perViewPositionAllComponents": true
                 },
+                "VkPhysicalDeviceShaderAbortPropertiesKHR": {
+                    "maxShaderAbortMessageSize": 65536
+                },
                 "VkPhysicalDeviceDescriptorHeapPropertiesEXT": {
                     "samplerHeapAlignment": 4,
                     "resourceHeapAlignment": 4,
@@ -2768,6 +2774,7 @@
                 "VK_KHR_sampler_mirror_clamp_to_edge": 1,
                 "VK_KHR_sampler_ycbcr_conversion": 1,
                 "VK_KHR_separate_depth_stencil_layouts": 1,
+                "VK_KHR_shader_abort": 1,
                 "VK_KHR_shader_atomic_int64": 1,
                 "VK_KHR_shader_bfloat16": 1,
                 "VK_KHR_shader_clock": 1,
