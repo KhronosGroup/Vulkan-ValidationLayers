@@ -3334,3 +3334,40 @@ TEST_F(NegativeShaderSpirv, LargerThanMaxShaderWaitQueues) {
     VkShaderObj cs{*m_device, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM};
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderSpirv, AbortMessageSizeTooLarge) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_ABORT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderAbort);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceShaderAbortPropertiesKHR abort_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(abort_props);
+    if (abort_props.maxShaderAbortMessageSize != 65536) {
+        GTEST_SKIP() << "Test assumes maxShaderAbortMessageSize is 65536";
+    }
+
+    const char* spv_source = R"(
+               OpCapability Shader
+               OpCapability AbortKHR
+               OpExtension "SPV_KHR_abort"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %msg_t ArrayStride 4
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %length = OpConstant %uint 16383
+     %msg_t = OpTypeArray %uint %length
+        %msg = OpConstantNull %msg_t
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpAbortKHR %msg_t %msg
+               OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-pMessageData-12568");
+    VkShaderObj cs(*m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}

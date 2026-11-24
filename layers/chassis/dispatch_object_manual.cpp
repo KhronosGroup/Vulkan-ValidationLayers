@@ -498,6 +498,8 @@ StatelessDeviceData::StatelessDeviceData(DispatchInstance* instance, VkPhysicalD
                                              &phys_dev_ext_props.maintenance10_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance12,
                                              &phys_dev_ext_props.maintenance12_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_shader_abort,
+                                             &phys_dev_ext_props.shader_abort_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_opacity_micromap,
                                              &phys_dev_ext_props.micromap_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_opacity_micromap,

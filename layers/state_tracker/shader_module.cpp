@@ -1098,6 +1098,12 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 }
                 break;
 
+            case spv::OpAbortKHR:
+                if (stateless_data) {
+                    stateless_data->abort_inst.push_back(&insn);
+                }
+                break;
+
             // Execution Mode
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId: {

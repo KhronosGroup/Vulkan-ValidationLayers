@@ -121,6 +121,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceMaintenance9PropertiesKHR maintenance9_props;
     VkPhysicalDeviceMaintenance10PropertiesKHR maintenance10_props;
     VkPhysicalDeviceMaintenance12PropertiesKHR maintenance12_props;
+    VkPhysicalDeviceShaderAbortPropertiesKHR shader_abort_props;
     VkPhysicalDeviceTensorPropertiesARM tensor_properties;
     VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR copy_memory_indirect_props;
     VkPhysicalDeviceOpacityMicromapPropertiesKHR micromap_props;
