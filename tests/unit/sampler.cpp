@@ -636,7 +636,6 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.pImageInfo = &image_infos[0];
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02738");
-    m_errorMonitor->SetDesiredError("VUID-VkDescriptorImageInfo-sampler-01564");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }

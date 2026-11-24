@@ -2243,7 +2243,6 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
                     continue;
                 }
 
-                const auto* image_state = iv_state->image_state.get();
                 skip |= ValidateImageUpdate(*iv_state, image_layout, update.descriptorType, image_info_loc);
 
                 // Samplers can't be VK_NULL_HANDLE from nullDescriptor, but if there is an immutble sampler, it can be set as
@@ -2298,30 +2297,6 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, co
                     }
 
                     if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
-                        // If there is an immutable sampler then |sampler| isn't used, so the following VU does not apply.
-                        if (vkuFormatIsMultiplane(image_state->GetFormat())) {
-                            // multiplane formats must be created with mutable format bit
-                            const VkFormat image_format = image_state->GetFormat();
-                            if ((image_state->create_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) == 0) {
-                                // This one seems like the impossible one to hit, but leave here just incase
-                                const LogObjectList objlist(update.dstSet, image_state->Handle());
-                                skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
-                                                 "combined image sampler is a multi-planar format (%s), but was created witout "
-                                                 "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT\nCreate flags: %s.",
-                                                 string_VkFormat(image_format),
-                                                 string_VkImageCreateFlags2KHR(image_state->create_flags).c_str());
-                            }
-                            const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
-                            if (!IsValidPlaneAspect(image_format, image_aspect)) {
-                                const LogObjectList objlist(update.dstSet, image_state->Handle(), iv_state->Handle());
-                                skip |= LogError(
-                                    "VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
-                                    "combined image sampler is a multi-planar format (%s), but imageView aspectMask is %s\nNote: "
-                                    "You can't sample the whole YCbCr image with it, only one plane can be sampled.",
-                                    string_VkFormat(image_format), string_VkImageAspectFlags(image_aspect).c_str());
-                            }
-                        }
-
                         if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
                             if ((VK_FALSE == enabled_features.mutableComparisonSamplers) &&
                                 (VK_FALSE != sampler_state->create_info.compareEnable)) {
