@@ -312,6 +312,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
     // Buffer could be null via nullDescriptor and accessing it is legal
     if (buffer == VK_NULL_HANDLE) {
+        if (resource_variable.IsCooperativeMatrixAccessed()) {
+            const LogObjectList objlist(this->objlist, descriptor_set.Handle());
+            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrix-12379", objlist, loc.Get(),
+                             "the %s is a null descriptor, but it is accessed by an OpCooperativeMatrix* instruction.%s",
+                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), DescribeInstruction().c_str());
+        }
         return skip;
     }
     if (buffer_node /* && !buffer_node->sparse*/) {

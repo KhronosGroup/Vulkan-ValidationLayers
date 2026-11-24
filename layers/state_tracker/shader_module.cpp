@@ -1016,6 +1016,8 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     std::vector<uint32_t> load_pointer_ids;
     std::vector<uint32_t> atomic_store_pointer_ids;
     std::vector<uint32_t> atomic_load_pointer_ids;
+    std::vector<uint32_t> cooperative_matrix_store_pointer_ids;
+    std::vector<uint32_t> cooperative_matrix_load_pointer_ids;
 
     uint32_t last_func_id = 0;
     // < Function ID, OpFunctionParameter Ids >
@@ -1246,11 +1248,21 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
                 }
                 break;
             }
+            case spv::OpCooperativeMatrixLoadKHR:
+            case spv::OpCooperativeMatrixLoadNV:
+            case spv::OpCooperativeMatrixLoadTensorNV:
+                cooperative_matrix_load_pointer_ids.emplace_back(insn.Word(3));  // object id or AccessChain id
+                cooperative_matrix_inst.push_back(&insn);
+                break;
+            case spv::OpCooperativeMatrixStoreKHR:
+            case spv::OpCooperativeMatrixStoreNV:
+            case spv::OpCooperativeMatrixStoreTensorNV:
+                cooperative_matrix_store_pointer_ids.emplace_back(insn.Word(1));  // object id or AccessChain id
+                cooperative_matrix_inst.push_back(&insn);
+                break;
             case spv::OpTypeCooperativeMatrixNV:
             case spv::OpCooperativeMatrixMulAddNV:
             case spv::OpTypeCooperativeMatrixKHR:
-            case spv::OpCooperativeMatrixLoadKHR:
-            case spv::OpCooperativeMatrixStoreKHR:
             case spv::OpCooperativeMatrixLengthKHR:
             case spv::OpCooperativeMatrixMulAddKHR: {
                 cooperative_matrix_inst.push_back(&insn);
@@ -1437,6 +1449,8 @@ Module::StaticData::StaticData(const Module& module_state, bool parse, Stateless
     mark_variable_access(load_pointer_ids, AccessBit::read);
     mark_variable_access(atomic_store_pointer_ids, AccessBit::atomic_write);
     mark_variable_access(atomic_load_pointer_ids, AccessBit::atomic_read);
+    mark_variable_access(cooperative_matrix_store_pointer_ids, AccessBit::write | AccessBit::cooperative_matrix);
+    mark_variable_access(cooperative_matrix_load_pointer_ids, AccessBit::read | AccessBit::cooperative_matrix);
 
     for (const Instruction* decoration_inst : built_in_decoration_instructions) {
         const spv::BuiltIn built_in = decoration_inst->GetBuiltIn();

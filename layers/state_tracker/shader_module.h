@@ -266,6 +266,7 @@ const uint32_t atomic_read = 1 << 2;
 const uint32_t atomic_write = 1 << 3;
 const uint32_t image_read = 1 << 4;
 const uint32_t image_write = 1 << 5;
+const uint32_t cooperative_matrix = 1 << 6;
 
 constexpr uint32_t atomic_mask = atomic_read | atomic_write;
 constexpr uint32_t image_mask = image_read | image_write;
@@ -395,6 +396,8 @@ struct VariableBase {
     bool IsImageWrittenTo() const { return access_mask & AccessBit::image_write; }
     // Something like textureSize() will access the OpVariable, but not the image itself
     bool IsImageAccessed() const { return access_mask & AccessBit::image_mask; }
+    // Accessed by any OpCooperativeMatrix* load/store instruction
+    bool IsCooperativeMatrixAccessed() const { return access_mask & AccessBit::cooperative_matrix; }
 
     bool IsUntyped() const { return data_type_id != 0; }
 
