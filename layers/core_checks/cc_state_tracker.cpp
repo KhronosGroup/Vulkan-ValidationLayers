@@ -389,9 +389,9 @@ void CommandBufferSubState::RecordCopyImage(vvl::Image& src_image_state, vvl::Im
                                             const VkImageCopy* regions, const Location& loc) {
     for (const VkImageCopy& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.srcSubresource), region.srcOffset.z, region.extent.depth,
-                                   src_image_layout);
+                                   src_image_layout, vvl::Field::srcImageLayout);
         base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.dstSubresource), region.dstOffset.z, region.extent.depth,
-                                   dst_image_layout);
+                                   dst_image_layout, vvl::Field::dstImageLayout);
     }
 }
 
@@ -400,9 +400,9 @@ void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::I
                                              const VkImageCopy2* regions, const Location& loc) {
     for (const VkImageCopy2& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.srcSubresource), region.srcOffset.z, region.extent.depth,
-                                   src_image_layout);
+                                   src_image_layout, vvl::Field::srcImageLayout);
         base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.dstSubresource), region.dstOffset.z, region.extent.depth,
-                                   dst_image_layout);
+                                   dst_image_layout, vvl::Field::dstImageLayout);
     }
 }
 
@@ -410,7 +410,7 @@ void CommandBufferSubState::RecordCopyBufferToImage(vvl::Buffer&, vvl::Image& ds
                                                     uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) {
     for (const VkBufferImageCopy& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                   region.imageExtent.depth, dst_image_layout);
+                                   region.imageExtent.depth, dst_image_layout, vvl::Field::dstImageLayout);
     }
 }
 
@@ -419,7 +419,7 @@ void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Buffer&, vvl::Image& d
                                                      const Location& loc) {
     for (const VkBufferImageCopy2& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                   region.imageExtent.depth, dst_image_layout);
+                                   region.imageExtent.depth, dst_image_layout, vvl::Field::dstImageLayout);
     }
 }
 
@@ -427,7 +427,7 @@ void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state,
                                                     uint32_t region_count, const VkBufferImageCopy* regions, const Location& loc) {
     for (const VkBufferImageCopy& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                   region.imageExtent.depth, src_image_layout);
+                                   region.imageExtent.depth, src_image_layout, vvl::Field::srcImageLayout);
     }
 }
 
@@ -436,7 +436,7 @@ void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state
                                                      const Location& loc) {
     for (const VkBufferImageCopy2& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                   region.imageExtent.depth, src_image_layout);
+                                   region.imageExtent.depth, src_image_layout, vvl::Field::srcImageLayout);
     }
 }
 
@@ -444,7 +444,7 @@ void CommandBufferSubState::RecordCopyImageToMemory(vvl::Image& src_image_state,
                                                     const VkDeviceMemoryImageCopyKHR* regions, const Location& loc) {
     for (const VkDeviceMemoryImageCopyKHR& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                   region.imageExtent.depth, region.imageLayout);
+                                   region.imageExtent.depth, region.imageLayout, vvl::Field::imageLayout);
     }
 }
 
@@ -452,7 +452,7 @@ void CommandBufferSubState::RecordCopyMemoryToImage(vvl::Image& dst_image_state,
                                                     const VkDeviceMemoryImageCopyKHR* regions, const Location& loc) {
     for (const VkDeviceMemoryImageCopyKHR& region : vvl::make_span(regions, region_count)) {
         base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.imageSubresource), region.imageOffset.z,
-                                   region.imageExtent.depth, region.imageLayout);
+                                   region.imageExtent.depth, region.imageLayout, vvl::Field::imageLayout);
     }
 }
 
@@ -463,12 +463,12 @@ void CommandBufferSubState::RecordBlitImage(vvl::Image& src_image_state, vvl::Im
         const int32_t src_depth_offset = (int32_t)std::min(region.srcOffsets[0].z, region.srcOffsets[1].z);
         const uint32_t src_depth_extent = (uint32_t)std::abs(region.srcOffsets[1].z - region.srcOffsets[0].z);
         base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.srcSubresource), src_depth_offset, src_depth_extent,
-                                   src_image_layout);
+                                   src_image_layout, vvl::Field::srcImageLayout);
 
         const int32_t dst_depth_offset = (int32_t)std::min(region.dstOffsets[0].z, region.dstOffsets[1].z);
         const uint32_t dst_depth_extent = (uint32_t)std::abs(region.dstOffsets[1].z - region.dstOffsets[0].z);
         base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.dstSubresource), dst_depth_offset, dst_depth_extent,
-                                   dst_image_layout);
+                                   dst_image_layout, vvl::Field::dstImageLayout);
     }
 }
 
@@ -479,19 +479,20 @@ void CommandBufferSubState::RecordBlitImage2(vvl::Image& src_image_state, vvl::I
         const int32_t src_depth_offset = (int32_t)std::min(region.srcOffsets[0].z, region.srcOffsets[1].z);
         const uint32_t src_depth_extent = (uint32_t)std::abs(region.srcOffsets[1].z - region.srcOffsets[0].z);
         base.TrackImageFirstLayout(src_image_state, RangeFromLayers(region.srcSubresource), src_depth_offset, src_depth_extent,
-                                   src_image_layout);
+                                   src_image_layout, vvl::Field::srcImageLayout);
 
         const int32_t dst_depth_offset = (int32_t)std::min(region.dstOffsets[0].z, region.dstOffsets[1].z);
         const uint32_t dst_depth_extent = (uint32_t)std::abs(region.dstOffsets[1].z - region.dstOffsets[0].z);
         base.TrackImageFirstLayout(dst_image_state, RangeFromLayers(region.dstSubresource), dst_depth_offset, dst_depth_extent,
-                                   dst_image_layout);
+                                   dst_image_layout, vvl::Field::dstImageLayout);
     }
 }
 
 void CommandBufferSubState::RecordClearColorImage(vvl::Image& image_state, VkImageLayout image_layout, const VkClearColorValue*,
-                                                  uint32_t range_count, const VkImageSubresourceRange* ranges, const Location&) {
+                                                  uint32_t range_count, const VkImageSubresourceRange* ranges,
+                                                  const Location& loc) {
     for (uint32_t i = 0; i < range_count; ++i) {
-        base.TrackImageFirstLayout(image_state, ranges[i], 0, 0, image_layout);
+        base.TrackImageFirstLayout(image_state, ranges[i], 0, 0, image_layout, vvl::Field::imageLayout);
     }
 }
 
@@ -499,7 +500,7 @@ void CommandBufferSubState::RecordClearDepthStencilImage(vvl::Image& image_state
                                                          const VkClearDepthStencilValue*, uint32_t range_count,
                                                          const VkImageSubresourceRange* ranges, const Location&) {
     for (uint32_t i = 0; i < range_count; ++i) {
-        base.TrackImageFirstLayout(image_state, ranges[i], 0, 0, image_layout);
+        base.TrackImageFirstLayout(image_state, ranges[i], 0, 0, image_layout, vvl::Field::imageLayout);
     }
 }
 

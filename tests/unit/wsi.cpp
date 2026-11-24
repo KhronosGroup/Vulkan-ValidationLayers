@@ -344,7 +344,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
 
     // Even though both peer_image and swapchain_images[0] use the same memory and are in an invalid layout,
     // only peer_image is referenced by the command buffer so there should only be one error reported.
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImageLayout-00133");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
@@ -7265,7 +7265,7 @@ TEST_F(NegativeWsi, SharedPresentLayout) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    monitor_.SetDesiredError("VUID-vkCmdDraw-None-09600");
+    monitor_.SetDesiredError("VUID-vkCmdBeginRenderPass-initialLayout-00900");
     m_default_queue->Submit(m_command_buffer);
     monitor_.VerifyFound();
     m_default_queue->Wait();

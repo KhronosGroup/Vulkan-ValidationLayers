@@ -29,6 +29,7 @@
 #include "core_checks/cc_vuid_maps.h"
 #include "containers/container_utils.h"
 #include "core_checks/core_validation.h"
+#include "drawdispatch/drawdispatch_vuids.h"
 #include "error_message/error_strings.h"
 #include "generated/error_location_helper.h"
 #include "state_tracker/queue_state.h"
@@ -51,6 +52,22 @@ static bool IsImageBarrierCommand(vvl::Func command) {
     return IsValueIn(command,
                      {vvl::Func::vkCmdPipelineBarrier, vvl::Func::vkCmdPipelineBarrier2, vvl::Func::vkCmdPipelineBarrier2KHR,
                       vvl::Func::vkCmdWaitEvents, vvl::Func::vkCmdWaitEvents2, vvl::Func::vkCmdWaitEvents2KHR});
+}
+
+static std::string GetSubmitTimeLayoutMismatchVuid(const ImageLayoutState& layout_state) {
+    if (layout_state.submit_time_layout_mismatch_vuid) {
+        return layout_state.submit_time_layout_mismatch_vuid;
+    }
+
+    const vvl::Func command = layout_state.first_layout_command;
+    const Location loc(command, layout_state.first_layout_field);
+    const std::string& vuid = vvl::GetSubmitTimeImageLayoutVUID(loc);
+    if (!vuid.empty()) {
+        return vuid;
+    }
+
+    // Everything else is from a descriptor, which is tracked when the draw/dispatch/traceRays is recorded
+    return vvl::CreateActionVuid(command, vvl::ActionVUID::IMAGE_LAYOUT_09600);
 }
 
 struct LayoutMismatch {
@@ -353,10 +370,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location& submit_loc, const vv
                 const auto aspect_mask = image_state->subresource_encoder.Decode(intersected_range.begin).aspectMask;
                 const bool matches = ImageLayoutMatches(aspect_mask, image_layout, first_layout);
                 if (!matches) {
-                    // TODO - this should detect the command, not just always use vkCmdDraw
-                    const char* vuid = cb_layout_state.submit_time_layout_mismatch_vuid
-                                           ? cb_layout_state.submit_time_layout_mismatch_vuid
-                                           : "VUID-vkCmdDraw-None-09600";
+                    const std::string vuid = GetSubmitTimeLayoutMismatchVuid(cb_layout_state);
                     const std::string debug_region = vvl::CommandBuffer::GetDebugRegionName(
                         cb_info.cb->GetLabelCommands(), cb_layout_state.first_layout_label_command_i, cb_info.initial_label_stack);
                     const Location loc_with_region(submit_loc, debug_region, submit_loc.frame_id);

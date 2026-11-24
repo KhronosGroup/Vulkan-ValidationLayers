@@ -51,6 +51,10 @@ struct ImageLayoutState {
     // The command that set |first_layout|
     vvl::Func first_layout_command = vvl::Func::Empty;
 
+    // The parameter of |first_layout_command| that specified |first_layout| (ex. srcImageLayout)
+    // Only used to look up the VUID if submit time validation finds a mismatch.
+    vvl::Field first_layout_field = vvl::Field::Empty;
+
     // Index into the recording command buffer's label-command stream when |first_layout| was recorded
     uint32_t first_layout_label_command_i = vvl::kNoIndex32;
 
@@ -60,7 +64,7 @@ struct ImageLayoutState {
 
     // Submit time validation compares first_layout against image's current global layout.
     // If not null, this vuid is used to report an error.
-    // If null, the current implementation will use VUID-vkCmdDraw-None-09600 until we fix all the places
+    // If null, the VUID is looked up from |first_layout_command| (and |first_layout_field|) at error time
     const char* submit_time_layout_mismatch_vuid = nullptr;
 };
 
@@ -87,7 +91,7 @@ bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, vvl::Sub
 // The VkImageLayout parameter must be unnormalized value (as defined by the API) so it can be used in the error messages.
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, vvl::SubresourceRangeGenerator&& range_gen,
                       VkImageLayout expected_layout, VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid,
-                      uint32_t label_command_i, vvl::Func command);
+                      uint32_t label_command_i, vvl::Func command, vvl::Field field = vvl::Field::Empty);
 
 // Iterate over layout map subresource ranges that intersect with the ranges defined by SubresourceRangeGenerator.
 // Runs the callback on each matching layout map range.

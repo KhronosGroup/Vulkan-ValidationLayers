@@ -127,12 +127,13 @@ bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGen
 
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout expected_layout,
                       VkImageAspectFlags aspect_mask, const char* submit_time_layout_mismatch_vuid, uint32_t label_command_i,
-                      vvl::Func command) {
+                      vvl::Func command, vvl::Field field) {
     assert(expected_layout != kInvalidLayout);
 
     ImageLayoutState entry;
     entry.first_layout = expected_layout;
     entry.first_layout_command = command;
+    entry.first_layout_field = field;
     entry.first_layout_label_command_i = label_command_i;
 
     entry.aspect_mask = aspect_mask;

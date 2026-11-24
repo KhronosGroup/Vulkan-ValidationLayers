@@ -41,7 +41,6 @@ std::string CreateActionVuid(Func function, const ActionVUID id) {
     switch (id) {
         case ActionVUID::UNKNOWN: suffix = "UNKNOWN"; break;
 
-        // TODO - This one is a lie, see ValidateCmdBufImageLayouts()
         // ### VUID-vkCmdDraw-None-09600
         case ActionVUID::IMAGE_LAYOUT_09600: suffix = "None-09600"; break;
 
