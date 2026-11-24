@@ -52,16 +52,17 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
 
                 const uint32_t payload = error_record[kInst_LogError_ParameterOffset_2];
                 const bool is_write = ((payload >> kInst_BuffAddrAccess_PayloadShiftIsWrite) & 1) != 0;
+                const bool is_atomic = ((payload >> kInst_BuffAddrAccess_PayloadShiftIsAtomic) & 1) != 0;
                 const bool is_struct = ((payload >> kInst_BuffAddrAccess_PayloadShiftIsStruct) & 1) != 0;
 
                 const uint64_t address = *reinterpret_cast<const uint64_t*>(error_record + kInst_LogError_ParameterOffset_0);
                 const uint32_t error_sub_code = GetSubError(error_record);
                 switch (error_sub_code) {
                     case kErrorSubCode_BufferDeviceAddress_UnallocRef: {
-                        const char* access_type = is_write ? "write" : "read";
+                        const char* access_type = is_atomic ? "atomically access" : (is_write ? "write" : "read");
                         const uint32_t byte_size = payload & kInst_BuffAddrAccess_PayloadMaskAccessInfo;
                         ss << "Out of bounds: trying to " << access_type << " " << byte_size << " bytes at [0x" << std::hex
-                           << address << ", 0x" << (address + byte_size) - 1 << ") but this range does not belong to any buffer.";
+                           << address << ", 0x" << (address + byte_size) << ") but this range does not belong to any buffer.";
                         if (is_struct) {
                             // Added because glslang currently has no way to separate out the struct (Slang does as of 2025.6.2)
                             ss << " This " << (is_write ? "write" : "read") << " corresponds to a full OpTypeStruct load";

@@ -159,14 +159,15 @@ const int kInst_DescriptorHeap_AlignmentShiftMask = 0xF;
 
 // Buffer device addresses
 // ---
-// Payload contains 3 pieces of data, compressed into a single uint32_t
-// We can be safe that assume alignment we don't need these upper 2 bytes
+// Payload contains 4 pieces of data, compressed into a single uint32_t
+// We can be safe that assume alignment we don't need these upper 3 bytes
 // Note - if needed, we could use log2(alignment) as it must be a Power-of-Two
-// |    31    |     30    | 29 ........................ 0 |
-// | is write | is struct | Alignment OR Access Byte Size |
+// |    31    |     30    |    29     | 28 ........................ 0 |
+// | is write | is struct | is atomic | Alignment OR Access Byte Size |
 const uint kInst_BuffAddrAccess_PayloadShiftIsWrite = 31;
 const uint kInst_BuffAddrAccess_PayloadShiftIsStruct = 30;
-const uint kInst_BuffAddrAccess_PayloadMaskAccessInfo = 0x3FFFFFFF;
+const uint kInst_BuffAddrAccess_PayloadShiftIsAtomic = 29;
+const uint kInst_BuffAddrAccess_PayloadMaskAccessInfo = 0x1FFFFFFF;
 
 // kErrorGroup_InstMeshShading
 // ---
