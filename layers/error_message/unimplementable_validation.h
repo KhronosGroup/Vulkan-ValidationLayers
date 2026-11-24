@@ -1184,6 +1184,11 @@ const char* deprecated_validation[] = {
     // Way too complex to implement for the assumed return value
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7481
     "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-dst-03561",
+
+    // Redundant VU, can't be hit without also hitting 06415, 02738), or 00337
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5591
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3663
+    "VUID-VkDescriptorImageInfo-sampler-01564",
 };
 
 // clang-format on
