@@ -263,7 +263,6 @@ class TypeManager {
     std::vector<const Type*> runtime_array_types_;
     std::vector<const Type*> coop_mat_types_;
     std::vector<const Type*> pointer_types_;
-    std::vector<const Type*> forward_pointer_types_;
     std::vector<const Type*> function_types_;
     // Only for types we want to avoid when linking
     std::vector<const Type*> linking_struct_types_;

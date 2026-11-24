@@ -72,6 +72,49 @@ TEST_F(PositiveGpuAVRayQuery, ComputeBasic) {
     m_device->Wait();
 }
 
+TEST_F(PositiveGpuAVRayQuery, ComputeForwardPointer) {
+    RETURN_IF_SKIP(InitGpuAVRayQuery());
+
+    const char* shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : require
+        #extension GL_EXT_buffer_reference : require
+
+        // only here there to create a OpTypeForwardPointer
+        layout(buffer_reference) buffer BDA { uint x; };
+        layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+        layout(set = 0, binding = 1) buffer SSBO { BDA ptr; };
+
+        void main() {
+            rayQueryEXT query;
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0), 0.1, vec3(0,0,1), 1000.0);
+            rayQueryProceedEXT(query);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = VkShaderObj(*m_device, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                              {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.CreateComputePipeline();
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer);
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipeline.descriptor_set_.WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.descriptor_set_.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+}
+
 TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     TEST_DESCRIPTION("Ray query in a compute shader, with dynamically set t_min and t_max");
     RETURN_IF_SKIP(InitGpuAVRayQuery());

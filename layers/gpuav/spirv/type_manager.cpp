@@ -129,9 +129,6 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
         case SpvType::kPointer:
             pointer_types_.push_back(new_type);
             break;
-        case SpvType::kForwardPointer:
-            forward_pointer_types_.push_back(new_type);
-            break;
         case SpvType::kFunction:
             function_types_.push_back(new_type);
             break;
