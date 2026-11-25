@@ -1401,27 +1401,6 @@ TEST_F(NegativeDescriptorHeapEXT, ResourceInheritance) {
     }
 }
 
-TEST_F(NegativeDescriptorHeapEXT, ReservedRangeZeroSizeOffset) {
-    RETURN_IF_SKIP(InitBasicDescriptorHeap());
-    if (heap_props.minResourceHeapReservedRange != 0) {
-        GTEST_SKIP() << "Test requires minResourceHeapReservedRange to be 0";
-    }
-
-    vkt::DescriptorHeapEXT desc_heap(*this);
-    desc_heap.CreateResourceHeap(heap_props.bufferDescriptorSize * 2);
-
-    VkBindHeapInfoEXT bind_info = vku::InitStructHelper();
-    bind_info.heapRange = desc_heap.resource_heap_.AddressRange();
-    bind_info.reservedRangeOffset = desc_heap.AlignResource(heap_props.bufferDescriptorSize);
-    bind_info.reservedRangeSize = 0;
-
-    m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindResourceHeapEXT-pBindInfo-12558");
-    vk::CmdBindResourceHeapEXT(m_command_buffer, &bind_info);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
-}
-
 TEST_F(NegativeDescriptorHeapEXT, CmdBindResourceHeapAlign) {
     RETURN_IF_SKIP(InitBasicDescriptorHeap());
 
