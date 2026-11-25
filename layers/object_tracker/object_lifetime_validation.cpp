@@ -612,6 +612,14 @@ void Device::CreateQueue(VkQueue vkObj, const Location& loc) {
 }
 
 void Device::CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain, const Location& loc) {
+    // Without unique handles a swapchain can reuse images from its oldSwapchain.
+    // Hand the image over to the new swapchain so destroying the oldSwapchain does
+    // not remove it from the tracker.
+    if (auto image_state = tracker.GetObjectState(VulkanTypedHandle(swapchain_image, kVulkanObjectTypeImage))) {
+        image_state->parent_object = HandleToUint64(swapchain);
+        return;
+    }
+
     tracker.CreateObject(swapchain_image, kVulkanObjectTypeImage, nullptr, loc, swapchain);
 }
 
@@ -1114,6 +1122,7 @@ void Device::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool comm
 
 void Device::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator,
                                               const RecordObject& record_obj) {
+    auto lock = WriteSharedLock();
     RecordDestroyObject(swapchain, kVulkanObjectTypeSwapchainKHR, record_obj.location);
 
     auto& image_map = tracker.object_map[kVulkanObjectTypeImage];

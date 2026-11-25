@@ -2337,6 +2337,56 @@ TEST_F(PositiveWsi, CreateWithOldSwapchainUniqueHandlesAndGetImages2) {
     swapchain.Destroy();
 }
 
+TEST_F(PositiveWsi, ReuseOldSwapchainImagesNoUniqueHandles) {
+    // Only reproduces if the driver hands the same VkImage handle to both swapchains (seen on NVIDIA)
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8584
+    TEST_DESCRIPTION("Destroy oldSwapchain, then use an image the new swapchain reused from it");
+
+    VkLayerSettingEXT layer_settings = {OBJECT_LAYER_NAME, "unique_handles", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+    VkLayerSettingsCreateInfoEXT layer_settings_ci = vku::InitStructHelper();
+    layer_settings_ci.settingCount = 1;
+    layer_settings_ci.pSettings = &layer_settings;
+
+    VkValidationFeaturesEXT validation_features = vku::InitStructHelper();
+    validation_features.pNext = &layer_settings_ci;
+
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init(nullptr, nullptr, &validation_features));
+    RETURN_IF_SKIP(InitSurface());
+
+    const SurfaceInformation swapchain_info = GetSwapchainInfo(m_surface);
+    VkSwapchainCreateInfoKHR swapchain_ci = GetDefaultSwapchainCreateInfo(m_surface, swapchain_info);
+
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    auto swapchain_images = swapchain.GetImages();
+
+    swapchain_ci.oldSwapchain = swapchain;
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+    auto swapchain2_images = swapchain2.GetImages();
+
+    swapchain.Destroy();
+
+    bool shared = false;
+    for (VkImage image : swapchain2_images) {
+        for (VkImage old_image : swapchain_images) {
+            shared |= (image == old_image);
+        }
+    }
+    if (!shared) {
+        GTEST_SKIP() << "Driver did not reuse swapchain image handles, nothing to test";
+    }
+
+    // Image parameter is validated by object tracker
+    for (VkImage image : swapchain2_images) {
+        VkImageViewCreateInfo ivci = vku::InitStructHelper();
+        ivci.image = image;
+        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ivci.format = swapchain_ci.imageFormat;
+        ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        vkt::ImageView view(*m_device, ivci);
+    }
+}
+
 TEST_F(PositiveWsi, OldSwapchainFromAnotherSurface) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112");
     AddSurfaceExtension();
