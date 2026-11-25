@@ -1923,11 +1923,12 @@ void GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t>& in
         return;
     }
 
-    const std::string dump_file_prefix = gpuav_settings.debug_dump_instrumented_shaders
-                                             ? "dump_" + std::to_string(interface.unique_shader_id) + "_" +
-                                                   ShaderStageDumpName(interface.entry_point_stage) + "_" +
-                                                   std::string(interface.entry_point_name)
-                                             : "";
+    const bool may_dump_files =
+        gpuav_settings.debug_dump_instrumented_shaders || gpuav_settings.debug_validate_instrumented_shaders;
+    const std::string dump_file_prefix = may_dump_files ? "dump_" + std::to_string(interface.unique_shader_id) + "_" +
+                                                              ShaderStageDumpName(interface.entry_point_stage) + "_" +
+                                                              std::string(interface.entry_point_name)
+                                                        : "";
     if (gpuav_settings.debug_dump_instrumented_shaders) {
         const auto non_instrumented_spirv_file = fs::absolute(dump_file_prefix + "_before.spv");
         DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
