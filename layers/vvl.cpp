@@ -32,6 +32,18 @@
 // layer library but not vvl_core. Otherwise anything linking vvl_core, like the tests, would also replace its new / delete.
 #if defined(USE_MIMALLOC) && defined(_WIN64)
 #include "mimalloc-new-delete.h"
+
+// From https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10572
+// disclosure: Had LLM figure out the leak on Windows and proved this fixed it
+//
+// mimalloc is statically linked into the layer, and the loader unloads the layer DLL when the last VkInstance is destroyed.
+// By default mimalloc keeps its arenas (the OS memory it reserved) on DLL_PROCESS_DETACH, since a normal process exit would let
+// the OS reclaim them. A process that repeatedly creates and destroys instances (like the test suite) therefore leaks
+// that memory on every cycle.
+[[maybe_unused]] static const bool kMimallocDestroyOnExit = [] {
+    mi_option_enable(mi_option_destroy_on_exit);
+    return true;
+}();
 #endif
 
 #if defined(__GNUC__)
