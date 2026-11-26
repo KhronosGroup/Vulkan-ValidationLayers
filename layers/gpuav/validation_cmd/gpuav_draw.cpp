@@ -70,16 +70,27 @@ struct ValidationCmdCbState {
 
 void FlushValidationCmds(Validator& gpuav, CommandBufferSubState& cb_state) {
     ValidationCmdCbState* val_cmd_cb_state = cb_state.shared_resources_cache.TryGet<ValidationCmdCbState>();
-    if (!val_cmd_cb_state) {
+    if (!val_cmd_cb_state || val_cmd_cb_state->per_render_pass_validation_commands.empty()) {
         return;
     }
 
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
+    VkMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+    barrier_read_after_write.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1,
+                               &barrier_read_after_write, 0, nullptr, 0, nullptr);
+
     for (auto& validation_cmd : val_cmd_cb_state->per_render_pass_validation_commands) {
         validation_cmd(gpuav, cb_state);
     }
     val_cmd_cb_state->per_render_pass_validation_commands.clear();
+
+    VkMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
+    barrier_write_after_read.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    barrier_write_after_read.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1,
+                               &barrier_write_after_read, 0, nullptr, 0, nullptr);
 }
 
 struct FirstInstanceValidationShader {
@@ -212,30 +223,6 @@ void FirstInstance(Validator& gpuav, CommandBufferSubState& cb_state, const Loca
             }
 
             DispatchCmdDispatch(cb_state.VkHandle(), work_group_count, 1, 1);
-
-            // synchronize draw buffer validation (read) against subsequent writes
-            std::array<VkBufferMemoryBarrier, 2> buffer_memory_barriers = {};
-            uint32_t buffer_memory_barriers_count = 1;
-            buffer_memory_barriers[0] = vku::InitStructHelper();
-            buffer_memory_barriers[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            buffer_memory_barriers[0].dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-            buffer_memory_barriers[0].buffer = api_buffer;
-            buffer_memory_barriers[0].offset = api_offset;
-            buffer_memory_barriers[0].size = work_group_count * sizeof(uint32_t);
-
-            if (api_count_buffer) {
-                buffer_memory_barriers[1] = vku::InitStructHelper();
-                buffer_memory_barriers[1].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                buffer_memory_barriers[1].dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-                buffer_memory_barriers[1].buffer = api_count_buffer;
-                buffer_memory_barriers[1].offset = api_count_buffer_offset;
-                buffer_memory_barriers[1].size = sizeof(uint32_t);
-                ++buffer_memory_barriers_count;
-            }
-
-            DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, buffer_memory_barriers_count,
-                                       buffer_memory_barriers.data(), 0, nullptr);
         }
     };
 
@@ -428,17 +415,6 @@ void CountBuffer(Validator& gpuav, CommandBufferSubState& cb_state, const Locati
                 return;
             }
             DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
-            // synchronize draw buffer validation (read) against subsequent writes
-            VkBufferMemoryBarrier count_buffer_memory_barrier = vku::InitStructHelper();
-            count_buffer_memory_barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            count_buffer_memory_barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-            count_buffer_memory_barrier.buffer = api_count_buffer;
-            count_buffer_memory_barrier.offset = api_count_buffer_offset;
-            count_buffer_memory_barrier.size = sizeof(uint32_t);
-
-            DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &count_buffer_memory_barrier, 0,
-                                       nullptr);
         }
     };
 
@@ -620,30 +596,6 @@ void DrawMeshIndirect(Validator& gpuav, CommandBufferSubState& cb_state, const L
             }
             const uint32_t work_group_count = std::min(api_draw_count, max_held_draw_cmds);
             DispatchCmdDispatch(cb_state.VkHandle(), work_group_count, 1, 1);
-
-            // synchronize draw buffer validation (read) against subsequent writes
-            std::array<VkBufferMemoryBarrier, 2> buffer_memory_barriers = {};
-            uint32_t buffer_memory_barriers_count = 1;
-            buffer_memory_barriers[0] = vku::InitStructHelper();
-            buffer_memory_barriers[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            buffer_memory_barriers[0].dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-            buffer_memory_barriers[0].buffer = api_buffer;
-            buffer_memory_barriers[0].offset = api_offset;
-            buffer_memory_barriers[0].size = work_group_count * sizeof(uint32_t);
-
-            if (api_count_buffer) {
-                buffer_memory_barriers[1] = vku::InitStructHelper();
-                buffer_memory_barriers[1].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                buffer_memory_barriers[1].dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-                buffer_memory_barriers[1].buffer = api_count_buffer;
-                buffer_memory_barriers[1].offset = api_count_buffer_offset;
-                buffer_memory_barriers[1].size = sizeof(uint32_t);
-                ++buffer_memory_barriers_count;
-            }
-
-            DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, buffer_memory_barriers_count,
-                                       buffer_memory_barriers.data(), 0, nullptr);
         }
     };
 
@@ -908,15 +860,11 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
             // Sync indirect buffer writes - the same command buffer could be executed concurrently
             // for all we know
             {
-                VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
+                VkMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
                 barrier_write_after_read.srcAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
                 barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-                barrier_write_after_read.buffer = validation_dispatch_params_buffer_range.buffer;
-                barrier_write_after_read.offset = validation_dispatch_params_buffer_range.offset;
-                barrier_write_after_read.size = validation_dispatch_params_buffer_range.size;
-
                 DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-                                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
+                                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier_write_after_read, 0, nullptr, 0,
                                            nullptr);
             }
 
@@ -924,15 +872,11 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
 
             // Sync indirect buffer reads
             {
-                VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+                VkMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
                 barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
                 barrier_read_after_write.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-                barrier_read_after_write.buffer = validation_dispatch_params_buffer_range.buffer;
-                barrier_read_after_write.offset = validation_dispatch_params_buffer_range.offset;
-                barrier_read_after_write.size = validation_dispatch_params_buffer_range.size;
-
                 DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                           VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0, 0, nullptr, 1, &barrier_read_after_write, 0,
+                                           VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0, 1, &barrier_read_after_write, 0, nullptr, 0,
                                            nullptr);
             }
         }
@@ -960,29 +904,6 @@ void DrawIndexedIndirectIndexBuffer(Validator& gpuav, CommandBufferSubState& cb_
             // One draw will check all VkDrawIndexedIndirectCommand
             DispatchCmdDispatchIndirect(cb_state.VkHandle(), validation_dispatch_params_buffer_range.buffer,
                                         validation_dispatch_params_buffer_range.offset);
-            // synchronize draw buffer validation (read) against subsequent writes
-            std::array<VkBufferMemoryBarrier, 2> buffer_memory_barriers = {};
-            uint32_t buffer_memory_barriers_count = 1;
-            buffer_memory_barriers[0] = vku::InitStructHelper();
-            buffer_memory_barriers[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            buffer_memory_barriers[0].dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-            buffer_memory_barriers[0].buffer = api_buffer;
-            buffer_memory_barriers[0].offset = api_offset;
-            buffer_memory_barriers[0].size = VK_WHOLE_SIZE;
-
-            if (api_count_buffer) {
-                buffer_memory_barriers[1] = vku::InitStructHelper();
-                buffer_memory_barriers[1].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                buffer_memory_barriers[1].dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-                buffer_memory_barriers[1].buffer = api_count_buffer;
-                buffer_memory_barriers[1].offset = api_count_buffer_offset;
-                buffer_memory_barriers[1].size = sizeof(uint32_t);
-                ++buffer_memory_barriers_count;
-            }
-
-            DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, buffer_memory_barriers_count,
-                                       buffer_memory_barriers.data(), 0, nullptr);
         }
     };
 

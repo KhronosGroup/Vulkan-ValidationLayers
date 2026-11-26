@@ -306,31 +306,23 @@ void DescriptorSetSubState::PerformPushDescriptorsUpdate(vvl::CommandBuffer& cb,
             descriptor_encoding_update_pipeline.BindShaderResources(cb_sub_state.gpuav_, cb_sub_state, shader_resources));
 
         {
-            VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
+            VkMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
             barrier_write_after_read.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
             barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            barrier_write_after_read.buffer = descriptor_encodings_.VkHandle();
-            barrier_write_after_read.offset = 0;
-            barrier_write_after_read.size = VK_WHOLE_SIZE;
-
             DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
+                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier_write_after_read, 0, nullptr, 0,
                                        nullptr);
         }
 
         DispatchCmdDispatch(cb.VkHandle(), binding_count, 1, 1);
 
         {
-            VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+            VkMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
             barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
             barrier_read_after_write.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            barrier_read_after_write.buffer = descriptor_encodings_.VkHandle();
-            barrier_read_after_write.offset = 0;
-            barrier_read_after_write.size = VK_WHOLE_SIZE;
-
             DispatchCmdPipelineBarrier(cb.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 1,
-                                       &barrier_read_after_write, 0, nullptr);
+                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 1,
+                                       &barrier_read_after_write, 0, nullptr, 0, nullptr);
         }
     }
 }

@@ -340,16 +340,12 @@ class DummyBLAS {
                 std::array build_range_infos = {&triangle_build_range};
                 DispatchCmdBuildAccelerationStructuresKHR(per_submission_cb, 1, &as_build_geom_info, build_range_infos.data());
 
-                VkBufferMemoryBarrier barrier_blas_build = vku::InitStructHelper();
+                VkMemoryBarrier barrier_blas_build = vku::InitStructHelper();
                 barrier_blas_build.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
                 barrier_blas_build.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-                barrier_blas_build.buffer = blas_buffer.VkHandle();
-                barrier_blas_build.offset = 0;
-                barrier_blas_build.size = blas_buffer.Size();
-
                 DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
-                                           &barrier_blas_build, 0, nullptr);
+                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier_blas_build, 0,
+                                           nullptr, 0, nullptr);
             });
     }
 
@@ -565,20 +561,14 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
         // Validation dispatch, one for each TLAS build
         // ---
         for (size_t tlas_build_i = 0; tlas_build_i < tlas_builds.size(); ++tlas_build_i) {
-            const auto blas_array_buffers = gpuav.GetBuffersByAddress(tlas_builds[tlas_build_i].blas_array_start_addr);
-            if (blas_array_buffers.empty()) {
-                assert(false);
-            } else {
-                VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
-                barrier_write_after_read.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
-                barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-                barrier_write_after_read.buffer = blas_array_buffers[0]->VkHandle();
-                barrier_write_after_read.offset = 0;
-                barrier_write_after_read.size = VK_WHOLE_SIZE;
-
+            // Wait for previous AS builds
+            {
+                VkMemoryBarrier barrier_access_before_validation = vku::InitStructHelper();
+                barrier_access_before_validation.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+                barrier_access_before_validation.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
                 DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-                                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
-                                           nullptr);
+                                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier_access_before_validation, 0,
+                                           nullptr, 0, nullptr);
             }
 
             shader_resources.push_constants.validation_mode = shader::kBuildASValidationMode_invalid_AS;
@@ -607,6 +597,16 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             const uint32_t wg_count_x = GetDispatchWorkGroupCount(blas_instances_count, wg_size_x);
             DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, 1, 1);
 
+            // Sync validation shaders executions
+            {
+                VkMemoryBarrier barrier_access_after_write = vku::InitStructHelper();
+                barrier_access_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+                barrier_access_after_write.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier_access_after_write, 0, nullptr, 0,
+                                           nullptr);
+            }
+
             shader_resources.push_constants.validation_mode = shader::kBuildASValidationMode_memory_overlaps;
 
             validation_pipeline.BindPushConstants(gpuav, cb_state, shader_resources);
@@ -614,17 +614,14 @@ void TLAS(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state
             const uint32_t wg_count_y = GetDispatchWorkGroupCount((uint32_t)blas_built_in_cmd_array.size(), wg_size_y);
             DispatchCmdDispatch(cb_state.VkHandle(), wg_count_x, wg_count_y, 1);
 
-            if (!blas_array_buffers.empty()) {
-                VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+            // Sync potential validation shader changes to instance buffers with AS build
+            {
+                VkMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
                 barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-                barrier_read_after_write.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-                barrier_read_after_write.buffer = blas_array_buffers[0]->VkHandle();
-                barrier_read_after_write.offset = 0;
-                barrier_read_after_write.size = VK_WHOLE_SIZE;
-
+                barrier_read_after_write.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
                 DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 0, nullptr, 1,
-                                           &barrier_read_after_write, 0, nullptr);
+                                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier_read_after_write,
+                                           0, nullptr, 0, nullptr);
             }
         }
     }
