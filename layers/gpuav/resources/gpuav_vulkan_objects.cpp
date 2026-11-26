@@ -242,15 +242,11 @@ void BufferRange::Clear() const {
 
 void CmdSynchronizedCopyBufferRange(VkCommandBuffer cb, const vko::BufferRange& dst, const vko::BufferRange& src) {
     assert(dst.size == src.size);
-    VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
+    VkMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
     barrier_write_after_read.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier_write_after_read.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier_write_after_read.buffer = dst.buffer;
-    barrier_write_after_read.offset = dst.offset;
-    barrier_write_after_read.size = dst.size;
-
-    DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                               &barrier_write_after_read, 0, nullptr);
+    DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
+                               &barrier_write_after_read, 0, nullptr, 0, nullptr);
 
     VkBufferCopy copy;
     copy.srcOffset = src.offset;
@@ -258,15 +254,11 @@ void CmdSynchronizedCopyBufferRange(VkCommandBuffer cb, const vko::BufferRange& 
     copy.size = src.size;
     DispatchCmdCopyBuffer(cb, src.buffer, dst.buffer, 1, &copy);
 
-    VkBufferMemoryBarrier barrier_read_before_write = vku::InitStructHelper();
+    VkMemoryBarrier barrier_read_before_write = vku::InitStructHelper();
     barrier_read_before_write.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier_read_before_write.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier_read_before_write.buffer = dst.buffer;
-    barrier_read_before_write.offset = dst.offset;
-    barrier_read_before_write.size = dst.size;
-
-    DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1,
-                               &barrier_read_before_write, 0, nullptr);
+    DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1,
+                               &barrier_read_before_write, 0, nullptr, 0, nullptr);
 }
 
 GpuResourcesManager::GpuResourcesManager(Validator& gpuav, bool thread_safe_buffer_caches)
@@ -627,27 +619,19 @@ StagingBuffer::StagingBuffer(GpuResourcesManager& gpu_resources_manager, VkDevic
     if (device_buffer_mem_prop_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
         host_buffer_range = device_buffer_range;
     } else {
-        VkBufferMemoryBarrier barrier_access_before_write = vku::InitStructHelper();
+        VkMemoryBarrier barrier_access_before_write = vku::InitStructHelper();
         barrier_access_before_write.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier_access_before_write.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier_access_before_write.buffer = device_buffer_range.buffer;
-        barrier_access_before_write.offset = device_buffer_range.offset;
-        barrier_access_before_write.size = device_buffer_range.size;
-
-        DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                                   &barrier_access_before_write, 0, nullptr);
+        DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
+                                   &barrier_access_before_write, 0, nullptr, 0, nullptr);
 
         DispatchCmdFillBuffer(cb, device_buffer_range.buffer, device_buffer_range.offset, device_buffer_range.size, 0);
 
-        VkBufferMemoryBarrier barrier_access_after_write = vku::InitStructHelper();
+        VkMemoryBarrier barrier_access_after_write = vku::InitStructHelper();
         barrier_access_after_write.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier_access_after_write.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
-        barrier_access_after_write.buffer = device_buffer_range.buffer;
-        barrier_access_after_write.offset = device_buffer_range.offset;
-        barrier_access_after_write.size = device_buffer_range.size;
-
-        DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1,
-                                   &barrier_access_after_write, 0, nullptr);
+        DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1,
+                                   &barrier_access_after_write, 0, nullptr, 0, nullptr);
 
         // #ARNO_TODO reconsider using host cached memory
         host_buffer_range = gpu_resources_manager.GetHostCachedBufferRange(size);
@@ -664,28 +648,14 @@ void StagingBuffer::CmdCopyDeviceToHost(VkCommandBuffer cb) const {
     }
 
     // Dispatch a copy command, copying staging buffer device local memory to host visible.
-    std::array<VkBufferMemoryBarrier, 2> barriers;
-    // Source: make the device buffer's write visible to the transfer read.
-    VkBufferMemoryBarrier& barrier_read_after_write = barriers[0];
-    barrier_read_after_write = vku::InitStructHelper();
-    barrier_read_after_write.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-    barrier_read_after_write.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    barrier_read_after_write.buffer = device_buffer_range.buffer;
-    barrier_read_after_write.offset = device_buffer_range.offset;
-    barrier_read_after_write.size = device_buffer_range.size;
-
-    // Destination: The host  buffer range is taken from a cache and may have been written by a previous
+    // - Read after write: make the device buffer's write visible to the transfer read.
+    // - Write after write: the host buffer range is taken from a cache and may have been written by a previous
     // vkCmdCopyBuffer (from an earlier submission reusing the same range).
-    VkBufferMemoryBarrier& barrier_write_after_write = barriers[1];
-    barrier_write_after_write = vku::InitStructHelper();
-    barrier_write_after_write.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier_write_after_write.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier_write_after_write.buffer = host_buffer_range.buffer;
-    barrier_write_after_write.offset = host_buffer_range.offset;
-    barrier_write_after_write.size = host_buffer_range.size;
-
-    DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr,
-                               static_cast<uint32_t>(barriers.size()), barriers.data(), 0, nullptr);
+    VkMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+    DispatchCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &barrier, 0, nullptr,
+                               0, nullptr);
 
     VkBufferCopy copy = {};
     copy.srcOffset = device_buffer_range.offset;
