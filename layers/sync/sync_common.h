@@ -24,13 +24,14 @@
 
 namespace vvl {
 class Buffer;
+struct SyncValInputData;
 }  // namespace vvl
 
 namespace syncval {
 
 struct CommandBufferRecording;
 using CommandBufferRecordingPtr = std::shared_ptr<const CommandBufferRecording>;
-
+using GpuAVDataPtr = std::shared_ptr<const vvl::SyncValInputData>;
 using ImageRangeGen = ImageRangeGenerator;
 
 // The resource tag index is relative to the command buffer or queue in which it's found

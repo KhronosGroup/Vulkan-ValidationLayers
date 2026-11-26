@@ -414,9 +414,11 @@ class SyncValidator : public vvl::DeviceProxy {
                               uint32_t access_size, BufferName buffer_name, const Location& loc) const;
     void RecordDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count, uint32_t stride,
                             uint32_t access_size, BufferName buffer_name, const Location& loc);
-    bool ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+    bool ValidateDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
+                                   VkDeviceSize countBufferOffset, uint32_t stride, uint32_t access_size,
                                    const Location& loc) const;
-    void RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+    void RecordDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
+                                 VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride, uint32_t access_size,
                                  const Location& loc);
     bool PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                          VkBuffer countBuffer, VkDeviceSize countBufferOffset,

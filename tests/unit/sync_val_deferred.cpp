@@ -16,6 +16,9 @@
  */
 
 #include "sync_val_tests.h"
+#include "buffer_helper.h"
+#include "gpu_av_helper.h"
+#include "pipeline_helper.h"
 
 class NegativeSyncValDeferred : public VkSyncValTest {};
 class PositiveSyncValDeferred : public VkSyncValTest {};
@@ -328,4 +331,187 @@ TEST_F(NegativeSyncValDeferred, ValidateAfterSwapchainDestruction) {
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     m_device->Wait();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncValDeferred, DrawIndirectCountArgumentHazard) {
+    TEST_DESCRIPTION("Detect a write racing with an indirect draw's read of its arguments");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    RETURN_IF_SKIP(InitDeferredSyncVal(true));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {1, 1};
+    rendering_info.layerCount = 1;
+
+    vkt::Buffer count_buffer = vkt::IndirectBuffer<uint32_t>(*m_device, {1});
+
+    const std::vector<VkDrawIndirectCommand> draws = {{3, 1, 0, 0}};
+    vkt::Buffer draw_buffer = vkt::IndirectBuffer(*m_device, draws, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // Only the second command buffer in the batch needs draw-count collection
+    vkt::CommandBuffer empty_cb(*m_device, m_command_pool);
+    empty_cb.Begin();
+    empty_cb.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawIndirectCount(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
+    m_command_buffer.EndRendering();
+    vk::CmdFillBuffer(m_command_buffer, draw_buffer, 0, sizeof(uint32_t), 3);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    m_default_queue->Submit({empty_cb, m_command_buffer});
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncValDeferred, DrawIndirectCountPerCommand) {
+    TEST_DESCRIPTION("Check that validation uses the correct count for each indirect draw command");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    RETURN_IF_SKIP(InitDeferredSyncVal(true));
+    if (m_device->Physical().limits_.maxDrawIndirectCount < 2) {
+        GTEST_SKIP() << "Two indirect draws are needed";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {1, 1};
+    rendering_info.layerCount = 1;
+
+    vkt::Buffer count_buffer = vkt::IndirectBuffer<uint32_t>(*m_device, {1, 2});
+
+    const std::vector<VkDrawIndirectCommand> draws = {{3, 1, 0, 0}, {3, 1, 0, 0}};
+    vkt::Buffer draw_buffer = vkt::IndirectBuffer(*m_device, draws, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    const uint32_t stride = sizeof(VkDrawIndirectCommand);
+
+    // Draw count is count_buffer[0] = 1.
+    // This draw is safe and does not cause hazards
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdDrawIndirectCount(m_command_buffer, draw_buffer, 0, count_buffer, 0, 2, stride);
+    m_command_buffer.EndRendering();
+
+    // Write the second draw struct
+    vk::CmdFillBuffer(m_command_buffer, draw_buffer, stride, sizeof(uint32_t), 3);
+
+    // Draw count is count_buffer[1] = 2.
+    // Accessing the second draw struct causes a hazard with the previous write
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdDrawIndirectCount(m_command_buffer, draw_buffer, 0, count_buffer, sizeof(uint32_t), 2, stride);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(PositiveSyncValDeferred, DrawIndirectCountRerecordedBeforeRetirement) {
+    TEST_DESCRIPTION("A later recording must not supply the draw count for an earlier submission");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(InitDeferredSyncVal(true));
+
+    auto [first_queue, second_queue] = GetTwoQueuesFromSameFamily(m_device->QueuesWithGraphicsCapability());
+    if (!first_queue) {
+        GTEST_SKIP() << "Two graphics queues from the same family are needed";
+    }
+    if (m_device->Physical().limits_.maxDrawIndirectCount < 2) {
+        GTEST_SKIP() << "Two indirect draws are needed";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.SetDynamicRendering({});
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {1, 1};
+    rendering_info.layerCount = 1;
+
+    const uint32_t stride = sizeof(VkDrawIndirectCommand);
+    const std::vector<VkDrawIndirectCommand> draws = {{3, 1, 0, 0}, {3, 1, 0, 0}};
+    auto first_args = vkt::IndirectBuffer(*m_device, draws, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto second_args = vkt::IndirectBuffer(*m_device, draws);
+    auto first_count = vkt::IndirectBuffer<uint32_t>(*m_device, {1});
+    auto second_count = vkt::IndirectBuffer<uint32_t>(*m_device, {2});
+
+    vkt::CommandPool pool(*m_device, first_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandBuffer cb(*m_device, pool);
+
+    auto draw = [&](VkBuffer args, VkBuffer count) {
+        cb.BeginRendering(rendering_info);
+        vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+        vk::CmdDrawIndirectCount(cb, args, 0, count, 0, 2, stride);
+        cb.EndRendering();
+    };
+
+    cb.Begin();
+    draw(first_args, first_count);
+    // The first draw only reads the first record, so this write is safe
+    vk::CmdFillBuffer(cb, first_args, stride, sizeof(uint32_t), 3);
+    cb.End();
+
+    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    SubmitWithLastBatchWaitingOnHost(*first_queue, cb, timeline);
+    timeline.Wait(1, kWaitTimeout);
+
+    // The first batch has finished, but GPU-AV will read its results only after the last batch retires
+    cb.Reset();
+    cb.Begin();
+    draw(second_args, second_count);
+    cb.End();
+    second_queue->SubmitAndWait(cb);
+
+    timeline.Signal(2);
+    first_queue->Wait();
+}
+
+TEST_F(PositiveSyncValDeferred, DrawIndirectCountClampedToMaxDrawCount) {
+    TEST_DESCRIPTION("Draw with count 2 and maxDrawCount 1, then write to the second record");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    RETURN_IF_SKIP(InitDeferredSyncVal(true));
+    if (m_device->Physical().limits_.maxDrawIndirectCount < 2) {
+        GTEST_SKIP() << "A stored draw count of 2 exceeds the device limit";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.VertexShaderOnly();
+    pipe.SetDynamicRendering({});
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea.extent = {1, 1};
+    rendering_info.layerCount = 1;
+
+    const uint32_t stride = sizeof(VkDrawIndirectCommand);
+    const std::vector<VkDrawIndirectCommand> draws = {{3, 1, 0, 0}, {3, 1, 0, 0}};
+    auto draw_buffer = vkt::IndirectBuffer<VkDrawIndirectCommand>(*m_device, draws, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto count_buffer = vkt::IndirectBuffer<uint32_t>(*m_device, {2});
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDrawIndirectCount(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1, stride);
+    m_command_buffer.EndRendering();
+    vk::CmdFillBuffer(m_command_buffer, draw_buffer, stride, stride, 0);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

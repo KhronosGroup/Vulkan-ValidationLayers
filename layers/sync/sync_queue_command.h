@@ -126,6 +126,8 @@ struct QueueSubmitCommand {
         small_vector<SemaphoreSubmitInfo, 1> waits;
         small_vector<CommandBufferRecordingPtr, 1> recordings;
         small_vector<SemaphoreSubmitInfo, 1> signals;
+        // Empty unless GPU-AV collects data, then indexed by recording
+        std::vector<GpuAVDataPtr> gpuav_data;
     };
     bool ready;
     QueueId queue_id;

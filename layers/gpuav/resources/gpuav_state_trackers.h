@@ -318,6 +318,7 @@ class QueueSubState : public vvl::QueueSubState {
     struct QueueSubmitInfo {
         std::vector<vvl::CommandBufferSubmitInfo> cb_submit_infos;
         vvl::QueueSubmission::GpuAV gpuav;
+        std::vector<std::shared_ptr<vvl::SyncValInputData>> syncval_data;
         // To uniquely identify a command buffer submission on a queue,
         // so they can be removed from CommandBufferSubState::pending_submissions_
         uint64_t seq = vvl::kU64Max;

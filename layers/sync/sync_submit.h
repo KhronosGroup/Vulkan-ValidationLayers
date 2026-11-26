@@ -240,6 +240,7 @@ struct UnresolvedBatch {
     uint64_t submit_index = 0;
     uint32_t batch_index = 0;
     std::vector<CommandBufferRecordingPtr> recordings;
+    std::vector<GpuAVDataPtr> gpuav_data;
 
     // Waits-before-signals that prevent this batch from being resolved.
     // When the wait is resolved it is removed from this list and the batch
@@ -335,8 +336,9 @@ class QueueBatchContext final : public ResourceUsageInfoProvider, public std::en
                                                     std::vector<SemaphoreSubmitInfo>& unresolved_waits,
                                                     SignalsUpdate& signals_update);
 
-    bool ValidateSubmit(vvl::span<const CommandBufferRecordingPtr> recordings, uint64_t submit_index, uint32_t batch_index,
-                        std::vector<std::string>& current_label_stack, const Location& submit_loc);
+    bool ValidateSubmit(vvl::span<const CommandBufferRecordingPtr> recordings, vvl::span<const GpuAVDataPtr> gpuav_data,
+                        uint64_t submit_index, uint32_t batch_index, std::vector<std::string>& current_label_stack,
+                        const Location& submit_loc);
 
     // For Present
     std::vector<BatchContextPtr> ResolvePresentWaits(vvl::span<const VkSemaphore> wait_semaphores,

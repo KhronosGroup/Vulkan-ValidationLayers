@@ -15,6 +15,7 @@
 #include <algorithm>
 #include "sync_val_tests.h"
 #include "buffer_helper.h"
+#include "gpu_av_helper.h"
 #include "pipeline_helper.h"
 #include "descriptor_helper.h"
 #include "render_pass_helper.h"
@@ -29,7 +30,7 @@ static const std::array syncval_disables = {
     VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
     VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
 
-void VkSyncValTest::InitSyncValFramework(const SyncValSettings* p_sync_settings) {
+void VkSyncValTest::InitSyncValFramework(const SyncValSettings* p_sync_settings, bool gpu_assisted) {
     std::vector<VkLayerSettingEXT> settings;
 
     static const SyncValSettings test_default_sync_settings = [] {
@@ -68,9 +69,13 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings* p_sync_settings)
     settings_create_info.settingCount = size32(settings);
     settings_create_info.pSettings = settings.data();
 
+    std::vector<VkValidationFeatureEnableEXT> enables(syncval_enables.begin(), syncval_enables.end());
+    if (gpu_assisted) {
+        enables.push_back(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT);
+    }
     VkValidationFeaturesEXT validation_features = vku::InitStructHelper();
-    validation_features.enabledValidationFeatureCount = size32(syncval_enables);
-    validation_features.pEnabledValidationFeatures = syncval_enables.data();
+    validation_features.enabledValidationFeatureCount = size32(enables);
+    validation_features.pEnabledValidationFeatures = enables.data();
     if (m_syncval_disable_core) {
         validation_features.disabledValidationFeatureCount = size32(syncval_disables);
         validation_features.pDisabledValidationFeatures = syncval_disables.data();
@@ -86,11 +91,15 @@ void VkSyncValTest::InitSyncVal(const SyncValSettings* p_sync_settings) {
     RETURN_IF_SKIP(InitState());
 }
 
-void VkSyncValTest::InitDeferredSyncVal() {
+void VkSyncValTest::InitDeferredSyncVal(bool gpu_assisted) {
     SyncValSettings settings;
     settings.record_time_validation = false;
     settings.defer_full_validation = true;
-    RETURN_IF_SKIP(InitSyncVal(&settings));
+    RETURN_IF_SKIP(InitSyncValFramework(&settings, gpu_assisted));
+    if (gpu_assisted && !CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    RETURN_IF_SKIP(InitState());
 }
 
 void VkSyncValTest::InitTimelineSemaphore() {

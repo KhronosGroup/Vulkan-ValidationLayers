@@ -337,6 +337,11 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
 
     for (uint32_t batch_idx = 0; batch_idx < batches.size(); batch_idx++) {
         const SubmitBatch& submit = batches[batch_idx];
+
+        // If replay is forced before the submit is ready, pass an empty span
+        // because GPU-AV may still be writing the data
+        const auto gpuav_data = ready ? vvl::make_span(submit.gpuav_data) : vvl::span<const GpuAVDataPtr>{};
+
         auto batch = std::make_shared<QueueBatchContext>(validator, queue_state);
 
         std::vector<SemaphoreSubmitInfo> unresolved_waits;
@@ -350,6 +355,7 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
             unresolved_batch.submit_index = submit_id;
             unresolved_batch.batch_index = batch_idx;
             unresolved_batch.recordings.assign(submit.recordings.begin(), submit.recordings.end());
+            unresolved_batch.gpuav_data.assign(gpuav_data.begin(), gpuav_data.end());
             unresolved_batch.unresolved_waits = std::move(unresolved_waits);
             unresolved_batch.resolved_dependencies = std::move(resolved_batches);
             unresolved_batch.signals.assign(submit.signals.begin(), submit.signals.end());
@@ -368,7 +374,7 @@ bool QueueSubmitCommand::Execute(SyncValidator& validator) const {
         // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case
         const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
 
-        skip |= batch->ValidateSubmit(submit.recordings, submit_id, batch_idx, current_label_stack, submit_loc);
+        skip |= batch->ValidateSubmit(submit.recordings, gpuav_data, submit_id, batch_idx, current_label_stack, submit_loc);
 
         new_timeline_signals |= signals_update.RegisterSignals(batch, submit.signals);
 

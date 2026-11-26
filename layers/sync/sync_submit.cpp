@@ -698,9 +698,9 @@ std::vector<BatchContextPtr> QueueBatchContext::ResolveSubmitWaits(vvl::span<con
     return resolved_batches;
 }
 
-bool QueueBatchContext::ValidateSubmit(vvl::span<const CommandBufferRecordingPtr> recordings, uint64_t submit_index,
-                                       uint32_t batch_index, std::vector<std::string>& current_label_stack,
-                                       const Location& submit_loc) {
+bool QueueBatchContext::ValidateSubmit(vvl::span<const CommandBufferRecordingPtr> recordings,
+                                       vvl::span<const GpuAVDataPtr> gpuav_data, uint64_t submit_index, uint32_t batch_index,
+                                       std::vector<std::string>& current_label_stack, const Location& submit_loc) {
     bool skip = false;
 
     BatchInfo batch{queue_state_, submit_index, batch_index};
@@ -725,7 +725,8 @@ bool QueueBatchContext::ValidateSubmit(vvl::span<const CommandBufferRecordingPtr
 
             batch_log_.Import(batch, recording, current_label_stack);
 
-            skip |= ReplayCommands(GetSyncEnvironment(), GetAccessContext(), *recording, batch.base_tag, cb_loc);
+            skip |= ReplayCommands(GetSyncEnvironment(), GetAccessContext(), *recording, batch.base_tag, cb_loc, nullptr, nullptr,
+                                   gpuav_data.empty() ? nullptr : gpuav_data[index].get());
             batch.base_tag += recording->GetTagCount();
         }
         // Apply debug label commands

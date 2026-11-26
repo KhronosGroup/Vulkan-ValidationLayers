@@ -28,6 +28,7 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/shaders/validation_cmd/build_acceleration_structures.h"
+#include "gpuav/syncval/gpuav_syncval.h"
 #include "gpuav/validation_cmd/gpuav_draw.h"
 
 #include "gpuav/validation_cmd/gpuav_ray_tracing.h"
@@ -35,6 +36,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/pipeline_layout_state.h"
+#include "state_tracker/submission_reference.h"
 #include "utils/ray_tracing_utils.h"
 #include "utils/vk_api_utils.h"
 
@@ -165,9 +167,13 @@ void CommandBufferSubState::RecordBindResourceHeap() { descriptor::UpdateBoundDe
 
 void CommandBufferSubState::RecordBindSamplerHeap() { descriptor::UpdateBoundDescriptorHeap(gpuav_, *this, true); }
 
-void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT*) { valcmd::FlushValidationCmds(gpuav_, *this); }
+void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT*) {
+    syncval::CopyDrawCounts(*this);
+    valcmd::FlushValidationCmds(gpuav_, *this);
+}
 
 void CommandBufferSubState::RecordEndRenderPass(const VkSubpassEndInfo*, const Location&) {
+    syncval::CopyDrawCounts(*this);
     valcmd::FlushValidationCmds(gpuav_, *this);
 }
 
@@ -611,6 +617,7 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission>& submissions) {
 }
 
 void QueueSubState::PreSubmitCommandBuffers(std::vector<vvl::QueueSubmission>& submissions) {
+    const bool syncval_enabled = syncval::IsEnabled(gpuav_);
     bool success = true;
     for (auto& submission : submissions) {
         auto loc = submission.loc.Get();
@@ -622,6 +629,9 @@ void QueueSubState::PreSubmitCommandBuffers(std::vector<vvl::QueueSubmission>& s
 
             {
                 auto& cb_submission = submission.gpuav.cb_infos.emplace_back();
+                if (syncval_enabled) {
+                    syncval::PrepareData(gpu_cb, base, submission, uint32_t(cb_info_i));
+                }
                 success = gpu_cb.PreSubmit(*this, submission.seq, loc, submission.gpuav.queue, cb_submission, cb_info);
                 if (!success) {
                     return;
@@ -703,20 +713,26 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
         return;
     }
 
-    retiring_.emplace_back(QueueSubmitInfo{submission.cb_infos, submission.gpuav, submission.seq});
+    retiring_.emplace_back(
+        QueueSubmitInfo{submission.cb_infos, submission.gpuav, submission.gpuav_to_syncval_data, submission.seq});
     if (submission.is_last_submission) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &barrier_sem_;
         wait_info.pValues = &submission.seq;
 
+        bool barrier_wait_succeeded = false;
         if (!gpuav_.device_state->dispatch_device_->is_device_lost) {
             if (timeline_khr_) {
-                if (DispatchWaitSemaphoresKHR(gpuav_.device, &wait_info, 1'000'000'000) == VK_ERROR_DEVICE_LOST) {
+                const VkResult result = DispatchWaitSemaphoresKHR(gpuav_.device, &wait_info, 1'000'000'000);
+                barrier_wait_succeeded = result == VK_SUCCESS;
+                if (result == VK_ERROR_DEVICE_LOST) {
                     gpuav_.PublishDeviceLost(Location(vvl::Func::vkWaitSemaphoresKHR));
                 }
             } else {
-                if (DispatchWaitSemaphores(gpuav_.device, &wait_info, 1'000'000'000) == VK_ERROR_DEVICE_LOST) {
+                const VkResult result = DispatchWaitSemaphores(gpuav_.device, &wait_info, 1'000'000'000);
+                barrier_wait_succeeded = result == VK_SUCCESS;
+                if (result == VK_ERROR_DEVICE_LOST) {
                     gpuav_.PublishDeviceLost(Location(vvl::Func::vkWaitSemaphores));
                 }
             }
@@ -741,7 +757,7 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
 
         for (auto [retiring_i, submit_info] : vvl::enumerate(retiring_)) {
             size_t cb_submission_i = 0;
-            for (auto& cb_info : vvl::make_span(submit_info.cb_submit_infos)) {
+            for (auto [cb_info_i, cb_info] : vvl::enumerate(submit_info.cb_submit_infos)) {
                 auto guard = cb_info.cb->WriteLock();
                 auto& gpu_cb = SubState(*cb_info.cb);
                 auto submission_loc = submission.loc.Get();
@@ -749,6 +765,11 @@ void QueueSubState::Retire(vvl::QueueSubmission& submission) {
                     auto& cb_submission_gpuav = submit_info.gpuav.cb_infos[cb_submission_i++];
                     gpu_cb.OnCompletion(VkHandle(), submission.gpuav.queue, submit_info.seq, cb_submission_gpuav, cb_info,
                                         submission_loc);
+                    if (barrier_wait_succeeded && !submit_info.syncval_data.empty()) {
+                        if (const auto& syncval_data = submit_info.syncval_data[cb_info_i]) {
+                            syncval::CollectData(gpu_cb, {&base, submit_info.seq}, *syncval_data);
+                        }
+                    }
                 }
 
                 for (vvl::CommandBuffer* secondary_cb : gpu_cb.base.linked_command_buffers) {

@@ -28,6 +28,7 @@
 #include "gpuav/instrumentation/register_validation.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "gpuav/syncval/gpuav_syncval.h"
 #include "gpuav/validation_cmd/gpuav_copy_buffer_to_image.h"
 #include "gpuav/validation_cmd/gpuav_copy_memory_indirect.h"
 #include "gpuav/validation_cmd/gpuav_dispatch.h"
@@ -106,6 +107,11 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
 
     if (gpuav_settings.validate_acceleration_structures_builds &&
         (in_usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
+        extra_usage |= VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
+    }
+
+    // Draw counts are copied from the count buffers
+    if (syncval::IsEnabled(*this) && (in_usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT)) {
         extra_usage |= VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
     }
 
@@ -451,6 +457,7 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
                         vvl::Struct::VkDrawIndirectCommand, stride, countBuffer, countBufferOffset, vuid);
     valcmd::FirstInstance<VkDrawIndirectCommand>(*this, sub_state, record_obj.location, last_bound, buffer, offset, maxDrawCount,
                                                  stride, countBuffer, countBufferOffset);
+    syncval::DrawCountBuffer(*this, sub_state, countBuffer, countBufferOffset);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
@@ -619,6 +626,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
     valcmd::DrawIndexedIndirectIndexBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset, stride, maxDrawCount,
                                            countBuffer, countBufferOffset,
                                            "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+    syncval::DrawCountBuffer(*this, sub_state, countBuffer, countBufferOffset);
 
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
@@ -705,6 +713,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer co
     valcmd::CountBuffer(*this, sub_state, record_obj.location, last_bound, buffer, offset,
                         sizeof(VkDrawMeshTasksIndirectCommandEXT), vvl::Struct::VkDrawMeshTasksIndirectCommandEXT, stride,
                         countBuffer, countBufferOffset, count_vuid);
+    syncval::DrawCountBuffer(*this, sub_state, countBuffer, countBufferOffset);
     PreCallActionCommand(*this, sub_state, last_bound, record_obj.location);
 }
 
