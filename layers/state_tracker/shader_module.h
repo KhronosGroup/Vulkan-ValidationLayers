@@ -426,7 +426,6 @@ struct StageInterfaceVariable : public VariableBase {
     uint32_t array_size = 1;  // flatten size of all dimensions; 1 if no array
     const Instruction &base_type;
     const bool is_built_in;
-    bool nested_struct;
 
     const std::vector<InterfaceSlot> interface_slots;  // Only for User Defined variables
     const std::vector<spv::BuiltIn> built_in_block;

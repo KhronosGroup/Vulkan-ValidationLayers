@@ -542,9 +542,6 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
 
     for (const auto& [interface_slot, stage_variable] : producer_entrypoint.output_interface_slots) {
         auto& slot = slot_map[interface_slot.Location()][interface_slot.Component()];
-        if (stage_variable->nested_struct) {
-            return skip;  // TODO workaround
-        }
         slot.output = stage_variable;
         slot.output_type = interface_slot.type;
         slot.output_width = interface_slot.bit_width;
@@ -552,9 +549,6 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const ShaderStageState& producer
 
     for (const auto& [interface_slot, stage_variable] : consumer_entrypoint.input_interface_slots) {
         auto& slot = slot_map[interface_slot.Location()][interface_slot.Component()];
-        if (stage_variable->nested_struct) {
-            return skip;  // TODO workaround
-        }
         slot.input = stage_variable;
         slot.input_type = interface_slot.type;
         slot.input_width = interface_slot.bit_width;
