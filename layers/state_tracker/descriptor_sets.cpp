@@ -281,7 +281,7 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState& device_sta
       has_non_mesh_pre_raster_(false),
       binding_count_(0),
       descriptor_count_(0),
-      non_inline_descriptor_count_(0),
+      gpuav_tracked_descriptor_count_(0),
       dynamic_descriptor_count_(0) {
     const auto* flags_create_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
 
@@ -317,8 +317,14 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(vvl::DeviceState& device_sta
             non_empty_bindings_.insert(binding_num);
         }
 
-        non_inline_descriptor_count_ +=
-            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) ? 1 : binding_info.descriptorCount;
+        const bool inline_descriptor = binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
+        const bool variable_descriptor_count =
+            (input_binding.binding_flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) != 0;
+        if (inline_descriptor) {
+            gpuav_tracked_descriptor_count_ += 1;
+        } else if (!variable_descriptor_count) {
+            gpuav_tracked_descriptor_count_ += binding_info.descriptorCount;
+        }
 
         if (IsDynamicDescriptor(binding_info.descriptorType)) {
             dynamic_descriptor_count_ += binding_info.descriptorCount;
@@ -959,7 +965,7 @@ bool vvl::DescriptorSet::ValidateBindingOnGPU(const DescriptorBinding& binding,
     // means that we are miss validating non-bindless rules on these arrays if the app is doing illegal aliasing of the descriptor
     // array, but its a non-trival perf operation to track the difference for very little ROI
     static constexpr uint32_t max_descriptor_on_cpu = 1024;
-    if (GetNonInlineDescriptorCount() > max_descriptor_on_cpu) {
+    if (GetGpuAVTrackedDescriptorCount() > max_descriptor_on_cpu) {
         // If too much CPU work
         return true;
     } else if (IsBindless(binding.binding_flags)) {

@@ -121,6 +121,12 @@ const int kDebugInputBindlessMaxDescSets = 32;
 
 // Used to know that the descriptor is null and not uninitialized
 const uint kNullDescriptor = 0x00ffffff;
+// Binding layouts created with VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT
+// Will have their size specified at descriptor set allocation time
+// through VkDescriptorSetVariableDescriptorCountAllocateInfo
+// => Use a special value to indicate that binding layout size
+//    needs to be fetched dynamically
+const uint kBindingVariableDescriptorCount = 0xffffffff;
 
 // Top 8 bits of the descriptor id
 const uint kDescBitShift = 24;

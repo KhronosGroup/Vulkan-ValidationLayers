@@ -23,8 +23,11 @@
 #include "descriptor_encoding.h"
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorEncodings {
+    uint variable_descriptor_count;
+    uint padding_;
     DescriptorEncoding data[];
 };
+
 
 layout(buffer_reference) buffer UnusedInitializedStatus;
 
