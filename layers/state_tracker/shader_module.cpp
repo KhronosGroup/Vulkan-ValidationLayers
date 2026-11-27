@@ -2454,6 +2454,14 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
             // In case of option 1, need to keep track as we go
             uint32_t base_location = variable.decorations.location;
             for (const auto& members : variable.type_struct_info->members) {
+                if (members.type_struct_info) {
+                    const uint32_t array_size = module_state.GetFlattenArraySize(*members.insn);
+                    for (uint32_t j = 0; j < array_size; j++) {
+                        base_location += GetStructInterfaceSlots(module_state, members.type_struct_info, slots, base_location);
+                    }
+                    continue;
+                }
+
                 const uint32_t member_id = members.id;
                 const Instruction* member_type = module_state.FindDef(member_id);
                 const uint32_t components = module_state.GetComponentsConsumedByType(member_type);
@@ -2471,11 +2479,6 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                 ASSERT_AND_CONTINUE(numerical_type);
 
                 const uint32_t numerical_type_opcode = numerical_type->Opcode();
-                // TODO - Handle nested structs
-                if (numerical_type_opcode == spv::OpTypeStruct) {
-                    variable.nested_struct = true;
-                    break;
-                }
                 const uint32_t numerical_type_width = numerical_type->GetBitWidth();
 
                 for (uint32_t j = 0; j < components; j++) {
@@ -2619,7 +2622,6 @@ StageInterfaceVariable::StageInterfaceVariable(const Module& module_state, const
       is_array_interface(IsArrayInterface(*this)),
       base_type(FindBaseType(*this, module_state)),
       is_built_in(IsBuiltIn(*this, module_state)),
-      nested_struct(false),
       interface_slots(GetInterfaceSlots(*this, module_state)),
       built_in_block(GetBuiltInBlock(*this, module_state)),
       total_built_in_components(GetBuiltInComponents(*this, module_state)) {}

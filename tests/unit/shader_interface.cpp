@@ -2849,22 +2849,22 @@ TEST_F(NegativeShaderInterface, PhysicalStorageBufferNested) {
     m_errorMonitor->VerifyFound();
 }
 
-// More interface checks that require deeping spirv matching
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11267
-TEST_F(NegativeShaderInterface, DISABLED_NestedStructInBlock) {
+TEST_F(NegativeShaderInterface, NestedStructInBlock) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const char vsSource[] = R"glsl(
         #version 450
         struct Foo {
-            vec2 a;
+            float a[8];
+            vec4 b;
         };
         layout(location = 0) out block {
             Foo foo;
         } testBlock;
         void main(void) {
-            testBlock.foo.a = vec2(0);
+            testBlock.foo.a[0] = 0.0;
+            testBlock.foo.b = vec4(0);
         }
     )glsl";
 

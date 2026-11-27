@@ -960,6 +960,56 @@ TEST_F(PositiveShaderInterface, NestedStructs) {
     pipe.CreateGraphicsPipeline();
 }
 
+TEST_F(PositiveShaderInterface, NestedStructArrayInBlock) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/11267");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char vsSource[] = R"glsl(
+        #version 450
+        struct Foo {
+            vec2 a;
+            int b[2];
+        };
+        layout(location = 0) out block {
+            float x;
+            Foo foo[2];
+            vec4 y;
+        } testBlock;
+        void main(void) {
+            testBlock.x = 0.0;
+            testBlock.foo[0].a = vec2(0.0);
+            testBlock.foo[0].b[0] = 0;
+            testBlock.foo[0].b[1] = 0;
+            testBlock.foo[1] = testBlock.foo[0];
+            testBlock.y = vec4(0.0);
+        }
+    )glsl";
+
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 color;
+        struct Foo {
+            vec2 a;
+            int b[2];
+        };
+        layout(location = 0) in block {
+            float x;
+            flat Foo foo[2];
+            vec4 y;
+        } testBlock;
+        void main(void) {
+            color = testBlock.y + vec4(testBlock.foo[1].a, testBlock.x, float(testBlock.foo[1].b[1]));
+        }
+    )glsl";
+    VkShaderObj vs(*m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(*m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(PositiveShaderInterface, AlphaToCoverageOffsetToAlpha) {
     TEST_DESCRIPTION("Only set the needed component and nothing else.");
 
